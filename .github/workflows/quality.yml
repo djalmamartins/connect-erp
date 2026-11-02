@@ -1,0 +1,15 @@
+name: quality
+on: [push, pull_request]
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - name: Composer validation
+        run: if [ -f composer.json ]; then composer validate --strict; fi
+      - name: PHP lint
+        run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -r -n1 php -l
