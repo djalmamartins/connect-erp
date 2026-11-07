@@ -316,13 +316,20 @@ docker compose -p connect-erp exec app composer db:status
 ```
 
 ```bash
-docker compose -p connect-erp exec -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS="$(grep '^LEGACY_DB_ROOT_PASSWORD=' .env | cut -d= -f2-)" app vendor/bin/phpunit --testsuite unit
+docker compose -p connect-erp exec -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS="$(grep '^LEGACY_DB_ROOT_PASSWORD=' .env | cut -d= -f2-)" app composer test:unit
 ```
 
-Sem essas variáveis, `tests/legacy/prepare-environment.php` tenta `localhost` e falha com
-`SQLSTATE[HY000] [2002]` (resultado observado em 2026-11-07). A suíte cria e usa somente
-o banco `movesos_test`. A senha root não foi colocada no ambiente do serviço `app` de
-propósito.
+**Nunca chame `vendor/bin/phpunit` diretamente.** Ele carrega o `Config.php` antes de
+`MOVESOS_ENV=testing` valer, conecta no banco do app (`MOVESOS_DB_NAME`) e o `TestCase`
+faz `TRUNCATE` em `users`, `posts`, `pages` e outras tabelas. Foi o que zerou o
+`connect_legacy` em 2026-11-07, com o comando que este documento recomendava antes. Os
+scripts `composer test:*` passam por `tests/legacy/run.php`, que define o ambiente de
+teste antes do autoload. O `TestCase` agora aborta se o banco conectado não terminar em
+`_test`.
+
+Sem as variáveis `MOVESOS_TEST_DB_*`, `tests/legacy/prepare-environment.php` tenta
+`localhost` e falha com `SQLSTATE[HY000] [2002]`. A senha root não foi colocada no
+ambiente do serviço `app` de propósito.
 
 ```bash
 docker compose -p connect-erp exec legacy-db mariadb -u root -p -e "SELECT view_theme, view_erp, view_app, view_mail FROM connect_legacy.settings LIMIT 1"

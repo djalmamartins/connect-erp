@@ -21,6 +21,7 @@ abstract class TestCase extends PHPUnitTestCase
                 self::markTestSkipped('Integração exige MariaDB (MOVESOS_TEST_DB_DISABLED=1).');
             }
         } else {
+            self::assertIsolatedTestDatabase();
             $this->pdo = Connect::getInstance();
             $this->resetDatabase();
         }
@@ -50,6 +51,23 @@ abstract class TestCase extends PHPUnitTestCase
         $statement = $this->pdo->prepare('INSERT INTO users (first_name,last_name,email,document,password,level,status) VALUES (:first_name,:last_name,:email,:document,:password,:level,:status)');
         $statement->execute($data);
         return (int)$this->pdo->lastInsertId();
+    }
+
+    /**
+     * Trava de segurança: resetDatabase() faz TRUNCATE em users, posts, pages etc.
+     * Chamar vendor/bin/phpunit direto carrega o Config.php antes de MOVESOS_ENV=testing
+     * valer e conecta no banco do app (incidente de 2026-11-07, connect_legacy zerado).
+     * Por isso a suíte para aqui se o boot não estiver em modo testing ou se o banco
+     * conectado não terminar em _test.
+     */
+    private static function assertIsolatedTestDatabase(): void
+    {
+        $environment = defined('CONF_APP_ENV') ? CONF_APP_ENV : '';
+        $database = defined('CONF_DB_NAME') ? (string)CONF_DB_NAME : '';
+        if ($environment !== 'testing' || !preg_match('/_test$/', $database)) {
+            fwrite(STDERR, "\nSuíte abortada: banco '{$database}' (ambiente '{$environment}') não é um banco de teste. Use composer test:legacy, test:unit ou test:integration.\n");
+            exit(2);
+        }
     }
 
     private function resetDatabase(): void
