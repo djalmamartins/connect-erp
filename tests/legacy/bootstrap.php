@@ -11,6 +11,10 @@ require __DIR__ . '/prepare-environment.php';
 
 require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 
+if ($pdo === null) {
+    return;
+}
+
 $schema = [
     "CREATE TABLE IF NOT EXISTS users (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

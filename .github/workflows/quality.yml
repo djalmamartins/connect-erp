@@ -13,3 +13,7 @@ jobs:
         run: if [ -f composer.json ]; then composer validate --strict; fi
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -r -n1 php -l
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Unit tests without MariaDB
+        run: composer test:unit:offline

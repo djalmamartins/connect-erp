@@ -16,8 +16,14 @@ abstract class TestCase extends PHPUnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->pdo = Connect::getInstance();
-        $this->resetDatabase();
+        if (Connect::databaseDisabled()) {
+            if (str_starts_with(static::class, 'MovesOSTests\\Integration\\')) {
+                self::markTestSkipped('Integração exige MariaDB (MOVESOS_TEST_DB_DISABLED=1).');
+            }
+        } else {
+            $this->pdo = Connect::getInstance();
+            $this->resetDatabase();
+        }
         Access::clear();
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();

@@ -25,6 +25,12 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_save_path($sessionDirectory);
 }
 
+// Suíte unit sem MariaDB (A6): não prepara banco; TestCase pula testes de integração.
+if (filter_var(getenv('MOVESOS_TEST_DB_DISABLED') ?: false, FILTER_VALIDATE_BOOL)) {
+    $pdo = null;
+    return;
+}
+
 $host = getenv('MOVESOS_TEST_DB_HOST') ?: 'localhost';
 $user = getenv('MOVESOS_TEST_DB_USER') ?: 'root';
 $password = getenv('MOVESOS_TEST_DB_PASS') ?: '';
