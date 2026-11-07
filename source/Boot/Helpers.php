@@ -272,7 +272,9 @@ function is_local_host(): bool
 function local_url(): string
 {
     $host = $_SERVER['HTTP_HOST'] ?? parse_url(CONF_URL_LOCAL, PHP_URL_HOST);
-    $https = ($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off';
+    $forwardedProto = strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+    $https = (($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off')
+        || $forwardedProto === 'https';
     $scheme = $https ? 'https' : 'http';
     $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
     $basePath = rtrim(str_replace('/index.php', '', $scriptName), '/');
