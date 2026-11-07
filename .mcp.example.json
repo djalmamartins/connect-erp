@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "<instalar-servidor-aprovado>",
+      "args": [
+        "<escopo-somente-repositorio>"
+      ]
+    },
+    "github": {
+      "command": "<servidor-opcional>",
+      "args": []
+    },
+    "database-readonly": {
+      "command": "<servidor-opcional>",
+      "args": [
+        "<apenas-ambiente-dev>"
+      ]
+    }
+  }
+}

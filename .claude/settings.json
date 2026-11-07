@@ -1,0 +1,4 @@
+{
+  "permissions": {"deny": ["Read(./.env)", "Read(./.local/**)", "Read(./**/*-key.pem)"]},
+  "hooks": {"PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "bash .claude/hooks/php-lint.sh"}]}]}
+}

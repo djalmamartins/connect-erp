@@ -1,0 +1,13 @@
+{
+  "name": "connect/erp",
+  "description": "Connect ERP foundation on Organic Code conventions",
+  "license": "proprietary",
+  "type": "project",
+  "require": {"php": "^8.2", "ext-json": "*", "ext-pdo": "*", "ext-pdo_mysql": "*"},
+  "autoload": {"psr-4": {"Connect\\": "source/Connect/"}},
+  "scripts": {
+    "lint": "find public source container database tests -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "test": "php tests/smoke.php"
+  },
+  "config": {"sort-packages": true}
+}

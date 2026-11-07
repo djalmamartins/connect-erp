@@ -1,0 +1,1550 @@
+[
+  {
+    "id": "AP-001",
+    "name": "Administradora",
+    "reference_route": "/inicio/administrador",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-001-administradora.md"
+  },
+  {
+    "id": "AP-002",
+    "name": "Condomínio",
+    "reference_route": "/inicio/condominio",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-002-condominio.md"
+  },
+  {
+    "id": "AP-003",
+    "name": "Unidade",
+    "reference_route": "/inicio/unidade",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-003-unidade.md"
+  },
+  {
+    "id": "AP-004",
+    "name": "Condomínios",
+    "reference_route": "/cadastro/condominio/",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-004-condominios.md"
+  },
+  {
+    "id": "AP-005",
+    "name": "Inquilinos",
+    "reference_route": "/Proprietários/cadastro/morador/lis",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "plataforma",
+    "spec_path": "docs/specs/pages/ap-005-inquilinos.md"
+  },
+  {
+    "id": "AP-006",
+    "name": "Unidades",
+    "reference_route": "/cadastro/unidade/lis",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-006-unidades.md"
+  },
+  {
+    "id": "AP-007",
+    "name": "Áreas Vinculáveis",
+    "reference_route": "/cadastro/area-vincul",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-007-areas-vinculaveis.md"
+  },
+  {
+    "id": "AP-008",
+    "name": "Áreas Comuns",
+    "reference_route": "/cadastro/area-comum/",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-008-areas-comuns.md"
+  },
+  {
+    "id": "AP-009",
+    "name": "Funcionários",
+    "reference_route": "/cadastro/funcionario",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-009-funcionarios.md"
+  },
+  {
+    "id": "AP-010",
+    "name": "Fornecedores",
+    "reference_route": "/cadastro/fornecedor/",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-010-fornecedores.md"
+  },
+  {
+    "id": "AP-011",
+    "name": "Veículos",
+    "reference_route": "/cadastro/veiculo/lis",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-011-veiculos.md"
+  },
+  {
+    "id": "AP-012",
+    "name": "Visitantes",
+    "reference_route": "/cadastro/visitante/l",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-012-visitantes.md"
+  },
+  {
+    "id": "AP-013",
+    "name": "Animais de Estimação",
+    "reference_route": "/cadastro/pet/listage",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-013-animais-de-estimacao.md"
+  },
+  {
+    "id": "AP-014",
+    "name": "Conselho",
+    "reference_route": "/cadastro/conselho/li",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-014-conselho.md"
+  },
+  {
+    "id": "AP-015",
+    "name": "Contatos Úteis",
+    "reference_route": "/cadastro/contatos-ut",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-015-contatos-uteis.md"
+  },
+  {
+    "id": "AP-016",
+    "name": "Advogados",
+    "reference_route": "/cadastro/advogado/li",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-016-advogados.md"
+  },
+  {
+    "id": "AP-017",
+    "name": "Votação",
+    "reference_route": "/cadastro/votacao/lis",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-017-votacao.md"
+  },
+  {
+    "id": "AP-018",
+    "name": "Assembleia Virtual",
+    "reference_route": "/cadastro/assembleia-",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-018-assembleia-virtual.md"
+  },
+  {
+    "id": "AP-019",
+    "name": "Patrimônio",
+    "reference_route": "/cadastro/patrimonio/",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "cadastros",
+    "spec_path": "docs/specs/pages/ap-019-patrimonio.md"
+  },
+  {
+    "id": "AP-020",
+    "name": "Ver Lançamentos",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-020-ver-lancamentos.md"
+  },
+  {
+    "id": "AP-021",
+    "name": "Ver Lançamentos Fixos",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-021-ver-lancamentos-fixos.md"
+  },
+  {
+    "id": "AP-022",
+    "name": "Contas a Pagar",
+    "reference_route": "/financeiro/conta-pag",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-022-contas-a-pagar.md"
+  },
+  {
+    "id": "AP-023",
+    "name": "Contas a Receber",
+    "reference_route": "/financeiro/conta-rec",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-023-contas-a-receber.md"
+  },
+  {
+    "id": "AP-024",
+    "name": "Lançar Despesa",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 9,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-024-lancar-despesa.md"
+  },
+  {
+    "id": "AP-025",
+    "name": "Lançar Receita",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-025-lancar-receita.md"
+  },
+  {
+    "id": "AP-026",
+    "name": "Lançar Desconto",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-026-lancar-desconto.md"
+  },
+  {
+    "id": "AP-027",
+    "name": "Lançar Multa (Avulsa)",
+    "reference_route": "/financeiro/multa/cri",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-027-lancar-multa-avulsa.md"
+  },
+  {
+    "id": "AP-028",
+    "name": "Cobranças Extras",
+    "reference_route": "/financeiro/cobranca-",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-028-cobrancas-extras.md"
+  },
+  {
+    "id": "AP-029",
+    "name": "Outros Lançamentos",
+    "reference_route": "/financeiro/lancament",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-029-outros-lancamentos.md"
+  },
+  {
+    "id": "AP-030",
+    "name": "Fechamento Mensal",
+    "reference_route": "/financeiro/fechament",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-030-fechamento-mensal.md"
+  },
+  {
+    "id": "AP-031",
+    "name": "Pagamentos (Bancos)",
+    "reference_route": "/app/financeiro/pagam",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-031-pagamentos-bancos.md"
+  },
+  {
+    "id": "AP-032",
+    "name": "Faturas",
+    "reference_route": "/financeiro/fatura/li",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-032-faturas.md"
+  },
+  {
+    "id": "AP-033",
+    "name": "Acordos",
+    "reference_route": "/financeiro/acordo/li",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-033-acordos.md"
+  },
+  {
+    "id": "AP-034",
+    "name": "Parcelas de Acordo",
+    "reference_route": "/financeiro/acordo-pa",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-034-parcelas-de-acordo.md"
+  },
+  {
+    "id": "AP-035",
+    "name": "Boletos",
+    "reference_route": "/financeiro/boleto/li",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-035-boletos.md"
+  },
+  {
+    "id": "AP-036",
+    "name": "Arquivo de Retorno",
+    "reference_route": "/financeiro/retorno/p",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-036-arquivo-de-retorno.md"
+  },
+  {
+    "id": "AP-037",
+    "name": "Remessas",
+    "reference_route": "/financeiro/remessa/l",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-037-remessas.md"
+  },
+  {
+    "id": "AP-038",
+    "name": "Retornos",
+    "reference_route": "/financeiro/retorno/l",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-038-retornos.md"
+  },
+  {
+    "id": "AP-039",
+    "name": "Cobrança Judicial",
+    "reference_route": "/financeiro/cobranca-",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-039-cobranca-judicial.md"
+  },
+  {
+    "id": "AP-040",
+    "name": "Recibos",
+    "reference_route": "/financeiro/recibo/li",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-040-recibos.md"
+  },
+  {
+    "id": "AP-041",
+    "name": "Relógios",
+    "reference_route": "/leitura/relogio/list",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "leituras",
+    "spec_path": "docs/specs/pages/ap-041-relogios.md"
+  },
+  {
+    "id": "AP-042",
+    "name": "Leituras",
+    "reference_route": "/leitura/leitura/list",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "leituras",
+    "spec_path": "docs/specs/pages/ap-042-leituras.md"
+  },
+  {
+    "id": "AP-043",
+    "name": "Tarifas",
+    "reference_route": "/leitura/tarifacao/li",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "leituras",
+    "spec_path": "docs/specs/pages/ap-043-tarifas.md"
+  },
+  {
+    "id": "AP-044",
+    "name": "Importação de Leituras",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-044-importacao-de-leituras.md"
+  },
+  {
+    "id": "AP-045",
+    "name": "Consumo (Geral)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-045-consumo-geral.md"
+  },
+  {
+    "id": "AP-046",
+    "name": "Consumo (Unidade)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-046-consumo-unidade.md"
+  },
+  {
+    "id": "AP-047",
+    "name": "Acordos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-047-acordos.md"
+  },
+  {
+    "id": "AP-048",
+    "name": "Taxas de Acordos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-048-taxas-de-acordos.md"
+  },
+  {
+    "id": "AP-049",
+    "name": "Centros de Custo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-049-centros-de-custo.md"
+  },
+  {
+    "id": "AP-050",
+    "name": "Comparativo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 10,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-050-comparativo.md"
+  },
+  {
+    "id": "AP-051",
+    "name": "Demonstrativo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-051-demonstrativo.md"
+  },
+  {
+    "id": "AP-052",
+    "name": "Demonstrativo Contas",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-052-demonstrativo-contas.md"
+  },
+  {
+    "id": "AP-053",
+    "name": "Demonstrativo Analítico",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-053-demonstrativo-analitico.md"
+  },
+  {
+    "id": "AP-054",
+    "name": "Demonstrativo Situação",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-054-demonstrativo-situacao.md"
+  },
+  {
+    "id": "AP-055",
+    "name": "Demonstrativo Contas",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-055-demonstrativo-contas.md"
+  },
+  {
+    "id": "AP-056",
+    "name": "Extrato Conta",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-056-extrato-conta.md"
+  },
+  {
+    "id": "AP-057",
+    "name": "Inadimplentes (Geral)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-057-inadimplentes-geral.md"
+  },
+  {
+    "id": "AP-058",
+    "name": "Inadimplentes (Unidade)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-058-inadimplentes-unidade.md"
+  },
+  {
+    "id": "AP-059",
+    "name": "Inadimplentes (Detalhado",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-059-inadimplentes-detalhado.md"
+  },
+  {
+    "id": "AP-060",
+    "name": "Inadimplentes (Taxa)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-060-inadimplentes-taxa.md"
+  },
+  {
+    "id": "AP-061",
+    "name": "Inadimplentes (Morador)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-061-inadimplentes-morador.md"
+  },
+  {
+    "id": "AP-062",
+    "name": "Rateio",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-062-rateio.md"
+  },
+  {
+    "id": "AP-063",
+    "name": "Rateio Comparativo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-063-rateio-comparativo.md"
+  },
+  {
+    "id": "AP-064",
+    "name": "Rateio Detalhado",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-064-rateio-detalhado.md"
+  },
+  {
+    "id": "AP-065",
+    "name": "Rateio Analítico",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-065-rateio-analitico.md"
+  },
+  {
+    "id": "AP-066",
+    "name": "Rateio Analítico (Detalhado)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-066-rateio-analitico-detalhado.md"
+  },
+  {
+    "id": "AP-067",
+    "name": "Rateio por Conta",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-067-rateio-por-conta.md"
+  },
+  {
+    "id": "AP-068",
+    "name": "Lançamentos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-068-lancamentos.md"
+  },
+  {
+    "id": "AP-069",
+    "name": "Lançamentos (Detalhado)",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 11,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-069-lancamentos-detalhado.md"
+  },
+  {
+    "id": "AP-070",
+    "name": "Boletos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-070-boletos.md"
+  },
+  {
+    "id": "AP-071",
+    "name": "Recebimentos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-071-recebimentos.md"
+  },
+  {
+    "id": "AP-072",
+    "name": "Recebimentos por Conta",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-072-recebimentos-por-conta.md"
+  },
+  {
+    "id": "AP-073",
+    "name": "Saldos de Contas",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-073-saldos-de-contas.md"
+  },
+  {
+    "id": "AP-074",
+    "name": "Registro de Pagamentos",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-074-registro-de-pagamentos.md"
+  },
+  {
+    "id": "AP-075",
+    "name": "Relatório Memória de Cálculo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-075-relatorio-memoria-de-calculo.md"
+  },
+  {
+    "id": "AP-076",
+    "name": "Relatório de transferências",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-076-relatorio-de-transferencias.md"
+  },
+  {
+    "id": "AP-077",
+    "name": "Demonstrativo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-077-demonstrativo.md"
+  },
+  {
+    "id": "AP-078",
+    "name": "Comparativo",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-078-comparativo.md"
+  },
+  {
+    "id": "AP-079",
+    "name": "Balancete Verificação",
+    "reference_route": "/app/financeiro/lista",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "financeiro",
+    "spec_path": "docs/specs/pages/ap-079-balancete-verificacao.md"
+  },
+  {
+    "id": "AP-080",
+    "name": "Balancete Anual",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-080-balancete-anual.md"
+  },
+  {
+    "id": "AP-081",
+    "name": "Balanço Patrimonial",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-081-balanco-patrimonial.md"
+  },
+  {
+    "id": "AP-082",
+    "name": "Resultado Exercício",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-082-resultado-exercicio.md"
+  },
+  {
+    "id": "AP-083",
+    "name": "Livro Razão",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-083-livro-razao.md"
+  },
+  {
+    "id": "AP-084",
+    "name": "Previsão Orçamentária",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-084-previsao-orcamentaria.md"
+  },
+  {
+    "id": "AP-085",
+    "name": "Reservas Áreas Comuns",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-085-reservas-areas-comuns.md"
+  },
+  {
+    "id": "AP-086",
+    "name": "Unidades",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-086-unidades.md"
+  },
+  {
+    "id": "AP-087",
+    "name": "Listagem de Pessoas",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-087-listagem-de-pessoas.md"
+  },
+  {
+    "id": "AP-088",
+    "name": "Listagem de presenças em",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-088-listagem-de-presencas-em.md"
+  },
+  {
+    "id": "AP-089",
+    "name": "Condomínios",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-089-condominios.md"
+  },
+  {
+    "id": "AP-090",
+    "name": "Ocorrências",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-090-ocorrencias.md"
+  },
+  {
+    "id": "AP-091",
+    "name": "Administração",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 12,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-091-administracao.md"
+  },
+  {
+    "id": "AP-092",
+    "name": "Parecer",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-092-parecer.md"
+  },
+  {
+    "id": "AP-093",
+    "name": "Pagamentos Pendentes",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-093-pagamentos-pendentes.md"
+  },
+  {
+    "id": "AP-094",
+    "name": "Listagem de prestação de",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-094-listagem-de-prestacao-de.md"
+  },
+  {
+    "id": "AP-095",
+    "name": "Mudanças",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-095-mudancas.md"
+  },
+  {
+    "id": "AP-096",
+    "name": "Relatório de Endereços",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-096-relatorio-de-enderecos.md"
+  },
+  {
+    "id": "AP-097",
+    "name": "Logs",
+    "reference_route": "/relatorios/relatorio",
+    "status": "PENDENTE",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-097-logs.md"
+  },
+  {
+    "id": "AP-098",
+    "name": "Pessoas com Acesso",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-098-pessoas-com-acesso.md"
+  },
+  {
+    "id": "AP-099",
+    "name": "Boletos Enviados",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-099-boletos-enviados.md"
+  },
+  {
+    "id": "AP-100",
+    "name": "Relatórios Enviados",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-100-relatorios-enviados.md"
+  },
+  {
+    "id": "AP-101",
+    "name": "Prestação de Contas",
+    "reference_route": "/relatorios/relatorio",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "relatorios",
+    "spec_path": "docs/specs/pages/ap-101-prestacao-de-contas.md"
+  },
+  {
+    "id": "AP-102",
+    "name": "Gerais",
+    "reference_route": "/graficos/gerais",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-102-gerais.md"
+  },
+  {
+    "id": "AP-103",
+    "name": "Contas",
+    "reference_route": "/graficos/contas",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-103-contas.md"
+  },
+  {
+    "id": "AP-104",
+    "name": "Consumo (Unidade)",
+    "reference_route": "/graficos/grafico-con",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-104-consumo-unidade.md"
+  },
+  {
+    "id": "AP-105",
+    "name": "Consumo (Geral)",
+    "reference_route": "/graficos/grafico-con",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-105-consumo-geral.md"
+  },
+  {
+    "id": "AP-106",
+    "name": "Financeiro",
+    "reference_route": "/graficos/grafico-fin",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-106-financeiro.md"
+  },
+  {
+    "id": "AP-107",
+    "name": "Inadimplência",
+    "reference_route": "/graficos/grafico-ina",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-107-inadimplencia.md"
+  },
+  {
+    "id": "AP-108",
+    "name": "Financeiro por Conta",
+    "reference_route": "/graficos/grafico-fin",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-108-financeiro-por-conta.md"
+  },
+  {
+    "id": "AP-109",
+    "name": "Áreas Comuns",
+    "reference_route": "/graficos/grafico-are",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "dashboards",
+    "spec_path": "docs/specs/pages/ap-109-areas-comuns.md"
+  },
+  {
+    "id": "AP-110",
+    "name": "Manutenções",
+    "reference_route": "/agenda/manutencao/li",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-110-manutencoes.md"
+  },
+  {
+    "id": "AP-111",
+    "name": "Comunicados Gerais",
+    "reference_route": "/agenda/comunicado/li",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-111-comunicados-gerais.md"
+  },
+  {
+    "id": "AP-112",
+    "name": "Ocorrências",
+    "reference_route": "/agenda/ocorrencia/li",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-112-ocorrencias.md"
+  },
+  {
+    "id": "AP-113",
+    "name": "Reservas Áreas Comuns",
+    "reference_route": "/agenda/agendamento-a",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-113-reservas-areas-comuns.md"
+  },
+  {
+    "id": "AP-114",
+    "name": "Agendamentos Pendentes",
+    "reference_route": "/agenda/agendamento-a",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-114-agendamentos-pendentes.md"
+  },
+  {
+    "id": "AP-115",
+    "name": "Lista de espera",
+    "reference_route": "/app/agenda/agendamen",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-115-lista-de-espera.md"
+  },
+  {
+    "id": "AP-116",
+    "name": "Multas Pendentes",
+    "reference_route": "/agenda/multas-area-c",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-116-multas-pendentes.md"
+  },
+  {
+    "id": "AP-117",
+    "name": "Atendimento Cobrança",
+    "reference_route": "/agenda/atendimento-c",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-117-atendimento-cobranca.md"
+  },
+  {
+    "id": "AP-118",
+    "name": "Seguros",
+    "reference_route": "/agenda/seguro/listag",
+    "status": "CONFIRMADA",
+    "source_page": 13,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-118-seguros.md"
+  },
+  {
+    "id": "AP-119",
+    "name": "Contratos",
+    "reference_route": "/agenda/contrato/list",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-119-contratos.md"
+  },
+  {
+    "id": "AP-120",
+    "name": "Agendamentos",
+    "reference_route": "/app/agenda/mudanca/a",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-120-agendamentos.md"
+  },
+  {
+    "id": "AP-121",
+    "name": "Configurações",
+    "reference_route": "/app/agenda/mudanca/c",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "operacional",
+    "spec_path": "docs/specs/pages/ap-121-configuracoes.md"
+  },
+  {
+    "id": "AP-122",
+    "name": "Disco Virtual",
+    "reference_route": "/documento/disco-virt",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-122-disco-virtual.md"
+  },
+  {
+    "id": "AP-123",
+    "name": "Certidão de Débitos",
+    "reference_route": "/documento/certidao-d",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-123-certidao-de-debitos.md"
+  },
+  {
+    "id": "AP-124",
+    "name": "Declaração de Inadimplência",
+    "reference_route": "/documento/declaracao",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-124-declaracao-de-inadimplencia.md"
+  },
+  {
+    "id": "AP-125",
+    "name": "Comprovante de Quitação",
+    "reference_route": "/documento/comprovant",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-125-comprovante-de-quitacao.md"
+  },
+  {
+    "id": "AP-126",
+    "name": "Avisos de Recebimento",
+    "reference_route": "/documento/aviso-rece",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-126-avisos-de-recebimento.md"
+  },
+  {
+    "id": "AP-127",
+    "name": "Cópias de Cheques",
+    "reference_route": "/documento/copia-cheq",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-127-copias-de-cheques.md"
+  },
+  {
+    "id": "AP-128",
+    "name": "Empenhos",
+    "reference_route": "/documento/empenho/li",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-128-empenhos.md"
+  },
+  {
+    "id": "AP-129",
+    "name": "Malotes",
+    "reference_route": "/documento/malote/lis",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-129-malotes.md"
+  },
+  {
+    "id": "AP-130",
+    "name": "Carta de anuência",
+    "reference_route": "/documento/carta-anue",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "documentos",
+    "spec_path": "docs/specs/pages/ap-130-carta-de-anuencia.md"
+  },
+  {
+    "id": "AP-131",
+    "name": "Gerenciamento",
+    "reference_route": "/portaria/gerenciamen",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-131-gerenciamento.md"
+  },
+  {
+    "id": "AP-132",
+    "name": "Previsão de Visita",
+    "reference_route": "/portaria/visita/list",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-132-previsao-de-visita.md"
+  },
+  {
+    "id": "AP-133",
+    "name": "Registro de Acessos",
+    "reference_route": "/portaria/visita/regi",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-133-registro-de-acessos.md"
+  },
+  {
+    "id": "AP-134",
+    "name": "Achados e Perdidos",
+    "reference_route": "/portaria/achado-perd",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-134-achados-e-perdidos.md"
+  },
+  {
+    "id": "AP-135",
+    "name": "Entregas",
+    "reference_route": "/portaria/corresponde",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-135-entregas.md"
+  },
+  {
+    "id": "AP-136",
+    "name": "Registros de Entregas",
+    "reference_route": "/portaria/corresponde",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "portaria",
+    "spec_path": "docs/specs/pages/ap-136-registros-de-entregas.md"
+  },
+  {
+    "id": "AP-137",
+    "name": "Cobrança",
+    "reference_route": "/mala-direta/cobranca",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "comunicacao",
+    "spec_path": "docs/specs/pages/ap-137-cobranca.md"
+  },
+  {
+    "id": "AP-138",
+    "name": "Agendada",
+    "reference_route": "/mala-direta/agendada",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "comunicacao",
+    "spec_path": "docs/specs/pages/ap-138-agendada.md"
+  },
+  {
+    "id": "AP-139",
+    "name": "Endereços",
+    "reference_route": "/malaDireta/automatiz",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "comunicacao",
+    "spec_path": "docs/specs/pages/ap-139-enderecos.md"
+  },
+  {
+    "id": "AP-140",
+    "name": "Extrato Bancário (OFX)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-140-extrato-bancario-ofx.md"
+  },
+  {
+    "id": "AP-141",
+    "name": "Importação NF-e (xml)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-141-importacao-nf-e-xml.md"
+  },
+  {
+    "id": "AP-142",
+    "name": "Inadimplentes (Planilha)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-142-inadimplentes-planilha.md"
+  },
+  {
+    "id": "AP-143",
+    "name": "Frações Ideais (Planilha)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-143-fracoes-ideais-planilha.md"
+  },
+  {
+    "id": "AP-144",
+    "name": "Lançamentos (Planilha)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-144-lancamentos-planilha.md"
+  },
+  {
+    "id": "AP-145",
+    "name": "Lançamentos por Unidade",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 14,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-145-lancamentos-por-unidade.md"
+  },
+  {
+    "id": "AP-146",
+    "name": "Contas a pagar (Planilha)",
+    "reference_route": "/importacoes/importac",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "importacoes",
+    "spec_path": "docs/specs/pages/ap-146-contas-a-pagar-planilha.md"
+  },
+  {
+    "id": "AP-147",
+    "name": "Administrativo",
+    "reference_route": "/configuracoes/admini",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-147-administrativo.md"
+  },
+  {
+    "id": "AP-148",
+    "name": "Usuários de Imobiliárias",
+    "reference_route": "/configuracoes/imobil",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-148-usuarios-de-imobiliarias.md"
+  },
+  {
+    "id": "AP-149",
+    "name": "Usuários do Sistema",
+    "reference_route": "/configuracoes/usuari",
+    "status": "PENDENTE",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-149-usuarios-do-sistema.md"
+  },
+  {
+    "id": "AP-150",
+    "name": "Permissões de Usuários",
+    "reference_route": "/configuracoes/permis",
+    "status": "PENDENTE",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-150-permissoes-de-usuarios.md"
+  },
+  {
+    "id": "AP-151",
+    "name": "Notificações da Prestação de",
+    "reference_route": "/configuracoes/presta",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-151-notificacoes-da-prestacao-de.md"
+  },
+  {
+    "id": "AP-152",
+    "name": "Criação de Usuários p",
+    "reference_route": "//configuracoes/usuari",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-152-criacao-de-usuarios-p.md"
+  },
+  {
+    "id": "AP-153",
+    "name": "Permissões de Moradores",
+    "reference_route": "/configuracoes/permis",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-153-permissoes-de-moradores.md"
+  },
+  {
+    "id": "AP-154",
+    "name": "Layout da Aplicação",
+    "reference_route": "/configuracoes/layout",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-154-layout-da-aplicacao.md"
+  },
+  {
+    "id": "AP-155",
+    "name": "Notificações aplicativo",
+    "reference_route": "/configuracoes/config",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-155-notificacoes-aplicativo.md"
+  },
+  {
+    "id": "AP-156",
+    "name": "Banners",
+    "reference_route": "/configuracoes/banner",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-156-banners.md"
+  },
+  {
+    "id": "AP-157",
+    "name": "Financeiro",
+    "reference_route": "/configuracoes/conta-",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-157-financeiro.md"
+  },
+  {
+    "id": "AP-158",
+    "name": "Demonstrativo",
+    "reference_route": "/configuracoes/demons",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-158-demonstrativo.md"
+  },
+  {
+    "id": "AP-159",
+    "name": "Alertas",
+    "reference_route": "/configuracoes/config",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-159-alertas.md"
+  },
+  {
+    "id": "AP-160",
+    "name": "Plano de Contas",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-160-plano-de-contas.md"
+  },
+  {
+    "id": "AP-161",
+    "name": "Saldo Inicial (Plano de",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-161-saldo-inicial-plano-de.md"
+  },
+  {
+    "id": "AP-162",
+    "name": "Saldo Inicial (Centro de",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-162-saldo-inicial-centro-de.md"
+  },
+  {
+    "id": "AP-163",
+    "name": "Previsão Orçamentária",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-163-previsao-orcamentaria.md"
+  },
+  {
+    "id": "AP-164",
+    "name": "Imposto",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-164-imposto.md"
+  },
+  {
+    "id": "AP-165",
+    "name": "Índices",
+    "reference_route": "/configuracoes/financ",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-165-indices.md"
+  },
+  {
+    "id": "AP-166",
+    "name": "Parâmetros",
+    "reference_route": "/configuracoes/divers",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-166-parametros.md"
+  },
+  {
+    "id": "AP-167",
+    "name": "Fração Ideal",
+    "reference_route": "/configuracoes/divers",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-167-fracao-ideal.md"
+  },
+  {
+    "id": "AP-168",
+    "name": "Tipos de Faturas",
+    "reference_route": "/configuracoes/divers",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "configuracoes",
+    "spec_path": "docs/specs/pages/ap-168-tipos-de-faturas.md"
+  },
+  {
+    "id": "AP-169",
+    "name": "Assinatura",
+    "reference_route": "/central-cliente/assi",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "plataforma",
+    "spec_path": "docs/specs/pages/ap-169-assinatura.md"
+  },
+  {
+    "id": "AP-170",
+    "name": "Suporte",
+    "reference_route": "/central-cliente/supo",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "plataforma",
+    "spec_path": "docs/specs/pages/ap-170-suporte.md"
+  },
+  {
+    "id": "AP-171",
+    "name": "Integrações",
+    "reference_route": "/central-cliente/inte",
+    "status": "CONFIRMADA",
+    "source_page": 15,
+    "domain": "plataforma",
+    "spec_path": "docs/specs/pages/ap-171-integracoes.md"
+  },
+  {
+    "id": "AP-172",
+    "name": "Atualizações",
+    "reference_route": "/central-cliente/atua",
+    "status": "CONFIRMADA",
+    "source_page": 16,
+    "domain": "plataforma",
+    "spec_path": "docs/specs/pages/ap-172-atualizacoes.md"
+  }
+]

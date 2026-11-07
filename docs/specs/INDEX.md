@@ -1,0 +1,176 @@
+# Índice de especificações por rota
+
+Cada documento é uma ficha inicial gerada do inventário do PDF, NÃO uma especificação funcional profunda. Claude deve enriquecer a ficha com evidências antes de implementar.
+
+- [AP-001 — Administradora](pages/ap-001-administradora.md) · dashboards · CONFIRMADA
+- [AP-002 — Condomínio](pages/ap-002-condominio.md) · dashboards · CONFIRMADA
+- [AP-003 — Unidade](pages/ap-003-unidade.md) · dashboards · CONFIRMADA
+- [AP-004 — Condomínios](pages/ap-004-condominios.md) · cadastros · CONFIRMADA
+- [AP-005 — Inquilinos](pages/ap-005-inquilinos.md) · plataforma · CONFIRMADA
+- [AP-006 — Unidades](pages/ap-006-unidades.md) · cadastros · CONFIRMADA
+- [AP-007 — Áreas Vinculáveis](pages/ap-007-areas-vinculaveis.md) · cadastros · CONFIRMADA
+- [AP-008 — Áreas Comuns](pages/ap-008-areas-comuns.md) · cadastros · CONFIRMADA
+- [AP-009 — Funcionários](pages/ap-009-funcionarios.md) · cadastros · CONFIRMADA
+- [AP-010 — Fornecedores](pages/ap-010-fornecedores.md) · cadastros · CONFIRMADA
+- [AP-011 — Veículos](pages/ap-011-veiculos.md) · cadastros · CONFIRMADA
+- [AP-012 — Visitantes](pages/ap-012-visitantes.md) · cadastros · CONFIRMADA
+- [AP-013 — Animais de Estimação](pages/ap-013-animais-de-estimacao.md) · cadastros · CONFIRMADA
+- [AP-014 — Conselho](pages/ap-014-conselho.md) · cadastros · CONFIRMADA
+- [AP-015 — Contatos Úteis](pages/ap-015-contatos-uteis.md) · cadastros · CONFIRMADA
+- [AP-016 — Advogados](pages/ap-016-advogados.md) · cadastros · CONFIRMADA
+- [AP-017 — Votação](pages/ap-017-votacao.md) · cadastros · CONFIRMADA
+- [AP-018 — Assembleia Virtual](pages/ap-018-assembleia-virtual.md) · cadastros · CONFIRMADA
+- [AP-019 — Patrimônio](pages/ap-019-patrimonio.md) · cadastros · CONFIRMADA
+- [AP-020 — Ver Lançamentos](pages/ap-020-ver-lancamentos.md) · financeiro · CONFIRMADA
+- [AP-021 — Ver Lançamentos Fixos](pages/ap-021-ver-lancamentos-fixos.md) · financeiro · CONFIRMADA
+- [AP-022 — Contas a Pagar](pages/ap-022-contas-a-pagar.md) · financeiro · CONFIRMADA
+- [AP-023 — Contas a Receber](pages/ap-023-contas-a-receber.md) · financeiro · CONFIRMADA
+- [AP-024 — Lançar Despesa](pages/ap-024-lancar-despesa.md) · financeiro · CONFIRMADA
+- [AP-025 — Lançar Receita](pages/ap-025-lancar-receita.md) · financeiro · CONFIRMADA
+- [AP-026 — Lançar Desconto](pages/ap-026-lancar-desconto.md) · financeiro · CONFIRMADA
+- [AP-027 — Lançar Multa (Avulsa)](pages/ap-027-lancar-multa-avulsa.md) · financeiro · CONFIRMADA
+- [AP-028 — Cobranças Extras](pages/ap-028-cobrancas-extras.md) · financeiro · CONFIRMADA
+- [AP-029 — Outros Lançamentos](pages/ap-029-outros-lancamentos.md) · financeiro · CONFIRMADA
+- [AP-030 — Fechamento Mensal](pages/ap-030-fechamento-mensal.md) · financeiro · CONFIRMADA
+- [AP-031 — Pagamentos (Bancos)](pages/ap-031-pagamentos-bancos.md) · financeiro · CONFIRMADA
+- [AP-032 — Faturas](pages/ap-032-faturas.md) · financeiro · CONFIRMADA
+- [AP-033 — Acordos](pages/ap-033-acordos.md) · financeiro · CONFIRMADA
+- [AP-034 — Parcelas de Acordo](pages/ap-034-parcelas-de-acordo.md) · financeiro · CONFIRMADA
+- [AP-035 — Boletos](pages/ap-035-boletos.md) · financeiro · CONFIRMADA
+- [AP-036 — Arquivo de Retorno](pages/ap-036-arquivo-de-retorno.md) · financeiro · CONFIRMADA
+- [AP-037 — Remessas](pages/ap-037-remessas.md) · financeiro · CONFIRMADA
+- [AP-038 — Retornos](pages/ap-038-retornos.md) · financeiro · CONFIRMADA
+- [AP-039 — Cobrança Judicial](pages/ap-039-cobranca-judicial.md) · financeiro · CONFIRMADA
+- [AP-040 — Recibos](pages/ap-040-recibos.md) · financeiro · CONFIRMADA
+- [AP-041 — Relógios](pages/ap-041-relogios.md) · leituras · CONFIRMADA
+- [AP-042 — Leituras](pages/ap-042-leituras.md) · leituras · CONFIRMADA
+- [AP-043 — Tarifas](pages/ap-043-tarifas.md) · leituras · CONFIRMADA
+- [AP-044 — Importação de Leituras](pages/ap-044-importacao-de-leituras.md) · importacoes · CONFIRMADA
+- [AP-045 — Consumo (Geral)](pages/ap-045-consumo-geral.md) · relatorios · CONFIRMADA
+- [AP-046 — Consumo (Unidade)](pages/ap-046-consumo-unidade.md) · relatorios · CONFIRMADA
+- [AP-047 — Acordos](pages/ap-047-acordos.md) · relatorios · CONFIRMADA
+- [AP-048 — Taxas de Acordos](pages/ap-048-taxas-de-acordos.md) · relatorios · CONFIRMADA
+- [AP-049 — Centros de Custo](pages/ap-049-centros-de-custo.md) · relatorios · CONFIRMADA
+- [AP-050 — Comparativo](pages/ap-050-comparativo.md) · relatorios · CONFIRMADA
+- [AP-051 — Demonstrativo](pages/ap-051-demonstrativo.md) · relatorios · CONFIRMADA
+- [AP-052 — Demonstrativo Contas](pages/ap-052-demonstrativo-contas.md) · relatorios · CONFIRMADA
+- [AP-053 — Demonstrativo Analítico](pages/ap-053-demonstrativo-analitico.md) · relatorios · CONFIRMADA
+- [AP-054 — Demonstrativo Situação](pages/ap-054-demonstrativo-situacao.md) · relatorios · CONFIRMADA
+- [AP-055 — Demonstrativo Contas](pages/ap-055-demonstrativo-contas.md) · relatorios · CONFIRMADA
+- [AP-056 — Extrato Conta](pages/ap-056-extrato-conta.md) · relatorios · CONFIRMADA
+- [AP-057 — Inadimplentes (Geral)](pages/ap-057-inadimplentes-geral.md) · relatorios · CONFIRMADA
+- [AP-058 — Inadimplentes (Unidade)](pages/ap-058-inadimplentes-unidade.md) · relatorios · CONFIRMADA
+- [AP-059 — Inadimplentes (Detalhado](pages/ap-059-inadimplentes-detalhado.md) · relatorios · CONFIRMADA
+- [AP-060 — Inadimplentes (Taxa)](pages/ap-060-inadimplentes-taxa.md) · relatorios · CONFIRMADA
+- [AP-061 — Inadimplentes (Morador)](pages/ap-061-inadimplentes-morador.md) · relatorios · CONFIRMADA
+- [AP-062 — Rateio](pages/ap-062-rateio.md) · relatorios · CONFIRMADA
+- [AP-063 — Rateio Comparativo](pages/ap-063-rateio-comparativo.md) · relatorios · CONFIRMADA
+- [AP-064 — Rateio Detalhado](pages/ap-064-rateio-detalhado.md) · relatorios · CONFIRMADA
+- [AP-065 — Rateio Analítico](pages/ap-065-rateio-analitico.md) · relatorios · CONFIRMADA
+- [AP-066 — Rateio Analítico (Detalhado)](pages/ap-066-rateio-analitico-detalhado.md) · relatorios · CONFIRMADA
+- [AP-067 — Rateio por Conta](pages/ap-067-rateio-por-conta.md) · relatorios · CONFIRMADA
+- [AP-068 — Lançamentos](pages/ap-068-lancamentos.md) · relatorios · CONFIRMADA
+- [AP-069 — Lançamentos (Detalhado)](pages/ap-069-lancamentos-detalhado.md) · relatorios · CONFIRMADA
+- [AP-070 — Boletos](pages/ap-070-boletos.md) · relatorios · CONFIRMADA
+- [AP-071 — Recebimentos](pages/ap-071-recebimentos.md) · relatorios · CONFIRMADA
+- [AP-072 — Recebimentos por Conta](pages/ap-072-recebimentos-por-conta.md) · relatorios · CONFIRMADA
+- [AP-073 — Saldos de Contas](pages/ap-073-saldos-de-contas.md) · relatorios · CONFIRMADA
+- [AP-074 — Registro de Pagamentos](pages/ap-074-registro-de-pagamentos.md) · relatorios · CONFIRMADA
+- [AP-075 — Relatório Memória de Cálculo](pages/ap-075-relatorio-memoria-de-calculo.md) · relatorios · CONFIRMADA
+- [AP-076 — Relatório de transferências](pages/ap-076-relatorio-de-transferencias.md) · relatorios · CONFIRMADA
+- [AP-077 — Demonstrativo](pages/ap-077-demonstrativo.md) · relatorios · CONFIRMADA
+- [AP-078 — Comparativo](pages/ap-078-comparativo.md) · relatorios · CONFIRMADA
+- [AP-079 — Balancete Verificação](pages/ap-079-balancete-verificacao.md) · financeiro · CONFIRMADA
+- [AP-080 — Balancete Anual](pages/ap-080-balancete-anual.md) · relatorios · CONFIRMADA
+- [AP-081 — Balanço Patrimonial](pages/ap-081-balanco-patrimonial.md) · relatorios · CONFIRMADA
+- [AP-082 — Resultado Exercício](pages/ap-082-resultado-exercicio.md) · relatorios · CONFIRMADA
+- [AP-083 — Livro Razão](pages/ap-083-livro-razao.md) · relatorios · CONFIRMADA
+- [AP-084 — Previsão Orçamentária](pages/ap-084-previsao-orcamentaria.md) · relatorios · CONFIRMADA
+- [AP-085 — Reservas Áreas Comuns](pages/ap-085-reservas-areas-comuns.md) · relatorios · CONFIRMADA
+- [AP-086 — Unidades](pages/ap-086-unidades.md) · relatorios · CONFIRMADA
+- [AP-087 — Listagem de Pessoas](pages/ap-087-listagem-de-pessoas.md) · relatorios · CONFIRMADA
+- [AP-088 — Listagem de presenças em](pages/ap-088-listagem-de-presencas-em.md) · relatorios · CONFIRMADA
+- [AP-089 — Condomínios](pages/ap-089-condominios.md) · relatorios · CONFIRMADA
+- [AP-090 — Ocorrências](pages/ap-090-ocorrencias.md) · relatorios · CONFIRMADA
+- [AP-091 — Administração](pages/ap-091-administracao.md) · relatorios · CONFIRMADA
+- [AP-092 — Parecer](pages/ap-092-parecer.md) · relatorios · CONFIRMADA
+- [AP-093 — Pagamentos Pendentes](pages/ap-093-pagamentos-pendentes.md) · relatorios · CONFIRMADA
+- [AP-094 — Listagem de prestação de](pages/ap-094-listagem-de-prestacao-de.md) · relatorios · CONFIRMADA
+- [AP-095 — Mudanças](pages/ap-095-mudancas.md) · relatorios · CONFIRMADA
+- [AP-096 — Relatório de Endereços](pages/ap-096-relatorio-de-enderecos.md) · relatorios · CONFIRMADA
+- [AP-097 — Logs](pages/ap-097-logs.md) · relatorios · PENDENTE
+- [AP-098 — Pessoas com Acesso](pages/ap-098-pessoas-com-acesso.md) · relatorios · CONFIRMADA
+- [AP-099 — Boletos Enviados](pages/ap-099-boletos-enviados.md) · relatorios · CONFIRMADA
+- [AP-100 — Relatórios Enviados](pages/ap-100-relatorios-enviados.md) · relatorios · CONFIRMADA
+- [AP-101 — Prestação de Contas](pages/ap-101-prestacao-de-contas.md) · relatorios · CONFIRMADA
+- [AP-102 — Gerais](pages/ap-102-gerais.md) · dashboards · CONFIRMADA
+- [AP-103 — Contas](pages/ap-103-contas.md) · dashboards · CONFIRMADA
+- [AP-104 — Consumo (Unidade)](pages/ap-104-consumo-unidade.md) · dashboards · CONFIRMADA
+- [AP-105 — Consumo (Geral)](pages/ap-105-consumo-geral.md) · dashboards · CONFIRMADA
+- [AP-106 — Financeiro](pages/ap-106-financeiro.md) · dashboards · CONFIRMADA
+- [AP-107 — Inadimplência](pages/ap-107-inadimplencia.md) · dashboards · CONFIRMADA
+- [AP-108 — Financeiro por Conta](pages/ap-108-financeiro-por-conta.md) · dashboards · CONFIRMADA
+- [AP-109 — Áreas Comuns](pages/ap-109-areas-comuns.md) · dashboards · CONFIRMADA
+- [AP-110 — Manutenções](pages/ap-110-manutencoes.md) · operacional · CONFIRMADA
+- [AP-111 — Comunicados Gerais](pages/ap-111-comunicados-gerais.md) · operacional · CONFIRMADA
+- [AP-112 — Ocorrências](pages/ap-112-ocorrencias.md) · operacional · CONFIRMADA
+- [AP-113 — Reservas Áreas Comuns](pages/ap-113-reservas-areas-comuns.md) · operacional · CONFIRMADA
+- [AP-114 — Agendamentos Pendentes](pages/ap-114-agendamentos-pendentes.md) · operacional · CONFIRMADA
+- [AP-115 — Lista de espera](pages/ap-115-lista-de-espera.md) · operacional · CONFIRMADA
+- [AP-116 — Multas Pendentes](pages/ap-116-multas-pendentes.md) · operacional · CONFIRMADA
+- [AP-117 — Atendimento Cobrança](pages/ap-117-atendimento-cobranca.md) · operacional · CONFIRMADA
+- [AP-118 — Seguros](pages/ap-118-seguros.md) · operacional · CONFIRMADA
+- [AP-119 — Contratos](pages/ap-119-contratos.md) · operacional · CONFIRMADA
+- [AP-120 — Agendamentos](pages/ap-120-agendamentos.md) · operacional · CONFIRMADA
+- [AP-121 — Configurações](pages/ap-121-configuracoes.md) · operacional · CONFIRMADA
+- [AP-122 — Disco Virtual](pages/ap-122-disco-virtual.md) · documentos · CONFIRMADA
+- [AP-123 — Certidão de Débitos](pages/ap-123-certidao-de-debitos.md) · documentos · CONFIRMADA
+- [AP-124 — Declaração de Inadimplência](pages/ap-124-declaracao-de-inadimplencia.md) · documentos · CONFIRMADA
+- [AP-125 — Comprovante de Quitação](pages/ap-125-comprovante-de-quitacao.md) · documentos · CONFIRMADA
+- [AP-126 — Avisos de Recebimento](pages/ap-126-avisos-de-recebimento.md) · documentos · CONFIRMADA
+- [AP-127 — Cópias de Cheques](pages/ap-127-copias-de-cheques.md) · documentos · CONFIRMADA
+- [AP-128 — Empenhos](pages/ap-128-empenhos.md) · documentos · CONFIRMADA
+- [AP-129 — Malotes](pages/ap-129-malotes.md) · documentos · CONFIRMADA
+- [AP-130 — Carta de anuência](pages/ap-130-carta-de-anuencia.md) · documentos · CONFIRMADA
+- [AP-131 — Gerenciamento](pages/ap-131-gerenciamento.md) · portaria · CONFIRMADA
+- [AP-132 — Previsão de Visita](pages/ap-132-previsao-de-visita.md) · portaria · CONFIRMADA
+- [AP-133 — Registro de Acessos](pages/ap-133-registro-de-acessos.md) · portaria · CONFIRMADA
+- [AP-134 — Achados e Perdidos](pages/ap-134-achados-e-perdidos.md) · portaria · CONFIRMADA
+- [AP-135 — Entregas](pages/ap-135-entregas.md) · portaria · CONFIRMADA
+- [AP-136 — Registros de Entregas](pages/ap-136-registros-de-entregas.md) · portaria · CONFIRMADA
+- [AP-137 — Cobrança](pages/ap-137-cobranca.md) · comunicacao · CONFIRMADA
+- [AP-138 — Agendada](pages/ap-138-agendada.md) · comunicacao · CONFIRMADA
+- [AP-139 — Endereços](pages/ap-139-enderecos.md) · comunicacao · CONFIRMADA
+- [AP-140 — Extrato Bancário (OFX)](pages/ap-140-extrato-bancario-ofx.md) · importacoes · CONFIRMADA
+- [AP-141 — Importação NF-e (xml)](pages/ap-141-importacao-nf-e-xml.md) · importacoes · CONFIRMADA
+- [AP-142 — Inadimplentes (Planilha)](pages/ap-142-inadimplentes-planilha.md) · importacoes · CONFIRMADA
+- [AP-143 — Frações Ideais (Planilha)](pages/ap-143-fracoes-ideais-planilha.md) · importacoes · CONFIRMADA
+- [AP-144 — Lançamentos (Planilha)](pages/ap-144-lancamentos-planilha.md) · importacoes · CONFIRMADA
+- [AP-145 — Lançamentos por Unidade](pages/ap-145-lancamentos-por-unidade.md) · importacoes · CONFIRMADA
+- [AP-146 — Contas a pagar (Planilha)](pages/ap-146-contas-a-pagar-planilha.md) · importacoes · CONFIRMADA
+- [AP-147 — Administrativo](pages/ap-147-administrativo.md) · configuracoes · CONFIRMADA
+- [AP-148 — Usuários de Imobiliárias](pages/ap-148-usuarios-de-imobiliarias.md) · configuracoes · CONFIRMADA
+- [AP-149 — Usuários do Sistema](pages/ap-149-usuarios-do-sistema.md) · configuracoes · PENDENTE
+- [AP-150 — Permissões de Usuários](pages/ap-150-permissoes-de-usuarios.md) · configuracoes · PENDENTE
+- [AP-151 — Notificações da Prestação de](pages/ap-151-notificacoes-da-prestacao-de.md) · configuracoes · CONFIRMADA
+- [AP-152 — Criação de Usuários p](pages/ap-152-criacao-de-usuarios-p.md) · configuracoes · CONFIRMADA
+- [AP-153 — Permissões de Moradores](pages/ap-153-permissoes-de-moradores.md) · configuracoes · CONFIRMADA
+- [AP-154 — Layout da Aplicação](pages/ap-154-layout-da-aplicacao.md) · configuracoes · CONFIRMADA
+- [AP-155 — Notificações aplicativo](pages/ap-155-notificacoes-aplicativo.md) · configuracoes · CONFIRMADA
+- [AP-156 — Banners](pages/ap-156-banners.md) · configuracoes · CONFIRMADA
+- [AP-157 — Financeiro](pages/ap-157-financeiro.md) · configuracoes · CONFIRMADA
+- [AP-158 — Demonstrativo](pages/ap-158-demonstrativo.md) · configuracoes · CONFIRMADA
+- [AP-159 — Alertas](pages/ap-159-alertas.md) · configuracoes · CONFIRMADA
+- [AP-160 — Plano de Contas](pages/ap-160-plano-de-contas.md) · configuracoes · CONFIRMADA
+- [AP-161 — Saldo Inicial (Plano de](pages/ap-161-saldo-inicial-plano-de.md) · configuracoes · CONFIRMADA
+- [AP-162 — Saldo Inicial (Centro de](pages/ap-162-saldo-inicial-centro-de.md) · configuracoes · CONFIRMADA
+- [AP-163 — Previsão Orçamentária](pages/ap-163-previsao-orcamentaria.md) · configuracoes · CONFIRMADA
+- [AP-164 — Imposto](pages/ap-164-imposto.md) · configuracoes · CONFIRMADA
+- [AP-165 — Índices](pages/ap-165-indices.md) · configuracoes · CONFIRMADA
+- [AP-166 — Parâmetros](pages/ap-166-parametros.md) · configuracoes · CONFIRMADA
+- [AP-167 — Fração Ideal](pages/ap-167-fracao-ideal.md) · configuracoes · CONFIRMADA
+- [AP-168 — Tipos de Faturas](pages/ap-168-tipos-de-faturas.md) · configuracoes · CONFIRMADA
+- [AP-169 — Assinatura](pages/ap-169-assinatura.md) · plataforma · CONFIRMADA
+- [AP-170 — Suporte](pages/ap-170-suporte.md) · plataforma · CONFIRMADA
+- [AP-171 — Integrações](pages/ap-171-integracoes.md) · plataforma · CONFIRMADA
+- [AP-172 — Atualizações](pages/ap-172-atualizacoes.md) · plataforma · CONFIRMADA

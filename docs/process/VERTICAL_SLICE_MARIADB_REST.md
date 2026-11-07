@@ -1,0 +1,3 @@
+# Regra obrigatória — desenvolvimento simultâneo
+Para cada ficha AP-xxx: verificar dependências → detalhar requisitos confirmados/inferidos → migration MariaDB → entidade/repositório → serviço e validação → rota REST `/api/v1` → contrato OpenAPI → tela e estados → autorização/isolamento → testes unitários, integração e API → documentação → revisão.
+Não aceitar tela sem endpoint real, endpoint sem teste, ou banco sem migration. Se for relatório, incluir filtros, query otimizada, exportação segura e reconciliação de números. Se for financeiro, testar centavos, duplicidade, concorrência e estorno.

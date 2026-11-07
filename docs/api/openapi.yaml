@@ -1,0 +1,16 @@
+openapi: 3.1.0
+info:
+  title: Connect ERP API
+  version: 0.1.0
+  description: Contrato inicial; autenticação reutilizará o núcleo Organic Code.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Verifica aplicação e MariaDB
+      security: []
+      responses:
+        '200': { description: Serviço pronto }
+        '503': { description: Dependência indisponível }

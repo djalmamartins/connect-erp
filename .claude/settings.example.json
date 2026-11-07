@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(*production*)"
+    ]
+  },
+  "note": "Exemplo: revisar permissões com sintaxe suportada pela versão instalada do Claude Code; não habilitar bypass."
+}

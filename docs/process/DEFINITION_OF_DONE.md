@@ -1,0 +1,11 @@
+# Definition of Done por página
+- [ ] Requisitos e evidências identificados; dúvidas registradas
+- [ ] Modelo e migrations revisados
+- [ ] Autorização e escopo tenant testados
+- [ ] Listagem, filtros, paginação, estados vazios e erros conforme aplicável
+- [ ] Formulários, validações servidor/cliente e acessibilidade conforme aplicável
+- [ ] Ações idempotentes/transacionais quando aplicável
+- [ ] Auditoria e LGPD verificadas
+- [ ] Testes unitários, integração e E2E relevantes passando
+- [ ] Documentação e rastreabilidade atualizadas
+- [ ] Revisão humana de regras financeiras e liberação de produção pendente
