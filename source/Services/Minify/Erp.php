@@ -23,8 +23,8 @@ if (is_local_host()
     $minCSS = new CSS();
     $minCSS->add($movesRoot . "/container/shared/assets/vendor/owl/owl.carousel.min.css");
     $minCSS->add($movesRoot . "/container/shared/assets/vendor/owl/owl.theme.default.min.css");
-    $minCSS->add($movesRoot . "/organic/organic.min.css");
-    $minCSS->add($movesRoot . "/organic/compat-v1.css");
+    $minCSS->add($movesRoot . "/container/shared/assets/organic/organic.min.css");
+    $minCSS->add($movesRoot . "/container/shared/assets/organic/compat-v1.css");
 
     //theme CSS
     $cssDir = scandir($erpThemePath . "/assets/css");

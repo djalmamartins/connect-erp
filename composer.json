@@ -58,6 +58,7 @@
     "db:status": "@php service/commands/database-migrate.php status",
     "db:migrate": "@php service/commands/database-migrate.php apply",
     "db:baseline": "@php service/commands/database-migrate.php baseline",
+    "db:rollback": "@php service/commands/database-migrate.php rollback",
     "deploy:check": "@php service/commands/deploy-check.php",
     "migrate:content": "@php service/commands/migrate-legacy-content.php",
     "migrate:images": "@php service/commands/migrate-legacy-content.php --images-only",

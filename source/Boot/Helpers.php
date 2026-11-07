@@ -391,6 +391,9 @@ function moves_container_path(string $area, string $theme): string
     if ($area === 'studio') {
         return dirname(__DIR__, 2) . "/container/cms/" . moves_container_theme($area, $theme) . "/v1";
     }
+    if ($area === 'helpdesk') {
+        return dirname(__DIR__, 2) . "/container/cms/helpdesk/v1";
+    }
     $section = in_array($area, ['studio', 'helpdesk', 'erp', 'residents'], true)
         ? "apps/{$area}"
         : $area;
@@ -405,6 +408,9 @@ function moves_container_url(string $area, string $theme, ?string $path = null):
     }
     if ($area === 'studio') {
         return url("container/cms/" . moves_container_theme($area, $theme) . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
+    }
+    if ($area === 'helpdesk') {
+        return url("container/cms/helpdesk/v1" . ($path ? "/" . ltrim($path, "/") : ""));
     }
     $section = in_array($area, ['studio', 'helpdesk', 'erp', 'residents'], true)
         ? "apps/{$area}"

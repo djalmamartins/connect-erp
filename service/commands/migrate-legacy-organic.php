@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 
 $root = dirname(__DIR__, 2);
-$organic = $root . '/organic';
+$organic = $root . '/container/shared/assets/organic';
 $vendorAssets = $root . '/container/shared/assets/vendor';
 $backup = $root . '/storage/backups/organic-v1-retired';
 

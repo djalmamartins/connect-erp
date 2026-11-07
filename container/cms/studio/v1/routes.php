@@ -6,6 +6,10 @@ $route->group("/studio");
 $route->get("/", "Studio:root");
 $route->get("/login", "Studio:login");
 $route->post("/login", "Studio:login");
+$route->get("/login/2fa", "TwoFactor:challenge");
+$route->post("/login/2fa", "TwoFactor:challenge");
+$route->get("/seguranca/2fa", "TwoFactor:manage");
+$route->post("/seguranca/2fa", "TwoFactor:manage");
 $route->get("/sair", "Studio:logout");
 $route->get("/logoff", "Studio:logout");
 

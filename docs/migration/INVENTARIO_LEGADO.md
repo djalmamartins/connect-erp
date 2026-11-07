@@ -32,6 +32,8 @@ nós, 2.370 relações e 162 comunidades. Pontos centrais: `url()`, `User`,
 | CMS | Posts, categorias, páginas, mídia e slides | migrado; CRUD automatizado parcial |
 | CMS | Usuários/ACL, notificações, relatórios, logs e configurações | migrado; testes automatizados |
 | CMS | Propostas, agenda, suporte e versões | migrado; testes automatizados parciais |
+| Help Desk | `/helpdesk`: chamados, agenda, base de conhecimento, usuários, configurações, versões e logs | migrado como tema `cms/helpdesk/v1` (rotas; reutiliza components do Studio); validação HTTP pendente no container |
+| Suporte | `/suporte`: artigos, busca, avaliação e widget de chamados | migrado como tema próprio `web/support/v1`; validação HTTP pendente no container |
 | E-mail | Fila, PHPMailer e worker | identificado/migrado; SMTP pendente |
 | Bancário | Adaptador Banco Inter | identificado, não ativado; credenciais ausentes |
 | ERP | Código do Connect ERP existente | preservado, não sobrescrito |

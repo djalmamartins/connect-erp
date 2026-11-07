@@ -10,6 +10,7 @@ use Source\Models\Corporation\AppCorporations;
 use Source\Models\Session\AppLog;
 use Source\Support\Email;
 use Source\Support\AppLogger;
+use Source\Services\TwoFactorService;
 
 /**
  * ERP | Class Auth
@@ -56,6 +57,98 @@ class Auth extends Model
         $session = new Session();
         $session->unset("authUser");
         $session->unset("authCondo");
+        $session->unset(self::PENDING_2FA);
+    }
+
+    public const PENDING_2FA = "auth2faPending";
+    private const PENDING_TTL = 300;
+    private const PENDING_ATTEMPTS = 5;
+
+    /**
+     * Login aguardando o segundo fator. Enquanto existir, a sessão NÃO tem
+     * authUser, então nenhuma rota autenticada fica acessível.
+     *
+     * @return object{user:int,mode:string,expires:int,attempts:int,save:bool,email:string}|null
+     */
+    public static function twoFactorPending(): ?object
+    {
+        $session = new Session();
+        if (!$session->has(self::PENDING_2FA)) {
+            return null;
+        }
+        $pending = (object)$session->{self::PENDING_2FA};
+        if ((int)($pending->expires ?? 0) < time() || (int)($pending->attempts ?? 0) >= self::PENDING_ATTEMPTS) {
+            $session->unset(self::PENDING_2FA);
+            return null;
+        }
+        return $pending;
+    }
+
+    public static function cancelTwoFactor(): void
+    {
+        (new Session())->unset(self::PENDING_2FA);
+    }
+
+    /**
+     * Conclui o login pendente com um código TOTP ou de recuperação.
+     */
+    public function completeTwoFactor(string $code, ?TwoFactorService $twoFactor = null): bool
+    {
+        $pending = self::twoFactorPending();
+        if (!$pending || $pending->mode !== "verify") {
+            $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
+            return false;
+        }
+        $twoFactor ??= new TwoFactorService();
+        $userId = (int)$pending->user;
+        $code = trim($code);
+        $valid = preg_match('/^\d{6}$/', preg_replace('/\s/', '', $code) ?? '')
+            ? $twoFactor->verify($userId, $code)
+            : $twoFactor->verifyRecoveryCode($userId, $code);
+        if (!$valid) {
+            $session = new Session();
+            $pending->attempts = (int)$pending->attempts + 1;
+            $session->set(self::PENDING_2FA, (array)$pending);
+            $this->message->error("Código de verificação inválido.");
+            return false;
+        }
+        $user = (new User())->findById($userId);
+        if (!$user) {
+            self::cancelTwoFactor();
+            $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
+            return false;
+        }
+        $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
+        return true;
+    }
+
+    /**
+     * Ativa o 2FA durante um login pendente de configuração obrigatória e conclui o login.
+     *
+     * @return list<string>|null códigos de recuperação
+     */
+    public function completeTwoFactorSetup(string $code, ?TwoFactorService $twoFactor = null): ?array
+    {
+        $pending = self::twoFactorPending();
+        if (!$pending || $pending->mode !== "setup") {
+            $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
+            return null;
+        }
+        $twoFactor ??= new TwoFactorService();
+        $codes = $twoFactor->confirm((int)$pending->user, $code);
+        if ($codes === null) {
+            $pending->attempts = (int)$pending->attempts + 1;
+            (new Session())->set(self::PENDING_2FA, (array)$pending);
+            $this->message->error("Código de verificação inválido.");
+            return null;
+        }
+        $user = (new User())->findById((int)$pending->user);
+        if (!$user) {
+            self::cancelTwoFactor();
+            return null;
+        }
+        $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
+        return $codes;
     }
 
     /**
@@ -97,19 +190,19 @@ class Auth extends Model
         if (is_numeric ($email)){
             $user = (new User())->findByDocument($email);
             if (!$user) {
-                $this->message->error("O CPF informado não está cadastrado");
+                $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
                 return null;
             }
         }else{
             $user = (new User())->findByEmail($email);
             if (!$user) {
-                $this->message->error("O e-mail informado não está cadastrado");
+                $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
                 return null;
             }
         }
 
         if (!passwd_verify($password, $user->password)) {
-            $this->message->error("A senha informada não confere");
+            $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
             return null;
         }
 
@@ -133,14 +226,51 @@ class Auth extends Model
      * @param int $level
      * @return bool|null
      */
-    public function login(string $email, string $password, bool $save = false, int $level = 1): ?bool
+    public function login(string $email, string $password, bool $save = false, int $level = 1, ?TwoFactorService $twoFactor = null): ?bool
     {
+        self::cancelTwoFactor();
         $user = $this->attempt($email, $password, $level);
         if (!$user) {
             AppLogger::log('notice', 'Tentativa de autenticação não concluída', ['event_type' => 'authentication_failed', 'code' => 'AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($email))), 'status' => 'resolved'], 'authentication');
             return false;
         }
 
+        $mode = $this->secondFactorMode((int)$user->id, $twoFactor ?? new TwoFactorService());
+        if ($mode !== null) {
+            // Senha correta, mas a sessão só é elevada depois do segundo fator.
+            (new Session())->regenerate()->set(self::PENDING_2FA, [
+                "user" => (int)$user->id, "mode" => $mode, "expires" => time() + self::PENDING_TTL,
+                "attempts" => 0, "save" => $save, "email" => $email,
+            ]);
+            $this->message->info($mode === "verify" ? "Informe o código do seu aplicativo autenticador." : "Configure a autenticação em dois fatores para continuar.");
+            return null;
+        }
+
+        $this->finishLogin($user, $email, $save);
+        return true;
+    }
+
+    /** "verify" (2FA ativo), "setup" (obrigatório e não configurado) ou null. */
+    private function secondFactorMode(int $userId, TwoFactorService $twoFactor): ?string
+    {
+        try {
+            if ($twoFactor->isEnabled($userId)) {
+                return "verify";
+            }
+        } catch (\PDOException $error) {
+            // Antes de aplicar a migration 20261107_0001 a tabela não existe; qualquer outro erro bloqueia o login.
+            if ($error->getCode() !== '42S02') {
+                throw $error;
+            }
+            AppLogger::log('error', 'Tabela de 2FA ausente: aplique as migrations', ['event_type' => 'two_factor', 'code' => 'TWO_FACTOR_SCHEMA_MISSING', 'status' => 'open'], 'authentication');
+            return null;
+        }
+        return TwoFactorService::isEnforced() ? "setup" : null;
+    }
+
+    private function finishLogin(User $user, string $email, bool $save): void
+    {
+        self::cancelTwoFactor();
         if ($save) {
             setcookie("authEmail", $email, ['expires' => time() + 604800, 'path' => '/', 'secure' => $this->secureCookie(), 'httponly' => true, 'samesite' => 'Lax']);
         } else {
@@ -150,7 +280,6 @@ class Auth extends Model
         //LOGIN
         (new AppLog())->register($user->id, "Realizou login");
         (new Session())->regenerate()->set("authUser", $user->id);
-        return true;
     }
 
     private function secureCookie(): bool
