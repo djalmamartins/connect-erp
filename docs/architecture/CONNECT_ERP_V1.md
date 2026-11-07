@@ -142,7 +142,7 @@ e não se cria `layouts/`.
 **C4. Templates de e-mail sem diretório.** `Auth` e `Users` renderizam e-mails a partir de
 `moves_container_path('mail', CONF_VIEW_MAIL)` → `container/mail/default`, que não existe.
 Recuperação de senha e convites podem falhar. O ambiente `send` do contrato também não
-existe. Adaptação: A4.
+existe. Adaptação: A4. Resolvido em 2026-11-07 por A4 (ADR 0008) para `Auth::forget`.
 
 **C5. Dois bancos MariaDB.** A aplicação usa `legacy-db` (`connect_legacy`); o serviço `db`
 (`connect_erp`) está ligado mas sem uso. As migrations do ERP (`database/migrations`)
@@ -209,6 +209,9 @@ Nenhuma delas foi aplicada nesta execução. Ordem sugerida:
 - **A4. Templates de e-mail.** Confirmar onde os templates de e-mail do legado estão e
   restaurá-los em `container/send/default/v1` (ambiente `send`), com alias `mail` →
   `send` em `moves_container_path()`. Até lá, registrar a falha como pendência.
+  **Aplicado em 2026-11-07** (ADR 0008): Djalma definiu o ambiente `send` para os e-mails.
+  Nenhum template do legado foi encontrado no Connect, então `forget` e `confirm` foram
+  escritos do zero.
 - **A5. Absorver `source/Connect/`.** Manter `JsonResponse` (mover para
   `Source\Support\Http\JsonResponse` só por ADR), remover `HealthController`,
   `DatabaseConnection` e `bootstrap.php` depois que `tests/smoke.php` usar o bootstrap
@@ -337,4 +340,5 @@ subir o compose a partir do worktree.
 3. `claude-dev` + `claude-layout`: A1 e A2 aplicados em 2026-11-07 (Condomínios somente
    leitura); falta smoke de `/erp` no lab, visual pelo `claude-layout` e cadastro/edição
    após a spec AP-004.
-4. A4 e A5 coordenados com a frente que remove `organic/` e `src/`.
+4. A4 aplicado em 2026-11-07 (ADR 0008). A5 aguarda aprovação para remover arquivos de
+   `source/Connect/`.

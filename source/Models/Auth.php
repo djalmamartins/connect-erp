@@ -4,12 +4,12 @@ namespace Source\Models;
 
 use Source\Core\Model;
 use Source\Core\Session;
-use Source\Core\View;
 use Source\Models\Corporation\AppCondominium;
 use Source\Models\Corporation\AppCorporations;
 use Source\Models\Session\AppLog;
 use Source\Support\Email;
 use Source\Support\AppLogger;
+use Source\Support\MailTemplate;
 use Source\Services\TwoFactorService;
 
 /**
@@ -317,8 +317,7 @@ class Auth extends Model
             $user->save();
         }
 
-        $view = new View(moves_container_path('mail', CONF_VIEW_MAIL));
-        $message = $view->render("forget", [
+        $message = (new MailTemplate())->render("forget", [
             "first_name" => $user->first_name,
             "forget_link" => url("/forget/{$user->forget}:{$user->email}")
         ]);
