@@ -31,7 +31,13 @@ final class Access
                 WHERE p.slug=:permission LIMIT 1");
             $stmt->execute(["user" => $user->id, "permission" => $permission]);
             $access = $stmt->fetch();
-            if (!$access) { return self::$cache[$key] = self::fallback($permission, (int)$user->level); }
+            if (!$access) {
+                if (!self::isRegistered($pdo, $permission)) {
+                    AppLogger::log('warning', 'Permissão não cadastrada negada', ['event_type' => 'permission_unregistered', 'permission' => $permission, 'users_id' => $user->id], 'authorization');
+                    return self::$cache[$key] = false;
+                }
+                return self::$cache[$key] = self::fallback($permission, (int)$user->level);
+            }
             if ($access->role_slug === "developer") { return self::$cache[$key] = true; }
             if (!self::moduleEnabled($permission)) { return self::$cache[$key] = false; }
             if ($access->effect === "deny") { return self::$cache[$key] = false; }
@@ -70,7 +76,18 @@ final class Access
     }
 
     /**
-     * Decisão quando não há registro de permissão ou papel para o usuário: prefixos
+     * Slug existe em access_permissions? Permissão não cadastrada é erro de código
+     * (slug digitado errado ou migration faltando) e sempre nega (issue #8).
+     */
+    public static function isRegistered(\PDO $pdo, string $permission): bool
+    {
+        $stmt = $pdo->prepare("SELECT 1 FROM access_permissions WHERE slug=:permission LIMIT 1");
+        $stmt->execute(["permission" => $permission]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Decisão quando a permissão está cadastrada mas o usuário não tem papel: prefixos
      * estritos negam; as demais permissões mantêm o legado do Studio (nível >= 5).
      */
     public static function fallback(string $permission, int $level): bool
