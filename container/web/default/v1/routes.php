@@ -10,6 +10,12 @@ $route->post("/solicite-sua-proposta", "Web:proposalSubmit");
 $route->get("/politica-de-privacidade", "Web:legal");
 $route->get("/termos-de-uso", "Web:legal");
 
+//password recovery (link do e-mail: /forget/{token}, sem e-mail na URL)
+$route->get("/forget", "Web:forget");
+$route->post("/forget", "Web:forget");
+$route->get("/forget/{code}", "Web:reset");
+$route->post("/reset", "Web:reset");
+
 
 //articles
 $route->group("/artigos");
