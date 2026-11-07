@@ -7,4 +7,4 @@
 5. Adaptador bancário piloto em sandbox, boleto, eventos, remessa/retorno e conciliação.
 6. Relatórios financeiros e prestação de contas com reconciliação.
 7. Operacional, portaria, documentos, leituras, dashboards, demais relatórios e integrações.
-Cada etapa só fecha com teste de autorização, tenant, acessibilidade, fluxo e regressão.
+Cada etapa só fecha com teste de autorização, isolamento por condomínio, acessibilidade, fluxo e regressão.

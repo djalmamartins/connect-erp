@@ -30,9 +30,9 @@ class Thumb
      * @param string $image
      * @param int $width
      * @param int|null $height
-     * @return string
+     * @return string|null
      */
-    public function make(string $image, int $width, ?int $height = null): string
+    public function make(string $image, int $width, ?int $height = null): ?string
     {
         return $this->cropper->make("{$this->uploads}/{$image}", $width, $height);
     }

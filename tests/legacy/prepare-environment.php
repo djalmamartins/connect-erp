@@ -25,6 +25,12 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_save_path($sessionDirectory);
 }
 
+// Suíte unit sem MariaDB (A6): não prepara banco; TestCase pula testes de integração.
+if (filter_var(getenv('MOVESOS_TEST_DB_DISABLED') ?: false, FILTER_VALIDATE_BOOL)) {
+    $pdo = null;
+    return;
+}
+
 $host = getenv('MOVESOS_TEST_DB_HOST') ?: 'localhost';
 $user = getenv('MOVESOS_TEST_DB_USER') ?: 'root';
 $password = getenv('MOVESOS_TEST_DB_PASS') ?: '';
@@ -89,3 +95,6 @@ $pdo->exec("INSERT INTO settings
     (id,mode,site_name,site_title,site_desc,site_lang,site_domain_ssl,view_theme,view_support,view_app,view_erp,view_admin,view_mail,view_upkeep,mail_name,mail_address,mail_lang,mail_html,mail_auth,mail_charset,pay_mode,pay_back,timezone_set,access_studio,access_erp,access_app)
     VALUES (1,1,'MovesOS Test','MovesOS Test','Ambiente automatizado','pt_BR','https://localhost','default','support','default','default','default','default','default','MovesOS Test','test@localhost','pt_BR','1','0','UTF-8','test','/','America/Sao_Paulo',1,1,1)
     ON DUPLICATE KEY UPDATE site_name=VALUES(site_name),timezone_set=VALUES(timezone_set),access_studio=1,access_erp=1,access_app=1,access_site=1,access_support=1");
+
+putenv('CONNECT_2FA_KEY=' . base64_encode(str_repeat("\x07", 32)));
+putenv('CONNECT_2FA_ENFORCE_FROM');

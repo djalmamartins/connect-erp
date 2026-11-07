@@ -2,11 +2,13 @@
 
 Cada documento é uma ficha inicial gerada do inventário do PDF, NÃO uma especificação funcional profunda. Claude deve enriquecer a ficha com evidências antes de implementar.
 
-- [AP-001 — Administradora](pages/ap-001-administradora.md) · dashboards · CONFIRMADA
+Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOPO são funcionalidades do fornecedor SaaS e não serão implementadas; REINTERPRETAR indica adaptação ao modelo de administradora única.
+
+- [AP-001 — Administradora](pages/ap-001-administradora.md) · dashboards · CONFIRMADA · REINTERPRETAR
 - [AP-002 — Condomínio](pages/ap-002-condominio.md) · dashboards · CONFIRMADA
 - [AP-003 — Unidade](pages/ap-003-unidade.md) · dashboards · CONFIRMADA
 - [AP-004 — Condomínios](pages/ap-004-condominios.md) · cadastros · CONFIRMADA
-- [AP-005 — Inquilinos](pages/ap-005-inquilinos.md) · plataforma · CONFIRMADA
+- [AP-005 — Inquilinos](pages/ap-005-inquilinos.md) · cadastros · CONFIRMADA
 - [AP-006 — Unidades](pages/ap-006-unidades.md) · cadastros · CONFIRMADA
 - [AP-007 — Áreas Vinculáveis](pages/ap-007-areas-vinculaveis.md) · cadastros · CONFIRMADA
 - [AP-008 — Áreas Comuns](pages/ap-008-areas-comuns.md) · cadastros · CONFIRMADA
@@ -149,7 +151,7 @@ Cada documento é uma ficha inicial gerada do inventário do PDF, NÃO uma espec
 - [AP-145 — Lançamentos por Unidade](pages/ap-145-lancamentos-por-unidade.md) · importacoes · CONFIRMADA
 - [AP-146 — Contas a pagar (Planilha)](pages/ap-146-contas-a-pagar-planilha.md) · importacoes · CONFIRMADA
 - [AP-147 — Administrativo](pages/ap-147-administrativo.md) · configuracoes · CONFIRMADA
-- [AP-148 — Usuários de Imobiliárias](pages/ap-148-usuarios-de-imobiliarias.md) · configuracoes · CONFIRMADA
+- [AP-148 — Usuários de Imobiliárias](pages/ap-148-usuarios-de-imobiliarias.md) · configuracoes · CONFIRMADA · REINTERPRETAR
 - [AP-149 — Usuários do Sistema](pages/ap-149-usuarios-do-sistema.md) · configuracoes · PENDENTE
 - [AP-150 — Permissões de Usuários](pages/ap-150-permissoes-de-usuarios.md) · configuracoes · PENDENTE
 - [AP-151 — Notificações da Prestação de](pages/ap-151-notificacoes-da-prestacao-de.md) · configuracoes · CONFIRMADA
@@ -170,7 +172,7 @@ Cada documento é uma ficha inicial gerada do inventário do PDF, NÃO uma espec
 - [AP-166 — Parâmetros](pages/ap-166-parametros.md) · configuracoes · CONFIRMADA
 - [AP-167 — Fração Ideal](pages/ap-167-fracao-ideal.md) · configuracoes · CONFIRMADA
 - [AP-168 — Tipos de Faturas](pages/ap-168-tipos-de-faturas.md) · configuracoes · CONFIRMADA
-- [AP-169 — Assinatura](pages/ap-169-assinatura.md) · plataforma · CONFIRMADA
-- [AP-170 — Suporte](pages/ap-170-suporte.md) · plataforma · CONFIRMADA
-- [AP-171 — Integrações](pages/ap-171-integracoes.md) · plataforma · CONFIRMADA
-- [AP-172 — Atualizações](pages/ap-172-atualizacoes.md) · plataforma · CONFIRMADA
+- [AP-169 — Assinatura](pages/ap-169-assinatura.md) · plataforma · CONFIRMADA · **FORA DO ESCOPO (SaaS)**
+- [AP-170 — Suporte](pages/ap-170-suporte.md) · plataforma · CONFIRMADA · **FORA DO ESCOPO (SaaS)**
+- [AP-171 — Integrações](pages/ap-171-integracoes.md) · plataforma · CONFIRMADA · REINTERPRETAR
+- [AP-172 — Atualizações](pages/ap-172-atualizacoes.md) · plataforma · CONFIRMADA · **FORA DO ESCOPO (SaaS)**

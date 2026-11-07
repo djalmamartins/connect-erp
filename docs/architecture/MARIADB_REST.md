@@ -4,7 +4,7 @@
 
 ## Persistência
 - Reutilizar a camada de acesso a dados existente, avaliando compatibilidade PDO/MySQL e versões do MariaDB efetivamente instaladas.
-- Migrations versionadas, chaves estrangeiras, índices, transações InnoDB, constraints suportadas, isolamento por administradora/condomínio e rollback ou reversão planejada.
+- Migrations versionadas, chaves estrangeiras, índices, transações InnoDB, constraints suportadas, isolamento por condomínio (`condominium_id`, administradora única — ADR-002) e rollback ou reversão planejada.
 - Valores monetários DECIMAL, nunca FLOAT; datas em UTC e exibição por fuso; charset utf8mb4.
 - Credenciais em variáveis de ambiente; backups testados e restore automatizado em homologação.
 - Não migrar banco existente ou executar SQL destrutivo sem autorização.

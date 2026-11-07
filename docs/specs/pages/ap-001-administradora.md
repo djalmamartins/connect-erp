@@ -1,5 +1,7 @@
 # AP-001 — Administradora
 
+> **REINTERPRETAR (ADR-002):** Usar como dashboard interno da Connect; não existe cadastro de administradoras.
+
 - **Domínio:** dashboards
 - **Rota de referência (APControle; NÃO rota obrigatória do Connect ERP):** `/inicio/administrador`
 - **Situação da rota na auditoria:** CONFIRMADA
@@ -16,7 +18,7 @@ PENDENTE: levantar evidências específicas; não inferir a partir da quantidade
 PROPOSTO: mapear entidades canônicas e relacionamentos após inspeção do Organic Code.
 
 ## Permissões e segurança
-PROPOSTO: autorização server-side por ação, tenant e condomínio; testes negativos obrigatórios.
+PROPOSTO: autorização server-side por ação e condomínio (administradora única — ADR-002); testes negativos obrigatórios.
 
 ## UI e estados
 PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregamento e acesso negado.

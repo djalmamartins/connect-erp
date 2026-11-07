@@ -18,7 +18,7 @@ class Support extends Controller
     public function home(): void
     {
         $categories = $this->categories();
-        echo $this->view->render("home", ["head" => $this->seo->render("Suporte - " . CONF_SITE_NAME, "Tutoriais e respostas para usar o MovesOS.", url("/suporte"), theme("/assets/images/share.jpg")), "categories" => $categories, "popular" => (new SupportArticle())->findPublished()->order("views DESC, helpful_yes DESC")->limit(6)->fetch(true) ?: []]);
+        echo $this->view->render("pages/home", ["head" => $this->seo->render("Suporte - " . CONF_SITE_NAME, "Tutoriais e respostas para usar o MovesOS.", url("/suporte"), theme("/assets/images/share.jpg")), "categories" => $categories, "popular" => (new SupportArticle())->findPublished()->order("views DESC, helpful_yes DESC")->limit(6)->fetch(true) ?: []]);
     }
 
     public function search(): void
@@ -29,13 +29,13 @@ class Support extends Controller
             $like = urlencode("%{$search}%");
             $articles = (new SupportArticle())->findPublished("(title LIKE :q1 OR summary LIKE :q2 OR content LIKE :q3)", "q1={$like}&q2={$like}&q3={$like}")->order("views DESC, title")->limit(40)->fetch(true) ?: [];
         }
-        echo $this->view->render("search", ["head" => $this->seo->render("Busca no Suporte", "Resultados da busca de suporte.", url("/suporte/buscar?q=" . urlencode($search)), theme("/assets/images/share.jpg")), "search" => $search, "articles" => $articles, "categories" => $this->categories()]);
+        echo $this->view->render("pages/search", ["head" => $this->seo->render("Busca no Suporte", "Resultados da busca de suporte.", url("/suporte/buscar?q=" . urlencode($search)), theme("/assets/images/share.jpg")), "search" => $search, "articles" => $articles, "categories" => $this->categories()]);
     }
 
     public function widget(): void
     {
         header("Content-Security-Policy: frame-ancestors *");
-        echo $this->view->render('widget', ['siteName' => CONF_SITE_NAME, 'widgetToken' => $this->widgetToken()]);
+        echo $this->view->render('pages/widget', ['siteName' => CONF_SITE_NAME, 'widgetToken' => $this->widgetToken()]);
     }
 
     public function widgetCreate(array $data): void
@@ -152,7 +152,7 @@ class Support extends Controller
             redirect("/suporte");
             return;
         }
-        echo $this->view->render("category", ["head" => $this->seo->render($category->title . " - Suporte", $category->description, url("/suporte/{$category->uri}"), theme("/assets/images/share.jpg")), "category" => $category, "articles" => $category->articles(true)->order("title")->fetch(true) ?: [], "categories" => $this->categories()]);
+        echo $this->view->render("pages/category", ["head" => $this->seo->render($category->title . " - Suporte", $category->description, url("/suporte/{$category->uri}"), theme("/assets/images/share.jpg")), "category" => $category, "articles" => $category->articles(true)->order("title")->fetch(true) ?: [], "categories" => $this->categories()]);
     }
 
     public function article(array $data): void
@@ -163,7 +163,7 @@ class Support extends Controller
         if (!$category || !$article || (int)$article->category_id !== (int)$category->id) { redirect("/suporte"); return; }
         Connect::getInstance()->prepare("UPDATE support_articles SET views=views+1 WHERE id=:id")->execute(["id" => $article->id]);
         $related = (new SupportArticle())->findPublished("category_id=:category AND id!=:id", "category={$category->id}&id={$article->id}")->order("views DESC,title")->limit(5)->fetch(true) ?: [];
-        echo $this->view->render("article", ["head" => $this->seo->render($article->title . " - Suporte", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $article->cover ? image($article->cover, 1200, 628) : theme("/assets/images/share.jpg")), "article" => $article, "category" => $category, "related" => $related, "categories" => $this->categories()]);
+        echo $this->view->render("pages/article", ["head" => $this->seo->render($article->title . " - Suporte", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $article->cover ? image($article->cover, 1200, 628) : theme("/assets/images/share.jpg")), "article" => $article, "category" => $category, "related" => $related, "categories" => $this->categories()]);
     }
 
     public function vote(array $data): void

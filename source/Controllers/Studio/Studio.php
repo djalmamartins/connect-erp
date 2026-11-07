@@ -75,7 +75,13 @@ class Studio extends Controller
             }
 
             $auth = new Auth();
-            if (!$auth->login($data["email"], $data["password"], !empty($data["save"]), 1)) {
+            $login = $auth->login($data["email"], $data["password"], !empty($data["save"]), 1);
+            if ($login === null && Auth::twoFactorPending()) {
+                // Senha válida; a sessão só é elevada após o segundo fator.
+                echo json_encode(["redirect" => url("/studio/login/2fa" . ($helpDesk ? "?next=helpdesk" : ""))]);
+                return;
+            }
+            if (!$login) {
                 echo json_encode(["message" => $auth->message()->render()]);
                 return;
             }

@@ -2,8 +2,9 @@
 
 > O contrato original da base foi preservado em
 > `docs/reference/ORGANIC_CODE_ENGINEERING_CONTRACT.md` e continua obrigatório.
-> O runtime MovesCode ainda não está presente nesta fundação; não invente
-> substitutos nem declare recursos existentes sem evidência no repositório.
+> Os pacotes MovesCode (router, view, compress, storage, cropper, seo, pager)
+> estão instalados via Composer; reutilize-os e não declare recursos existentes
+> sem evidência no repositório. 2FA ainda NÃO existe no `Auth` (auditoria de 07/11/2026).
 
 ## Missão
 Transformar a auditoria APControle em produto próprio Connect ERP, com implementação independente, incremental e verificável. O PDF é referência de requisitos, NÃO prova de fluxos completos.
@@ -21,7 +22,8 @@ Transformar a auditoria APControle em produto próprio Connect ERP, com implemen
 - Nunca copiar código, assets proprietários ou identidade visual do APControle; desenvolver solução independente.
 - Uma spec por rota de referência; um componente compartilhado para comportamentos repetidos. Skills são processos, não cópias de páginas.
 - Não implementar suposições como fatos: distinguir CONFIRMADO, INFERIDO e PENDENTE; abrir decisões em `docs/decisions/`.
-- Autorização server-side, isolamento por administradora/condomínio, auditoria, LGPD e testes são obrigatórios.
+- Autorização server-side, isolamento por condomínio, auditoria, LGPD e testes são obrigatórios.
+- **Connect ERP NÃO é SaaS** (ADR-002): uma única administradora (Connect) e vários condomínios. Proibido criar cadastro de administradoras, planos/assinaturas, cobrança por administradora, provisionamento, marketplace ou `tenant_id`. A unidade de segregação é `condominium_id`.
 - Cada tarefa: plano curto → implementação → testes → revisão → documentação → relatório de cobertura.
 - Proibido afirmar '100% sem falhas'; informar testes executados, riscos e lacunas.
 - Antes de integrar ferramentas MCP, ler `.mcp.example.json` e configurar apenas servidores instalados, com credenciais locais fora do Git.

@@ -16,8 +16,14 @@ abstract class TestCase extends PHPUnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->pdo = Connect::getInstance();
-        $this->resetDatabase();
+        if (Connect::databaseDisabled()) {
+            if (str_starts_with(static::class, 'MovesOSTests\\Integration\\')) {
+                self::markTestSkipped('Integração exige MariaDB (MOVESOS_TEST_DB_DISABLED=1).');
+            }
+        } else {
+            $this->pdo = Connect::getInstance();
+            $this->resetDatabase();
+        }
         Access::clear();
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
@@ -49,7 +55,7 @@ abstract class TestCase extends PHPUnitTestCase
     private function resetDatabase(): void
     {
         $this->pdo->exec('SET FOREIGN_KEY_CHECKS=0');
-        foreach (['studio_support_ticket_attachments','studio_support_ticket_events','studio_support_templates','studio_support_ticket_messages','studio_support_tickets','studio_calendar_events','movesos_versions','notifications','notification_messages','notifications_categories','mail_queue','support_articles','support_categories','faq_questions','faq_channels','posts','pages','categories','access_user_overrides','access_user_roles','access_role_permissions','access_permissions','access_roles','system_audit_logs','app_log','users'] as $table) {
+        foreach (['user_recovery_codes','user_two_factor','user_condominium_access','condominiums','studio_support_ticket_attachments','studio_support_ticket_events','studio_support_templates','studio_support_ticket_messages','studio_support_tickets','studio_calendar_events','movesos_versions','notifications','notification_messages','notifications_categories','mail_queue','support_articles','support_categories','faq_questions','faq_channels','posts','pages','categories','access_user_overrides','access_user_roles','access_role_permissions','access_permissions','access_roles','system_audit_logs','app_log','users'] as $table) {
             $this->pdo->exec("TRUNCATE TABLE {$table}");
         }
         $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1');

@@ -1,7 +1,7 @@
 # Definition of Done por página
 - [ ] Requisitos e evidências identificados; dúvidas registradas
 - [ ] Modelo e migrations revisados
-- [ ] Autorização e escopo tenant testados
+- [ ] Autorização e escopo por condomínio testados (inclui acesso cruzado negado)
 - [ ] Listagem, filtros, paginação, estados vazios e erros conforme aplicável
 - [ ] Formulários, validações servidor/cliente e acessibilidade conforme aplicável
 - [ ] Ações idempotentes/transacionais quando aplicável

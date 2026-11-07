@@ -6,7 +6,8 @@
     "status": "CONFIRMADA",
     "source_page": 9,
     "domain": "dashboards",
-    "spec_path": "docs/specs/pages/ap-001-administradora.md"
+    "spec_path": "docs/specs/pages/ap-001-administradora.md",
+    "scope": "reinterpret"
   },
   {
     "id": "AP-002",
@@ -41,7 +42,7 @@
     "reference_route": "/Proprietários/cadastro/morador/lis",
     "status": "CONFIRMADA",
     "source_page": 9,
-    "domain": "plataforma",
+    "domain": "cadastros",
     "spec_path": "docs/specs/pages/ap-005-inquilinos.md"
   },
   {
@@ -1329,7 +1330,8 @@
     "status": "CONFIRMADA",
     "source_page": 15,
     "domain": "configuracoes",
-    "spec_path": "docs/specs/pages/ap-148-usuarios-de-imobiliarias.md"
+    "spec_path": "docs/specs/pages/ap-148-usuarios-de-imobiliarias.md",
+    "scope": "reinterpret"
   },
   {
     "id": "AP-149",
@@ -1518,7 +1520,8 @@
     "status": "CONFIRMADA",
     "source_page": 15,
     "domain": "plataforma",
-    "spec_path": "docs/specs/pages/ap-169-assinatura.md"
+    "spec_path": "docs/specs/pages/ap-169-assinatura.md",
+    "scope": "out_of_scope_saas"
   },
   {
     "id": "AP-170",
@@ -1527,7 +1530,8 @@
     "status": "CONFIRMADA",
     "source_page": 15,
     "domain": "plataforma",
-    "spec_path": "docs/specs/pages/ap-170-suporte.md"
+    "spec_path": "docs/specs/pages/ap-170-suporte.md",
+    "scope": "out_of_scope_saas"
   },
   {
     "id": "AP-171",
@@ -1536,7 +1540,8 @@
     "status": "CONFIRMADA",
     "source_page": 15,
     "domain": "plataforma",
-    "spec_path": "docs/specs/pages/ap-171-integracoes.md"
+    "spec_path": "docs/specs/pages/ap-171-integracoes.md",
+    "scope": "reinterpret"
   },
   {
     "id": "AP-172",
@@ -1545,6 +1550,7 @@
     "status": "CONFIRMADA",
     "source_page": 16,
     "domain": "plataforma",
-    "spec_path": "docs/specs/pages/ap-172-atualizacoes.md"
+    "spec_path": "docs/specs/pages/ap-172-atualizacoes.md",
+    "scope": "out_of_scope_saas"
   }
 ]

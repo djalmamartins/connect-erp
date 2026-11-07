@@ -49,6 +49,43 @@ final class AccessControlTest extends TestCase
         self::assertFalse(Access::can('studio.access', $user));
     }
 
+    public function testUnregisteredStrictPermissionDeniesHighLevelUserWithoutRole(): void
+    {
+        $user = (new User())->findById($this->createUser(['level' => 10]));
+
+        self::assertFalse(Access::can('erp.ledger.manage', $user));
+        self::assertFalse(Access::can('api.anything', $user));
+        self::assertTrue(Access::can('unregistered.studio.permission', $user), 'Permissões não estritas mantêm o legado por nível.');
+    }
+
+    public function testRegisteredErpPermissionDeniesUserWithoutRole(): void
+    {
+        // erp.access é cadastrada pela migration 0003; sem papel atribuído não há fallback por nível.
+        $user = (new User())->findById($this->createUser(['level' => 10]));
+        $this->pdo->exec("INSERT IGNORE INTO access_permissions (name,slug,group_name) VALUES ('Acessar ERP','erp.access','ERP')");
+        Access::clear();
+
+        self::assertFalse(Access::can('erp.access', $user));
+    }
+
+    public function testStrictPermissionStillGrantedThroughRole(): void
+    {
+        [$user] = $this->prepareAccess('manager', 'erp.condominiums.view', true);
+        self::assertTrue(Access::can('erp.condominiums.view', $user));
+    }
+
+    public function testCheckFailureDeniesAndIsNotCached(): void
+    {
+        [$user] = $this->prepareAccess('manager', 'articles.manage', true);
+        $this->pdo->exec('RENAME TABLE access_user_overrides TO access_user_overrides_tmp');
+        try {
+            self::assertFalse(Access::can('articles.manage', $user));
+        } finally {
+            $this->pdo->exec('RENAME TABLE access_user_overrides_tmp TO access_user_overrides');
+        }
+        self::assertTrue(Access::can('articles.manage', $user), 'A negação por falha não pode ficar em cache.');
+    }
+
     private function prepareAccess(string $roleSlug, string $permissionSlug, bool $roleAllowed): array
     {
         $userId = $this->createUser(['level' => $roleSlug === 'developer' ? 10 : 2]);

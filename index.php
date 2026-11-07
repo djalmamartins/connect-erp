@@ -30,6 +30,16 @@ $route->get("/health", static function (): void {
     }
 });
 
+/**
+ * API REST v1 (sessão do Organic Code; 2FA obrigatório quando ativo)
+ */
+$route->namespace("Source\\Controllers\\Api\\V1");
+$route->post("/auth/2fa/verify", "TwoFactor:verify");
+$route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->namespace(null);
+
 
 /**
  * WEB ROUTES
@@ -45,7 +55,7 @@ if (CONF_ACCESS_SITE || $developerBypass) {
     $route->group("/ops");
     $route->get("/{errcode}", "Web:error");
 }
-$supportRoutes = moves_container_path('web', CONF_VIEW_SUPPORT) . "/default.php";
+$supportRoutes = moves_container_path('web', CONF_VIEW_SUPPORT) . "/routes.php";
 if ((CONF_ACCESS_SUPPORT || $developerBypass) && is_file($supportRoutes)) {
     require $supportRoutes;
 }
@@ -58,7 +68,7 @@ require moves_container_path('studio', 'default') . "/routes.php";
 /**
  * HELP DESK ROUTES
  */
-$helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/default.php";
+$helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/routes.php";
 if (is_file($helpDeskRoutes)) {
     require $helpDeskRoutes;
 }
@@ -74,7 +84,8 @@ if (is_file($appRoutes)) {
 /**
  * ERP ROUTES
  */
-$erpRoutes = moves_container_path('erp', CONF_VIEW_ERP) . "/default.php";
+// A1: default.php é a moldura do tema; as rotas ficam em routes.php.
+$erpRoutes = moves_container_path('erp', CONF_VIEW_ERP) . "/routes.php";
 if (is_file($erpRoutes)) {
     require $erpRoutes;
 }
