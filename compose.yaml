@@ -8,19 +8,40 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: ${APP_DEBUG:-false}
-      DB_HOST: db
+      DB_HOST: legacy-db
       DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE:-connect_erp}
-      DB_USERNAME: ${DB_USERNAME:-connect_erp}
-      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      DB_NAME: ${LEGACY_DB_DATABASE:-connect_legacy}
+      DB_USER: ${LEGACY_DB_USERNAME:-connect_legacy}
+      DB_PASS: ${LEGACY_DB_PASSWORD:?Set LEGACY_DB_PASSWORD in .env}
+      MOVESOS_DB_HOST: legacy-db
+      MOVESOS_DB_PORT: 3306
+      MOVESOS_DB_NAME: ${LEGACY_DB_DATABASE:-connect_legacy}
+      MOVESOS_DB_USER: ${LEGACY_DB_USERNAME:-connect_legacy}
+      MOVESOS_DB_PASS: ${LEGACY_DB_PASSWORD:?Set LEGACY_DB_PASSWORD in .env}
     volumes: ["./:/var/www/html"]
     depends_on:
-      db: { condition: service_healthy }
+      legacy-db: { condition: service_healthy }
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/api/v1/health >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 12
+    networks: [connect]
+    restart: unless-stopped
+  legacy-db:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: ${LEGACY_DB_DATABASE:-connect_legacy}
+      MARIADB_USER: ${LEGACY_DB_USERNAME:-connect_legacy}
+      MARIADB_PASSWORD: ${LEGACY_DB_PASSWORD:?Set LEGACY_DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${LEGACY_DB_ROOT_PASSWORD:?Set LEGACY_DB_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--transaction-isolation=READ-COMMITTED"]
+    volumes: ["connect_legacy_db_data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks: [connect]
     restart: unless-stopped
   db:
@@ -44,3 +65,4 @@ networks:
   connect: { driver: bridge }
 volumes:
   connect_db_data:
+  connect_legacy_db_data:

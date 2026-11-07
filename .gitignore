@@ -9,3 +9,16 @@ node_modules/
 *.log
 coverage/
 build/
+storage/backups/
+storage/cache/
+storage/cert/
+storage/files/
+storage/images/
+storage/logs/
+storage/output/
+storage/sessions/
+storage/temp/
+storage/tmp/
+storage/uploads/
+graphify-out/
+.phpunit.cache/

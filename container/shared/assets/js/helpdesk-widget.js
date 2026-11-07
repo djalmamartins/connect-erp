@@ -1,0 +1,22 @@
+(function(){
+    'use strict';
+    if(window.__movesHelpDeskWidget)return;
+    window.__movesHelpDeskWidget=true;
+    var script=document.currentScript;
+    if(!script)return;
+    var source=new URL(script.src,window.location.href);
+    var base=(script.dataset.base||source.href.replace(/\/container\/shared\/assets\/js\/helpdesk-widget\.js(?:\?.*)?$/,'')).replace(/\/$/,'');
+    var color=script.dataset.color||'#2563eb';
+    var side=script.dataset.position==='left'?'left':'right';
+    var root=document.createElement('div');
+    root.className='moves-helpdesk-embed moves-helpdesk-embed--'+side;
+    root.innerHTML='<button class="moves-helpdesk-launcher" type="button" aria-label="Abrir Help Desk" aria-expanded="false"><img alt="" src="'+base+'/container/web/support/assets/images/helpdesk-mark.svg"><span>'+(script.dataset.label||'Ajuda')+'</span></button><section class="moves-helpdesk-panel" hidden><iframe title="Help Desk Moves" loading="lazy" src="'+base+'/suporte/widget?embed=1"></iframe></section>';
+    var style=document.createElement('style');
+    style.textContent='.moves-helpdesk-embed{--moves-helpdesk-color:'+color+';position:fixed;z-index:2147483000;bottom:22px;'+side+':22px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.moves-helpdesk-launcher{display:flex;align-items:center;gap:8px;min-width:54px;height:54px;padding:0 15px;border:0;border-radius:999px;background:var(--moves-helpdesk-color);color:#fff;box-shadow:0 12px 32px rgba(15,23,42,.25);font:700 13px inherit;cursor:pointer}.moves-helpdesk-launcher img{width:29px;height:29px}.moves-helpdesk-panel{position:absolute;bottom:68px;'+side+':0;width:min(390px,calc(100vw - 24px));height:min(650px,calc(100vh - 105px));overflow:hidden;border-radius:18px;background:#fff;box-shadow:0 22px 70px rgba(15,23,42,.28)}.moves-helpdesk-panel iframe{display:block;width:100%;height:100%;border:0}.moves-helpdesk-panel[hidden]{display:none}@media(max-width:520px){.moves-helpdesk-embed{bottom:12px;'+side+':12px}.moves-helpdesk-launcher span{display:none}.moves-helpdesk-panel{position:fixed;inset:12px 12px 78px;width:auto;height:auto;border-radius:16px}}';
+    document.head.appendChild(style);document.body.appendChild(root);
+    var button=root.querySelector('.moves-helpdesk-launcher'),panel=root.querySelector('.moves-helpdesk-panel');
+    var toggle=function(open){panel.hidden=!open;button.setAttribute('aria-expanded',String(open));};
+    button.addEventListener('click',function(){toggle(panel.hidden)});
+    window.addEventListener('message',function(event){if(event.origin===source.origin&&event.data&&event.data.type==='moves-helpdesk-close')toggle(false)});
+    document.addEventListener('keydown',function(event){if(event.key==='Escape')toggle(false)});
+})();

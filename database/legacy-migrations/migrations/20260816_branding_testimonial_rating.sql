@@ -1,0 +1,7 @@
+ALTER TABLE `settings`
+    ADD COLUMN IF NOT EXISTS `site_logo_svg` VARCHAR(255) NULL AFTER `site_photo`,
+    ADD COLUMN IF NOT EXISTS `site_icon` VARCHAR(255) NULL AFTER `site_logo_svg`,
+    ADD COLUMN IF NOT EXISTS `site_favicon` VARCHAR(255) NULL AFTER `site_icon`;
+
+ALTER TABLE `brief`
+    ADD COLUMN IF NOT EXISTS `rating` TINYINT UNSIGNED NOT NULL DEFAULT 5 AFTER `townhouse`;

@@ -1,0 +1,80 @@
+<?php
+
+$route->namespace("Source\\Controllers\\Studio");
+$route->group("/studio");
+
+$route->get("/", "Studio:root");
+$route->get("/login", "Studio:login");
+$route->post("/login", "Studio:login");
+$route->get("/sair", "Studio:logout");
+$route->get("/logoff", "Studio:logout");
+
+$route->get("/dash", "Studio:dash");
+$route->get("/buscar", "Studio:search");
+$route->get("/blog/home", "Studio:posts");
+$route->post("/blog/home", "Studio:posts");
+$route->get("/blog/home/p/{page}", "Studio:posts");
+$route->get("/blog/post", "Studio:post");
+$route->post("/blog/post", "Studio:post");
+$route->get("/blog/post/{id}", "Studio:post");
+$route->post("/blog/post/{id}", "Studio:post");
+$route->post("/blog/image", "Studio:postImage");
+$route->get("/notifications/count", "Studio:notificationsCount");
+$route->get("/notifications/list", "Studio:notificationsList");
+$route->get("/notifications/read/{id}", "Studio:notificationRead");
+$route->post("/notifications/action/{id}", "Studio:notificationAction");
+$route->get("/notifications", "Studio:notificationCenter");
+$route->get("/proposals", "Studio:proposals");
+$route->get("/proposals/p/{page}", "Studio:proposals");
+$route->get("/proposals/{id}", "Studio:proposal");
+$route->post("/proposals/{id}", "Studio:proposal");
+$route->get("/proposal-response/{id}/pdf", "Studio:proposalPdf");
+$route->post("/notifications/message", "Studio:notificationCompose");
+$route->post("/notifications/mail-queue", "Studio:mailQueueAction");
+$route->post("/notifications/read-all", "Studio:notificationsMarkAll");
+$route->get("/blog/categories", "Studio:categories");
+$route->get("/blog/category", "Studio:category");
+$route->post("/blog/category", "Studio:category");
+$route->get("/blog/category/{id}", "Studio:category");
+$route->post("/blog/category/{id}", "Studio:category");
+
+$route->get("/pages", "Studio:pages");
+$route->get("/page", "Studio:page");
+$route->post("/page", "Studio:page");
+$route->get("/page/{id}", "Studio:page");
+$route->post("/page/{id}", "Studio:page");
+$route->get("/media", "Studio:media");
+$route->post("/media", "Studio:media");
+$route->get("/media/p/{page}", "Studio:media");
+$route->get("/media/library", "Studio:mediaLibrary");
+$route->post("/media/editor", "Studio:editorImage");
+$route->get("/users", "Studio:users");
+$route->get("/users/p/{page}", "Studio:users");
+$route->get("/user", "Studio:userForm");
+$route->post("/user", "Studio:userForm");
+$route->get("/user/{id}", "Studio:userForm");
+$route->post("/user/{id}", "Studio:userForm");
+$route->get("/faqs", "Studio:faqs");
+$route->post("/faqs", "Studio:faqs");
+$route->get("/testimonials", "Studio:testimonials");
+$route->post("/testimonials", "Studio:testimonials");
+$route->get("/testimonials/{id}", "Studio:testimonials");
+$route->post("/testimonials/{id}", "Studio:testimonials");
+$route->get("/slides", "Studio:slides");
+$route->get("/slide", "Studio:slide");
+$route->post("/slide", "Studio:slide");
+$route->get("/slide/{id}", "Studio:slide");
+$route->post("/slide/{id}", "Studio:slide");
+$route->get("/reports", "Studio:reports");
+$route->get("/versions", "Studio:versions");
+$route->post("/versions", "Studio:versions");
+$route->get("/system-logs", "Studio:systemLogs");
+$route->get("/system-logs/p/{page}", "Studio:systemLogs");
+$route->post("/system-logs/action/{id}", "Studio:systemLogAction");
+$route->get("/settings", "Studio:settings");
+$route->post("/settings", "Studio:settings");
+
+$route->get("/ops/{errcode}", "Studio:error");
+
+$route->namespace("Source\\Controllers\\Web\\Connect");
+$route->group("");

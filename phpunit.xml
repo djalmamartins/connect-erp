@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="tests/legacy/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true">
+    <php>
+        <env name="MOVESOS_ENV" value="testing" force="true"/>
+        <env name="MOVESOS_TEST_DB" value="movesos_test" force="true"/>
+        <server name="HTTP_HOST" value="localhost" force="true"/>
+    </php>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/legacy/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/legacy/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">source</directory>
+        </include>
+    </source>
+</phpunit>

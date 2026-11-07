@@ -1,0 +1,16 @@
+DirectoryIndex index.php
+Options -Indexes
+
+RewriteEngine On
+
+# Arquivos de configuração, código interno e dados operacionais nunca são públicos.
+<FilesMatch "^(\.env(?:\..*)?|composer\.(json|lock)|phpunit\.xml|README(?:\..*)?)$">
+    Require all denied
+</FilesMatch>
+
+RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
+RewriteRule ^storage/(?:backups|cache|cert|database|logs|sessions|temp|tmp)(?:/|$) - [F,L,NC]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,1 @@
+<?php $this->layout('layouts/error'); ?><main class="studio-error"><span><?= $code ?></span><h1><?= htmlspecialchars($errorTitle??'Não foi possível abrir esta página.') ?></h1><p><?= htmlspecialchars($errorMessage??'Tente novamente em alguns instantes.') ?></p><a href="<?= url('/studio') ?>">Voltar ao Studio</a></main>
