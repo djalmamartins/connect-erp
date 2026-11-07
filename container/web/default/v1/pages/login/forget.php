@@ -21,7 +21,7 @@ $this->layout("layouts/error"); ?>
                             <div>
                                 <span class="icon-user">Email ou CPF:</span>
                                 <span><a title="Voltar e entrar!"
-                                         href="<?= url("/login"); ?>">Voltar e entrar!</a></span>
+                                         href="<?= url("/studio/login"); ?>">Voltar e entrar!</a></span>
                             </div>
                             <input type="text" id="cpf-email" name="email" placeholder="Informe seu E-mail ou CPF:"
                                    required/>
