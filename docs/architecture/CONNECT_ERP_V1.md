@@ -304,8 +304,13 @@ docker compose -p connect-erp exec app composer db:status
 ```
 
 ```bash
-docker compose -p connect-erp exec app vendor/bin/phpunit --testsuite unit
+docker compose -p connect-erp exec -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS="$(grep '^LEGACY_DB_ROOT_PASSWORD=' .env | cut -d= -f2-)" app vendor/bin/phpunit --testsuite unit
 ```
+
+Sem essas variáveis, `tests/legacy/prepare-environment.php` tenta `localhost` e falha com
+`SQLSTATE[HY000] [2002]` (resultado observado em 2026-11-07). A suíte cria e usa somente
+o banco `movesos_test`. A senha root não foi colocada no ambiente do serviço `app` de
+propósito.
 
 ```bash
 docker compose -p connect-erp exec legacy-db mariadb -u root -p -e "SELECT view_theme, view_erp, view_app, view_mail FROM connect_legacy.settings LIMIT 1"
