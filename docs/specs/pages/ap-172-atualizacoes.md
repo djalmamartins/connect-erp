@@ -1,5 +1,7 @@
 # AP-172 — Atualizações
 
+> **FORA DO ESCOPO (ADR-002):** Notas de atualização do fornecedor APControle. Funcionalidade exclusiva de SaaS; mantida só como registro da auditoria.
+
 - **Domínio:** plataforma
 - **Rota de referência (APControle; NÃO rota obrigatória do Connect ERP):** `/central-cliente/atua`
 - **Situação da rota na auditoria:** CONFIRMADA
@@ -16,7 +18,7 @@ PENDENTE: levantar evidências específicas; não inferir a partir da quantidade
 PROPOSTO: mapear entidades canônicas e relacionamentos após inspeção do Organic Code.
 
 ## Permissões e segurança
-PROPOSTO: autorização server-side por ação, tenant e condomínio; testes negativos obrigatórios.
+PROPOSTO: autorização server-side por ação e condomínio (administradora única — ADR-002); testes negativos obrigatórios.
 
 ## UI e estados
 PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregamento e acesso negado.

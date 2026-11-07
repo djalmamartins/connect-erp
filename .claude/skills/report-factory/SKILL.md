@@ -1,9 +1,9 @@
 ---
 name: report-factory
-description: Criar relatórios com parâmetros tipados, filtros de tenant, totais testados e exportações.
+description: Criar relatórios com parâmetros tipados, filtro por condomínio, totais testados e exportações.
 ---
 # Procedimento
-Criar relatórios com parâmetros tipados, filtros de tenant, totais testados e exportações.
+Criar relatórios com parâmetros tipados, filtro por condomínio, totais testados e exportações.
 1. Ler `CLAUDE.md`, spec relevante e evidências.
 2. Verificar o estado real do projeto antes de editar.
 3. Definir checklist verificável e dependências.
