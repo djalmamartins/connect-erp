@@ -170,10 +170,9 @@ conexão vira erro fatal em vez de mensagem clara.
 nível, inclusive para nível ≥ 5) quando a permissão não está cadastrada **e** quando a
 consulta falha por exceção. Para módulos financeiros isso é inaceitável. Adaptação: A3.
 
-**C10. Pastas `organic/` e `src/`.** Outra frente está eliminando `organic/` e `src/` e
-migrando para a base. Os layouts WEB (`layouts/theme.php`, `sales.php`, `error.php`) e
-`Services/Minify/{App,Erp}.php` ainda referenciam `/organic/*.css|js`. Esta execução não
-toca nesses arquivos para não conflitar; a remoção precisa atualizar essas referências.
+**C10. Pastas `organic/` e `src/`.** Resolvido em 2026-11-07 (ADR 0003): a distribuição
+Organic foi movida para `container/shared/assets/organic/`, layouts WEB/Suporte e
+`Services/Minify/{App,Erp}.php` foram atualizados, e `src/` (vazia, não versionada) foi removida.
 
 **C11. Duplicidade de controllers `V1` e `Connect`.** `Erp/V1` e `Erp/Connect`, `App/V1` e
 `App/Connect`, `Web/V1` e `Web/Connect` são versões legadas lado a lado. Não renomear;

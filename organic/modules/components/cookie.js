@@ -1,1 +1,0 @@
-document.addEventListener('click',e=>{const accept=e.target.closest('[data-org-cookie-accept]'),reject=e.target.closest('[data-org-cookie-reject]');if(!accept&&!reject)return;const root=e.target.closest('[data-org-cookie]');if(root){root.classList.add('is-hidden');root.dispatchEvent(new CustomEvent('organic:cookie:change',{bubbles:true,detail:{accepted:!!accept}}));}});

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <?= $head ?>
     <link rel="icon" href="<?= site_favicon_url() ?>">
-    <link rel="stylesheet" href="<?= url('/organic/organic.min.css') ?>">
-    <link rel="stylesheet" href="<?= url('/organic/compat-v1.css') ?>">
+    <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/organic.min.css') ?>">
+    <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/compat-v1.css') ?>">
     <link rel="stylesheet" href="<?= theme('/assets/support.css?v=' . filemtime(__DIR__ . '/../assets/support.css'), 'support') ?>">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 </head>
@@ -36,8 +36,8 @@
         <span>© <?= date('Y') ?> <?= htmlspecialchars(CONF_SITE_NAME) ?></span>
     </nav>
 </footer>
-<script src="<?= url('/organic/organic.global.min.js') ?>"></script>
-<script src="<?= url('/organic/compat-v1.js') ?>"></script>
+<script src="<?= url('/container/shared/assets/organic/organic.global.min.js') ?>"></script>
+<script src="<?= url('/container/shared/assets/organic/compat-v1.js') ?>"></script>
 <script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget defer></script>
 <?= $this->section('scripts') ?>
 </body>

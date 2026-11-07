@@ -11,7 +11,7 @@ declare(strict_types=1);
 $movesRoot = dirname(__DIR__, 2);
 $sourceRoot = $argv[1] ?? dirname($movesRoot) . '/organic-v2';
 $sourceRoot = realpath($sourceRoot) ?: $sourceRoot;
-$targetRoot = $movesRoot . '/organic';
+$targetRoot = $movesRoot . '/container/shared/assets/organic';
 
 $files = [
     'dist/organic.css' => 'organic.css',
