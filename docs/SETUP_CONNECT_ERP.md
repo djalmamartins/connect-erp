@@ -146,7 +146,9 @@ Não criar branches permanentes adicionais sem autorização.
   respondeu pelo certificado/VHost já existentes.
 - Serviços compartilhados em 8080, 8081, 8090, 8091 e 8025 continuaram
   respondendo após a instalação.
-- Claude Code 2.1.316 iniciou e reconhece a configuração local.
+- Claude Code 2.1.316 respondeu a `--version` e `--help`; `CLAUDE.md`, agentes,
+  skills e regras estão presentes nos dois worktrees. Uma sessão interativa não
+  foi aberta nesta preparação.
 
 Login não foi testado: o runtime e as credenciais de teste do Organic Code não
 estão presentes. Integrações bancárias reais, migrations de negócio e dados do
