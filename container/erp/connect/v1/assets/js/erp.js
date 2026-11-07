@@ -227,15 +227,27 @@
         page = 1; draw();
       });
     });
-    var filter = wrap.parentNode.querySelector('[data-erp-table-filter]');
-    if (filter) {
+    // Filtros: texto livre e selects da mesma área (data-erp-list) agem sobre as linhas.
+    var scope = wrap.closest('[data-erp-list]') || wrap.parentNode;
+    var textFilter = scope.querySelector('[data-erp-table-filter]');
+    var selectFilters = $$('[data-erp-select-filter]', scope);
+    if (textFilter || selectFilters.length) {
       var all = rows.slice();
-      filter.addEventListener('input', function () {
-        var term = filter.value.trim().toLowerCase();
+      var apply = function () {
+        var term = textFilter ? textFilter.value.trim().toLowerCase() : '';
+        var picks = selectFilters.map(function (s) { return s.value; }).filter(Boolean);
         all.forEach(function (row) { row.hidden = true; });
-        rows = all.filter(function (row) { return row.textContent.toLowerCase().indexOf(term) !== -1; });
+        rows = all.filter(function (row) {
+          if (term && row.textContent.toLowerCase().indexOf(term) === -1) return false;
+          var cells = Array.prototype.map.call(row.cells, function (c) { return c.textContent.trim(); });
+          return picks.every(function (p) { return cells.indexOf(p) !== -1; });
+        });
         page = 1; draw();
-      });
+      };
+      if (textFilter) textFilter.addEventListener('input', apply);
+      selectFilters.forEach(function (s) { s.addEventListener('change', apply); });
+      var reset = scope.querySelector('[data-erp-filter-reset]');
+      if (reset) reset.addEventListener('click', function () { window.setTimeout(apply, 0); });
     }
     draw();
   });
@@ -256,6 +268,22 @@
       if (firstInvalid) { event.preventDefault(); firstInvalid.focus(); toast('Revise os campos destacados.', 'warning'); return; }
       if (form.hasAttribute('data-erp-pending')) { event.preventDefault(); toast(form.getAttribute('data-erp-pending'), 'warning'); }
     });
+  });
+
+  /* Resumo ao vivo dos formulários de lançamento ------------------------- */
+  $$('[data-erp-summary]').forEach(function (summary) {
+    var form = document.getElementById(summary.getAttribute('data-erp-summary'));
+    if (!form) return;
+    var sync = function () {
+      $$('[data-erp-summary-for]', summary).forEach(function (dd) {
+        var field = document.getElementById(dd.getAttribute('data-erp-summary-for'));
+        var value = field ? (field.type === 'checkbox' ? (field.checked ? 'Sim' : 'Não') : field.value) : '';
+        dd.textContent = value || '—';
+      });
+    };
+    form.addEventListener('input', sync);
+    form.addEventListener('change', sync);
+    form.addEventListener('reset', function () { window.setTimeout(sync, 0); });
   });
 
   /* Ações que dependem de backend ainda não implementado ------------------- */

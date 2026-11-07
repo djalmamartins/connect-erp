@@ -196,7 +196,7 @@ md = ["# Connect ERP v1 — matriz de rotas validada", "",
       "Gerada por `tools/erp-catalog.py` a partir de `docs/specs/routes.json` (inventário de 172 rotas da auditoria APControle).",
       "As rotas de referência do APControle não são rotas do Connect ERP: cada página recebeu uma rota própria em `/erp`.", "",
       f"- Inventário: {len(SPECS)} · Validadas: {len(pages)} · Removidas: {len(REMOVED)} · Fundidas: {len(MERGED)}", "",
-      "Componente: template que renderiza a rota hoje. Implementação: `rota+pendente` = rota registrada, protegida e com estado \"em construção\" específico da página (aguarda aprovação visual); `completa` = interface específica pronta. Teste: resultado de `tests/erp/render-smoke.php`.", "",
+      "Componente: template que renderiza a rota hoje. Implementação: `interface proposta (demonstração)` = rota registrada e protegida, com a interface do seu tipo, colunas e campos propostos (a confirmar nas fichas) e dados fictícios; operações de negócio ficam pendentes até o backend. Teste: resultado de `tests/erp/render-smoke.php`.", "",
       "| AP | Nome no inventário | Página | Rota | Grupo | Tipo de interface | Componente | Layout | Ações visuais | Validação | Implementação | Teste | Observação |",
       "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
 by_id = {p["id"]: p for p in pages}
@@ -206,7 +206,19 @@ for ap, orig, name, route, status, note in matrix:
     if p and p["id"] == "AP-001":
         comp, actions, impl = "pages/dashboard/index", "período, exportar (pendente), comunicado rápido (modal), filtro/ordenação/paginação", "completa (demonstração)"
     elif p:
-        comp, actions, impl = "pages/system/pending", "voltar ao módulo, breadcrumbs, menu ativo", "rota+pendente"
+        comp = "pages/modules/" + p["kind"]
+        actions = {
+            "list": "filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação",
+            "report": "parâmetros, filtro, ordenação, paginação, totais, exportar (pendente), imprimir",
+            "form": "validação, resumo ao vivo, limpar, confirmar (pendente)",
+            "import": "etapas, validação de arquivo, pré-visualização, importar (pendente)",
+            "settings": "seções ou matriz de permissões, salvar (pendente), histórico",
+            "document": "parâmetros, prévia, emitir (pendente)",
+            "chart": "parâmetros, gráfico com tabela acessível, exportar (pendente)",
+            "closing": "competência, checklist, resumo, fechar (pendente)",
+            "dashboard": "contexto, indicadores, gráfico, tabela",
+        }[p["kind"]]
+        impl = "interface proposta (demonstração)"
     else:
         comp = actions = impl = "—"
     test = "smoke OK" if p else "—"

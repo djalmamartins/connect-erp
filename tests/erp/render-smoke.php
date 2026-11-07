@@ -51,7 +51,7 @@ foreach ($argv as $arg) {
 }
 if ($out) @mkdir($out, 0777, true);
 
-putenv('ERP_DEMO_DATA=' . (getenv('ERP_DEMO_DATA') !== false ? getenv('ERP_DEMO_DATA') : 'true'));
+putenv('ERP_DEMO_DATA=true');
 
 $user = new Source\Models\User();
 foreach (['id' => 1, 'first_name' => 'Ana', 'last_name' => 'Exemplo', 'email' => 'ana@example.invalid', 'level' => 5] as $k => $v) {
@@ -117,14 +117,34 @@ foreach ($catalog['groups'] as $key => $group) {
     $save('hub-' . $key, $html);
 }
 
-// Todas as páginas do catálogo
+// Todas as páginas do catálogo, com o template do seu tipo
 $hrefs = [];
+$kinds = [];
 foreach ($catalog['pages'] as $id => $page) {
     if ($id === 'AP-001') continue;
-    $data = $layoutData->invoke($panel, $user, $id);
-    $html = $render('pages/system/pending', $data);
+    [$template, $data] = $panel->pageView($user, $id);
+    $html = $render($template, $data);
+    $kinds[$page['kind']] = ($kinds[$page['kind']] ?? 0) + 1;
     $common($html, $id, $page['name']);
-    $assert(str_contains($html, $id . ' · especificação'), "$id: rastreabilidade");
+    $assert($template === 'pages/modules/' . $page['kind'], "$id: template do tipo {$page['kind']}");
+    $assert(!str_contains($html, 'Interface em construção'), "$id: não usa a página genérica");
+    $assert(str_contains($html, $page['spec']), "$id: rastreabilidade da ficha");
+    preg_match_all('~\sid="([^"]+)"~', $html, $ids);
+    $dupes = array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1));
+    $assert($dupes === [], "$id: ids duplicados " . implode(',', $dupes));
+    $expect = [
+        'list' => ['data-erp-table data-per-page', 'role="tablist"', '-delete"', 'class="erp-filters"'],
+        'report' => ['data-erp-table data-per-page', 'Parâmetros do relatório', 'Exportar'],
+        'form' => ['data-erp-validate', 'data-erp-summary', 'Confirmar'],
+        'import' => ['type="file"', 'erp-steps', 'Pré-visualização'],
+        'settings' => ['Salvar configurações', 'Histórico de alterações'],
+        'document' => ['Emitir documento', 'erp-doc-preview'],
+        'chart' => ['erp-bars', '<caption>'],
+        'closing' => ['Fechar competência', 'Checklist do fechamento'],
+        'dashboard' => ['erp-kpi', 'erp-bars'],
+    ][$page['kind']] ?? [];
+    foreach ($expect as $needle) $assert(str_contains($html, $needle), "$id ({$page['kind']}): contém $needle");
+    if ($page['kind'] === 'report' && str_contains(json_encode($data['spec']['columns']), ':money')) $assert(str_contains($html, '<tfoot>'), "$id: total no rodapé");
     $assert((bool)preg_match('~<a href="https://www.connect.lab/erp' . preg_quote($page['route'], '~') . '" aria-current="page"~', $html) || $page['group'] === 'relatorios' || $page['group'] === 'operacional' || $page['group'] === 'configuracoes', "$id: link ativo na sidebar");
     preg_match_all('~href="https://www\.connect\.lab(/erp[^"#]*)~', $html, $m);
     foreach ($m[1] as $h) $hrefs[$h] = true;
@@ -152,6 +172,10 @@ putenv('ERP_DEMO_DATA=false');
 $data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard')]);
 $html = $render('pages/dashboard/index', $data);
 $assert(str_contains($html, 'Indicadores ainda indisponíveis') && !str_contains($html, 'R$ 1.284.530'), 'demo off: estado vazio sem números');
+[$template, $data] = $panel->pageView($user, 'AP-022');
+$html = $render($template, $data);
+$assert(str_contains($html, 'Nenhum registro ainda') && !str_contains($html, 'data-erp-table data-per-page'), 'demo off: listagem sem linhas fictícias');
+putenv('ERP_DEMO_DATA=true');
 
 // Login (view do Studio reaproveitada)
 $studio = static fn (): Source\Core\View => new Source\Core\View($root . '/container/cms/studio/v1/', 'php');
@@ -163,6 +187,8 @@ $save('login', $html);
 $html = $studio()->render('components/login/login', ['head' => '', 'cookie' => null, 'adminBase' => '/studio', 'loginEnvironment' => 'studio']);
 $assert(str_contains($html, 'MOVESOS') && str_contains($html, 'Área restrita'), 'login do Studio inalterado');
 
+ksort($kinds);
+echo "Páginas por tipo: " . json_encode($kinds, JSON_UNESCAPED_UNICODE) . "\n";
 printf("%d verificações, %d falhas\n", $checks, count($failures));
 foreach ($failures as $f) echo "FALHA: $f\n";
 exit($failures ? 1 : 0);

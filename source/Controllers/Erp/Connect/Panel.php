@@ -10,6 +10,7 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\DemoData;
 use Source\Support\Access;
+use Source\Support\Erp\FieldSpec;
 
 /**
  * ERP v1 — moldura navegável: dashboard, visão geral de cada módulo e as páginas do
@@ -80,9 +81,63 @@ final class Panel extends Controller
             $this->state($user, 404, 'Página não encontrada', 'O endereço não corresponde a nenhuma página do ERP.');
             return;
         }
-        // Até a aprovação da identidade visual (login + dashboard), cada rota mostra o
-        // estado "em construção" com o que a página terá e o que falta, sem dados simulados.
-        echo $this->view->render('pages/system/pending', $this->layoutData($user, $id));
+        echo $this->view->render(...$this->pageView($user, $id));
+    }
+
+    /**
+     * Template e dados de uma página do catálogo, pelo tipo de interface. Também usado
+     * pelo smoke de renderização (tests/erp/render-smoke.php).
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    public function pageView(User $user, string $id): array
+    {
+        $specs = require self::THEME . 'components/layout/page-specs.php';
+        $spec = $specs[$id] ?? null;
+        if ($spec === null) {
+            return ['pages/system/pending', $this->layoutData($user, $id)];
+        }
+        $kind = $spec['kind'];
+        $columns = FieldSpec::parseAll($spec['columns'] ?? [], 'c');
+        if ($kind === 'import') {
+            $columns = FieldSpec::parseAll(array_map(static fn (string $c): string => $c . (str_contains($c, 'Situação') ? ':status(Pronta para importar|Com erro|Duplicada)' : (preg_match('/Valor/', $c) ? ':money' : (preg_match('/Data|Emissão|Vencimento|Pago em/', $c) ? ':date' : ':text'))), $spec['columns']), 'c');
+        }
+        $data = [
+            'spec' => $spec,
+            'columns' => $columns,
+            'fields' => FieldSpec::parseAll($spec['fields'] ?? [], strtolower($id)),
+            'rows' => [],
+            'chart' => [],
+            'vocabulary' => DemoData::get('vocabulary'),
+        ];
+        if (isset($spec['sections'])) {
+            foreach ($spec['sections'] as $i => $section) {
+                $data['spec']['sections'][$i]['fields'] = FieldSpec::parseAll($section['fields'], strtolower($id) . '-' . $i);
+            }
+        }
+        if (in_array($kind, ['list', 'report', 'import'], true)) {
+            $data['rows'] = DemoData::rows($id, $spec['columns'] ?? [], $kind === 'import' ? 6 : ($kind === 'report' ? 18 : 23));
+            if ($kind === 'import') {
+                $data['rows'] = DemoData::rows($id, array_map(static fn (array $c): string => $c['label'] . ':' . $c['type'] . ($c['options'] ? '(' . implode('|', $c['options']) . ')' : ''), $columns), 6);
+            }
+        }
+        if (in_array($kind, ['chart', 'dashboard'], true) && DemoData::enabled()) {
+            $series = $spec['series'] ?? ['Receitas', 'Despesas'];
+            mt_srand(crc32($id));
+            $data['chart'] = [
+                'labels' => ['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'],
+                'series' => array_map(static fn (string $name): array => ['name' => $name, 'values' => array_map(static fn (): int => mt_rand(40, 100), range(1, 6))], $series),
+                'unit' => str_contains($series[0], '%') ? '%' : (str_contains($series[0], 'm³') ? 'm³' : (count($series) > 1 ? 'R$ mil' : 'quantidade')),
+            ];
+            mt_srand();
+        }
+        if ($kind === 'dashboard') {
+            $cols = $id === 'AP-003' ? ['Vencimento:date', 'Descrição:text', 'Valor:money', 'Situação:status(Aberto|Pago|Vencido)'] : ['Vencimento:date', 'Fornecedor:text', 'Valor:money', 'Situação:status(A vencer|Vencida|Agendada)'];
+            $data['columns'] = FieldSpec::parseAll($cols, 'c');
+            $data['rows'] = DemoData::rows($id, $cols, 6);
+        }
+        $template = 'pages/modules/' . $kind;
+        return [$template, $this->layoutData($user, $id, $data)];
     }
 
     /** GET /erp/seguranca/codigos — códigos de recuperação mostrados uma única vez após ativar o 2FA. */

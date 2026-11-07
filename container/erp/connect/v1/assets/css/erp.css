@@ -376,6 +376,24 @@ p { margin: 0; }
 .erp-hub-card p { color: var(--erp-muted); font-size: 13px; }
 .erp-hub-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 8px; }
 
+
+/* 17b. Detalhe, etapas, fieldsets e documento ------------------------------- */
+.erp-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 0; }
+.erp-detail-grid--single { grid-template-columns: minmax(0, 1fr); }
+.erp-detail-grid dt { color: var(--erp-muted); font-size: 12px; font-weight: 600; }
+.erp-detail-grid dd { margin: 2px 0 0; font-weight: 500; overflow-wrap: anywhere; }
+.erp-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.erp-fieldset + .erp-fieldset { padding-top: var(--erp-space-5); border-top: 1px solid var(--erp-border); }
+.erp-fieldset legend { padding: 0; margin-bottom: var(--erp-space-3); font-size: 15px; font-weight: 600; }
+.erp-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.erp-steps li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-pill); background: var(--erp-surface); color: var(--erp-muted); font-size: 13px; font-weight: 600; }
+.erp-steps li span { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--erp-neutral-soft); font-size: 12px; }
+.erp-steps li.is-current { border-color: var(--erp-brand-line); background: var(--erp-brand-soft); color: var(--erp-brand-ink); }
+.erp-steps li.is-current span { background: var(--erp-brand); color: var(--erp-on-brand); }
+.erp-doc-preview { display: grid; gap: 14px; align-content: start; border: 1px dashed var(--erp-border-strong); }
+.erp-doc-preview h2 { font-size: 18px; }
+.erp-list-page > * + * { margin-top: var(--erp-space-4); }
+
 /* 18. Animações -------------------------------------------------------------- */
 @keyframes erp-spin { to { transform: rotate(360deg); } }
 @keyframes erp-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
@@ -410,6 +428,7 @@ p { margin: 0; }
   .erp-page-head__actions { width: 100%; }
   .erp-page-head__actions > * { flex: 1; }
   .erp-form__grid > [class*="erp-col-"] { grid-column: 1 / -1; }
+  .erp-detail-grid { grid-template-columns: minmax(0, 1fr); }
   .erp-filters { display: grid; }
   .erp-donut { flex-direction: column; align-items: flex-start; }
   .erp-dropdown__panel { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; }

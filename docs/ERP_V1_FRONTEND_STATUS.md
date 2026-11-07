@@ -1,6 +1,6 @@
 # Connect ERP v1 — status do frontend
 
-Atualizado em 2026-11-07 · branch `claude-layout` · fase atual: **aprovação da identidade visual** (login + layout + dashboard).
+Atualizado em 2026-11-07 · branch `claude-layout` · fase atual: **todas as páginas com interface visual**, aguardando revisão (identidade aprovada por Djalma em 2026-11-07).
 
 ## URL local
 
@@ -18,8 +18,9 @@ Atualizado em 2026-11-07 · branch `claude-layout` · fase atual: **aprovação 
 | Páginas validadas e com rota registrada | 166 |
 | Visões gerais de módulo (hubs) | 10 |
 | Rotas de acesso | 6 (`/erp`, `/erp/login` GET/POST, `/erp/sair` POST, `/erp/recuperar-senha`, `/erp/seguranca/codigos`) |
-| Páginas com interface específica concluída | 1 (Dashboard) + login reaproveitado do Studio |
-| Páginas com estado "em construção" específico | 165 |
+| Páginas com interface do seu tipo | 166 (Dashboard + 165) e o login reaproveitado do Studio |
+| Por tipo | 67 listagens · 54 relatórios · 14 configurações · 9 importações · 8 gráficos · 6 formulários · 4 documentos · 2 painéis · 1 fechamento |
+| Páginas genéricas "em construção" | 0 |
 | Rotas cobertas pelo smoke de renderização | 166 páginas + 10 hubs + estados + login |
 | Rotas testadas por HTTP no connect.lab | 0 (bloqueado no ambiente; ver Pendências) |
 
@@ -49,7 +50,10 @@ Matriz completa (módulo, página, rota, componente, layout, ações, validaçã
 | Indicador | `components/cards/kpi.php` |
 | Gráficos | `components/charts/bars.php`, `components/charts/donut.php` |
 | Estado vazio | `components/feedback/empty.php` |
-| Páginas de sistema | `pages/system/hub.php`, `pages/system/pending.php`, `pages/system/state.php`, `pages/auth/recovery-codes.php` |
+| Modelos de página por tipo | `pages/modules/{list,report,form,import,settings,document,chart,closing,dashboard}.php` |
+| Campo, tabela, filtros, modais, aviso de proposta | `components/forms/field.php`, `components/tables/data-table.php`, `components/filters/filter-bar.php`, `components/modals/form-modal.php`, `components/modals/confirm.php`, `components/notifications/proposal.php` |
+| Definições e dados | `components/layout/page-specs.php`, `Source\Support\Erp\FieldSpec`, `Source\Services\Erp\DemoData::rows()`, `database/fixtures/erp-demo/vocabulary.php` |
+| Páginas de sistema | `pages/system/hub.php`, `pages/system/state.php`, `pages/system/pending.php` (reserva), `pages/auth/recovery-codes.php` |
 
 ## Testes executados
 
@@ -58,9 +62,10 @@ Matriz completa (módulo, página, rota, componente, layout, ações, validaçã
 | `php -l` em todos os PHP alterados/novos | sem erros |
 | `node --check container/erp/connect/v1/assets/js/erp.js` | sem erros |
 | `python3 tools/erp-catalog.py` | 166 páginas, 3 removidas, 3 fundidas, nenhuma rota duplicada |
-| `VENDOR=/Volumes/MAC\ HD/Docker/xampp/www/connect/vendor php tests/erp/render-smoke.php` | **1.821 verificações, 0 falhas** |
+| `python3 tools/erp-page-specs.py` | 165 definições de página |
+| `VENDOR=/Volumes/MAC\ HD/Docker/xampp/www/connect/vendor php tests/erp/render-smoke.php` | **2.890 verificações, 0 falhas** |
 
-O smoke renderiza, sem banco, pelo mesmo `Source\Core\View` do controller: dashboard (indicadores, gráficos, tabela, modal, aviso de demonstração), os 10 hubs (todos os links), as 165 páginas restantes (sidebar, navbar, breadcrumbs, título, item ativo, um `<main>`, logout com CSRF, rastreabilidade), todos os links internos contra as rotas registradas, estados 403/404, códigos de recuperação, dashboard com demonstração desligada e o login do ERP e do Studio (o do Studio continua igual). Avisos PHP contam como falha.
+O smoke renderiza, sem banco, pelo mesmo `Source\Core\View` do controller: dashboard (indicadores, gráficos, tabela, modal, aviso de demonstração), os 10 hubs (todos os links), as 165 páginas restantes pelo mesmo `Panel::pageView()` da rota (template do tipo certo, nenhuma página genérica, ids únicos, elementos do tipo: tabela/abas/exclusão nas listagens, totais nos relatórios com valores, arquivo e etapas nas importações etc., além de sidebar, navbar, breadcrumbs, título, item ativo, um `<main>`, logout com CSRF e a ficha de origem), listagem sem linhas com a demonstração desligada, todos os links internos contra as rotas registradas, estados 403/404, códigos de recuperação, dashboard com demonstração desligada e o login do ERP e do Studio (o do Studio continua igual). Avisos PHP contam como falha.
 
 **Não executados** (o sandbox bloqueia Docker, loopback e o banco): requisição HTTP real no connect.lab, login com usuário real e 2FA, console JavaScript no navegador, PHPUnit. A prévia publicada foi gerada do HTML renderizado, não navegada aqui.
 
@@ -78,8 +83,8 @@ VENDOR="/Volumes/MAC HD/Docker/xampp/www/connect/vendor" php tests/erp/render-sm
 
 ## Pendências
 
-1. **Aprovação da identidade visual** (login + dashboard) antes de replicar nos módulos.
-2. **Interfaces específicas das 165 páginas**: hoje cada rota mostra o estado "em construção" com o que a página terá e a ficha de origem. As fichas `docs/specs/pages/ap-*.md` ainda estão com campos PENDENTE; as telas seguirão o tipo (listagem, formulário, relatório, importação, configuração, documento, gráfico) sem inventar campos.
+1. **Revisão das páginas** pela prévia ou no connect.lab.
+2. **Confirmar colunas e campos**: as definições em `components/layout/page-specs.php` (gerado por `tools/erp-page-specs.py`) são propostas derivadas do nome e do domínio de cada página, avisadas na tela. As fichas `docs/specs/pages/ap-*.md` ainda estão com campos PENDENTE e precisam ser confirmadas antes do backend.
 3. **Permissões por módulo** (`erp.<módulo>.view`/`.manage`) não existem em `access_permissions`; hoje só `erp.access` é exigido. Precisa de migration e seed (frente backend).
 4. **Recuperação de senha**: `Auth::forget()` depende do template de e-mail `forget`, que por decisão de Djalma (2026-11-07) fica no container `send` (`container/send/...`, frente A4 no claude-dev), e de rota de redefinição; além disso responde de forma diferente para e-mail cadastrado e não cadastrado. A tela `/erp/recuperar-senha` explica a pendência.
 5. **Gestão do 2FA** fica no Studio (`/studio/seguranca/2fa`), que exige `studio.access`; quem só tem `erp.access` precisa de uma tela própria no ERP.
@@ -89,6 +94,6 @@ VENDOR="/Volumes/MAC HD/Docker/xampp/www/connect/vendor" php tests/erp/render-sm
 
 ## Próximas etapas
 
-1. Djalma aprova ou ajusta login + dashboard.
-2. Construir as interfaces por tipo, começando por Condomínios (listagem, cadastro, detalhe, edição, vínculos), Unidades e pessoas, e Financeiro.
+1. Djalma revisa as páginas e indica ajustes.
+2. Confirmar campos nas fichas e ligar o backend por módulo, começando por Condomínios (listagem, cadastro, detalhe, edição, vínculos), Unidades e pessoas, e Financeiro.
 3. Testes HTTP automatizados de todas as rotas autenticadas no container e relatório de cobertura atualizado.
