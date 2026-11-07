@@ -1,0 +1,68 @@
+/*
+ * ERP Connect v1 — estilos mínimos do AppShell (A2).
+ * Tokens próprios; o refinamento visual e o bundle via MovesCode Compress ficam com
+ * a frente claude-layout. Não há assets/js/ de propósito: Services/Minify/Erp.php só
+ * gera o bundle quando css/ e js/ existem.
+ */
+:root {
+    --erp-bg: #f5f7fa;
+    --erp-surface: #ffffff;
+    --erp-text: #1d2733;
+    --erp-muted: #5b6878;
+    --erp-border: #d9e0e8;
+    --erp-accent: #0f5fa8;
+    --erp-accent-contrast: #ffffff;
+    --erp-sidebar: #13263b;
+    --erp-sidebar-text: #e6edf5;
+    --erp-focus: #f2b632;
+    --erp-radius: 8px;
+    --erp-space: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body.erp-body { margin: 0; background: var(--erp-bg); color: var(--erp-text); line-height: 1.5; }
+a { color: var(--erp-accent); }
+:focus-visible { outline: 3px solid var(--erp-focus); outline-offset: 2px; }
+
+.erp-skip-link { position: absolute; left: -9999px; top: 8px; background: var(--erp-surface); padding: 8px 12px; z-index: 10; }
+.erp-skip-link:focus { left: 8px; }
+.erp-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.erp-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.erp-sidebar { background: var(--erp-sidebar); color: var(--erp-sidebar-text); padding: var(--erp-space); }
+.erp-brand { display: flex; gap: 6px; align-items: baseline; color: inherit; text-decoration: none; font-size: 1.25rem; margin-bottom: 24px; }
+.erp-brand small { opacity: .75; }
+.erp-sidebar ul { list-style: none; margin: 0; padding: 0; }
+.erp-sidebar li a { display: block; padding: 10px 12px; border-radius: var(--erp-radius); color: inherit; text-decoration: none; }
+.erp-sidebar li a:hover, .erp-sidebar li a[aria-current="page"] { background: rgba(255, 255, 255, .12); }
+
+.erp-content { display: flex; flex-direction: column; min-width: 0; }
+.erp-navbar { display: flex; justify-content: flex-end; gap: var(--erp-space); align-items: center; padding: 12px 24px; background: var(--erp-surface); border-bottom: 1px solid var(--erp-border); }
+.erp-user { color: var(--erp-muted); }
+.erp-main { padding: 24px; }
+
+.erp-page-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.erp-page-header p { margin: 0 0 24px; color: var(--erp-muted); }
+.erp-breadcrumb { margin-bottom: 12px; color: var(--erp-muted); }
+
+.erp-table-wrap { overflow-x: auto; background: var(--erp-surface); border: 1px solid var(--erp-border); border-radius: var(--erp-radius); }
+.erp-table { width: 100%; border-collapse: collapse; }
+.erp-table th, .erp-table td { text-align: left; padding: 12px var(--erp-space); border-bottom: 1px solid var(--erp-border); }
+.erp-table tbody tr:last-child td { border-bottom: 0; }
+.erp-table th { font-size: .875rem; color: var(--erp-muted); font-weight: 600; }
+
+.erp-details { display: grid; gap: 12px; background: var(--erp-surface); border: 1px solid var(--erp-border); border-radius: var(--erp-radius); padding: var(--erp-space); margin: 0; }
+.erp-details dt { font-size: .875rem; color: var(--erp-muted); }
+.erp-details dd { margin: 0; }
+
+.erp-state { background: var(--erp-surface); border: 1px solid var(--erp-border); border-radius: var(--erp-radius); padding: 24px; }
+.erp-state h1, .erp-state h2 { margin-top: 0; }
+
+@media (max-width: 768px) {
+    .erp-shell { grid-template-columns: 1fr; }
+    .erp-sidebar { padding: 12px var(--erp-space); }
+    .erp-brand { margin-bottom: 8px; }
+    .erp-sidebar ul { display: flex; gap: 8px; overflow-x: auto; }
+    .erp-main { padding: var(--erp-space); }
+}
