@@ -45,7 +45,7 @@ if (CONF_ACCESS_SITE || $developerBypass) {
     $route->group("/ops");
     $route->get("/{errcode}", "Web:error");
 }
-$supportRoutes = moves_container_path('web', CONF_VIEW_SUPPORT) . "/default.php";
+$supportRoutes = moves_container_path('web', CONF_VIEW_SUPPORT) . "/routes.php";
 if ((CONF_ACCESS_SUPPORT || $developerBypass) && is_file($supportRoutes)) {
     require $supportRoutes;
 }
@@ -58,7 +58,7 @@ require moves_container_path('studio', 'default') . "/routes.php";
 /**
  * HELP DESK ROUTES
  */
-$helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/default.php";
+$helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/routes.php";
 if (is_file($helpDeskRoutes)) {
     require $helpDeskRoutes;
 }
