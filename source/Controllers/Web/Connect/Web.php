@@ -568,15 +568,23 @@ class Web extends Controller
                 return;
             }
 
+            if (request_limit("webforget_limit", 5, 900)) {
+                $json['message'] = $this->message->warning("Muitas tentativas. Aguarde alguns minutos.")->render();
+                echo json_encode($json);
+                return;
+            }
+
+            // Mesma resposta para conta existente ou não (sem enumeração de cadastros).
+            $generic = "Se houver uma conta com esse e-mail ou CPF, enviaremos um link para criar uma nova senha.";
             if (request_repeat("webforget", $data["email"])) {
-                $json['message'] = $this->message->error("Ooops! Você já tentou este e-mail antes")->render();
+                $json["message"] = $this->message->success($generic)->render();
                 echo json_encode($json);
                 return;
             }
 
             $auth = new Auth();
             if ($auth->forget($data["email"])) {
-                $json["message"] = $this->message->success("Acesse seu e-mail para recuperar a senha")->render();
+                $json["message"] = $this->message->success($generic)->render();
             } else {
                 $json["message"] = $auth->message()->before("Ooops! ")->render();
             }
@@ -621,12 +629,17 @@ class Web extends Controller
                 return;
             }
 
-            list($code, $email) = explode(":", $data["code"]);
-            $auth = new Auth();
+            if (request_limit("webreset_limit", 10, 900)) {
+                $json['message'] = $this->message->warning("Muitas tentativas. Aguarde alguns minutos.")->render();
+                echo json_encode($json);
+                return;
+            }
 
-            if ($auth->reset($email, $code, $data["password"], $data["password_re"])) {
+            // O link leva só o token (sem e-mail); o formato é validado no serviço.
+            $auth = new Auth();
+            if ($auth->resetWithToken((string)($data["code"] ?? ""), $data["password"], $data["password_re"])) {
                 $this->message->success("Senha alterada com sucesso.")->flash();
-                $json["redirect"] = url("/login");
+                $json["redirect"] = url("/studio/login");
             } else {
                 $json["message"] = $auth->message()->before("Ooops! ")->render();
             }
@@ -635,11 +648,18 @@ class Web extends Controller
             return;
         }
 
+        if (!(new Auth())->resetTokenIsValid((string)($data["code"] ?? ""))) {
+            $this->message->error("O link de recuperação é inválido ou expirou. Solicite um novo.")->flash();
+            redirect("/forget");
+            return;
+        }
+
         $head = $this->seo->render(
             "Crie sua nova senha no " . CONF_SITE_NAME,
             CONF_SITE_DESC,
             url("/forget"),
-            theme("/assets/images/share.jpg")
+            theme("/assets/images/share.jpg"),
+            false
         );
 
         echo $this->view->render("pages/login/reset", [

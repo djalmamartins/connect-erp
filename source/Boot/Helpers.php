@@ -395,7 +395,8 @@ function moves_container_theme(string $area, string $theme): string
         // legada 20260829_canonical_container_paths.sql e continua aceito.
         'erp' => ['default' => 'connect'],
         'residents' => ['app_connect' => 'default'],
-        'mail' => ['mail' => 'default'],
+        // A4: e-mails ficam no ambiente send (container/send/{tema}/v1); 'mail' é o nome legado.
+        'send' => ['mail' => 'default', 'send' => 'default'],
     ];
 
     return $aliases[$area][$theme] ?? $theme;
@@ -414,6 +415,9 @@ function moves_container_path(string $area, string $theme): string
     }
     if ($area === 'erp') {
         return dirname(__DIR__, 2) . "/container/erp/" . moves_erp_theme($theme) . "/v1";
+    }
+    if ($area === 'send' || $area === 'mail') {
+        return dirname(__DIR__, 2) . "/container/send/" . moves_send_theme($theme) . "/v1";
     }
     $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
@@ -436,6 +440,9 @@ function moves_container_url(string $area, string $theme, ?string $path = null):
     if ($area === 'erp') {
         return url("container/erp/" . moves_erp_theme($theme) . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
     }
+    if ($area === 'send' || $area === 'mail') {
+        return url("container/send/" . moves_send_theme($theme) . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
+    }
     $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
         : $area;
@@ -450,8 +457,19 @@ function moves_container_url(string $area, string $theme, ?string $path = null):
  */
 function moves_erp_theme(string $theme): string
 {
-    $theme = moves_container_theme('erp', strtolower(trim($theme)));
-    return preg_match('~^[a-z0-9_-]+$~', $theme) ? $theme : 'connect';
+    return moves_safe_theme('erp', $theme, 'connect');
+}
+
+/** Tema de e-mail vindo de settings.view_mail, com a mesma restrição do ERP (A4). */
+function moves_send_theme(string $theme): string
+{
+    return moves_safe_theme('send', $theme, 'default');
+}
+
+function moves_safe_theme(string $area, string $theme, string $fallback): string
+{
+    $theme = moves_container_theme($area, strtolower(trim($theme)));
+    return preg_match('~^[a-z0-9_-]+$~', $theme) ? $theme : $fallback;
 }
 
 function theme(?string $path = null, string $theme = CONF_VIEW_THEME): string

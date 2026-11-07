@@ -21,6 +21,7 @@ abstract class TestCase extends PHPUnitTestCase
                 self::markTestSkipped('Integração exige MariaDB (MOVESOS_TEST_DB_DISABLED=1).');
             }
         } else {
+            self::assertIsolatedTestDatabase();
             $this->pdo = Connect::getInstance();
             $this->resetDatabase();
         }
@@ -52,10 +53,27 @@ abstract class TestCase extends PHPUnitTestCase
         return (int)$this->pdo->lastInsertId();
     }
 
+    /**
+     * Trava de segurança: resetDatabase() faz TRUNCATE em users, posts, pages etc.
+     * Chamar vendor/bin/phpunit direto carrega o Config.php antes de MOVESOS_ENV=testing
+     * valer e conecta no banco do app (incidente de 2026-11-07, connect_legacy zerado).
+     * Por isso a suíte para aqui se o boot não estiver em modo testing ou se o banco
+     * conectado não terminar em _test.
+     */
+    private static function assertIsolatedTestDatabase(): void
+    {
+        $environment = defined('CONF_APP_ENV') ? CONF_APP_ENV : '';
+        $database = defined('CONF_DB_NAME') ? (string)CONF_DB_NAME : '';
+        if ($environment !== 'testing' || !preg_match('/_test$/', $database)) {
+            fwrite(STDERR, "\nSuíte abortada: banco '{$database}' (ambiente '{$environment}') não é um banco de teste. Use composer test:legacy, test:unit ou test:integration.\n");
+            exit(2);
+        }
+    }
+
     private function resetDatabase(): void
     {
         $this->pdo->exec('SET FOREIGN_KEY_CHECKS=0');
-        foreach (['user_recovery_codes','user_two_factor','user_condominium_access','condominiums','studio_support_ticket_attachments','studio_support_ticket_events','studio_support_templates','studio_support_ticket_messages','studio_support_tickets','studio_calendar_events','movesos_versions','notifications','notification_messages','notifications_categories','mail_queue','support_articles','support_categories','faq_questions','faq_channels','posts','pages','categories','access_user_overrides','access_user_roles','access_role_permissions','access_permissions','access_roles','system_audit_logs','app_log','users'] as $table) {
+        foreach (['user_password_resets','user_recovery_codes','user_two_factor','user_condominium_access','condominiums','studio_support_ticket_attachments','studio_support_ticket_events','studio_support_templates','studio_support_ticket_messages','studio_support_tickets','studio_calendar_events','movesos_versions','notifications','notification_messages','notifications_categories','mail_queue','support_articles','support_categories','faq_questions','faq_channels','posts','pages','categories','access_user_overrides','access_user_roles','access_role_permissions','access_permissions','access_roles','system_audit_logs','app_log','users'] as $table) {
             $this->pdo->exec("TRUNCATE TABLE {$table}");
         }
         $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1');
