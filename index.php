@@ -30,6 +30,16 @@ $route->get("/health", static function (): void {
     }
 });
 
+/**
+ * API REST v1 (sessão do Organic Code; 2FA obrigatório quando ativo)
+ */
+$route->namespace("Source\\Controllers\\Api\\V1");
+$route->post("/auth/2fa/verify", "TwoFactor:verify");
+$route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->namespace(null);
+
 
 /**
  * WEB ROUTES
