@@ -170,7 +170,7 @@ conexão vira erro fatal em vez de mensagem clara.
 nível, inclusive para nível ≥ 5) quando a permissão não está cadastrada **e** quando a
 consulta falha por exceção. Para módulos financeiros isso é inaceitável. Adaptação: A3.
 
-**C10. Pastas `organic/` e `src/`.** Resolvido em 2026-11-07 (ADR 0003): a distribuição
+**C10. Pastas `organic/` e `src/`.** Resolvido em 2026-11-07 (ADR 0004, `docs/Organic Code/decisions/0004-organic-shared-assets.md`): a distribuição
 Organic foi movida para `container/shared/assets/organic/`, layouts WEB/Suporte e
 `Services/Minify/{App,Erp}.php` foram atualizados, e `src/` (vazia, não versionada) foi removida.
 
