@@ -1,10 +1,73 @@
 openapi: 3.1.0
 info:
   title: Connect ERP API
-  version: 0.1.0
-  description: Contrato inicial; autenticação reutilizará o núcleo Organic Code.
+  version: 0.2.0
+  description: |
+    API REST do Connect ERP sobre o núcleo Organic Code. Administradora única (ADR-002):
+    todo dado de condomínio é limitado ao escopo do usuário no servidor.
+    Autenticação pela sessão do Organic Code (cookie). Quando o usuário tem 2FA ativo,
+    a sessão só é autenticada depois de POST /auth/2fa/verify.
+    Métodos que alteram estado exigem o cabeçalho X-CSRF-Token com o token da sessão.
 servers:
   - url: /api/v1
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: PHPSESSID
+      description: Sessão do Organic Code já elevada pelo segundo fator quando exigido.
+    csrf:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_code] }
+            message: { type: string }
+    Condominium:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string, maxLength: 160 }
+        document: { type: [string, 'null'], pattern: '^\d{14}$', description: CNPJ somente dígitos }
+        status: { type: string, enum: [active, inactive] }
+    Me:
+      type: object
+      required: [id, name, email, two_factor_enabled, condominiums]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        role:
+          type: [object, 'null']
+          properties:
+            slug: { type: string }
+            name: { type: string }
+        two_factor_enabled: { type: boolean }
+        condominiums:
+          type: object
+          required: [all, items]
+          properties:
+            all: { type: boolean, description: Usuário com erp.condominiums.all explícito }
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Condominium' }
+  responses:
+    Unauthenticated:
+      description: Sessão ausente ou ainda sem o segundo fator
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Sem permissão
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
 paths:
   /health:
     get:
@@ -14,3 +77,95 @@ paths:
       responses:
         '200': { description: Serviço pronto }
         '503': { description: Dependência indisponível }
+  /auth/2fa/verify:
+    post:
+      operationId: verifyTwoFactor
+      summary: Conclui um login pendente com código TOTP ou de recuperação
+      description: Exige um login com senha válida feito antes nesta sessão. Limite de 6 tentativas a cada 5 minutos e 5 por desafio.
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, description: '6 dígitos TOTP ou código de recuperação xxxxx-xxxxx' }
+      responses:
+        '200':
+          description: Sessão autenticada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { authenticated: { const: true } } }
+        '409':
+          description: Não há verificação pendente
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '419':
+          description: Token CSRF ausente ou inválido
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: Código inválido
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '429':
+          description: Muitas tentativas
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /me:
+    get:
+      operationId: getMe
+      summary: Usuário autenticado, papel, 2FA e condomínios permitidos
+      security: [{ session: [] }]
+      responses:
+        '200':
+          description: Usuário atual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /condominiums:
+    get:
+      operationId: listCondominiums
+      summary: Condomínios ativos dentro do escopo do usuário
+      description: Requer erp.condominiums.view. Retorna só os vinculados ao usuário, ou todos com erp.condominiums.all explícito.
+      security: [{ session: [] }]
+      responses:
+        '200':
+          description: Lista de condomínios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Condominium' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /condominiums/{id}:
+    get:
+      operationId: getCondominium
+      summary: Um condomínio do escopo do usuário
+      description: Fora do escopo responde 404 para não revelar a existência do registro; a negação é registrada em log.
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Condomínio
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Condominium' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Não encontrado ou fora do escopo
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

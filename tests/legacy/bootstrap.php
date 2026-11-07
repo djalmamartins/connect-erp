@@ -181,3 +181,11 @@ $pdo->exec("ALTER TABLE mail_queue
 $pdo->exec("ALTER TABLE movesos_versions MODIFY product ENUM('web','app','studio','erp','support') NOT NULL");
 $pdo->exec("ALTER TABLE studio_support_tickets MODIFY created_by INT UNSIGNED NULL,ADD COLUMN IF NOT EXISTS requester_name VARCHAR(160) NULL AFTER requester_id,ADD COLUMN IF NOT EXISTS requester_email VARCHAR(190) NULL AFTER requester_name,ADD COLUMN IF NOT EXISTS access_token CHAR(64) NULL AFTER requester_email,ADD COLUMN IF NOT EXISTS team VARCHAR(100) NULL AFTER assigned_to,ADD COLUMN IF NOT EXISTS category VARCHAR(100) NULL AFTER area,ADD COLUMN IF NOT EXISTS tags VARCHAR(500) NULL AFTER category,ADD COLUMN IF NOT EXISTS first_response_at DATETIME NULL AFTER due_at,ADD COLUMN IF NOT EXISTS work_seconds INT UNSIGNED NOT NULL DEFAULT 0 AFTER first_response_at");
 $pdo->exec("ALTER TABLE studio_support_ticket_attachments MODIFY user_id INT UNSIGNED NULL");
+
+// Migrations do Connect ERP (depois do esquema base, pois usam FK para users/access_*): aplicadas no banco _test a cada execução (instalação limpa idempotente).
+foreach (array_filter(glob(dirname(__DIR__, 2) . '/database/migrations/*.sql') ?: [], static fn(string $file): bool => !str_ends_with($file, '.down.sql')) as $migration) {
+    $sql = trim((string)file_get_contents($migration));
+    if ($sql !== '') {
+        $pdo->exec($sql);
+    }
+}

@@ -96,12 +96,5 @@ $pdo->exec("INSERT INTO settings
     VALUES (1,1,'MovesOS Test','MovesOS Test','Ambiente automatizado','pt_BR','https://localhost','default','support','default','default','default','default','default','MovesOS Test','test@localhost','pt_BR','1','0','UTF-8','test','/','America/Sao_Paulo',1,1,1)
     ON DUPLICATE KEY UPDATE site_name=VALUES(site_name),timezone_set=VALUES(timezone_set),access_studio=1,access_erp=1,access_app=1,access_site=1,access_support=1");
 
-// Migrations do Connect ERP: aplicadas no banco _test a cada execução (instalação limpa idempotente).
-foreach (array_filter(glob(dirname(__DIR__, 2) . '/database/migrations/*.sql') ?: [], static fn(string $file): bool => !str_ends_with($file, '.down.sql')) as $migration) {
-    $sql = trim((string)file_get_contents($migration));
-    if ($sql !== '') {
-        $pdo->exec($sql);
-    }
-}
 putenv('CONNECT_2FA_KEY=' . base64_encode(str_repeat("\x07", 32)));
 putenv('CONNECT_2FA_ENFORCE_FROM');
