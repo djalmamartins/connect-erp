@@ -4,6 +4,10 @@
 .local/
 .claude/.cc-writes/
 vendor/
+!container/shared/assets/vendor/
+!container/shared/assets/vendor/**
+!container/cms/studio/v1/assets/vendor/
+!container/cms/studio/v1/assets/vendor/**
 node_modules/
 .DS_Store
 *.log

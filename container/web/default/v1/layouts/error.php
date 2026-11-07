@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <?= $head; ?>
     <link rel="icon" type="image/png" href="<?= theme("/assets/images/favicon.png"); ?>"/>
-    <link rel="stylesheet" href="<?= url('/organic/organic.min.css') . '?v=' . filemtime(dirname(__DIR__, 4) . '/organic/organic.min.css') ?>"/>
-    <link rel="stylesheet" href="<?= url('/organic/compat-v1.css') . '?v=' . filemtime(dirname(__DIR__, 4) . '/organic/compat-v1.css') ?>"/>
+    <link rel="stylesheet" href="<?= url('/organic/organic.min.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/organic/organic.min.css') ?>"/>
+    <link rel="stylesheet" href="<?= url('/organic/compat-v1.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/organic/compat-v1.css') ?>"/>
     <link rel="stylesheet" href="<?= theme('/assets/style.css') . '?v=' . filemtime(__DIR__ . '/../assets/style.css') ?>"/>
     <link rel="stylesheet" href="<?= theme('/assets/responsive.css') . '?v=' . filemtime(__DIR__ . '/../assets/responsive.css') ?>"/>
     <link rel="stylesheet" href="<?= theme('/assets/pages.css') . '?v=' . filemtime(__DIR__ . '/../assets/pages.css') ?>"/>
@@ -38,8 +38,8 @@
 
 <!--MODALS-->
 <?= $this->insert("pages/modals", $this->data); ?>
-<script src="<?= url('/organic/organic.global.min.js') . '?v=' . filemtime(dirname(__DIR__, 4) . '/organic/organic.global.min.js') ?>"></script>
-<script src="<?= url('/organic/compat-v1.js') . '?v=' . filemtime(dirname(__DIR__, 4) . '/organic/compat-v1.js') ?>"></script>
+<script src="<?= url('/organic/organic.global.min.js') . '?v=' . filemtime(dirname(__DIR__, 5) . '/organic/organic.global.min.js') ?>"></script>
+<script src="<?= url('/organic/compat-v1.js') . '?v=' . filemtime(dirname(__DIR__, 5) . '/organic/compat-v1.js') ?>"></script>
 <script src="<?= theme("/assets/scripts.js"); ?>"></script>
 <?= $this->section("scripts"); ?>
 </body>
