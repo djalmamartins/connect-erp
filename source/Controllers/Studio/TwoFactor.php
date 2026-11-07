@@ -56,19 +56,20 @@ final class TwoFactor extends Controller
                     return;
                 }
                 (new \Source\Core\Session())->set("auth2faRecoveryCodes", $codes);
-                echo json_encode(["redirect" => url("/studio/seguranca/2fa?novo=1")]);
+                // O ERP mostra os códigos na própria moldura: quem só tem erp.access não abre o Studio.
+                echo json_encode(["redirect" => url($next === "/erp" ? "/erp/seguranca/codigos" : "/studio/seguranca/2fa?novo=1")]);
                 return;
             }
             if (!$auth->completeTwoFactor($code, $twoFactor)) {
                 echo json_encode(["message" => $auth->message()->render()]);
                 return;
             }
-            if (!AccessControl::can("studio.access", Auth::user())) {
+            if (!AccessControl::can($next === "/erp" ? "erp.access" : "studio.access", Auth::user())) {
                 Auth::logout();
                 echo json_encode(["message" => $this->message->warning("Sua conta não possui acesso a este ambiente.")->render()]);
                 return;
             }
-            echo json_encode(["redirect" => url($next === "/helpdesk" ? "/helpdesk/tickets" : "/studio/dash")]);
+            echo json_encode(["redirect" => url(match ($next) { "/helpdesk" => "/helpdesk/tickets", "/erp" => "/erp/dashboard", default => "/studio/dash" })]);
             return;
         }
 
@@ -175,6 +176,10 @@ final class TwoFactor extends Controller
 
     private function next(mixed $value): string
     {
-        return $value === "helpdesk" || $value === "/helpdesk" ? "/helpdesk" : "/studio";
+        return match ($value) {
+            "helpdesk", "/helpdesk" => "/helpdesk",
+            "erp", "/erp" => "/erp",
+            default => "/studio",
+        };
     }
 }

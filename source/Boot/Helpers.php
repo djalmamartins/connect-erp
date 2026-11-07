@@ -17,6 +17,22 @@ function is_email(string $email): bool
 }
 
 /**
+ * Formata CNPJ de 14 dígitos (00.000.000/0000-00); vazio vira "—" e outros valores
+ * são devolvidos sem alteração (o escape fica na view).
+ */
+function format_cnpj(?string $document): string
+{
+    $digits = preg_replace('/\D/', '', (string)$document);
+    if ($digits === '') {
+        return '—';
+    }
+    if (strlen($digits) !== 14) {
+        return (string)$document;
+    }
+    return substr($digits, 0, 2) . '.' . substr($digits, 2, 3) . '.' . substr($digits, 5, 3) . '/' . substr($digits, 8, 4) . '-' . substr($digits, 12, 2);
+}
+
+/**
  * @param string $document
  * @return bool
  */
@@ -375,7 +391,9 @@ function moves_container_theme(string $area, string $theme): string
     $aliases = [
         'web' => ['connect_by_moves' => 'default', 'support_by_moves' => 'support'],
         'studio' => ['moves_studio' => 'studio', 'default' => 'studio'],
-        'erp' => ['connect' => 'default'],
+        // A1: o tema ERP real é container/erp/connect/v1; 'default' vem da migration
+        // legada 20260829_canonical_container_paths.sql e continua aceito.
+        'erp' => ['default' => 'connect'],
         'residents' => ['app_connect' => 'default'],
         'mail' => ['mail' => 'default'],
     ];
@@ -394,7 +412,10 @@ function moves_container_path(string $area, string $theme): string
     if ($area === 'helpdesk') {
         return dirname(__DIR__, 2) . "/container/cms/helpdesk/v1";
     }
-    $section = in_array($area, ['studio', 'helpdesk', 'erp', 'residents'], true)
+    if ($area === 'erp') {
+        return dirname(__DIR__, 2) . "/container/erp/" . moves_erp_theme($theme) . "/v1";
+    }
+    $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
         : $area;
 
@@ -412,12 +433,25 @@ function moves_container_url(string $area, string $theme, ?string $path = null):
     if ($area === 'helpdesk') {
         return url("container/cms/helpdesk/v1" . ($path ? "/" . ltrim($path, "/") : ""));
     }
-    $section = in_array($area, ['studio', 'helpdesk', 'erp', 'residents'], true)
+    if ($area === 'erp') {
+        return url("container/erp/" . moves_erp_theme($theme) . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
+    }
+    $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
         : $area;
     $theme = moves_container_theme($area, $theme);
 
     return url("container/{$section}/{$theme}" . ($path ? "/" . ltrim($path, "/") : ""));
+}
+
+/**
+ * Nome do tema ERP vindo de settings.view_erp, resolvido por alias e restrito a
+ * [a-z0-9_-] para que um valor inválido no banco não monte caminhos fora de container/erp.
+ */
+function moves_erp_theme(string $theme): string
+{
+    $theme = moves_container_theme('erp', strtolower(trim($theme)));
+    return preg_match('~^[a-z0-9_-]+$~', $theme) ? $theme : 'connect';
 }
 
 function theme(?string $path = null, string $theme = CONF_VIEW_THEME): string

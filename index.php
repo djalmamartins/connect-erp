@@ -84,7 +84,8 @@ if (is_file($appRoutes)) {
 /**
  * ERP ROUTES
  */
-$erpRoutes = moves_container_path('erp', CONF_VIEW_ERP) . "/default.php";
+// A1: default.php é a moldura do tema; as rotas ficam em routes.php.
+$erpRoutes = moves_container_path('erp', CONF_VIEW_ERP) . "/routes.php";
 if (is_file($erpRoutes)) {
     require $erpRoutes;
 }

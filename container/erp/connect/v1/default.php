@@ -1,3 +1,47 @@
 <?php
-declare(strict_types=1);
-// Placeholder do contrato de tema. Inspecionar a API MovesCode View antes de substituir.
+/**
+ * Moldura única do Connect ERP v1 (sem layouts/ paralelos).
+ * As páginas chamam $this->layout('default') e preenchem a seção 'content'.
+ * Dados vêm de Erp\Connect\Panel::layoutData(): $head, $title, $user, $catalog,
+ * $currentPageId, $currentGroup, $breadcrumbs, $demo, $notifications, $icon, $anchor.
+ */
+$erpAsset = static function (string $path): string {
+    $file = __DIR__ . $path;
+    return themeErp($path) . '?v=' . (is_file($file) ? filemtime($file) : 0);
+};
+$searchIndex = [];
+foreach ($catalog['pages'] as $id => $page) {
+    $searchIndex[] = ['n' => $page['name'], 'g' => $catalog['groups'][$page['group']]['label'] . ($page['section'] ? ' · ' . $page['section'] : ''), 'u' => url('/erp' . $page['route'])];
+}
+?>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <?= $head ?? '' ?>
+    <link rel="icon" href="<?= theme('/assets/images/favicon-32x32.png') ?>">
+    <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css') ?>">
+</head>
+<body class="erp-body">
+<a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
+<?php if ($withNavigation ?? true): ?>
+<div class="erp-shell" data-erp-shell>
+    <?php $this->insert('components/sidebar/sidebar'); ?>
+    <div class="erp-content">
+        <?php $this->insert('components/navbar/navbar'); ?>
+        <main id="erp-main" class="erp-main" tabindex="-1">
+            <?= $this->section('content') ?>
+        </main>
+    </div>
+</div>
+<?php else: ?>
+<main id="erp-main" class="erp-main" tabindex="-1"><?= $this->section('content') ?></main>
+<?php endif; ?>
+<div class="erp-toasts" data-erp-toasts role="status" aria-live="polite"></div>
+<script type="application/json" id="erp-search-index"><?= json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= $erpAsset('/assets/js/erp.js') ?>" defer></script>
+<?= $this->section('scripts') ?>
+</body>
+</html>
