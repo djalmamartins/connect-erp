@@ -27,6 +27,7 @@ namespace Source\Services\Erp\Registry;
  * ADR 0020 — quem é apontado não pode ser excluído enquanto houver registro ativo apontando).
  *
  * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
+ * 'base_where' + 'fixed' (ADR 0024): visão filtrada de outra tabela, que grava sempre os valores fixos.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  */
 final class Definitions
@@ -502,6 +503,31 @@ final class Definitions
                 'order' => 'due_on',
             ],
         ];
+
+        // Contas a pagar (AP-022) e a receber (AP-023), ADR 0024: visões dos lançamentos em aberto
+        // (sem segunda tabela). Gravam sempre a natureza da visão; preencher "Pago em" dá baixa e o
+        // lançamento sai da visão (continua em Lançamentos). Mesmas permissões de erp.entries.
+        foreach ([
+            'payables' => ['AP-022', 'despesa', '/financeiro/contas-a-pagar', 'payables', 'Contas a pagar', 'conta a pagar', 'Despesas em aberto, por vencimento. Informe "Pago em" e a conta bancária para dar baixa.'],
+            'receivables' => ['AP-023', 'receita', '/financeiro/contas-a-receber', 'receivables', 'Contas a receber', 'conta a receber', 'Receitas em aberto, por vencimento. Informe "Pago em" e a conta bancária para dar baixa.'],
+        ] as $slug => [$page, $nature, $route, $api, $label, $entity, $lead]) {
+            $fields = $definitions['entries']['fields'];
+            unset($fields['nature']);
+            $fields['chart_account_id']['ref_where']['nature'] = $nature;
+            $fields['paid_on']['hint'] = 'Preencha para dar baixa';
+            $definitions[$slug] = [
+                'page' => $page, 'table' => 'erp_entries', 'route' => $route, 'api' => $api,
+                'permission' => 'erp.entries', 'label' => $label, 'entity' => $entity, 'gender' => 'a',
+                'scope' => 'required', 'group' => 'financeiro', 'lead' => $lead,
+                'status' => $definitions['entries']['status'],
+                'fields' => $fields,
+                'base_where' => ['nature' => $nature, 'paid_on' => null],
+                'fixed' => ['nature' => $nature],
+                'requires' => $definitions['entries']['requires'],
+                'title' => 'description',
+                'order' => 'due_on',
+            ];
+        }
 
         foreach ($definitions as $slug => &$definition) {
             $definition['slug'] = $slug;

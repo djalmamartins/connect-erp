@@ -447,6 +447,58 @@ components:
             condominium_name: { type: [string, "null"] }
             created_at: { type: string }
             updated_at: { type: string }
+    PayablesInput:
+      type: object
+      required: [condominium_id, competence, description, amount_cents, chart_account_id, due_on]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        competence: { type: [string, "null"], maxLength: 7 }
+        description: { type: [string, "null"], maxLength: 160 }
+        amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
+        cost_center_id: { type: [integer, "null"], minimum: 1, description: 'ID de /cost-centers ativo, do plano padrão ou do mesmo condomínio.' }
+        due_on: { type: [string, "null"], format: date }
+        paid_on: { type: [string, "null"], format: date }
+        bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
+        supplier_id: { type: [integer, "null"], minimum: 1, description: 'ID de /suppliers ativo.' }
+        document_number: { type: [string, "null"], maxLength: 40 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Payables:
+      allOf:
+        - $ref: '#/components/schemas/PayablesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    ReceivablesInput:
+      type: object
+      required: [condominium_id, competence, description, amount_cents, chart_account_id, due_on]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        competence: { type: [string, "null"], maxLength: 7 }
+        description: { type: [string, "null"], maxLength: 160 }
+        amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
+        cost_center_id: { type: [integer, "null"], minimum: 1, description: 'ID de /cost-centers ativo, do plano padrão ou do mesmo condomínio.' }
+        due_on: { type: [string, "null"], format: date }
+        paid_on: { type: [string, "null"], format: date }
+        bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
+        supplier_id: { type: [integer, "null"], minimum: 1, description: 'ID de /suppliers ativo.' }
+        document_number: { type: [string, "null"], maxLength: 40 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Receivables:
+      allOf:
+        - $ref: '#/components/schemas/ReceivablesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
 paths:
   /units:
     get:
@@ -1486,6 +1538,120 @@ paths:
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     delete:
       tags: ['Lançamentos']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /payables:
+    get:
+      tags: ['Contas a pagar']
+      summary: 'Lista contas a pagar (permissão erp.entries.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Payables' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Contas a pagar']
+      summary: 'Cadastra (permissão erp.entries.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PayablesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /payables/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Contas a pagar']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Contas a pagar']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PayablesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Contas a pagar']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PayablesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Contas a pagar']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /receivables:
+    get:
+      tags: ['Contas a receber']
+      summary: 'Lista contas a receber (permissão erp.entries.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Receivables' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Contas a receber']
+      summary: 'Cadastra (permissão erp.entries.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivablesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /receivables/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Contas a receber']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Contas a receber']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivablesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Contas a receber']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivablesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Contas a receber']
       summary: Exclusão lógica (o histórico de auditoria é mantido)
       security: [{ session: [], csrf: [] }]
       responses:

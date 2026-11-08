@@ -429,6 +429,42 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /bank-accounts/balances:
+    get:
+      operationId: listBankAccountBalances
+      summary: Saldo calculado de cada conta bancária do escopo (ADR 0024)
+      description: |
+        Saldo inicial + receitas pagas − despesas pagas, só com lançamentos válidos e pagos a partir
+        da data do saldo inicial. Exige erp.bank_accounts.view e erp.entries.view. Somente leitura.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        condominium_id: { type: integer }
+                        condominium_name: { type: [string, "null"] }
+                        name: { type: string }
+                        is_main: { type: boolean }
+                        opening_cents: { type: integer }
+                        opened_on: { type: [string, "null"], format: date }
+                        received_cents: { type: integer }
+                        paid_cents: { type: integer }
+                        balance_cents: { type: integer, description: Pode ser negativo }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates

@@ -162,7 +162,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(18, Definitions::all());
+        self::assertCount(20, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }

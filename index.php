@@ -46,6 +46,10 @@ $route->get("/onboarding/templates", "OnboardingTemplates:index", null, \Source\
 $route->post("/onboarding/templates", "OnboardingTemplates:create", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->patch("/onboarding/templates/{id}", "OnboardingTemplates:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
+// Saldo calculado das contas bancárias (ADR 0024). Antes do laço dos cadastros: /bank-accounts/{id}
+// capturaria "balances".
+$route->get("/bank-accounts/balances", "BankBalances:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
     $registryPath = "/" . $registryDefinition["api"];

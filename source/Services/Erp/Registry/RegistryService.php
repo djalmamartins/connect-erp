@@ -135,6 +135,9 @@ final class RegistryService
         }
 
         [$values, $errors] = RegistryValidator::validate($definition, $input);
+        // 'fixed' (ADR 0024): colunas que a visão grava sempre com o mesmo valor (ex.: natureza
+        // despesa em contas a pagar). Não vêm do formulário e não podem ser trocadas pela entrada.
+        $values = array_merge($values, $definition['fixed'] ?? []);
         if ($definition['scope'] !== 'none' && !isset($errors['condominium_id'])) {
             $condominium = $values['condominium_id'] ?? null;
             if ($condominium !== null && !$this->scope->canAccess($user, (int)$condominium)) {
@@ -349,6 +352,16 @@ final class RegistryService
     {
         $where = ['t.deleted_at IS NULL'];
         $params = [];
+        // 'base_where' (ADR 0024): visão filtrada de outra tabela (ex.: contas a pagar = despesas em
+        // aberto de erp_entries). null = IS NULL. Vale para listagem, leitura, edição e exclusão.
+        foreach ($definition['base_where'] ?? [] as $column => $value) {
+            if ($value === null) {
+                $where[] = "t.`{$column}` IS NULL";
+            } else {
+                $where[] = "t.`{$column}` = :bw_{$column}";
+                $params["bw_{$column}"] = $value;
+            }
+        }
         if ($definition['scope'] === 'none') {
             return [$where, $params];
         }
