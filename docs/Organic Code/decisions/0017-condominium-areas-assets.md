@@ -1,4 +1,4 @@
-# 0016 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros
+# 0017 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros
 
 Data: 2026-11-08 · Status: aceito (campos PROPOSTOS, aguardam revisão do Djalma)
 

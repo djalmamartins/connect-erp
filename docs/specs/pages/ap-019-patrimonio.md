@@ -32,7 +32,7 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
 
-## Implementação Connect ERP (08/11/2026, ADR 0015)
+## Implementação Connect ERP (08/11/2026, ADR 0017)
 
 - **Situação:** implementado com MariaDB pelo motor de cadastros (ADR 0014); campos PROPOSTOS, aguardam confirmação.
 - **Tela:** `/erp/condominios/patrimonio` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/assets`.

@@ -222,7 +222,7 @@ foreach ($catalog['pages'] as $id => $page) {
 }
 
 // Links internos apontam para rotas registradas
-$registered = [$erpPrefix . '/dashboard' => true, $erpPrefix . '/configuracoes' => true, $erpPrefix . '/login' => true, $erpPrefix . '/sair' => true];
+$registered = [$erpPrefix . '/seguranca' => true, $erpPrefix . '/dashboard' => true, $erpPrefix . '/configuracoes' => true, $erpPrefix . '/login' => true, $erpPrefix . '/sair' => true];
 foreach ($catalog['pages'] as $p) $registered[$erpPrefix . $p['route']] = true;
 foreach ($catalog['groups'] as $g) if ($g['prefix'] !== '') $registered[$erpPrefix . $g['prefix']] = true;
 $registered['/studio/seguranca/2fa'] = true; // registrada também no host do ERP (index.php)
@@ -235,8 +235,14 @@ foreach ([[403, false], [404, true]] as [$code, $nav]) {
     $assert(str_contains($html, "Erro $code"), "estado $code");
     $assert($nav === str_contains($html, 'erp-sidebar"'), "estado $code: navegação " . ($nav ? 'visível' : 'oculta'));
 }
-$data = $layoutData->invoke($panel, $user, null, ['recoveryCodes' => ['AAAA-BBBB', 'CCCC-DDDD']], 'Códigos de recuperação');
-$assert(str_contains($render('pages/auth/recovery-codes', $data), 'CCCC-DDDD'), 'códigos de recuperação');
+// Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
+$security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
+$html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
+$assert(str_contains($html, 'AAAA-BBBB') && str_contains($html, '&lt;b&gt;x&lt;/b&gt;') && str_contains($html, 'value="recovery"') && str_contains($html, 'value="disable"'), 'segurança: 2FA ativo, códigos escapados, renovar e desativar');
+$assert(!str_contains($security(['twoFactorEnabled' => true, 'twoFactorEnforced' => true]), 'value="disable"'), 'segurança: 2FA obrigatório não oferece desativar');
+$html = $security(['twoFactorSetup' => ['secret' => 'JBSWY3DPEHPK3PXP', 'uri' => 'otpauth://totp/Connect%20ERP:ana?secret=JBSWY3DPEHPK3PXP']]);
+$assert(str_contains($html, 'JBSW Y3DP EHPK 3PXP') && str_contains($html, 'value="confirm"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'segurança: configuração com chave, código e CSRF');
+$assert(str_contains($security(['twoFactorConfigured' => false]), 'CONNECT_2FA_KEY'), 'segurança: servidor sem chave avisa o administrador');
 
 // Demonstração desligada: dashboard mostra estado vazio
 putenv('ERP_DEMO_DATA=false');
