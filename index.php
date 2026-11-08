@@ -38,6 +38,10 @@ $route->post("/auth/2fa/verify", "TwoFactor:verify");
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums/{id}/onboarding", "CondominiumOnboarding:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/condominiums/{id}/onboarding", "CondominiumOnboarding:start", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/condominiums/{id}/onboarding/items", "CondominiumOnboarding:add", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->patch("/condominiums/{id}/onboarding/items/{item}", "CondominiumOnboarding:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

@@ -21,7 +21,7 @@ $this->insert('components/layout/page-head', [
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($errors['_form'] ?? 'Revise os campos destacados.') ?></strong><?= count(array_diff_key($errors, ['_form' => 1])) > 0 ? count(array_diff_key($errors, ['_form' => 1])) . ' campo(s) com problema.' : '' ?></div></div>
 <?php endif; ?>
 <?php if ($definition['scope'] !== 'none' && $condominiums === [] && $isNew): ?>
-    <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.</div></div>
+    <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><?php if ($user->can('erp.condominiums.manage')): ?>Nenhum condomínio ativo cadastrado. <a href="<?= erp_url('/condominios/novo') ?>">Cadastre um condomínio</a> antes de continuar.<?php else: ?>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.<?php endif; ?></div></div>
 <?php endif; ?>
 
 <div class="erp-grid erp-grid--main">

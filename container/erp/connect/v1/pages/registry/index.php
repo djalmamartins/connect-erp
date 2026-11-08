@@ -62,7 +62,7 @@ $this->insert('components/layout/page-head', [
             <div class="erp-empty" role="status">
                 <span class="erp-empty__icon"><?= $icon('users') ?></span>
                 <h3><?= $filtered ? 'Nenhum registro encontrado' : 'Nenhum registro ainda' ?></h3>
-                <p><?= $filtered ? 'Ajuste os filtros ou limpe a pesquisa.' : ($hasCondominium && $condominiums === [] ? 'Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.' : 'Cadastre o primeiro registro para começar.') ?></p>
+                <p><?= $filtered ? 'Ajuste os filtros ou limpe a pesquisa.' : ($hasCondominium && $condominiums === [] ? ($user->can('erp.condominiums.manage') ? 'Cadastre um condomínio em Condomínios › Novo condomínio para começar.' : 'Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.') : 'Cadastre o primeiro registro para começar.') ?></p>
                 <?php if ($canManage && !$filtered && (!$hasCondominium || $condominiums !== [])): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
             </div>
         <?php else: ?>

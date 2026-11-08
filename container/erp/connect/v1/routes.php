@@ -7,6 +7,7 @@ declare(strict_types=1);
  * Incluído por index.php a partir de moves_container_path('erp', CONF_VIEW_ERP).
  * As páginas vêm do catálogo validado (components/layout/catalog.php, gerado por
  * tools/erp-catalog.py; matriz em docs/ERP_V1_ROUTE_MATRIX.md).
+ * Condomínios AP-004 (cadastro e edição, ADR 0011) e checklist de chegada (ADR 0013).
  */
 
 use Source\Controllers\Erp\Connect\Panel;
@@ -41,6 +42,16 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     // Condomínios (AP-004) com dados reais e somente leitura: CondominiumScope → MariaDB,
     // o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
     $route->get("/condominios", "Condominiums:index");
+    // Cadastro e edição (ADR 0011) e checklist de chegada (ADR 0013). /novo antes das páginas
+    // do catálogo; as rotas /{id}/... têm mais segmentos e não colidem com /condominios/unidades.
+    $route->get("/condominios/novo", "Condominiums:create");
+    $route->post("/condominios/novo", "Condominiums:store");
+    $route->get("/condominios/{id}/editar", "Condominiums:edit");
+    $route->post("/condominios/{id}/editar", "Condominiums:update");
+    $route->get("/condominios/{id}/checklist", "CondominiumChecklist:show");
+    $route->post("/condominios/{id}/checklist/iniciar", "CondominiumChecklist:start");
+    $route->post("/condominios/{id}/checklist/itens", "CondominiumChecklist:add");
+    $route->post("/condominios/{id}/checklist/itens/{item}", "CondominiumChecklist:update");
 
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.
