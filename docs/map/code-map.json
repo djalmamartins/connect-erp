@@ -65,6 +65,14 @@
    "title": "0017 — Unidades (AP-006) e troca de unit_label por unit_id"
   },
   {
+   "file": "docs/Organic Code/decisions/0018-condominium-areas-assets.md",
+   "title": "0018 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0019-chart-of-accounts.md",
+   "title": "0019 — Plano de contas (AP-160)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -1295,6 +1303,7 @@
    "tests": [
     "tests/erp/render-smoke.php",
     "tests/legacy/Integration/AccessControlTest.php",
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
@@ -1356,6 +1365,7 @@
     "access_roles"
    ],
    "tests": [
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
@@ -1393,18 +1403,23 @@
    "layer": "Services",
    "tables": [
     "erp_useful_contacts",
+    "erp_linkable_areas",
+    "erp_chart_accounts",
     "erp_board_members",
+    "erp_common_areas",
     "erp_residents",
     "erp_employees",
     "erp_suppliers",
     "erp_vehicles",
     "erp_visitors",
     "erp_lawyers",
+    "erp_assets",
     "erp_units",
     "erp_pets"
    ],
    "tests": [
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1416,6 +1431,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php"
    ]
   },
@@ -1426,6 +1442,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
@@ -1456,6 +1473,7 @@
     "pages"
    ],
    "tests": [
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
@@ -1468,6 +1486,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
@@ -1481,6 +1500,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1970,7 +1990,7 @@
   }
  },
  "counts": {
-  "adrs": 19,
+  "adrs": 21,
   "classes": 129,
   "dynamic_route_lines": {
    "erp": 8,
@@ -1978,8 +1998,8 @@
   },
   "erp_pages": 172,
   "routes": 199,
-  "tables": 53,
-  "tests": 46
+  "tables": 57,
+  "tests": 48
  },
  "erp_pages": [
   {
@@ -5092,11 +5112,32 @@
     "Source\\Services\\OnboardingAlerts"
    ]
   },
+  "erp_assets": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
   "erp_board_members": {
    "altered_in": [
     "database/migrations/20261108_0402_unit_links.sql"
    ],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_chart_accounts": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0405_chart_of_accounts.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_common_areas": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -5111,6 +5152,15 @@
   "erp_lawyers": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_linkable_areas": {
+   "altered_in": [
+    "database/migrations/20261108_0404_linkable_area_units.sql"
+   ],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -5477,6 +5527,14 @@
   "tests/legacy/Integration/AuthTest.php": [
    "Source\\Models\\Auth"
   ],
+  "tests/legacy/Integration/ChartOfAccountsTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+   "Source\\Services\\Erp\\Registry\\RegistryInUse",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
   "tests/legacy/Integration/CondominiumChecklistControllerTest.php": [
    "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
    "Source\\Services\\CondominiumScope",
@@ -5586,6 +5644,10 @@
   ],
   "tests/legacy/Unit/AuthDummyHashTest.php": [
    "Source\\Models\\Auth"
+  ],
+  "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php": [
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
   "tests/legacy/Unit/CondominiumValidatorTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",

@@ -15,26 +15,37 @@ $this->insert('components/layout/page-head', [
     'pageTitle' => $condominium['name'],
     'pageActions' => $actions,
 ]);
-$tabs = ['Dados', 'Unidades', 'Contas bancárias', 'Configurações', 'Vínculos', 'Histórico'];
+// Cadastros ligados ao condomínio: cada link abre a lista real já filtrada por ele.
+$related = [];
+foreach (\Source\Services\Erp\Registry\Definitions::all() as $definition) {
+    if ($definition['scope'] === 'none' || !$user->can($definition['permission'] . '.view')) {
+        continue;
+    }
+    $related[] = $definition;
+}
 ?>
-<section class="erp-card">
-    <div class="erp-tabs" role="tablist" aria-label="Seções do condomínio">
-        <?php foreach ($tabs as $i => $tab): ?>
-            <button type="button" role="tab" id="condo-tab-<?= $i ?>" aria-controls="condo-panel-<?= $i ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"<?= $i ? ' tabindex="-1"' : '' ?>><?= $this->e($tab) ?></button>
-        <?php endforeach; ?>
-    </div>
-    <?php foreach ($tabs as $i => $tab): ?>
-        <div class="erp-tabpanel" role="tabpanel" id="condo-panel-<?= $i ?>" aria-labelledby="condo-tab-<?= $i ?>"<?= $i ? ' hidden' : '' ?>>
-            <?php if ($i === 0): ?>
-                <dl class="erp-detail-grid">
-                    <div><dt>Nome</dt><dd><?= $this->e($condominium['name']) ?></dd></div>
-                    <div><dt>CNPJ</dt><dd><?= $this->e(format_cnpj($condominium['document'])) ?></dd></div>
-                    <div><dt>Situação</dt><dd><span class="erp-badge erp-badge--<?= $active ? 'success' : 'danger' ?>"><?= $active ? 'Ativo' : 'Inativo' ?></span></dd></div>
-                    <div><dt>Código interno</dt><dd><?= (int)$condominium['id'] ?></dd></div>
-                </dl>
-            <?php else: ?>
-                <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'clipboard', 'emptyTitle' => $tab, 'emptyText' => 'Esta seção mostrará ' . mb_strtolower($tab) . ' do condomínio quando o módulo correspondente estiver integrado.']); ?>
-            <?php endif; ?>
-        </div>
-    <?php endforeach; ?>
-</section>
+<div class="erp-grid erp-grid--main">
+    <section class="erp-card" aria-labelledby="condo-data-title">
+        <div class="erp-card__head"><div><h2 id="condo-data-title">Dados</h2><p>Cadastro do condomínio (AP-004)</p></div></div>
+        <dl class="erp-detail-grid">
+            <div><dt>Nome</dt><dd><?= $this->e($condominium['name']) ?></dd></div>
+            <div><dt>CNPJ</dt><dd><?= $this->e(format_cnpj($condominium['document'])) ?></dd></div>
+            <div><dt>Situação</dt><dd><span class="erp-badge erp-badge--<?= $active ? 'success' : 'danger' ?>"><?= $active ? 'Ativo' : 'Inativo' ?></span></dd></div>
+            <div><dt>Código interno</dt><dd><?= (int)$condominium['id'] ?></dd></div>
+        </dl>
+    </section>
+
+    <aside class="erp-card" aria-labelledby="condo-related-title">
+        <div class="erp-card__head"><div><h2 id="condo-related-title">Cadastros do condomínio</h2><p>Abre a lista já filtrada por este condomínio</p></div></div>
+        <?php if ($related === []): ?>
+            <p class="erp-field__hint">Você não tem acesso a nenhum cadastro deste condomínio.</p>
+        <?php else: ?>
+            <ul class="erp-list">
+                <?php foreach ($related as $definition): ?>
+                    <li><span class="erp-list__icon"><?= $icon('clipboard', 'erp-icon--sm') ?></span>
+                        <div class="erp-list__body"><a href="<?= erp_url($definition['route']) ?>?condominio=<?= (int)$condominium['id'] ?>"><strong><?= $this->e($definition['label']) ?></strong></a></div></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </aside>
+</div>

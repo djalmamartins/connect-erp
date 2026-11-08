@@ -69,6 +69,13 @@ final class RegistryValidatorTest extends TestCase
             'texto acima do limite' => ['pets', ['name' => str_repeat('a', 81)], 'name'],
             'array no lugar de texto' => ['pets', ['name' => ['x']], 'name'],
             'situação desconhecida' => ['pets', ['status' => 'deleted'], 'status'],
+            'capacidade zero' => ['common_areas', ['capacity' => '0'], 'capacity'],
+            'capacidade com letras' => ['common_areas', ['capacity' => '10a'], 'capacity'],
+            'antecedência máxima menor que a mínima' => ['common_areas', ['min_advance_days' => '10', 'max_advance_days' => '5'], 'max_advance_days'],
+            'horário inválido' => ['common_areas', ['opening_time' => '25:00'], 'opening_time'],
+            'tipo de área vinculável desconhecido' => ['linkable_areas', ['kind' => 'garagem'], 'kind'],
+            'fração acima de 100' => ['linkable_areas', ['fraction' => '101'], 'fraction'],
+            'data de aquisição inexistente' => ['assets', ['acquired_on' => '2025-13-01'], 'acquired_on'],
         ];
     }
 
@@ -92,6 +99,23 @@ final class RegistryValidatorTest extends TestCase
         self::assertArrayNotHasKey('valid_until', $errors, 'Acesso permanente dispensa a validade.');
         [$resident] = RegistryValidator::validate(Definitions::get('residents'), ['document' => '11.222.333/0001-81']);
         self::assertSame('11222333000181', $resident['document'], 'Proprietário pode ser pessoa jurídica.');
+    }
+
+    public function testCondominiumAreaFormats(): void
+    {
+        [$area, $errors] = RegistryValidator::validate(Definitions::get('common_areas'), [
+            'condominium_id' => '2', 'name' => 'Salão de festas', 'booking_mode' => 'approval', 'capacity' => '80',
+            'booking_fee_cents' => '150,00', 'min_advance_days' => '2', 'max_advance_days' => '60',
+            'opening_time' => '08:00', 'closing_time' => '22:30',
+        ]);
+        self::assertSame([], $errors);
+        self::assertSame(80, $area['capacity']);
+        self::assertSame(15000, $area['booking_fee_cents']);
+        self::assertSame(2, $area['min_advance_days']);
+        self::assertSame('22:30', $area['closing_time']);
+        [$asset] = RegistryValidator::validate(Definitions::get('assets'), ['acquired_on' => '05/03/2024', 'value_cents' => '1.299,90']);
+        self::assertSame('2024-03-05', $asset['acquired_on']);
+        self::assertSame(129990, $asset['value_cents']);
     }
 
     public function testDefinitionsMatchCatalogMigrationsAndPermissions(): void
@@ -138,7 +162,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(11, Definitions::all());
+        self::assertCount(14, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }

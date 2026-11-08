@@ -180,6 +180,8 @@ final class RegistryServiceTest extends TestCase
         }
         $count = (int)$this->pdo->query("SELECT COUNT(*) FROM access_permissions WHERE group_name = 'ERP Cadastros'")->fetchColumn();
         self::assertSame(18, $count);
+        $areas = (int)$this->pdo->query("SELECT COUNT(*) FROM access_permissions WHERE group_name = 'ERP Condomínios'")->fetchColumn();
+        self::assertSame(6, $areas);
     }
 
     public function testApiEnforcesPermissionsAndReturnsValidationErrors(): void
@@ -216,6 +218,46 @@ final class RegistryServiceTest extends TestCase
         [$status] = $this->call(fn () => (new RegistryApi())->show('pets', ['id' => (string)$body['data'][0]['id']]));
         self::assertSame(404, $status, 'Fora do escopo responde 404.');
         $_POST = [];
+    }
+
+    public function testCondominiumAreasAndAssetsStayInsideScope(): void
+    {
+        $user = $this->user([$this->alpha]);
+        $other = $this->user([$this->beta]);
+        $service = new RegistryService($this->pdo);
+
+        $area = $service->save($user, 'common_areas', [
+            'condominium_id' => $this->alpha, 'name' => 'Salão de festas', 'booking_mode' => 'approval', 'capacity' => '80',
+            'booking_fee_cents' => '150,00', 'min_advance_days' => '2', 'max_advance_days' => '60', 'opening_time' => '08:00', 'closing_time' => '22:00',
+        ]);
+        self::assertSame(80, $area['capacity']);
+        self::assertSame('22:00', $area['closing_time']);
+        self::assertSame(15000, $area['booking_fee_cents']);
+        try {
+            $service->save($user, 'common_areas', ['condominium_id' => $this->alpha, 'name' => 'Salão de festas', 'booking_mode' => 'free']);
+            self::fail('Duas áreas comuns com o mesmo nome no condomínio.');
+        } catch (RegistryValidationException $exception) {
+            self::assertNotSame([], $exception->errors);
+        }
+        $service->save($other, 'common_areas', ['condominium_id' => $this->beta, 'name' => 'Salão de festas', 'booking_mode' => 'free']);
+
+        $spot = $service->save($user, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'vaga', 'identifier' => 'G1-023', 'unit_label' => 'A-101', 'fraction' => '0,25']);
+        self::assertSame(0.25, (float)$spot['fraction']);
+        $service->save($user, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'deposito', 'identifier' => 'G1-023']);
+
+        $asset = $service->save($user, 'assets', [
+            'condominium_id' => $this->alpha, 'description' => 'Bomba de recalque', 'asset_number' => 'PAT-001', 'category' => array_key_first(Definitions::get('assets')['fields']['category']['options']),
+            'condition' => array_key_first(Definitions::get('assets')['fields']['condition']['options']), 'acquired_on' => '05/03/2024', 'value_cents' => '1.299,90',
+        ]);
+        self::assertSame('2024-03-05', $asset['acquired_on']);
+        $service->save($user, 'assets', ['status' => 'inactive'] + $asset, $asset['id']);
+        self::assertSame(1, $service->list($user, 'assets', ['status' => 'inactive'])['total'], 'Bem baixado continua no histórico.');
+
+        self::assertSame(1, $service->list($user, 'common_areas')['total']);
+        self::assertSame(2, $service->list($user, 'linkable_areas')['total']);
+        self::assertSame(0, $service->list($other, 'assets')['total']);
+        $this->assertNotFound(fn () => $service->find($other, 'common_areas', $area['id']));
+        $this->assertNotFound(fn () => $service->delete($other, 'assets', $asset['id']));
     }
 
     private function assertNotFound(callable $call): void
@@ -283,5 +325,6 @@ final class RegistryServiceTest extends TestCase
     private function seedRegistryPermissions(): void
     {
         $this->pdo->exec((string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261108_0202_erp_registry_permissions.sql'));
+        $this->pdo->exec((string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261108_0302_erp_condominium_areas_permissions.sql'));
     }
 }

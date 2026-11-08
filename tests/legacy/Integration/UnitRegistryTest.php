@@ -112,6 +112,44 @@ final class UnitRegistryTest extends TestCase
         self::assertSame('outro', (string)$this->pdo->query("SELECT type FROM erp_units WHERE condominium_id = {$this->beta}")->fetchColumn());
     }
 
+    public function testLinkableAreaPointsToUnitAndBlocksUnitDeletion(): void
+    {
+        $user = $this->user([$this->alpha, $this->beta]);
+        $unit = $this->service->save($user, 'units', ['condominium_id' => $this->alpha, 'block' => 'A', 'number' => '101', 'type' => 'apartamento']);
+        $other = $this->service->save($user, 'units', ['condominium_id' => $this->beta, 'number' => '1', 'type' => 'casa']);
+
+        $spot = $this->service->save($user, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'vaga', 'identifier' => 'G1-023', 'unit_id' => $unit['id']]);
+        self::assertSame($unit['id'], $spot['unit_id']);
+        self::assertSame('A - 101', $spot['unit_label']);
+        $free = $this->service->save($user, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'box', 'identifier' => 'B-07']);
+        self::assertNull($free['unit_id'], 'Vaga ou box livre fica sem unidade.');
+        $this->assertInvalid('unit_id', fn () => $this->service->save($user, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'deposito', 'identifier' => 'D-1', 'unit_id' => $other['id']]), 'Unidade de outro condomínio.');
+
+        try {
+            $this->service->delete($user, 'units', $unit['id']);
+            self::fail('Excluiu unidade com vaga vinculada.');
+        } catch (RegistryInUse) {
+            self::addToAssertionCount(1);
+        }
+    }
+
+    public function testLinkableAreaBackfillIsIdempotent(): void
+    {
+        $insert = $this->pdo->prepare('INSERT INTO erp_linkable_areas (condominium_id, kind, identifier, unit_label) VALUES (?, ?, ?, ?)');
+        $insert->execute([$this->alpha, 'vaga', 'G1', 'Bloco D - 3']);
+        $insert->execute([$this->alpha, 'box', 'B1', ' Bloco D - 3 ']);
+        $insert->execute([$this->alpha, 'vaga', 'G2', null]);
+
+        $migration = (string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261108_0404_linkable_area_units.sql');
+        $this->pdo->exec($migration);
+        $this->pdo->exec($migration);
+
+        self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_units')->fetchColumn());
+        $unit = (int)$this->pdo->query("SELECT id FROM erp_units WHERE label = 'Bloco D - 3'")->fetchColumn();
+        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_linkable_areas WHERE unit_id = {$unit}")->fetchColumn());
+        self::assertNull($this->pdo->query("SELECT unit_id FROM erp_linkable_areas WHERE identifier = 'G2'")->fetchColumn() ?: null, 'Vaga livre continua livre.');
+    }
+
     private function assertInvalid(string $field, callable $call, string $message = ''): void
     {
         try {
