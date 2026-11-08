@@ -36,6 +36,7 @@ final class RegistryFormat
             'date' => ($d = \DateTimeImmutable::createFromFormat('!Y-m-d', (string)$value)) ? $d->format('d/m/Y') : (string)$value,
             'money' => 'R$ ' . number_format(((int)$value) / 100, 2, ',', '.'),
             'percent' => number_format((float)$value, 2, ',', '.') . '%',
+            'decimal' => number_format((float)$value, (int)($field['scale'] ?? 2), ',', '.'),
             'plate' => strlen((string)$value) === 7 ? substr((string)$value, 0, 3) . '-' . substr((string)$value, 3) : (string)$value,
             default => (string)$value,
         };

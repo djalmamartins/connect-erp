@@ -19,9 +19,12 @@ namespace Source\Services\Erp\Registry;
  *  - none: cadastro da administradora Connect, usado por todos os condomínios
  *    (fornecedores, advogados); controlado apenas pela permissão.
  *
- * Tipos de campo: condominium, text, longtext, cpf, cnpj, document (CPF ou CNPJ),
- * id_document (CPF ou RG/outro), email, phone, date, money (centavos), percent, bool,
- * select, plate, oab.
+ * Tipos de campo: condominium, unit (FK erp_units do mesmo condomínio), text, longtext, cpf,
+ * cnpj, document (CPF ou CNPJ), id_document (CPF ou RG/outro), email, phone, date,
+ * money (centavos), percent, decimal (scale/min/max_value), bool, select, plate, oab.
+ *
+ * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
+ * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  */
 final class Definitions
 {
@@ -66,7 +69,41 @@ final class Definitions
     /** @return array<string, array<string, mixed>> */
     private static function build(): array
     {
+        // Unidade escolhida (unit_id, ADR 0017). unit_label continua gravado (texto da unidade)
+        // até a troca ser validada; sem unit_id, o texto é obrigatório onde já era.
+        $unit = static fn (int $span = 3): array => ['label' => 'Unidade', 'type' => 'unit', 'span' => $span, 'hint' => 'Unidade cadastrada em Condomínios › Unidades'];
+        $unitText = static fn (string $label, bool $list, int $span = 3, ?string $hint = null): array => [
+            'label' => $label, 'type' => 'text', 'max' => 40, 'span' => $span, 'list' => $list, 'search' => $list,
+            'hint' => $hint ?? 'Preenchido pela unidade escolhida; digite só se ela ainda não estiver cadastrada',
+        ];
+        $unitRequired = static fn (string $message = 'Escolha a unidade ou digite o texto da unidade.'): array => ['field' => 'unit_label', 'unless' => 'unit_id', 'message' => $message];
+
         $definitions = [
+            'units' => [
+                'page' => 'AP-006', 'table' => 'erp_units', 'route' => '/condominios/unidades',
+                'api' => 'units', 'permission' => 'erp.units', 'label' => 'Unidades',
+                'entity' => 'unidade', 'gender' => 'a', 'scope' => 'required', 'group' => 'condominios',
+                'lead' => 'Unidades de cada condomínio. Proprietários, inquilinos, conselho, veículos, visitantes e animais se vinculam a elas.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'block' => ['label' => 'Bloco ou torre', 'type' => 'text', 'max' => 20, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Vazio se o condomínio não tem blocos'],
+                    'number' => ['label' => 'Unidade', 'type' => 'text', 'required' => true, 'max' => 16, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: 101, Casa 3, Loja 2'],
+                    'type' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true, 'options' => [
+                        'apartamento' => 'Apartamento', 'casa' => 'Casa', 'sala' => 'Sala comercial', 'loja' => 'Loja', 'garagem' => 'Garagem', 'outro' => 'Outro',
+                    ]],
+                    'floor' => ['label' => 'Andar', 'type' => 'text', 'max' => 10, 'span' => 2],
+                    'ideal_fraction' => ['label' => 'Fração ideal', 'type' => 'decimal', 'scale' => 6, 'min' => 0, 'max_value' => 1, 'span' => 3, 'hint' => 'Entre 0 e 1, ex.: 0,012500'],
+                    'private_area' => ['label' => 'Área privativa (m²)', 'type' => 'decimal', 'scale' => 2, 'min' => 0, 'max_value' => 99999999.99, 'span' => 3],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                // Bloco vazio conta como valor: "101" sem bloco não pode repetir no mesmo condomínio.
+                'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
+                'computed' => ['label'],
+                // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
+                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets'],
+                'title' => 'number',
+                'order' => 'label',
+            ],
             'residents' => [
                 'page' => 'AP-005', 'table' => 'erp_residents', 'route' => '/cadastros/proprietarios-e-inquilinos',
                 'api' => 'residents', 'permission' => 'erp.residents', 'label' => 'Proprietários e inquilinos',
@@ -74,7 +111,8 @@ final class Definitions
                 'lead' => 'Proprietários, inquilinos, moradores e responsáveis financeiros de cada unidade.',
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
-                    'unit_label' => ['label' => 'Unidade', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: Bloco A - 101'],
+                    'unit_id' => $unit(),
+                    'unit_label' => $unitText('Unidade (texto)', true),
                     'relationship' => ['label' => 'Vínculo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => [
                         'owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro',
                     ]],
@@ -88,7 +126,7 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'unique' => [['fields' => ['condominium_id', 'unit_label', 'relationship', 'document'], 'message' => 'Esta pessoa já tem este vínculo com a unidade.']],
-                'requires' => [['field' => 'email', 'when' => 'billing_by_email', 'message' => 'Informe o e-mail para enviar o boleto.']],
+                'requires' => [['field' => 'email', 'when' => 'billing_by_email', 'message' => 'Informe o e-mail para enviar o boleto.'], $unitRequired()],
                 'order' => 'name',
             ],
             'board' => [
@@ -104,7 +142,8 @@ final class Definitions
                     ]],
                     'name' => ['label' => 'Nome ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'search' => true, 'hint' => 'CNPJ para síndico profissional'],
-                    'unit_label' => ['label' => 'Unidade', 'type' => 'text', 'max' => 40, 'span' => 4, 'hint' => 'Vazio para síndico profissional'],
+                    'unit_id' => $unit(4),
+                    'unit_label' => $unitText('Unidade (texto)', false, 4, 'Vazio para síndico profissional'),
                     'term_starts_on' => ['label' => 'Início do mandato', 'type' => 'date', 'required' => true, 'span' => 4],
                     'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on'],
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
@@ -190,7 +229,8 @@ final class Definitions
                 'lead' => 'Veículos autorizados por unidade, para a portaria e o controle de vagas.',
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
-                    'unit_label' => ['label' => 'Unidade', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Bloco A - 101'],
+                    'unit_id' => $unit(),
+                    'unit_label' => $unitText('Unidade (texto)', true),
                     'plate' => ['label' => 'Placa', 'type' => 'plate', 'required' => true, 'span' => 4, 'list' => true, 'search' => true],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'options' => ['carro' => 'Carro', 'moto' => 'Moto', 'utilitario' => 'Utilitário', 'outro' => 'Outro']],
                     'model' => ['label' => 'Marca e modelo', 'type' => 'text', 'max' => 80, 'span' => 4, 'list' => true, 'search' => true],
@@ -200,6 +240,7 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'unique' => [['fields' => ['condominium_id', 'plate'], 'message' => 'Esta placa já está cadastrada neste condomínio.']],
+                'requires' => [$unitRequired()],
                 'order' => 'plate',
             ],
             'visitors' => [
@@ -210,7 +251,8 @@ final class Definitions
                 'status' => ['active' => 'Liberado', 'inactive' => 'Bloqueado'],
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
-                    'unit_label' => ['label' => 'Unidade visitada', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 6, 'list' => true, 'search' => true],
+                    'unit_id' => ['label' => 'Unidade visitada'] + $unit(),
+                    'unit_label' => $unitText('Unidade visitada (texto)', true),
                     'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'document' => ['label' => 'Documento (CPF ou RG)', 'type' => 'id_document', 'span' => 4, 'list' => true, 'search' => true],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 4],
@@ -218,7 +260,7 @@ final class Definitions
                     'valid_until' => ['label' => 'Autorizado até', 'type' => 'date', 'span' => 4, 'list' => true, 'hint' => 'Vazio quando o acesso é permanente'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                'requires' => [['field' => 'valid_until', 'unless' => 'permanent_access', 'message' => 'Informe até quando o acesso vale ou marque acesso permanente.']],
+                'requires' => [['field' => 'valid_until', 'unless' => 'permanent_access', 'message' => 'Informe até quando o acesso vale ou marque acesso permanente.'], $unitRequired('Escolha a unidade visitada ou digite o texto da unidade.')],
                 'order' => 'name',
             ],
             'pets' => [
@@ -228,7 +270,8 @@ final class Definitions
                 'lead' => 'Animais de estimação por unidade.',
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
-                    'unit_label' => ['label' => 'Unidade', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 6, 'list' => true, 'search' => true],
+                    'unit_id' => $unit(),
+                    'unit_label' => $unitText('Unidade (texto)', true),
                     'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true],
                     'species' => ['label' => 'Espécie', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['cao' => 'Cão', 'gato' => 'Gato', 'ave' => 'Ave', 'outro' => 'Outro']],
                     'size' => ['label' => 'Porte', 'type' => 'select', 'span' => 3, 'options' => ['pequeno' => 'Pequeno', 'medio' => 'Médio', 'grande' => 'Grande']],
@@ -237,6 +280,7 @@ final class Definitions
                     'vaccinated' => ['label' => 'Vacinação em dia', 'type' => 'bool', 'span' => 6],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
+                'requires' => [$unitRequired()],
                 'order' => 'name',
             ],
             'contacts' => [
@@ -261,6 +305,7 @@ final class Definitions
 
         foreach ($definitions as $slug => &$definition) {
             $definition['slug'] = $slug;
+            $definition['group'] ??= 'cadastros';
             $definition['status'] ??= self::STATUS;
             $definition['title'] ??= $definition['order'];
             $definition['unique'] ??= [];

@@ -30,11 +30,35 @@ components:
     Meta:
       type: object
       properties: { total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } }
-    ResidentsInput:
+    UnitsInput:
       type: object
-      required: [condominium_id, unit_label, relationship, name]
+      required: [condominium_id, number, type]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
+        block: { type: [string, "null"], maxLength: 20 }
+        number: { type: [string, "null"], maxLength: 16 }
+        type: { type: [string, "null"], enum: ['apartamento', 'casa', 'sala', 'loja', 'garagem', 'outro'] }
+        floor: { type: [string, "null"], maxLength: 10 }
+        ideal_fraction: { type: [number, "null"], minimum: 0, maximum: 1 }
+        private_area: { type: [number, "null"], minimum: 0, maximum: 99999999.99 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Units:
+      allOf:
+        - $ref: '#/components/schemas/UnitsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            label: { type: [string, "null"], readOnly: true }
+            created_at: { type: string }
+            updated_at: { type: string }
+    ResidentsInput:
+      type: object
+      required: [condominium_id, relationship, name]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         relationship: { type: [string, "null"], enum: ['owner', 'tenant', 'resident', 'financial'] }
         name: { type: [string, "null"], maxLength: 160 }
@@ -63,6 +87,7 @@ components:
         role: { type: [string, "null"], enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] }
         name: { type: [string, "null"], maxLength: 160 }
         document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         term_starts_on: { type: [string, "null"], format: date }
         term_ends_on: { type: [string, "null"], format: date }
@@ -151,9 +176,10 @@ components:
             updated_at: { type: string }
     VehiclesInput:
       type: object
-      required: [condominium_id, unit_label, plate, kind]
+      required: [condominium_id, plate, kind]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         plate: { type: [string, "null"], pattern: "^[A-Z]{3}\\d[A-Z0-9]\\d{2}$" }
         kind: { type: [string, "null"], enum: ['carro', 'moto', 'utilitario', 'outro'] }
@@ -174,9 +200,10 @@ components:
             updated_at: { type: string }
     VisitorsInput:
       type: object
-      required: [condominium_id, unit_label, name]
+      required: [condominium_id, name]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         name: { type: [string, "null"], maxLength: 160 }
         document: { type: [string, "null"], description: 'CPF válido ou RG/outro (5 a 20 caracteres alfanuméricos).' }
@@ -196,9 +223,10 @@ components:
             updated_at: { type: string }
     PetsInput:
       type: object
-      required: [condominium_id, unit_label, name, species]
+      required: [condominium_id, name, species]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         name: { type: [string, "null"], maxLength: 80 }
         species: { type: [string, "null"], enum: ['cao', 'gato', 'ave', 'outro'] }
@@ -238,6 +266,65 @@ components:
             created_at: { type: string }
             updated_at: { type: string }
 paths:
+  /units:
+    get:
+      tags: ['Unidades']
+      summary: 'Lista unidades (permissão erp.units.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por type', schema: { type: string, enum: ['apartamento', 'casa', 'sala', 'loja', 'garagem', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Units' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Unidades']
+      summary: 'Cadastra (permissão erp.units.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UnitsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Units' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /units/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Unidades']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Units' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Unidades']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UnitsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Units' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Unidades']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UnitsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Units' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Unidades']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /residents:
     get:
       tags: ['Proprietários e inquilinos']

@@ -12,7 +12,7 @@ $readonly = !$canManage;
 $action = erp_url($isNew ? $route : $route . '/' . (int)$recordId);
 $actionLabels = ['create' => 'Cadastro criado', 'update' => 'Cadastro alterado', 'delete' => 'Cadastro excluído'];
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => 'Cadastros · ' . $definition['label'],
+    'pageEyebrow' => (($definition['group'] ?? 'cadastros') === 'condominios' ? 'Condomínios' : 'Cadastros') . ' · ' . $definition['label'],
     'pageTitle' => $title,
     'pageLead' => $isNew ? 'Preencha os dados e salve. Campos com * são obrigatórios.' : ($readonly ? 'Você tem acesso somente para consulta.' : 'Altere os dados e salve. Toda alteração fica registrada no histórico.'),
 ]);
@@ -32,7 +32,7 @@ $this->insert('components/layout/page-head', [
             <?php foreach ($definition['fields'] as $name => $field) {
                 $this->insert('components/forms/registry-field', [
                     'field' => $field, 'value' => $values[$name] ?? null, 'error' => $errors[$name] ?? null,
-                    'condominiums' => $condominiums, 'readonly' => $readonly,
+                    'condominiums' => $condominiums, 'units' => $units ?? [], 'readonly' => $readonly,
                 ]);
             } ?>
             <?php $this->insert('components/forms/registry-field', [

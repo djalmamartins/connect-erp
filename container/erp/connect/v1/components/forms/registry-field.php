@@ -2,6 +2,7 @@
 /**
  * Campo de um cadastro real (Definitions + RegistryValidator). Valor e erro vêm do servidor.
  * @var array $field @var mixed $value @var ?string $error @var list<array> $condominiums @var bool $readonly
+ * @var list<array{id:int,condominium_id:int,label:string}> $units (campos do tipo unit)
  */
 $id = 'f-' . $field['name'];
 $name = $field['name'];
@@ -16,9 +17,11 @@ $display = match ($field['type']) {
     'id_document' => strlen($text) === 11 && ctype_digit($text) ? \Source\Support\Erp\BrDocument::format($text) : $text,
     'money' => is_int($value) ? number_format($value / 100, 2, ',', '.') : $text,
     'percent' => is_float($value) ? number_format($value, 2, ',', '') : $text,
+    'decimal' => is_float($value) ? number_format($value, (int)($field['scale'] ?? 2), ',', '') : $text,
     'phone' => \Source\Support\Erp\RegistryFormat::phone($text),
     default => $text,
 };
+$units ??= [];
 ?>
 <div class="erp-field erp-col-<?= (int)$field['span'] ?>">
     <?php if ($field['type'] === 'bool'): ?>
@@ -37,6 +40,23 @@ $display = match ($field['type']) {
                     <option value="<?= $this->e((string)$key) ?>"<?= (string)$key === $text ? ' selected' : '' ?>><?= $this->e($label) ?></option>
                 <?php endforeach; ?>
             </select>
+        <?php elseif ($field['type'] === 'unit'):
+            // Unidades ativas do escopo, agrupadas por condomínio (ADR 0017); o servidor confere o condomínio.
+            $condominiumNames = array_column($condominiums, 'name', 'id');
+            $byCondominium = [];
+            foreach ($units as $unitOption) {
+                $byCondominium[$unitOption['condominium_id']][] = $unitOption;
+            } ?>
+            <select class="erp-select" id="<?= $id ?>" name="<?= $this->e($name) ?>"<?= $required . $disabled . $invalid ?>>
+                <option value=""><?= $units === [] ? 'Nenhuma unidade cadastrada' : 'Selecione' ?></option>
+                <?php foreach ($byCondominium as $condominiumId => $group): ?>
+                    <optgroup label="<?= $this->e((string)($condominiumNames[$condominiumId] ?? ('Condomínio ' . $condominiumId))) ?>">
+                        <?php foreach ($group as $unitOption): ?>
+                            <option value="<?= (int)$unitOption['id'] ?>" data-condominium="<?= (int)$condominiumId ?>"<?= (string)$unitOption['id'] === $text ? ' selected' : '' ?>><?= $this->e($unitOption['label']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                <?php endforeach; ?>
+            </select>
         <?php elseif ($field['type'] === 'longtext'): ?>
             <textarea class="erp-textarea" id="<?= $id ?>" name="<?= $this->e($name) ?>" maxlength="<?= (int)($field['max'] ?? 2000) ?>"<?= $required . $disabled . $invalid ?>><?= $this->e($text) ?></textarea>
         <?php else:
@@ -46,6 +66,7 @@ $display = match ($field['type']) {
                 'date' => ['date', ' min="1900-01-01" max="2100-12-31"', ''],
                 'money' => ['text', ' inputmode="decimal" maxlength="18"', '0,00'],
                 'percent' => ['text', ' inputmode="decimal" maxlength="6"', '0,00'],
+                'decimal' => ['text', ' inputmode="decimal" maxlength="20"', '0,' . str_repeat('0', (int)($field['scale'] ?? 2))],
                 'cpf' => ['text', ' inputmode="numeric" maxlength="14"', '000.000.000-00'],
                 'cnpj' => ['text', ' inputmode="numeric" maxlength="18"', '00.000.000/0000-00'],
                 'document' => ['text', ' inputmode="numeric" maxlength="18"', 'CPF ou CNPJ'],

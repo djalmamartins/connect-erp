@@ -9,6 +9,7 @@ use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryForbidden;
+use Source\Services\Erp\Registry\RegistryInUse;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
@@ -140,6 +141,11 @@ final class Registry extends Controller
         } catch (RegistryForbidden) {
             $this->state($user, $definition, 403, 'Exclusão não permitida', 'Este registro vale para todos os condomínios e só pode ser excluído por quem acessa todos eles.');
             return;
+        } catch (RegistryInUse) {
+            // PRG: volta ao registro com o aviso (a API responde 409).
+            (new Message())->error(ucfirst($definition['entity']) . ' em uso: há cadastros ativos vinculados. Altere ou exclua esses cadastros antes, ou inative o registro.')->flash();
+            redirect(erp_url($definition['route'] . '/' . $this->id($data)));
+            return;
         }
         (new Message())->success(ucfirst($definition['entity']) . " excluíd{$definition['gender']}.")->flash();
         redirect(erp_url($definition['route']));
@@ -172,6 +178,7 @@ final class Registry extends Controller
             'errors' => $errors,
             'history' => $history,
             'condominiums' => $service->condominiums($user),
+            'units' => RegistryService::hasUnitField($definition) ? $service->units($user) : [],
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
         ]));
     }

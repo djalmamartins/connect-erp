@@ -144,6 +144,9 @@ final class RegistryService
             }
         }
         if ($errors === []) {
+            $errors = $this->unitRules($definition, $values);
+        }
+        if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
         if ($errors !== []) {
@@ -184,6 +187,14 @@ final class RegistryService
             throw new RegistryNotFound();
         }
         $this->assertWritable($user, $definition, $row);
+        // Unidade com cadastros ativos vinculados não sai (eles perderiam a unidade escolhida).
+        foreach ($definition['referenced_by'] ?? [] as $table) {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE unit_id = :id AND deleted_at IS NULL");
+            $stmt->execute(['id' => $id]);
+            if ((int)$stmt->fetchColumn() > 0) {
+                throw new RegistryInUse();
+            }
+        }
         $this->pdo->prepare("UPDATE `{$definition['table']}` SET deleted_at = CURRENT_TIMESTAMP, updated_by = :user WHERE id = :id AND deleted_at IS NULL")
             ->execute(['id' => $id, 'user' => (int)$user->id]);
         Audit::record('delete', $definition['table'], $id, ['status' => $row['status']], ['status' => 'deleted']);
@@ -227,6 +238,33 @@ final class RegistryService
     public function condominiums(User $user): array
     {
         return $this->scope->allowed($user);
+    }
+
+    /**
+     * Unidades ativas dos condomínios do escopo, para os campos do tipo 'unit' (ADR 0017).
+     *
+     * @return list<array{id:int,condominium_id:int,label:string}>
+     */
+    public function units(User $user): array
+    {
+        $ids = $this->scope->allowedIds($user);
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(',', array_map('intval', $ids));
+        $rows = $this->pdo->query("SELECT id, condominium_id, label FROM erp_units WHERE deleted_at IS NULL AND status = 'active' AND condominium_id IN ({$in}) ORDER BY condominium_id, label")->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'condominium_id' => (int)$r['condominium_id'], 'label' => (string)$r['label']], $rows);
+    }
+
+    /** O cadastro tem algum campo de unidade? (a tela só carrega a lista quando precisa) */
+    public static function hasUnitField(array $definition): bool
+    {
+        foreach ($definition['fields'] as $field) {
+            if ($field['type'] === 'unit') {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Campo de seleção usado como filtro rápido na listagem (o primeiro com 'filter'). */
@@ -291,6 +329,44 @@ final class RegistryService
         }
     }
 
+    /**
+     * Campos do tipo 'unit' (ADR 0017): a unidade precisa existir, estar ativa e ser do mesmo
+     * condomínio do registro. Com unidade escolhida, unit_label passa a ser o texto dela; sem
+     * unidade e com texto, liga automaticamente à unidade de mesmo texto, se existir.
+     *
+     * @param array<string, mixed> $values alterado por referência
+     * @return array<string, string>
+     */
+    private function unitRules(array $definition, array &$values): array
+    {
+        $errors = [];
+        $condominium = $values['condominium_id'] ?? null;
+        foreach ($definition['fields'] as $name => $field) {
+            if ($field['type'] !== 'unit') {
+                continue;
+            }
+            $hasText = array_key_exists('unit_label', $values);
+            if ($values[$name] !== null) {
+                $stmt = $this->pdo->prepare("SELECT condominium_id, label FROM erp_units WHERE id = :id AND deleted_at IS NULL AND status = 'active'");
+                $stmt->execute(['id' => $values[$name]]);
+                $unit = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!is_array($unit) || $condominium === null || (int)$unit['condominium_id'] !== (int)$condominium) {
+                    $errors[$name] = 'Escolha uma unidade ativa do condomínio selecionado.';
+                    continue;
+                }
+                if ($hasText) {
+                    $values['unit_label'] = mb_substr((string)$unit['label'], 0, 40);
+                }
+            } elseif ($hasText && $values['unit_label'] !== null && $condominium !== null) {
+                $stmt = $this->pdo->prepare("SELECT MIN(id) FROM erp_units WHERE condominium_id = :c AND label = :l AND deleted_at IS NULL AND status = 'active'");
+                $stmt->execute(['c' => $condominium, 'l' => $values['unit_label']]);
+                $match = $stmt->fetchColumn();
+                $values[$name] = $match !== null && $match !== false ? (int)$match : null;
+            }
+        }
+        return $errors;
+    }
+
     /** @return array<string, string> */
     private function businessRules(array $definition, array $values, ?int $id): array
     {
@@ -301,6 +377,11 @@ final class RegistryService
             $complete = true;
             foreach ($rule['fields'] as $field) {
                 if ($values[$field] === null) {
+                    // 'nullable': vazio conta como valor (ex.: unidade "101" sem bloco).
+                    if (in_array($field, $rule['nullable'] ?? [], true)) {
+                        $where[] = "(`{$field}` IS NULL OR `{$field}` = '')";
+                        continue;
+                    }
                     $complete = false;
                     break;
                 }
@@ -358,10 +439,14 @@ final class RegistryService
             $out[$name] = match (true) {
                 $value === null => $field['type'] === 'bool' ? false : null,
                 $field['type'] === 'bool' => (bool)$value,
-                in_array($field['type'], ['condominium', 'money'], true) => (int)$value,
-                $field['type'] === 'percent' => (float)$value,
+                in_array($field['type'], ['condominium', 'unit', 'money'], true) => (int)$value,
+                in_array($field['type'], ['percent', 'decimal'], true) => (float)$value,
                 default => (string)$value,
             };
+        }
+        // Colunas geradas pelo banco, somente leitura (ex.: erp_units.label).
+        foreach ($definition['computed'] ?? [] as $column) {
+            $out[$column] = isset($row[$column]) ? (string)$row[$column] : null;
         }
         if ($definition['scope'] !== 'none') {
             $out['condominium_name'] = $row['condominium_name'] ?? null;
