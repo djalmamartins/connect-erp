@@ -23,6 +23,13 @@ use Source\Services\TwoFactorService;
 class Auth extends Model
 {
     /**
+     * Hash bcrypt (custo 10, igual a CONF_PASSWD_OPTION) de um valor aleatório descartado.
+     * Usuário inexistente também paga um password_verify, para que o tempo de resposta não
+     * revele quais e-mails/CPFs estão cadastrados (REVIEW_FASE1_2FA.md, risco 3; issue #7).
+     */
+    public const DUMMY_PASSWORD_HASH = '$2y$10$8Q6tEFGQfJcJ5BoH9z1zZu/IECF5s4bIFOtl9JuUW29DodW5zHrlW';
+
+    /**
      * Auth constructor.
      */
     public function __construct()
@@ -192,12 +199,14 @@ class Auth extends Model
         if (is_numeric ($email)){
             $user = (new User())->findByDocument($email);
             if (!$user) {
+                passwd_verify($password, self::DUMMY_PASSWORD_HASH);
                 $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
                 return null;
             }
         }else{
             $user = (new User())->findByEmail($email);
             if (!$user) {
+                passwd_verify($password, self::DUMMY_PASSWORD_HASH);
                 $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
                 return null;
             }

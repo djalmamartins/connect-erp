@@ -76,6 +76,14 @@
     $$('.erp-nav__group > summary').forEach(function (summary) {
       summary.addEventListener('click', function () { if (shell.classList.contains('is-collapsed')) setCollapsed(false); });
     });
+    // Acordeão: abrir um grupo do menu fecha os outros.
+    var groups = $$('.erp-nav__group');
+    groups.forEach(function (group) {
+      group.addEventListener('toggle', function () {
+        if (!group.open) return;
+        groups.forEach(function (other) { if (other !== group && other.open) other.open = false; });
+      });
+    });
   }
 
   /* Dropdowns (<details>): fecham ao clicar fora ou com Escape ----------- */
@@ -86,6 +94,30 @@
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
     dropdowns.forEach(function (d) { if (d.open) { d.open = false; var s = $('summary', d); if (s) s.focus(); } });
+  });
+
+  /* Busca em ícone na navbar --------------------------------------------- */
+  var navSearch = $('[data-erp-navsearch]');
+  var navToggle = navSearch && $('[data-erp-navsearch-toggle]', navSearch);
+  var navPanel = navSearch && $('.erp-navsearch__panel', navSearch);
+  var setNavSearch = function (open) {
+    if (!navPanel) return;
+    navPanel.hidden = !open;
+    navToggle.setAttribute('aria-expanded', String(open));
+    if (open) { var input = $('[data-erp-search]', navPanel); if (input) input.focus(); }
+  };
+  if (navToggle) {
+    navToggle.addEventListener('click', function () { setNavSearch(navPanel.hidden); });
+    document.addEventListener('click', function (event) { if (!navSearch.contains(event.target)) setNavSearch(false); });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !navPanel.hidden) { setNavSearch(false); navToggle.focus(); }
+    });
+  }
+
+  /* Seletor de condomínio: trocar já envia (o servidor valida o escopo) --- */
+  $$('[data-erp-condo-switch]').forEach(function (form) {
+    var select = $('select', form);
+    if (select) select.addEventListener('change', function () { form.submit(); });
   });
 
   /* Pesquisa de páginas ---------------------------------------------------- */
@@ -140,7 +172,7 @@
     });
     document.addEventListener('click', function (event) { if (!searchInput.parentNode.contains(event.target)) { searchResults.hidden = true; searchInput.setAttribute('aria-expanded', 'false'); } });
     document.addEventListener('keydown', function (event) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput.focus(); }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); if (navToggle) setNavSearch(true); else searchInput.focus(); }
     });
   }
 

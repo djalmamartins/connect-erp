@@ -151,7 +151,7 @@ p { margin: 0; }
   min-height: var(--erp-navbar-height); padding: 10px var(--erp-space-7); background: rgba(238, 248, 242, .92);
   backdrop-filter: saturate(1.4) blur(8px); border-bottom: 1px solid var(--erp-border);
 }
-.erp-navbar__menu { display: none; }
+.erp-icon-button.erp-navbar__menu { display: none; }
 .erp-navbar__title { min-width: 0; flex: 1; }
 .erp-navbar__title strong { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .erp-search { position: relative; width: min(340px, 34vw); }
@@ -178,6 +178,19 @@ p { margin: 0; }
 .erp-user-chip { display: flex; align-items: center; gap: 8px; padding: 3px 10px 3px 3px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-pill); background: var(--erp-surface); cursor: pointer; }
 .erp-user-chip .erp-avatar { width: 32px; height: 32px; font-size: 13px; }
 .erp-user-chip span { font-weight: 600; font-size: 13px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* 5b. Seletor de condomínio e busca em ícone (navbar) ------------------------- */
+.erp-condo-switch { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 340px; padding: 4px 6px 4px 12px; border: 1px solid var(--erp-brand-line); border-radius: var(--erp-radius-pill); background: var(--erp-brand-soft); box-shadow: 0 0 0 3px rgba(7, 136, 76, .06); }
+.erp-condo-switch__icon { color: var(--erp-brand-ink); display: grid; place-items: center; }
+.erp-condo-switch__label { color: var(--erp-brand-ink); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.erp-condo-switch__select { min-width: 0; max-width: 220px; height: 32px; padding: 0 28px 0 10px; border: 0; border-radius: var(--erp-radius-pill); background: var(--erp-surface); color: var(--erp-text); font-weight: 650; text-overflow: ellipsis; cursor: pointer; }
+.erp-condo-switch__select:focus-visible { outline: 3px solid var(--erp-focus); outline-offset: 1px; }
+.erp-condo-switch__select[disabled] { color: var(--erp-faint); cursor: not-allowed; }
+.erp-navsearch { position: relative; }
+.erp-navsearch__panel { position: absolute; right: 0; top: calc(100% + 8px); width: 360px; padding: 10px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); box-shadow: var(--erp-shadow-raised); z-index: 50; }
+.erp-navsearch__panel .erp-search { width: 100%; display: block; }
+.erp-navsearch [data-erp-navsearch-toggle][aria-expanded="true"] { border-color: var(--erp-brand); color: var(--erp-brand-ink); background: var(--erp-brand-soft); }
 
 /* 6. Breadcrumbs e cabeçalho de página -------------------------------------- */
 .erp-breadcrumbs ol { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--erp-muted); font-size: 12.5px; }
@@ -416,8 +429,9 @@ p { margin: 0; }
   .erp-sidebar__collapse { display: none; }
   .erp-sidebar__close { display: grid; }
   .erp-shell.is-collapsed .erp-brand__logo, .erp-shell.is-collapsed .erp-nav__label, .erp-shell.is-collapsed .erp-sidebar__context, .erp-shell.is-collapsed .erp-sidebar__profile div { display: revert; }
-  .erp-navbar__menu { display: grid; }
-  .erp-search { display: none; }
+  .erp-icon-button.erp-navbar__menu { display: grid; }
+  .erp-condo-switch__label { display: none; }
+  .erp-condo-switch { max-width: 46vw; padding-left: 10px; }
   .erp-user-chip span { display: none; }
   .erp-grid--2 { grid-template-columns: minmax(0, 1fr); }
 }
@@ -432,7 +446,8 @@ p { margin: 0; }
   .erp-detail-grid { grid-template-columns: minmax(0, 1fr); }
   .erp-filters { display: grid; }
   .erp-donut { flex-direction: column; align-items: flex-start; }
-  .erp-dropdown__panel { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; }
+  .erp-dropdown__panel, .erp-navsearch__panel { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; }
+  .erp-condo-switch__icon { display: none; }
   .erp-modal__foot > .erp-btn { flex: 1; }
 }
 

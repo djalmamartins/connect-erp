@@ -85,6 +85,23 @@ final class RegistryValidator
             case 'condominium':
                 $id = filter_var($text, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
                 return $id === false ? [null, 'Selecione um condomínio.'] : [$id, null];
+            case 'unit':
+                // Existência, escopo e condomínio da unidade são conferidos no RegistryService.
+                $id = filter_var($text, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                return $id === false ? [null, 'Selecione uma unidade.'] : [$id, null];
+            case 'decimal':
+                $scale = (int)($field['scale'] ?? 2);
+                $normalized = str_replace([' ', ','], ['', '.'], $text);
+                if (!preg_match('/^\d+(\.\d{1,' . $scale . '})?$/', $normalized)) {
+                    return [null, "Número inválido (até {$scale} casas decimais)."];
+                }
+                $number = round((float)$normalized, $scale);
+                $min = (float)($field['min'] ?? 0);
+                $max = (float)($field['max_value'] ?? 1e12);
+                if ($number < $min || $number > $max) {
+                    return [null, 'Informe um valor entre ' . self::number($min, $scale) . ' e ' . self::number($max, $scale) . '.'];
+                }
+                return [$number, null];
             case 'select':
                 return array_key_exists($text, $field['options']) ? [$text, null] : [null, 'Opção inválida.'];
             case 'cpf':
@@ -181,6 +198,12 @@ final class RegistryValidator
                 }
                 return [$text, null];
         }
+    }
+
+    private static function number(float $value, int $scale): string
+    {
+        $text = number_format($value, $scale, ',', '.');
+        return str_contains($text, ',') ? rtrim(rtrim($text, '0'), ',') : $text;
     }
 
     private const UF = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];

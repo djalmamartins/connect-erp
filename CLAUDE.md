@@ -21,7 +21,7 @@ Transformar a auditoria APControle em produto próprio Connect ERP, com implemen
 - Não sobrescrever o projeto, remover arquivos, alterar produção, executar migrations destrutivas ou usar credenciais reais sem aprovação explícita.
 - Nunca copiar código, assets proprietários ou identidade visual do APControle; desenvolver solução independente.
 - Uma spec por rota de referência; um componente compartilhado para comportamentos repetidos. Skills são processos, não cópias de páginas.
-- Não implementar suposições como fatos: distinguir CONFIRMADO, INFERIDO e PENDENTE; abrir decisões em `docs/decisions/`.
+- Não implementar suposições como fatos: distinguir CONFIRMADO, INFERIDO e PENDENTE; abrir decisões em `docs/Organic Code/decisions/` com o próximo número livre do índice `docs/decisions/README.md`.
 - Autorização server-side, isolamento por condomínio, auditoria, LGPD e testes são obrigatórios.
 - **Connect ERP NÃO é SaaS** (ADR-002): uma única administradora (Connect) e vários condomínios. Proibido criar cadastro de administradoras, planos/assinaturas, cobrança por administradora, provisionamento, marketplace ou `tenant_id`. A unidade de segregação é `condominium_id`.
 - Cada tarefa: plano curto → implementação → testes → revisão → documentação → relatório de cobertura.
