@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0025.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0026.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -49,3 +49,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0022](../Organic%20Code/decisions/0022-financial-entries.md) | Lançamentos (AP-020): receitas e despesas por condomínio |
 | [0023](../Organic%20Code/decisions/0023-login-throttle-account-ip.md) | Limite de tentativas de login e 2FA por conta e por IP |
 | [0024](../Organic%20Code/decisions/0024-payables-receivables-bank-balances.md) | Contas a pagar e a receber (AP-022/023) como visões dos lançamentos e saldo por conta bancária |
+| [0025](../Organic%20Code/decisions/0025-admin-two-factor-reset.md) | Reset do 2FA de outro usuário por administrador |

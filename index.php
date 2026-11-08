@@ -45,6 +45,8 @@ $route->patch("/condominiums/{id}/onboarding/items/{item}", "CondominiumOnboardi
 $route->get("/onboarding/templates", "OnboardingTemplates:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/onboarding/templates", "OnboardingTemplates:create", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->patch("/onboarding/templates/{id}", "OnboardingTemplates:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reset do 2FA de outro usuário por quem tem security.2fa.manage (ADR 0025).
+$route->delete("/users/{id}/2fa", "UserTwoFactor:reset", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Saldo calculado das contas bancárias (ADR 0024). Antes do laço dos cadastros: /bank-accounts/{id}
 // capturaria "balances".
