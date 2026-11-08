@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Connect ERP API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     API REST do Connect ERP sobre o núcleo Organic Code. Administradora única (ADR-002):
     todo dado de condomínio é limitado ao escopo do usuário no servidor.
@@ -30,7 +30,7 @@ components:
           type: object
           required: [code, message]
           properties:
-            code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_code] }
+            code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_code, validation_failed] }
             message: { type: string }
     Condominium:
       type: object
@@ -61,12 +61,57 @@ components:
             items:
               type: array
               items: { $ref: '#/components/schemas/Condominium' }
+    OnboardingItem:
+      type: object
+      description: Item do checklist de chegada do condomínio (ADR 0013)
+      required: [id, category, title, status, situation]
+      properties:
+        id: { type: integer, minimum: 1 }
+        code: { type: [string, 'null'], description: Código do item no catálogo; null em item avulso }
+        custom: { type: boolean }
+        category: { type: string, enum: [documentacao, seguranca, manutencao, seguros, financeiro, pessoas] }
+        title: { type: string, maxLength: 160 }
+        description: { type: [string, 'null'] }
+        status: { type: string, enum: [pending, regular, action_required, in_progress, not_applicable] }
+        situation:
+          type: string
+          enum: [pending, regular, action_required, in_progress, not_applicable, expiring, expired, overdue]
+          description: Situação calculada na leitura (validade vencida ou a vencer em 30 dias, prazo do protocolo vencido)
+        protocol: { type: [string, 'null'], pattern: '^CHK-\d{4}-\d{6}$' }
+        due_date: { type: [string, 'null'], format: date }
+        expires_at: { type: [string, 'null'], format: date }
+        renewal_months: { type: [integer, 'null'] }
+        notes: { type: [string, 'null'], maxLength: 2000 }
+        responsible:
+          type: [object, 'null']
+          properties: { id: { type: integer }, name: { type: string } }
+        resolved_at: { type: [string, 'null'] }
+        updated_at: { type: string }
+    OnboardingSummary:
+      type: object
+      properties:
+        total: { type: integer }
+        done: { type: integer, description: Em dia, vencendo ou não se aplica }
+        open: { type: integer, description: Protocolos abertos }
+        pending: { type: integer, description: Ainda a verificar }
+        attention: { type: integer, description: Vencidos, a vencer ou com prazo vencido }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        by_situation: { type: object, additionalProperties: { type: integer } }
   responses:
     Unauthenticated:
       description: Sessão ausente ou ainda sem o segundo fator
       content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
     Forbidden:
       description: Sem permissão
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Não encontrado ou fora do escopo
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    CsrfInvalid:
+      description: X-CSRF-Token ausente ou inválido
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ValidationFailed:
+      description: Dados inválidos; error.fields traz campo → mensagem
       content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
 paths:
   /health:
@@ -166,6 +211,98 @@ paths:
                   data: { $ref: '#/components/schemas/Condominium' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '404':
-          description: Não encontrado ou fora do escopo
-          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /condominiums/{id}/onboarding:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: getCondominiumOnboarding
+      summary: Checklist de chegada do condomínio
+      description: Requer erp.access e erp.condominiums.view. Itens na ordem do catálogo e resumo.
+      security: [{ session: [] }]
+      responses:
+        '200':
+          description: Itens e resumo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/OnboardingItem' } }
+                      summary: { $ref: '#/components/schemas/OnboardingSummary' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: startCondominiumOnboarding
+      summary: Inicia ou atualiza o checklist com os itens ativos do catálogo
+      description: Requer erp.condominiums.manage. Idempotente; 201 quando criou itens, 200 quando nada mudou.
+      security: [{ session: [] }]
+      responses:
+        '200': { description: Nada a criar }
+        '201': { description: Itens criados }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /condominiums/{id}/onboarding/items:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    post:
+      operationId: addCondominiumOnboardingItem
+      summary: Registra pendência avulsa (já nasce com protocolo)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, title]
+              properties:
+                category: { type: string, enum: [documentacao, seguranca, manutencao, seguros, financeiro, pessoas] }
+                title: { type: string, maxLength: 160 }
+      responses:
+        '201':
+          description: Item criado
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/OnboardingItem' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /condominiums/{id}/onboarding/items/{item}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      - { name: item, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      operationId: updateCondominiumOnboardingItem
+      summary: Atualiza situação, prazo, validade, observações ou responsável
+      description: |
+        action_required ou in_progress geram protocolo (uma vez) e prazo padrão do item quando due_date
+        não é enviado. regular sem expires_at usa a periodicidade de renovação do catálogo.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [pending, regular, action_required, in_progress, not_applicable] }
+                due_date: { type: [string, 'null'], format: date }
+                expires_at: { type: [string, 'null'], format: date }
+                notes: { type: [string, 'null'], maxLength: 2000 }
+                responsible_user_id: { type: [integer, 'null'] }
+      responses:
+        '200':
+          description: Item atualizado
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/OnboardingItem' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
