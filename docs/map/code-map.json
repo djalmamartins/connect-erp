@@ -65,6 +65,10 @@
    "title": "0017 — Unidades (AP-006) e troca de unit_label por unit_id"
   },
   {
+   "file": "docs/Organic Code/decisions/0018-condominium-areas-assets.md",
+   "title": "0018 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -1393,13 +1397,16 @@
    "layer": "Services",
    "tables": [
     "erp_useful_contacts",
+    "erp_linkable_areas",
     "erp_board_members",
+    "erp_common_areas",
     "erp_residents",
     "erp_employees",
     "erp_suppliers",
     "erp_vehicles",
     "erp_visitors",
     "erp_lawyers",
+    "erp_assets",
     "erp_units",
     "erp_pets"
    ],
@@ -1970,7 +1977,7 @@
   }
  },
  "counts": {
-  "adrs": 19,
+  "adrs": 20,
   "classes": 129,
   "dynamic_route_lines": {
    "erp": 8,
@@ -1978,7 +1985,7 @@
   },
   "erp_pages": 172,
   "routes": 199,
-  "tables": 53,
+  "tables": 56,
   "tests": 46
  },
  "erp_pages": [
@@ -5092,11 +5099,25 @@
     "Source\\Services\\OnboardingAlerts"
    ]
   },
+  "erp_assets": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
   "erp_board_members": {
    "altered_in": [
     "database/migrations/20261108_0402_unit_links.sql"
    ],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_common_areas": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -5111,6 +5132,13 @@
   "erp_lawyers": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_linkable_areas": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
