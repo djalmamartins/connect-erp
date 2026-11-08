@@ -88,8 +88,8 @@ zera esse controle. PENDENTE: agendar o cron no servidor/lab.
 
 ## PENDENTE
 
-- Iniciar o checklist automaticamente ao cadastrar o condomínio (AP-004): chamar
-  `OnboardingChecklist::start($id, $userId)` logo após o INSERT, na fatia de cadastro.
+- FEITO: o cadastro (AP-004, CondominiumRegistry::create) já chama
+  `OnboardingChecklist::start()` na mesma transação e redireciona para o checklist.
 - Anexar documentos/comprovantes ao item (depende do módulo de arquivos).
 - Ligação com a vistoria presencial (thread própria): achados da vistoria devem abrir itens
   avulsos aqui em vez de outra tabela de protocolos.
