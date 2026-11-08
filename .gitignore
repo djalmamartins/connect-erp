@@ -26,3 +26,5 @@ storage/tmp/
 storage/uploads/
 graphify-out/
 .phpunit.cache/
+.claude/settings.local.json
+.claude/backups/
