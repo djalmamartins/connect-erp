@@ -1,0 +1,5673 @@
+{
+ "adrs": [
+  {
+   "file": "docs/Organic Code/decisions/0001-local-environment.md",
+   "title": "0001 — Local environment on the shared XAMPP stack"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0002-helpdesk-support-themes.md",
+   "title": "0002 — Help Desk e Central de Suporte como temas próprios"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0004-organic-shared-assets.md",
+   "title": "0004 — Distribuição Organic em container/shared e fim de organic/ e src/"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0005-legacy-images-storage.md",
+   "title": "0005 — Imagens do legado ficam no storage, fora do Git"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0006-fail-closed-access-and-offline-unit-tests.md",
+   "title": "0006 — Autorização fail-closed e suíte unit sem MariaDB"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0007-erp-theme-and-condominiums-slice.md",
+   "title": "0007 — Tema ERP em container/erp/connect/v1 e primeira fatia de Condomínios"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0008-send-mail-templates.md",
+   "title": "0008 — Templates de e-mail no ambiente send"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0009-password-reset-tokens.md",
+   "title": "0009 — Recuperação de senha com token aleatório, hash e uso único"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0010-erp-frontend-shell-and-catalog.md",
+   "title": "0010 — Moldura do ERP, catálogo de rotas e login compartilhado com o Studio"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0011-condominium-registry.md",
+   "title": "0011 — Cadastro e edição de condomínios (AP-004)"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0012-single-database.md",
+   "title": "0012 — Banco único (C5)"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0013-condominium-onboarding-checklist.md",
+   "title": "0013 — Checklist de chegada do condomínio"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0014-registry-engine.md",
+   "title": "0014 — Motor único dos cadastros do ERP (grupo Cadastros)"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0015-inspections-gps-photos.md",
+   "title": "0015 — Vistoria presencial: check-in por GPS, fotos privadas e relatório"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0016-code-map-and-watchdog.md",
+   "title": "0016 — Mapa do código e vigia de 30 minutos"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0017-units-and-unit-links.md",
+   "title": "0017 — Unidades (AP-006) e troca de unit_label por unit_id"
+  },
+  {
+   "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
+   "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
+  },
+  {
+   "file": "docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md",
+   "title": "ADR-002 — Administradora única, sem SaaS"
+  },
+  {
+   "file": "docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md",
+   "title": "ADR-003 — Design System do Studio em camada única"
+  }
+ ],
+ "classes": {
+  "Connect\\Http\\JsonResponse": {
+   "deps": [],
+   "file": "source/Connect/Http/JsonResponse.php",
+   "kind": "class",
+   "layer": "Http",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\CondominiumOnboarding": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingChecklist",
+    "Source\\Services\\OnboardingItemNotFound",
+    "Source\\Services\\OnboardingValidationError",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/CondominiumOnboarding.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Controllers\\Api\\V1\\Condominiums": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/Condominiums.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\Inspections": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Inspections\\InspectionError",
+    "Source\\Services\\Inspections\\InspectionService"
+   ],
+   "file": "source/Controllers/Api/V1/Inspections.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\Me": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\TwoFactorService",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/Me.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\OnboardingTemplates": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\OnboardingCatalog",
+    "Source\\Services\\OnboardingItemNotFound",
+    "Source\\Services\\OnboardingValidationError",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/OnboardingTemplates.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Controllers\\Api\\V1\\Registry": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryInUse",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/Registry.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "pages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php"
+   ]
+  },
+  "Source\\Controllers\\Api\\V1\\TwoFactor": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Support\\Middleware\\ApiAuthenticated"
+   ],
+   "file": "source/Controllers/Api/V1/TwoFactor.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\App\\Connect\\App": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/App/Connect/App.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\App\\Connect\\Dash": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/App/Connect/Dash.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\App\\V1\\App": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/App/V1/App.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\App\\V1\\Dash": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth"
+   ],
+   "file": "source/Controllers/App/V1/Dash.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Condo": {
+   "deps": [
+    "Source\\Core\\View",
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppOwner",
+    "Source\\Models\\Corporation\\AppUnits",
+    "Source\\Models\\User",
+    "Source\\Support\\Email",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/Connect/Condo.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Condominium": {
+   "deps": [
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Corporation\\AppOwner",
+    "Source\\Models\\Corporation\\AppUnits",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\User",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Thumb",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/Connect/Condominium.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingChecklist",
+    "Source\\Services\\OnboardingItemNotFound",
+    "Source\\Services\\OnboardingValidationError",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/CondominiumChecklist.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Controllers\\Erp\\Connect\\Condominiums": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\CondominiumRegistry",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\CondominiumValidator",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/Condominiums.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": [
+    "tests/legacy/Unit/ErpThemeTest.php"
+   ]
+  },
+  "Source\\Controllers\\Erp\\Connect\\Dash": {
+   "deps": [
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/Erp/Connect/Dash.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Erp": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Erp\\AppWallet",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/Erp.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Finance": {
+   "deps": [
+    "Source\\Controllers\\App\\V1\\App",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Erp\\AppInvoice"
+   ],
+   "file": "source/Controllers/Erp/Connect/Finance.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Inspections": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Inspections\\ChecklistText",
+    "Source\\Services\\Inspections\\InspectionError",
+    "Source\\Services\\Inspections\\InspectionReport",
+    "Source\\Services\\Inspections\\InspectionService",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/Inspections.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Login": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/Login.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\OnboardingCatalog",
+    "Source\\Services\\OnboardingItemNotFound",
+    "Source\\Services\\OnboardingValidationError",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Erp/Connect/OnboardingCatalog.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/OnboardingCatalogTest.php"
+   ]
+  },
+  "Source\\Controllers\\Erp\\Connect\\Panel": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\DemoData",
+    "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\FieldSpec"
+   ],
+   "file": "source/Controllers/Erp/Connect/Panel.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications",
+    "pages"
+   ],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpThemeTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Controllers\\Erp\\Connect\\Register": {
+   "deps": [
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppUnits",
+    "Source\\Models\\User",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/Connect/Register.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Registry": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryInUse",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+    "Source\\Support\\Access",
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Controllers/Erp/Connect/Registry.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Security": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Services\\TwoFactorService",
+    "Source\\Support\\Access",
+    "Source\\Support\\SecretBox"
+   ],
+   "file": "source/Controllers/Erp/Connect/Security.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\Connect\\Users": {
+   "deps": [
+    "Source\\Core\\View",
+    "Source\\Models\\Address",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\User",
+    "Source\\Support\\Email",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/Connect/Users.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Condominium": {
+   "deps": [
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Corporation\\AppOwner",
+    "Source\\Models\\Corporation\\AppUnits",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\User",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Thumb",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/V1/Condominium.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Corporations": {
+   "deps": [
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Thumb",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/V1/Corporations.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Dash": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Faq\\Channel",
+    "Source\\Models\\Faq\\Question",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Post\\Category",
+    "Source\\Models\\Post\\Post",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/Erp/V1/Dash.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Erp": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/Erp/V1/Erp.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Manager": {
+   "deps": [
+    "Source\\Models\\Banking\\AppBankInter",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Corporation\\AppUnits",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\User",
+    "Source\\Support\\Pager"
+   ],
+   "file": "source/Controllers/Erp/V1/Manager.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Erp\\V1\\Users": {
+   "deps": [
+    "Source\\Core\\View",
+    "Source\\Models\\Address",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User",
+    "Source\\Support\\Email",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Erp/V1/Users.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Pay\\Pay": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth"
+   ],
+   "file": "source/Controllers/Pay/Pay.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Studio\\Studio": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Core\\Controller",
+    "Source\\Models\\Address",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Brief\\AppBrief",
+    "Source\\Models\\Faq\\Channel",
+    "Source\\Models\\Faq\\Question",
+    "Source\\Models\\Notification\\AuditLog",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Notification\\NotificationCategory",
+    "Source\\Models\\Notification\\NotificationMessage",
+    "Source\\Models\\Post\\Category",
+    "Source\\Models\\Post\\Page",
+    "Source\\Models\\Post\\Post",
+    "Source\\Models\\Proposal\\Proposal",
+    "Source\\Models\\Proposal\\ProposalResponse",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Settings\\Settings",
+    "Source\\Models\\Slide\\AppSlides",
+    "Source\\Models\\Support\\SupportArticle",
+    "Source\\Models\\Support\\SupportCategory",
+    "Source\\Models\\User",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit",
+    "Source\\Support\\Communication",
+    "Source\\Support\\Email",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Proposal\\ProposalMailer",
+    "Source\\Support\\Proposal\\ProposalPdf",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Studio/Studio.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "studio_support_ticket_attachments",
+    "studio_support_ticket_messages",
+    "studio_support_ticket_events",
+    "studio_support_templates",
+    "studio_calendar_events",
+    "studio_support_tickets",
+    "notification_messages",
+    "access_user_overrides",
+    "access_permissions",
+    "access_user_roles",
+    "system_audit_logs",
+    "movesos_versions",
+    "support_articles",
+    "notifications",
+    "access_roles",
+    "mail_queue",
+    "settings",
+    "app_log",
+    "pages",
+    "posts"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ServiceDeskTest.php",
+    "tests/legacy/Unit/HelpDeskSupportThemesTest.php"
+   ]
+  },
+  "Source\\Controllers\\Studio\\TwoFactor": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\TwoFactorService",
+    "Source\\Support\\Access",
+    "Source\\Support\\SecretBox"
+   ],
+   "file": "source/Controllers/Studio/TwoFactor.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Web\\Connect\\Web": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Brief\\AppBrief",
+    "Source\\Models\\Post\\Category",
+    "Source\\Models\\Post\\Page",
+    "Source\\Models\\Post\\Post",
+    "Source\\Models\\Report\\Access",
+    "Source\\Models\\Report\\Online",
+    "Source\\Models\\Slide\\AppSlides",
+    "Source\\Models\\Support\\SupportArticle",
+    "Source\\Models\\Support\\SupportCategory",
+    "Source\\Models\\User",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Pager",
+    "Source\\Support\\Proposal\\ProposalService"
+   ],
+   "file": "source/Controllers/Web/Connect/Web.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "support_article_votes",
+    "support_articles"
+   ],
+   "tests": []
+  },
+  "Source\\Controllers\\Web\\Support\\Support": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Core\\Controller",
+    "Source\\Models\\Support\\SupportArticle",
+    "Source\\Models\\Support\\SupportCategory",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Upload"
+   ],
+   "file": "source/Controllers/Web/Support/Support.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "studio_support_ticket_messages",
+    "studio_support_tickets",
+    "support_article_votes",
+    "support_articles"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ServiceDeskTest.php"
+   ]
+  },
+  "Source\\Controllers\\Web\\V1\\Web": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Models\\Session\\AppSession",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Controllers/Web/V1/Web.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Core\\Connect": {
+   "deps": [
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Core/Connect.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": [
+    "tests/legacy/TestCase.php"
+   ]
+  },
+  "Source\\Core\\Controller": {
+   "deps": [
+    "Source\\Support\\Message",
+    "Source\\Support\\Seo"
+   ],
+   "file": "source/Core/Controller.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Core\\Model": {
+   "deps": [
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit",
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Core/Model.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Core\\Router": {
+   "deps": [],
+   "file": "source/Core/Router.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": [
+    "tests/smoke.php"
+   ]
+  },
+  "Source\\Core\\Session": {
+   "deps": [
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Core/Session.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/CsrfTest.php"
+   ]
+  },
+  "Source\\Core\\View": {
+   "deps": [],
+   "file": "source/Core/View.php",
+   "kind": "class",
+   "layer": "Core",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpThemeTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
+   ]
+  },
+  "Source\\Models\\Address": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Address.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Auth": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Core\\Model",
+    "Source\\Core\\Session",
+    "Source\\Models\\Corporation\\AppCondominium",
+    "Source\\Models\\Corporation\\AppCorporations",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Services\\PasswordResetService",
+    "Source\\Services\\TwoFactorService",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Email",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Models/Auth.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/AuthTest.php",
+    "tests/legacy/Integration/PasswordResetServiceTest.php",
+    "tests/legacy/Unit/AuthDummyHashTest.php"
+   ]
+  },
+  "Source\\Models\\Banking\\AppBankInter": {
+   "deps": [],
+   "file": "source/Models/Banking/AppBankInter.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Banking\\Banking": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Banking/Banking.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Brief\\AppBrief": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Brief/AppBrief.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "brief"
+   ],
+   "tests": []
+  },
+  "Source\\Models\\Corporation\\AppCondominium": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Core\\Session",
+    "Source\\Models\\Address"
+   ],
+   "file": "source/Models/Corporation/AppCondominium.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Corporation\\AppCorporations": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Core\\Session",
+    "Source\\Models\\Address"
+   ],
+   "file": "source/Models/Corporation/AppCorporations.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Corporation\\AppOwner": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Corporation/AppOwner.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Corporation\\AppUnits": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Corporation/AppUnits.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Erp\\AppCategory": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Erp/AppCategory.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Erp\\AppInvoice": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Erp/AppInvoice.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Erp\\AppWallet": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\Corporation\\AppCondominium"
+   ],
+   "file": "source/Models/Erp/AppWallet.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Faq\\Channel": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Faq/Channel.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Faq\\Question": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Faq/Question.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "faq_questions"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Notification\\AuditLog": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Notification/AuditLog.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "system_audit_logs"
+   ],
+   "tests": []
+  },
+  "Source\\Models\\Notification\\Notification": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Notification/Notification.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "notifications"
+   ],
+   "tests": []
+  },
+  "Source\\Models\\Notification\\NotificationCategory": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Notification/NotificationCategory.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Notification\\NotificationMessage": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Notification/NotificationMessage.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "notification_messages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/NotificationQueueTest.php",
+    "tests/legacy/Integration/ServiceDeskTest.php"
+   ]
+  },
+  "Source\\Models\\Post\\Category": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Post/Category.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Post\\Page": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Post/Page.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "pages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Post\\Post": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Post/Post.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "posts"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Proposal\\Proposal": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Proposal/Proposal.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Proposal\\ProposalResponse": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Proposal/ProposalResponse.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Report\\Access": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Core\\Session"
+   ],
+   "file": "source/Models/Report/Access.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "pages"
+   ],
+   "tests": []
+  },
+  "Source\\Models\\Report\\Online": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Core\\Session",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Report/Online.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Session\\AppLog": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Models/Session/AppLog.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "app_log"
+   ],
+   "tests": []
+  },
+  "Source\\Models\\Session\\AppSession": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Session/AppSession.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Settings\\Settings": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Settings/Settings.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "settings"
+   ],
+   "tests": [
+    "tests/legacy/Integration/SettingsAndVersionsTest.php"
+   ]
+  },
+  "Source\\Models\\Slide\\AppSlide": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\Slide\\SlideCategory",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Slide/AppSlide.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Slide\\AppSlides": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Models/Slide/AppSlides.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Slide\\CategorySlide": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Slide/CategorySlide.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Slide\\SlideCategory": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Slide/SlideCategory.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\Support\\SupportArticle": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Support/SupportArticle.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "support_articles"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Support\\SupportCategory": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Support/SupportCategory.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [
+    "support_categories"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ContentCrudTest.php"
+   ]
+  },
+  "Source\\Models\\Talk\\Talk": {
+   "deps": [
+    "Source\\Core\\Model"
+   ],
+   "file": "source/Models/Talk/Talk.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Models\\User": {
+   "deps": [
+    "Source\\Core\\Model",
+    "Source\\Models\\Corporation\\AppOwner",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Models/User.php",
+   "kind": "class",
+   "layer": "Models",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Integration/AccessControlTest.php",
+    "tests/legacy/Integration/CondominiumRegistryTest.php",
+    "tests/legacy/Integration/CondominiumScopeTest.php",
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Integration/PasswordResetServiceTest.php",
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/ServiceDeskTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Integration/UserTest.php",
+    "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpThemeTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Services\\CondominiumAccessDenied": {
+   "deps": [],
+   "file": "source/Services/CondominiumAccessDenied.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/CondominiumRegistryTest.php",
+    "tests/legacy/Integration/CondominiumScopeTest.php"
+   ]
+  },
+  "Source\\Services\\CondominiumRegistry": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Support\\Access",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/CondominiumRegistry.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "user_condominium_access",
+    "condominiums"
+   ],
+   "tests": [
+    "tests/legacy/Integration/CondominiumRegistryTest.php"
+   ]
+  },
+  "Source\\Services\\CondominiumScope": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Services/CondominiumScope.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "user_condominium_access",
+    "access_role_permissions",
+    "access_user_overrides",
+    "access_permissions",
+    "access_user_roles",
+    "condominiums",
+    "access_roles"
+   ],
+   "tests": [
+    "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
+    "tests/legacy/Integration/CondominiumRegistryTest.php",
+    "tests/legacy/Integration/CondominiumScopeTest.php",
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Integration/OnboardingAlertsTest.php",
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php"
+   ]
+  },
+  "Source\\Services\\CondominiumValidator": {
+   "deps": [],
+   "file": "source/Services/CondominiumValidator.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/DocumentValidationTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\DemoData": {
+   "deps": [],
+   "file": "source/Services/Erp/DemoData.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\Definitions": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/Definitions.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_useful_contacts",
+    "erp_board_members",
+    "erp_residents",
+    "erp_employees",
+    "erp_suppliers",
+    "erp_vehicles",
+    "erp_visitors",
+    "erp_lawyers",
+    "erp_units",
+    "erp_pets"
+   ],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Unit/RegistryValidatorTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryForbidden": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryForbidden.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryInUse": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryInUse.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/UnitRegistryTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryNotFound": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryNotFound.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/Registry/RegistryService.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "system_audit_logs",
+    "condominiums",
+    "erp_units",
+    "pages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryValidationException": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryValidationException.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryValidator": {
+   "deps": [
+    "Source\\Support\\Erp\\BrDocument"
+   ],
+   "file": "source/Services/Erp/Registry/RegistryValidator.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/RegistryValidatorTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\ChecklistText": {
+   "deps": [],
+   "file": "source/Services/Inspections/ChecklistText.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/InspectionRulesTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\Geo": {
+   "deps": [],
+   "file": "source/Services/Inspections/Geo.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/InspectionRulesTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\InspectionError": {
+   "deps": [],
+   "file": "source/Services/Inspections/InspectionError.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Unit/InspectionPhotoStorageTest.php",
+    "tests/legacy/Unit/InspectionRulesTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\InspectionReport": {
+   "deps": [
+    "Source\\Core\\View",
+    "Source\\Models\\User",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Email",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Services/Inspections/InspectionReport.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/InspectionServiceTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\InspectionService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Access",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Inspections/InspectionService.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "inspection_report_deliveries",
+    "inspection_template_items",
+    "condominium_geolocations",
+    "inspection_templates",
+    "inspection_answers",
+    "inspection_photos",
+    "inspection_plans",
+    "condominiums",
+    "inspections"
+   ],
+   "tests": [
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Unit/InspectionRulesTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\PhotoStorage": {
+   "deps": [],
+   "file": "source/Services/Inspections/PhotoStorage.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Unit/InspectionPhotoStorageTest.php"
+   ]
+  },
+  "Source\\Services\\Inspections\\Schedule": {
+   "deps": [],
+   "file": "source/Services/Inspections/Schedule.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/InspectionRulesTest.php"
+   ]
+  },
+  "Source\\Services\\OnboardingAlerts": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Services/OnboardingAlerts.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "condominium_onboarding_items",
+    "access_role_permissions",
+    "access_user_overrides",
+    "access_permissions",
+    "access_user_roles",
+    "notifications",
+    "condominiums",
+    "access_roles",
+    "mail_queue"
+   ],
+   "tests": [
+    "tests/legacy/Integration/OnboardingAlertsTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Services\\OnboardingCatalog": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/OnboardingCatalog.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "condominium_onboarding_items",
+    "onboarding_item_templates"
+   ],
+   "tests": [
+    "tests/legacy/Integration/OnboardingCatalogTest.php"
+   ]
+  },
+  "Source\\Services\\OnboardingChecklist": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/OnboardingChecklist.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "condominium_onboarding_items",
+    "onboarding_item_templates"
+   ],
+   "tests": [
+    "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
+    "tests/legacy/Integration/CondominiumRegistryTest.php",
+    "tests/legacy/Integration/OnboardingAlertsTest.php",
+    "tests/legacy/Integration/OnboardingCatalogTest.php",
+    "tests/legacy/Integration/OnboardingChecklistTest.php"
+   ]
+  },
+  "Source\\Services\\OnboardingItemNotFound": {
+   "deps": [],
+   "file": "source/Services/OnboardingItemNotFound.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/OnboardingChecklistTest.php"
+   ]
+  },
+  "Source\\Services\\OnboardingValidationError": {
+   "deps": [],
+   "file": "source/Services/OnboardingValidationError.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/OnboardingCatalogTest.php",
+    "tests/legacy/Integration/OnboardingChecklistTest.php"
+   ]
+  },
+  "Source\\Services\\PasswordResetService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\PasswordResetToken"
+   ],
+   "file": "source/Services/PasswordResetService.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "user_password_resets"
+   ],
+   "tests": [
+    "tests/legacy/Integration/PasswordResetServiceTest.php"
+   ]
+  },
+  "Source\\Services\\TwoFactorService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\SecretBox",
+    "Source\\Support\\Totp"
+   ],
+   "file": "source/Services/TwoFactorService.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "user_recovery_codes",
+    "user_two_factor"
+   ],
+   "tests": [
+    "tests/legacy/Integration/TwoFactorServiceTest.php",
+    "tests/legacy/Unit/SecretBoxTest.php"
+   ]
+  },
+  "Source\\Support\\Access": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Support/Access.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "access_role_permissions",
+    "access_user_overrides",
+    "access_permissions",
+    "access_user_roles",
+    "access_roles",
+    "settings"
+   ],
+   "tests": [
+    "tests/legacy/Integration/AccessControlTest.php",
+    "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
+    "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Integration/OnboardingCatalogTest.php",
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/TestCase.php",
+    "tests/legacy/Unit/AccessFallbackTest.php",
+    "tests/legacy/Unit/AccessRegisteredPermissionsTest.php",
+    "tests/smoke.php"
+   ]
+  },
+  "Source\\Support\\AppLogger": {
+   "deps": [],
+   "file": "source/Support/AppLogger.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "access_user_roles",
+    "access_roles",
+    "app_log"
+   ],
+   "tests": []
+  },
+  "Source\\Support\\Audit": {
+   "deps": [
+    "Source\\Core\\Connect"
+   ],
+   "file": "source/Support/Audit.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "notification_messages",
+    "system_audit_logs",
+    "notifications",
+    "app_log"
+   ],
+   "tests": []
+  },
+  "Source\\Support\\Communication": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Notification\\NotificationCategory",
+    "Source\\Models\\Notification\\NotificationMessage",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Support/Communication.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "mail_queue"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ServiceDeskTest.php"
+   ]
+  },
+  "Source\\Support\\Email": {
+   "deps": [
+    "Source\\Core\\Connect"
+   ],
+   "file": "source/Support/Email.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "mail_queue"
+   ],
+   "tests": []
+  },
+  "Source\\Support\\Erp\\BrDocument": {
+   "deps": [],
+   "file": "source/Support/Erp/BrDocument.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/RegistryValidatorTest.php"
+   ]
+  },
+  "Source\\Support\\Erp\\FieldSpec": {
+   "deps": [],
+   "file": "source/Support/Erp/FieldSpec.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\Erp\\RegistryFormat": {
+   "deps": [],
+   "file": "source/Support/Erp/RegistryFormat.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\MailTemplate": {
+   "deps": [
+    "Source\\Core\\View"
+   ],
+   "file": "source/Support/MailTemplate.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/MailTemplateTest.php",
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Support\\Message": {
+   "deps": [
+    "Source\\Core\\Session"
+   ],
+   "file": "source/Support/Message.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\Middleware\\ApiAuthenticated": {
+   "deps": [
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth"
+   ],
+   "file": "source/Support/Middleware/ApiAuthenticated.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\Pager": {
+   "deps": [],
+   "file": "source/Support/Pager.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\PasswordResetToken": {
+   "deps": [],
+   "file": "source/Support/PasswordResetToken.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/PasswordResetServiceTest.php",
+    "tests/legacy/Unit/PasswordResetTokenTest.php"
+   ]
+  },
+  "Source\\Support\\Proposal\\ProposalMailer": {
+   "deps": [
+    "Source\\Models\\Proposal\\Proposal",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Support/Proposal/ProposalMailer.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\Proposal\\ProposalPdf": {
+   "deps": [
+    "Source\\Models\\Proposal\\Proposal",
+    "Source\\Models\\Proposal\\ProposalResponse"
+   ],
+   "file": "source/Support/Proposal/ProposalPdf.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\Proposal\\ProposalService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Notification\\NotificationCategory",
+    "Source\\Models\\Notification\\NotificationMessage",
+    "Source\\Models\\Proposal\\Proposal",
+    "Source\\Models\\User",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Email"
+   ],
+   "file": "source/Support/Proposal/ProposalService.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "access_user_roles",
+    "access_roles"
+   ],
+   "tests": []
+  },
+  "Source\\Support\\SecretBox": {
+   "deps": [],
+   "file": "source/Support/SecretBox.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/SecretBoxTest.php"
+   ]
+  },
+  "Source\\Support\\Seo": {
+   "deps": [],
+   "file": "source/Support/Seo.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Support\\StudioModules": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Support/StudioModules.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "module_migrations",
+    "modules"
+   ],
+   "tests": []
+  },
+  "Source\\Support\\Thumb": {
+   "deps": [],
+   "file": "source/Support/Thumb.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ThumbFallbackTest.php"
+   ]
+  },
+  "Source\\Support\\Totp": {
+   "deps": [],
+   "file": "source/Support/Totp.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/TwoFactorServiceTest.php",
+    "tests/legacy/Unit/TotpTest.php"
+   ]
+  },
+  "Source\\Support\\Upload": {
+   "deps": [],
+   "file": "source/Support/Upload.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/UploadSecurityTest.php"
+   ]
+  }
+ },
+ "counts": {
+  "adrs": 19,
+  "classes": 129,
+  "dynamic_route_lines": {
+   "erp": 8,
+   "index": 6
+  },
+  "erp_pages": 172,
+  "routes": 199,
+  "tables": 53,
+  "tests": 46
+ },
+ "erp_pages": [
+  {
+   "domain": "dashboards",
+   "id": "AP-001",
+   "name": "Administradora",
+   "spec_path": "docs/specs/pages/ap-001-administradora.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-002",
+   "name": "Condomínio",
+   "spec_path": "docs/specs/pages/ap-002-condominio.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-003",
+   "name": "Unidade",
+   "spec_path": "docs/specs/pages/ap-003-unidade.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-004",
+   "name": "Condomínios",
+   "spec_path": "docs/specs/pages/ap-004-condominios.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-005",
+   "name": "Inquilinos",
+   "spec_path": "docs/specs/pages/ap-005-inquilinos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-006",
+   "name": "Unidades",
+   "spec_path": "docs/specs/pages/ap-006-unidades.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-007",
+   "name": "Áreas Vinculáveis",
+   "spec_path": "docs/specs/pages/ap-007-areas-vinculaveis.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-008",
+   "name": "Áreas Comuns",
+   "spec_path": "docs/specs/pages/ap-008-areas-comuns.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-009",
+   "name": "Funcionários",
+   "spec_path": "docs/specs/pages/ap-009-funcionarios.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-010",
+   "name": "Fornecedores",
+   "spec_path": "docs/specs/pages/ap-010-fornecedores.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-011",
+   "name": "Veículos",
+   "spec_path": "docs/specs/pages/ap-011-veiculos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-012",
+   "name": "Visitantes",
+   "spec_path": "docs/specs/pages/ap-012-visitantes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-013",
+   "name": "Animais de Estimação",
+   "spec_path": "docs/specs/pages/ap-013-animais-de-estimacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-014",
+   "name": "Conselho",
+   "spec_path": "docs/specs/pages/ap-014-conselho.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-015",
+   "name": "Contatos Úteis",
+   "spec_path": "docs/specs/pages/ap-015-contatos-uteis.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-016",
+   "name": "Advogados",
+   "spec_path": "docs/specs/pages/ap-016-advogados.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-017",
+   "name": "Votação",
+   "spec_path": "docs/specs/pages/ap-017-votacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-018",
+   "name": "Assembleia Virtual",
+   "spec_path": "docs/specs/pages/ap-018-assembleia-virtual.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "cadastros",
+   "id": "AP-019",
+   "name": "Patrimônio",
+   "spec_path": "docs/specs/pages/ap-019-patrimonio.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-020",
+   "name": "Ver Lançamentos",
+   "spec_path": "docs/specs/pages/ap-020-ver-lancamentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-021",
+   "name": "Ver Lançamentos Fixos",
+   "spec_path": "docs/specs/pages/ap-021-ver-lancamentos-fixos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-022",
+   "name": "Contas a Pagar",
+   "spec_path": "docs/specs/pages/ap-022-contas-a-pagar.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-023",
+   "name": "Contas a Receber",
+   "spec_path": "docs/specs/pages/ap-023-contas-a-receber.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-024",
+   "name": "Lançar Despesa",
+   "spec_path": "docs/specs/pages/ap-024-lancar-despesa.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-025",
+   "name": "Lançar Receita",
+   "spec_path": "docs/specs/pages/ap-025-lancar-receita.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-026",
+   "name": "Lançar Desconto",
+   "spec_path": "docs/specs/pages/ap-026-lancar-desconto.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-027",
+   "name": "Lançar Multa (Avulsa)",
+   "spec_path": "docs/specs/pages/ap-027-lancar-multa-avulsa.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-028",
+   "name": "Cobranças Extras",
+   "spec_path": "docs/specs/pages/ap-028-cobrancas-extras.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-029",
+   "name": "Outros Lançamentos",
+   "spec_path": "docs/specs/pages/ap-029-outros-lancamentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-030",
+   "name": "Fechamento Mensal",
+   "spec_path": "docs/specs/pages/ap-030-fechamento-mensal.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-031",
+   "name": "Pagamentos (Bancos)",
+   "spec_path": "docs/specs/pages/ap-031-pagamentos-bancos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-032",
+   "name": "Faturas",
+   "spec_path": "docs/specs/pages/ap-032-faturas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-033",
+   "name": "Acordos",
+   "spec_path": "docs/specs/pages/ap-033-acordos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-034",
+   "name": "Parcelas de Acordo",
+   "spec_path": "docs/specs/pages/ap-034-parcelas-de-acordo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-035",
+   "name": "Boletos",
+   "spec_path": "docs/specs/pages/ap-035-boletos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-036",
+   "name": "Arquivo de Retorno",
+   "spec_path": "docs/specs/pages/ap-036-arquivo-de-retorno.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-037",
+   "name": "Remessas",
+   "spec_path": "docs/specs/pages/ap-037-remessas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-038",
+   "name": "Retornos",
+   "spec_path": "docs/specs/pages/ap-038-retornos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-039",
+   "name": "Cobrança Judicial",
+   "spec_path": "docs/specs/pages/ap-039-cobranca-judicial.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-040",
+   "name": "Recibos",
+   "spec_path": "docs/specs/pages/ap-040-recibos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "leituras",
+   "id": "AP-041",
+   "name": "Relógios",
+   "spec_path": "docs/specs/pages/ap-041-relogios.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "leituras",
+   "id": "AP-042",
+   "name": "Leituras",
+   "spec_path": "docs/specs/pages/ap-042-leituras.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "leituras",
+   "id": "AP-043",
+   "name": "Tarifas",
+   "spec_path": "docs/specs/pages/ap-043-tarifas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-044",
+   "name": "Importação de Leituras",
+   "spec_path": "docs/specs/pages/ap-044-importacao-de-leituras.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-045",
+   "name": "Consumo (Geral)",
+   "spec_path": "docs/specs/pages/ap-045-consumo-geral.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-046",
+   "name": "Consumo (Unidade)",
+   "spec_path": "docs/specs/pages/ap-046-consumo-unidade.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-047",
+   "name": "Acordos",
+   "spec_path": "docs/specs/pages/ap-047-acordos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-048",
+   "name": "Taxas de Acordos",
+   "spec_path": "docs/specs/pages/ap-048-taxas-de-acordos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-049",
+   "name": "Centros de Custo",
+   "spec_path": "docs/specs/pages/ap-049-centros-de-custo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-050",
+   "name": "Comparativo",
+   "spec_path": "docs/specs/pages/ap-050-comparativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-051",
+   "name": "Demonstrativo",
+   "spec_path": "docs/specs/pages/ap-051-demonstrativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-052",
+   "name": "Demonstrativo Contas",
+   "spec_path": "docs/specs/pages/ap-052-demonstrativo-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-053",
+   "name": "Demonstrativo Analítico",
+   "spec_path": "docs/specs/pages/ap-053-demonstrativo-analitico.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-054",
+   "name": "Demonstrativo Situação",
+   "spec_path": "docs/specs/pages/ap-054-demonstrativo-situacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-055",
+   "name": "Demonstrativo Contas",
+   "spec_path": "docs/specs/pages/ap-055-demonstrativo-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-056",
+   "name": "Extrato Conta",
+   "spec_path": "docs/specs/pages/ap-056-extrato-conta.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-057",
+   "name": "Inadimplentes (Geral)",
+   "spec_path": "docs/specs/pages/ap-057-inadimplentes-geral.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-058",
+   "name": "Inadimplentes (Unidade)",
+   "spec_path": "docs/specs/pages/ap-058-inadimplentes-unidade.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-059",
+   "name": "Inadimplentes (Detalhado",
+   "spec_path": "docs/specs/pages/ap-059-inadimplentes-detalhado.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-060",
+   "name": "Inadimplentes (Taxa)",
+   "spec_path": "docs/specs/pages/ap-060-inadimplentes-taxa.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-061",
+   "name": "Inadimplentes (Morador)",
+   "spec_path": "docs/specs/pages/ap-061-inadimplentes-morador.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-062",
+   "name": "Rateio",
+   "spec_path": "docs/specs/pages/ap-062-rateio.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-063",
+   "name": "Rateio Comparativo",
+   "spec_path": "docs/specs/pages/ap-063-rateio-comparativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-064",
+   "name": "Rateio Detalhado",
+   "spec_path": "docs/specs/pages/ap-064-rateio-detalhado.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-065",
+   "name": "Rateio Analítico",
+   "spec_path": "docs/specs/pages/ap-065-rateio-analitico.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-066",
+   "name": "Rateio Analítico (Detalhado)",
+   "spec_path": "docs/specs/pages/ap-066-rateio-analitico-detalhado.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-067",
+   "name": "Rateio por Conta",
+   "spec_path": "docs/specs/pages/ap-067-rateio-por-conta.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-068",
+   "name": "Lançamentos",
+   "spec_path": "docs/specs/pages/ap-068-lancamentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-069",
+   "name": "Lançamentos (Detalhado)",
+   "spec_path": "docs/specs/pages/ap-069-lancamentos-detalhado.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-070",
+   "name": "Boletos",
+   "spec_path": "docs/specs/pages/ap-070-boletos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-071",
+   "name": "Recebimentos",
+   "spec_path": "docs/specs/pages/ap-071-recebimentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-072",
+   "name": "Recebimentos por Conta",
+   "spec_path": "docs/specs/pages/ap-072-recebimentos-por-conta.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-073",
+   "name": "Saldos de Contas",
+   "spec_path": "docs/specs/pages/ap-073-saldos-de-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-074",
+   "name": "Registro de Pagamentos",
+   "spec_path": "docs/specs/pages/ap-074-registro-de-pagamentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-075",
+   "name": "Relatório Memória de Cálculo",
+   "spec_path": "docs/specs/pages/ap-075-relatorio-memoria-de-calculo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-076",
+   "name": "Relatório de transferências",
+   "spec_path": "docs/specs/pages/ap-076-relatorio-de-transferencias.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-077",
+   "name": "Demonstrativo",
+   "spec_path": "docs/specs/pages/ap-077-demonstrativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-078",
+   "name": "Comparativo",
+   "spec_path": "docs/specs/pages/ap-078-comparativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "financeiro",
+   "id": "AP-079",
+   "name": "Balancete Verificação",
+   "spec_path": "docs/specs/pages/ap-079-balancete-verificacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-080",
+   "name": "Balancete Anual",
+   "spec_path": "docs/specs/pages/ap-080-balancete-anual.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-081",
+   "name": "Balanço Patrimonial",
+   "spec_path": "docs/specs/pages/ap-081-balanco-patrimonial.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-082",
+   "name": "Resultado Exercício",
+   "spec_path": "docs/specs/pages/ap-082-resultado-exercicio.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-083",
+   "name": "Livro Razão",
+   "spec_path": "docs/specs/pages/ap-083-livro-razao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-084",
+   "name": "Previsão Orçamentária",
+   "spec_path": "docs/specs/pages/ap-084-previsao-orcamentaria.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-085",
+   "name": "Reservas Áreas Comuns",
+   "spec_path": "docs/specs/pages/ap-085-reservas-areas-comuns.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-086",
+   "name": "Unidades",
+   "spec_path": "docs/specs/pages/ap-086-unidades.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-087",
+   "name": "Listagem de Pessoas",
+   "spec_path": "docs/specs/pages/ap-087-listagem-de-pessoas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-088",
+   "name": "Listagem de presenças em",
+   "spec_path": "docs/specs/pages/ap-088-listagem-de-presencas-em.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-089",
+   "name": "Condomínios",
+   "spec_path": "docs/specs/pages/ap-089-condominios.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-090",
+   "name": "Ocorrências",
+   "spec_path": "docs/specs/pages/ap-090-ocorrencias.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-091",
+   "name": "Administração",
+   "spec_path": "docs/specs/pages/ap-091-administracao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-092",
+   "name": "Parecer",
+   "spec_path": "docs/specs/pages/ap-092-parecer.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-093",
+   "name": "Pagamentos Pendentes",
+   "spec_path": "docs/specs/pages/ap-093-pagamentos-pendentes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-094",
+   "name": "Listagem de prestação de",
+   "spec_path": "docs/specs/pages/ap-094-listagem-de-prestacao-de.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-095",
+   "name": "Mudanças",
+   "spec_path": "docs/specs/pages/ap-095-mudancas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-096",
+   "name": "Relatório de Endereços",
+   "spec_path": "docs/specs/pages/ap-096-relatorio-de-enderecos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-097",
+   "name": "Logs",
+   "spec_path": "docs/specs/pages/ap-097-logs.md",
+   "status": "PENDENTE"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-098",
+   "name": "Pessoas com Acesso",
+   "spec_path": "docs/specs/pages/ap-098-pessoas-com-acesso.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-099",
+   "name": "Boletos Enviados",
+   "spec_path": "docs/specs/pages/ap-099-boletos-enviados.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-100",
+   "name": "Relatórios Enviados",
+   "spec_path": "docs/specs/pages/ap-100-relatorios-enviados.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "relatorios",
+   "id": "AP-101",
+   "name": "Prestação de Contas",
+   "spec_path": "docs/specs/pages/ap-101-prestacao-de-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-102",
+   "name": "Gerais",
+   "spec_path": "docs/specs/pages/ap-102-gerais.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-103",
+   "name": "Contas",
+   "spec_path": "docs/specs/pages/ap-103-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-104",
+   "name": "Consumo (Unidade)",
+   "spec_path": "docs/specs/pages/ap-104-consumo-unidade.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-105",
+   "name": "Consumo (Geral)",
+   "spec_path": "docs/specs/pages/ap-105-consumo-geral.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-106",
+   "name": "Financeiro",
+   "spec_path": "docs/specs/pages/ap-106-financeiro.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-107",
+   "name": "Inadimplência",
+   "spec_path": "docs/specs/pages/ap-107-inadimplencia.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-108",
+   "name": "Financeiro por Conta",
+   "spec_path": "docs/specs/pages/ap-108-financeiro-por-conta.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "dashboards",
+   "id": "AP-109",
+   "name": "Áreas Comuns",
+   "spec_path": "docs/specs/pages/ap-109-areas-comuns.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-110",
+   "name": "Manutenções",
+   "spec_path": "docs/specs/pages/ap-110-manutencoes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-111",
+   "name": "Comunicados Gerais",
+   "spec_path": "docs/specs/pages/ap-111-comunicados-gerais.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-112",
+   "name": "Ocorrências",
+   "spec_path": "docs/specs/pages/ap-112-ocorrencias.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-113",
+   "name": "Reservas Áreas Comuns",
+   "spec_path": "docs/specs/pages/ap-113-reservas-areas-comuns.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-114",
+   "name": "Agendamentos Pendentes",
+   "spec_path": "docs/specs/pages/ap-114-agendamentos-pendentes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-115",
+   "name": "Lista de espera",
+   "spec_path": "docs/specs/pages/ap-115-lista-de-espera.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-116",
+   "name": "Multas Pendentes",
+   "spec_path": "docs/specs/pages/ap-116-multas-pendentes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-117",
+   "name": "Atendimento Cobrança",
+   "spec_path": "docs/specs/pages/ap-117-atendimento-cobranca.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-118",
+   "name": "Seguros",
+   "spec_path": "docs/specs/pages/ap-118-seguros.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-119",
+   "name": "Contratos",
+   "spec_path": "docs/specs/pages/ap-119-contratos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-120",
+   "name": "Agendamentos",
+   "spec_path": "docs/specs/pages/ap-120-agendamentos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "operacional",
+   "id": "AP-121",
+   "name": "Configurações",
+   "spec_path": "docs/specs/pages/ap-121-configuracoes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-122",
+   "name": "Disco Virtual",
+   "spec_path": "docs/specs/pages/ap-122-disco-virtual.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-123",
+   "name": "Certidão de Débitos",
+   "spec_path": "docs/specs/pages/ap-123-certidao-de-debitos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-124",
+   "name": "Declaração de Inadimplência",
+   "spec_path": "docs/specs/pages/ap-124-declaracao-de-inadimplencia.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-125",
+   "name": "Comprovante de Quitação",
+   "spec_path": "docs/specs/pages/ap-125-comprovante-de-quitacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-126",
+   "name": "Avisos de Recebimento",
+   "spec_path": "docs/specs/pages/ap-126-avisos-de-recebimento.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-127",
+   "name": "Cópias de Cheques",
+   "spec_path": "docs/specs/pages/ap-127-copias-de-cheques.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-128",
+   "name": "Empenhos",
+   "spec_path": "docs/specs/pages/ap-128-empenhos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-129",
+   "name": "Malotes",
+   "spec_path": "docs/specs/pages/ap-129-malotes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "documentos",
+   "id": "AP-130",
+   "name": "Carta de anuência",
+   "spec_path": "docs/specs/pages/ap-130-carta-de-anuencia.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-131",
+   "name": "Gerenciamento",
+   "spec_path": "docs/specs/pages/ap-131-gerenciamento.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-132",
+   "name": "Previsão de Visita",
+   "spec_path": "docs/specs/pages/ap-132-previsao-de-visita.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-133",
+   "name": "Registro de Acessos",
+   "spec_path": "docs/specs/pages/ap-133-registro-de-acessos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-134",
+   "name": "Achados e Perdidos",
+   "spec_path": "docs/specs/pages/ap-134-achados-e-perdidos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-135",
+   "name": "Entregas",
+   "spec_path": "docs/specs/pages/ap-135-entregas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "portaria",
+   "id": "AP-136",
+   "name": "Registros de Entregas",
+   "spec_path": "docs/specs/pages/ap-136-registros-de-entregas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "comunicacao",
+   "id": "AP-137",
+   "name": "Cobrança",
+   "spec_path": "docs/specs/pages/ap-137-cobranca.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "comunicacao",
+   "id": "AP-138",
+   "name": "Agendada",
+   "spec_path": "docs/specs/pages/ap-138-agendada.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "comunicacao",
+   "id": "AP-139",
+   "name": "Endereços",
+   "spec_path": "docs/specs/pages/ap-139-enderecos.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-140",
+   "name": "Extrato Bancário (OFX)",
+   "spec_path": "docs/specs/pages/ap-140-extrato-bancario-ofx.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-141",
+   "name": "Importação NF-e (xml)",
+   "spec_path": "docs/specs/pages/ap-141-importacao-nf-e-xml.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-142",
+   "name": "Inadimplentes (Planilha)",
+   "spec_path": "docs/specs/pages/ap-142-inadimplentes-planilha.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-143",
+   "name": "Frações Ideais (Planilha)",
+   "spec_path": "docs/specs/pages/ap-143-fracoes-ideais-planilha.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-144",
+   "name": "Lançamentos (Planilha)",
+   "spec_path": "docs/specs/pages/ap-144-lancamentos-planilha.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-145",
+   "name": "Lançamentos por Unidade",
+   "spec_path": "docs/specs/pages/ap-145-lancamentos-por-unidade.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "importacoes",
+   "id": "AP-146",
+   "name": "Contas a pagar (Planilha)",
+   "spec_path": "docs/specs/pages/ap-146-contas-a-pagar-planilha.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-147",
+   "name": "Administrativo",
+   "spec_path": "docs/specs/pages/ap-147-administrativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-148",
+   "name": "Usuários de Imobiliárias",
+   "spec_path": "docs/specs/pages/ap-148-usuarios-de-imobiliarias.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-149",
+   "name": "Usuários do Sistema",
+   "spec_path": "docs/specs/pages/ap-149-usuarios-do-sistema.md",
+   "status": "PENDENTE"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-150",
+   "name": "Permissões de Usuários",
+   "spec_path": "docs/specs/pages/ap-150-permissoes-de-usuarios.md",
+   "status": "PENDENTE"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-151",
+   "name": "Notificações da Prestação de",
+   "spec_path": "docs/specs/pages/ap-151-notificacoes-da-prestacao-de.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-152",
+   "name": "Criação de Usuários p",
+   "spec_path": "docs/specs/pages/ap-152-criacao-de-usuarios-p.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-153",
+   "name": "Permissões de Moradores",
+   "spec_path": "docs/specs/pages/ap-153-permissoes-de-moradores.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-154",
+   "name": "Layout da Aplicação",
+   "spec_path": "docs/specs/pages/ap-154-layout-da-aplicacao.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-155",
+   "name": "Notificações aplicativo",
+   "spec_path": "docs/specs/pages/ap-155-notificacoes-aplicativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-156",
+   "name": "Banners",
+   "spec_path": "docs/specs/pages/ap-156-banners.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-157",
+   "name": "Financeiro",
+   "spec_path": "docs/specs/pages/ap-157-financeiro.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-158",
+   "name": "Demonstrativo",
+   "spec_path": "docs/specs/pages/ap-158-demonstrativo.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-159",
+   "name": "Alertas",
+   "spec_path": "docs/specs/pages/ap-159-alertas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-160",
+   "name": "Plano de Contas",
+   "spec_path": "docs/specs/pages/ap-160-plano-de-contas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-161",
+   "name": "Saldo Inicial (Plano de",
+   "spec_path": "docs/specs/pages/ap-161-saldo-inicial-plano-de.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-162",
+   "name": "Saldo Inicial (Centro de",
+   "spec_path": "docs/specs/pages/ap-162-saldo-inicial-centro-de.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-163",
+   "name": "Previsão Orçamentária",
+   "spec_path": "docs/specs/pages/ap-163-previsao-orcamentaria.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-164",
+   "name": "Imposto",
+   "spec_path": "docs/specs/pages/ap-164-imposto.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-165",
+   "name": "Índices",
+   "spec_path": "docs/specs/pages/ap-165-indices.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-166",
+   "name": "Parâmetros",
+   "spec_path": "docs/specs/pages/ap-166-parametros.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-167",
+   "name": "Fração Ideal",
+   "spec_path": "docs/specs/pages/ap-167-fracao-ideal.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "configuracoes",
+   "id": "AP-168",
+   "name": "Tipos de Faturas",
+   "spec_path": "docs/specs/pages/ap-168-tipos-de-faturas.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "plataforma",
+   "id": "AP-169",
+   "name": "Assinatura",
+   "spec_path": "docs/specs/pages/ap-169-assinatura.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "plataforma",
+   "id": "AP-170",
+   "name": "Suporte",
+   "spec_path": "docs/specs/pages/ap-170-suporte.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "plataforma",
+   "id": "AP-171",
+   "name": "Integrações",
+   "spec_path": "docs/specs/pages/ap-171-integracoes.md",
+   "status": "CONFIRMADA"
+  },
+  {
+   "domain": "plataforma",
+   "id": "AP-172",
+   "name": "Atualizações",
+   "spec_path": "docs/specs/pages/ap-172-atualizacoes.md",
+   "status": "CONFIRMADA"
+  }
+ ],
+ "generated_by": "tools/code-map.py",
+ "routes": [
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 37,
+   "method": "verify",
+   "path": "/api/v1/auth/2fa/verify",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Me",
+   "env": "index",
+   "file": "index.php",
+   "line": 38,
+   "method": "show",
+   "path": "/api/v1/me",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Condominiums",
+   "env": "index",
+   "file": "index.php",
+   "line": 39,
+   "method": "index",
+   "path": "/api/v1/condominiums",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Condominiums",
+   "env": "index",
+   "file": "index.php",
+   "line": 40,
+   "method": "show",
+   "path": "/api/v1/condominiums/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
+   "env": "index",
+   "file": "index.php",
+   "line": 41,
+   "method": "index",
+   "path": "/api/v1/condominiums/{id}/onboarding",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
+   "env": "index",
+   "file": "index.php",
+   "line": 42,
+   "method": "start",
+   "path": "/api/v1/condominiums/{id}/onboarding",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
+   "env": "index",
+   "file": "index.php",
+   "line": 43,
+   "method": "add",
+   "path": "/api/v1/condominiums/{id}/onboarding/items",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
+   "env": "index",
+   "file": "index.php",
+   "line": 44,
+   "method": "update",
+   "path": "/api/v1/condominiums/{id}/onboarding/items/{item}",
+   "verb": "PATCH"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\OnboardingTemplates",
+   "env": "index",
+   "file": "index.php",
+   "line": 45,
+   "method": "index",
+   "path": "/api/v1/onboarding/templates",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\OnboardingTemplates",
+   "env": "index",
+   "file": "index.php",
+   "line": 46,
+   "method": "create",
+   "path": "/api/v1/onboarding/templates",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\OnboardingTemplates",
+   "env": "index",
+   "file": "index.php",
+   "line": 47,
+   "method": "update",
+   "path": "/api/v1/onboarding/templates/{id}",
+   "verb": "PATCH"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 63,
+   "method": "templates",
+   "path": "/api/v1/inspection-templates",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 64,
+   "method": "index",
+   "path": "/api/v1/inspections",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 65,
+   "method": "schedule",
+   "path": "/api/v1/inspections/schedule",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 66,
+   "method": "store",
+   "path": "/api/v1/inspections",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 67,
+   "method": "show",
+   "path": "/api/v1/inspections/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 68,
+   "method": "answer",
+   "path": "/api/v1/inspections/{id}/items/{item}",
+   "verb": "PUT"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 69,
+   "method": "photo",
+   "path": "/api/v1/inspections/{id}/items/{item}/photos",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Inspections",
+   "env": "index",
+   "file": "index.php",
+   "line": 70,
+   "method": "complete",
+   "path": "/api/v1/inspections/{id}/complete",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 84,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 85,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 86,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 87,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 90,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 91,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 92,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 93,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 105,
+   "method": "unavailable",
+   "path": "/",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 107,
+   "method": "error",
+   "path": "/ops/{errcode}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 7,
+   "method": "home",
+   "path": "/",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 8,
+   "method": "sales",
+   "path": "/solicite-sua-proposta",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 9,
+   "method": "proposalSubmit",
+   "path": "/solicite-sua-proposta",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 10,
+   "method": "legal",
+   "path": "/politica-de-privacidade",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 11,
+   "method": "legal",
+   "path": "/termos-de-uso",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 14,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 15,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 16,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 17,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 22,
+   "method": "articles",
+   "path": "/artigos",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 23,
+   "method": "articles",
+   "path": "/artigos/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 24,
+   "method": "articlesPost",
+   "path": "/artigos/{uri}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 25,
+   "method": "articlesSearch",
+   "path": "/artigos/buscar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 26,
+   "method": "articlesSearch",
+   "path": "/artigos/buscar/{search}/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 27,
+   "method": "articlesCategory",
+   "path": "/artigos/em/{category}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 28,
+   "method": "articlesCategory",
+   "path": "/artigos/em/{category}/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "web",
+   "file": "container/web/default/v1/routes.php",
+   "line": 34,
+   "method": "error",
+   "path": "/ops/{errcode}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 5,
+   "method": "home",
+   "path": "/suporte",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 6,
+   "method": "search",
+   "path": "/suporte/buscar",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 7,
+   "method": "widget",
+   "path": "/suporte/widget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 8,
+   "method": "widgetCreate",
+   "path": "/suporte/widget/abrir",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 9,
+   "method": "widgetLookup",
+   "path": "/suporte/widget/acompanhar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 10,
+   "method": "vote",
+   "path": "/suporte/avaliar/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 11,
+   "method": "category",
+   "path": "/suporte/{section}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Support\\Support",
+   "env": "support",
+   "file": "container/web/support/v1/routes.php",
+   "line": 12,
+   "method": "article",
+   "path": "/suporte/{section}/{article}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 6,
+   "method": "root",
+   "path": "/studio",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 7,
+   "method": "login",
+   "path": "/studio/login",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 8,
+   "method": "login",
+   "path": "/studio/login",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 9,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 10,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 11,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 12,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 13,
+   "method": "logout",
+   "path": "/studio/sair",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 14,
+   "method": "logout",
+   "path": "/studio/logoff",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 16,
+   "method": "dash",
+   "path": "/studio/dash",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 17,
+   "method": "search",
+   "path": "/studio/buscar",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 18,
+   "method": "posts",
+   "path": "/studio/blog/home",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 19,
+   "method": "posts",
+   "path": "/studio/blog/home",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 20,
+   "method": "posts",
+   "path": "/studio/blog/home/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 21,
+   "method": "post",
+   "path": "/studio/blog/post",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 22,
+   "method": "post",
+   "path": "/studio/blog/post",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 23,
+   "method": "post",
+   "path": "/studio/blog/post/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 24,
+   "method": "post",
+   "path": "/studio/blog/post/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 25,
+   "method": "postImage",
+   "path": "/studio/blog/image",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 26,
+   "method": "notificationsCount",
+   "path": "/studio/notifications/count",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 27,
+   "method": "notificationsList",
+   "path": "/studio/notifications/list",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 28,
+   "method": "notificationRead",
+   "path": "/studio/notifications/read/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 29,
+   "method": "notificationAction",
+   "path": "/studio/notifications/action/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 30,
+   "method": "notificationCenter",
+   "path": "/studio/notifications",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 31,
+   "method": "proposals",
+   "path": "/studio/proposals",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 32,
+   "method": "proposals",
+   "path": "/studio/proposals/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 33,
+   "method": "proposal",
+   "path": "/studio/proposals/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 34,
+   "method": "proposal",
+   "path": "/studio/proposals/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 35,
+   "method": "proposalPdf",
+   "path": "/studio/proposal-response/{id}/pdf",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 36,
+   "method": "notificationCompose",
+   "path": "/studio/notifications/message",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 37,
+   "method": "mailQueueAction",
+   "path": "/studio/notifications/mail-queue",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 38,
+   "method": "notificationsMarkAll",
+   "path": "/studio/notifications/read-all",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 39,
+   "method": "categories",
+   "path": "/studio/blog/categories",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 40,
+   "method": "category",
+   "path": "/studio/blog/category",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 41,
+   "method": "category",
+   "path": "/studio/blog/category",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 42,
+   "method": "category",
+   "path": "/studio/blog/category/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 43,
+   "method": "category",
+   "path": "/studio/blog/category/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 45,
+   "method": "pages",
+   "path": "/studio/pages",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 46,
+   "method": "page",
+   "path": "/studio/page",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 47,
+   "method": "page",
+   "path": "/studio/page",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 48,
+   "method": "page",
+   "path": "/studio/page/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 49,
+   "method": "page",
+   "path": "/studio/page/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 50,
+   "method": "media",
+   "path": "/studio/media",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 51,
+   "method": "media",
+   "path": "/studio/media",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 52,
+   "method": "media",
+   "path": "/studio/media/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 53,
+   "method": "mediaLibrary",
+   "path": "/studio/media/library",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 54,
+   "method": "editorImage",
+   "path": "/studio/media/editor",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 55,
+   "method": "users",
+   "path": "/studio/users",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 56,
+   "method": "users",
+   "path": "/studio/users/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 57,
+   "method": "userForm",
+   "path": "/studio/user",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 58,
+   "method": "userForm",
+   "path": "/studio/user",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 59,
+   "method": "userForm",
+   "path": "/studio/user/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 60,
+   "method": "userForm",
+   "path": "/studio/user/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 61,
+   "method": "faqs",
+   "path": "/studio/faqs",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 62,
+   "method": "faqs",
+   "path": "/studio/faqs",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 63,
+   "method": "testimonials",
+   "path": "/studio/testimonials",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 64,
+   "method": "testimonials",
+   "path": "/studio/testimonials",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 65,
+   "method": "testimonials",
+   "path": "/studio/testimonials/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 66,
+   "method": "testimonials",
+   "path": "/studio/testimonials/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 67,
+   "method": "slides",
+   "path": "/studio/slides",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 68,
+   "method": "slide",
+   "path": "/studio/slide",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 69,
+   "method": "slide",
+   "path": "/studio/slide",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 70,
+   "method": "slide",
+   "path": "/studio/slide/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 71,
+   "method": "slide",
+   "path": "/studio/slide/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 72,
+   "method": "reports",
+   "path": "/studio/reports",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 73,
+   "method": "versions",
+   "path": "/studio/versions",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 74,
+   "method": "versions",
+   "path": "/studio/versions",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 75,
+   "method": "systemLogs",
+   "path": "/studio/system-logs",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 76,
+   "method": "systemLogs",
+   "path": "/studio/system-logs/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 77,
+   "method": "systemLogAction",
+   "path": "/studio/system-logs/action/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 78,
+   "method": "settings",
+   "path": "/studio/settings",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 79,
+   "method": "settings",
+   "path": "/studio/settings",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "studio",
+   "file": "container/cms/studio/v1/routes.php",
+   "line": 81,
+   "method": "error",
+   "path": "/studio/ops/{errcode}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 6,
+   "method": "tickets",
+   "path": "/helpdesk",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 7,
+   "method": "login",
+   "path": "/helpdesk/login",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 8,
+   "method": "login",
+   "path": "/helpdesk/login",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 9,
+   "method": "logout",
+   "path": "/helpdesk/sair",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 10,
+   "method": "tickets",
+   "path": "/helpdesk/tickets",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 11,
+   "method": "tickets",
+   "path": "/helpdesk/tickets",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 12,
+   "method": "agenda",
+   "path": "/helpdesk/agenda",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 13,
+   "method": "agenda",
+   "path": "/helpdesk/agenda",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 14,
+   "method": "support",
+   "path": "/helpdesk/support",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 15,
+   "method": "users",
+   "path": "/helpdesk/users",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 16,
+   "method": "users",
+   "path": "/helpdesk/users/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 17,
+   "method": "userForm",
+   "path": "/helpdesk/user",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 18,
+   "method": "userForm",
+   "path": "/helpdesk/user",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 19,
+   "method": "userForm",
+   "path": "/helpdesk/user/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 20,
+   "method": "userForm",
+   "path": "/helpdesk/user/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 21,
+   "method": "settings",
+   "path": "/helpdesk/settings",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 22,
+   "method": "settings",
+   "path": "/helpdesk/settings",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 23,
+   "method": "versions",
+   "path": "/helpdesk/versions",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 24,
+   "method": "versions",
+   "path": "/helpdesk/versions",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 25,
+   "method": "systemLogs",
+   "path": "/helpdesk/system-logs",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 26,
+   "method": "systemLogs",
+   "path": "/helpdesk/system-logs/p/{page}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 27,
+   "method": "systemLogAction",
+   "path": "/helpdesk/system-logs/action/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 28,
+   "method": "supportCategory",
+   "path": "/helpdesk/support/category",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 29,
+   "method": "supportCategory",
+   "path": "/helpdesk/support/category",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 30,
+   "method": "supportCategory",
+   "path": "/helpdesk/support/category/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 31,
+   "method": "supportCategory",
+   "path": "/helpdesk/support/category/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 32,
+   "method": "supportArticle",
+   "path": "/helpdesk/support/article",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 33,
+   "method": "supportArticle",
+   "path": "/helpdesk/support/article",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 34,
+   "method": "supportArticle",
+   "path": "/helpdesk/support/article/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 35,
+   "method": "supportArticle",
+   "path": "/helpdesk/support/article/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 36,
+   "method": "supportImage",
+   "path": "/helpdesk/support/image",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\Studio",
+   "env": "helpdesk",
+   "file": "container/cms/helpdesk/v1/routes.php",
+   "line": 37,
+   "method": "error",
+   "path": "/helpdesk/ops/{errcode}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Panel",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 32,
+   "method": "root",
+   "path": "/erp",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Login",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 33,
+   "method": "login",
+   "path": "/erp/login",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Login",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 34,
+   "method": "login",
+   "path": "/erp/login",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Login",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 35,
+   "method": "logout",
+   "path": "/erp/sair",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Panel",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 36,
+   "method": "root",
+   "path": "/erp/sair",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Login",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 37,
+   "method": "forgot",
+   "path": "/erp/recuperar-senha",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Security",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 38,
+   "method": "show",
+   "path": "/erp/seguranca",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Security",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 39,
+   "method": "update",
+   "path": "/erp/seguranca",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Panel",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 40,
+   "method": "recoveryCodes",
+   "path": "/erp/seguranca/codigos",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Panel",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 41,
+   "method": "setCondominium",
+   "path": "/erp/contexto/condominio",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Panel",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 43,
+   "method": "dashboard",
+   "path": "/erp/dashboard",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 47,
+   "method": "index",
+   "path": "/erp/condominios",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 50,
+   "method": "create",
+   "path": "/erp/condominios/novo",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 51,
+   "method": "store",
+   "path": "/erp/condominios/novo",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 52,
+   "method": "edit",
+   "path": "/erp/condominios/{id}/editar",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 53,
+   "method": "update",
+   "path": "/erp/condominios/{id}/editar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 54,
+   "method": "show",
+   "path": "/erp/condominios/{id}/checklist",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 55,
+   "method": "start",
+   "path": "/erp/condominios/{id}/checklist/iniciar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 56,
+   "method": "add",
+   "path": "/erp/condominios/{id}/checklist/itens",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 57,
+   "method": "update",
+   "path": "/erp/condominios/{id}/checklist/itens/{item}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 58,
+   "method": "index",
+   "path": "/erp/checklist/catalogo",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 59,
+   "method": "create",
+   "path": "/erp/checklist/catalogo",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 60,
+   "method": "update",
+   "path": "/erp/checklist/catalogo/{id}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 100,
+   "method": "index",
+   "path": "/erp/operacional/vistorias",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 101,
+   "method": "create",
+   "path": "/erp/operacional/vistorias/nova",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 102,
+   "method": "store",
+   "path": "/erp/operacional/vistorias",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 103,
+   "method": "settings",
+   "path": "/erp/operacional/vistorias/configurar",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 104,
+   "method": "saveTemplate",
+   "path": "/erp/operacional/vistorias/modelos",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 105,
+   "method": "savePlan",
+   "path": "/erp/operacional/vistorias/planos",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 106,
+   "method": "saveLocation",
+   "path": "/erp/operacional/vistorias/localizacao",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 107,
+   "method": "show",
+   "path": "/erp/operacional/vistorias/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 108,
+   "method": "answer",
+   "path": "/erp/operacional/vistorias/{id}/itens/{item}",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 109,
+   "method": "photo",
+   "path": "/erp/operacional/vistorias/{id}/fotos/{photo}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 110,
+   "method": "deletePhoto",
+   "path": "/erp/operacional/vistorias/{id}/fotos/{photo}/excluir",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 111,
+   "method": "complete",
+   "path": "/erp/operacional/vistorias/{id}/concluir",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 112,
+   "method": "cancel",
+   "path": "/erp/operacional/vistorias/{id}/cancelar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 113,
+   "method": "report",
+   "path": "/erp/operacional/vistorias/{id}/relatorio",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 114,
+   "method": "reportPdf",
+   "path": "/erp/operacional/vistorias/{id}/relatorio/pdf",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Inspections",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 115,
+   "method": "send",
+   "path": "/erp/operacional/vistorias/{id}/enviar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 128,
+   "method": "show",
+   "path": "/erp/condominios/{id}",
+   "verb": "GET"
+  }
+ ],
+ "tables": {
+  "access_permissions": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_access_control.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Access"
+   ]
+  },
+  "access_role_permissions": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_access_control.sql",
+   "used_by": [
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Access"
+   ]
+  },
+  "access_roles": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_access_control.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Proposal\\ProposalService"
+   ]
+  },
+  "access_user_overrides": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_access_control.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Access"
+   ]
+  },
+  "access_user_roles": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_access_control.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Proposal\\ProposalService"
+   ]
+  },
+  "app_log": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_movesos_application_logs.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit"
+   ]
+  },
+  "brief": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260816_branding_testimonial_rating.sql"
+   ],
+   "created_in": "database/legacy-migrations/migrations/20260815_brief_testimonials.sql",
+   "used_by": [
+    "Source\\Models\\Brief\\AppBrief"
+   ]
+  },
+  "condominium_geolocations": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "condominium_onboarding_items": {
+   "altered_in": [
+    "database/migrations/20261108_0011_onboarding_alerts.sql"
+   ],
+   "created_in": "database/migrations/20261108_0010_condominium_onboarding.sql",
+   "used_by": [
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Services\\OnboardingCatalog",
+    "Source\\Services\\OnboardingChecklist"
+   ]
+  },
+  "condominiums": {
+   "altered_in": [
+    "database/migrations/20261108_0005_condominiums_registry.sql",
+    "database/migrations/20261108_0006_drop_condominium_manager.sql"
+   ],
+   "created_in": "database/migrations/20261107_0002_condominiums.sql",
+   "used_by": [
+    "Source\\Controllers\\Api\\V1\\Me",
+    "Source\\Controllers\\Erp\\Connect\\Condominiums",
+    "Source\\Controllers\\Erp\\Connect\\Inspections",
+    "Source\\Controllers\\Erp\\Connect\\Registry",
+    "Source\\Services\\CondominiumRegistry",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Inspections\\InspectionService",
+    "Source\\Services\\OnboardingAlerts"
+   ]
+  },
+  "erp_board_members": {
+   "altered_in": [
+    "database/migrations/20261108_0402_unit_links.sql"
+   ],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_employees": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_lawyers": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_pets": {
+   "altered_in": [
+    "database/migrations/20261108_0402_unit_links.sql"
+   ],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_residents": {
+   "altered_in": [
+    "database/migrations/20261108_0402_unit_links.sql"
+   ],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_suppliers": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_units": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0401_units.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryService"
+   ]
+  },
+  "erp_useful_contacts": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_vehicles": {
+   "altered_in": [
+    "database/migrations/20261108_0402_unit_links.sql"
+   ],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_visitors": {
+   "altered_in": [
+    "database/migrations/20261108_0402_unit_links.sql"
+   ],
+   "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "faq_questions": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_faq_support_link.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Models\\Faq\\Question"
+   ]
+  },
+  "inspection_answers": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspection_photos": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspection_plans": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspection_report_deliveries": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspection_template_items": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspection_templates": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "inspections": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0101_inspections.sql",
+   "used_by": [
+    "Source\\Services\\Inspections\\InspectionService"
+   ]
+  },
+  "mail_queue": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_log_alerts.sql",
+    "database/legacy-migrations/migrations/20260815_mail_queue_scheduler.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Communication",
+    "Source\\Support\\Email"
+   ]
+  },
+  "module_migrations": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/core/001_modules.sql",
+   "used_by": [
+    "Source\\Support\\StudioModules"
+   ]
+  },
+  "modules": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/core/001_modules.sql",
+   "used_by": [
+    "Source\\Support\\StudioModules"
+   ]
+  },
+  "movesos_versions": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260816_support_theme_version.sql"
+   ],
+   "created_in": "database/legacy-migrations/migrations/20260815_movesos_version_settings.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio"
+   ]
+  },
+  "notification_messages": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_mail_queue_scheduler.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Notification\\NotificationMessage",
+    "Source\\Support\\Audit"
+   ]
+  },
+  "notifications": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_log_alerts.sql",
+    "database/legacy-migrations/migrations/20260815_notifications_audit.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Controllers\\Erp\\Connect\\Panel",
+    "Source\\Controllers\\Erp\\V1\\Condominium",
+    "Source\\Controllers\\Erp\\V1\\Corporations",
+    "Source\\Controllers\\Erp\\V1\\Dash",
+    "Source\\Controllers\\Erp\\V1\\Manager",
+    "Source\\Controllers\\Erp\\V1\\Users",
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Support\\Audit"
+   ]
+  },
+  "onboarding_item_templates": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0010_condominium_onboarding.sql",
+   "used_by": [
+    "Source\\Services\\OnboardingCatalog",
+    "Source\\Services\\OnboardingChecklist"
+   ]
+  },
+  "pages": {
+   "altered_in": [
+    "database/legacy-migrations/imports/moves-content/pages_posts.sql"
+   ],
+   "created_in": "database/legacy-migrations/imports/moves-content/pages_posts.sql",
+   "used_by": [
+    "Source\\Controllers\\Api\\V1\\Registry",
+    "Source\\Controllers\\Erp\\Connect\\Panel",
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Post\\Page",
+    "Source\\Models\\Report\\Access",
+    "Source\\Services\\Erp\\Registry\\RegistryService"
+   ]
+  },
+  "posts": {
+   "altered_in": [
+    "database/legacy-migrations/imports/moves-content/pages_posts.sql"
+   ],
+   "created_in": "database/legacy-migrations/imports/moves-content/pages_posts.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Post\\Post"
+   ]
+  },
+  "settings": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260815_movesos_version_settings.sql",
+    "database/legacy-migrations/migrations/20260816_branding_testimonial_rating.sql",
+    "database/legacy-migrations/migrations/20260816_site_support_module_access.sql",
+    "database/legacy-migrations/migrations/20260816_support_theme_version.sql"
+   ],
+   "created_in": null,
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Settings\\Settings",
+    "Source\\Support\\Access"
+   ]
+  },
+  "studio_calendar_events": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260816_service_desk.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio"
+   ]
+  },
+  "studio_support_templates": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio"
+   ]
+  },
+  "studio_support_ticket_attachments": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260830_public_helpdesk_widget.sql"
+   ],
+   "created_in": "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio"
+   ]
+  },
+  "studio_support_ticket_events": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio"
+   ]
+  },
+  "studio_support_ticket_messages": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260816_service_desk.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Controllers\\Web\\Support\\Support"
+   ]
+  },
+  "studio_support_tickets": {
+   "altered_in": [
+    "database/legacy-migrations/migrations/20260816_service_desk.sql",
+    "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
+    "database/legacy-migrations/migrations/20260830_public_helpdesk_widget.sql"
+   ],
+   "created_in": "database/legacy-migrations/migrations/20260816_service_desk.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Controllers\\Web\\Support\\Support"
+   ]
+  },
+  "support_article_votes": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_support_center.sql",
+   "used_by": [
+    "Source\\Controllers\\Web\\Connect\\Web",
+    "Source\\Controllers\\Web\\Support\\Support"
+   ]
+  },
+  "support_articles": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_support_center.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Controllers\\Web\\Connect\\Web",
+    "Source\\Controllers\\Web\\Support\\Support",
+    "Source\\Models\\Support\\SupportArticle"
+   ]
+  },
+  "support_categories": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_support_center.sql",
+   "used_by": [
+    "Source\\Models\\Support\\SupportCategory"
+   ]
+  },
+  "system_audit_logs": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260815_notifications_audit.sql",
+   "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Models\\Notification\\AuditLog",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Support\\Audit"
+   ]
+  },
+  "system_protected_users": {
+   "altered_in": [],
+   "created_in": "database/legacy-migrations/migrations/20260830_protected_primary_user.sql",
+   "used_by": []
+  },
+  "user_condominium_access": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261107_0002_condominiums.sql",
+   "used_by": [
+    "Source\\Services\\CondominiumRegistry",
+    "Source\\Services\\CondominiumScope"
+   ]
+  },
+  "user_password_resets": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261107_0004_password_resets.sql",
+   "used_by": [
+    "Source\\Services\\PasswordResetService"
+   ]
+  },
+  "user_recovery_codes": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261107_0001_two_factor.sql",
+   "used_by": [
+    "Source\\Services\\TwoFactorService"
+   ]
+  },
+  "user_two_factor": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261107_0001_two_factor.sql",
+   "used_by": [
+    "Source\\Services\\TwoFactorService"
+   ]
+  }
+ },
+ "tests": {
+  "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Core\\View",
+   "Source\\Models\\User",
+   "Source\\Services\\Erp\\DemoData"
+  ],
+  "tests/legacy/Integration/AccessControlTest.php": [
+   "Source\\Models\\User",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Integration/AuthTest.php": [
+   "Source\\Models\\Auth"
+  ],
+  "tests/legacy/Integration/CondominiumChecklistControllerTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\OnboardingChecklist",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Integration/CondominiumRegistryTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumRegistry",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\OnboardingChecklist"
+  ],
+  "tests/legacy/Integration/CondominiumScopeTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope"
+  ],
+  "tests/legacy/Integration/ContentCrudTest.php": [
+   "Source\\Models\\Faq\\Channel",
+   "Source\\Models\\Faq\\Question",
+   "Source\\Models\\Post\\Category",
+   "Source\\Models\\Post\\Page",
+   "Source\\Models\\Post\\Post",
+   "Source\\Models\\Support\\SupportArticle",
+   "Source\\Models\\Support\\SupportCategory"
+  ],
+  "tests/legacy/Integration/InspectionServiceTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Inspections\\InspectionError",
+   "Source\\Services\\Inspections\\InspectionReport",
+   "Source\\Services\\Inspections\\InspectionService",
+   "Source\\Services\\Inspections\\PhotoStorage",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Integration/NotificationQueueTest.php": [
+   "Source\\Models\\Notification\\NotificationMessage"
+  ],
+  "tests/legacy/Integration/OnboardingAlertsTest.php": [
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\OnboardingAlerts",
+   "Source\\Services\\OnboardingChecklist"
+  ],
+  "tests/legacy/Integration/OnboardingCatalogTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog",
+   "Source\\Services\\OnboardingCatalog",
+   "Source\\Services\\OnboardingChecklist",
+   "Source\\Services\\OnboardingValidationError",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Integration/OnboardingChecklistTest.php": [
+   "Source\\Services\\OnboardingChecklist",
+   "Source\\Services\\OnboardingItemNotFound",
+   "Source\\Services\\OnboardingValidationError"
+  ],
+  "tests/legacy/Integration/PasswordResetServiceTest.php": [
+   "Source\\Models\\Auth",
+   "Source\\Models\\User",
+   "Source\\Services\\PasswordResetService",
+   "Source\\Support\\PasswordResetToken"
+  ],
+  "tests/legacy/Integration/RegistryServiceTest.php": [
+   "Source\\Controllers\\Api\\V1\\Registry",
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Integration/ServiceDeskTest.php": [
+   "Source\\Controllers\\Studio\\Studio",
+   "Source\\Controllers\\Web\\Support\\Support",
+   "Source\\Models\\Notification\\NotificationMessage",
+   "Source\\Models\\User",
+   "Source\\Support\\Communication"
+  ],
+  "tests/legacy/Integration/SettingsAndVersionsTest.php": [
+   "Source\\Models\\Settings\\Settings"
+  ],
+  "tests/legacy/Integration/TwoFactorServiceTest.php": [
+   "Source\\Services\\TwoFactorService",
+   "Source\\Support\\Totp"
+  ],
+  "tests/legacy/Integration/UnitRegistryTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryInUse",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
+  "tests/legacy/Integration/UserTest.php": [
+   "Source\\Models\\User"
+  ],
+  "tests/legacy/TestCase.php": [
+   "Source\\Core\\Connect",
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Unit/AccessFallbackTest.php": [
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Unit/AccessRegisteredPermissionsTest.php": [
+   "Source\\Support\\Access"
+  ],
+  "tests/legacy/Unit/AuthDummyHashTest.php": [
+   "Source\\Models\\Auth"
+  ],
+  "tests/legacy/Unit/CondominiumValidatorTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Core\\View",
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumValidator"
+  ],
+  "tests/legacy/Unit/CsrfTest.php": [
+   "Source\\Core\\Session"
+  ],
+  "tests/legacy/Unit/DecisionIndexTest.php": [],
+  "tests/legacy/Unit/DocumentValidationTest.php": [
+   "Source\\Services\\CondominiumValidator"
+  ],
+  "tests/legacy/Unit/ErpThemeTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Condominiums",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Core\\View",
+   "Source\\Models\\User"
+  ],
+  "tests/legacy/Unit/HelpDeskSupportThemesTest.php": [
+   "Source\\Controllers\\Studio\\Studio"
+  ],
+  "tests/legacy/Unit/InspectionPhotoStorageTest.php": [
+   "Source\\Services\\Inspections\\InspectionError",
+   "Source\\Services\\Inspections\\PhotoStorage"
+  ],
+  "tests/legacy/Unit/InspectionRulesTest.php": [
+   "Source\\Services\\Inspections\\ChecklistText",
+   "Source\\Services\\Inspections\\Geo",
+   "Source\\Services\\Inspections\\InspectionError",
+   "Source\\Services\\Inspections\\InspectionService",
+   "Source\\Services\\Inspections\\Schedule"
+  ],
+  "tests/legacy/Unit/MailTemplateTest.php": [
+   "Source\\Support\\MailTemplate"
+  ],
+  "tests/legacy/Unit/OnboardingChecklistViewTest.php": [
+   "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
+   "Source\\Controllers\\Api\\V1\\OnboardingTemplates",
+   "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Core\\View",
+   "Source\\Models\\User",
+   "Source\\Services\\OnboardingAlerts",
+   "Source\\Support\\MailTemplate"
+  ],
+  "tests/legacy/Unit/PasswordPolicyTest.php": [],
+  "tests/legacy/Unit/PasswordResetTokenTest.php": [
+   "Source\\Support\\PasswordResetToken"
+  ],
+  "tests/legacy/Unit/RegistryValidatorTest.php": [
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator",
+   "Source\\Support\\Erp\\BrDocument"
+  ],
+  "tests/legacy/Unit/RequestLimitTest.php": [],
+  "tests/legacy/Unit/SecretBoxTest.php": [
+   "Source\\Services\\TwoFactorService",
+   "Source\\Support\\SecretBox"
+  ],
+  "tests/legacy/Unit/ThumbFallbackTest.php": [
+   "Source\\Support\\Thumb"
+  ],
+  "tests/legacy/Unit/TotpTest.php": [
+   "Source\\Support\\Totp"
+  ],
+  "tests/legacy/Unit/UnitDefinitionTest.php": [
+   "Source\\Core\\View",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/UploadSecurityTest.php": [
+   "Source\\Support\\Upload"
+  ],
+  "tests/legacy/bootstrap.php": [],
+  "tests/legacy/prepare-environment.php": [],
+  "tests/legacy/run.php": [],
+  "tests/smoke.php": [
+   "Source\\Core\\Router",
+   "Source\\Support\\Access"
+  ]
+ }
+}

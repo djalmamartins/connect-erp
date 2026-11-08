@@ -5,7 +5,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 2);
 $mode = $argv[1] ?? 'status';
 if (!in_array($mode, ['status', 'apply', 'baseline', 'rollback'], true)) {
-    fwrite(STDERR, "Uso: php service/commands/database-migrate.php [status|apply|baseline|rollback]\n");
+    fwrite(STDERR, "Uso: php service/commands/database-migrate.php [status|apply|baseline|rollback] [--until=AAAAMMDD_NNNN]\n");
     exit(2);
 }
 
@@ -58,6 +58,15 @@ try {
     $directory = $root . '/database/migrations';
     $files = array_values(array_filter(glob($directory . '/*.sql') ?: [], static fn(string $file): bool => !str_ends_with($file, '.down.sql')));
     sort($files, SORT_STRING);
+    // --until=20261108_0301 aplica só as migrations com nome menor ou igual ao prefixo
+    // (para segurar uma fatia ainda em desenvolvimento sem bloquear as anteriores).
+    $until = null;
+    foreach ($argv as $arg) {
+        if (str_starts_with($arg, '--until=')) $until = substr($arg, 8);
+    }
+    if ($until !== null && $until !== '') {
+        $files = array_values(array_filter($files, static fn(string $file): bool => strncmp(basename($file), $until, strlen($until)) <= 0));
+    }
 
     if ($mode === 'rollback') {
         $last = (int)$pdo->query('SELECT COALESCE(MAX(batch), 0) FROM movesos_schema_migrations')->fetchColumn();
