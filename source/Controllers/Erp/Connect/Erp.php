@@ -34,7 +34,7 @@ class Erp extends Controller
 
         $this->user = Auth::user();
         if (!$this->user) {
-            redirect("/login");
+            redirect(erp_url('/login'));
             return;
         }
 
@@ -54,7 +54,7 @@ class Erp extends Controller
         if (!$sessionUser || !AccessControl::can("erp.access", $this->user)) {
             $this->message->warning("{$this->user->first_name}, você precisa de permissão, entre em contato com o administrador do sistema.")->flash();
             Auth::logout();
-            redirect("/login");
+            redirect(erp_url('/login'));
         }
     }
 
