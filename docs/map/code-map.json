@@ -85,6 +85,10 @@
    "title": "0022 — Lançamentos (AP-020): receitas e despesas por condomínio"
   },
   {
+   "file": "docs/Organic Code/decisions/0023-login-throttle-account-ip.md",
+   "title": "0023 — Limite de tentativas de login e 2FA por conta e por IP"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -902,6 +906,7 @@
     "Source\\Models\\Corporation\\AppCondominium",
     "Source\\Models\\Corporation\\AppCorporations",
     "Source\\Models\\Session\\AppLog",
+    "Source\\Services\\LoginThrottle",
     "Source\\Services\\PasswordResetService",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\AppLogger",
@@ -916,6 +921,7 @@
     "tests/legacy/Integration/AuthTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Unit/AuthDummyHashTest.php",
+    "tests/legacy/Unit/LoginThrottleTest.php",
     "tests/legacy/Unit/TwoFactorSchemaMissingTest.php"
    ]
   },
@@ -1644,6 +1650,21 @@
     "tests/legacy/Unit/InspectionRulesTest.php"
    ]
   },
+  "Source\\Services\\LoginThrottle": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Services/LoginThrottle.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "auth_throttle_events"
+   ],
+   "tests": [
+    "tests/legacy/Unit/LoginThrottleTest.php"
+   ]
+  },
   "Source\\Services\\OnboardingAlerts": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2033,16 +2054,16 @@
   }
  },
  "counts": {
-  "adrs": 24,
-  "classes": 129,
+  "adrs": 25,
+  "classes": 130,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
   "routes": 199,
-  "tables": 61,
-  "tests": 57
+  "tables": 62,
+  "tests": 58
  },
  "erp_pages": [
   {
@@ -5110,6 +5131,13 @@
     "Source\\Support\\Audit"
    ]
   },
+  "auth_throttle_events": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0901_auth_throttle_events.sql",
+   "used_by": [
+    "Source\\Services\\LoginThrottle"
+   ]
+  },
   "brief": {
    "altered_in": [
     "database/legacy-migrations/migrations/20260816_branding_testimonial_rating.sql"
@@ -5791,6 +5819,10 @@
    "Source\\Core\\View",
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/LoginThrottleTest.php": [
+   "Source\\Models\\Auth",
+   "Source\\Services\\LoginThrottle"
   ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
