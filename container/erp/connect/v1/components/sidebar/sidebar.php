@@ -22,7 +22,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
 ?>
 <aside class="erp-sidebar" id="erp-sidebar" aria-label="Navegação do ERP">
     <div class="erp-sidebar__head">
-        <a class="erp-brand" href="<?= url('/erp/dashboard') ?>" aria-label="Connect ERP — início">
+        <a class="erp-brand" href="<?= erp_url('/dashboard') ?>" aria-label="Connect ERP — início">
             <img class="erp-brand__logo" src="<?= $this->e(function_exists('site_logo_url') ? site_logo_url() : theme('/assets/images/logo-connect-condominios.svg')) ?>" alt="Connect Condomínios" width="152" height="40">
             <img class="erp-brand__mark" src="<?= theme('/assets/images/marca_connect.svg') ?>" alt="" width="34" height="34">
         </a>
@@ -38,22 +38,22 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
             $pages = $pagesByGroup[$groupKey] ?? [];
             $isActive = $currentGroup === $groupKey;
             if ($groupKey === 'dashboard'): ?>
-                <a class="erp-nav__link" href="<?= url('/erp/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
+                <a class="erp-nav__link" href="<?= erp_url('/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
                 <?php continue;
             endif;
             $long = count($pages) > 14;
-            $hubHref = '/erp' . $group['prefix'];
+            $hubHref = $group['prefix'];
             $hasHub = !in_array($group['prefix'], array_column($catalog['pages'], 'route'), true); ?>
             <details class="erp-nav__group" data-erp-group="<?= $this->e($groupKey) ?>"<?= $isActive ? ' open' : '' ?>>
                 <summary<?= $isActive ? ' class="is-active"' : '' ?> title="<?= $this->e($group['label']) ?>"><?= $icon($group['icon']) ?><span class="erp-nav__label"><?= $this->e($group['label']) ?></span></summary>
                 <div class="erp-nav__sub">
                     <?php if ($hasHub): ?>
-                        <a href="<?= url($hubHref) ?>"<?= $isActive && $currentPageId === null ? ' aria-current="page"' : '' ?>>Visão geral</a>
+                        <a href="<?= erp_url($hubHref) ?>"<?= $isActive && $currentPageId === null ? ' aria-current="page"' : '' ?>>Visão geral</a>
                     <?php endif; ?>
                     <?php if ($long):
                         $sections = array_values(array_unique(array_filter(array_column($pages, 'section'))));
                         foreach ($sections as $section): ?>
-                            <a href="<?= url($hubHref) ?>#<?= $anchor($section) ?>"<?= $isActive && $currentSection === $section ? ' aria-current="page"' : '' ?>><?= $this->e($section) ?></a>
+                            <a href="<?= erp_url($hubHref) ?>#<?= $anchor($section) ?>"<?= $isActive && $currentSection === $section ? ' aria-current="page"' : '' ?>><?= $this->e($section) ?></a>
                         <?php endforeach;
                     else:
                         $lastSection = '';
@@ -62,7 +62,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                                 $lastSection = $page['section']; ?>
                                 <span class="erp-nav__heading"><?= $this->e($lastSection) ?></span>
                             <?php endif; ?>
-                            <a href="<?= url('/erp' . $page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?></a>
+                            <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?></a>
                         <?php endforeach;
                     endif; ?>
                 </div>
@@ -70,7 +70,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <?php endforeach; ?>
     </nav>
     <div class="erp-sidebar__foot">
-        <a class="erp-sidebar__profile" href="<?= url('/erp/configuracoes') ?>" title="Minha conta">
+        <a class="erp-sidebar__profile" href="<?= erp_url('/configuracoes') ?>" title="Minha conta">
             <span class="erp-avatar" aria-hidden="true"><?= $this->e($initial) ?></span>
             <div><strong><?= $this->e(trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''))) ?></strong><small>Connect · administradora</small></div>
         </a>

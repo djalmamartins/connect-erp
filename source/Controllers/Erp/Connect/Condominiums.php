@@ -27,7 +27,7 @@ final class Condominiums extends Controller
 
     public function root(): void
     {
-        redirect('/erp/condominios');
+        redirect(erp_url('/condominios'));
     }
 
     public function index(): void
@@ -75,7 +75,7 @@ final class Condominiums extends Controller
     {
         $user = Auth::user();
         if ($user === null) {
-            redirect('/erp/login');
+            redirect(erp_url('/login'));
             return null;
         }
         if (!Access::can('erp.access', $user) || !Access::can($permission, $user)) {

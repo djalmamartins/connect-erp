@@ -16,7 +16,7 @@ foreach ($catalog['pages'] as $id => $page) {
     if (!$canSee($id)) {
         continue;
     }
-    $searchIndex[] = ['n' => $page['name'], 'g' => $catalog['groups'][$page['group']]['label'] . ($page['section'] ? ' · ' . $page['section'] : ''), 'u' => url('/erp' . $page['route'])];
+    $searchIndex[] = ['n' => $page['name'], 'g' => $catalog['groups'][$page['group']]['label'] . ($page['section'] ? ' · ' . $page['section'] : ''), 'u' => erp_url($page['route'])];
 }
 ?>
 <!doctype html>

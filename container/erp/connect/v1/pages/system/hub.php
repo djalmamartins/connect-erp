@@ -28,7 +28,7 @@ $this->insert('components/layout/page-head', [
         <h2 id="<?= $this->e($anchor($section)) ?>-title"><?= $this->e($section) ?></h2>
         <div class="erp-grid erp-grid--cards">
             <?php foreach ($pages as $id => $page): ?>
-                <a class="erp-card erp-card-link erp-hub-card" href="<?= url('/erp' . $page['route']) ?>" data-erp-hub-item="<?= $this->e(mb_strtolower($page['name'])) ?>">
+                <a class="erp-card erp-card-link erp-hub-card" href="<?= erp_url($page['route']) ?>" data-erp-hub-item="<?= $this->e(mb_strtolower($page['name'])) ?>">
                     <h3><?= $this->e($page['name']) ?></h3>
                     <p><?= $this->e($kindLabels[$page['kind']] ?? 'Página') ?></p>
                     <span class="erp-hub-card__foot"><span class="erp-badge erp-badge--plain"><?= $this->e($id) ?></span><?= $icon('chevron-right', 'erp-icon--sm') ?></span>

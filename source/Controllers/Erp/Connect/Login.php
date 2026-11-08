@@ -27,7 +27,7 @@ final class Login extends Controller
     public function login(?array $data): void
     {
         if (Access::can('erp.access', Auth::user())) {
-            redirect('/erp/dashboard');
+            redirect(erp_url('/dashboard'));
             return;
         }
 
@@ -63,16 +63,16 @@ final class Login extends Controller
                 echo json_encode(['message' => $this->message->warning('Sua conta não possui acesso ao ERP.')->render()]);
                 return;
             }
-            echo json_encode(['redirect' => url('/erp/dashboard')]);
+            echo json_encode(['redirect' => erp_url('/dashboard')]);
             return;
         }
 
         echo $this->view->render('components/login/login', [
-            'head' => $this->seo->render('Entrar · Connect ERP', 'Acesso ao ERP da administradora Connect.', url('/erp/login'), theme('/assets/images/favicon.png'), false),
+            'head' => $this->seo->render('Entrar · Connect ERP', 'Acesso ao ERP da administradora Connect.', erp_url('/login'), theme('/assets/images/favicon.png'), false),
             'cookie' => filter_input(INPUT_COOKIE, 'authEmail'),
-            'adminBase' => '/erp',
+            'adminBase' => rtrim(erp_base(), '/'),
             'loginEnvironment' => 'erp',
-            'forgotUrl' => url('/erp/recuperar-senha'),
+            'forgotUrl' => erp_url('/recuperar-senha'),
         ]);
     }
 
@@ -80,11 +80,11 @@ final class Login extends Controller
     public function logout(?array $data): void
     {
         if (!csrf_verify($data ?? [])) {
-            redirect('/erp/dashboard');
+            redirect(erp_url('/dashboard'));
             return;
         }
         Auth::logout();
-        redirect('/erp/login');
+        redirect(erp_url('/login'));
     }
 
     /**

@@ -29,10 +29,10 @@ return [
         ['label' => 'Acima de 180 dias', 'value' => 11, 'color' => '#d92d36'],
     ],
     'alerts' => [
-        ['tone' => 'danger', 'title' => '4 contas a pagar vencidas', 'text' => 'Residencial Jardim das Acácias e mais 2 condomínios', 'href' => '/erp/financeiro/contas-a-pagar'],
-        ['tone' => 'warning', 'title' => 'Retorno bancário não processado', 'text' => 'Arquivo de 06/11 aguardando conciliação', 'href' => '/erp/cobranca/retornos'],
-        ['tone' => 'warning', 'title' => 'Fechamento de outubro pendente', 'text' => '3 condomínios sem fechamento mensal', 'href' => '/erp/financeiro/fechamento-mensal'],
-        ['tone' => 'info', 'title' => 'Assembleia em 5 dias', 'text' => 'Edifício Monte Verde · AGO 12/11 às 19h', 'href' => '/erp/comunicacao/assembleia-virtual'],
+        ['tone' => 'danger', 'title' => '4 contas a pagar vencidas', 'text' => 'Residencial Jardim das Acácias e mais 2 condomínios', 'href' => '/financeiro/contas-a-pagar'],
+        ['tone' => 'warning', 'title' => 'Retorno bancário não processado', 'text' => 'Arquivo de 06/11 aguardando conciliação', 'href' => '/cobranca/retornos'],
+        ['tone' => 'warning', 'title' => 'Fechamento de outubro pendente', 'text' => '3 condomínios sem fechamento mensal', 'href' => '/financeiro/fechamento-mensal'],
+        ['tone' => 'info', 'title' => 'Assembleia em 5 dias', 'text' => 'Edifício Monte Verde · AGO 12/11 às 19h', 'href' => '/comunicacao/assembleia-virtual'],
     ],
     'activities' => [
         ['icon' => 'check', 'title' => 'Boletos de dezembro gerados', 'text' => 'Condomínio Parque das Palmeiras · 212 boletos', 'when' => 'há 12 min'],
@@ -55,8 +55,8 @@ return [
         ['day' => '15', 'month' => 'nov', 'title' => 'Envio das prestações de contas', 'text' => 'Competência outubro'],
     ],
     'notifications' => [
-        ['title' => 'Retorno bancário disponível', 'text' => 'Banco fictício · 06/11', 'href' => '/erp/cobranca/retornos'],
-        ['title' => 'Nova ocorrência registrada', 'text' => 'Condomínio Vila Rica', 'href' => '/erp/operacional/ocorrencias'],
-        ['title' => 'Comunicado agendado', 'text' => 'Edifício Solar do Atlântico · amanhã', 'href' => '/erp/comunicacao/comunicados-gerais'],
+        ['title' => 'Retorno bancário disponível', 'text' => 'Banco fictício · 06/11', 'href' => '/cobranca/retornos'],
+        ['title' => 'Nova ocorrência registrada', 'text' => 'Condomínio Vila Rica', 'href' => '/operacional/ocorrencias'],
+        ['title' => 'Comunicado agendado', 'text' => 'Edifício Solar do Atlântico · amanhã', 'href' => '/comunicacao/comunicados-gerais'],
     ],
 ];

@@ -12,5 +12,5 @@ $this->insert('components/layout/page-head', ['pageEyebrow' => 'Segurança', 'pa
             <?php foreach ($recoveryCodes as $code): ?><li style="padding:8px 12px;border-radius:8px;background:var(--erp-surface-muted)"><?= $this->e($code) ?></li><?php endforeach; ?>
         </ul>
     <?php endif; ?>
-    <div class="erp-form__actions"><a class="erp-btn erp-btn--primary" href="<?= url('/erp/dashboard') ?>">Continuar para o dashboard</a></div>
+    <div class="erp-form__actions"><a class="erp-btn erp-btn--primary" href="<?= erp_url('/dashboard') ?>">Continuar para o dashboard</a></div>
 </section>

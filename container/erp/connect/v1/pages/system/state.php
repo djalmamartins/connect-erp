@@ -9,9 +9,9 @@ $this->layout('default');
         <h3><?= $this->e($stateTitle) ?></h3>
         <p><?= $this->e($stateMessage) ?></p>
         <?php if ($withNavigation): ?>
-            <a class="erp-btn erp-btn--primary" href="<?= url('/erp/dashboard') ?>">Ir para o dashboard</a>
+            <a class="erp-btn erp-btn--primary" href="<?= erp_url('/dashboard') ?>">Ir para o dashboard</a>
         <?php else: ?>
-            <form method="post" action="<?= url('/erp/sair') ?>"><?= csrf_input() ?><button class="erp-btn" type="submit">Sair e entrar com outra conta</button></form>
+            <form method="post" action="<?= erp_url('/sair') ?>"><?= csrf_input() ?><button class="erp-btn" type="submit">Sair e entrar com outra conta</button></form>
         <?php endif; ?>
     </div>
 </section>

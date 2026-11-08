@@ -52,7 +52,7 @@ $this->insert('components/layout/page-head', [
                 <div><h2 id="dash-delinquency-title">Inadimplência por atraso</h2><p>Participação no valor em aberto</p></div>
             </div>
             <?php $this->insert('components/charts/donut', ['slices' => $dashboard['delinquencyByAge'], 'donutLabel' => 'Inadimplência por faixa de atraso']); ?>
-            <p style="margin-top:16px"><a href="<?= url('/erp/relatorios/inadimplentes-geral') ?>">Ver relatório de inadimplentes →</a></p>
+            <p style="margin-top:16px"><a href="<?= erp_url('/relatorios/inadimplentes-geral') ?>">Ver relatório de inadimplentes →</a></p>
         </section>
     </div>
 
@@ -103,7 +103,7 @@ $this->insert('components/layout/page-head', [
                 <?php foreach ($dashboard['alerts'] as $alert): ?>
                     <li>
                         <span class="erp-list__icon<?= $alert['tone'] === 'info' ? '' : ' erp-list__icon--' . $this->e($alert['tone']) ?>"><?= $icon($alert['tone'] === 'info' ? 'calendar' : 'alert', 'erp-icon--sm') ?></span>
-                        <div class="erp-list__body"><a href="<?= url($alert['href']) ?>"><strong><?= $this->e($alert['title']) ?></strong></a><small><?= $this->e($alert['text']) ?></small></div>
+                        <div class="erp-list__body"><a href="<?= erp_url($alert['href']) ?>"><strong><?= $this->e($alert['title']) ?></strong></a><small><?= $this->e($alert['text']) ?></small></div>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -124,7 +124,7 @@ $this->insert('components/layout/page-head', [
             </ul>
         </section>
         <section class="erp-card" aria-labelledby="dash-agenda-title">
-            <div class="erp-card__head"><div><h2 id="dash-agenda-title">Agenda</h2><p>Próximos compromissos</p></div><a class="erp-btn erp-btn--sm" href="<?= url('/erp/operacional') ?>">Ver tudo</a></div>
+            <div class="erp-card__head"><div><h2 id="dash-agenda-title">Agenda</h2><p>Próximos compromissos</p></div><a class="erp-btn erp-btn--sm" href="<?= erp_url('/operacional') ?>">Ver tudo</a></div>
             <ul class="erp-list">
                 <?php foreach ($dashboard['agenda'] as $event): ?>
                     <li>

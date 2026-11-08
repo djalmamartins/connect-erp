@@ -46,10 +46,10 @@ $this->insert('components/layout/page-head', [
                     <tbody>
                     <?php foreach ($condominiums as $condominium): $active = $condominium['status'] === 'active'; ?>
                         <tr>
-                            <td><a href="<?= url('/erp/condominios/' . (int)$condominium['id']) ?>"><strong><?= $this->e($condominium['name']) ?></strong></a></td>
+                            <td><a href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>"><strong><?= $this->e($condominium['name']) ?></strong></a></td>
                             <td><?= $this->e(format_cnpj($condominium['document'])) ?></td>
                             <td><span class="erp-badge erp-badge--<?= $active ? 'success' : 'danger' ?>"><?= $active ? 'Ativo' : 'Inativo' ?></span></td>
-                            <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= url('/erp/condominios/' . (int)$condominium['id']) ?>" aria-label="Ver <?= $this->e($condominium['name']) ?>"><?= $icon('eye', 'erp-icon--sm') ?></a></td>
+                            <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>" aria-label="Ver <?= $this->e($condominium['name']) ?>"><?= $icon('eye', 'erp-icon--sm') ?></a></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

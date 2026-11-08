@@ -31,20 +31,22 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                     <p class="erp-dropdown__item"><span>Nenhuma notificação no momento.</span></p>
                 <?php endif; ?>
                 <?php foreach ($notifications as $notification): ?>
-                    <a class="erp-dropdown__item" href="<?= url($notification['href']) ?>"><?= $icon('info', 'erp-icon--sm') ?><span><?= $this->e($notification['title']) ?><small><?= $this->e($notification['text']) ?></small></span></a>
+                    <a class="erp-dropdown__item" href="<?= erp_url($notification['href']) ?>"><?= $icon('info', 'erp-icon--sm') ?><span><?= $this->e($notification['title']) ?><small><?= $this->e($notification['text']) ?></small></span></a>
                 <?php endforeach; ?>
             </div>
         </details>
-        <a class="erp-icon-button" href="<?= url('/erp/configuracoes') ?>" aria-label="Configurações" title="Configurações"><?= $icon('settings') ?></a>
+        <a class="erp-icon-button" href="<?= erp_url('/configuracoes') ?>" aria-label="Configurações" title="Configurações"><?= $icon('settings') ?></a>
         <details class="erp-dropdown" data-erp-dropdown>
             <summary class="erp-user-chip" aria-label="Menu do usuário"><span class="erp-avatar" aria-hidden="true"><?= $this->e($initial) ?></span><span><?= $this->e($user->first_name ?? '') ?></span></summary>
             <div class="erp-dropdown__panel">
                 <h2><?= $this->e(trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''))) ?><br><small><?= $this->e($user->email ?? '') ?></small></h2>
-                <a class="erp-dropdown__item" href="<?= url('/erp/configuracoes/usuarios-do-sistema') ?>"><?= $icon('user', 'erp-icon--sm') ?><span>Meu perfil</span></a>
-                <a class="erp-dropdown__item" href="<?= url('/studio/seguranca/2fa') ?>"><?= $icon('shield', 'erp-icon--sm') ?><span>Segurança e 2FA<small>Gerenciado no Studio</small></span></a>
-                <a class="erp-dropdown__item" href="<?= url('/erp/configuracoes') ?>"><?= $icon('settings', 'erp-icon--sm') ?><span>Configurações</span></a>
+                <a class="erp-dropdown__item" href="<?= erp_url('/configuracoes/usuarios-do-sistema') ?>"><?= $icon('user', 'erp-icon--sm') ?><span>Meu perfil</span></a>
+                <?php if ($user->can('studio.access')): // A tela de 2FA é do Studio e exige studio.access. ?>
+                    <a class="erp-dropdown__item" href="<?= url('/studio/seguranca/2fa') ?>"><?= $icon('shield', 'erp-icon--sm') ?><span>Segurança e 2FA<small>Gerenciado no Studio</small></span></a>
+                <?php endif; ?>
+                <a class="erp-dropdown__item" href="<?= erp_url('/configuracoes') ?>"><?= $icon('settings', 'erp-icon--sm') ?><span>Configurações</span></a>
                 <div class="erp-dropdown__sep"></div>
-                <form method="post" action="<?= url('/erp/sair') ?>">
+                <form method="post" action="<?= erp_url('/sair') ?>">
                     <?= csrf_input() ?>
                     <button type="submit" class="erp-dropdown__item"><?= $icon('logout', 'erp-icon--sm') ?><span>Sair</span></button>
                 </form>

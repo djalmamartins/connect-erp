@@ -42,10 +42,31 @@ $route->namespace(null);
 
 
 /**
- * WEB ROUTES
+ * WEB, STUDIO, HELP DESK E APP — não existem no host próprio do ERP (erp.connect.lab):
+ * cada ambiente fica isolado pelo hostname. No host do ERP só entram o 2FA do login
+ * compartilhado e a recuperação de senha do núcleo.
  */
 $moduleRole = Access::role(Auth::user());
 $developerBypass = ($moduleRole->slug ?? null) === "developer";
+if (erp_host()) {
+    $route->namespace("Source\\Controllers\\Studio");
+    $route->group("/studio");
+    $route->get("/login/2fa", "TwoFactor:challenge");
+    $route->post("/login/2fa", "TwoFactor:challenge");
+    $route->get("/seguranca/2fa", "TwoFactor:manage");
+    $route->post("/seguranca/2fa", "TwoFactor:manage");
+    $route->namespace("Source\\Controllers\\Web\\Connect");
+    $route->group(null);
+    $route->get("/forget", "Web:forget");
+    $route->post("/forget", "Web:forget");
+    $route->get("/forget/{code}", "Web:reset");
+    $route->post("/reset", "Web:reset");
+    $route->namespace(null);
+} else {
+
+/**
+ * WEB ROUTES
+ */
 if (CONF_ACCESS_SITE || $developerBypass) {
     require moves_container_path('web', CONF_VIEW_THEMES) . "/routes.php";
 } else {
@@ -80,6 +101,7 @@ $appRoutes = moves_container_path('residents', CONF_VIEW_APP) . "/default.php";
 if (is_file($appRoutes)) {
     require $appRoutes;
 }
+}
 
 /**
  * ERP ROUTES
@@ -98,7 +120,10 @@ $route->dispatch();
 /**
  * ERROR REDIRECT
  */
-if ($route->error()) {
+if ($route->error() && erp_host()) {
+    AppLogger::log((int)$route->error() >= 500 ? 'error' : 'notice', 'Rota do ERP finalizada com erro HTTP', ['event_type' => 'http_error', 'code' => 'HTTP_' . $route->error(), 'http_status' => (int)$route->error(), 'status' => 'resolved'], 'http');
+    (new \Source\Controllers\Erp\Connect\Panel())->routeError((int)$route->error());
+} elseif ($route->error()) {
     AppLogger::log((int)$route->error() >= 500 ? 'error' : 'notice', 'Rota finalizada com erro HTTP', ['event_type' => 'http_error', 'code' => 'HTTP_' . $route->error(), 'http_status' => (int)$route->error(), 'status' => (int)$route->error() >= 500 ? 'open' : 'resolved'], 'http');
     $requestPath = parse_url($_SERVER["REQUEST_URI"] ?? "", PHP_URL_PATH);
     $isStudio = (bool)preg_match("~/studio(?:/|$)~", $requestPath);

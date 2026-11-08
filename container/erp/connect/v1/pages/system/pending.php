@@ -46,6 +46,6 @@ $this->insert('components/layout/page-head', [
         </div>
     </div>
     <div class="erp-form__actions">
-        <a class="erp-btn" href="<?= url('/erp' . ($catalog['groups'][$currentPage['group']]['prefix'] ?: '/dashboard')) ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Voltar ao módulo</a>
+        <a class="erp-btn" href="<?= erp_url(($catalog['groups'][$currentPage['group']]['prefix'] ?: '/dashboard')) ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Voltar ao módulo</a>
     </div>
 </section>

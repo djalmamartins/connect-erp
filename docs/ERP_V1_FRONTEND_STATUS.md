@@ -4,9 +4,10 @@ Atualizado em 2026-11-07 · branch `claude-layout` · fase atual: **todas as pá
 
 ## URL local
 
-- `https://www.connect.lab/erp` (redireciona para `/erp/login` ou `/erp/dashboard`).
-- Atenção: o compose `connect-erp` monta o checkout principal (`www/connect`, branch `main`). O que está em `claude-layout` só aparece no connect.lab depois do merge ou com o compose rodando a partir do worktree (ver "Como testar").
-- Prévia estática para aprovação (gerada pelo próprio tema): https://claude.ai/artifact/DaVWJZRTTejtFhi7mK5GZH
+- **`https://erp.connect.lab`** — host próprio do ERP (rotas na raiz: `/login`, `/dashboard`, `/condominios`…). Neste host só existem o ERP, o 2FA do login (`/studio/login/2fa`, `/studio/seguranca/2fa`) e a recuperação de senha (`/forget`); site, Studio e Help Desk não respondem. Links antigos em `/erp/...` continuam funcionando no mesmo host.
+- `https://www.connect.lab/erp` — o mesmo ERP no host do site, mantido para transição.
+- Infra do lab: vhost em `/Volumes/MAC HD/Docker/xampp/apache/connect.conf`, `erp.connect.lab` em `scripts/update-lab-hosts.sh`, certificado `certs/erp-connect.pem` (mkcert). O compose `connect-erp` serve o checkout principal (`www/connect`, `main`).
+- Prévia estática: https://claude.ai/artifact/DaVWJZRTTejtFhi7mK5GZH
 
 ## Números
 
@@ -86,7 +87,7 @@ VENDOR="/Volumes/MAC HD/Docker/xampp/www/connect/vendor" php tests/erp/render-sm
 1. **Revisão das páginas** pela prévia ou no connect.lab.
 2. **Confirmar colunas e campos**: as definições em `components/layout/page-specs.php` (gerado por `tools/erp-page-specs.py`) são propostas derivadas do nome e do domínio de cada página, avisadas na tela. As fichas `docs/specs/pages/ap-*.md` ainda estão com campos PENDENTE e precisam ser confirmadas antes do backend.
 3. **Permissões por módulo**: só `erp.access` e `erp.condominiums.*` existem (migration `20261107_0003`). As outras páginas exigem `erp.access`; cada módulo precisa da sua permissão quando ganhar backend. O menu já esconde páginas sem a permissão própria (`Panel::PAGE_PERMISSIONS`).
-4. **Recuperação de senha no site fechado**: o ERP usa o fluxo real do núcleo (`/forget`, ADR 0009, e-mail `container/send`). Essa rota é do tema web e só existe com o site aberto (`CONF_ACCESS_SITE`) ou para developer; com o site fechado, `/erp/recuperar-senha` leva a um 404.
+4. **Recuperação de senha em www.connect.lab/erp**: no host do site, `/forget` só existe com o site aberto (`CONF_ACCESS_SITE`) ou para developer. Em `erp.connect.lab` a rota é registrada sempre.
 5. **Gestão do 2FA** fica no Studio (`/studio/seguranca/2fa`), que exige `studio.access`; quem só tem `erp.access` precisa de uma tela própria no ERP.
 6. **Testes HTTP e de navegador** (rotas, autenticação, permissões, console JS, 390/768/1440 px) no connect.lab, e a suíte PHPUnit (`tests/legacy/Unit/ErpThemeTest.php` foi atualizado para a moldura nova, mas não rodou aqui: o PHPUnit precisa do vendor do próprio checkout).
 

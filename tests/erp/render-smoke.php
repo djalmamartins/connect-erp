@@ -7,7 +7,8 @@ declare(strict_types=1);
  * Panel::layoutData() e renderiza dashboard, visões gerais, todas as páginas do catálogo,
  * estados e o login (view do Studio). Qualquer aviso PHP vira falha.
  *
- * Uso: VENDOR=/caminho/vendor php tests/erp/render-smoke.php [--out=dir]
+ * Uso: VENDOR=/caminho/vendor [SMOKE_HOST=erp.connect.lab] php tests/erp/render-smoke.php [--out=dir]
+ * SMOKE_HOST=erp.connect.lab verifica o ERP no host próprio (rotas na raiz).
  * (o vendor fica no checkout principal; não é versionado no worktree).
  */
 
@@ -30,7 +31,8 @@ set_error_handler(static function (int $no, string $msg, string $file, int $line
     throw new ErrorException($msg, 0, $no, $file, $line);
 });
 
-$_SERVER['HTTP_HOST'] = 'www.connect.lab';
+$smokeHost = getenv('SMOKE_HOST') ?: 'www.connect.lab';
+$_SERVER['HTTP_HOST'] = $smokeHost;
 $_SERVER['HTTPS'] = 'on';
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 foreach ([
@@ -44,6 +46,8 @@ foreach ([
 }
 @mkdir(CONF_SES_PATH, 0700, true);
 require_once $root . '/source/Boot/Helpers.php';
+$erpRoot = 'https://' . $smokeHost . erp_base();
+$erpPrefix = erp_base();
 
 $out = null;
 foreach ($argv as $arg) {
@@ -117,7 +121,7 @@ foreach ($catalog['groups'] as $key => $group) {
     $data = $layoutData->invoke($panel, $user, null, ['hubGroup' => $key, 'hubPages' => $pages], $group['label']);
     $html = $render('pages/system/hub', $data);
     $common($html, "hub $key", $group['label']);
-    foreach ($pages as $p) $assert(str_contains($html, 'href="https://www.connect.lab/erp' . $p['route'] . '"'), "hub $key: link {$p['route']}");
+    foreach ($pages as $p) $assert(str_contains($html, 'href="' . $erpRoot . $p['route'] . '"'), "hub $key: link {$p['route']}");
     $save('hub-' . $key, $html);
 }
 
@@ -135,12 +139,12 @@ foreach ($catalog['pages'] as $id => $page) {
         ]], 'Condomínios');
         $html = $render($template, $data);
         $common($html, $id, 'Condomínios');
-        $assert(str_contains($html, '&lt;b&gt;Residencial') && str_contains($html, '12.345.678/0001-95') && str_contains($html, '/erp/condominios/7'), 'AP-004: dados reais escapados e com link de detalhe');
+        $assert(str_contains($html, '&lt;b&gt;Residencial') && str_contains($html, '12.345.678/0001-95') && str_contains($html, $erpRoot . '/condominios/7'), 'AP-004: dados reais escapados e com link de detalhe');
         $show = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive']], 'Edifício Exemplo'));
-        $assert(str_contains($show, 'Inativo') && str_contains($show, 'role="tablist"') && (bool)preg_match('~<a href="https://www\.connect\.lab/erp/condominios">Condomínios</a>~', $show), 'AP-004: detalhe com abas e trilha de volta');
+        $assert(str_contains($show, 'Inativo') && str_contains($show, 'role="tablist"') && str_contains($show, '<a href="' . $erpRoot . '/condominios">Condomínios</a>'), 'AP-004: detalhe com abas e trilha de volta');
         $user->granted = ['erp.access'];
         $denied = $render('pages/condominiums/index', $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => []], 'Condomínios'));
-        $assert(!str_contains($denied, '<a href="https://www.connect.lab/erp/condominios"'), 'sem erp.condominiums.view: item some do menu');
+        $assert(!str_contains($denied, '<a href="' . $erpRoot . '/condominios"'), 'sem erp.condominiums.view: item some do menu');
         $user->granted = ['*'];
         continue;
     }
@@ -167,17 +171,18 @@ foreach ($catalog['pages'] as $id => $page) {
     ][$page['kind']] ?? [];
     foreach ($expect as $needle) $assert(str_contains($html, $needle), "$id ({$page['kind']}): contém $needle");
     if ($page['kind'] === 'report' && str_contains(json_encode($data['spec']['columns']), ':money')) $assert(str_contains($html, '<tfoot>'), "$id: total no rodapé");
-    $assert((bool)preg_match('~<a href="https://www.connect.lab/erp' . preg_quote($page['route'], '~') . '" aria-current="page"~', $html) || $page['group'] === 'relatorios' || $page['group'] === 'operacional' || $page['group'] === 'configuracoes', "$id: link ativo na sidebar");
-    preg_match_all('~href="https://www\.connect\.lab(/erp[^"#]*)~', $html, $m);
+    $assert((bool)preg_match('~<a href="' . preg_quote($erpRoot . $page['route'], '~') . '" aria-current="page"~', $html) || $page['group'] === 'relatorios' || $page['group'] === 'operacional' || $page['group'] === 'configuracoes', "$id: link ativo na sidebar");
+    preg_match_all('~href="' . preg_quote('https://' . $smokeHost, '~') . '(' . preg_quote($erpPrefix, '~') . '/[^"#]*)~', $html, $m);
     foreach ($m[1] as $h) $hrefs[$h] = true;
     $save('page-' . strtolower($id), $html);
 }
 
 // Links internos apontam para rotas registradas
-$registered = ['/erp/dashboard' => true, '/erp/configuracoes' => true, '/erp/login' => true, '/erp/sair' => true];
-foreach ($catalog['pages'] as $p) $registered['/erp' . $p['route']] = true;
-foreach ($catalog['groups'] as $g) if ($g['prefix'] !== '') $registered['/erp' . $g['prefix']] = true;
-foreach (array_keys($hrefs) as $h) $assert(isset($registered[$h]), "link sem rota: $h");
+$registered = [$erpPrefix . '/dashboard' => true, $erpPrefix . '/configuracoes' => true, $erpPrefix . '/login' => true, $erpPrefix . '/sair' => true];
+foreach ($catalog['pages'] as $p) $registered[$erpPrefix . $p['route']] = true;
+foreach ($catalog['groups'] as $g) if ($g['prefix'] !== '') $registered[$erpPrefix . $g['prefix']] = true;
+$registered['/studio/seguranca/2fa'] = true; // registrada também no host do ERP (index.php)
+foreach (array_keys($hrefs) as $h) if (!str_starts_with($h, '/container/')) $assert(isset($registered[$h]), "link sem rota: $h");
 
 // Estados
 foreach ([[403, false], [404, true]] as [$code, $nav]) {
@@ -201,13 +206,34 @@ putenv('ERP_DEMO_DATA=true');
 
 // Login (view do Studio reaproveitada)
 $studio = static fn (): Source\Core\View => new Source\Core\View($root . '/container/cms/studio/v1/', 'php');
-$html = $studio()->render('components/login/login', ['head' => '<title>Entrar</title>', 'cookie' => null, 'adminBase' => '/erp', 'loginEnvironment' => 'erp', 'forgotUrl' => '/erp/recuperar-senha']);
-$assert(str_contains($html, 'action="https://www.connect.lab/erp/login"'), 'login: envia para /erp/login');
+$html = $studio()->render('components/login/login', ['head' => '<title>Entrar</title>', 'cookie' => null, 'adminBase' => $erpPrefix, 'loginEnvironment' => 'erp', 'forgotUrl' => erp_url('/recuperar-senha')]);
+$assert(str_contains($html, 'action="' . $erpRoot . '/login"'), 'login: envia para o login do ERP');
 $assert(str_contains($html, 'CONNECT ERP') && str_contains($html, 'Esqueci minha senha'), 'login: identidade ERP e recuperação');
 $assert((bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'type="password"'), 'login: CSRF e senha');
 $save('login', $html);
 $html = $studio()->render('components/login/login', ['head' => '', 'cookie' => null, 'adminBase' => '/studio', 'loginEnvironment' => 'studio']);
 $assert(str_contains($html, 'MOVESOS') && str_contains($html, 'Área restrita'), 'login do Studio inalterado');
+
+// Registro das rotas (sem despachar): grupo certo para o host e nenhuma rota repetida.
+$route = new class {
+    public array $paths = [];
+    private string $group = '';
+    public function __call(string $name, array $args): void
+    {
+        if ($name === 'group') { $this->group = (string)($args[0] ?? ''); return; }
+        if (in_array($name, ['get', 'post'], true)) { $this->paths[] = strtoupper($name) . ' ' . ($this->group . ($args[0] === '/' && $this->group !== '' ? '' : $args[0])); }
+    }
+};
+require $theme . 'routes.php';
+$dupes = array_keys(array_filter(array_count_values($route->paths), static fn (int $n): bool => $n > 1));
+$assert($dupes === [], 'rotas repetidas: ' . implode(', ', $dupes));
+$expected = erp_host() ? ['GET /', 'GET /dashboard', 'GET /login', 'POST /sair', 'GET /condominios/{id}', 'GET /financeiro/contas-a-pagar', 'GET /erp/dashboard', 'GET /erp/login'] : ['GET /erp', 'GET /erp/dashboard', 'GET /erp/login', 'GET /erp/condominios/{id}', 'GET /erp/financeiro/contas-a-pagar'];
+foreach ($expected as $path) $assert(in_array($path, $route->paths, true), "rota registrada: $path");
+if (!erp_host()) $assert(!in_array('GET /dashboard', $route->paths, true), 'fora do host do ERP não há rotas na raiz');
+$idShow = array_search((erp_host() ? '' : '/erp') . '/condominios/{id}', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
+$idUnits = array_search((erp_host() ? '' : '/erp') . '/condominios/unidades', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
+$assert($idShow !== false && $idUnits !== false && $idUnits < $idShow, '/condominios/{id} registrada depois de /condominios/unidades');
+echo 'Rotas registradas: ' . count($route->paths) . "\n";
 
 ksort($kinds);
 echo "Páginas por tipo: " . json_encode($kinds, JSON_UNESCAPED_UNICODE) . "\n";

@@ -7,6 +7,6 @@ $this->layout('default');
         <span class="erp-empty__icon"><?= $icon('alert') ?></span>
         <h1 style="font-size:18px"><?= $this->e($title) ?></h1>
         <p><?= $this->e($description) ?></p>
-        <a class="erp-btn erp-btn--primary" href="<?= url('/erp/condominios') ?>">Voltar para Condomínios</a>
+        <a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios') ?>">Voltar para Condomínios</a>
     </div>
 </section>

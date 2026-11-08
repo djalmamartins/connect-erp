@@ -39,7 +39,7 @@ final class Panel extends Controller
     /** GET /erp */
     public function root(): void
     {
-        redirect(Auth::user() ? '/erp/dashboard' : '/erp/login');
+        redirect(erp_url(Auth::user() ? '/dashboard' : '/login'));
     }
 
     /** GET /erp/dashboard (AP-001 reinterpretada: dashboard da administradora). */
@@ -143,6 +143,25 @@ final class Panel extends Controller
         return [$template, $this->layoutData($user, $id, $data)];
     }
 
+    /**
+     * Erro de rota no host do ERP: sem sessão vai ao login; com sessão, estado de erro na
+     * moldura. Não redireciona para /ops (rota do site, que não existe neste host).
+     */
+    public function routeError(int $code): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect(erp_url('/login'));
+            return;
+        }
+        if (!Access::can('erp.access', $user)) {
+            $this->state($user, 403, 'Acesso negado', 'Sua conta não tem permissão para acessar o ERP. Fale com o administrador da Connect.', false);
+            return;
+        }
+        $code = in_array($code, [404, 405], true) ? $code : 500;
+        $this->state($user, $code, $code === 500 ? 'Algo deu errado' : 'Página não encontrada', $code === 500 ? 'Não foi possível concluir a solicitação. Tente de novo em instantes.' : 'O endereço não corresponde a nenhuma página do ERP.');
+    }
+
     /** GET /erp/seguranca/codigos — códigos de recuperação mostrados uma única vez após ativar o 2FA. */
     public function recoveryCodes(): void
     {
@@ -163,7 +182,7 @@ final class Panel extends Controller
     {
         $user = Auth::user();
         if ($user === null) {
-            redirect('/erp/login');
+            redirect(erp_url('/login'));
             return null;
         }
         if (!Access::can('erp.access', $user)) {
@@ -202,7 +221,7 @@ final class Panel extends Controller
         $dashboard = DemoData::get('dashboard');
 
         return array_merge([
-            'head' => $this->seo->render($title . ' · Connect ERP', 'ERP da administradora Connect.', url('/erp'), theme('/assets/images/favicon.png'), false),
+            'head' => $this->seo->render($title . ' · Connect ERP', 'ERP da administradora Connect.', erp_url(), theme('/assets/images/favicon.png'), false),
             'title' => $title,
             'user' => $user,
             'catalog' => $this->catalog,
@@ -226,7 +245,7 @@ final class Panel extends Controller
     /** @return list<array{label: string, href: ?string}> */
     private function breadcrumbs(?array $page, ?string $group, string $title): array
     {
-        $crumbs = [['label' => 'Início', 'href' => '/erp/dashboard']];
+        $crumbs = [['label' => 'Início', 'href' => '/dashboard']];
         if ($page !== null && $page['group'] === 'dashboard') {
             return [['label' => 'Início', 'href' => null]];
         }
@@ -238,14 +257,14 @@ final class Panel extends Controller
         }
         $pageIsModuleHome = $groupInfo !== null && $page['route'] === $groupInfo['prefix'];
         if ($groupInfo !== null && !$pageIsModuleHome) {
-            $crumbs[] = ['label' => $groupInfo['label'], 'href' => '/erp' . $groupInfo['prefix']];
+            $crumbs[] = ['label' => $groupInfo['label'], 'href' => $groupInfo['prefix']];
         }
         if (($page['section'] ?? '') !== '') {
-            $crumbs[] = ['label' => $page['section'], 'href' => '/erp' . $groupInfo['prefix'] . '#' . self::anchor($page['section'])];
+            $crumbs[] = ['label' => $page['section'], 'href' => $groupInfo['prefix'] . '#' . self::anchor($page['section'])];
         }
         if ($title !== $page['name']) {
             // Detalhe de um registro dentro da página (ex.: /erp/condominios/{id}).
-            $crumbs[] = ['label' => $page['name'], 'href' => '/erp' . $page['route']];
+            $crumbs[] = ['label' => $page['name'], 'href' => $page['route']];
         }
         $crumbs[] = ['label' => $title, 'href' => null];
         return $crumbs;

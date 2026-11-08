@@ -17,7 +17,7 @@ $this->insert('components/notifications/proposal');
         </div>
         <div class="erp-form__actions">
             <button type="reset" class="erp-btn erp-btn--ghost">Limpar</button>
-            <a class="erp-btn" href="<?= url('/erp' . $catalog['groups'][$currentPage['group']]['prefix']) ?>">Cancelar</a>
+            <a class="erp-btn" href="<?= erp_url($catalog['groups'][$currentPage['group']]['prefix']) ?>">Cancelar</a>
             <button type="submit" class="erp-btn erp-btn--primary">Confirmar <?= $this->e(mb_strtolower($spec['entity'])) ?></button>
         </div>
     </form>

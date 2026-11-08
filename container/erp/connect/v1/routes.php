@@ -14,48 +14,55 @@ use Source\Controllers\Erp\Connect\Panel;
 $erpCatalog = require __DIR__ . '/components/layout/catalog.php';
 
 $route->namespace("Source\\Controllers\\Erp\\Connect");
-$route->group("/erp");
 
-// Acesso: mesma autenticação do Studio (Auth + 2FA), destino e permissão do ERP.
-$route->get("/", "Panel:root");
-$route->get("/login", "Login:login");
-$route->post("/login", "Login:login");
-$route->post("/sair", "Login:logout");
-$route->get("/sair", "Panel:root");
-$route->get("/recuperar-senha", "Login:forgot");
-$route->get("/seguranca/codigos", "Panel:recoveryCodes");
-
-$route->get("/dashboard", "Panel:dashboard");
-
-// Condomínios (AP-004) com dados reais e somente leitura: CondominiumScope → MariaDB,
-// o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
-$route->get("/condominios", "Condominiums:index");
-
-// Visão geral de cada módulo. O Dashboard não tem prefixo e, em Condomínios, a própria
-// listagem (AP-004) ocupa o prefixo /condominios.
+// No host do ERP (erp.connect.lab) as rotas ficam na raiz e também em /erp, para links
+// antigos e para o retorno do 2FA (/studio/login/2fa?next=erp). Nos demais hosts, só /erp.
+$erpBases = erp_host() ? ['', '/erp'] : ['/erp'];
 $erpPageRoutes = array_column($erpCatalog['pages'], 'route');
-foreach ($erpCatalog['groups'] as $groupKey => $group) {
-    if ($group['prefix'] === '' || in_array($group['prefix'], $erpPageRoutes, true)) {
-        continue;
+foreach ($erpBases as $erpIndex => $erpBase) {
+    $erpName = static fn (string $name): ?string => $erpIndex === 0 ? $name : null;
+    $route->group($erpBase);
+
+    // Acesso: mesma autenticação do Studio (Auth + 2FA), destino e permissão do ERP.
+    $route->get("/", "Panel:root");
+    $route->get("/login", "Login:login");
+    $route->post("/login", "Login:login");
+    $route->post("/sair", "Login:logout");
+    $route->get("/sair", "Panel:root");
+    $route->get("/recuperar-senha", "Login:forgot");
+    $route->get("/seguranca/codigos", "Panel:recoveryCodes");
+
+    $route->get("/dashboard", "Panel:dashboard");
+
+    // Condomínios (AP-004) com dados reais e somente leitura: CondominiumScope → MariaDB,
+    // o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
+    $route->get("/condominios", "Condominiums:index");
+
+    // Visão geral de cada módulo. O Dashboard não tem prefixo e, em Condomínios, a própria
+    // listagem (AP-004) ocupa o prefixo /condominios.
+    foreach ($erpCatalog['groups'] as $groupKey => $group) {
+        if ($group['prefix'] === '' || in_array($group['prefix'], $erpPageRoutes, true)) {
+            continue;
+        }
+        $route->get($group['prefix'], static function () use ($groupKey): void {
+            (new Panel())->hub($groupKey);
+        }, $erpName("erp.hub.{$groupKey}"));
     }
-    $route->get($group['prefix'], static function () use ($groupKey): void {
-        (new Panel())->hub($groupKey);
-    }, "erp.hub.{$groupKey}");
+
+    // Uma rota por página do catálogo (exceto Dashboard e Condomínios, registrados acima).
+    foreach ($erpCatalog['pages'] as $pageId => $page) {
+        if (in_array($page['route'], ['/dashboard', '/condominios'], true)) {
+            continue;
+        }
+        $route->get($page['route'], static function () use ($pageId): void {
+            (new Panel())->page($pageId);
+        }, $erpName('erp.' . strtolower($pageId)));
+    }
+
+    // Depois das páginas do catálogo: /condominios/{id} não pode capturar /condominios/unidades etc.
+    $route->get("/condominios/{id}", "Condominiums:show");
 }
 
-// Uma rota por página do catálogo (exceto o Dashboard, registrado acima).
-foreach ($erpCatalog['pages'] as $pageId => $page) {
-    if (in_array($page['route'], ['/dashboard', '/condominios'], true)) {
-        continue;
-    }
-    $route->get($page['route'], static function () use ($pageId): void {
-        (new Panel())->page($pageId);
-    }, 'erp.' . strtolower($pageId));
-}
-
-// Depois das páginas do catálogo: /condominios/{id} não pode capturar /condominios/unidades etc.
-$route->get("/condominios/{id}", "Condominiums:show");
-
-unset($erpCatalog, $erpPageRoutes);
+unset($erpCatalog, $erpPageRoutes, $erpBases, $erpBase, $erpIndex, $erpName);
 $route->namespace(null);
 $route->group(null);

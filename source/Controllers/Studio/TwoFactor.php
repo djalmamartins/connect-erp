@@ -57,7 +57,7 @@ final class TwoFactor extends Controller
                 }
                 (new \Source\Core\Session())->set("auth2faRecoveryCodes", $codes);
                 // O ERP mostra os códigos na própria moldura: quem só tem erp.access não abre o Studio.
-                echo json_encode(["redirect" => url($next === "/erp" ? "/erp/seguranca/codigos" : "/studio/seguranca/2fa?novo=1")]);
+                echo json_encode(["redirect" => ($next === "/erp" ? erp_url("/seguranca/codigos") : url("/studio/seguranca/2fa?novo=1"))]);
                 return;
             }
             if (!$auth->completeTwoFactor($code, $twoFactor)) {
@@ -69,7 +69,7 @@ final class TwoFactor extends Controller
                 echo json_encode(["message" => $this->message->warning("Sua conta não possui acesso a este ambiente.")->render()]);
                 return;
             }
-            echo json_encode(["redirect" => url(match ($next) { "/helpdesk" => "/helpdesk/tickets", "/erp" => "/erp/dashboard", default => "/studio/dash" })]);
+            echo json_encode(["redirect" => $next === "/erp" ? erp_url("/dashboard") : url(match ($next) { "/helpdesk" => "/helpdesk/tickets", default => "/studio/dash" })]);
             return;
         }
 
