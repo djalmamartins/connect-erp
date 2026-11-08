@@ -215,7 +215,7 @@ foreach ($catalog['pages'] as $id => $page) {
     ][$page['kind']] ?? [];
     foreach ($expect as $needle) $assert(str_contains($html, $needle), "$id ({$page['kind']}): contém $needle");
     if ($page['kind'] === 'report' && str_contains(json_encode($data['spec']['columns']), ':money')) $assert(str_contains($html, '<tfoot>'), "$id: total no rodapé");
-    $assert((bool)preg_match('~<a href="' . preg_quote($erpRoot . $page['route'], '~') . '" aria-current="page"~', $html) || $page['group'] === 'relatorios' || $page['group'] === 'operacional' || $page['group'] === 'configuracoes', "$id: link ativo na sidebar");
+    $assert((bool)preg_match('~<a href="' . preg_quote($erpRoot . $page['route'], '~') . '" aria-current="page"~', $html) || in_array($page['group'], ['relatorios', 'operacional', 'configuracoes', 'financeiro'], true), "$id: link ativo na sidebar");
     preg_match_all('~href="' . preg_quote('https://' . $smokeHost, '~') . '(' . preg_quote($erpPrefix, '~') . '/[^"#]*)~', $html, $m);
     foreach ($m[1] as $h) $hrefs[$h] = true;
     $save('page-' . strtolower($id), $html);

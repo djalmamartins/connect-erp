@@ -181,3 +181,5 @@ Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOP
 ## Páginas próprias da Connect
 
 - [CN-001 — Vistorias](pages/cn-001-vistorias.md) · operacional · CONFIRMADA (pedido do proprietário, 08/11/2026)
+- [CN-002 — Centros de custo](pages/cn-002-centros-de-custo.md) · financeiro · INFERIDA (cadastro base do núcleo financeiro)
+- [CN-003 — Contas bancárias](pages/cn-003-contas-bancarias.md) · financeiro · INFERIDA (cadastro base do núcleo financeiro)

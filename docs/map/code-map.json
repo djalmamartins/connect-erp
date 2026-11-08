@@ -73,6 +73,10 @@
    "title": "0019 — Plano de contas (AP-160)"
   },
   {
+   "file": "docs/Organic Code/decisions/0020-invoice-types-and-references.md",
+   "title": "0020 — Tipos de faturas (AP-168) e campo de referência entre cadastros"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -864,6 +868,7 @@
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
+    "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -899,7 +904,8 @@
    "tests": [
     "tests/legacy/Integration/AuthTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
-    "tests/legacy/Unit/AuthDummyHashTest.php"
+    "tests/legacy/Unit/AuthDummyHashTest.php",
+    "tests/legacy/Unit/TwoFactorSchemaMissingTest.php"
    ]
   },
   "Source\\Models\\Banking\\AppBankInter": {
@@ -1307,6 +1313,7 @@
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
@@ -1370,6 +1377,7 @@
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
@@ -1406,6 +1414,7 @@
     "erp_linkable_areas",
     "erp_chart_accounts",
     "erp_board_members",
+    "erp_invoice_types",
     "erp_common_areas",
     "erp_residents",
     "erp_employees",
@@ -1418,8 +1427,10 @@
     "erp_pets"
    ],
    "tests": [
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php",
+    "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1443,6 +1454,7 @@
    "tables": [],
    "tests": [
     "tests/legacy/Integration/ChartOfAccountsTest.php",
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
@@ -1474,6 +1486,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/ChartOfAccountsTest.php",
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
@@ -1487,6 +1500,7 @@
    "tables": [],
    "tests": [
     "tests/legacy/Integration/ChartOfAccountsTest.php",
+    "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
@@ -1501,6 +1515,7 @@
    "tables": [],
    "tests": [
     "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php",
+    "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1990,7 +2005,7 @@
   }
  },
  "counts": {
-  "adrs": 21,
+  "adrs": 22,
   "classes": 129,
   "dynamic_route_lines": {
    "erp": 8,
@@ -1998,8 +2013,8 @@
   },
   "erp_pages": 172,
   "routes": 199,
-  "tables": 57,
-  "tests": 48
+  "tables": 58,
+  "tests": 51
  },
  "erp_pages": [
   {
@@ -5149,6 +5164,13 @@
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
+  "erp_invoice_types": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0501_invoice_types.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
   "erp_lawyers": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
@@ -5571,6 +5593,14 @@
    "Source\\Services\\Inspections\\PhotoStorage",
    "Source\\Support\\Access"
   ],
+  "tests/legacy/Integration/InvoiceTypesTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryInUse",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
   "tests/legacy/Integration/NotificationQueueTest.php": [
    "Source\\Models\\Notification\\NotificationMessage"
   ],
@@ -5682,6 +5712,11 @@
    "Source\\Services\\Inspections\\InspectionService",
    "Source\\Services\\Inspections\\Schedule"
   ],
+  "tests/legacy/Unit/InvoiceTypesDefinitionTest.php": [
+   "Source\\Core\\View",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
   ],
@@ -5714,6 +5749,9 @@
   ],
   "tests/legacy/Unit/TotpTest.php": [
    "Source\\Support\\Totp"
+  ],
+  "tests/legacy/Unit/TwoFactorSchemaMissingTest.php": [
+   "Source\\Models\\Auth"
   ],
   "tests/legacy/Unit/UnitDefinitionTest.php": [
    "Source\\Core\\View",

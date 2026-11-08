@@ -143,6 +143,9 @@ SPECS = {
     "AP-164": L("imposto", ["Imposto:text", "Alíquota:pct", "Base:select(Serviços|Folha|Faturamento)", "Retenção:select(Sim|Não)"], ["Nome:text!@6", "Alíquota (%):pct!@6", "Base de cálculo:select(Serviços|Folha|Faturamento)@6"], filters=("search",)),
     "AP-165": L("índice", ["Índice:select(IPCA|IGP-M|INPC|Selic)", "Competência:month", "Variação:pct", "Acumulado 12 meses:pct"], ["Índice:select(IPCA|IGP-M|INPC|Selic)!@6", "Competência:month!@3", "Variação (%):pct!@3"], filters=("period",)),
     "AP-168": L("tipo de fatura", ["Tipo:text", "Conta do plano:text", "Gera boleto:select(Sim|Não)", "Situação:" + ATIVO], ["Nome:text!@6", "Conta do plano:text!@6", "Gera boleto:bool@6"], filters=("search",)),
+    # Cadastros base do núcleo financeiro (páginas próprias da Connect).
+    "CN-002": L("centro de custo", ["Código:text", "Centro de custo:text", "Condomínio:condo", "Situação:" + ATIVO], ["Condomínio:condo@6", "Código:text!@3", "Situação:select(Ativo|Inativo)@3", "Nome:text!@12", "Observações:longtext@12"], filters=("condo", "search")),
+    "CN-003": L("conta bancária", ["Condomínio:condo", "Banco:bank", "Agência:text", "Conta:text", "Tipo:select(Corrente|Poupança|Aplicação)", "Situação:" + ATIVO], ["Condomínio:condo!@6", "Banco:bank!@6", "Agência:text!@3", "Dígito da agência:text@1", "Conta:text!@4", "Dígito da conta:text@1", "Tipo:select(Corrente|Poupança|Aplicação)!@3", "Carteira de cobrança:text@4", "Saldo inicial:money@4", "Data do saldo:date@4", "Conta principal:bool@4"], tabs=("Dados", "Cobrança", "Histórico"), gender="a"),
     "AP-171": L("integração", ["Serviço:text", "Tipo:select(Banco|E-mail|SMS)", "Condomínios:int", "Última sincronização:date", "Situação:status(Conectada|Pendente|Erro)"], ["Serviço:select(Banco|E-mail|SMS)!@6", "Identificação:text!@6"], filters=("status",), gender="a"),
 }
 

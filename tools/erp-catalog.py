@@ -125,6 +125,10 @@ for ap in ids(111, 18, 17): SECTION[ap] = "Canais"
 for ap in ids(147, 149, 150, 153, 148, 152): SECTION[ap] = "Acesso"
 for ap in ids(151, 154, 155, 156, 159, 171): SECTION[ap] = "Aplicativo e notificações"
 for ap in ids(157, 158, (160, 168)): SECTION[ap] = "Financeiro e parâmetros"
+# Financeiro passou de 14 páginas com CN-002/CN-003: a sidebar mostra as seções e a visão geral lista as páginas.
+for ap in ids(20, 21, 24, 25, 26, 27, 28, 29): SECTION[ap] = "Lançamentos"
+for ap in ids(22, 23, 31, 32, 40): SECTION[ap] = "Contas e pagamentos"
+for ap in ids(30): SECTION[ap] = "Fechamento"
 
 def kind(ap, name, domain):
     n = name.lower()
@@ -174,6 +178,15 @@ CONNECT_PAGES = [
      "route": "/operacional/vistorias", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-001-vistorias.md", "reference": "",
      "note": "Vistoria presencial com check-in por GPS, checklist, fotos e relatório (pedido do proprietário, 08/11/2026)"},
+    # Cadastros base do núcleo financeiro, servidos pelo motor de cadastros (ADR 0014).
+    {"id": "CN-002", "name": "Centros de custo", "group": "financeiro", "section": "Cadastros financeiros", "order": 100,
+     "route": "/financeiro/centros-de-custo", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-002-centros-de-custo.md", "reference": "",
+     "note": "Cadastro de centros de custo (padrão da Connect e por condomínio), base de lançamentos e relatórios"},
+    {"id": "CN-003", "name": "Contas bancárias", "group": "financeiro", "section": "Cadastros financeiros", "order": 101,
+     "route": "/financeiro/contas-bancarias", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-003-contas-bancarias.md", "reference": "",
+     "note": "Contas bancárias de cada condomínio (banco, agência, conta, carteira), base de boletos e conciliação"},
 ]
 for p in CONNECT_PAGES:
     pages.append(p)
