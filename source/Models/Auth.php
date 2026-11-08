@@ -13,6 +13,7 @@ use Source\Support\AppLogger;
 use Source\Support\MailTemplate;
 use Source\Services\PasswordResetService;
 use Source\Services\TwoFactorService;
+use Source\Services\LoginThrottle;
 
 /**
  * ERP | Class Auth
@@ -101,7 +102,7 @@ class Auth extends Model
     /**
      * Conclui o login pendente com um código TOTP ou de recuperação.
      */
-    public function completeTwoFactor(string $code, ?TwoFactorService $twoFactor = null): bool
+    public function completeTwoFactor(string $code, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null): bool
     {
         $pending = self::twoFactorPending();
         if (!$pending || $pending->mode !== "verify") {
@@ -110,11 +111,18 @@ class Auth extends Model
         }
         $twoFactor ??= new TwoFactorService();
         $userId = (int)$pending->user;
+        $throttle ??= new LoginThrottle();
+        $subjects = self::twoFactorSubjects($userId);
+        if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
+            $this->message->error(self::THROTTLED_MESSAGE);
+            return false;
+        }
         $code = trim($code);
         $valid = preg_match('/^\d{6}$/', preg_replace('/\s/', '', $code) ?? '')
             ? $twoFactor->verify($userId, $code)
             : $twoFactor->verifyRecoveryCode($userId, $code);
         if (!$valid) {
+            $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
             $session = new Session();
             $pending->attempts = (int)$pending->attempts + 1;
             $session->set(self::PENDING_2FA, (array)$pending);
@@ -127,6 +135,7 @@ class Auth extends Model
             $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
             return false;
         }
+        $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
         $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
         return true;
     }
@@ -136,7 +145,7 @@ class Auth extends Model
      *
      * @return list<string>|null códigos de recuperação
      */
-    public function completeTwoFactorSetup(string $code, ?TwoFactorService $twoFactor = null): ?array
+    public function completeTwoFactorSetup(string $code, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null): ?array
     {
         $pending = self::twoFactorPending();
         if (!$pending || $pending->mode !== "setup") {
@@ -144,8 +153,15 @@ class Auth extends Model
             return null;
         }
         $twoFactor ??= new TwoFactorService();
+        $throttle ??= new LoginThrottle();
+        $subjects = self::twoFactorSubjects((int)$pending->user);
+        if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
+            $this->message->error(self::THROTTLED_MESSAGE);
+            return null;
+        }
         $codes = $twoFactor->confirm((int)$pending->user, $code);
         if ($codes === null) {
+            $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
             $pending->attempts = (int)$pending->attempts + 1;
             (new Session())->set(self::PENDING_2FA, (array)$pending);
             $this->message->error("Código de verificação inválido.");
@@ -156,6 +172,7 @@ class Auth extends Model
             self::cancelTwoFactor();
             return null;
         }
+        $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
         $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
         return $codes;
     }
@@ -167,6 +184,21 @@ class Auth extends Model
     {
         $session = new Session();
         $session->unset("authCondo");
+    }
+
+    /** Mensagem única para bloqueio por conta/IP: não diz qual dos dois atingiu o limite. */
+    public const THROTTLED_MESSAGE = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+
+    /** E-mail em minúsculas ou CPF/CNPJ só com dígitos, como attempt() procura a conta. */
+    public static function throttleAccount(string $login): string
+    {
+        $login = mb_strtolower(trim($login));
+        return str_contains($login, '@') ? $login : str_replace(['.', '-', '/'], '', $login);
+    }
+
+    private static function twoFactorSubjects(int $userId): array
+    {
+        return LoginThrottle::subjects('user:' . $userId, $_SERVER['REMOTE_ADDR'] ?? null);
     }
 
     /**
@@ -237,15 +269,23 @@ class Auth extends Model
      * @param int $level
      * @return bool|null
      */
-    public function login(string $email, string $password, bool $save = false, int $level = 1, ?TwoFactorService $twoFactor = null): ?bool
+    public function login(string $email, string $password, bool $save = false, int $level = 1, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null): ?bool
     {
         self::cancelTwoFactor();
+        $throttle ??= new LoginThrottle();
+        $subjects = LoginThrottle::subjects(self::throttleAccount($email), $_SERVER['REMOTE_ADDR'] ?? null);
+        if ($throttle->blocked(LoginThrottle::LOGIN, $subjects)) {
+            $this->message->error(self::THROTTLED_MESSAGE);
+            return false;
+        }
         $user = $this->attempt($email, $password, $level);
         if (!$user) {
+            $throttle->fail(LoginThrottle::LOGIN, $subjects);
             AppLogger::log('notice', 'Tentativa de autenticação não concluída', ['event_type' => 'authentication_failed', 'code' => 'AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($email))), 'status' => 'resolved'], 'authentication');
             return false;
         }
 
+        $throttle->clear(LoginThrottle::LOGIN, $subjects);
         $mode = $this->secondFactorMode((int)$user->id, $twoFactor ?? new TwoFactorService());
         if ($mode === "unavailable") {
             $this->message->error("O acesso está temporariamente indisponível. Tente novamente em alguns minutos.");
