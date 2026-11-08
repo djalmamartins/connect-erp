@@ -26,7 +26,7 @@ final class Panel extends Controller
     private const THEME = __DIR__ . '/../../../../container/erp/connect/v1/';
 
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
-    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view'];
+    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = 'erpCondominium';

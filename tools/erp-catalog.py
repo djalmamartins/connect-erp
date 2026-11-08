@@ -166,6 +166,17 @@ for spec in SPECS:
     })
     matrix.append((ap, spec["name"], name, "/erp" + route, "VALIDADA" if ap not in REINTERPRET else "REINTERPRETADA", REINTERPRET.get(ap, "")))
 
+# Páginas próprias da Connect, sem rota de referência no inventário APControle.
+CONNECT_PAGES = [
+    {"id": "CN-001", "name": "Vistorias", "group": "operacional", "section": "Rotina", "order": -1,
+     "route": "/operacional/vistorias", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-001-vistorias.md", "reference": "",
+     "note": "Vistoria presencial com check-in por GPS, checklist, fotos e relatório (pedido do proprietário, 08/11/2026)"},
+]
+for p in CONNECT_PAGES:
+    pages.append(p)
+    matrix.append((p["id"], p["name"], p["name"], "/erp" + p["route"], "CONNECT", p["note"]))
+
 routes = [p["route"] for p in pages]
 dupes = {r for r in routes if routes.count(r) > 1}
 assert not dupes, f"rotas duplicadas: {dupes}"
@@ -205,6 +216,8 @@ for ap, orig, name, route, status, note in matrix:
     group = next((g[1] for g in GROUPS if p and g[0] == p["group"]), "—")
     if p and p["id"] == "AP-001":
         comp, actions, impl = "pages/dashboard/index", "período, exportar (pendente), comunicado rápido (modal), filtro/ordenação/paginação", "completa (demonstração)"
+    elif p and p["id"] == "CN-001":
+        comp, actions, impl = "pages/inspections/*", "check-in GPS, checklist, fotos, concluir, relatório HTML/PDF, envio por e-mail, configurar modelos/planos/localização", "completa (dados reais)"
     elif p:
         comp = "pages/modules/" + p["kind"]
         actions = {

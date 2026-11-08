@@ -3,7 +3,7 @@
 Gerada por `tools/erp-catalog.py` a partir de `docs/specs/routes.json` (inventário de 172 rotas da auditoria APControle).
 As rotas de referência do APControle não são rotas do Connect ERP: cada página recebeu uma rota própria em `/erp`.
 
-- Inventário: 172 · Validadas: 166 · Removidas: 3 · Fundidas: 3
+- Inventário: 172 · Validadas: 167 · Removidas: 3 · Fundidas: 3
 
 Componente: template que renderiza a rota hoje. Implementação: `interface proposta (demonstração)` = rota registrada e protegida, com a interface do seu tipo, colunas e campos propostos (a confirmar nas fichas) e dados fictícios; operações de negócio ficam pendentes até o backend. Teste: resultado de `tests/erp/render-smoke.php`.
 
@@ -181,3 +181,4 @@ Componente: template que renderiza a rota hoje. Implementação: `interface prop
 | AP-170 | Suporte | — | `—` | — | — | — | — | — | REMOVIDA | — | — | Fora do escopo: suporte do fornecedor SaaS; Connect usa o próprio Help Desk |
 | AP-171 | Integrações | Integrações | `/erp/configuracoes/integracoes` | Configurações | list | pages/modules/list | default.php | filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação | REINTERPRETADA | interface proposta (demonstração) | smoke OK | Integrações da própria Connect (bancos, e-mail), não da plataforma do fornecedor |
 | AP-172 | Atualizações | — | `—` | — | — | — | — | — | REMOVIDA | — | — | Fora do escopo: notas de versão do fornecedor SaaS |
+| CN-001 | Vistorias | Vistorias | `/erp/operacional/vistorias` | Operacional | list | pages/inspections/* | default.php | check-in GPS, checklist, fotos, concluir, relatório HTML/PDF, envio por e-mail, configurar modelos/planos/localização | CONNECT | completa (dados reais) | smoke OK | Vistoria presencial com check-in por GPS, checklist, fotos e relatório (pedido do proprietário, 08/11/2026) |
