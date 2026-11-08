@@ -93,11 +93,9 @@ function is_document(string $document): bool
         $resto = $soma % 11;
         $digito2 = ($resto < 2) ? 0 : 11 - $resto;
 
-        // Verificar se os dígitos calculados são iguais aos dígitos originais do CNPJ
-        if ($document[12] != $digito1 && $document[13] != $digito2){
-            return false;
-        }
-        return true;
+        // Os DOIS dígitos verificadores precisam conferir. Antes era "&&", o que aceitava
+        // CNPJ com um único dígito errado (ex.: 11222333000182).
+        return (int)$document[12] === $digito1 && (int)$document[13] === $digito2;
     }
 
 
