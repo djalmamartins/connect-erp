@@ -177,3 +177,7 @@ Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOP
 - [AP-170 — Suporte](pages/ap-170-suporte.md) · plataforma · CONFIRMADA · **FORA DO ESCOPO (SaaS)**
 - [AP-171 — Integrações](pages/ap-171-integracoes.md) · plataforma · CONFIRMADA · REINTERPRETAR
 - [AP-172 — Atualizações](pages/ap-172-atualizacoes.md) · plataforma · CONFIRMADA · **FORA DO ESCOPO (SaaS)**
+
+## Páginas próprias da Connect
+
+- [CN-001 — Vistorias](pages/cn-001-vistorias.md) · operacional · CONFIRMADA (pedido do proprietário, 08/11/2026)

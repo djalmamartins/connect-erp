@@ -1,0 +1,47 @@
+/* Vistoria presencial (CN-001). Complementa erp.css; pensado primeiro para o celular. */
+.insp-flash { margin-bottom: var(--erp-space-4); }
+.insp-board { display: grid; gap: var(--erp-space-3); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.insp-due { display: grid; gap: 6px; padding: var(--erp-space-4); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); }
+.insp-due h3 { font-size: 15px; margin: 0; }
+.insp-due small { color: var(--erp-muted); }
+.insp-due .erp-btn { margin-top: 6px; }
+.insp-due--overdue { border-color: #f6c9c4; background: var(--erp-danger-soft); }
+.insp-due--due_soon { border-color: #f1deb1; background: var(--erp-warning-soft); }
+.insp-gps { display: grid; gap: 8px; padding: var(--erp-space-4); border-radius: var(--erp-radius-md); background: var(--erp-surface-muted); border: 1px dashed var(--erp-border-strong); }
+.insp-gps[data-state="inside"] { background: var(--erp-success-soft); border-color: var(--erp-brand-line); border-style: solid; }
+.insp-gps[data-state="outside"], .insp-gps[data-state="error"] { background: var(--erp-warning-soft); border-color: #f1deb1; border-style: solid; }
+.insp-gps strong { font-size: 15px; }
+.insp-progress { height: 8px; border-radius: 999px; background: var(--erp-neutral-soft); overflow: hidden; }
+.insp-progress span { display: block; height: 100%; background: var(--erp-brand); }
+.insp-section { margin: var(--erp-space-5) 0 var(--erp-space-2); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--erp-muted); }
+.insp-item { display: grid; gap: var(--erp-space-3); padding: var(--erp-space-4); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); scroll-margin-top: 84px; }
+.insp-item + .insp-item { margin-top: var(--erp-space-3); }
+.insp-item--ok { border-left: 4px solid var(--erp-success); }
+.insp-item--issue { border-left: 4px solid var(--erp-danger); }
+.insp-item--not_applicable { border-left: 4px solid var(--erp-neutral); }
+.insp-item--error { border-color: var(--erp-danger); box-shadow: 0 0 0 3px rgba(217, 45, 54, .12); }
+.insp-item__title { display: flex; justify-content: space-between; gap: var(--erp-space-2); align-items: flex-start; }
+.insp-item__title h3 { font-size: 15px; margin: 0; }
+.insp-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.insp-choices input { position: absolute; opacity: 0; pointer-events: none; }
+.insp-choices label { display: grid; place-items: center; min-height: 48px; padding: 6px; text-align: center; border: 1px solid var(--erp-border-strong); border-radius: var(--erp-radius-sm); background: var(--erp-surface); font-weight: 650; font-size: 13px; cursor: pointer; }
+.insp-choices input:focus-visible + label { outline: 3px solid var(--erp-focus); outline-offset: 2px; }
+.insp-choices input[value="ok"]:checked + label { background: var(--erp-success-soft); border-color: var(--erp-success); color: var(--erp-success); }
+.insp-choices input[value="issue"]:checked + label { background: var(--erp-danger-soft); border-color: var(--erp-danger); color: var(--erp-danger); }
+.insp-choices input[value="not_applicable"]:checked + label { background: var(--erp-neutral-soft); border-color: var(--erp-neutral); color: var(--erp-neutral); }
+.insp-photos { display: flex; flex-wrap: wrap; gap: 8px; }
+.insp-photos figure { position: relative; margin: 0; }
+.insp-photos img { width: 96px; height: 96px; object-fit: cover; border-radius: var(--erp-radius-sm); border: 1px solid var(--erp-border); display: block; }
+.insp-photos form { position: absolute; top: 4px; right: 4px; }
+.insp-photos button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .65); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.insp-file { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.insp-file input[type="file"] { max-width: 100%; }
+.insp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.insp-sticky { position: sticky; bottom: 0; z-index: 5; margin-top: var(--erp-space-5); padding: var(--erp-space-3) var(--erp-space-4); background: rgba(255, 255, 255, .96); border-top: 1px solid var(--erp-border); display: flex; gap: var(--erp-space-3); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.insp-muted { color: var(--erp-muted); font-size: 13px; }
+.insp-template-text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; min-height: 280px; }
+@media (max-width: 640px) {
+  .insp-sticky { margin-left: calc(-1 * var(--erp-space-4)); margin-right: calc(-1 * var(--erp-space-4)); }
+  .insp-sticky .erp-btn { flex: 1; }
+}
+[data-insp-note][hidden] { display: none; }
