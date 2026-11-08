@@ -49,9 +49,28 @@ foreach ($erpBases as $erpIndex => $erpBase) {
         }, $erpName("erp.hub.{$groupKey}"));
     }
 
-    // Uma rota por página do catálogo (exceto Dashboard e Condomínios, registrados acima).
+    // Vistoria presencial (CN-001) com dados reais: InspectionService → MariaDB, o mesmo
+    // serviço da API /api/v1/inspections. Rotas fixas antes de /{id}.
+    $route->get("/operacional/vistorias", "Inspections:index");
+    $route->get("/operacional/vistorias/nova", "Inspections:create");
+    $route->post("/operacional/vistorias", "Inspections:store");
+    $route->get("/operacional/vistorias/configurar", "Inspections:settings");
+    $route->post("/operacional/vistorias/modelos", "Inspections:saveTemplate");
+    $route->post("/operacional/vistorias/planos", "Inspections:savePlan");
+    $route->post("/operacional/vistorias/localizacao", "Inspections:saveLocation");
+    $route->get("/operacional/vistorias/{id}", "Inspections:show");
+    $route->post("/operacional/vistorias/{id}/itens/{item}", "Inspections:answer");
+    $route->get("/operacional/vistorias/{id}/fotos/{photo}", "Inspections:photo");
+    $route->post("/operacional/vistorias/{id}/fotos/{photo}/excluir", "Inspections:deletePhoto");
+    $route->post("/operacional/vistorias/{id}/concluir", "Inspections:complete");
+    $route->post("/operacional/vistorias/{id}/cancelar", "Inspections:cancel");
+    $route->get("/operacional/vistorias/{id}/relatorio", "Inspections:report");
+    $route->get("/operacional/vistorias/{id}/relatorio/pdf", "Inspections:reportPdf");
+    $route->post("/operacional/vistorias/{id}/enviar", "Inspections:send");
+
+    // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios'], true)) {
+        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias'], true)) {
             continue;
         }
         $route->get($page['route'], static function () use ($pageId): void {

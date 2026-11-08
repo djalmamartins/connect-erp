@@ -9,7 +9,7 @@ RewriteEngine On
 </FilesMatch>
 
 RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
-RewriteRule ^storage/(?:backups|cache|cert|database|logs|sessions|temp|tmp)(?:/|$) - [F,L,NC]
+RewriteRule ^storage/(?:backups|cache|cert|database|logs|private|sessions|temp|tmp)(?:/|$) - [F,L,NC]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

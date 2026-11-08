@@ -38,6 +38,15 @@ $route->post("/auth/2fa/verify", "TwoFactor:verify");
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Vistoria presencial (CN-001). Rotas fixas antes de /inspections/{id}.
+$route->get("/inspection-templates", "Inspections:templates", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/inspections", "Inspections:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/inspections/schedule", "Inspections:schedule", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/inspections", "Inspections:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/inspections/{id}", "Inspections:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->put("/inspections/{id}/items/{item}", "Inspections:answer", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/inspections/{id}/items/{item}/photos", "Inspections:photo", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/inspections/{id}/complete", "Inspections:complete", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->namespace(null);
 
 

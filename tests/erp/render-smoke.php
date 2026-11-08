@@ -130,6 +130,42 @@ $hrefs = [];
 $kinds = [];
 foreach ($catalog['pages'] as $id => $page) {
     if ($id === 'AP-001') continue;
+    if ($id === 'CN-001') {
+        // Vistoria presencial: páginas próprias (pages/inspections), com dados de exemplo e escape.
+        $evil = '<b>Residencial</b>';
+        $item = static fn (int $n, string $result, array $photos = []): array => ['id' => $n, 'position' => $n, 'section' => 'Portaria', 'label' => "Item <i>{$n}</i>", 'requires_photo' => $n === 2, 'result' => $result, 'note' => $result === 'issue' ? 'Nota <script>' : null, 'answered_at' => null, 'photos' => $photos];
+        $inspection = ['id' => 5, 'condominium_id' => 7, 'condominium' => $evil, 'template_id' => 1, 'template' => 'Ronda semanal', 'plan_id' => 1, 'inspector_id' => 1, 'inspector' => 'Ana Exemplo', 'status' => 'in_progress',
+            'checkin' => ['at' => '2026-11-08 09:00:00', 'status' => 'outside', 'latitude' => -22.9, 'longitude' => -47.06, 'accuracy_m' => 12.0, 'distance_m' => 480.0, 'note' => 'GPS <ruim>'],
+            'summary' => null, 'completed_at' => null, 'counts' => ['pending' => 1, 'ok' => 1, 'issue' => 1, 'not_applicable' => 0],
+            'items' => [$item(1, 'ok'), $item(2, 'issue', [['id' => 3, 'width' => 10, 'height' => 10, 'latitude' => null, 'longitude' => null, 'created_at' => '2026-11-08 09:05:00']]), $item(3, 'pending')],
+            'deliveries' => [], 'editable' => true];
+        $cnCommon = ['flash' => ['type' => 'success', 'text' => 'Ok <x>'], 'base' => '/operacional/vistorias'];
+        $pagesToRender = [
+            'index' => ['pages/inspections/index', ['board' => [['plan_id' => 1, 'condominium_id' => 7, 'condominium' => $evil, 'template_id' => 1, 'template' => 'Ronda', 'frequency' => 'weekly', 'last_completed_at' => null, 'next_due_on' => '2026-11-01', 'status' => 'overdue', 'open_inspection_id' => null]],
+                'recent' => [['id' => 5, 'condominium_id' => 7, 'condominium' => $evil, 'template' => 'Ronda', 'status' => 'completed', 'inspector' => 'Ana', 'checkin_at' => '2026-11-08 09:00:00', 'checkin_status' => 'outside', 'completed_at' => null, 'items' => 3, 'issues' => 1, 'pending' => 0]],
+                'filters' => ['condominium_id' => 0, 'status' => ''], 'condominiums' => [['id' => 7, 'name' => $evil, 'document' => null, 'status' => 'active']], 'canPerform' => true, 'canManage' => true], 'Vistorias'],
+            'create' => ['pages/inspections/create', ['condominiums' => [['id' => 7, 'name' => $evil, 'document' => null, 'status' => 'active']], 'templates' => [['id' => 1, 'name' => 'Ronda', 'description' => null, 'frequency' => 'weekly', 'status' => 'active', 'items' => 3]],
+                'geolocations' => [7 => ['latitude' => -22.9, 'longitude' => -47.06, 'radius_m' => 150]], 'selected' => ['condominium_id' => 7, 'template_id' => 1], 'old' => [], 'errors' => ['checkin_note' => 'Explique']], 'Nova vistoria'],
+            'show' => ['pages/inspections/show', ['inspection' => $inspection, 'errors' => ['item_3' => 'Responda: Item 3'], 'canPerform' => true], $evil],
+            'show-done' => ['pages/inspections/show', ['inspection' => ['status' => 'completed', 'editable' => false, 'summary' => 'Resumo <b>'] + $inspection, 'errors' => [], 'canPerform' => true], $evil],
+            'settings' => ['pages/inspections/settings', ['templates' => [['id' => 1, 'name' => 'Ronda <x>', 'description' => null, 'frequency' => 'weekly', 'status' => 'active', 'items' => 3]], 'editing' => null, 'editingText' => '',
+                'plans' => [['id' => 1, 'condominium_id' => 7, 'condominium' => $evil, 'template_id' => 1, 'template' => 'Ronda', 'frequency' => 'weekly', 'starts_on' => '2026-11-01', 'status' => 'active']],
+                'condominiums' => [['id' => 7, 'name' => $evil, 'document' => null, 'status' => 'active']], 'geolocations' => [], 'old' => [], 'errors' => ['items' => 'Informe']], 'Configurar vistorias'],
+        ];
+        foreach ($pagesToRender as $name => [$template, $pageData, $title]) {
+            $html = $render($template, $layoutData->invoke($panel, $user, 'CN-001', $pageData + $cnCommon, $title));
+            $assert(str_contains($html, '<aside class="erp-sidebar"') && substr_count($html, '<main') === 1, "CN-001 $name: moldura");
+            $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, '<script>') && !str_contains($html, '<i>') && !str_contains($html, 'Ok <x>'), "CN-001 $name: escape");
+            $assert(str_contains($html, 'inspections.css') && str_contains($html, 'inspections.js'), "CN-001 $name: assets do módulo");
+            $save('cn-001-' . $name, $html);
+        }
+        $show = $render('pages/inspections/show', $layoutData->invoke($panel, $user, 'CN-001', $pagesToRender['show'][1] + $cnCommon, 'x'));
+        $assert(substr_count($show, 'enctype="multipart/form-data"') === 3 && str_contains($show, 'capture="environment"') && str_contains($show, '/operacional/vistorias/5/fotos/3'), 'CN-001: itens com foto pela câmera e foto servida por rota autorizada');
+        $assert(substr_count($show, "name='csrf'") >= 6, 'CN-001: formulários com CSRF');
+        $done = $render('pages/inspections/show', $layoutData->invoke($panel, $user, 'CN-001', $pagesToRender['show-done'][1] + $cnCommon, 'x'));
+        $assert(!str_contains($done, 'multipart/form-data') && str_contains($done, 'id="enviar"'), 'CN-001: concluída fica só leitura e oferece envio');
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';

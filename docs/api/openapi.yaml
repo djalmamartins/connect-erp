@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Connect ERP API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     API REST do Connect ERP sobre o núcleo Organic Code. Administradora única (ADR-002):
     todo dado de condomínio é limitado ao escopo do usuário no servidor.
@@ -61,6 +61,64 @@ components:
             items:
               type: array
               items: { $ref: '#/components/schemas/Condominium' }
+    InspectionItem:
+      type: object
+      required: [id, section, label, requires_photo, result]
+      properties:
+        id: { type: integer }
+        position: { type: integer }
+        section: { type: string }
+        label: { type: string }
+        requires_photo: { type: boolean }
+        result: { type: string, enum: [pending, ok, issue, not_applicable] }
+        note: { type: [string, 'null'] }
+        answered_at: { type: [string, 'null'] }
+        photos:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              width: { type: integer }
+              height: { type: integer }
+              latitude: { type: [number, 'null'] }
+              longitude: { type: [number, 'null'] }
+              url: { type: string, description: Rota autorizada do ERP que serve a foto }
+    Inspection:
+      type: object
+      required: [id, condominium_id, status, checkin, items]
+      properties:
+        id: { type: integer }
+        condominium_id: { type: integer }
+        condominium: { type: string }
+        template_id: { type: integer }
+        template: { type: string }
+        inspector: { type: string }
+        status: { type: string, enum: [in_progress, completed, cancelled] }
+        checkin:
+          type: object
+          properties:
+            at: { type: string }
+            status: { type: string, enum: [inside, outside, no_reference, no_signal] }
+            latitude: { type: [number, 'null'] }
+            longitude: { type: [number, 'null'] }
+            accuracy_m: { type: [number, 'null'] }
+            distance_m: { type: [number, 'null'] }
+            note: { type: [string, 'null'] }
+        summary: { type: [string, 'null'] }
+        completed_at: { type: [string, 'null'] }
+        counts: { type: object, additionalProperties: { type: integer } }
+        editable: { type: boolean }
+        items: { type: array, items: { $ref: '#/components/schemas/InspectionItem' } }
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { const: validation_failed }
+            message: { type: string }
+            fields: { type: object, additionalProperties: { type: string } }
   responses:
     Unauthenticated:
       description: Sessão ausente ou ainda sem o segundo fator
@@ -169,3 +227,153 @@ paths:
         '404':
           description: Não encontrado ou fora do escopo
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /inspection-templates:
+    get:
+      operationId: listInspectionTemplates
+      tags: [Inspections]
+      summary: Modelos de checklist ativos
+      description: Requer erp.inspections.view.
+      security: [{ session: [] }]
+      responses:
+        '200': { description: Modelos }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /inspections:
+    get:
+      operationId: listInspections
+      tags: [Inspections]
+      summary: Vistorias recentes dos condomínios do usuário
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [in_progress, completed, cancelled] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200': { description: Lista }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: startInspection
+      tags: [Inspections]
+      summary: Check-in (abre a vistoria)
+      description: Requer erp.inspections.perform e o condomínio no escopo. Fora do raio ou sem posição exige checkin_note.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, template_id]
+              properties:
+                condominium_id: { type: integer }
+                template_id: { type: integer }
+                latitude: { type: number, minimum: -90, maximum: 90 }
+                longitude: { type: number, minimum: -180, maximum: 180 }
+                accuracy: { type: number, description: Precisão do GPS em metros }
+                checkin_note: { type: string, maxLength: 500 }
+      responses:
+        '201':
+          description: Vistoria criada
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Inspection' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { description: CSRF inválido }
+        '422':
+          description: Dados inválidos ou justificativa ausente
+          content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } }
+  /inspections/schedule:
+    get:
+      operationId: inspectionSchedule
+      tags: [Inspections]
+      summary: Planos ativos com próxima data e situação (overdue, due_soon, in_progress, ok)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: Programação }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /inspections/{id}:
+    get:
+      operationId: getInspection
+      tags: [Inspections]
+      summary: Uma vistoria com itens e fotos
+      description: Fora do escopo responde 404.
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Vistoria
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Inspection' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Não encontrada ou fora do escopo }
+  /inspections/{id}/items/{item}:
+    put:
+      operationId: answerInspectionItem
+      tags: [Inspections]
+      summary: Responde um item (issue exige note)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: item, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                result: { type: string, enum: [pending, ok, issue, not_applicable] }
+                note: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Vistoria atualizada }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Não encontrada }
+        '409': { description: Vistoria concluída ou cancelada }
+        '422': { description: Inválido, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /inspections/{id}/items/{item}/photos:
+    post:
+      operationId: addInspectionPhoto
+      tags: [Inspections]
+      summary: Envia uma foto do item (JPG, PNG ou WebP até 15 MB; regravada como JPEG sem EXIF)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: item, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo: { type: string, format: binary }
+                latitude: { type: number }
+                longitude: { type: number }
+      responses:
+        '201': { description: Foto gravada }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Não encontrada }
+        '409': { description: Vistoria concluída ou cancelada }
+        '422': { description: Arquivo inválido ou limite de fotos }
+  /inspections/{id}/complete:
+    post:
+      operationId: completeInspection
+      tags: [Inspections]
+      summary: Conclui a vistoria (todos os itens respondidos e fotos obrigatórias presentes)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { summary: { type: string, maxLength: 4000 } } }
+      responses:
+        '200': { description: Concluída }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Não encontrada }
+        '409': { description: Já concluída ou cancelada }
+        '422': { description: Itens pendentes, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
