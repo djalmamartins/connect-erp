@@ -112,7 +112,7 @@ final class RegistryValidatorTest extends TestCase
             $page = $catalog['pages'][$definition['page']] ?? null;
             self::assertNotNull($page, "{$slug}: página do catálogo inexistente");
             self::assertSame($definition['group'], $page['group'], "{$slug}: grupo igual ao do catálogo");
-            self::assertContains($definition['group'], ['cadastros', 'condominios']);
+            self::assertContains($definition['group'], ['cadastros', 'condominios', 'configuracoes']);
             self::assertSame($page['route'], $definition['route'], "{$slug}: rota igual à do catálogo");
             self::assertMatchesRegularExpression('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '`/', $schema);
             preg_match('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '` \((.*?)\) ENGINE/s', $schema, $table);
@@ -138,7 +138,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(10, Definitions::all());
+        self::assertCount(11, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }

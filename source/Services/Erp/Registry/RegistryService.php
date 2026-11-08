@@ -140,7 +140,7 @@ final class RegistryService
             if ($condominium !== null && !$this->scope->canAccess($user, (int)$condominium)) {
                 $errors['condominium_id'] = 'Condomínio fora do seu escopo de acesso.';
             } elseif ($condominium === null && $definition['scope'] === 'optional' && !$this->scope->hasGlobalAccess($user)) {
-                $errors['condominium_id'] = 'Somente quem acessa todos os condomínios pode cadastrar um contato para todos. Selecione um condomínio.';
+                $errors['condominium_id'] = sprintf('Somente quem acessa todos os condomínios pode cadastrar %s %s para todos. Selecione um condomínio.', $definition['gender'] === 'a' ? 'uma' : 'um', $definition['entity']);
             }
         }
         if ($errors === []) {
@@ -191,6 +191,22 @@ final class RegistryService
         foreach ($definition['referenced_by'] ?? [] as $table) {
             $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE unit_id = :id AND deleted_at IS NULL");
             $stmt->execute(['id' => $id]);
+            if ((int)$stmt->fetchColumn() > 0) {
+                throw new RegistryInUse();
+            }
+        }
+        // Conta com contas-filhas ativas (mesmo plano) não sai (ADR 0018).
+        if (isset($definition['hierarchy'])) {
+            $field = $definition['hierarchy']['field'];
+            $separator = $definition['hierarchy']['separator'];
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$definition['table']}` WHERE deleted_at IS NULL AND id <> :id AND `{$field}` LIKE :prefix
+                AND (condominium_id <=> :condominium OR :condominium_is_null = 1)");
+            $stmt->execute([
+                'id' => $id,
+                'prefix' => addcslashes((string)$row[$field] . $separator, '%_\\') . '%',
+                'condominium' => $row['condominium_id'],
+                'condominium_is_null' => $row['condominium_id'] === null ? 1 : 0,
+            ]);
             if ((int)$stmt->fetchColumn() > 0) {
                 throw new RegistryInUse();
             }
@@ -417,7 +433,57 @@ final class RegistryService
                 $errors[$rule['field']] = $rule['message'];
             }
         }
+        if (isset($definition['hierarchy']) && !isset($errors[$definition['hierarchy']['field']])) {
+            $errors += $this->hierarchyRules($definition, $values);
+        }
         return $errors;
+    }
+
+    /**
+     * Código hierárquico (plano de contas, ADR 0018): a conta-pai (código sem o último segmento)
+     * precisa existir ativa no mesmo plano ou no plano padrão, ser do tipo indicado e ter o
+     * mesmo valor em 'same' (natureza). Conta de condomínio não repete código do plano padrão.
+     *
+     * @return array<string, string>
+     */
+    private function hierarchyRules(array $definition, array $values): array
+    {
+        $rule = $definition['hierarchy'];
+        $field = $rule['field'];
+        $code = (string)$values[$field];
+        $condominium = $values['condominium_id'] ?? null;
+        $table = $definition['table'];
+
+        if ($condominium !== null) {
+            $stmt = $this->pdo->prepare("SELECT 1 FROM `{$table}` WHERE deleted_at IS NULL AND condominium_id IS NULL AND `{$field}` = :code LIMIT 1");
+            $stmt->execute(['code' => $code]);
+            if ($stmt->fetchColumn()) {
+                return [$field => 'Este código já existe no plano padrão da Connect. Use outro código para a conta do condomínio.'];
+            }
+        }
+
+        $segments = explode($rule['separator'], $code);
+        if (count($segments) < 2) {
+            return [];
+        }
+        $parentCode = implode($rule['separator'], array_slice($segments, 0, -1));
+        [$kindField, $kindValue] = $rule['parent_kind'];
+        $same = $rule['same'];
+        $stmt = $this->pdo->prepare("SELECT `{$kindField}` AS kind, `{$same}` AS same_value FROM `{$table}`
+            WHERE deleted_at IS NULL AND status = 'active' AND `{$field}` = :code AND (condominium_id IS NULL OR condominium_id <=> :condominium)
+            ORDER BY condominium_id IS NULL LIMIT 1");
+        $stmt->execute(['code' => $parentCode, 'condominium' => $condominium]);
+        $parent = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($parent)) {
+            return [$field => "A conta-pai {$parentCode} não existe neste plano. Cadastre-a antes."];
+        }
+        if ($parent['kind'] !== $kindValue) {
+            return [$field => "A conta-pai {$parentCode} é analítica e não pode ter contas abaixo dela."];
+        }
+        if ($parent['same_value'] !== ($values[$same] ?? null)) {
+            return [$same => 'A natureza precisa ser a mesma da conta-pai ' . $parentCode . '.'];
+        }
+        return [];
     }
 
     /** @return array<string, mixed> */

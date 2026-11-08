@@ -159,7 +159,7 @@ foreach ($paths as [$d, $name]) {
     $out[] = '      security: [{ session: [], csrf: [] }]';
     $out[] = '      responses:';
     $out[] = "        '204': { description: Excluído }";
-    if (!empty($d['referenced_by'])) {
+    if (!empty($d['referenced_by']) || isset($d['hierarchy'])) {
         $out[] = "        '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
     }
     $out[] = "        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
