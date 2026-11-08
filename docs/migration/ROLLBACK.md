@@ -1,6 +1,8 @@
 # Rollback
 
-Esta migração não sobrescreve `connect_erp`. Para parar o ambiente:
+Esta migração não sobrescreve `connect_erp`. Desde o ADR 0010 (C5) o serviço `db` não existe
+mais no `compose.yaml`, mas o volume `connect-erp_connect_db_data` continua preservado. Para
+parar o ambiente:
 
 ```bash
 cd '/Volumes/MAC HD/Docker/xampp/worktrees/connect-claude-dev'
