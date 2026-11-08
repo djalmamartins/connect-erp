@@ -61,6 +61,10 @@
    "title": "0016 — Mapa do código e vigia de 30 minutos"
   },
   {
+   "file": "docs/Organic Code/decisions/0017-units-and-unit-links.md",
+   "title": "0017 — Unidades (AP-006) e troca de unit_label por unit_id"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -163,6 +167,7 @@
     "Source\\Models\\Auth",
     "Source\\Models\\User",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryInUse",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
@@ -463,6 +468,7 @@
     "Source\\Models\\Auth",
     "Source\\Models\\User",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryInUse",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
@@ -850,7 +856,8 @@
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
-    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
   "Source\\Models\\Address": {
@@ -1294,6 +1301,7 @@
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Integration/UserTest.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
@@ -1353,7 +1361,8 @@
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
-    "tests/legacy/Integration/RegistryServiceTest.php"
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
   "Source\\Services\\CondominiumValidator": {
@@ -1391,11 +1400,13 @@
     "erp_vehicles",
     "erp_visitors",
     "erp_lawyers",
+    "erp_units",
     "erp_pets"
    ],
    "tests": [
     "tests/legacy/Integration/RegistryServiceTest.php",
-    "tests/legacy/Unit/RegistryValidatorTest.php"
+    "tests/legacy/Unit/RegistryValidatorTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryForbidden": {
@@ -1406,6 +1417,16 @@
    "tables": [],
    "tests": [
     "tests/legacy/Integration/RegistryServiceTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Registry\\RegistryInUse": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryInUse.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryNotFound": {
@@ -1431,10 +1452,13 @@
    "tables": [
     "system_audit_logs",
     "condominiums",
+    "erp_units",
     "pages"
    ],
    "tests": [
-    "tests/legacy/Integration/RegistryServiceTest.php"
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryValidationException": {
@@ -1444,7 +1468,8 @@
    "layer": "Services",
    "tables": [],
    "tests": [
-    "tests/legacy/Integration/RegistryServiceTest.php"
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryValidator": {
@@ -1456,7 +1481,8 @@
    "layer": "Services",
    "tables": [],
    "tests": [
-    "tests/legacy/Unit/RegistryValidatorTest.php"
+    "tests/legacy/Unit/RegistryValidatorTest.php",
+    "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
   "Source\\Services\\Inspections\\ChecklistText": {
@@ -1944,8 +1970,8 @@
   }
  },
  "counts": {
-  "adrs": 18,
-  "classes": 128,
+  "adrs": 19,
+  "classes": 129,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -1953,7 +1979,7 @@
   "erp_pages": 172,
   "routes": 199,
   "tables": 53,
-  "tests": 44
+  "tests": 46
  },
  "erp_pages": [
   {
@@ -5117,7 +5143,10 @@
   "erp_units": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0401_units.sql",
-   "used_by": []
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryService"
+   ]
   },
   "erp_useful_contacts": {
    "altered_in": [],
@@ -5535,6 +5564,13 @@
    "Source\\Services\\TwoFactorService",
    "Source\\Support\\Totp"
   ],
+  "tests/legacy/Integration/UnitRegistryTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryInUse",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
   "tests/legacy/Integration/UserTest.php": [
    "Source\\Models\\User"
   ],
@@ -5616,6 +5652,12 @@
   ],
   "tests/legacy/Unit/TotpTest.php": [
    "Source\\Support\\Totp"
+  ],
+  "tests/legacy/Unit/UnitDefinitionTest.php": [
+   "Source\\Core\\View",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
   "tests/legacy/Unit/UploadSecurityTest.php": [
    "Source\\Support\\Upload"

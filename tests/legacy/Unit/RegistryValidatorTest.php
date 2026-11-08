@@ -122,22 +122,37 @@ final class RegistryValidatorTest extends TestCase
     {
         $root = dirname(__DIR__, 3);
         $catalog = require $root . '/container/erp/connect/v1/components/layout/catalog.php';
-        $schema = (string)file_get_contents($root . '/database/migrations/20261108_0201_erp_registries.sql')
-            . (string)file_get_contents($root . '/database/migrations/20261108_0301_erp_condominium_areas_assets.sql');
-        $permissions = (string)file_get_contents($root . '/database/migrations/20261108_0202_erp_registry_permissions.sql')
-            . (string)file_get_contents($root . '/database/migrations/20261108_0302_erp_condominium_areas_permissions.sql');
+        // Todas as migrations de avanço: tabelas criadas na 0201/0401 e colunas acrescentadas
+        // depois por ALTER TABLE ... ADD COLUMN (ex.: unit_id da 0402, ADR 0017).
+        $schema = '';
+        foreach (glob($root . '/database/migrations/*.sql') ?: [] as $file) {
+            if (!str_ends_with($file, '.down.sql')) {
+                $schema .= (string)file_get_contents($file) . "\n";
+            }
+        }
+        $permissions = $schema;
         $apis = [];
         foreach (Definitions::all() as $slug => $definition) {
             $page = $catalog['pages'][$definition['page']] ?? null;
             self::assertNotNull($page, "{$slug}: página do catálogo inexistente");
-            self::assertContains($page['group'], ['cadastros', 'condominios'], "{$slug} fica em Cadastros ou Condomínios");
+            self::assertSame($definition['group'], $page['group'], "{$slug}: grupo igual ao do catálogo");
+            self::assertContains($definition['group'], ['cadastros', 'condominios']);
             self::assertSame($page['route'], $definition['route'], "{$slug}: rota igual à do catálogo");
             self::assertMatchesRegularExpression('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '`/', $schema);
             preg_match('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '` \((.*?)\) ENGINE/s', $schema, $table);
-            foreach (array_merge(array_keys($definition['fields']), ['status', 'created_by', 'updated_by', 'deleted_at']) as $column) {
-                self::assertStringContainsString("`{$column}`", $table[1], "{$definition['table']}.{$column} existe na migration");
+            $columns = $table[1];
+            preg_match_all('/ALTER TABLE `' . $definition['table'] . '`(.*?);/s', $schema, $alters);
+            foreach ($alters[1] as $alter) {
+                preg_match_all('/ADD COLUMN IF NOT EXISTS `(\w+)`/', $alter, $added);
+                $columns .= ' `' . implode('` `', $added[1]) . '`';
+            }
+            foreach (array_merge(array_keys($definition['fields']), ['status', 'created_by', 'updated_by', 'deleted_at'], $definition['computed'] ?? []) as $column) {
+                self::assertStringContainsString("`{$column}`", $columns, "{$definition['table']}.{$column} existe nas migrations");
             }
             self::assertSame($definition['scope'] !== 'none', str_contains($table[1], '`condominium_id`'));
+            foreach ($definition['referenced_by'] ?? [] as $referencing) {
+                self::assertMatchesRegularExpression('/ALTER TABLE `' . $referencing . '`[^;]*ADD COLUMN IF NOT EXISTS `unit_id`/s', $schema, "{$referencing}.unit_id existe");
+            }
             foreach (['view', 'manage'] as $action) {
                 self::assertStringContainsString("'{$definition['permission']}.{$action}'", $permissions);
             }
@@ -147,7 +162,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(12, Definitions::all());
+        self::assertCount(13, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }

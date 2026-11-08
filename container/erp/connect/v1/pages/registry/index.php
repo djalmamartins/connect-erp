@@ -26,7 +26,7 @@ ob_start(); ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
 <?php $actions = trim((string)ob_get_clean());
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
+    'pageEyebrow' => ($definition['group'] ?? 'cadastros') === 'condominios' ? 'Condomínios' : 'Cadastros',
     'pageTitle' => $definition['label'],
     'pageLead' => $definition['lead'],
     'pageActions' => $actions,

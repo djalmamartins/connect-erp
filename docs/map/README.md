@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**199** rotas fixas · **128** classes em `source/` · **53** tabelas nas migrations · **44** arquivos de teste · **18** ADRs · **172** páginas no catálogo do ERP.
+**199** rotas fixas · **129** classes em `source/` · **53** tabelas nas migrations · **46** arquivos de teste · **19** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -74,6 +74,8 @@ flowchart LR
   Source_Controllers_Api_V1_Registry["Controllers/Api/V1/Registry"]
   Source_Services_Erp_Registry_RegistryForbidden["Services/Erp/Registry/RegistryForbidden"]
   Source_Controllers_Api_V1_Registry --> Source_Services_Erp_Registry_RegistryForbidden
+  Source_Services_Erp_Registry_RegistryInUse["Services/Erp/Registry/RegistryInUse"]
+  Source_Controllers_Api_V1_Registry --> Source_Services_Erp_Registry_RegistryInUse
   Source_Services_Erp_Registry_RegistryNotFound["Services/Erp/Registry/RegistryNotFound"]
   Source_Controllers_Api_V1_Registry --> Source_Services_Erp_Registry_RegistryNotFound
   Source_Services_Erp_Registry_RegistryService["Services/Erp/Registry/RegistryService"]
@@ -121,6 +123,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Register["Controllers/Erp/Connect/Register"]
   Source_Controllers_Erp_Connect_Registry["Controllers/Erp/Connect/Registry"]
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryForbidden
+  Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryInUse
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryNotFound
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryValidationException
@@ -155,6 +158,8 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_residents
   t_erp_suppliers[("erp_suppliers")]
   Source_Services_Erp_Registry_Definitions --> t_erp_suppliers
+  t_erp_units[("erp_units")]
+  Source_Services_Erp_Registry_Definitions --> t_erp_units
   t_erp_useful_contacts[("erp_useful_contacts")]
   Source_Services_Erp_Registry_Definitions --> t_erp_useful_contacts
   t_erp_vehicles[("erp_vehicles")]
@@ -162,6 +167,7 @@ flowchart LR
   t_erp_visitors[("erp_visitors")]
   Source_Services_Erp_Registry_Definitions --> t_erp_visitors
   Source_Services_Erp_Registry_RegistryService --> t_condominiums
+  Source_Services_Erp_Registry_RegistryService --> t_erp_units
   t_pages[("pages")]
   Source_Services_Erp_Registry_RegistryService --> t_pages
   t_system_audit_logs[("system_audit_logs")]
@@ -458,7 +464,7 @@ flowchart LR
 | `erp_pets` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_units` | `20261108_0401_units.sql` | — | — |
+| `erp_units` | `20261108_0401_units.sql` | — | `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService` |
 | `erp_useful_contacts` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_vehicles` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_visitors` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
@@ -507,7 +513,7 @@ flowchart LR
 | [`Controllers/Api/V1/Inspections`](../../source/Controllers/Api/V1/Inspections.php) | Auth, User, InspectionError, InspectionService | — | — |
 | [`Controllers/Api/V1/Me`](../../source/Controllers/Api/V1/Me.php) | Auth, CondominiumScope, TwoFactorService, Access | condominiums | — |
 | [`Controllers/Api/V1/OnboardingTemplates`](../../source/Controllers/Api/V1/OnboardingTemplates.php) | Auth, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Api/V1/Registry`](../../source/Controllers/Api/V1/Registry.php) | Auth, User, RegistryForbidden, RegistryNotFound, RegistryService, RegistryValidationException, Access | pages | 1 |
+| [`Controllers/Api/V1/Registry`](../../source/Controllers/Api/V1/Registry.php) | Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService, RegistryValidationException, Access | pages | 1 |
 | [`Controllers/Api/V1/TwoFactor`](../../source/Controllers/Api/V1/TwoFactor.php) | Auth, ApiAuthenticated | — | — |
 | [`Controllers/App/Connect/App`](../../source/Controllers/App/Connect/App.php) | Controller, Auth, Access, Online, Access | — | — |
 | [`Controllers/App/Connect/Dash`](../../source/Controllers/App/Connect/Dash.php) | Auth, User | — | — |
@@ -525,7 +531,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
 | [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Controller, Session, Auth, User, CondominiumScope, DemoData, Definitions, Access … | notifications, pages | 4 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
-| [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryNotFound, RegistryService, RegistryValidationException … | condominiums | — |
+| [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService … | condominiums | — |
 | [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorService, Access, SecretBox | — | — |
 | [`Controllers/Erp/Connect/Users`](../../source/Controllers/Erp/Connect/Users.php) | View, Address, Auth, AppCondominium, User, Email, Pager, Upload | — | — |
 | [`Controllers/Erp/V1/Condominium`](../../source/Controllers/Erp/V1/Condominium.php) | Address, AppCondominium, AppCorporations, AppOwner, AppUnits, Notification, User, Pager … | notifications | — |
@@ -552,7 +558,7 @@ flowchart LR
 | [`Core/Model`](../../source/Core/Model.php) | AppLogger, Audit, Message | — | — |
 | [`Core/Router`](../../source/Core/Router.php) | — | — | 1 |
 | [`Core/Session`](../../source/Core/Session.php) | Message | — | 1 |
-| [`Core/View`](../../source/Core/View.php) | — | — | 4 |
+| [`Core/View`](../../source/Core/View.php) | — | — | 5 |
 
 </details>
 
@@ -603,25 +609,26 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 12 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 13 |
 
 </details>
 
-<details><summary><b>Services</b> (25)</summary>
+<details><summary><b>Services</b> (26)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 2 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 6 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 7 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_board_members, erp_employees, erp_lawyers, erp_pets, erp_residents, erp_suppliers, erp_useful_contacts, erp_vehicles, erp_visitors | 2 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_board_members, erp_employees, erp_lawyers, erp_pets, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 3 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 1 |
+| [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 1 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 1 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, pages, system_audit_logs | 1 |
-| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 1 |
-| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 1 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_units, pages, system_audit_logs | 3 |
+| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 2 |
+| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 2 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |
 | [`Services/Inspections/Geo`](../../source/Services/Inspections/Geo.php) | — | — | 1 |
 | [`Services/Inspections/InspectionError`](../../source/Services/Inspections/InspectionError.php) | — | — | 3 |
@@ -689,6 +696,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0014 — Motor único dos cadastros do ERP (grupo Cadastros)](../../docs/Organic%20Code/decisions/0014-registry-engine.md)
 - [0015 — Vistoria presencial: check-in por GPS, fotos privadas e relatório](../../docs/Organic%20Code/decisions/0015-inspections-gps-photos.md)
 - [0016 — Mapa do código e vigia de 30 minutos](../../docs/Organic%20Code/decisions/0016-code-map-and-watchdog.md)
+- [0017 — Unidades (AP-006) e troca de unit_label por unit_id](../../docs/Organic%20Code/decisions/0017-units-and-unit-links.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)

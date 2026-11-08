@@ -8,6 +8,7 @@ use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryForbidden;
+use Source\Services\Erp\Registry\RegistryInUse;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
@@ -79,6 +80,8 @@ final class Registry
             $this->notFound();
         } catch (RegistryForbidden) {
             $this->forbidden('Registro compartilhado por todos os condomínios: exige acesso a todos eles.');
+        } catch (RegistryInUse) {
+            JsonResponse::send(409, ['error' => ['code' => 'in_use', 'message' => 'Registro em uso por cadastros ativos vinculados. Desvincule-os antes ou inative o registro.']]);
         }
     }
 

@@ -1,4 +1,4 @@
-# 0017 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros
+# 0018 — Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros
 
 Data: 2026-11-08 · Status: aceito (campos PROPOSTOS, aguardam revisão do Djalma)
 
@@ -13,16 +13,16 @@ catálogo com dados de demonstração. As fichas do APControle não confirmam ca
 
 - As três páginas entram como definições em `Definitions.php` (`common_areas`,
   `linkable_areas`, `assets`) e reaproveitam validador, serviço, controllers, templates,
-  API, escopo por condomínio, auditoria e exclusão lógica do ADR 0014. O grupo do catálogo
-  continua `condominios`; os templates mostram o grupo da própria página.
+  API, escopo por condomínio, auditoria e exclusão lógica do ADR 0014, com
+  `'group' => 'condominios'` (chave criada no ADR 0017).
 - Tabelas `erp_common_areas`, `erp_linkable_areas`, `erp_assets` (migration
   `20261108_0301`) e permissões `erp.common_areas.*`, `erp.linkable_areas.*`,
   `erp.assets.*` no grupo "ERP Condomínios" (`20261108_0302`), concedidas a developer e
   super_admin.
 - O motor ganhou os tipos `int` (com `min`/`max_value`) e `time` (HH:MM) e a regra
   `not_below` (um campo numérico não pode ser menor que outro).
-- Área vinculável aponta a unidade em texto (`unit_label`), como os cadastros, até a
-  frente de Unidades trocar por `unit_id`.
+- Área vinculável aponta a unidade em texto (`unit_label`). A troca por `unit_id` (ADR 0017)
+  precisa de migration posterior à 0401, que cria `erp_units`; fica PENDENTE.
 - Patrimônio usa a situação "Em uso / Baixado": bem baixado continua no histórico.
 
 ## INFERIDO / PENDENTE
