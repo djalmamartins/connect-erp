@@ -112,7 +112,7 @@ connect/
 | `tests/` | `tests/legacy/` + `smoke.php` | OK |
 | `tools/` | Existe; `setup.py` ausente | OK |
 | `docker/` | `docker/app/` | OK |
-| MariaDB | 11.8 nos dois serviços | OK. C5 resolvido em 2026-11-08: banco único `legacy-db` (ADR 0010). |
+| MariaDB | 11.8 nos dois serviços | OK. C5 resolvido em 2026-11-08: banco único `legacy-db` (ADR 0012). |
 
 ## 4. Conflitos encontrados
 
@@ -149,7 +149,7 @@ existe. Adaptação: A4. Resolvido em 2026-11-07 por A4 (ADR 0008) para `Auth::f
 estendem as tabelas existentes (`users`, `access_*`), então pertencem ao mesmo banco da
 aplicação. Decisão: um único banco (`legacy-db`) para o núcleo e o ERP; o serviço `db`
 fica sem uso até uma decisão explícita de removê-lo (não removido agora).
-**Resolvido em 2026-11-08** (ADR 0010, aprovado pelo Djalma): o serviço `db` saiu do
+**Resolvido em 2026-11-08** (ADR 0012, aprovado pelo Djalma): o serviço `db` saiu do
 `compose.yaml`, o volume `connect_db_data` foi preservado e os testes usam `movesos_test`
 no `legacy-db`.
 
@@ -347,7 +347,7 @@ subir o compose a partir do worktree.
 
 ## 10. Próximos passos
 
-1. C5 decidido em 2026-11-08: banco único (ADR 0010). Djalma confirma que `connect_erp` está
+1. C5 decidido em 2026-11-08: banco único (ADR 0012). Djalma confirma que `connect_erp` está
    vazio antes de recriar o ambiente sem o serviço `db`.
 2. `claude-dev`: A3 (Access) e A6 (boot testável) aplicados em 2026-11-07; falta rodar a
    suíte `integration` no container e fechar a Fase 1 (`e007c18`).

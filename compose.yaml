@@ -44,7 +44,7 @@ services:
       retries: 15
     networks: [connect]
     restart: unless-stopped
-  # C5 (ADR 0010): banco único. O serviço "db" (connect_erp) foi removido; o app e a suíte
+  # C5 (ADR 0012): banco único. O serviço "db" (connect_erp) foi removido; o app e a suíte
   # de testes usam somente legacy-db (connect_legacy + banco *_test criado pelos testes).
 networks:
   connect: { driver: bridge }

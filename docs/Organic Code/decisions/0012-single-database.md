@@ -1,4 +1,4 @@
-# 0010 — Banco único (C5)
+# 0012 — Banco único (C5)
 
 Data: 2026-11-08 · Status: aceito (aprovado pelo Djalma em 2026-11-08)
 

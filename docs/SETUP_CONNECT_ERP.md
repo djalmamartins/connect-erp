@@ -84,7 +84,7 @@ O VirtualHost e o certificado de `connect.lab` já existiam. O Apache
 compartilhado monta a árvore `xampp/www` e serve o checkout `main`. Nenhum
 arquivo global de hosts, certificado ou VirtualHost foi alterado nesta missão.
 
-Banco único (C5, ADR 0010): serviço `legacy-db`, banco `connect_legacy`, volume
+Banco único (C5, ADR 0012): serviço `legacy-db`, banco `connect_legacy`, volume
 `connect-erp_connect_legacy_db_data`, `utf8mb4`, collation `utf8mb4_unicode_ci` e
 isolamento `READ-COMMITTED`. A suíte de testes cria e usa `movesos_test` no mesmo
 servidor (nome obrigatoriamente terminado em `_test`) e roda só por `composer test:*`.
