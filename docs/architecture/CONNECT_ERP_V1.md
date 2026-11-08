@@ -130,6 +130,7 @@ rotas. O mesmo vale para `residents` (`container/apps/residents/...`, usado tamb
 `Studio.php`). Resultado: `container/erp/connect/v1` nunca é carregado, nenhuma rota
 `/erp` existe (confirmado: `https://www.connect.lab/erp` responde 404) e os controllers
 `Erp/Connect/*` estão órfãos. Adaptação: ver A1.
+ERP resolvido em 2026-11-07 por A1 (ADR 0007); `residents` continua pendente.
 
 **C3. Pasta `layouts/` dentro dos temas.** O contrato proíbe "layouts paralelos" e pede
 `components/`. Os temas reais (WEB, Support, Studio) usam `layouts/*.php` como moldura
@@ -141,7 +142,7 @@ e não se cria `layouts/`.
 **C4. Templates de e-mail sem diretório.** `Auth` e `Users` renderizam e-mails a partir de
 `moves_container_path('mail', CONF_VIEW_MAIL)` → `container/mail/default`, que não existe.
 Recuperação de senha e convites podem falhar. O ambiente `send` do contrato também não
-existe. Adaptação: A4.
+existe. Adaptação: A4. Resolvido em 2026-11-07 por A4 (ADR 0008) para `Auth::forget`.
 
 **C5. Dois bancos MariaDB.** A aplicação usa `legacy-db` (`connect_legacy`); o serviço `db`
 (`connect_erp`) está ligado mas sem uso. As migrations do ERP (`database/migrations`)
@@ -165,10 +166,13 @@ expor código. Não mudar agora; registrar como risco e revisar no hardening.
 `Helpers.php:297`, porque `Connect::getInstance()` tenta redirecionar antes de as
 constantes de URL existirem). Ou seja, até testes unitários exigem MariaDB, e a falha de
 conexão vira erro fatal em vez de mensagem clara.
+Resolvido em 2026-11-07 por A6 (ADR 0006): `composer test:unit:offline` roda a suíte
+`unit` sem MariaDB e a falha de conexão em CLI/testes vira `RuntimeException` clara.
 
 **C9. Autorização com fallback permissivo.** `Access::can()` usa `legacy()` (libera por
 nível, inclusive para nível ≥ 5) quando a permissão não está cadastrada **e** quando a
 consulta falha por exceção. Para módulos financeiros isso é inaceitável. Adaptação: A3.
+Resolvido em 2026-11-07 por A3 (ADR 0006).
 
 **C10. Pastas `organic/` e `src/`.** Resolvido em 2026-11-07 (ADR 0004, `docs/Organic Code/decisions/0004-organic-shared-assets.md`): a distribuição
 Organic foi movida para `container/shared/assets/organic/`, layouts WEB/Suporte e
@@ -189,17 +193,25 @@ Nenhuma delas foi aplicada nesta execução. Ordem sugerida:
   atual vem de `20260829_canonical_container_paths.sql`). Mesma correção para `residents`
   → `container/app/{tema}/v1` quando o APP for retomado. Teste: unidade para
   `moves_container_path('erp','connect')` e smoke de `GET /erp` respondendo login/302.
+  **Aplicado em 2026-11-07** (ADR 0007), sem migration: o alias `default` → `connect`
+  cobre o valor atual de `view_erp`. Smoke de `GET /erp` ainda não executado.
 - **A2. Tema ERP mínimo.** `container/erp/connect/v1/default.php` como moldura única
   (sidebar, navbar, conteúdo via `$this->section('content')` do MovesCode View),
   `routes.php` com grupo `/erp` e namespace `Source\Controllers\Erp\Connect`, e só os
   `components/` e `pages/` do primeiro módulo (Condomínios). Responsabilidade do
   `claude-layout` para a interface e do `claude-dev` para rotas/controllers.
+  **Aplicado em 2026-11-07** (ADR 0007): moldura, rotas e Condomínios somente leitura;
+  refinamento visual e bundle Compress ficam com `claude-layout`.
 - **A3. Endurecer `Access::can()`.** Permissões com prefixo `erp.` e `api.` negam por
   padrão quando não cadastradas, e qualquer exceção na checagem nega acesso em vez de
   cair no nível legado. Cadastrar as permissões do ERP na migration `0003` já existente.
+  **Aplicado em 2026-11-07** (ADR 0006): prefixos estritos `erp.`, `api.` e `security.`.
 - **A4. Templates de e-mail.** Confirmar onde os templates de e-mail do legado estão e
   restaurá-los em `container/send/default/v1` (ambiente `send`), com alias `mail` →
   `send` em `moves_container_path()`. Até lá, registrar a falha como pendência.
+  **Aplicado em 2026-11-07** (ADR 0008): Djalma definiu o ambiente `send` para os e-mails.
+  Nenhum template do legado foi encontrado no Connect, então `forget` e `confirm` foram
+  escritos do zero.
 - **A5. Absorver `source/Connect/`.** Manter `JsonResponse` (mover para
   `Source\Support\Http\JsonResponse` só por ADR), remover `HealthController`,
   `DatabaseConnection` e `bootstrap.php` depois que `tests/smoke.php` usar o bootstrap
@@ -207,8 +219,9 @@ Nenhuma delas foi aplicada nesta execução. Ordem sugerida:
 - **A6. Boot testável.** Fazer `Connect::getInstance()` lançar exceção quando chamado
   antes das constantes de URL (ou em `MOVESOS_ENV=testing`) em vez de redirecionar, para
   que a suíte `unit` rode sem banco e a `integration` rode no container.
+  **Aplicado em 2026-11-07** (ADR 0006): modo opt-in `MOVESOS_TEST_DB_DISABLED=1`.
 - **A7. `docs/modules/`.** Criar com a especificação do primeiro módulo (Condomínios),
-  sem duplicar `docs/specs/`.
+  sem duplicar `docs/specs/`. **Iniciado em 2026-11-07:** `docs/modules/condominios.md`.
 
 ## 6. Árvore definitiva validada (v1)
 
@@ -303,13 +316,20 @@ docker compose -p connect-erp exec app composer db:status
 ```
 
 ```bash
-docker compose -p connect-erp exec -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS="$(grep '^LEGACY_DB_ROOT_PASSWORD=' .env | cut -d= -f2-)" app vendor/bin/phpunit --testsuite unit
+docker compose -p connect-erp exec -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS="$(grep '^LEGACY_DB_ROOT_PASSWORD=' .env | cut -d= -f2-)" app composer test:unit
 ```
 
-Sem essas variáveis, `tests/legacy/prepare-environment.php` tenta `localhost` e falha com
-`SQLSTATE[HY000] [2002]` (resultado observado em 2026-11-07). A suíte cria e usa somente
-o banco `movesos_test`. A senha root não foi colocada no ambiente do serviço `app` de
-propósito.
+**Nunca chame `vendor/bin/phpunit` diretamente.** Ele carrega o `Config.php` antes de
+`MOVESOS_ENV=testing` valer, conecta no banco do app (`MOVESOS_DB_NAME`) e o `TestCase`
+faz `TRUNCATE` em `users`, `posts`, `pages` e outras tabelas. Foi o que zerou o
+`connect_legacy` em 2026-11-07, com o comando que este documento recomendava antes. Os
+scripts `composer test:*` passam por `tests/legacy/run.php`, que define o ambiente de
+teste antes do autoload. O `TestCase` agora aborta se o banco conectado não terminar em
+`_test`.
+
+Sem as variáveis `MOVESOS_TEST_DB_*`, `tests/legacy/prepare-environment.php` tenta
+`localhost` e falha com `SQLSTATE[HY000] [2002]`. A senha root não foi colocada no
+ambiente do serviço `app` de propósito.
 
 ```bash
 docker compose -p connect-erp exec legacy-db mariadb -u root -p -e "SELECT view_theme, view_erp, view_app, view_mail FROM connect_legacy.settings LIMIT 1"
@@ -322,7 +342,10 @@ subir o compose a partir do worktree.
 ## 10. Próximos passos
 
 1. Djalma roda os comandos da seção 9 e decide sobre C5 (banco único).
-2. `claude-dev`: A3 (Access) e A6 (boot testável), depois rodar PHPUnit no container e
-   fechar a Fase 1 (`e007c18`).
-3. `claude-dev` + `claude-layout`: A1 e A2, abrindo o primeiro módulo (Condomínios).
-4. A4 e A5 coordenados com a frente que remove `organic/` e `src/`.
+2. `claude-dev`: A3 (Access) e A6 (boot testável) aplicados em 2026-11-07; falta rodar a
+   suíte `integration` no container e fechar a Fase 1 (`e007c18`).
+3. `claude-dev` + `claude-layout`: A1 e A2 aplicados em 2026-11-07 (Condomínios somente
+   leitura); falta smoke de `/erp` no lab, visual pelo `claude-layout` e cadastro/edição
+   após a spec AP-004.
+4. A4 aplicado em 2026-11-07 (ADR 0008). A5 aguarda aprovação para remover arquivos de
+   `source/Connect/`.

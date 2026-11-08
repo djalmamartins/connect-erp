@@ -24,6 +24,9 @@ final class Panel extends Controller
 {
     private const THEME = __DIR__ . '/../../../../container/erp/connect/v1/';
 
+    /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
+    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view'];
+
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
     private array $catalog;
 
@@ -190,7 +193,7 @@ final class Panel extends Controller
      * @param array<string, mixed> $extra
      * @return array<string, mixed>
      */
-    private function layoutData(User $user, ?string $pageId, array $extra = [], ?string $title = null): array
+    public function layoutData(User $user, ?string $pageId, array $extra = [], ?string $title = null): array
     {
         $page = $pageId !== null ? ($this->catalog['pages'][$pageId] ?? null) : null;
         $group = $page['group'] ?? ($extra['hubGroup'] ?? null);
@@ -211,6 +214,8 @@ final class Panel extends Controller
             'notifications' => $dashboard['notifications'] ?? [],
             'withNavigation' => true,
             'anchor' => static fn (string $text): string => self::anchor($text),
+            // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
+            'canSee' => static fn (string $pageId): bool => !isset(self::PAGE_PERMISSIONS[$pageId]) || $user->can(self::PAGE_PERMISSIONS[$pageId]),
             'icon' => static function (string $name, string $class = '') use ($icons): string {
                 $paths = $icons[$name] ?? $icons['info'];
                 return '<svg class="erp-icon ' . htmlspecialchars($class, ENT_QUOTES) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths . '</svg>';
@@ -222,21 +227,27 @@ final class Panel extends Controller
     private function breadcrumbs(?array $page, ?string $group, string $title): array
     {
         $crumbs = [['label' => 'Início', 'href' => '/erp/dashboard']];
-        if ($group !== null && $group !== 'dashboard' && isset($this->catalog['groups'][$group])) {
-            $crumbs[] = ['label' => $this->catalog['groups'][$group]['label'], 'href' => $page ? '/erp' . $this->catalog['groups'][$group]['prefix'] : null];
+        if ($page !== null && $page['group'] === 'dashboard') {
+            return [['label' => 'Início', 'href' => null]];
         }
-        if ($page !== null && ($page['section'] ?? '') !== '') {
-            $crumbs[] = ['label' => $page['section'], 'href' => '/erp' . $this->catalog['groups'][$group]['prefix'] . '#' . self::anchor($page['section'])];
+        $groupInfo = $group !== null ? ($this->catalog['groups'][$group] ?? null) : null;
+        if ($page === null) {
+            // Visão geral de módulo ou estado de erro.
+            $crumbs[] = ['label' => $groupInfo['label'] ?? $title, 'href' => null];
+            return $crumbs;
         }
-        if ($page === null || $page['group'] !== 'dashboard') {
-            if ($page !== null) {
-                $crumbs[] = ['label' => $title, 'href' => null];
-            } elseif ($group === null) {
-                $crumbs[] = ['label' => $title, 'href' => null];
-            }
-        } else {
-            $crumbs = [['label' => 'Início', 'href' => null]];
+        $pageIsModuleHome = $groupInfo !== null && $page['route'] === $groupInfo['prefix'];
+        if ($groupInfo !== null && !$pageIsModuleHome) {
+            $crumbs[] = ['label' => $groupInfo['label'], 'href' => '/erp' . $groupInfo['prefix']];
         }
+        if (($page['section'] ?? '') !== '') {
+            $crumbs[] = ['label' => $page['section'], 'href' => '/erp' . $groupInfo['prefix'] . '#' . self::anchor($page['section'])];
+        }
+        if ($title !== $page['name']) {
+            // Detalhe de um registro dentro da página (ex.: /erp/condominios/{id}).
+            $crumbs[] = ['label' => $page['name'], 'href' => '/erp' . $page['route']];
+        }
+        $crumbs[] = ['label' => $title, 'href' => null];
         return $crumbs;
     }
 

@@ -63,7 +63,7 @@ Matriz completa (módulo, página, rota, componente, layout, ações, validaçã
 | `node --check container/erp/connect/v1/assets/js/erp.js` | sem erros |
 | `python3 tools/erp-catalog.py` | 166 páginas, 3 removidas, 3 fundidas, nenhuma rota duplicada |
 | `python3 tools/erp-page-specs.py` | 165 definições de página |
-| `VENDOR=/Volumes/MAC\ HD/Docker/xampp/www/connect/vendor php tests/erp/render-smoke.php` | **2.890 verificações, 0 falhas** |
+| `VENDOR=/Volumes/MAC\ HD/Docker/xampp/www/connect/vendor php tests/erp/render-smoke.php` | **2.884 verificações, 0 falhas** (2026-11-08, com Condomínios reais) |
 
 O smoke renderiza, sem banco, pelo mesmo `Source\Core\View` do controller: dashboard (indicadores, gráficos, tabela, modal, aviso de demonstração), os 10 hubs (todos os links), as 165 páginas restantes pelo mesmo `Panel::pageView()` da rota (template do tipo certo, nenhuma página genérica, ids únicos, elementos do tipo: tabela/abas/exclusão nas listagens, totais nos relatórios com valores, arquivo e etapas nas importações etc., além de sidebar, navbar, breadcrumbs, título, item ativo, um `<main>`, logout com CSRF e a ficha de origem), listagem sem linhas com a demonstração desligada, todos os links internos contra as rotas registradas, estados 403/404, códigos de recuperação, dashboard com demonstração desligada e o login do ERP e do Studio (o do Studio continua igual). Avisos PHP contam como falha.
 
@@ -85,12 +85,12 @@ VENDOR="/Volumes/MAC HD/Docker/xampp/www/connect/vendor" php tests/erp/render-sm
 
 1. **Revisão das páginas** pela prévia ou no connect.lab.
 2. **Confirmar colunas e campos**: as definições em `components/layout/page-specs.php` (gerado por `tools/erp-page-specs.py`) são propostas derivadas do nome e do domínio de cada página, avisadas na tela. As fichas `docs/specs/pages/ap-*.md` ainda estão com campos PENDENTE e precisam ser confirmadas antes do backend.
-3. **Permissões por módulo** (`erp.<módulo>.view`/`.manage`) não existem em `access_permissions`; hoje só `erp.access` é exigido. Precisa de migration e seed (frente backend).
-4. **Recuperação de senha**: `Auth::forget()` depende do template de e-mail `forget`, que por decisão de Djalma (2026-11-07) fica no container `send` (`container/send/...`, frente A4 no claude-dev), e de rota de redefinição; além disso responde de forma diferente para e-mail cadastrado e não cadastrado. A tela `/erp/recuperar-senha` explica a pendência.
+3. **Permissões por módulo**: só `erp.access` e `erp.condominiums.*` existem (migration `20261107_0003`). As outras páginas exigem `erp.access`; cada módulo precisa da sua permissão quando ganhar backend. O menu já esconde páginas sem a permissão própria (`Panel::PAGE_PERMISSIONS`).
+4. **Recuperação de senha no site fechado**: o ERP usa o fluxo real do núcleo (`/forget`, ADR 0009, e-mail `container/send`). Essa rota é do tema web e só existe com o site aberto (`CONF_ACCESS_SITE`) ou para developer; com o site fechado, `/erp/recuperar-senha` leva a um 404.
 5. **Gestão do 2FA** fica no Studio (`/studio/seguranca/2fa`), que exige `studio.access`; quem só tem `erp.access` precisa de uma tela própria no ERP.
-6. **Bundle via MovesCode Compress** de `erp.css`/`erp.js` para `public/` (hoje servidos direto do tema, como no ADR 0007 da frente claude-dev).
-7. **Merge com `claude-dev`**: lá existem, sem commit, `default.php`, `erp.css` e páginas de Condomínios em `container/erp/connect/v1`. No merge, a moldura deste branch prevalece e as views de Condomínios (`Condominiums` controller) passam a usar `$this->layout('default')` com os dados de `Panel::layoutData()`.
-8. **Testes HTTP e de navegador** (rotas, autenticação, permissões, console JS, 390/768/1440 px) no connect.lab.
+6. **Testes HTTP e de navegador** (rotas, autenticação, permissões, console JS, 390/768/1440 px) no connect.lab, e a suíte PHPUnit (`tests/legacy/Unit/ErpThemeTest.php` foi atualizado para a moldura nova, mas não rodou aqui: o PHPUnit precisa do vendor do próprio checkout).
+
+Resolvidas em 2026-11-08: merge com `claude-dev` (moldura e CSS deste branch, helpers de `container/send`, Condomínios reais em `/erp/condominios` e `/erp/condominios/{id}` com `CondominiumScope`), bundle via MovesCode Compress (`Services/Minify/Erp.php` publica `assets/erp.min.css` e `assets/erp.min.js` só com o design system do ERP e só quando a fonte muda) e recuperação de senha real.
 
 ## Próximas etapas
 

@@ -7,6 +7,12 @@ use Source\Models\User;
 
 final class Access
 {
+    /**
+     * Prefixos que nunca caem no fallback legado por nível (A3, CONNECT_ERP_V1.md C9):
+     * permissão não cadastrada ou usuário sem papel resulta em acesso negado.
+     */
+    public const STRICT_PREFIXES = ['erp.', 'api.', 'security.'];
+
     private static array $cache = [];
 
     public static function can(string $permission, ?User $user = null): bool
@@ -25,7 +31,7 @@ final class Access
                 WHERE p.slug=:permission LIMIT 1");
             $stmt->execute(["user" => $user->id, "permission" => $permission]);
             $access = $stmt->fetch();
-            if (!$access) { return self::$cache[$key] = self::legacy($permission, (int)$user->level); }
+            if (!$access) { return self::$cache[$key] = self::fallback($permission, (int)$user->level); }
             if ($access->role_slug === "developer") { return self::$cache[$key] = true; }
             if (!self::moduleEnabled($permission)) { return self::$cache[$key] = false; }
             if ($access->effect === "deny") { return self::$cache[$key] = false; }
@@ -33,7 +39,9 @@ final class Access
             return self::$cache[$key] = (bool)$access->role_allowed;
         } catch (\Throwable $exception) {
             AppLogger::exception($exception, 'authorization', ['event_type' => 'permission_check_failed', 'permission' => $permission, 'users_id' => $user->id]);
-            return self::$cache[$key] = self::legacy($permission, (int)$user->level);
+            // Falha na checagem sempre nega e não entra no cache: não libera pelo nível
+            // legado nem fixa a negação por uma indisponibilidade transitória.
+            return false;
         }
     }
 
@@ -53,10 +61,21 @@ final class Access
         foreach (array_keys(self::$cache) as $key) { if (str_starts_with($key, $userId . ":")) unset(self::$cache[$key]); }
     }
 
-    private static function legacy(string $permission, int $level): bool
+    public static function isStrict(string $permission): bool
     {
-        if ($permission === "erp.access") { return $level >= 2; }
-        if ($permission === "studio.access") { return $level >= 5; }
+        foreach (self::STRICT_PREFIXES as $prefix) {
+            if (str_starts_with($permission, $prefix)) { return true; }
+        }
+        return false;
+    }
+
+    /**
+     * Decisão quando não há registro de permissão ou papel para o usuário: prefixos
+     * estritos negam; as demais permissões mantêm o legado do Studio (nível >= 5).
+     */
+    public static function fallback(string $permission, int $level): bool
+    {
+        if (self::isStrict($permission)) { return false; }
         return $level >= 5;
     }
 

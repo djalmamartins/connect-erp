@@ -9,10 +9,13 @@
  * @var ?string $currentPageId
  * @var callable $icon
  * @var callable $anchor
+ * @var callable $canSee  esconde páginas sem a permissão própria (a rota valida de novo)
  */
 $pagesByGroup = [];
 foreach ($catalog['pages'] as $id => $page) {
-    $pagesByGroup[$page['group']][$id] = $page;
+    if ($canSee($id)) {
+        $pagesByGroup[$page['group']][$id] = $page;
+    }
 }
 $currentSection = $currentPageId !== null ? ($catalog['pages'][$currentPageId]['section'] ?? null) : null;
 $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 1));

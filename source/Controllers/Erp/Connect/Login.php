@@ -88,16 +88,11 @@ final class Login extends Controller
     }
 
     /**
-     * GET /erp/recuperar-senha — a recuperação por e-mail depende de container/mail/default
-     * (template "forget") e de uma rota de redefinição, que ainda não existem. Sem esses
-     * pré-requisitos a tela explica a pendência em vez de simular o envio.
+     * GET /erp/recuperar-senha — usa a recuperação de senha do núcleo (/forget, tokens
+     * aleatórios de uso único guardados com hash, ADR 0009), sem fluxo paralelo no ERP.
      */
     public function forgot(): void
     {
-        echo $this->view->render('components/login/forgot-pending', [
-            'head' => $this->seo->render('Recuperar senha · Connect ERP', 'Recuperação de senha do ERP Connect.', url('/erp/recuperar-senha'), theme('/assets/images/favicon.png'), false),
-            'loginEnvironment' => 'erp',
-            'adminBase' => '/erp',
-        ]);
+        redirect('/forget');
     }
 }

@@ -53,7 +53,11 @@ if ($out) @mkdir($out, 0777, true);
 
 putenv('ERP_DEMO_DATA=true');
 
-$user = new Source\Models\User();
+// Usuário com todas as permissões do ERP; o caso sem permissão é verificado mais abaixo.
+$user = new class extends Source\Models\User {
+    public array $granted = ['*'];
+    public function can(string $permission): bool { return in_array('*', $this->granted, true) || in_array($permission, $this->granted, true); }
+};
 foreach (['id' => 1, 'first_name' => 'Ana', 'last_name' => 'Exemplo', 'email' => 'ana@example.invalid', 'level' => 5] as $k => $v) {
     $user->$k = $v;
 }
@@ -122,6 +126,24 @@ $hrefs = [];
 $kinds = [];
 foreach ($catalog['pages'] as $id => $page) {
     if ($id === 'AP-001') continue;
+    if ($id === 'AP-004') {
+        // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
+        $template = 'pages/condominiums/index';
+        $data = $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => [
+            ['id' => 7, 'name' => '<b>Residencial</b> Exemplo', 'document' => '12345678000195', 'status' => 'active'],
+            ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive'],
+        ]], 'Condomínios');
+        $html = $render($template, $data);
+        $common($html, $id, 'Condomínios');
+        $assert(str_contains($html, '&lt;b&gt;Residencial') && str_contains($html, '12.345.678/0001-95') && str_contains($html, '/erp/condominios/7'), 'AP-004: dados reais escapados e com link de detalhe');
+        $show = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive']], 'Edifício Exemplo'));
+        $assert(str_contains($show, 'Inativo') && str_contains($show, 'role="tablist"') && (bool)preg_match('~<a href="https://www\.connect\.lab/erp/condominios">Condomínios</a>~', $show), 'AP-004: detalhe com abas e trilha de volta');
+        $user->granted = ['erp.access'];
+        $denied = $render('pages/condominiums/index', $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => []], 'Condomínios'));
+        $assert(!str_contains($denied, '<a href="https://www.connect.lab/erp/condominios"'), 'sem erp.condominiums.view: item some do menu');
+        $user->granted = ['*'];
+        continue;
+    }
     [$template, $data] = $panel->pageView($user, $id);
     $html = $render($template, $data);
     $kinds[$page['kind']] = ($kinds[$page['kind']] ?? 0) + 1;

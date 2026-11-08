@@ -2,14 +2,16 @@
 
 namespace Source\Models;
 
+use Source\Core\Connect;
 use Source\Core\Model;
 use Source\Core\Session;
-use Source\Core\View;
 use Source\Models\Corporation\AppCondominium;
 use Source\Models\Corporation\AppCorporations;
 use Source\Models\Session\AppLog;
 use Source\Support\Email;
 use Source\Support\AppLogger;
+use Source\Support\MailTemplate;
+use Source\Services\PasswordResetService;
 use Source\Services\TwoFactorService;
 
 /**
@@ -288,39 +290,39 @@ class Auth extends Model
     }
 
     /**
-     * @param string $email
-     * @return bool
+     * Pedido de recuperação de senha por e-mail ou CPF/CNPJ.
+     *
+     * Retorna true para qualquer identificador bem formado, exista ou não a conta,
+     * para não revelar cadastros. Só retorna false quando o formato é inválido.
+     * O link leva apenas o token (o e-mail não vai na URL); o banco guarda o hash.
      */
     public function forget(string $email): bool
     {
-        if(!str_contains($email, '@')){
-            $email = str_replace(array('.','-','/'), "", $email);
+        $login = trim($email);
+        if (!str_contains($login, '@')) {
+            $login = str_replace(['.', '-', '/'], '', $login);
         }
 
-        if (is_numeric ($email)){
-            $user = (new User())->findByDocument($email);
-            if (!$user) {
-                $this->message->warning("O CPF ou CNPJ informado não está cadastrado.");
-                return false;
-            }
-        }elseif(is_email($email)) {
-            $user = (new User())->findByEmail($email);
-
-            if (!$user) {
-                $this->message->warning("O e-mail informado não está cadastrado.");
-                return false;
-            }
+        if (is_numeric($login)) {
+            $user = (new User())->findByDocument($login);
+        } elseif (is_email($login)) {
+            $user = (new User())->findByEmail($login);
+        } else {
+            $this->message->warning("Informe um e-mail ou CPF/CNPJ válido.");
+            return false;
         }
 
-        if(!empty($user)){
-            $user->forget = md5(uniqid(rand(), true));
-            $user->save();
+        if (!$user) {
+            AppLogger::log('notice', 'Recuperação de senha para conta inexistente', [
+                'event_type' => 'password_reset', 'code' => 'PASSWORD_RESET_UNKNOWN_ACCOUNT', 'status' => 'resolved',
+            ], 'authentication');
+            return true;
         }
 
-        $view = new View(moves_container_path('mail', CONF_VIEW_MAIL));
-        $message = $view->render("forget", [
+        $token = (new PasswordResetService())->issue((int)$user->id, $_SERVER['REMOTE_ADDR'] ?? null);
+        $message = (new MailTemplate())->render("forget", [
             "first_name" => $user->first_name,
-            "forget_link" => url("/forget/{$user->forget}:{$user->email}")
+            "forget_link" => url("/forget/{$token}")
         ]);
         (new Email())->bootstrap(
             "Recupere sua senha no " . CONF_SITE_NAME,
@@ -329,6 +331,59 @@ class Auth extends Model
             "{$user->first_name} {$user->last_name}"
         )->send();
         (new AppLog())->register($user->id, "Solicitou recuperação de senha");
+        return true;
+    }
+
+    /** O token de recuperação ainda pode ser usado (exibição do formulário). */
+    public function resetTokenIsValid(string $token): bool
+    {
+        return (new PasswordResetService())->findValidUserId($token) !== null;
+    }
+
+    /**
+     * Troca a senha com um token de recuperação. O consumo do token e a gravação
+     * da senha ficam na mesma transação: se a senha não for salva, o token continua válido.
+     */
+    public function resetWithToken(string $token, string $password, string $passwordRe): bool
+    {
+        if (!is_passwd($password)) {
+            $min = CONF_PASSWD_MIN_LEN;
+            $max = CONF_PASSWD_MAX_LEN;
+            $this->message->info("Sua senha deve ter entre {$min} e {$max} caracteres.");
+            return false;
+        }
+        if ($password !== $passwordRe) {
+            $this->message->warning("Você informou duas senhas diferentes.");
+            return false;
+        }
+
+        $pdo = Connect::getInstance();
+        $pdo->beginTransaction();
+        try {
+            $userId = (new PasswordResetService($pdo))->consume($token);
+            $user = $userId !== null ? (new User())->findById($userId) : null;
+            if (!$user) {
+                $pdo->rollBack();
+                $this->message->error("O link de recuperação é inválido ou expirou. Solicite um novo.");
+                return false;
+            }
+            $user->password = $password;
+            $user->forget = null;
+            if (!$user->save()) {
+                $pdo->rollBack();
+                $this->message->error("Não foi possível atualizar sua senha. Tente novamente.");
+                return false;
+            }
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            AppLogger::exception($exception, 'authentication', ['event_type' => 'password_reset_failed']);
+            $this->message->error("Não foi possível atualizar sua senha. Tente novamente.");
+            return false;
+        }
+        (new AppLog())->register((int)$user->id, "Redefiniu a senha por recuperação");
         return true;
     }
 

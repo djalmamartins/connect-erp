@@ -1,4 +1,4 @@
-# 0008 — Moldura do ERP, catálogo de rotas e login compartilhado com o Studio
+# 0010 — Moldura do ERP, catálogo de rotas e login compartilhado com o Studio
 
 Data: 2026-11-07 · Status: proposto (aguarda aprovação visual de Djalma) · Branch: `claude-layout`
 

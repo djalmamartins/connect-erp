@@ -24,7 +24,22 @@
 
 use Source\Models\Auth;
 
-$setup = \Source\Models\Settings\Settings::dados();
+if (\Source\Core\Connect::databaseDisabled()) {
+    // Somente MOVESOS_ENV=testing + MOVESOS_TEST_DB_DISABLED=1 (suíte unit sem MariaDB, A6).
+    $setup = new class {
+        // Mesmos valores semeados em tests/legacy/prepare-environment.php.
+        private array $values = [
+            'timezone_set' => 'America/Sao_Paulo', 'site_domain_ssl' => 'https://localhost', 'mode' => '1',
+            'site_name' => 'MovesOS Test', 'site_lang' => 'pt_BR', 'view_theme' => 'default', 'view_support' => 'support',
+            'view_app' => 'default', 'view_erp' => 'default', 'view_admin' => 'default', 'view_mail' => 'default',
+            'view_upkeep' => 'default', 'mail_charset' => 'UTF-8', 'pay_back' => '/',
+        ];
+        public function __get(string $name): string { return $this->values[$name] ?? ''; }
+        public function __isset(string $name): bool { return isset($this->values[$name]); }
+    };
+} else {
+    $setup = \Source\Models\Settings\Settings::dados();
+}
 date_default_timezone_set($setup->timezone_set);
 
 /**

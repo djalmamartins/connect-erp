@@ -27,6 +27,10 @@ $route->get("/seguranca/codigos", "Panel:recoveryCodes");
 
 $route->get("/dashboard", "Panel:dashboard");
 
+// Condomínios (AP-004) com dados reais e somente leitura: CondominiumScope → MariaDB,
+// o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
+$route->get("/condominios", "Condominiums:index");
+
 // Visão geral de cada módulo. O Dashboard não tem prefixo e, em Condomínios, a própria
 // listagem (AP-004) ocupa o prefixo /condominios.
 $erpPageRoutes = array_column($erpCatalog['pages'], 'route');
@@ -41,13 +45,16 @@ foreach ($erpCatalog['groups'] as $groupKey => $group) {
 
 // Uma rota por página do catálogo (exceto o Dashboard, registrado acima).
 foreach ($erpCatalog['pages'] as $pageId => $page) {
-    if ($page['route'] === '/dashboard') {
+    if (in_array($page['route'], ['/dashboard', '/condominios'], true)) {
         continue;
     }
     $route->get($page['route'], static function () use ($pageId): void {
         (new Panel())->page($pageId);
     }, 'erp.' . strtolower($pageId));
 }
+
+// Depois das páginas do catálogo: /condominios/{id} não pode capturar /condominios/unidades etc.
+$route->get("/condominios/{id}", "Condominiums:show");
 
 unset($erpCatalog, $erpPageRoutes);
 $route->namespace(null);

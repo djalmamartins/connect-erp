@@ -65,6 +65,10 @@
     "test": "@php tests/smoke.php",
     "test:legacy": "@php tests/legacy/run.php --colors=always",
     "test:unit": "@php tests/legacy/run.php --testsuite unit --colors=always",
+    "test:unit:offline": [
+      "@putenv MOVESOS_TEST_DB_DISABLED=1",
+      "@php tests/legacy/run.php --testsuite unit --colors=always"
+    ],
     "test:integration": "@php tests/legacy/run.php --testsuite integration --colors=always"
   }
 }
