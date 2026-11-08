@@ -1,7 +1,7 @@
 <?php
 /**
  * Listagem de um cadastro real (RegistryService → MariaDB), com filtros e paginação no
- * servidor. Mesmo template para todos os cadastros do grupo Cadastros.
+ * servidor. Mesmo template para todos os cadastros do motor (ADR 0014/0015).
  * @var array $definition @var array $result @var array $filters @var ?string $filterField
  * @var list<array> $condominiums @var bool $canManage @var ?\Source\Support\Message $flash
  */
@@ -26,7 +26,7 @@ ob_start(); ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
 <?php $actions = trim((string)ob_get_clean());
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => 'Cadastros',
+    'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
     'pageTitle' => $definition['label'],
     'pageLead' => $definition['lead'],
     'pageActions' => $actions,

@@ -35,6 +35,8 @@ final class RegistryFormat
             'phone' => self::phone((string)$value),
             'date' => ($d = \DateTimeImmutable::createFromFormat('!Y-m-d', (string)$value)) ? $d->format('d/m/Y') : (string)$value,
             'money' => 'R$ ' . number_format(((int)$value) / 100, 2, ',', '.'),
+            'int' => number_format((int)$value, 0, ',', '.'),
+            'time' => substr((string)$value, 0, 5),
             'percent' => number_format((float)$value, 2, ',', '.') . '%',
             'plate' => strlen((string)$value) === 7 ? substr((string)$value, 0, 3) . '-' . substr((string)$value, 3) : (string)$value,
             default => (string)$value,

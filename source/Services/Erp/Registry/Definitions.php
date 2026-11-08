@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Source\Services\Erp\Registry;
 
 /**
- * Definições dos cadastros do ERP (grupo Cadastros da sidebar).
+ * Definições dos cadastros do ERP (grupo Cadastros e, desde o ADR 0015, as áreas e o
+ * patrimônio do grupo Condomínios).
  *
  * Um único motor (RegistryService + RegistryValidator + controllers Registry) atende
  * todos os cadastros: cada entrada abaixo descreve tabela, rota, recurso da API,
@@ -256,6 +257,75 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'order' => 'name',
+            ],
+            // Módulo Condomínios (ADR 0015): áreas e patrimônio de cada condomínio.
+            'common_areas' => [
+                'page' => 'AP-008', 'table' => 'erp_common_areas', 'route' => '/condominios/areas-comuns',
+                'api' => 'common-areas', 'permission' => 'erp.common_areas', 'label' => 'Áreas comuns',
+                'entity' => 'área comum', 'gender' => 'a', 'scope' => 'required',
+                'lead' => 'Salão de festas, churrasqueira, academia e demais áreas que os moradores podem reservar.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'name' => ['label' => 'Nome da área', 'type' => 'text', 'required' => true, 'max' => 120, 'span' => 6, 'list' => true, 'search' => true],
+                    'booking_mode' => ['label' => 'Reserva', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true, 'options' => [
+                        'approval' => 'Exige aprovação', 'free' => 'Livre', 'blocked' => 'Bloqueada', 'none' => 'Não reservável',
+                    ]],
+                    'capacity' => ['label' => 'Capacidade (pessoas)', 'type' => 'int', 'min' => 1, 'max_value' => 10000, 'span' => 4, 'list' => true],
+                    'booking_fee_cents' => ['label' => 'Taxa de reserva', 'type' => 'money', 'span' => 4, 'list' => true],
+                    'min_advance_days' => ['label' => 'Antecedência mínima (dias)', 'type' => 'int', 'min' => 0, 'max_value' => 365, 'span' => 4],
+                    'max_advance_days' => ['label' => 'Antecedência máxima (dias)', 'type' => 'int', 'min' => 0, 'max_value' => 730, 'span' => 4, 'not_below' => 'min_advance_days'],
+                    'opening_time' => ['label' => 'Abre às', 'type' => 'time', 'span' => 2],
+                    'closing_time' => ['label' => 'Fecha às', 'type' => 'time', 'span' => 2],
+                    'rules' => ['label' => 'Regras de uso', 'type' => 'longtext', 'max' => 4000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'name'], 'message' => 'Já existe uma área com este nome neste condomínio.']],
+                'order' => 'name',
+            ],
+            'linkable_areas' => [
+                'page' => 'AP-007', 'table' => 'erp_linkable_areas', 'route' => '/condominios/areas-vinculaveis',
+                'api' => 'linkable-areas', 'permission' => 'erp.linkable_areas', 'label' => 'Áreas vinculáveis',
+                'entity' => 'área vinculável', 'gender' => 'a', 'scope' => 'required',
+                'lead' => 'Vagas de garagem, depósitos e boxes que podem ser vinculados a uma unidade.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => [
+                        'vaga' => 'Vaga de garagem', 'deposito' => 'Depósito', 'box' => 'Box', 'outro' => 'Outro',
+                    ]],
+                    'identifier' => ['label' => 'Identificação', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: G1-023'],
+                    'unit_label' => ['label' => 'Unidade vinculada', 'type' => 'text', 'max' => 40, 'span' => 4, 'list' => true, 'search' => true, 'hint' => 'Vazio: livre'],
+                    'location' => ['label' => 'Localização', 'type' => 'text', 'max' => 120, 'span' => 4, 'hint' => 'Ex.: Subsolo 1'],
+                    'fraction' => ['label' => 'Fração ideal (%)', 'type' => 'percent', 'span' => 4],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'kind', 'identifier'], 'message' => 'Já existe uma área deste tipo com esta identificação.']],
+                'order' => 'identifier',
+            ],
+            'assets' => [
+                'page' => 'AP-019', 'table' => 'erp_assets', 'route' => '/condominios/patrimonio',
+                'api' => 'assets', 'permission' => 'erp.assets', 'label' => 'Patrimônio',
+                'entity' => 'bem', 'gender' => 'o', 'scope' => 'required',
+                'lead' => 'Bens do condomínio: móveis, equipamentos, eletrônicos e ferramentas.',
+                'status' => ['active' => 'Em uso', 'inactive' => 'Baixado'],
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'description' => ['label' => 'Descrição', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                    'asset_number' => ['label' => 'Número de patrimônio', 'type' => 'text', 'max' => 30, 'span' => 4, 'list' => true, 'search' => true, 'pattern' => '/^[0-9A-Za-z.\/-]{1,30}$/', 'pattern_message' => 'Use letras, números, ponto, barra ou hífen.'],
+                    'category' => ['label' => 'Categoria', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true, 'options' => [
+                        'mobiliario' => 'Mobiliário', 'equipamento' => 'Equipamento', 'eletronico' => 'Eletrônico', 'ferramenta' => 'Ferramenta',
+                        'seguranca' => 'Segurança', 'lazer' => 'Lazer', 'outro' => 'Outro',
+                    ]],
+                    'condition' => ['label' => 'Estado', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'options' => [
+                        'bom' => 'Bom', 'regular' => 'Regular', 'manutencao' => 'Em manutenção', 'inservivel' => 'Inservível',
+                    ]],
+                    'acquired_on' => ['label' => 'Data de aquisição', 'type' => 'date', 'span' => 4],
+                    'value_cents' => ['label' => 'Valor de aquisição', 'type' => 'money', 'span' => 4, 'list' => true],
+                    'location' => ['label' => 'Localização', 'type' => 'text', 'max' => 120, 'span' => 4],
+                    'supplier_name' => ['label' => 'Fornecedor', 'type' => 'text', 'max' => 160, 'span' => 6],
+                    'invoice_number' => ['label' => 'Nota fiscal nº', 'type' => 'text', 'max' => 30, 'span' => 6],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'asset_number'], 'message' => 'Este número de patrimônio já existe neste condomínio.']],
+                'order' => 'description',
             ],
         ];
 

@@ -69,6 +69,13 @@ final class RegistryValidatorTest extends TestCase
             'texto acima do limite' => ['pets', ['name' => str_repeat('a', 81)], 'name'],
             'array no lugar de texto' => ['pets', ['name' => ['x']], 'name'],
             'situação desconhecida' => ['pets', ['status' => 'deleted'], 'status'],
+            'capacidade zero' => ['common_areas', ['capacity' => '0'], 'capacity'],
+            'capacidade com letras' => ['common_areas', ['capacity' => '10a'], 'capacity'],
+            'antecedência máxima menor que a mínima' => ['common_areas', ['min_advance_days' => '10', 'max_advance_days' => '5'], 'max_advance_days'],
+            'horário inválido' => ['common_areas', ['opening_time' => '25:00'], 'opening_time'],
+            'tipo de área vinculável desconhecido' => ['linkable_areas', ['kind' => 'garagem'], 'kind'],
+            'fração acima de 100' => ['linkable_areas', ['fraction' => '101'], 'fraction'],
+            'data de aquisição inexistente' => ['assets', ['acquired_on' => '2025-13-01'], 'acquired_on'],
         ];
     }
 
@@ -94,17 +101,36 @@ final class RegistryValidatorTest extends TestCase
         self::assertSame('11222333000181', $resident['document'], 'Proprietário pode ser pessoa jurídica.');
     }
 
+    public function testCondominiumAreaFormats(): void
+    {
+        [$area, $errors] = RegistryValidator::validate(Definitions::get('common_areas'), [
+            'condominium_id' => '2', 'name' => 'Salão de festas', 'booking_mode' => 'approval', 'capacity' => '80',
+            'booking_fee_cents' => '150,00', 'min_advance_days' => '2', 'max_advance_days' => '60',
+            'opening_time' => '08:00', 'closing_time' => '22:30',
+        ]);
+        self::assertSame([], $errors);
+        self::assertSame(80, $area['capacity']);
+        self::assertSame(15000, $area['booking_fee_cents']);
+        self::assertSame(2, $area['min_advance_days']);
+        self::assertSame('22:30', $area['closing_time']);
+        [$asset] = RegistryValidator::validate(Definitions::get('assets'), ['acquired_on' => '05/03/2024', 'value_cents' => '1.299,90']);
+        self::assertSame('2024-03-05', $asset['acquired_on']);
+        self::assertSame(129990, $asset['value_cents']);
+    }
+
     public function testDefinitionsMatchCatalogMigrationsAndPermissions(): void
     {
         $root = dirname(__DIR__, 3);
         $catalog = require $root . '/container/erp/connect/v1/components/layout/catalog.php';
-        $schema = (string)file_get_contents($root . '/database/migrations/20261108_0201_erp_registries.sql');
-        $permissions = (string)file_get_contents($root . '/database/migrations/20261108_0202_erp_registry_permissions.sql');
+        $schema = (string)file_get_contents($root . '/database/migrations/20261108_0201_erp_registries.sql')
+            . (string)file_get_contents($root . '/database/migrations/20261108_0301_erp_condominium_areas_assets.sql');
+        $permissions = (string)file_get_contents($root . '/database/migrations/20261108_0202_erp_registry_permissions.sql')
+            . (string)file_get_contents($root . '/database/migrations/20261108_0302_erp_condominium_areas_permissions.sql');
         $apis = [];
         foreach (Definitions::all() as $slug => $definition) {
             $page = $catalog['pages'][$definition['page']] ?? null;
             self::assertNotNull($page, "{$slug}: página do catálogo inexistente");
-            self::assertSame('cadastros', $page['group'], "{$slug} fica no grupo Cadastros");
+            self::assertContains($page['group'], ['cadastros', 'condominios'], "{$slug} fica em Cadastros ou Condomínios");
             self::assertSame($page['route'], $definition['route'], "{$slug}: rota igual à do catálogo");
             self::assertMatchesRegularExpression('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '`/', $schema);
             preg_match('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '` \((.*?)\) ENGINE/s', $schema, $table);
@@ -121,7 +147,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(9, Definitions::all());
+        self::assertCount(12, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }

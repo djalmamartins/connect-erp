@@ -12,7 +12,7 @@ $readonly = !$canManage;
 $action = erp_url($isNew ? $route : $route . '/' . (int)$recordId);
 $actionLabels = ['create' => 'Cadastro criado', 'update' => 'Cadastro alterado', 'delete' => 'Cadastro excluído'];
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => 'Cadastros · ' . $definition['label'],
+    'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · ' . $definition['label'],
     'pageTitle' => $title,
     'pageLead' => $isNew ? 'Preencha os dados e salve. Campos com * são obrigatórios.' : ($readonly ? 'Você tem acesso somente para consulta.' : 'Altere os dados e salve. Toda alteração fica registrada no histórico.'),
 ]);

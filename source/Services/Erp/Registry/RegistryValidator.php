@@ -43,6 +43,12 @@ final class RegistryValidator
                 $errors[$name] = sprintf('Deve ser igual ou posterior a "%s".', mb_strtolower($definition['fields'][$after]['label']));
             }
         }
+        foreach ($definition['fields'] as $name => $field) {
+            $floor = $field['not_below'] ?? null;
+            if ($floor !== null && !isset($errors[$name]) && $clean[$name] !== null && $clean[$floor] !== null && $clean[$name] < $clean[$floor]) {
+                $errors[$name] = sprintf('Não pode ser menor que "%s".', mb_strtolower($definition['fields'][$floor]['label']));
+            }
+        }
         foreach ($definition['requires'] as $rule) {
             $flag = (bool)($clean[$rule['when'] ?? $rule['unless']] ?? false);
             $needed = isset($rule['when']) ? $flag : !$flag;
@@ -138,6 +144,16 @@ final class RegistryValidator
                     return [null, 'Informe um percentual entre 0 e 100.'];
                 }
                 return [round((float)$normalized, 2), null];
+            case 'int':
+                if (!preg_match('/^-?\d{1,9}$/', $text)) {
+                    return [null, 'Informe um número inteiro.'];
+                }
+                $int = (int)$text;
+                $min = (int)($field['min'] ?? 0);
+                $maxValue = (int)($field['max_value'] ?? 999_999_999);
+                return $int < $min || $int > $maxValue ? [null, "Informe um valor entre {$min} e {$maxValue}."] : [$int, null];
+            case 'time':
+                return preg_match('/^([01]\d|2[0-3]):([0-5]\d)(:00)?$/', $text, $m) ? [$m[1] . ':' . $m[2], null] : [null, 'Hora inválida. Use HH:MM.'];
             case 'plate':
                 $plate = strtoupper((string)preg_replace('/[^0-9A-Za-z]/', '', $text));
                 return preg_match('/^[A-Z]{3}\d[A-Z0-9]\d{2}$/', $plate) ? [$plate, null] : [null, 'Placa inválida. Ex.: ABC1D23 ou ABC1234.'];

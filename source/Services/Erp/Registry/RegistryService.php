@@ -358,7 +358,8 @@ final class RegistryService
             $out[$name] = match (true) {
                 $value === null => $field['type'] === 'bool' ? false : null,
                 $field['type'] === 'bool' => (bool)$value,
-                in_array($field['type'], ['condominium', 'money'], true) => (int)$value,
+                in_array($field['type'], ['condominium', 'money', 'int'], true) => (int)$value,
+                $field['type'] === 'time' => substr((string)$value, 0, 5),
                 $field['type'] === 'percent' => (float)$value,
                 default => (string)$value,
             };
