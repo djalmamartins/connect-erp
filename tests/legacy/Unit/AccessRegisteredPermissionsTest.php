@@ -43,15 +43,24 @@ final class AccessRegisteredPermissionsTest extends TestCase
         $slugs = [];
         foreach ($this->phpFiles(['source', 'container']) as $file) {
             $code = (string)file_get_contents($file);
-            // can('x.y'), $nav(..., 'x.y') do layout do Studio e 'permission' => 'x.y' dos módulos.
-            preg_match_all("/can\\(\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]\\s*[,)]/", $code, $m1);
+            // can('x.y'), authorize('x.y') e $nav(..., 'x.y') do layout do Studio.
+            preg_match_all("/(?:can|authorize)\\(\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]\\s*[,)]/", $code, $m1);
             preg_match_all("/\\\$nav\\([^;]*?,'([a-z0-9_]+(?:\\.[a-z0-9_]+)+)'\\)/", $code, $m2);
-            preg_match_all("/['\"]permission['\"]\\s*=>\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]/", $code, $m3);
-            $slugs = array_merge($slugs, $m1[1], $m2[1], $m3[1]);
+            $slugs = array_merge($slugs, $m1[1], $m2[1]);
+            // Manifestos de módulo do Studio (*/module.php): 'permission' é o slug completo.
+            // Em outros arquivos (ex.: Erp/Registry/Definitions.php) 'permission' é prefixo de .view/.manage.
+            if (basename($file) === 'module.php') {
+                preg_match_all("/['\"]permission['\"]\\s*=>\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]/", $code, $m3);
+                $slugs = array_merge($slugs, $m3[1]);
+            }
             // Atalhos de sistemas no layout do Studio: [nome, descrição, url, ícone, 'x.y', atual].
             preg_match_all("/\\['[^']*','[^']*','[^']*','[^']*','([a-z0-9_]+\\.[a-z0-9_.]+)',/", $code, $m4);
             $slugs = array_merge($slugs, $m4[1]);
         }
+        // Cadastros do ERP: cada 'permission' de Definitions.php é prefixo de .view e .manage.
+        $definitions = (string)file_get_contents(self::ROOT . '/source/Services/Erp/Registry/Definitions.php');
+        preg_match_all("/['\"]permission['\"]\\s*=>\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]/", $definitions, $prefixes);
+        foreach ($prefixes[1] as $prefix) { $slugs[] = $prefix . '.view'; $slugs[] = $prefix . '.manage'; }
         $slugs = array_values(array_unique($slugs));
         self::assertContains('site.access', $slugs, 'A varredura deveria encontrar os atalhos do layout do Studio.');
         return $slugs;
