@@ -29,3 +29,5 @@
 .chk-button-primary { background: var(--erp-accent); border-color: var(--erp-accent); color: var(--erp-accent-contrast); }
 @media (max-width: 640px) { .chk-counters { gap: 16px; } .chk-counters dd { font-size: 1.25rem; } }
 .chk-table code { white-space: nowrap; }
+.chk-check { display: flex !important; align-items: center; gap: 8px; color: var(--erp-text) !important; }
+a.chk-button { display: inline-block; text-decoration: none; }

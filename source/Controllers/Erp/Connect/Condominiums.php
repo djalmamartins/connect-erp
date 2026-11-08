@@ -98,8 +98,8 @@ final class Condominiums extends Controller
             $this->form($user, null, $data, $result['errors'], 422);
             return;
         }
-        $this->message->success('Condomínio cadastrado com sucesso.')->flash();
-        redirect('/erp/condominios/' . $result['id']);
+        $this->message->success('Condomínio cadastrado. Agora verifique o checklist de chegada: o que já existe, o que falta e o que vence.')->flash();
+        redirect('/erp/condominios/' . $result['id'] . '/checklist');
     }
 
     /** GET /erp/condominios/{id}/editar */

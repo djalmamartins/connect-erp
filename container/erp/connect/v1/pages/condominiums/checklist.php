@@ -34,6 +34,7 @@ $date = static fn(?string $value): string => $value ? date('d/m/Y', strtotime($v
 <header class="erp-page-header">
     <h1>Checklist de chegada</h1>
     <p>Tudo o que o <?= $this->e($condominium['name']) ?> precisa ter em ordem. O que faltar gera um protocolo com prazo; o que vence volta para a lista antes da data.</p>
+    <?php if ($canCatalog ?? false): ?><p><a href="<?= url('/erp/checklist/catalogo') ?>">Configurar os itens do catálogo</a></p><?php endif; ?>
 </header>
 
 <?= flash() ?>

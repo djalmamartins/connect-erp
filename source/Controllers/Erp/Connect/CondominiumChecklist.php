@@ -43,6 +43,7 @@ final class CondominiumChecklist extends Controller
             'items' => $items,
             'summary' => $service->summary($condominium['id'], $items),
             'canManage' => $canManage,
+            'canCatalog' => Access::can('erp.onboarding.catalog', $user),
             'responsibles' => $canManage ? $service->responsibleOptions() : [],
             'editing' => (int)($_GET['item'] ?? 0),
         ]));

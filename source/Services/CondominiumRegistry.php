@@ -66,6 +66,8 @@ final class CondominiumRegistry
             if (!$this->scope->hasGlobalAccess($user)) {
                 $this->scope->grant((int)$user->id, $id, (int)$user->id);
             }
+            // Checklist de chegada (ADR 0013): o condomínio já nasce com os itens do catálogo.
+            (new OnboardingChecklist($this->pdo))->start($id, (int)$user->id);
             $this->pdo->commit();
         } catch (PDOException $exception) {
             $this->pdo->rollBack();

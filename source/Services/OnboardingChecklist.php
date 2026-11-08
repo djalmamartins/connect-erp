@@ -82,7 +82,7 @@ final class OnboardingChecklist
     public function items(int $condominiumId): array
     {
         $stmt = $this->pdo->prepare("SELECT i.id, i.template_id, i.category, i.title, i.status, i.protocol, i.due_date,
-                i.expires_at, i.notes, i.responsible_user_id, i.resolved_at, i.updated_at,
+                i.expires_at, i.notes, i.responsible_user_id, i.resolved_at, i.alerted_situation, i.updated_at,
                 t.code, t.description, t.renewal_months, t.default_due_days,
                 CONCAT_WS(' ', u.first_name, u.last_name) AS responsible_name
             FROM condominium_onboarding_items i
@@ -185,7 +185,7 @@ final class OnboardingChecklist
 
         $stmt = $this->pdo->prepare('UPDATE condominium_onboarding_items SET status = :status, protocol = :protocol,
                 due_date = :due_date, expires_at = :expires_at, notes = :notes, responsible_user_id = :responsible,
-                resolved_at = :resolved_at, updated_by = :updated_by
+                resolved_at = :resolved_at, updated_by = :updated_by, alerted_situation = NULL, alerted_at = NULL
             WHERE id = :id AND condominium_id = :condo');
         $stmt->execute([
             'status' => $status, 'protocol' => $protocol, 'due_date' => $dueDate, 'expires_at' => $expiresAt,
@@ -267,6 +267,7 @@ final class OnboardingChecklist
             'responsible' => $row['responsible_user_id'] !== null
                 ? ['id' => (int)$row['responsible_user_id'], 'name' => trim((string)$row['responsible_name'])] : null,
             'resolved_at' => $row['resolved_at'] !== null ? (string)$row['resolved_at'] : null,
+            'alerted_situation' => $row['alerted_situation'] !== null ? (string)$row['alerted_situation'] : null,
             'updated_at' => (string)$row['updated_at'],
         ];
     }

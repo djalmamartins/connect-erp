@@ -72,15 +72,24 @@ como AVCB/CLCB.
 - Leitura: `erp.access` + `erp.condominiums.view`. Alteração: `erp.condominiums.manage` + CSRF.
 - Escopo por condomínio no servidor (`CondominiumScope`); fora do escopo responde 404.
 - Toda alteração gera `system_audit_logs` (entidade `condominium_onboarding_items`).
-- Catálogo: permissão `erp.onboarding.catalog` criada; a tela de edição do catálogo é PENDENTE
-  (por ora, ajuste por migration/SQL).
+- Catálogo: tela `/erp/checklist/catalogo` e API `/api/v1/onboarding/templates`, com
+  `erp.access` + `erp.onboarding.catalog`. Incluir, editar e desativar (não há exclusão). O código
+  não muda depois de criado. Itens já copiados para condomínios mantêm o nome antigo.
+
+## Avisos de vencimento
+
+`service/jobs/onboarding-alerts.php`, uma vez por dia (ex.: `0 7 * * *`). Avisa itens que vencem
+em até 30 dias, vencidos e protocolos com prazo vencido. Vai para o responsável do item; sem
+responsável, para quem tem `erp.condominiums.manage` e acesso ao condomínio. Cria notificação no
+sistema e e-mail na `mail_queue` (template `container/send/default/v1/pages/checklist-alert.php`,
+enviado pelo worker de e-mail existente). Cada item é avisado uma vez por situação
+(`alerted_situation`, migration `20261108_0011_onboarding_alerts`); qualquer atualização do item
+zera esse controle. PENDENTE: agendar o cron no servidor/lab.
 
 ## PENDENTE
 
-- Iniciar o checklist automaticamente ao cadastrar o condomínio (AP-004): chamar
-  `OnboardingChecklist::start($id, $userId)` logo após o INSERT, na fatia de cadastro.
+- FEITO: o cadastro (AP-004, CondominiumRegistry::create) já chama
+  `OnboardingChecklist::start()` na mesma transação e redireciona para o checklist.
 - Anexar documentos/comprovantes ao item (depende do módulo de arquivos).
-- Aviso por e-mail/notificação de validade a vencer (rotina diária sobre `idx_coi_expires`).
 - Ligação com a vistoria presencial (thread própria): achados da vistoria devem abrir itens
   avulsos aqui em vez de outra tabela de protocolos.
-- Tela para editar o catálogo (`erp.onboarding.catalog`).

@@ -31,6 +31,8 @@ final class CondominiumRegistryTest extends TestCase
         self::assertSame((string)$user->id, (string)$row['created_by']);
         self::assertTrue((new CondominiumScope($this->pdo))->canAccess($user, (int)$result['id']), 'Quem cadastra passa a ter o vínculo.');
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'condominiums' AND action = 'create'")->fetchColumn());
+        $active = (int)$this->pdo->query('SELECT COUNT(*) FROM onboarding_item_templates WHERE active = 1')->fetchColumn();
+        self::assertCount($active, (new \Source\Services\OnboardingChecklist($this->pdo))->items((int)$result['id']), 'Cadastro já cria o checklist de chegada.');
     }
 
     public function testDuplicateCnpjIsRejected(): void
