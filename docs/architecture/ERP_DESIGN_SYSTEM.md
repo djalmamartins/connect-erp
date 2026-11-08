@@ -5,7 +5,7 @@ Camada única de componentes do ERP: `container/erp/connect/v1/assets/css/erp.cs
 ## Referência
 
 - **Visual**: igual ao Realizze PJ (contexto Empresa do App Realizze): sidebar verde profunda sobre canvas verde-claro, Inter, menus agrupados em `<details>`, cards suaves, tabelas em região rolável, estados vazios honestos. Decisão de Djalma em 2026-11-08, que substitui a identidade do Studio com dourado (2026-11-07).
-- **Marca**: o logotipo do site da Connect, o mesmo do cabeçalho da web (`site_logo_url()`, que usa o logo das configurações e cai em `logo-connect-condominios.svg`), em branco sobre a sidebar. Nada da marca, dos textos ou dos dados do Realizze foi copiado.
+- **Marca**: o logotipo do site da Connect, o mesmo do cabeçalho da web (`site_logo_url()`, que usa o logo das configurações e cai em `logo-connect-condominios.svg`), nas cores originais (dourado) sobre a sidebar. Nada da marca, dos textos ou dos dados do Realizze foi copiado.
 - **Login**: continua a tela do Studio, que Djalma pediu para reaproveitar.
 
 ## Tokens

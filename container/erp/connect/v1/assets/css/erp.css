@@ -102,8 +102,7 @@ p { margin: 0; }
 .erp-sidebar__head { display: flex; align-items: center; justify-content: space-between; gap: var(--erp-space-2); padding: 0 var(--erp-space-2); min-height: 40px; }
 .erp-brand { display: flex; align-items: center; gap: 10px; color: var(--erp-sidebar-strong); min-width: 0; }
 .erp-brand:hover { text-decoration: none; }
-.erp-brand__logo { width: 152px; max-height: 44px; height: auto; object-fit: contain; object-position: left center; filter: brightness(0) invert(1); }
-.erp-brand__mark { filter: brightness(0) invert(1); }
+.erp-brand__logo { width: 152px; max-height: 44px; height: auto; object-fit: contain; object-position: left center; }
 .erp-brand__mark { width: 34px; height: 34px; display: none; }
 .erp-brand__tag { margin-left: auto; padding: 2px 8px; border-radius: var(--erp-radius-pill); background: rgba(197, 161, 49, .2); color: #f0d98a; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
 .erp-sidebar__collapse, .erp-sidebar__close { border: 0; background: var(--erp-sidebar-hover); color: var(--erp-sidebar-strong); border-radius: var(--erp-radius-sm); width: 34px; height: 34px; display: grid; place-items: center; flex: none; }
