@@ -12,6 +12,10 @@ $route->group("/erp");
 $route->get("/", "Condominiums:root");
 $route->get("/condominios", "Condominiums:index");
 $route->get("/condominios/{id}", "Condominiums:show");
+$route->get("/condominios/{id}/checklist", "CondominiumChecklist:show");
+$route->post("/condominios/{id}/checklist/iniciar", "CondominiumChecklist:start");
+$route->post("/condominios/{id}/checklist/itens", "CondominiumChecklist:add");
+$route->post("/condominios/{id}/checklist/itens/{item}", "CondominiumChecklist:update");
 
 $route->namespace(null);
 $route->group(null);
