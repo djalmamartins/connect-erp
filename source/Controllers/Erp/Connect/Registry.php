@@ -114,7 +114,7 @@ final class Registry extends Controller
             $this->renderForm($user, $definition, $id, $data, $exception->errors);
             return;
         }
-        $label = ucfirst($definition['entity']);
+        $label = self::upperFirst($definition['entity']);
         (new Message())->success($id === null ? "{$label} cadastrad{$definition['gender']} com sucesso." : "{$label} atualizad{$definition['gender']} com sucesso.")->flash();
         redirect(erp_url($definition['route']));
     }
@@ -141,7 +141,7 @@ final class Registry extends Controller
             $this->state($user, $definition, 403, 'Exclusão não permitida', 'Este registro vale para todos os condomínios e só pode ser excluído por quem acessa todos eles.');
             return;
         }
-        (new Message())->success(ucfirst($definition['entity']) . " excluíd{$definition['gender']}.")->flash();
+        (new Message())->success(self::upperFirst($definition['entity']) . " excluíd{$definition['gender']}.")->flash();
         redirect(erp_url($definition['route']));
     }
 
@@ -163,7 +163,7 @@ final class Registry extends Controller
             }
         }
         $article = $definition['gender'] === 'a' ? 'Nova' : 'Novo';
-        $title = $id === null ? $article . ' ' . $definition['entity'] : (string)(($values[$definition['title']] ?? '') !== '' ? $values[$definition['title']] : ucfirst($definition['entity']));
+        $title = $id === null ? $article . ' ' . $definition['entity'] : (string)(($values[$definition['title']] ?? '') !== '' ? $values[$definition['title']] : self::upperFirst($definition['entity']));
         header('Cache-Control: no-store, private');
         echo $this->view->render('pages/registry/form', $this->layoutData($user, $definition, $title, [
             'definition' => $definition,
@@ -220,5 +220,11 @@ final class Registry extends Controller
     private function layoutData(User $user, array $definition, ?string $title, array $data): array
     {
         return (new Panel())->layoutData($user, $definition['page'], $data, $title);
+    }
+
+    /** Primeira letra maiúscula com acento ("área" vira "Área"); ucfirst() não trata multibyte. */
+    private static function upperFirst(string $text): string
+    {
+        return mb_strtoupper(mb_substr($text, 0, 1)) . mb_substr($text, 1);
     }
 }
