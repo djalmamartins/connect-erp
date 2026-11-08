@@ -27,7 +27,7 @@ Revisão por leitura de código; os testes de integração dependem do banco (ro
 
 1. **Cadastro obrigatório no primeiro login (modo `setup`)**: quando `CONNECT_2FA_ENFORCE_FROM` já passou, quem só tem a senha consegue cadastrar o autenticador. Mitigação: ativar a obrigatoriedade depois que a equipe cadastrar o 2FA no período de adesão.
 2. **Tabela ausente**: se a migration `20261107_0001` não estiver aplicada, o login segue sem 2FA (fail-open só para `42S02`, com log `TWO_FACTOR_SCHEMA_MISSING`). Aplicar as migrations antes de ativar a obrigatoriedade.
-3. **Enumeração por tempo**: e-mail inexistente responde sem `password_verify`; diferença de tempo mensurável. Baixo risco atrás do rate limit; corrigir com verificação contra hash fictício.
+3. **Enumeração por tempo**: ~~e-mail inexistente responde sem `password_verify`~~. **Corrigido em 08/11/2026** (issue #7): `Auth::attempt` verifica a senha contra `Auth::DUMMY_PASSWORD_HASH` (bcrypt custo 10) quando o e-mail/CPF não existe; `AuthDummyHashTest` garante algoritmo e custo iguais aos de `passwd()`.
 4. **Reset de 2FA por administrador** (`security.2fa.manage`): permissão criada, tela ainda não implementada. Até lá, reset é manual e deve ser auditado.
 5. **Rate limit por sessão**: `request_limit` usa a sessão; um atacante com a senha pode abrir novas sessões. O limite por desafio (5) também é por sessão. Próximo passo: limitador por usuário/IP no banco.
 6. **QR code**: não há gerador de QR no projeto; o cadastro usa chave manual e link `otpauth://`. Fica para o design system (`claude-layout`).
