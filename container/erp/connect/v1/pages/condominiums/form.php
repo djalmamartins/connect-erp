@@ -86,10 +86,7 @@ $field = function (string $key, string $label, string $type = 'text', array $att
         <legend>Contrato de administração</legend>
         <?= $field('contract_start_date', 'Início do contrato', 'date') ?>
         <?= $field('fee_due_day', 'Dia de vencimento da taxa (1 a 28)', 'number', ['min' => 1, 'max' => 28]) ?>
-        <?php if ($v('manager_person_id') !== ''): ?>
-            <input type="hidden" name="manager_person_id" value="<?= $this->e($v('manager_person_id')) ?>">
-        <?php endif; ?>
-        <p class="erp-field-hint">O síndico será escolhido no cadastro de Pessoas (Fase 2).</p>
+        <p class="erp-field-hint">O síndico é cadastrado em Síndico e conselho.</p>
     </fieldset>
 
     <fieldset>

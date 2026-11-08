@@ -39,7 +39,7 @@ final class CondominiumValidatorTest extends TestCase
         self::assertSame(2, $data['blocks_count']);
         self::assertSame(10, $data['fee_due_day']);
         self::assertSame('123456-X', $data['bank_account']);
-        self::assertNull($data['manager_person_id']);
+        self::assertArrayNotHasKey('manager_person_id', $data, 'Síndico fica em erp_board_members, não em condominiums.');
         self::assertSame(CondominiumValidator::FIELDS, array_keys($data), 'Somente campos do cadastro entram nos dados.');
     }
 

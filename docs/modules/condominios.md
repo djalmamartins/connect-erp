@@ -24,7 +24,7 @@ ADR 0011 (cadastro).
 | | E-mail | `email` | opcional, e-mail válido |
 | Estrutura | Blocos | `blocks_count` | opcional, 0 a 999 |
 | | Unidades | `units_count` | opcional, 0 a 100000 |
-| Contrato | Síndico | `manager_person_id` | opcional, sem FK. Migra para vínculos na Fase 2 |
+| Contrato | Síndico | — | não fica em `condominiums`: papel `sindico` em `erp_board_members` (migration 0201 da main) |
 | | Início do contrato | `contract_start_date` | opcional, data válida |
 | | Dia de vencimento da taxa | `fee_due_day` | opcional, 1 a 28 (também `CHECK` no banco) |
 | Banco (provisório) | Banco, agência, conta | `bank_code`, `bank_branch`, `bank_account` | opcionais, informados juntos. Migram para o núcleo financeiro |

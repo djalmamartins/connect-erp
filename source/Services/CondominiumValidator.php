@@ -17,7 +17,7 @@ final class CondominiumValidator
     public const FIELDS = [
         'name', 'legal_name', 'document', 'status', 'zip_code', 'street', 'number', 'complement',
         'district', 'city', 'state', 'phone', 'email', 'blocks_count', 'units_count',
-        'manager_person_id', 'contract_start_date', 'fee_due_day', 'bank_code', 'bank_branch', 'bank_account',
+        'contract_start_date', 'fee_due_day', 'bank_code', 'bank_branch', 'bank_account',
     ];
 
     /**
@@ -71,7 +71,6 @@ final class CondominiumValidator
 
         $data['blocks_count'] = $this->integer($value('blocks_count'), 0, 999, 'blocks_count', 'Quantidade de blocos', $errors);
         $data['units_count'] = $this->integer($value('units_count'), 0, 100000, 'units_count', 'Quantidade de unidades', $errors);
-        $data['manager_person_id'] = $this->integer($value('manager_person_id'), 1, PHP_INT_MAX, 'manager_person_id', 'Síndico', $errors);
 
         $data['contract_start_date'] = $value('contract_start_date') ?: null;
         if ($data['contract_start_date'] !== null) {
