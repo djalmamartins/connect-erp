@@ -467,6 +467,40 @@ final class Definitions
                 'requires' => [['field' => 'opened_on', 'when' => 'opening_balance_cents', 'message' => 'Informe a data do saldo inicial.']],
                 'order' => 'name',
             ],
+            // Lançamentos (AP-020, ADR 0022): receitas e despesas do condomínio. A conta do plano de
+            // contas precisa ser analítica e da mesma natureza; pago exige a conta bancária.
+            'entries' => [
+                'page' => 'AP-020', 'table' => 'erp_entries', 'route' => '/financeiro/lancamentos',
+                'api' => 'entries', 'permission' => 'erp.entries', 'label' => 'Lançamentos',
+                'entity' => 'lançamento', 'gender' => 'o', 'scope' => 'required', 'group' => 'financeiro',
+                'lead' => 'Receitas e despesas de cada condomínio, com conta, centro de custo, vencimento e pagamento.',
+                'status' => ['active' => 'Válido', 'inactive' => 'Cancelado'],
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'nature' => ['label' => 'Natureza', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['receita' => 'Receita', 'despesa' => 'Despesa']],
+                    'competence' => ['label' => 'Competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true, 'search' => true,
+                        'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-11.', 'hint' => 'AAAA-MM'],
+                    'description' => ['label' => 'Descrição', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                    'amount_cents' => ['label' => 'Valor', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 4, 'list' => true],
+                    'chart_account_id' => ['label' => 'Conta do plano de contas', 'type' => 'ref', 'required' => true, 'span' => 6,
+                        'ref' => 'chart', 'ref_where' => ['kind' => 'analitica'], 'ref_label' => ['code', 'name'],
+                        'ref_match' => ['nature' => 'nature'], 'ref_match_message' => 'A conta precisa ter a mesma natureza do lançamento (receita ou despesa).',
+                        'ref_message' => 'Escolha uma conta analítica ativa do plano de contas.'],
+                    'cost_center_id' => ['label' => 'Centro de custo', 'type' => 'ref', 'span' => 6, 'ref' => 'cost_centers', 'ref_label' => ['code', 'name'],
+                        'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.'],
+                    'due_on' => ['label' => 'Vencimento', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                    'paid_on' => ['label' => 'Pago em', 'type' => 'date', 'span' => 3, 'list' => true, 'hint' => 'Vazio enquanto estiver em aberto'],
+                    'bank_account_id' => ['label' => 'Conta bancária', 'type' => 'ref', 'span' => 6, 'ref' => 'bank_accounts', 'ref_label' => ['name', 'bank_code', 'account_number'],
+                        'ref_message' => 'Escolha uma conta bancária ativa deste condomínio.', 'hint' => 'Obrigatória quando o lançamento está pago'],
+                    'supplier_id' => ['label' => 'Fornecedor', 'type' => 'ref', 'span' => 6, 'ref' => 'suppliers', 'ref_label' => ['legal_name'],
+                        'ref_message' => 'Escolha um fornecedor ativo.'],
+                    'document_number' => ['label' => 'Nº do documento', 'type' => 'text', 'max' => 40, 'span' => 6, 'search' => true, 'hint' => 'Nota fiscal, recibo ou boleto'],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'requires' => [['field' => 'bank_account_id', 'when' => 'paid_on', 'message' => 'Informe a conta bancária do pagamento.']],
+                'title' => 'description',
+                'order' => 'due_on',
+            ],
         ];
 
         foreach ($definitions as $slug => &$definition) {

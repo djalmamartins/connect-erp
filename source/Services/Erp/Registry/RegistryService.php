@@ -448,7 +448,8 @@ final class RegistryService
                 continue;
             }
             $target = self::definition((string)$field['ref']);
-            $columns = array_unique(array_merge(['status'], array_keys($field['ref_where'] ?? []), $target['scope'] === 'none' ? [] : ['condominium_id']));
+            // 'ref_match' => [coluna do apontado => campo deste registro] (ex.: natureza da conta = natureza do lançamento).
+            $columns = array_unique(array_merge(['status'], array_keys($field['ref_where'] ?? []), array_keys($field['ref_match'] ?? []), $target['scope'] === 'none' ? [] : ['condominium_id']));
             $stmt = $this->pdo->prepare('SELECT ' . implode(', ', array_map(static fn (string $c): string => "`{$c}`", $columns))
                 . " FROM `{$target['table']}` WHERE id = :id AND deleted_at IS NULL");
             $stmt->execute(['id' => $values[$name]]);
@@ -461,6 +462,12 @@ final class RegistryService
             foreach ($field['ref_where'] ?? [] as $column => $expected) {
                 if ((string)$row[$column] !== (string)$expected) {
                     $errors[$name] = $message;
+                    continue 2;
+                }
+            }
+            foreach ($field['ref_match'] ?? [] as $column => $ownField) {
+                if ((string)$row[$column] !== (string)($values[$ownField] ?? '')) {
+                    $errors[$name] = $field['ref_match_message'] ?? $message;
                     continue 2;
                 }
             }

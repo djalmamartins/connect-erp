@@ -158,6 +158,9 @@ final class RegistryValidator
                     return [null, 'Valor inválido. Ex.: 1.250,00'];
                 }
                 $cents = (int)round((float)$normalized * 100);
+                if (!empty($field['positive']) && $cents <= 0) {
+                    return [null, 'Informe um valor maior que zero.'];
+                }
                 return $cents > 99_999_999_999 ? [null, 'Valor muito alto.'] : [$cents, null];
             case 'percent':
                 $normalized = str_replace([',', '%', ' '], ['.', '', ''], $text);

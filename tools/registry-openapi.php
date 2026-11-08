@@ -19,7 +19,8 @@ $schema = static function (array $field) use ($q): string {
     return match ($field['type']) {
         'condominium' => '{ type: [integer, "null"], minimum: 1 }',
         'unit' => '{ type: [integer, "null"], minimum: 1, description: ' . $q('ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.') . ' }',
-        'ref' => '{ type: [integer, "null"], minimum: 1, description: ' . $q('ID de /' . (\Source\Services\Erp\Registry\Definitions::get((string)$field['ref'])['api'] ?? '') . ' ativo, do plano padrão ou do mesmo condomínio.') . ' }',
+        'ref' => '{ type: [integer, "null"], minimum: 1, description: ' . $q('ID de /' . (\Source\Services\Erp\Registry\Definitions::get((string)$field['ref'])['api'] ?? '')
+            . ((\Source\Services\Erp\Registry\Definitions::get((string)$field['ref'])['scope'] ?? '') === 'none' ? ' ativo.' : ' ativo, do plano padrão ou do mesmo condomínio.')) . ' }',
         'decimal' => '{ type: [number, "null"], minimum: ' . (float)($field['min'] ?? 0) . ', maximum: ' . (float)($field['max_value'] ?? 1e12) . ' }',
         'bool' => '{ type: boolean }',
         'money' => '{ type: [integer, "null"], minimum: 0, description: ' . $q('Centavos. Na entrada também aceita "1.250,00".') . ' }',
