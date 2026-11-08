@@ -31,3 +31,24 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0014)
+
+- **Situação:** implementado com MariaDB; campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/cadastros/proprietarios-e-inquilinos` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/residents`.
+- **Tabela:** `erp_residents` · **Escopo:** condomínio obrigatório · **Permissões:** `erp.residents.view`, `erp.residents.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Condomínio (`condominium_id`) | condominium | sim |
+| Unidade (`unit_label`) | text | sim |
+| Vínculo (`relationship`) | select: Proprietário, Inquilino, Morador, Responsável financeiro | sim |
+| Nome completo ou razão social (`name`) | text | sim |
+| CPF/CNPJ (`document`) | document | não |
+| E-mail (`email`) | email | não |
+| Telefone (`phone`) | phone | não |
+| Início do vínculo (`starts_on`) | date | não |
+| Fim do vínculo (`ends_on`) | date | não |
+| Recebe boleto por e-mail (`billing_by_email`) | bool | não |
+| Observações (`notes`) | longtext | não |
+| Situação (`status`) | Ativo, Inativo | sim |

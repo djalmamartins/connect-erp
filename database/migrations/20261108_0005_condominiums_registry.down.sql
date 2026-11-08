@@ -1,0 +1,23 @@
+-- Reverte 20261108_0005: remove somente as colunas do cadastro AP-004 (os dados delas são perdidos).
+ALTER TABLE `condominiums`
+  DROP INDEX IF EXISTS `idx_condominiums_manager_person`,
+  DROP COLUMN IF EXISTS `updated_by`,
+  DROP COLUMN IF EXISTS `created_by`,
+  DROP COLUMN IF EXISTS `bank_account`,
+  DROP COLUMN IF EXISTS `bank_branch`,
+  DROP COLUMN IF EXISTS `bank_code`,
+  DROP COLUMN IF EXISTS `fee_due_day`,
+  DROP COLUMN IF EXISTS `contract_start_date`,
+  DROP COLUMN IF EXISTS `manager_person_id`,
+  DROP COLUMN IF EXISTS `units_count`,
+  DROP COLUMN IF EXISTS `blocks_count`,
+  DROP COLUMN IF EXISTS `email`,
+  DROP COLUMN IF EXISTS `phone`,
+  DROP COLUMN IF EXISTS `state`,
+  DROP COLUMN IF EXISTS `city`,
+  DROP COLUMN IF EXISTS `district`,
+  DROP COLUMN IF EXISTS `complement`,
+  DROP COLUMN IF EXISTS `number`,
+  DROP COLUMN IF EXISTS `street`,
+  DROP COLUMN IF EXISTS `zip_code`,
+  DROP COLUMN IF EXISTS `legal_name`;

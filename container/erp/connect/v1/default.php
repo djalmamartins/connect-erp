@@ -1,46 +1,52 @@
 <?php
 /**
- * Moldura única do ERP Connect v1 (C3: o tema ERP não tem layouts/).
- * Variáveis: $head (SEO), $user (Source\Models\User), $active (item do menu).
+ * Moldura única do Connect ERP v1 (sem layouts/ paralelos).
  * As páginas chamam $this->layout('default') e preenchem a seção 'content'.
+ * Dados vêm de Erp\Connect\Panel::layoutData(): $head, $title, $user, $catalog,
+ * $currentPageId, $currentGroup, $breadcrumbs, $demo, $notifications, $icon, $anchor.
  */
-$cssFile = __DIR__ . '/assets/css/erp.css';
-$navigation = [
-    ['condominiums', 'Condomínios', '/erp/condominios', 'erp.condominiums.view'],
-];
+// Usa o bundle do MovesCode Compress (Services/Minify/Erp.php) quando está atualizado;
+// senão, o arquivo-fonte do design system.
+$erpAsset = static function (string $source, string $bundle): string {
+    $path = is_file(__DIR__ . $bundle) && is_file(__DIR__ . $source) && filemtime(__DIR__ . $bundle) >= filemtime(__DIR__ . $source) ? $bundle : $source;
+    return themeErp($path) . '?v=' . (is_file(__DIR__ . $path) ? filemtime(__DIR__ . $path) : 0);
+};
+$searchIndex = [];
+foreach ($catalog['pages'] as $id => $page) {
+    if (!$canSee($id)) {
+        continue;
+    }
+    $searchIndex[] = ['n' => $page['name'], 'g' => $catalog['groups'][$page['group']]['label'] . ($page['section'] ? ' · ' . $page['section'] : ''), 'u' => erp_url($page['route'])];
+}
 ?>
 <!doctype html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
     <?= $head ?? '' ?>
-    <link rel="stylesheet" href="<?= themeErp('/assets/css/erp.css') . '?v=' . (is_file($cssFile) ? filemtime($cssFile) : 0) ?>">
+    <link rel="icon" href="<?= theme('/assets/images/favicon-32x32.png') ?>">
+    <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
 </head>
 <body class="erp-body">
 <a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
-<div class="erp-shell">
-    <aside class="erp-sidebar" aria-label="Navegação do ERP">
-        <a class="erp-brand" href="<?= url('/erp') ?>"><strong>Connect</strong><small>ERP</small></a>
-        <nav>
-            <ul>
-                <?php foreach ($navigation as [$key, $label, $href, $permission]): ?>
-                    <?php if ($user->can($permission)): ?>
-                        <li><a href="<?= url($href) ?>"<?= ($active ?? '') === $key ? ' aria-current="page"' : '' ?>><?= $this->e($label) ?></a></li>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </ul>
-        </nav>
-    </aside>
+<?php if ($withNavigation ?? true): ?>
+<div class="erp-shell" data-erp-shell>
+    <?php $this->insert('components/sidebar/sidebar'); ?>
     <div class="erp-content">
-        <header class="erp-navbar">
-            <span class="erp-user"><?= $this->e(trim($user->first_name . ' ' . $user->last_name)) ?></span>
-            <a class="erp-logout" href="<?= url('/studio/sair') ?>">Sair</a>
-        </header>
+        <?php $this->insert('components/navbar/navbar'); ?>
         <main id="erp-main" class="erp-main" tabindex="-1">
             <?= $this->section('content') ?>
         </main>
     </div>
 </div>
+<?php else: ?>
+<main id="erp-main" class="erp-main" tabindex="-1"><?= $this->section('content') ?></main>
+<?php endif; ?>
+<div class="erp-toasts" data-erp-toasts role="status" aria-live="polite"></div>
+<script type="application/json" id="erp-search-index"><?= json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= $erpAsset('/assets/js/erp.js', '/assets/erp.min.js') ?>" defer></script>
+<?= $this->section('scripts') ?>
 </body>
 </html>

@@ -93,11 +93,9 @@ function is_document(string $document): bool
         $resto = $soma % 11;
         $digito2 = ($resto < 2) ? 0 : 11 - $resto;
 
-        // Verificar se os dígitos calculados são iguais aos dígitos originais do CNPJ
-        if ($document[12] != $digito1 && $document[13] != $digito2){
-            return false;
-        }
-        return true;
+        // Os DOIS dígitos verificadores precisam conferir. Antes era "&&", o que aceitava
+        // CNPJ com um único dígito errado (ex.: 11222333000182).
+        return (int)$document[12] === $digito1 && (int)$document[13] === $digito2;
     }
 
 
@@ -860,4 +858,26 @@ function movesos_version(): string
         \Source\Support\AppLogger::exception($exception, 'versioning', ['event_type' => 'version_lookup_failed']);
         return $version = (defined("VERSION_STUDIO") ? VERSION_STUDIO : "1.0.0");
     }
+}
+
+/**
+ * ERP em host próprio (erp.connect.lab, erp.<domínio>): no host do ERP as rotas ficam na
+ * raiz; nos demais hosts continuam em /erp. Use erp_url() em todo link do ERP.
+ */
+function erp_host(): bool
+{
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    return (bool)preg_match('/^erp\.[a-z0-9.-]+(?::\d+)?$/', $host);
+}
+
+function erp_base(): string
+{
+    return erp_host() ? '' : '/erp';
+}
+
+function erp_url(string $path = '/'): string
+{
+    $path = '/' . ltrim($path, '/');
+    $full = erp_base() . ($path === '/' && erp_base() !== '' ? '' : $path);
+    return url($full === '' ? '/' : $full);
 }

@@ -40,8 +40,8 @@ openssl rand -hex 24
 openssl rand -hex 24
 ```
 
-Coloque valores diferentes gerados acima em `DB_PASSWORD` e
-`DB_ROOT_PASSWORD`. O `.env` é ignorado pelo Git. Depois:
+Coloque valores diferentes gerados acima em `LEGACY_DB_PASSWORD` e
+`LEGACY_DB_ROOT_PASSWORD`. O `.env` é ignorado pelo Git. Depois:
 
 ```bash
 docker compose config --quiet
@@ -77,16 +77,19 @@ banco local.
 |---|---|---|---|
 | Aplicação | `connect-erp-app-1` | `http://127.0.0.1:8088` | healthy |
 | API REST | `connect-erp-app-1` | `http://127.0.0.1:8088/api/v1/health` | ready |
-| MariaDB 11.8 | `connect-erp-db-1` | `127.0.0.1:3308` | healthy |
+| MariaDB 11.8 | `connect-erp-legacy-db-1` | rede interna `connect` (sem porta publicada) | healthy |
 | HTTPS compartilhado | `dev-apache` | `https://www.connect.lab` | responde |
 
 O VirtualHost e o certificado de `connect.lab` já existiam. O Apache
 compartilhado monta a árvore `xampp/www` e serve o checkout `main`. Nenhum
 arquivo global de hosts, certificado ou VirtualHost foi alterado nesta missão.
 
-O banco usa volume `connect-erp_connect_db_data`, `utf8mb4`, collation
-`utf8mb4_unicode_ci` e isolamento `READ-COMMITTED`. O usuário da aplicação só
-enxerga `connect_erp` e `information_schema`.
+Banco único (C5, ADR 0012): serviço `legacy-db`, banco `connect_legacy`, volume
+`connect-erp_connect_legacy_db_data`, `utf8mb4`, collation `utf8mb4_unicode_ci` e
+isolamento `READ-COMMITTED`. A suíte de testes cria e usa `movesos_test` no mesmo
+servidor (nome obrigatoriamente terminado em `_test`) e roda só por `composer test:*`.
+O antigo serviço `db` (`connect_erp`) foi removido do `compose.yaml`. O volume
+`connect-erp_connect_db_data` foi preservado e não deve ser apagado sem backup e ADR.
 
 ## Desenvolvimento e testes
 

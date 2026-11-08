@@ -1,0 +1,301 @@
+/*
+ * Connect ERP v1 — comportamentos de interface compartilhados (sem dependências).
+ * Nada aqui grava dados: ações de negócio sem backend usam data-erp-pending e só avisam.
+ */
+(function () {
+  'use strict';
+
+  var storage = {
+    get: function (key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+    set: function (key, value) { try { window.localStorage.setItem(key, value); } catch (e) { /* modo privado */ } }
+  };
+  var $ = function (selector, root) { return (root || document).querySelector(selector); };
+  var $$ = function (selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); };
+  var mobile = window.matchMedia('(max-width: 900px)');
+
+  /* Toasts --------------------------------------------------------------- */
+  function toast(message, tone) {
+    var region = $('[data-erp-toasts]');
+    if (!region) return;
+    var item = document.createElement('div');
+    item.className = 'erp-toast' + (tone ? ' erp-toast--' + tone : '');
+    var text = document.createElement('span');
+    text.textContent = message;
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Fechar aviso');
+    close.textContent = '×';
+    close.addEventListener('click', function () { item.remove(); });
+    item.appendChild(text);
+    item.appendChild(close);
+    region.appendChild(item);
+    window.setTimeout(function () { item.remove(); }, 6000);
+  }
+  window.ErpUI = { toast: toast };
+
+  /* Sidebar: recolher (desktop) e gaveta (celular) ------------------------- */
+  var shell = $('[data-erp-shell]');
+  if (shell) {
+    var collapse = $('[data-erp-collapse]');
+    var openButton = $('[data-erp-nav-open]');
+    var setCollapsed = function (value) {
+      shell.classList.toggle('is-collapsed', value);
+      if (collapse) {
+        collapse.setAttribute('aria-expanded', String(!value));
+        collapse.setAttribute('aria-label', value ? 'Expandir menu' : 'Recolher menu');
+      }
+      storage.set('erp.sidebar.collapsed', value ? '1' : '0');
+    };
+    if (storage.get('erp.sidebar.collapsed') === '1' && !mobile.matches) setCollapsed(true);
+    if (collapse) collapse.addEventListener('click', function () { setCollapsed(!shell.classList.contains('is-collapsed')); });
+
+    var sidebar = $('#erp-sidebar');
+    var setOpen = function (value) {
+      shell.classList.toggle('is-nav-open', value);
+      if (openButton) openButton.setAttribute('aria-expanded', String(value));
+      if (sidebar) {
+        if (value) { sidebar.removeAttribute('inert'); var first = $('a, button', sidebar); if (first) first.focus(); }
+        else if (mobile.matches) { sidebar.setAttribute('inert', ''); }
+      }
+      if (!value && openButton && mobile.matches) openButton.focus();
+    };
+    var syncBreakpoint = function () {
+      shell.classList.remove('is-nav-open');
+      if (!sidebar) return;
+      if (mobile.matches) { sidebar.setAttribute('inert', ''); shell.classList.remove('is-collapsed'); }
+      else { sidebar.removeAttribute('inert'); if (storage.get('erp.sidebar.collapsed') === '1') shell.classList.add('is-collapsed'); }
+    };
+    syncBreakpoint();
+    if (mobile.addEventListener) mobile.addEventListener('change', syncBreakpoint);
+    if (openButton) openButton.addEventListener('click', function () { setOpen(true); });
+    $$('[data-erp-nav-close]').forEach(function (el) { el.addEventListener('click', function () { setOpen(false); }); });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && shell.classList.contains('is-nav-open')) setOpen(false);
+    });
+    // Recolhida, abrir um grupo expande a sidebar para mostrar o submenu.
+    $$('.erp-nav__group > summary').forEach(function (summary) {
+      summary.addEventListener('click', function () { if (shell.classList.contains('is-collapsed')) setCollapsed(false); });
+    });
+  }
+
+  /* Dropdowns (<details>): fecham ao clicar fora ou com Escape ----------- */
+  var dropdowns = $$('[data-erp-dropdown]');
+  document.addEventListener('click', function (event) {
+    dropdowns.forEach(function (d) { if (d.open && !d.contains(event.target)) d.open = false; });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    dropdowns.forEach(function (d) { if (d.open) { d.open = false; var s = $('summary', d); if (s) s.focus(); } });
+  });
+
+  /* Pesquisa de páginas ---------------------------------------------------- */
+  var searchInput = $('[data-erp-search]');
+  var searchResults = $('#erp-search-results');
+  var indexNode = $('#erp-search-index');
+  if (searchInput && searchResults && indexNode) {
+    var index = [];
+    try { index = JSON.parse(indexNode.textContent || '[]'); } catch (e) { index = []; }
+    var normalize = function (text) { return String(text).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+    var focused = -1;
+    var render = function () {
+      var term = normalize(searchInput.value.trim());
+      searchResults.innerHTML = '';
+      focused = -1;
+      if (term.length < 2) { searchResults.hidden = true; searchInput.setAttribute('aria-expanded', 'false'); return; }
+      var hits = index.filter(function (item) { return normalize(item.n + ' ' + item.g).indexOf(term) !== -1; }).slice(0, 12);
+      if (!hits.length) {
+        var empty = document.createElement('p');
+        empty.className = 'erp-field__hint';
+        empty.style.padding = '8px 10px';
+        empty.textContent = 'Nenhuma página encontrada.';
+        searchResults.appendChild(empty);
+      }
+      hits.forEach(function (item) {
+        var link = document.createElement('a');
+        link.href = item.u;
+        link.setAttribute('role', 'option');
+        link.textContent = item.n;
+        var group = document.createElement('small');
+        group.textContent = item.g;
+        link.appendChild(group);
+        searchResults.appendChild(link);
+      });
+      searchResults.hidden = false;
+      searchInput.setAttribute('aria-expanded', 'true');
+    };
+    searchInput.addEventListener('input', render);
+    searchInput.addEventListener('keydown', function (event) {
+      var links = $$('a', searchResults);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!links.length) return;
+        focused = (focused + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+        links.forEach(function (l, i) { l.classList.toggle('is-focused', i === focused); });
+      } else if (event.key === 'Enter' && links[focused > -1 ? focused : 0]) {
+        event.preventDefault();
+        window.location.href = links[focused > -1 ? focused : 0].href;
+      } else if (event.key === 'Escape') {
+        searchInput.value = ''; render();
+      }
+    });
+    document.addEventListener('click', function (event) { if (!searchInput.parentNode.contains(event.target)) { searchResults.hidden = true; searchInput.setAttribute('aria-expanded', 'false'); } });
+    document.addEventListener('keydown', function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput.focus(); }
+    });
+  }
+
+  /* Modais (<dialog>) ------------------------------------------------------ */
+  $$('[data-erp-modal-open]').forEach(function (trigger) {
+    trigger.addEventListener('click', function () {
+      var dialog = document.getElementById(trigger.getAttribute('data-erp-modal-open'));
+      if (dialog && typeof dialog.showModal === 'function') { dialog.showModal(); dialog._erpTrigger = trigger; }
+    });
+  });
+  $$('dialog.erp-modal').forEach(function (dialog) {
+    dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', function () { if (dialog._erpTrigger) dialog._erpTrigger.focus(); });
+    $$('[data-erp-modal-close]', dialog).forEach(function (b) { b.addEventListener('click', function () { dialog.close(); }); });
+  });
+
+  /* Abas ------------------------------------------------------------------- */
+  $$('[role="tablist"]').forEach(function (list) {
+    var tabs = $$('[role="tab"]', list);
+    var select = function (tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        var panel = document.getElementById(t.getAttribute('aria-controls'));
+        if (panel) panel.hidden = !on;
+      });
+    };
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () { select(tab); });
+      tab.addEventListener('keydown', function (event) {
+        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+        var next = tabs[(i + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+        select(next); next.focus();
+      });
+    });
+  });
+
+  /* Tabelas de demonstração: ordenar e paginar no cliente ------------------ */
+  $$('[data-erp-table]').forEach(function (wrap) {
+    var table = $('table', wrap);
+    var body = table && table.tBodies[0];
+    if (!body) return;
+    var rows = Array.prototype.slice.call(body.rows);
+    var perPage = parseInt(wrap.getAttribute('data-per-page') || '8', 10);
+    var page = 1;
+    var pager = wrap.parentNode.querySelector('[data-erp-pager]');
+    var draw = function () {
+      var pages = Math.max(1, Math.ceil(rows.length / perPage));
+      page = Math.min(page, pages);
+      rows.forEach(function (row, i) { row.hidden = i < (page - 1) * perPage || i >= page * perPage; body.appendChild(row); });
+      if (!pager) return;
+      var info = $('[data-erp-pager-info]', pager);
+      if (info) info.textContent = rows.length ? 'Mostrando ' + ((page - 1) * perPage + 1) + '–' + Math.min(page * perPage, rows.length) + ' de ' + rows.length : 'Nenhum registro';
+      var holder = $('[data-erp-pager-pages]', pager);
+      if (!holder) return;
+      holder.innerHTML = '';
+      var add = function (label, target, disabled, current, aria) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.textContent = label; b.disabled = disabled;
+        if (aria) b.setAttribute('aria-label', aria);
+        if (current) b.setAttribute('aria-current', 'page');
+        b.addEventListener('click', function () { page = target; draw(); });
+        holder.appendChild(b);
+      };
+      add('‹', page - 1, page === 1, false, 'Página anterior');
+      for (var p = 1; p <= pages; p++) add(String(p), p, false, p === page, 'Página ' + p);
+      add('›', page + 1, page === pages, false, 'Próxima página');
+    };
+    $$('[data-erp-sort]', table).forEach(function (button, column) {
+      var index = parseInt(button.getAttribute('data-erp-sort'), 10);
+      button.addEventListener('click', function () {
+        var dir = button.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
+        $$('[data-erp-sort]', table).forEach(function (b) { b.removeAttribute('data-dir'); b.closest('th').removeAttribute('aria-sort'); });
+        button.setAttribute('data-dir', dir);
+        button.closest('th').setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
+        rows.sort(function (a, b) {
+          var x = a.cells[index].getAttribute('data-sort') || a.cells[index].textContent.trim();
+          var y = b.cells[index].getAttribute('data-sort') || b.cells[index].textContent.trim();
+          var nx = parseFloat(x), ny = parseFloat(y);
+          var cmp = !isNaN(nx) && !isNaN(ny) ? nx - ny : x.localeCompare(y, 'pt-BR');
+          return dir === 'asc' ? cmp : -cmp;
+        });
+        page = 1; draw();
+      });
+    });
+    // Filtros: texto livre e selects da mesma área (data-erp-list) agem sobre as linhas.
+    var scope = wrap.closest('[data-erp-list]') || wrap.parentNode;
+    var textFilter = scope.querySelector('[data-erp-table-filter]');
+    var selectFilters = $$('[data-erp-select-filter]', scope);
+    if (textFilter || selectFilters.length) {
+      var all = rows.slice();
+      var apply = function () {
+        var term = textFilter ? textFilter.value.trim().toLowerCase() : '';
+        var picks = selectFilters.map(function (s) { return s.value; }).filter(Boolean);
+        all.forEach(function (row) { row.hidden = true; });
+        rows = all.filter(function (row) {
+          if (term && row.textContent.toLowerCase().indexOf(term) === -1) return false;
+          var cells = Array.prototype.map.call(row.cells, function (c) { return c.textContent.trim(); });
+          return picks.every(function (p) { return cells.indexOf(p) !== -1; });
+        });
+        page = 1; draw();
+      };
+      if (textFilter) textFilter.addEventListener('input', apply);
+      selectFilters.forEach(function (s) { s.addEventListener('change', apply); });
+      var reset = scope.querySelector('[data-erp-filter-reset]');
+      if (reset) reset.addEventListener('click', function () { window.setTimeout(apply, 0); });
+    }
+    draw();
+  });
+
+  /* Validação de formulários no cliente (o servidor valida de novo) -------- */
+  $$('form[data-erp-validate]').forEach(function (form) {
+    form.setAttribute('novalidate', '');
+    form.addEventListener('submit', function (event) {
+      var firstInvalid = null;
+      $$('input, select, textarea', form).forEach(function (field) {
+        var holder = field.closest('.erp-field');
+        var error = holder && $('.erp-field__error', holder);
+        var ok = field.checkValidity();
+        field.setAttribute('aria-invalid', String(!ok));
+        if (error) { error.textContent = ok ? '' : (field.validationMessage || 'Campo inválido.'); }
+        if (!ok && !firstInvalid) firstInvalid = field;
+      });
+      if (firstInvalid) { event.preventDefault(); firstInvalid.focus(); toast('Revise os campos destacados.', 'warning'); return; }
+      if (form.hasAttribute('data-erp-pending')) { event.preventDefault(); toast(form.getAttribute('data-erp-pending'), 'warning'); }
+    });
+  });
+
+  /* Resumo ao vivo dos formulários de lançamento ------------------------- */
+  $$('[data-erp-summary]').forEach(function (summary) {
+    var form = document.getElementById(summary.getAttribute('data-erp-summary'));
+    if (!form) return;
+    var sync = function () {
+      $$('[data-erp-summary-for]', summary).forEach(function (dd) {
+        var field = document.getElementById(dd.getAttribute('data-erp-summary-for'));
+        var value = field ? (field.type === 'checkbox' ? (field.checked ? 'Sim' : 'Não') : field.value) : '';
+        dd.textContent = value || '—';
+      });
+    };
+    form.addEventListener('input', sync);
+    form.addEventListener('change', sync);
+    form.addEventListener('reset', function () { window.setTimeout(sync, 0); });
+  });
+
+  /* Ações que dependem de backend ainda não implementado ------------------- */
+  document.addEventListener('click', function (event) {
+    var trigger = event.target.closest('button[data-erp-pending], a[data-erp-pending]');
+    if (!trigger || trigger.closest('form[data-erp-validate]') && trigger.type === 'submit') return;
+    event.preventDefault();
+    toast(trigger.getAttribute('data-erp-pending') || 'Operação pendente: o backend deste módulo ainda não foi implementado.', 'warning');
+  });
+
+  /* Botões de envio mostram carregamento (formulários reais) --------------- */
+  $$('form[data-erp-loading]').forEach(function (form) {
+    form.addEventListener('submit', function () { var b = $('[type="submit"]', form); if (b) { b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true'); } });
+  });
+})();

@@ -8,6 +8,7 @@ Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOP
 - [AP-002 — Condomínio](pages/ap-002-condominio.md) · dashboards · CONFIRMADA
 - [AP-003 — Unidade](pages/ap-003-unidade.md) · dashboards · CONFIRMADA
 - [AP-004 — Condomínios](pages/ap-004-condominios.md) · cadastros · CONFIRMADA
+  - [Checklist de chegada do condomínio](modules/checklist-de-chegada.md) · funcionalidade própria do Connect ERP (ADR 0013)
 - [AP-005 — Inquilinos](pages/ap-005-inquilinos.md) · cadastros · CONFIRMADA
 - [AP-006 — Unidades](pages/ap-006-unidades.md) · cadastros · CONFIRMADA
 - [AP-007 — Áreas Vinculáveis](pages/ap-007-areas-vinculaveis.md) · cadastros · CONFIRMADA

@@ -21,16 +21,21 @@
         <div class="connect-login__card">
             <header>
                 <img src="<?= theme('/assets/images/logo-connect-condominios.svg') ?>" alt="Connect Condomínios">
-                <span><?= ($loginEnvironment ?? 'studio')==='helpdesk'?'MOVES HELP DESK':'MOVESOS' ?></span>
-                <h2><?= ($loginEnvironment ?? 'studio')==='helpdesk'?'Help Desk':'Bem-vindo(a) de volta!' ?></h2>
-                <p><?= ($loginEnvironment ?? 'studio')==='helpdesk'?'Acesse para atender e acompanhar chamados':'Acesse sua conta para continuar' ?></p>
+                <?php [$loginEyebrow, $loginTitle, $loginLead] = match ($loginEnvironment ?? 'studio') {
+                    'helpdesk' => ['MOVES HELP DESK', 'Help Desk', 'Acesse para atender e acompanhar chamados'],
+                    'erp' => ['CONNECT ERP', 'Bem-vindo(a) de volta!', 'Acesse a gestão dos condomínios da Connect'],
+                    default => ['MOVESOS', 'Bem-vindo(a) de volta!', 'Acesse sua conta para continuar'],
+                }; ?>
+                <span><?= $loginEyebrow ?></span>
+                <h2><?= $loginTitle ?></h2>
+                <p><?= $loginLead ?></p>
             </header>
             <div class="ajax_response"><?= flash() ?></div>
             <form action="<?= url(($adminBase ?? '/studio').'/login') ?>" method="post">
                 <?= csrf_input() ?>
                 <label><span>E-mail</span><span class="connect-login__field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v12H3zM3.5 7l8.5 7 8.5-7"/></svg><input name="email" type="email" value="<?= htmlspecialchars($cookie ?? '') ?>" placeholder="seu@email.com" autocomplete="username" required></span></label>
                 <label><span>Senha</span><span class="connect-login__field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v10H6zM8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></svg><input id="studioPassword" name="password" type="password" placeholder="Sua senha" autocomplete="current-password" required><button class="connect-login__eye" type="button" aria-label="Mostrar senha" aria-controls="studioPassword"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5z"/><circle cx="12" cy="12" r="2.5"/></svg></button></span></label>
-                <div class="connect-login__options"><label class="connect-login__remember"><input type="checkbox" name="save" value="1"><span>Lembrar meu e-mail</span></label><span>Área restrita</span></div>
+                <div class="connect-login__options"><label class="connect-login__remember"><input type="checkbox" name="save" value="1"><span>Lembrar meu e-mail</span></label><?php if (!empty($forgotUrl)): ?><a href="<?= htmlspecialchars($forgotUrl) ?>">Esqueci minha senha</a><?php else: ?><span>Área restrita</span><?php endif; ?></div>
                 <button class="connect-login__submit" type="submit"><span>Entrar</span><strong>→</strong></button>
             </form>
             <footer><span class="connect-login__lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span> Ambiente seguro e monitorado</footer>
