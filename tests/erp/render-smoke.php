@@ -77,6 +77,8 @@ $theme = $root . '/container/erp/connect/v1/';
 $catalog = require $theme . 'components/layout/catalog.php';
 $set('catalog', $catalog);
 $set('seo', $seo);
+// Escopo de condomínios fixo (sem banco) para o seletor da navbar.
+$set('condominiumOptions', [['id' => 7, 'name' => 'Residencial Exemplo'], ['id' => 9, 'name' => 'Edifício <Exemplo>']]);
 $layoutData = $reflection->getMethod('layoutData');
 
 $render = static function (string $template, array $data) use ($theme): string {
@@ -107,6 +109,12 @@ $data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Serv
 $html = $render('pages/dashboard/index', $data);
 $common($html, 'dashboard', 'Dashboard');
 $assert(substr_count($html, 'erp-kpi ') >= 4, 'dashboard: 4 indicadores');
+$assert(str_contains($html, 'data-erp-condo-switch') && str_contains($html, '<option value="7"') && str_contains($html, 'Edifício &lt;Exemplo&gt;') && str_contains($html, 'Todos os condomínios'), 'navbar: seletor de condomínio com o escopo, escapado');
+$assert((bool)preg_match('~action="[^"]*/contexto/condominio"~', $html), 'navbar: seletor envia para /contexto/condominio');
+$assert(str_contains($html, 'data-erp-navsearch-toggle') && str_contains($html, 'id="erp-navsearch-panel" role="search" hidden'), 'navbar: busca em ícone, fechada por padrão');
+$css = (string)file_get_contents($theme . 'assets/css/erp.css');
+$assert(str_contains($css, '.erp-icon-button.erp-navbar__menu { display: none; }'), 'css: hambúrguer escondido no desktop');
+$assert(str_contains((string)file_get_contents($theme . 'assets/js/erp.js'), "Acordeão"), 'js: menu em acordeão');
 $assert(str_contains($html, 'erp-bars') && str_contains($html, 'erp-donut'), 'dashboard: gráficos');
 $assert(str_contains($html, 'data-erp-table'), 'dashboard: tabela paginável');
 $assert(str_contains($html, '<dialog class="erp-modal"'), 'dashboard: modal');

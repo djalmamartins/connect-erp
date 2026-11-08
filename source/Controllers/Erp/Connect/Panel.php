@@ -8,6 +8,7 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\CondominiumScope;
 use Source\Services\Erp\DemoData;
 use Source\Support\Access;
 use Source\Support\Erp\FieldSpec;
@@ -27,8 +28,14 @@ final class Panel extends Controller
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
     public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view'];
 
+    /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
+    public const CONTEXT_KEY = 'erpCondominium';
+
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
     private array $catalog;
+
+    /** @var list<array{id:int,name:string}>|null cache por requisição; o smoke injeta uma lista fixa */
+    private ?array $condominiumOptions = null;
 
     public function __construct()
     {
@@ -162,6 +169,67 @@ final class Panel extends Controller
         $this->state($user, $code, $code === 500 ? 'Algo deu errado' : 'Página não encontrada', $code === 500 ? 'Não foi possível concluir a solicitação. Tente de novo em instantes.' : 'O endereço não corresponde a nenhuma página do ERP.');
     }
 
+    /**
+     * POST /contexto/condominio — troca o condomínio em contexto na navbar. Só aceita um
+     * condomínio do escopo do usuário (CondominiumScope); 0 volta para "todos".
+     */
+    public function setCondominium(?array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $back = (string)($data['back'] ?? '');
+        $back = str_starts_with($back, '/') && !str_starts_with($back, '//') && !preg_match('/[\x00-\x20\\\\]/', $back) ? $back : erp_base() . '/dashboard';
+        if (!csrf_verify($data ?? [])) {
+            $this->message->error('Sessão expirada. Atualize a página e tente novamente.')->flash();
+            redirect(url($back));
+            return;
+        }
+        $id = (int)(filter_var($data['condominium'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) ?: 0);
+        $session = new Session();
+        if ($id === 0) {
+            $session->unset(self::CONTEXT_KEY);
+        } elseif (in_array($id, array_column($this->condominiumOptions($user), 'id'), true)) {
+            $session->set(self::CONTEXT_KEY, $id);
+        } else {
+            // Fora do escopo: não revela se o condomínio existe.
+            $this->message->warning('Condomínio indisponível para a sua conta.')->flash();
+        }
+        redirect(url($back));
+    }
+
+    /** @return list<array{id:int,name:string}> */
+    private function condominiumOptions(User $user): array
+    {
+        if ($this->condominiumOptions !== null) {
+            return $this->condominiumOptions;
+        }
+        try {
+            $rows = (new CondominiumScope())->allowed($user);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'condominium_options_failed', 'users_id' => $user->id ?? null]);
+            $rows = [];
+        }
+        return $this->condominiumOptions = array_values(array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'name' => (string)$r['name']], array_filter($rows, static fn (array $r): bool => ($r['status'] ?? 'active') === 'active')));
+    }
+
+    /** Condomínio em contexto, revalidado a cada requisição contra o escopo atual. */
+    private function currentCondominium(User $user): ?array
+    {
+        $session = new Session();
+        $id = $session->has(self::CONTEXT_KEY) ? (int)$session->{self::CONTEXT_KEY} : 0;
+        foreach ($this->condominiumOptions($user) as $option) {
+            if ($option['id'] === $id) {
+                return $option;
+            }
+        }
+        if ($id !== 0) {
+            $session->unset(self::CONTEXT_KEY);
+        }
+        return null;
+    }
+
     /** GET /erp/seguranca/codigos — códigos de recuperação mostrados uma única vez após ativar o 2FA. */
     public function recoveryCodes(): void
     {
@@ -232,6 +300,8 @@ final class Panel extends Controller
             'demo' => DemoData::enabled(),
             'notifications' => $dashboard['notifications'] ?? [],
             'withNavigation' => true,
+            'condoOptions' => $this->condominiumOptions($user),
+            'condoCurrent' => $this->currentCondominium($user),
             'anchor' => static fn (string $text): string => self::anchor($text),
             // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
             'canSee' => static fn (string $pageId): bool => !isset(self::PAGE_PERMISSIONS[$pageId]) || $user->can(self::PAGE_PERMISSIONS[$pageId]),

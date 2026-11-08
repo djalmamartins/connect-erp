@@ -7,6 +7,8 @@
  * @var array $notifications
  * @var bool $demo
  * @var callable $icon
+ * @var list<array{id:int,name:string}> $condoOptions  condomínios do escopo do usuário (CondominiumScope)
+ * @var ?array{id:int,name:string} $condoCurrent  condomínio em contexto na sessão (null = todos)
  */
 $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 1));
 ?>
@@ -16,11 +18,33 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <strong><?= $this->e($title) ?></strong>
         <?php $this->insert('components/breadcrumbs/breadcrumbs'); ?>
     </div>
-    <div class="erp-search" role="search">
-        <?= $icon('search', 'erp-icon--sm') ?>
-        <label class="erp-sr-only" for="erp-search-input">Pesquisar páginas do ERP</label>
-        <input id="erp-search-input" type="search" placeholder="Pesquisar páginas (Ctrl + K)" autocomplete="off" data-erp-search aria-controls="erp-search-results" aria-expanded="false">
-        <div class="erp-search__results" id="erp-search-results" role="listbox" hidden></div>
+    <form class="erp-condo-switch" method="post" action="<?= erp_url('/contexto/condominio') ?>" data-erp-condo-switch>
+        <?= csrf_input() ?>
+        <input type="hidden" name="back" value="<?= $this->e(parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/') ?>">
+        <span class="erp-condo-switch__icon" aria-hidden="true"><?= $icon('building', 'erp-icon--sm') ?></span>
+        <label class="erp-condo-switch__label" for="erp-condo-select">Condomínio</label>
+        <select id="erp-condo-select" name="condominium" class="erp-condo-switch__select"<?= $condoOptions === [] ? ' disabled' : '' ?>>
+            <?php if ($condoOptions === []): ?>
+                <option value="0">Nenhum condomínio vinculado</option>
+            <?php else: ?>
+                <option value="0"<?= $condoCurrent === null ? ' selected' : '' ?>>Todos os condomínios</option>
+                <?php foreach ($condoOptions as $condo): ?>
+                    <option value="<?= (int)$condo['id'] ?>"<?= ($condoCurrent['id'] ?? null) === (int)$condo['id'] ? ' selected' : '' ?>><?= $this->e($condo['name']) ?></option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+        <noscript><button type="submit" class="erp-btn erp-btn--sm">Trocar</button></noscript>
+    </form>
+    <div class="erp-navsearch" data-erp-navsearch>
+        <button type="button" class="erp-icon-button" data-erp-navsearch-toggle aria-label="Pesquisar páginas (Ctrl + K)" title="Pesquisar páginas (Ctrl + K)" aria-controls="erp-navsearch-panel" aria-expanded="false"><?= $icon('search') ?></button>
+        <div class="erp-navsearch__panel" id="erp-navsearch-panel" role="search" hidden>
+            <div class="erp-search">
+                <?= $icon('search', 'erp-icon--sm') ?>
+                <label class="erp-sr-only" for="erp-search-input">Pesquisar páginas do ERP</label>
+                <input id="erp-search-input" type="search" placeholder="Pesquisar páginas" autocomplete="off" data-erp-search aria-controls="erp-search-results" aria-expanded="false">
+                <div class="erp-search__results" id="erp-search-results" role="listbox" hidden></div>
+            </div>
+        </div>
     </div>
     <div class="erp-navbar__actions">
         <details class="erp-dropdown" data-erp-dropdown>
