@@ -281,6 +281,17 @@ p { margin: 0; }
 .erp-skeleton--title { height: 22px; width: 45%; }
 .erp-skeleton--short { width: 60%; }
 
+
+/* 10b. Mensagens do servidor (flash) e segurança da conta --------------------- */
+.erp-flash .message { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid transparent; border-radius: var(--erp-radius-md); background: var(--erp-info-soft); color: var(--erp-info); font-weight: 600; }
+.erp-flash .message.success { background: var(--erp-success-soft); color: var(--erp-success); }
+.erp-flash .message.warning { background: var(--erp-warning-soft); color: var(--erp-warning); border-color: #f1deb1; }
+.erp-flash .message.error { background: var(--erp-danger-soft); color: var(--erp-danger); border-color: #f6c9c4; }
+.erp-codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; font: 600 15px/1.6 ui-monospace, Menlo, Consolas, monospace; }
+.erp-codes li { padding: 8px 12px; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); border: 1px solid var(--erp-border); text-align: center; }
+.erp-secret code { display: inline-block; padding: 8px 12px; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); border: 1px dashed var(--erp-border-strong); font: 600 16px/1.4 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; overflow-wrap: anywhere; }
+.erp-steps-list { display: grid; gap: 6px; margin: 0 0 12px; padding-left: 20px; color: var(--erp-muted); }
+
 /* 11. Formulários e filtros ------------------------------------------------- */
 .erp-form { display: grid; gap: var(--erp-space-4); }
 .erp-form__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--erp-space-4); }

@@ -240,17 +240,17 @@ final class Panel extends Controller
     /** GET /erp/seguranca/codigos — códigos de recuperação mostrados uma única vez após ativar o 2FA. */
     public function recoveryCodes(): void
     {
-        $user = $this->guard();
-        if ($user === null) {
-            return;
-        }
-        $session = new Session();
-        $codes = $session->has('auth2faRecoveryCodes') ? (array)$session->auth2faRecoveryCodes : [];
-        $session->unset('auth2faRecoveryCodes');
-        header('Cache-Control: no-store');
-        echo $this->view->render('pages/auth/recovery-codes', $this->layoutData($user, null, [
-            'recoveryCodes' => $codes,
-        ], 'Códigos de recuperação'));
+        // Os códigos ficam na sessão e aparecem uma única vez na tela de segurança.
+        redirect(erp_url('/seguranca'));
+    }
+
+    /** Renderiza uma página do ERP na moldura única (usado por outros controllers do ERP). */
+    public function render(string $template, User $user, string $title, array $data = []): void
+    {
+        header('Cache-Control: no-store, private');
+        header('X-Frame-Options: DENY');
+        header('Referrer-Policy: same-origin');
+        echo $this->view->render($template, $this->layoutData($user, null, $data, $title));
     }
 
     private function guard(): ?User

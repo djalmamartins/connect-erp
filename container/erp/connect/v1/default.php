@@ -37,6 +37,7 @@ foreach ($catalog['pages'] as $id => $page) {
     <div class="erp-content">
         <?php $this->insert('components/navbar/navbar'); ?>
         <main id="erp-main" class="erp-main" tabindex="-1">
+            <?php if ($erpFlash = flash()): ?><div class="erp-flash" role="status"><?= $erpFlash ?></div><?php endif; ?>
             <?= $this->section('content') ?>
         </main>
     </div>

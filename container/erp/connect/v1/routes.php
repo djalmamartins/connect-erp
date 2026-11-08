@@ -35,6 +35,8 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/sair", "Login:logout");
     $route->get("/sair", "Panel:root");
     $route->get("/recuperar-senha", "Login:forgot");
+    $route->get("/seguranca", "Security:show");
+    $route->post("/seguranca", "Security:update");
     $route->get("/seguranca/codigos", "Panel:recoveryCodes");
     $route->post("/contexto/condominio", "Panel:setCondominium");
 

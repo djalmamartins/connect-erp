@@ -65,9 +65,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
             <div class="erp-dropdown__panel">
                 <h2><?= $this->e(trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''))) ?><br><small><?= $this->e($user->email ?? '') ?></small></h2>
                 <a class="erp-dropdown__item" href="<?= erp_url('/configuracoes/usuarios-do-sistema') ?>"><?= $icon('user', 'erp-icon--sm') ?><span>Meu perfil</span></a>
-                <?php if ($user->can('studio.access')): // A tela de 2FA é do Studio e exige studio.access. ?>
-                    <a class="erp-dropdown__item" href="<?= url('/studio/seguranca/2fa') ?>"><?= $icon('shield', 'erp-icon--sm') ?><span>Segurança e 2FA<small>Gerenciado no Studio</small></span></a>
-                <?php endif; ?>
+                <a class="erp-dropdown__item" href="<?= erp_url('/seguranca') ?>"><?= $icon('shield', 'erp-icon--sm') ?><span>Segurança e 2FA<small>Verificação em duas etapas</small></span></a>
                 <a class="erp-dropdown__item" href="<?= erp_url('/configuracoes') ?>"><?= $icon('settings', 'erp-icon--sm') ?><span>Configurações</span></a>
                 <div class="erp-dropdown__sep"></div>
                 <form method="post" action="<?= erp_url('/sair') ?>">

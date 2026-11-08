@@ -54,7 +54,7 @@ Matriz completa (módulo, página, rota, componente, layout, ações, validaçã
 | Modelos de página por tipo | `pages/modules/{list,report,form,import,settings,document,chart,closing,dashboard}.php` |
 | Campo, tabela, filtros, modais, aviso de proposta | `components/forms/field.php`, `components/tables/data-table.php`, `components/filters/filter-bar.php`, `components/modals/form-modal.php`, `components/modals/confirm.php`, `components/notifications/proposal.php` |
 | Definições e dados | `components/layout/page-specs.php`, `Source\Support\Erp\FieldSpec`, `Source\Services\Erp\DemoData::rows()`, `database/fixtures/erp-demo/vocabulary.php` |
-| Páginas de sistema | `pages/system/hub.php`, `pages/system/state.php`, `pages/system/pending.php` (reserva), `pages/auth/recovery-codes.php` |
+| Páginas de sistema | `pages/system/hub.php`, `pages/system/state.php`, `pages/system/pending.php` (reserva), `pages/auth/security.php` (2FA da própria conta) |
 
 ## Testes executados
 
@@ -88,7 +88,7 @@ VENDOR="/Volumes/MAC HD/Docker/xampp/www/connect/vendor" php tests/erp/render-sm
 2. **Confirmar colunas e campos**: as definições em `components/layout/page-specs.php` (gerado por `tools/erp-page-specs.py`) são propostas derivadas do nome e do domínio de cada página, avisadas na tela. As fichas `docs/specs/pages/ap-*.md` ainda estão com campos PENDENTE e precisam ser confirmadas antes do backend.
 3. **Permissões por módulo**: só `erp.access` e `erp.condominiums.*` existem (migration `20261107_0003`). As outras páginas exigem `erp.access`; cada módulo precisa da sua permissão quando ganhar backend. O menu já esconde páginas sem a permissão própria (`Panel::PAGE_PERMISSIONS`).
 4. **Recuperação de senha em www.connect.lab/erp**: no host do site, `/forget` só existe com o site aberto (`CONF_ACCESS_SITE`) ou para developer. Em `erp.connect.lab` a rota é registrada sempre.
-5. **Gestão do 2FA** fica no Studio (`/studio/seguranca/2fa`), que exige `studio.access`; quem só tem `erp.access` precisa de uma tela própria no ERP.
+5. **Gestão do 2FA**: resolvida em 2026-11-08 com `/seguranca` no próprio ERP (ativar, renovar códigos e desativar com o código atual; `Erp\Connect\Security`). A tela do Studio continua existindo para quem usa o Studio.
 6. **Testes HTTP e de navegador** (rotas, autenticação, permissões, console JS, 390/768/1440 px) no connect.lab, e a suíte PHPUnit (`tests/legacy/Unit/ErpThemeTest.php` foi atualizado para a moldura nova, mas não rodou aqui: o PHPUnit precisa do vendor do próprio checkout).
 
 Resolvidas em 2026-11-08: merge com `claude-dev` (moldura e CSS deste branch, helpers de `container/send`, Condomínios reais em `/erp/condominios` e `/erp/condominios/{id}` com `CondominiumScope`), bundle via MovesCode Compress (`Services/Minify/Erp.php` publica `assets/erp.min.css` e `assets/erp.min.js` só com o design system do ERP e só quando a fonte muda) e recuperação de senha real.
