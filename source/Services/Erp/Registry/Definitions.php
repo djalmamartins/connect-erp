@@ -101,7 +101,7 @@ final class Definitions
                 'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
                 'computed' => ['label'],
                 // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
-                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets'],
+                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas'],
                 'title' => 'number',
                 'order' => 'label',
             ],
@@ -336,7 +336,8 @@ final class Definitions
                         'vaga' => 'Vaga de garagem', 'deposito' => 'Depósito', 'box' => 'Box', 'outro' => 'Outro',
                     ]],
                     'identifier' => ['label' => 'Identificação', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: G1-023'],
-                    'unit_label' => ['label' => 'Unidade vinculada', 'type' => 'text', 'max' => 40, 'span' => 4, 'list' => true, 'search' => true, 'hint' => 'Vazio: livre'],
+                    'unit_id' => ['label' => 'Unidade vinculada', 'hint' => 'Vazio: livre'] + $unit(4),
+                    'unit_label' => $unitText('Unidade vinculada (texto)', true, 4),
                     'location' => ['label' => 'Localização', 'type' => 'text', 'max' => 120, 'span' => 4, 'hint' => 'Ex.: Subsolo 1'],
                     'fraction' => ['label' => 'Fração ideal (%)', 'type' => 'percent', 'span' => 4],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
