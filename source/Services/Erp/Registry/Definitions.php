@@ -419,6 +419,54 @@ final class Definitions
                 'unique' => [['fields' => ['condominium_id', 'name'], 'nullable' => ['condominium_id'], 'message' => 'Já existe um tipo de fatura com este nome neste plano.']],
                 'order' => 'name',
             ],
+            // Centros de custo (CN-002, ADR 0021): onde a despesa ou a receita acontece (portaria,
+            // limpeza, obra do bloco B). Sem condomínio = padrão da Connect.
+            'cost_centers' => [
+                'page' => 'CN-002', 'table' => 'erp_cost_centers', 'route' => '/financeiro/centros-de-custo',
+                'api' => 'cost-centers', 'permission' => 'erp.cost_centers', 'label' => 'Centros de custo',
+                'entity' => 'centro de custo', 'gender' => 'o', 'scope' => 'optional', 'group' => 'financeiro',
+                'lead' => 'Agrupam lançamentos por área ou projeto. Sem condomínio, o centro de custo vale para todos.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: centro de custo padrão da Connect (todos os condomínios)'],
+                    'code' => ['label' => 'Código', 'type' => 'text', 'required' => true, 'max' => 20, 'span' => 2, 'list' => true, 'search' => true,
+                        'pattern' => '/^[0-9A-Za-z][0-9A-Za-z._-]{0,19}$/', 'pattern_message' => 'Use letras, números, ponto, hífen ou sublinhado (até 20).'],
+                    'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 120, 'span' => 4, 'list' => true, 'search' => true, 'hint' => 'Ex.: Portaria, Limpeza, Obra do bloco B'],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'code'], 'nullable' => ['condominium_id'], 'message' => 'Já existe um centro de custo com este código neste plano.']],
+                'order' => 'code',
+            ],
+            // Contas bancárias (CN-003, ADR 0021): onde o dinheiro do condomínio fica. Sem segredos:
+            // credenciais de API bancária ficam fora deste cadastro (BANKING_INTEGRATIONS.md).
+            'bank_accounts' => [
+                'page' => 'CN-003', 'table' => 'erp_bank_accounts', 'route' => '/financeiro/contas-bancarias',
+                'api' => 'bank-accounts', 'permission' => 'erp.bank_accounts', 'label' => 'Contas bancárias',
+                'entity' => 'conta bancária', 'gender' => 'a', 'scope' => 'required', 'group' => 'financeiro',
+                'lead' => 'Contas correntes, poupanças e aplicações de cada condomínio. Uma delas é a principal.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
+                    'name' => ['label' => 'Apelido', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Conta movimento'],
+                    'bank_code' => ['label' => 'Banco (código)', 'type' => 'text', 'required' => true, 'max' => 3, 'span' => 2, 'list' => true,
+                        'pattern' => '/^\d{3}$/', 'pattern_message' => 'Use o código de 3 dígitos do banco (COMPE).'],
+                    'branch' => ['label' => 'Agência', 'type' => 'text', 'required' => true, 'max' => 10, 'span' => 2, 'list' => true,
+                        'pattern' => '/^\d{1,5}(-[\dXx])?$/', 'pattern_message' => 'Agência inválida (ex.: 1234 ou 1234-5).'],
+                    'account_number' => ['label' => 'Conta', 'type' => 'text', 'required' => true, 'max' => 20, 'span' => 3, 'list' => true, 'search' => true,
+                        'pattern' => '/^\d{1,15}-[\dXx]$/', 'pattern_message' => 'Conta com dígito (ex.: 123456-7).'],
+                    'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'filter' => true, 'options' => ['corrente' => 'Conta corrente', 'poupanca' => 'Poupança', 'aplicacao' => 'Aplicação']],
+                    'wallet' => ['label' => 'Carteira de cobrança', 'type' => 'text', 'max' => 20, 'span' => 2, 'hint' => 'Quando houver'],
+                    'opening_balance_cents' => ['label' => 'Saldo inicial', 'type' => 'money', 'span' => 3],
+                    'opened_on' => ['label' => 'Data do saldo inicial', 'type' => 'date', 'span' => 3],
+                    'is_main' => ['label' => 'Conta principal', 'type' => 'bool', 'span' => 3, 'list' => true],
+                    'cost_center_id' => ['label' => 'Centro de custo padrão', 'type' => 'ref', 'span' => 6,
+                        'ref' => 'cost_centers', 'ref_label' => ['code', 'name'],
+                        'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.', 'hint' => 'Opcional; sugerido nos lançamentos desta conta'],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'bank_code', 'branch', 'account_number'], 'message' => 'Esta conta já está cadastrada neste condomínio.']],
+                'single_active' => [['field' => 'is_main', 'value' => 1, 'per' => 'condominium_id', 'message' => 'Este condomínio já tem uma conta principal ativa. Desmarque a atual antes.']],
+                'requires' => [['field' => 'opened_on', 'when' => 'opening_balance_cents', 'message' => 'Informe a data do saldo inicial.']],
+                'order' => 'name',
+            ],
         ];
 
         foreach ($definitions as $slug => &$definition) {

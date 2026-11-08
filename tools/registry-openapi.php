@@ -162,7 +162,13 @@ foreach ($paths as [$d, $name]) {
     $out[] = '      security: [{ session: [], csrf: [] }]';
     $out[] = '      responses:';
     $out[] = "        '204': { description: Excluído }";
-    if (!empty($d['referenced_by']) || isset($d['hierarchy'])) {
+    $pointedByRef = false;
+    foreach (Definitions::all() as $other) {
+        foreach ($other['fields'] as $f) {
+            $pointedByRef = $pointedByRef || ($f['type'] === 'ref' && ($f['ref'] ?? null) === $d['slug']);
+        }
+    }
+    if (!empty($d['referenced_by']) || isset($d['hierarchy']) || $pointedByRef) {
         $out[] = "        '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
     }
     $out[] = "        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";

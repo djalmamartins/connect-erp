@@ -1,0 +1,30 @@
+-- Contas bancárias dos condomínios (CN-003, ADR 0021). Toda conta pertence a um condomínio
+-- (ADR-002). Nenhuma credencial de API bancária fica aqui (docs/banking/BANKING_INTEGRATIONS.md).
+CREATE TABLE IF NOT EXISTS `erp_bank_accounts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `name` varchar(80) NOT NULL COMMENT 'Apelido, ex.: Conta movimento Itaú',
+  `bank_code` char(3) NOT NULL COMMENT 'Código COMPE',
+  `branch` varchar(10) NOT NULL,
+  `account_number` varchar(20) NOT NULL,
+  `kind` enum('corrente','poupanca','aplicacao') NOT NULL DEFAULT 'corrente',
+  `wallet` varchar(20) DEFAULT NULL COMMENT 'Carteira de cobrança, quando houver',
+  `opening_balance_cents` bigint unsigned DEFAULT NULL,
+  `opened_on` date DEFAULT NULL,
+  `is_main` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Uma conta principal ativa por condomínio',
+  `cost_center_id` int unsigned DEFAULT NULL COMMENT 'Centro de custo padrão dos lançamentos',
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_bank_accounts_condominium` (`condominium_id`, `deleted_at`, `status`),
+  KEY `idx_erp_bank_accounts_number` (`bank_code`, `branch`, `account_number`),
+  CONSTRAINT `fk_erp_bank_accounts_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_bank_accounts_cost_center` FOREIGN KEY (`cost_center_id`) REFERENCES `erp_cost_centers` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_bank_accounts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_bank_accounts_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
