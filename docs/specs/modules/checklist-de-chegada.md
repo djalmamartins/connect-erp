@@ -84,7 +84,12 @@ responsável, para quem tem `erp.condominiums.manage` e acesso ao condomínio. C
 sistema e e-mail na `mail_queue` (template `container/send/default/v1/pages/checklist-alert.php`,
 enviado pelo worker de e-mail existente). Cada item é avisado uma vez por situação
 (`alerted_situation`, migration `20261108_0011_onboarding_alerts`); qualquer atualização do item
-zera esse controle. PENDENTE: agendar o cron no servidor/lab.
+zera esse controle.
+
+Agendamento: serviço `scheduler` do `compose.yaml` (`service/jobs/scheduler.sh`) roda o job ao
+subir e todo dia às 07:00 (America/Sao_Paulo). `CONNECT_JOB_HOST` (padrão `erp.connect.lab`) define
+o domínio dos links. Para ativar no lab: `docker compose up -d --build scheduler`. Em produção sem
+Docker, usar cron: `0 7 * * * CONNECT_JOB_HOST=<domínio do ERP> php service/jobs/onboarding-alerts.php`.
 
 ## PENDENTE
 

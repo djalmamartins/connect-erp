@@ -28,6 +28,27 @@ services:
       retries: 12
     networks: [connect]
     restart: unless-stopped
+  # Rotinas diárias (ADR 0013): avisos de vencimento do checklist de chegada às 07:00 (Brasília).
+  # Só grava notificações e mail_queue; o envio de e-mail continua com o worker de e-mail.
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command: ["sh", "service/jobs/scheduler.sh"]
+    environment:
+      TZ: America/Sao_Paulo
+      APP_ENV: ${APP_ENV:-local}
+      CONNECT_JOB_HOST: ${CONNECT_JOB_HOST:-erp.connect.lab}
+      MOVESOS_DB_HOST: legacy-db
+      MOVESOS_DB_PORT: 3306
+      MOVESOS_DB_NAME: ${LEGACY_DB_DATABASE:-connect_legacy}
+      MOVESOS_DB_USER: ${LEGACY_DB_USERNAME:-connect_legacy}
+      MOVESOS_DB_PASS: ${LEGACY_DB_PASSWORD:?Set LEGACY_DB_PASSWORD in .env}
+    volumes: ["./:/var/www/html"]
+    depends_on:
+      legacy-db: { condition: service_healthy }
+    networks: [connect]
+    restart: unless-stopped
   legacy-db:
     image: mariadb:11.8
     environment:

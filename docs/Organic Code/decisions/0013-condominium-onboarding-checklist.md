@@ -38,3 +38,6 @@ Spec: `docs/specs/modules/checklist-de-chegada.md`.
   (notifications + mail_queue); o envio continua no worker de e-mail.
 - Catálogo editável em `/erp/checklist/catalogo` (e `/api/v1/onboarding/templates`) com
   `erp.onboarding.catalog`.
+- Agendamento pelo serviço `scheduler` do compose (laço em shell até as 07:00 seguintes), sem
+  instalar cron na imagem. O job é idempotente por situação, então reinícios do container
+  não duplicam avisos.
