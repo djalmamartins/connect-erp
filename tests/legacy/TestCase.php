@@ -44,13 +44,31 @@ abstract class TestCase extends PHPUnitTestCase
         $defaults = [
             'first_name' => 'Usuário', 'last_name' => 'Teste',
             'email' => 'user' . bin2hex(random_bytes(4)) . '@test.local',
-            'document' => (string)random_int(10000000000, 99999999999),
+            // CPF válido: User::save() revalida o documento com is_document(), então um número
+            // aleatório faria qualquer teste que salve o usuário falhar por causa do fixture.
+            'document' => self::validCpf(),
             'password' => passwd('Senha@123'), 'level' => 1, 'status' => 'confirmed'
         ];
         $data = array_merge($defaults, $attributes);
         $statement = $this->pdo->prepare('INSERT INTO users (first_name,last_name,email,document,password,level,status) VALUES (:first_name,:last_name,:email,:document,:password,:level,:status)');
         $statement->execute($data);
         return (int)$this->pdo->lastInsertId();
+    }
+
+    /** CPF aleatório com dígitos verificadores corretos (somente dígitos). */
+    public static function validCpf(): string
+    {
+        do {
+            $digits = array_map(static fn(): int => random_int(0, 9), range(1, 9));
+        } while (count(array_unique($digits)) === 1);
+        foreach ([10, 11] as $weight) {
+            $sum = 0;
+            foreach ($digits as $index => $digit) {
+                $sum += $digit * ($weight - $index);
+            }
+            $digits[] = ($sum * 10) % 11 % 10;
+        }
+        return implode('', $digits);
     }
 
     /**

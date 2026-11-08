@@ -42,6 +42,16 @@ final class DocumentValidationTest extends TestCase
         self::assertSame($expected, is_document($document));
     }
 
+    public function testFixtureCpfGeneratorAlwaysProducesValidDocuments(): void
+    {
+        // TestCase::createUser() usa este gerador; User::save() rejeita CPF inválido.
+        for ($i = 0; $i < 200; $i++) {
+            $cpf = \MovesOSTests\TestCase::validCpf();
+            self::assertMatchesRegularExpression('/^\d{11}$/', $cpf);
+            self::assertTrue(is_document($cpf), "CPF gerado inválido: {$cpf}");
+        }
+    }
+
     public function testAgreesWithCondominiumCnpjValidator(): void
     {
         foreach (['11222333000181', '11444777000161', '11222333000182', '11222333000191', '00000000000000'] as $cnpj) {
