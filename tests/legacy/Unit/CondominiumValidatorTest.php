@@ -6,7 +6,9 @@ namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Source\Controllers\Erp\Connect\Panel;
 use Source\Core\View;
+use Source\Models\User;
 use Source\Services\CondominiumValidator;
 
 /** AP-004: validação do cadastro de condomínio, rotas e formulário (sem banco). */
@@ -119,18 +121,16 @@ final class CondominiumValidatorTest extends TestCase
 
     public function testFormRendersCsrfEscapedValuesAndFieldErrors(): void
     {
-        $user = new class {
-            public string $first_name = 'Ana';
-            public string $last_name = 'Teste';
-            public function can(string $permission): bool { return true; }
-        };
-        $html = (new View(moves_container_path('erp', 'connect') . '/'))->render('pages/condominiums/form', [
-            'head' => '', 'user' => $user, 'active' => 'condominiums',
+        $user = new User();
+        $user->id = 1;
+        $user->first_name = 'Ana';
+        $user->last_name = 'Teste';
+        $html = (new View(moves_container_path('erp', 'connect') . '/'))->render('pages/condominiums/form', (new Panel())->layoutData($user, 'AP-004', [
             'formTitle' => 'Editar condomínio', 'action' => '/erp/condominios/3/editar', 'cancel' => '/erp/condominios/3',
             'values' => ['name' => '"><script>x</script>', 'state' => 'RJ', 'status' => 'inactive'],
             'errors' => ['document' => 'CNPJ inválido.'],
             'states' => CondominiumValidator::STATES, 'statuses' => CondominiumValidator::STATUSES,
-        ]);
+        ], 'Teste'));
 
         self::assertStringContainsString("name='csrf'", $html);
         self::assertStringNotContainsString('<script>x</script>', $html);

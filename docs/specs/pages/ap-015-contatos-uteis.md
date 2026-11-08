@@ -31,3 +31,19 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0014)
+
+- **Situação:** implementado com MariaDB; campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/cadastros/contatos-uteis` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/useful-contacts`.
+- **Tabela:** `erp_useful_contacts` · **Escopo:** condomínio opcional (vazio = todos) · **Permissões:** `erp.contacts.view`, `erp.contacts.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Condomínio (`condominium_id`) | condominium | não |
+| Serviço (`service`) | select: Emergência, Encanador, Eletricista, Chaveiro, Dedetização, Gás, Concessionária, Outro | sim |
+| Nome (`name`) | text | sim |
+| Telefone (`phone`) | phone | sim |
+| E-mail (`email`) | email | não |
+| Observações (`notes`) | longtext | não |
+| Situação (`status`) | Ativo, Inativo | sim |
