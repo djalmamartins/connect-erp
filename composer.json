@@ -62,6 +62,7 @@
     "deploy:check": "@php service/commands/deploy-check.php",
     "migrate:content": "@php service/commands/migrate-legacy-content.php",
     "migrate:images": "@php service/commands/migrate-legacy-content.php --images-only",
+    "map": "python3 tools/code-map.py",
     "test": "@php tests/smoke.php",
     "test:legacy": "@php tests/legacy/run.php --colors=always",
     "test:unit": "@php tests/legacy/run.php --testsuite unit --colors=always",
