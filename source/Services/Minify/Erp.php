@@ -4,7 +4,7 @@
  * ERP v1 — publica o design system do tema (assets/css/erp.css e assets/js/erp.js) em
  * assets/erp.min.css e assets/erp.min.js com o MovesCode Compress.
  *
- * Diferente do bundle legado, não inclui jQuery, Highcharts nem plugins: o ERP v1 não usa
+ * Diferente do bundle legado, não inclui bibliotecas de terceiros nem plugins: o ERP v1 não usa
  * dependências de frontend. Só reconstrói em ambiente local quando um arquivo-fonte é mais
  * novo que o bundle, para não reescrever arquivos a cada requisição.
  */
