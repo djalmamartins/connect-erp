@@ -31,3 +31,21 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0014)
+
+- **Situação:** implementado com MariaDB; campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/cadastros/advogados` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/lawyers`.
+- **Tabela:** `erp_lawyers` · **Escopo:** administradora (todos os condomínios) · **Permissões:** `erp.lawyers.view`, `erp.lawyers.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Nome (`name`) | text | sim |
+| OAB (`oab`) | oab | sim |
+| CPF (`document`) | cpf | não |
+| Escritório (`firm`) | text | não |
+| E-mail (`email`) | email | não |
+| Telefone (`phone`) | phone | não |
+| Honorários (%) (`fee_percent`) | percent | não |
+| Observações (`notes`) | longtext | não |
+| Situação (`status`) | Ativo, Inativo | sim |

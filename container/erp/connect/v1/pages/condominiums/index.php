@@ -1,12 +1,12 @@
 <?php
 /**
- * Condomínios (AP-004) com dados reais, somente leitura (CondominiumScope).
+ * Condomínios (AP-004) com dados reais (CondominiumScope); cadastro em /condominios/novo (ADR 0011).
  * @var list<array{id:int,name:string,document:?string,status:string}> $condominiums
  */
 $this->layout('default');
 ob_start(); ?>
-    <button type="button" class="erp-btn erp-btn--primary" data-erp-pending="Cadastro pendente: os campos do condomínio aguardam a confirmação da ficha AP-004. Nada foi criado."><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</button>
-<?php $actions = (string)ob_get_clean();
+    <?php if ($user->can('erp.condominiums.manage')): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a><?php endif; ?>
+<?php $actions = trim((string)ob_get_clean());
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Condomínios',
     'pageTitle' => 'Condomínios',
@@ -14,14 +14,14 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
-<div class="erp-alert erp-alert--success" role="note"><?= $icon('shield') ?><div><strong>Dados reais, somente leitura</strong>A lista respeita o seu escopo de acesso. Cadastro e edição serão liberados com a ficha AP-004.</div></div>
 
 <?php if ($condominiums === []): ?>
     <section class="erp-card">
         <div class="erp-empty" role="status">
             <span class="erp-empty__icon"><?= $icon('building') ?></span>
             <h2>Nenhum condomínio disponível</h2>
-            <p>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.</p>
+            <p><?= $user->can('erp.condominiums.manage') ? 'Cadastre o primeiro condomínio para começar.' : 'Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.' ?></p>
+            <?php if ($user->can('erp.condominiums.manage')): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a><?php endif; ?>
         </div>
     </section>
 <?php else: ?>

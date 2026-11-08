@@ -44,25 +44,11 @@ services:
       retries: 15
     networks: [connect]
     restart: unless-stopped
-  db:
-    image: mariadb:11.8
-    ports: ["127.0.0.1:${CONNECT_DB_PORT:-3308}:3306"]
-    environment:
-      MARIADB_DATABASE: ${DB_DATABASE:-connect_erp}
-      MARIADB_USER: ${DB_USERNAME:-connect_erp}
-      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--transaction-isolation=READ-COMMITTED"]
-    volumes: ["connect_db_data:/var/lib/mysql"]
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-    networks: [connect]
-    restart: unless-stopped
+  # C5 (ADR 0012): banco único. O serviço "db" (connect_erp) foi removido; o app e a suíte
+  # de testes usam somente legacy-db (connect_legacy + banco *_test criado pelos testes).
 networks:
   connect: { driver: bridge }
 volumes:
+  # Volume do antigo serviço "db": mantido de propósito, sem uso. Não apagar sem backup e ADR.
   connect_db_data:
   connect_legacy_db_data:

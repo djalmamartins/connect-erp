@@ -7,7 +7,8 @@ $this->layout('default');
 $active = $condominium['status'] === 'active';
 ob_start(); ?>
     <a class="erp-btn" href="<?= erp_url('/condominios') ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Voltar</a>
-    <button type="button" class="erp-btn erp-btn--primary" data-erp-pending="Edição pendente: os campos do condomínio aguardam a confirmação da ficha AP-004. Nada foi alterado."><?= $icon('edit', 'erp-icon--sm') ?>Editar</button>
+    <a class="erp-btn" href="<?= erp_url('/condominios/' . (int)$condominium['id'] . '/checklist') ?>"><?= $icon('clipboard', 'erp-icon--sm') ?>Checklist de chegada</a>
+    <?php if ($user->can('erp.condominiums.manage')): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/' . (int)$condominium['id'] . '/editar') ?>"><?= $icon('edit', 'erp-icon--sm') ?>Editar</a><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Condomínio',
