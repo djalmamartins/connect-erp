@@ -356,6 +356,26 @@ components:
             condominium_name: { type: [string, "null"] }
             created_at: { type: string }
             updated_at: { type: string }
+    InvoiceTypesInput:
+      type: object
+      required: [name, chart_account_id, recurrence]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        name: { type: [string, "null"], maxLength: 80 }
+        chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
+        recurrence: { type: [string, "null"], enum: ['mensal', 'avulsa'] }
+        default_amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    InvoiceTypes:
+      allOf:
+        - $ref: '#/components/schemas/InvoiceTypesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
 paths:
   /units:
     get:
@@ -1165,4 +1185,62 @@ paths:
       responses:
         '204': { description: Excluído }
         '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /invoice-types:
+    get:
+      tags: ['Tipos de faturas']
+      summary: 'Lista tipos de faturas (permissão erp.invoice_types.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por recurrence', schema: { type: string, enum: ['mensal', 'avulsa'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/InvoiceTypes' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Tipos de faturas']
+      summary: 'Cadastra (permissão erp.invoice_types.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceTypesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/InvoiceTypes' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /invoice-types/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Tipos de faturas']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/InvoiceTypes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Tipos de faturas']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceTypesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/InvoiceTypes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Tipos de faturas']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceTypesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/InvoiceTypes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Tipos de faturas']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
         '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

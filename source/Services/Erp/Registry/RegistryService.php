@@ -147,6 +147,9 @@ final class RegistryService
             $errors = $this->unitRules($definition, $values);
         }
         if ($errors === []) {
+            $errors = $this->refRules($definition, $values);
+        }
+        if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
         if ($errors !== []) {
@@ -193,6 +196,19 @@ final class RegistryService
             $stmt->execute(['id' => $id]);
             if ((int)$stmt->fetchColumn() > 0) {
                 throw new RegistryInUse();
+            }
+        }
+        // Registro apontado por campo 'ref' de outro cadastro ativo também não sai (ADR 0020).
+        foreach (Definitions::all() as $other) {
+            foreach ($other['fields'] as $name => $field) {
+                if ($field['type'] !== 'ref' || ($field['ref'] ?? null) !== $slug) {
+                    continue;
+                }
+                $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$other['table']}` WHERE `{$name}` = :id AND deleted_at IS NULL");
+                $stmt->execute(['id' => $id]);
+                if ((int)$stmt->fetchColumn() > 0) {
+                    throw new RegistryInUse();
+                }
             }
         }
         // Conta com contas-filhas ativas (mesmo plano) não sai (ADR 0018).
@@ -270,6 +286,40 @@ final class RegistryService
         $in = implode(',', array_map('intval', $ids));
         $rows = $this->pdo->query("SELECT id, condominium_id, label FROM erp_units WHERE deleted_at IS NULL AND status = 'active' AND condominium_id IN ({$in}) ORDER BY condominium_id, label")->fetchAll(PDO::FETCH_ASSOC);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'condominium_id' => (int)$r['condominium_id'], 'label' => (string)$r['label']], $rows);
+    }
+
+    /**
+     * Opções dos campos 'ref' (ADR 0020): registros ativos do cadastro apontado, com os filtros
+     * 'ref_where', dentro do escopo do usuário (registros sem condomínio valem para todos).
+     *
+     * @return array<string, list<array{id:int,condominium_id:?int,label:string}>> por nome do campo
+     */
+    public function references(User $user, array $definition): array
+    {
+        $options = [];
+        foreach ($definition['fields'] as $name => $field) {
+            if ($field['type'] !== 'ref') {
+                continue;
+            }
+            $target = self::definition((string)$field['ref']);
+            [$where, $params] = $this->scopeWhere($user, $target);
+            $where[] = "t.status = 'active'";
+            foreach ($field['ref_where'] ?? [] as $column => $value) {
+                $where[] = "t.`{$column}` = :w_{$column}";
+                $params["w_{$column}"] = $value;
+            }
+            $labels = implode(', ', array_map(static fn (string $c): string => "t.`{$c}`", $field['ref_label'] ?? ['id']));
+            $condominium = $target['scope'] === 'none' ? 'NULL' : 't.condominium_id';
+            $stmt = $this->pdo->prepare("SELECT t.id, {$condominium} AS condominium_id, CONCAT_WS(' — ', {$labels}) AS label
+                FROM `{$target['table']}` t WHERE " . implode(' AND ', $where) . " ORDER BY t.`{$target['order']}`, t.id");
+            $stmt->execute($params);
+            $options[$name] = array_map(static fn (array $r): array => [
+                'id' => (int)$r['id'],
+                'condominium_id' => $r['condominium_id'] === null ? null : (int)$r['condominium_id'],
+                'label' => (string)$r['label'],
+            ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+        return $options;
     }
 
     /** O cadastro tem algum campo de unidade? (a tela só carrega a lista quando precisa) */
@@ -378,6 +428,47 @@ final class RegistryService
                 $stmt->execute(['c' => $condominium, 'l' => $values['unit_label']]);
                 $match = $stmt->fetchColumn();
                 $values[$name] = $match !== null && $match !== false ? (int)$match : null;
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * Campos 'ref' (ADR 0020): o registro apontado precisa existir ativo, atender aos filtros
+     * 'ref_where' e valer para o condomínio do registro (sem condomínio no apontado = vale para
+     * todos; registro sem condomínio só aponta para registros sem condomínio).
+     *
+     * @return array<string, string>
+     */
+    private function refRules(array $definition, array $values): array
+    {
+        $errors = [];
+        foreach ($definition['fields'] as $name => $field) {
+            if ($field['type'] !== 'ref' || $values[$name] === null) {
+                continue;
+            }
+            $target = self::definition((string)$field['ref']);
+            $columns = array_unique(array_merge(['status'], array_keys($field['ref_where'] ?? []), $target['scope'] === 'none' ? [] : ['condominium_id']));
+            $stmt = $this->pdo->prepare('SELECT ' . implode(', ', array_map(static fn (string $c): string => "`{$c}`", $columns))
+                . " FROM `{$target['table']}` WHERE id = :id AND deleted_at IS NULL");
+            $stmt->execute(['id' => $values[$name]]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $message = $field['ref_message'] ?? 'Escolha uma opção válida da lista.';
+            if (!is_array($row) || $row['status'] !== 'active') {
+                $errors[$name] = $message;
+                continue;
+            }
+            foreach ($field['ref_where'] ?? [] as $column => $expected) {
+                if ((string)$row[$column] !== (string)$expected) {
+                    $errors[$name] = $message;
+                    continue 2;
+                }
+            }
+            if ($target['scope'] !== 'none' && $row['condominium_id'] !== null) {
+                $own = $values['condominium_id'] ?? null;
+                if ($own === null || (int)$row['condominium_id'] !== (int)$own) {
+                    $errors[$name] = 'Esta opção pertence a outro condomínio.';
+                }
             }
         }
         return $errors;
@@ -505,7 +596,7 @@ final class RegistryService
             $out[$name] = match (true) {
                 $value === null => $field['type'] === 'bool' ? false : null,
                 $field['type'] === 'bool' => (bool)$value,
-                in_array($field['type'], ['condominium', 'unit', 'money', 'int'], true) => (int)$value,
+                in_array($field['type'], ['condominium', 'unit', 'ref', 'money', 'int'], true) => (int)$value,
                 $field['type'] === 'time' => substr((string)$value, 0, 5),
                 in_array($field['type'], ['percent', 'decimal'], true) => (float)$value,
                 default => (string)$value,

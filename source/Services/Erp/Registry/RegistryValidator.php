@@ -89,6 +89,10 @@ final class RegistryValidator
                 // Existência, escopo e condomínio da unidade são conferidos no RegistryService.
                 $id = filter_var($text, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
                 return $id === false ? [null, 'Selecione uma unidade.'] : [$id, null];
+            case 'ref':
+                // Registro de outro cadastro (ADR 0020); existência, filtros e escopo no RegistryService.
+                $id = filter_var($text, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                return $id === false ? [null, 'Selecione uma opção da lista.'] : [$id, null];
             case 'decimal':
                 $scale = (int)($field['scale'] ?? 2);
                 $normalized = str_replace([' ', ','], ['', '.'], $text);

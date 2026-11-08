@@ -58,6 +58,23 @@ $units ??= [];
                     </optgroup>
                 <?php endforeach; ?>
             </select>
+        <?php elseif ($field['type'] === 'ref'):
+            // Registro de outro cadastro (ADR 0020): padrão da Connect primeiro, depois por condomínio.
+            $condominiumNames = array_column($condominiums, 'name', 'id');
+            $refGroups = [];
+            foreach ($refOptions ?? [] as $refOption) {
+                $refGroups[$refOption['condominium_id'] === null ? 'padrao' : (int)$refOption['condominium_id']][] = $refOption;
+            } ?>
+            <select class="erp-select" id="<?= $id ?>" name="<?= $this->e($name) ?>"<?= $required . $disabled . $invalid ?>>
+                <option value=""><?= ($refOptions ?? []) === [] ? 'Nenhuma opção cadastrada' : 'Selecione' ?></option>
+                <?php foreach ($refGroups as $groupKey => $group): ?>
+                    <optgroup label="<?= $this->e($groupKey === 'padrao' ? 'Padrão da Connect' : (string)($condominiumNames[$groupKey] ?? ('Condomínio ' . $groupKey))) ?>">
+                        <?php foreach ($group as $refOption): ?>
+                            <option value="<?= (int)$refOption['id'] ?>"<?= (string)$refOption['id'] === $text ? ' selected' : '' ?>><?= $this->e($refOption['label']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                <?php endforeach; ?>
+            </select>
         <?php elseif ($field['type'] === 'longtext'): ?>
             <textarea class="erp-textarea" id="<?= $id ?>" name="<?= $this->e($name) ?>" maxlength="<?= (int)($field['max'] ?? 2000) ?>"<?= $required . $disabled . $invalid ?>><?= $this->e($text) ?></textarea>
         <?php else:

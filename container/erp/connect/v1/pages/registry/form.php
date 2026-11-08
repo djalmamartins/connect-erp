@@ -32,7 +32,7 @@ $this->insert('components/layout/page-head', [
             <?php foreach ($definition['fields'] as $name => $field) {
                 $this->insert('components/forms/registry-field', [
                     'field' => $field, 'value' => $values[$name] ?? null, 'error' => $errors[$name] ?? null,
-                    'condominiums' => $condominiums, 'units' => $units ?? [], 'readonly' => $readonly,
+                    'condominiums' => $condominiums, 'units' => $units ?? [], 'refOptions' => ($refs ?? [])[$name] ?? [], 'readonly' => $readonly,
                 ]);
             } ?>
             <?php $this->insert('components/forms/registry-field', [

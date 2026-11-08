@@ -179,6 +179,7 @@ final class Registry extends Controller
             'history' => $history,
             'condominiums' => $service->condominiums($user),
             'units' => RegistryService::hasUnitField($definition) ? $service->units($user) : [],
+            'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
         ]));
     }

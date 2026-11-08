@@ -22,7 +22,9 @@ namespace Source\Services\Erp\Registry;
  *
  * Tipos de campo: condominium, unit (FK erp_units do mesmo condomínio), text, longtext, cpf,
  * cnpj, document (CPF ou CNPJ), id_document (CPF ou RG/outro), email, phone, date,
- * money (centavos), percent, decimal (scale/min/max_value), bool, select, plate, oab.
+ * money (centavos), percent, decimal (scale/min/max_value), bool, select, plate, oab,
+ * ref (registro de outro cadastro: 'ref' => slug, 'ref_where' => filtros, 'ref_label' => colunas;
+ * ADR 0020 — quem é apontado não pode ser excluído enquanto houver registro ativo apontando).
  *
  * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
@@ -395,6 +397,27 @@ final class Definitions
                 'hierarchy' => ['field' => 'code', 'separator' => '.', 'parent_kind' => ['kind', 'sintetica'], 'same' => 'nature'],
                 'title' => 'name',
                 'order' => 'code',
+            ],
+            // Tipos de faturas (AP-168, ADR 0020): o que se cobra das unidades (taxa condominial,
+            // fundo de reserva, rateio extra) e em qual conta de receita isso entra.
+            'invoice_types' => [
+                'page' => 'AP-168', 'table' => 'erp_invoice_types', 'route' => '/configuracoes/tipos-de-faturas',
+                'api' => 'invoice-types', 'permission' => 'erp.invoice_types', 'label' => 'Tipos de faturas',
+                'entity' => 'tipo de fatura', 'gender' => 'o', 'scope' => 'optional', 'group' => 'configuracoes',
+                'lead' => 'O que é cobrado das unidades e a conta de receita de cada cobrança. Sem condomínio, o tipo vale para todos.',
+                'fields' => [
+                    'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: tipo padrão da Connect (todos os condomínios)'],
+                    'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Taxa condominial, Fundo de reserva'],
+                    'chart_account_id' => ['label' => 'Conta de receita', 'type' => 'ref', 'required' => true, 'span' => 6,
+                        'ref' => 'chart', 'ref_where' => ['kind' => 'analitica', 'nature' => 'receita'], 'ref_label' => ['code', 'name'],
+                        'ref_message' => 'Escolha uma conta analítica de receita ativa do plano de contas.',
+                        'hint' => 'Conta analítica de receita do plano de contas'],
+                    'recurrence' => ['label' => 'Recorrência', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['mensal' => 'Mensal', 'avulsa' => 'Avulsa']],
+                    'default_amount_cents' => ['label' => 'Valor padrão', 'type' => 'money', 'span' => 3, 'list' => true, 'hint' => 'Opcional'],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['condominium_id', 'name'], 'nullable' => ['condominium_id'], 'message' => 'Já existe um tipo de fatura com este nome neste plano.']],
+                'order' => 'name',
             ],
         ];
 
