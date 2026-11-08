@@ -31,3 +31,21 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0014)
+
+- **Situação:** implementado com MariaDB; campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/cadastros/visitantes` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/visitors`.
+- **Tabela:** `erp_visitors` · **Escopo:** condomínio obrigatório · **Permissões:** `erp.visitors.view`, `erp.visitors.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Condomínio (`condominium_id`) | condominium | sim |
+| Unidade visitada (`unit_label`) | text | sim |
+| Nome (`name`) | text | sim |
+| Documento (CPF ou RG) (`document`) | id_document | não |
+| Telefone (`phone`) | phone | não |
+| Acesso permanente (`permanent_access`) | bool | não |
+| Autorizado até (`valid_until`) | date | não |
+| Observações (`notes`) | longtext | não |
+| Situação (`status`) | Liberado, Bloqueado | sim |

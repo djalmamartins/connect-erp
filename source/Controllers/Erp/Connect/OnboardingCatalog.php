@@ -41,11 +41,9 @@ final class OnboardingCatalog extends Controller
                 $editing = null;
             }
         }
-        echo $this->view->render('pages/checklist/catalog', [
-            'head' => $this->seo->render('Catálogo do checklist de chegada | Connect ERP', 'Gestão condominial Connect', url('/erp'), themeErp('/assets/images/share.jpg'), false),
-            'user' => $user, 'active' => 'condominiums',
+        echo $this->view->render('pages/checklist/catalog', (new Panel())->layoutData($user, 'AP-004', [
             'templates' => $catalog->all(), 'editing' => $editing, 'creating' => isset($_GET['novo']),
-        ]);
+        ], 'Catálogo do checklist de chegada'));
     }
 
     public function create(): void
@@ -116,11 +114,9 @@ final class OnboardingCatalog extends Controller
         }
         if (!Access::can('erp.access', $user) || !Access::can('erp.onboarding.catalog', $user)) {
             http_response_code(403);
-            echo $this->view->render('pages/errors/state', [
-                'head' => $this->seo->render('Acesso negado | Connect ERP', 'Gestão condominial Connect', url('/erp'), themeErp('/assets/images/share.jpg'), false),
-                'user' => $user, 'active' => 'condominiums',
+            echo $this->view->render('pages/errors/state', (new Panel())->layoutData($user, 'AP-004', [
                 'title' => 'Acesso negado', 'description' => 'Você não tem permissão para configurar o catálogo do checklist.',
-            ]);
+            ], 'Acesso negado'));
             return null;
         }
         return $user;

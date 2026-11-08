@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Source\Controllers\Erp\Connect\Panel;
 use Source\Core\View;
+use Source\Models\User;
 
 /** Tela e rotas do checklist de chegada do condomínio (ADR 0013). */
 final class OnboardingChecklistViewTest extends TestCase
@@ -32,16 +34,15 @@ final class OnboardingChecklistViewTest extends TestCase
 
     public function testCatalogPageListsAndEditsWithEscaping(): void
     {
-        $user = new class {
-            public string $first_name = 'Ana';
-            public string $last_name = 'Teste';
-            public function can(string $permission): bool { return true; }
-        };
+        $user = new User();
+        $user->id = 1;
+        $user->first_name = 'Ana';
+        $user->last_name = 'Teste';
         $template = ['id' => 5, 'code' => 'avcb', 'category' => 'seguranca', 'title' => 'AVCB <i>x</i>', 'description' => null,
             'default_due_days' => 90, 'renewal_months' => null, 'position' => 10, 'active' => true, 'usage_count' => 3];
         $view = new View(moves_container_path('erp', 'connect') . '/');
-        $html = $view->render('pages/checklist/catalog', ['head' => '', 'user' => $user, 'active' => 'condominiums',
-            'templates' => [$template], 'editing' => $template, 'creating' => false]);
+        $html = $view->render('pages/checklist/catalog', (new Panel())->layoutData($user, 'AP-004', [
+            'templates' => [$template], 'editing' => $template, 'creating' => false], 'Catálogo'));
 
         self::assertStringContainsString('AVCB &lt;i&gt;x&lt;/i&gt;', $html);
         self::assertStringContainsString('Não vence', $html);
@@ -49,8 +50,8 @@ final class OnboardingChecklistViewTest extends TestCase
         self::assertStringContainsString('Usado em 3 condomínio(s)', $html);
         self::assertStringNotContainsString('name="code"', $html, 'Código não muda depois de criado.');
 
-        $new = $view->render('pages/checklist/catalog', ['head' => '', 'user' => $user, 'active' => 'condominiums',
-            'templates' => [], 'editing' => null, 'creating' => true]);
+        $new = $view->render('pages/checklist/catalog', (new Panel())->layoutData($user, 'AP-004', [
+            'templates' => [], 'editing' => null, 'creating' => true], 'Catálogo'));
         self::assertStringContainsString('name="code"', $new);
     }
 
@@ -110,19 +111,17 @@ final class OnboardingChecklistViewTest extends TestCase
 
     private function render(array $items, bool $canManage, int $editing = 0): string
     {
-        $user = new class {
-            public string $first_name = 'Ana';
-            public string $last_name = 'Teste';
-            public function can(string $permission): bool { return true; }
-        };
+        $user = new User();
+        $user->id = 1;
+        $user->first_name = 'Ana';
+        $user->last_name = 'Teste';
         $total = count($items);
         $view = new View(moves_container_path('erp', 'connect') . '/');
-        return $view->render('pages/condominiums/checklist', [
-            'head' => '', 'user' => $user, 'active' => 'condominiums',
+        return $view->render('pages/condominiums/checklist', (new Panel())->layoutData($user, 'AP-004', [
             'condominium' => ['id' => 4, 'name' => 'Residencial Aurora', 'document' => null, 'status' => 'active'],
             'items' => $items,
             'summary' => ['total' => $total, 'done' => 0, 'open' => 1, 'pending' => 0, 'attention' => 2, 'progress' => 0, 'by_situation' => []],
             'canManage' => $canManage, 'responsibles' => [['id' => 9, 'name' => 'Ana Teste']], 'editing' => $editing,
-        ]);
+        ], 'Teste'));
     }
 }

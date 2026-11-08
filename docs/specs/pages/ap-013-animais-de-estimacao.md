@@ -31,3 +31,22 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0014)
+
+- **Situação:** implementado com MariaDB; campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/cadastros/animais-de-estimacao` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/pets`.
+- **Tabela:** `erp_pets` · **Escopo:** condomínio obrigatório · **Permissões:** `erp.pets.view`, `erp.pets.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Condomínio (`condominium_id`) | condominium | sim |
+| Unidade (`unit_label`) | text | sim |
+| Nome (`name`) | text | sim |
+| Espécie (`species`) | select: Cão, Gato, Ave, Outro | sim |
+| Porte (`size`) | select: Pequeno, Médio, Grande | não |
+| Raça (`breed`) | text | não |
+| Tutor (`tutor_name`) | text | não |
+| Vacinação em dia (`vaccinated`) | bool | não |
+| Observações (`notes`) | longtext | não |
+| Situação (`status`) | Ativo, Inativo | sim |

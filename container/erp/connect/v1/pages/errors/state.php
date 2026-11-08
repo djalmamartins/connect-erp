@@ -1,9 +1,12 @@
 <?php
-/** Estados de acesso negado (403) e não encontrado (404) do ERP. @var string $title @var string $description */
+/** Estados de acesso negado (403) e não encontrado (404) de Condomínios. @var string $title @var string $description */
 $this->layout('default');
 ?>
-<section class="erp-state erp-state-error" role="alert">
-    <h1><?= $this->e($title) ?></h1>
-    <p><?= $this->e($description) ?></p>
-    <p><a href="<?= url('/erp/condominios') ?>">Voltar para Condomínios</a></p>
+<section class="erp-card" style="max-width:640px;margin:48px auto" role="alert">
+    <div class="erp-empty">
+        <span class="erp-empty__icon"><?= $icon('alert') ?></span>
+        <h1 style="font-size:18px"><?= $this->e($title) ?></h1>
+        <p><?= $this->e($description) ?></p>
+        <a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios') ?>">Voltar para Condomínios</a>
+    </div>
 </section>

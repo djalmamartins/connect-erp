@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Source\Controllers\Erp\Connect\Panel;
 use Source\Core\View;
+use Source\Models\User;
 
 /**
  * A1/A2: o ERP resolve para container/erp/connect/v1, segue o contrato de tema e
@@ -35,8 +37,10 @@ final class ErpThemeTest extends TestCase
         sort($php);
         self::assertSame(['default.php', 'routes.php'], $php);
         self::assertDirectoryDoesNotExist($root . '/layouts');
-        self::assertDirectoryDoesNotExist($root . '/assets/js', 'Sem js/ o Minify/Erp.php não roda a cada requisição.');
         self::assertFileExists($root . '/assets/css/erp.css');
+        self::assertFileExists($root . '/assets/js/erp.js');
+        // Minify/Erp.php só publica o design system do ERP (sem jQuery/Highcharts) e só quando a fonte muda.
+        self::assertStringNotContainsString('jquery', strtolower((string)file_get_contents(dirname(__DIR__, 3) . '/source/Services/Minify/Erp.php')));
     }
 
     public function testRoutesRegisterCondominiumModuleUnderErpGroup(): void
@@ -67,8 +71,8 @@ final class ErpThemeTest extends TestCase
         self::assertStringContainsString('/erp/condominios/7', $html);
         self::assertStringContainsString('aria-current="page"', $html);
 
-        $withoutPermission = $this->render('pages/condominiums/index', ['condominiums' => []], []);
-        self::assertStringNotContainsString('href="' . url('/erp/condominios') . '"', $withoutPermission);
+        $withoutPermission = $this->render('pages/condominiums/index', ['condominiums' => []], ['erp.access']);
+        self::assertStringNotContainsString('<a href="' . url('/erp/condominios') . '"', $withoutPermission, 'Sem erp.condominiums.view o item some do menu.');
     }
 
     public function testEmptyAndErrorStates(): void
@@ -92,15 +96,14 @@ final class ErpThemeTest extends TestCase
         self::assertSame('123', format_cnpj('123'));
     }
 
-    private function render(string $template, array $data, array $permissions = ['erp.condominiums.view']): string
+    private function render(string $template, array $data, array $permissions = ['erp.access', 'erp.condominiums.view']): string
     {
-        $user = new class($permissions) {
-            public string $first_name = 'Ana';
-            public string $last_name = 'Teste';
-            public function __construct(private array $permissions) {}
-            public function can(string $permission): bool { return in_array($permission, $this->permissions, true); }
+        // Mesma moldura das rotas: Panel::layoutData() monta sidebar, navbar e breadcrumbs.
+        $user = new class($permissions) extends User {
+            public function __construct(private array $granted) { parent::__construct(); $this->id = 1; $this->first_name = 'Ana'; $this->last_name = 'Teste'; $this->email = 'ana@example.invalid'; }
+            public function can(string $permission): bool { return in_array($permission, $this->granted, true); }
         };
-        $view = new View(moves_container_path('erp', 'connect') . '/');
-        return $view->render($template, array_merge(['head' => '', 'user' => $user, 'active' => 'condominiums'], $data));
+        $frame = (new Panel())->layoutData($user, 'AP-004', $data, 'Condomínios');
+        return (new View(moves_container_path('erp', 'connect') . '/'))->render($template, $frame);
     }
 }

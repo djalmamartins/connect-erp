@@ -160,12 +160,9 @@ final class CondominiumChecklist extends Controller
         ]));
     }
 
+    /** Moldura única do ERP (Panel::layoutData), com o menu ativo em Condomínios. */
     private function layoutData(User $user, string $title, array $data): array
     {
-        return array_merge([
-            'head' => $this->seo->render("{$title} | Connect ERP", 'Gestão condominial Connect', url('/erp'), themeErp('/assets/images/share.jpg'), false),
-            'user' => $user,
-            'active' => 'condominiums',
-        ], $data);
+        return (new Panel())->layoutData($user, 'AP-004', $data, $title);
     }
 }

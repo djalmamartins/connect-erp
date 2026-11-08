@@ -859,3 +859,25 @@ function movesos_version(): string
         return $version = (defined("VERSION_STUDIO") ? VERSION_STUDIO : "1.0.0");
     }
 }
+
+/**
+ * ERP em host próprio (erp.connect.lab, erp.<domínio>): no host do ERP as rotas ficam na
+ * raiz; nos demais hosts continuam em /erp. Use erp_url() em todo link do ERP.
+ */
+function erp_host(): bool
+{
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    return (bool)preg_match('/^erp\.[a-z0-9.-]+(?::\d+)?$/', $host);
+}
+
+function erp_base(): string
+{
+    return erp_host() ? '' : '/erp';
+}
+
+function erp_url(string $path = '/'): string
+{
+    $path = '/' . ltrim($path, '/');
+    $full = erp_base() . ($path === '/' && erp_base() !== '' ? '' : $path);
+    return url($full === '' ? '/' : $full);
+}
