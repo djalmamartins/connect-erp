@@ -89,6 +89,10 @@
    "title": "0023 — Limite de tentativas de login e 2FA por conta e por IP"
   },
   {
+   "file": "docs/Organic Code/decisions/0024-payables-receivables-bank-balances.md",
+   "title": "0024 — Contas a pagar e a receber (AP-022/023) como visões dos lançamentos e saldo por conta bancária"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -107,6 +111,18 @@
    "file": "source/Connect/Http/JsonResponse.php",
    "kind": "class",
    "layer": "Http",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\BankBalances": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\Erp\\BankBalances",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/BankBalances.php",
+   "kind": "class",
+   "layer": "Controllers",
    "tables": [],
    "tests": []
   },
@@ -1334,6 +1350,7 @@
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
+    "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
@@ -1400,6 +1417,7 @@
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
+    "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
@@ -1413,6 +1431,25 @@
    "tests": [
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/DocumentValidationTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\BankBalances": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope"
+   ],
+   "file": "source/Services/Erp/BankBalances.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_bank_accounts",
+    "condominiums",
+    "erp_entries"
+   ],
+   "tests": [
+    "tests/legacy/Integration/PayablesBalancesTest.php",
+    "tests/legacy/Unit/PayablesBalancesDefinitionTest.php"
    ]
   },
   "Source\\Services\\Erp\\DemoData": {
@@ -1457,6 +1494,7 @@
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
+    "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1493,6 +1531,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php"
    ]
   },
@@ -1517,6 +1556,7 @@
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
@@ -1533,6 +1573,7 @@
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
@@ -1550,6 +1591,7 @@
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
+    "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -2054,16 +2096,16 @@
   }
  },
  "counts": {
-  "adrs": 25,
-  "classes": 130,
+  "adrs": 26,
+  "classes": 132,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 199,
+  "routes": 200,
   "tables": 62,
-  "tests": 58
+  "tests": 60
  },
  "erp_pages": [
   {
@@ -3373,10 +3415,19 @@
    "verb": "PATCH"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\BankBalances",
+   "env": "index",
+   "file": "index.php",
+   "line": 51,
+   "method": "index",
+   "path": "/api/v1/bank-accounts/balances",
+   "verb": "GET"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 63,
+   "line": 67,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -3385,7 +3436,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 64,
+   "line": 68,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -3394,7 +3445,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 65,
+   "line": 69,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -3403,7 +3454,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 66,
+   "line": 70,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -3412,7 +3463,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 67,
+   "line": 71,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -3421,7 +3472,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 68,
+   "line": 72,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -3430,7 +3481,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 69,
+   "line": 73,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -3439,7 +3490,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 70,
+   "line": 74,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -3448,7 +3499,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 84,
+   "line": 88,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "GET"
@@ -3457,34 +3508,34 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 85,
+   "line": 89,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 86,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 87,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
    "line": 90,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 91,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 94,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -3493,7 +3544,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 91,
+   "line": 95,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -3502,7 +3553,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 92,
+   "line": 96,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3511,7 +3562,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 93,
+   "line": 97,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3520,7 +3571,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 105,
+   "line": 109,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -3529,7 +3580,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 107,
+   "line": 111,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -5178,6 +5229,7 @@
     "Source\\Controllers\\Erp\\Connect\\Registry",
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Inspections\\InspectionService",
     "Source\\Services\\OnboardingAlerts"
@@ -5194,6 +5246,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0504_bank_accounts.sql",
    "used_by": [
+    "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5238,6 +5291,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0506_entries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5718,6 +5772,14 @@
    "Source\\Services\\PasswordResetService",
    "Source\\Support\\PasswordResetToken"
   ],
+  "tests/legacy/Integration/PayablesBalancesTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\BankBalances",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
   "tests/legacy/Integration/RegistryServiceTest.php": [
    "Source\\Controllers\\Api\\V1\\Registry",
    "Source\\Models\\User",
@@ -5840,6 +5902,11 @@
   "tests/legacy/Unit/PasswordPolicyTest.php": [],
   "tests/legacy/Unit/PasswordResetTokenTest.php": [
    "Source\\Support\\PasswordResetToken"
+  ],
+  "tests/legacy/Unit/PayablesBalancesDefinitionTest.php": [
+   "Source\\Services\\Erp\\BankBalances",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
   "tests/legacy/Unit/RegistryValidatorTest.php": [
    "Source\\Services\\Erp\\Registry\\Definitions",

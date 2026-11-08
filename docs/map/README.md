@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**199** rotas fixas · **130** classes em `source/` · **62** tabelas nas migrations · **58** arquivos de teste · **25** ADRs · **172** páginas no catálogo do ERP.
+**200** rotas fixas · **132** classes em `source/` · **62** tabelas nas migrations · **60** arquivos de teste · **26** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -43,6 +43,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
+  Source_Controllers_Api_V1_BankBalances["Controllers/Api/V1/BankBalances"]
+  Source_Services_Erp_BankBalances["Services/Erp/BankBalances"]
+  Source_Controllers_Api_V1_BankBalances --> Source_Services_Erp_BankBalances
   Source_Controllers_Api_V1_CondominiumOnboarding["Controllers/Api/V1/CondominiumOnboarding"]
   Source_Services_CondominiumAccessDenied["Services/CondominiumAccessDenied"]
   Source_Controllers_Api_V1_CondominiumOnboarding --> Source_Services_CondominiumAccessDenied
@@ -147,9 +150,13 @@ flowchart LR
   Source_Services_CondominiumScope --> t_access_user_roles
   Source_Services_CondominiumScope --> t_condominiums
   Source_Services_CondominiumScope --> t_user_condominium_access
+  Source_Services_Erp_BankBalances --> t_condominiums
+  t_erp_bank_accounts[("erp_bank_accounts")]
+  Source_Services_Erp_BankBalances --> t_erp_bank_accounts
+  t_erp_entries[("erp_entries")]
+  Source_Services_Erp_BankBalances --> t_erp_entries
   t_erp_assets[("erp_assets")]
   Source_Services_Erp_Registry_Definitions --> t_erp_assets
-  t_erp_bank_accounts[("erp_bank_accounts")]
   Source_Services_Erp_Registry_Definitions --> t_erp_bank_accounts
   t_erp_board_members[("erp_board_members")]
   Source_Services_Erp_Registry_Definitions --> t_erp_board_members
@@ -161,7 +168,6 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_cost_centers
   t_erp_employees[("erp_employees")]
   Source_Services_Erp_Registry_Definitions --> t_erp_employees
-  t_erp_entries[("erp_entries")]
   Source_Services_Erp_Registry_Definitions --> t_erp_entries
   t_erp_invoice_types[("erp_invoice_types")]
   Source_Services_Erp_Registry_Definitions --> t_erp_invoice_types
@@ -306,7 +312,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>index</b> (29 rotas)</summary>
+<details><summary><b>index</b> (30 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -321,24 +327,25 @@ flowchart LR
 | GET | `/api/v1/onboarding/templates` | `Controllers/Api/V1/OnboardingTemplates::index` | [index.php:45](../../index.php#L45) |
 | POST | `/api/v1/onboarding/templates` | `Controllers/Api/V1/OnboardingTemplates::create` | [index.php:46](../../index.php#L46) |
 | PATCH | `/api/v1/onboarding/templates/{id}` | `Controllers/Api/V1/OnboardingTemplates::update` | [index.php:47](../../index.php#L47) |
-| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:63](../../index.php#L63) |
-| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:64](../../index.php#L64) |
-| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:65](../../index.php#L65) |
-| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:66](../../index.php#L66) |
-| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:67](../../index.php#L67) |
-| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:68](../../index.php#L68) |
-| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:69](../../index.php#L69) |
-| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:70](../../index.php#L70) |
-| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:84](../../index.php#L84) |
-| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:85](../../index.php#L85) |
-| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:86](../../index.php#L86) |
-| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:87](../../index.php#L87) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:90](../../index.php#L90) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:91](../../index.php#L91) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:92](../../index.php#L92) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:93](../../index.php#L93) |
-| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:105](../../index.php#L105) |
-| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:107](../../index.php#L107) |
+| GET | `/api/v1/bank-accounts/balances` | `Controllers/Api/V1/BankBalances::index` | [index.php:51](../../index.php#L51) |
+| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:67](../../index.php#L67) |
+| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:68](../../index.php#L68) |
+| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:69](../../index.php#L69) |
+| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:70](../../index.php#L70) |
+| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:71](../../index.php#L71) |
+| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:72](../../index.php#L72) |
+| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:73](../../index.php#L73) |
+| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:74](../../index.php#L74) |
+| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:88](../../index.php#L88) |
+| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:89](../../index.php#L89) |
+| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:90](../../index.php#L90) |
+| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:91](../../index.php#L91) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:94](../../index.php#L94) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:95](../../index.php#L95) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:96](../../index.php#L96) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:97](../../index.php#L97) |
+| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:109](../../index.php#L109) |
+| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:111](../../index.php#L111) |
 
 </details>
 
@@ -475,15 +482,15 @@ flowchart LR
 | `brief` | `20260815_brief_testimonials.sql` | `20260816_branding_testimonial_rating.sql` | `Models/Brief/AppBrief` |
 | `condominium_geolocations` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `condominium_onboarding_items` | `20261108_0010_condominium_onboarding.sql` | `20261108_0011_onboarding_alerts.sql` | `Services/OnboardingAlerts`, `Services/OnboardingCatalog`, `Services/OnboardingChecklist` |
-| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts` |
+| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/BankBalances`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts` |
 | `erp_assets` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_bank_accounts` | `20261108_0504_bank_accounts.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_bank_accounts` | `20261108_0504_bank_accounts.sql` | — | `Services/Erp/BankBalances`, `Services/Erp/Registry/Definitions` |
 | `erp_board_members` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_chart_accounts` | `20261108_0405_chart_of_accounts.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_common_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_cost_centers` | `20261108_0503_cost_centers.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_employees` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_entries` | `20261108_0506_entries.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_entries` | `20261108_0506_entries.sql` | — | `Services/Erp/BankBalances`, `Services/Erp/Registry/Definitions` |
 | `erp_invoice_types` | `20261108_0501_invoice_types.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_lawyers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_linkable_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | `20261108_0404_linkable_area_units.sql` | `Services/Erp/Registry/Definitions` |
@@ -530,10 +537,11 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (38)</summary>
+<details><summary><b>Controllers</b> (39)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
+| [`Controllers/Api/V1/BankBalances`](../../source/Controllers/Api/V1/BankBalances.php) | Auth, BankBalances, Access | — | — |
 | [`Controllers/Api/V1/CondominiumOnboarding`](../../source/Controllers/Api/V1/CondominiumOnboarding.php) | Auth, User, CondominiumAccessDenied, CondominiumScope, OnboardingChecklist, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
 | [`Controllers/Api/V1/Condominiums`](../../source/Controllers/Api/V1/Condominiums.php) | Auth, CondominiumAccessDenied, CondominiumScope, Access | — | — |
 | [`Controllers/Api/V1/Inspections`](../../source/Controllers/Api/V1/Inspections.php) | Auth, User, InspectionError, InspectionService | — | — |
@@ -635,26 +643,27 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 17 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 18 |
 
 </details>
 
-<details><summary><b>Services</b> (27)</summary>
+<details><summary><b>Services</b> (28)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 2 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 11 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 12 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
+| [`Services/Erp/BankBalances`](../../source/Services/Erp/BankBalances.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_entries | 2 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 8 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 9 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 5 |
-| [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 1 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_units, pages, system_audit_logs | 7 |
-| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 6 |
-| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 6 |
+| [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 2 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_units, pages, system_audit_logs | 8 |
+| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 7 |
+| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 7 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |
 | [`Services/Inspections/Geo`](../../source/Services/Inspections/Geo.php) | — | — | 1 |
 | [`Services/Inspections/InspectionError`](../../source/Services/Inspections/InspectionError.php) | — | — | 3 |
@@ -730,6 +739,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0021 — Centros de custo (CN-002) e contas bancárias (CN-003)](../../docs/Organic%20Code/decisions/0021-cost-centers-and-bank-accounts.md)
 - [0022 — Lançamentos (AP-020): receitas e despesas por condomínio](../../docs/Organic%20Code/decisions/0022-financial-entries.md)
 - [0023 — Limite de tentativas de login e 2FA por conta e por IP](../../docs/Organic%20Code/decisions/0023-login-throttle-account-ip.md)
+- [0024 — Contas a pagar e a receber (AP-022/023) como visões dos lançamentos e saldo por conta bancária](../../docs/Organic%20Code/decisions/0024-payables-receivables-bank-balances.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
