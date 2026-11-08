@@ -1,0 +1,76 @@
+-- Áreas comuns (AP-008), áreas vinculáveis (AP-007) e patrimônio (AP-019) do módulo Condomínios.
+-- Motor de cadastros (ADR 0014/0015); escopo por condomínio; exclusão lógica em deleted_at.
+
+CREATE TABLE IF NOT EXISTS `erp_common_areas` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `booking_mode` enum('approval','free','blocked','none') NOT NULL,
+  `capacity` int unsigned DEFAULT NULL,
+  `booking_fee_cents` bigint unsigned DEFAULT NULL,
+  `min_advance_days` smallint unsigned DEFAULT NULL,
+  `max_advance_days` smallint unsigned DEFAULT NULL,
+  `opening_time` time DEFAULT NULL,
+  `closing_time` time DEFAULT NULL,
+  `rules` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_common_areas_condominium` (`condominium_id`, `deleted_at`, `status`),
+  CONSTRAINT `fk_erp_common_areas_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_common_areas_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_common_areas_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_linkable_areas` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `kind` varchar(10) NOT NULL,
+  `identifier` varchar(40) NOT NULL,
+  `unit_label` varchar(40) DEFAULT NULL COMMENT 'Unidade em texto até o módulo Unidades (AP-006)',
+  `location` varchar(120) DEFAULT NULL,
+  `fraction` decimal(5,2) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_linkable_areas_condominium` (`condominium_id`, `deleted_at`, `status`),
+  CONSTRAINT `fk_erp_linkable_areas_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_linkable_areas_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_linkable_areas_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_assets` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `description` varchar(160) NOT NULL,
+  `asset_number` varchar(30) DEFAULT NULL,
+  `category` varchar(15) NOT NULL,
+  `condition` varchar(12) NOT NULL,
+  `acquired_on` date DEFAULT NULL,
+  `value_cents` bigint unsigned DEFAULT NULL,
+  `location` varchar(120) DEFAULT NULL,
+  `supplier_name` varchar(160) DEFAULT NULL,
+  `invoice_number` varchar(30) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_assets_condominium` (`condominium_id`, `deleted_at`, `status`),
+  KEY `idx_erp_assets_number` (`asset_number`),
+  CONSTRAINT `fk_erp_assets_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_assets_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_assets_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -31,3 +31,23 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação Connect ERP (08/11/2026, ADR 0018)
+
+- **Situação:** implementado com MariaDB pelo motor de cadastros (ADR 0014); campos PROPOSTOS, aguardam confirmação.
+- **Tela:** `/erp/condominios/patrimonio` (lista, `/novo`, `/{id}`, exclusão lógica). **API:** `/api/v1/assets`.
+- **Tabela:** `erp_assets` · **Escopo:** condomínio obrigatório · **Permissões:** `erp.assets.view`, `erp.assets.manage`.
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| Condomínio (`condominium_id`) | condominium | sim |
+| Descrição (`description`) | text | sim |
+| Número de patrimônio (`asset_number`) | text | não |
+| Categoria (`category`) | select: Mobiliário, Equipamento, Eletrônico, Ferramenta, Segurança, Lazer, Outro | sim |
+| Estado (`condition`) | select: Bom, Regular, Em manutenção, Inservível | sim |
+| Data de aquisição (`acquired_on`) | date | não |
+| Valor de aquisição (`value_cents`) | money | não |
+| Localização (`location`) | text | não |
+| Fornecedor (`supplier_name`) | text | não |
+| Nota fiscal nº (`invoice_number`) | text | não |
+| Observações (`notes`) | longtext | não |

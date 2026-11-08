@@ -1,7 +1,7 @@
 <?php
 /**
  * Listagem de um cadastro real (RegistryService → MariaDB), com filtros e paginação no
- * servidor. Mesmo template para todos os cadastros do grupo Cadastros.
+ * servidor. Mesmo template para todos os cadastros do motor (ADR 0014/0015).
  * @var array $definition @var array $result @var array $filters @var ?string $filterField
  * @var list<array> $condominiums @var bool $canManage @var ?\Source\Support\Message $flash
  */

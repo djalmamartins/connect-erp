@@ -185,7 +185,7 @@ foreach ($catalog['pages'] as $id => $page) {
         $common($html, $id, 'Condomínios');
         $assert(str_contains($html, '&lt;b&gt;Residencial') && str_contains($html, '12.345.678/0001-95') && str_contains($html, $erpRoot . '/condominios/7'), 'AP-004: dados reais escapados e com link de detalhe');
         $show = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive']], 'Edifício Exemplo'));
-        $assert(str_contains($show, 'Inativo') && str_contains($show, 'role="tablist"') && str_contains($show, '<a href="' . $erpRoot . '/condominios">Condomínios</a>'), 'AP-004: detalhe com abas e trilha de volta');
+        $assert(str_contains($show, 'Inativo') && str_contains($show, 'Cadastros do condomínio') && str_contains($show, '<a href="' . $erpRoot . '/condominios">Condomínios</a>'), 'AP-004: detalhe com cadastros vinculados e trilha de volta');
         $user->granted = ['erp.access'];
         $denied = $render('pages/condominiums/index', $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => []], 'Condomínios'));
         $assert(!str_contains($denied, '<a href="' . $erpRoot . '/condominios"'), 'sem erp.condominiums.view: item some do menu');

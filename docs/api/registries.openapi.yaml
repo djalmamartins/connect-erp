@@ -265,6 +265,76 @@ components:
             condominium_name: { type: [string, "null"] }
             created_at: { type: string }
             updated_at: { type: string }
+    CommonAreasInput:
+      type: object
+      required: [condominium_id, name, booking_mode]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        name: { type: [string, "null"], maxLength: 120 }
+        booking_mode: { type: [string, "null"], enum: ['approval', 'free', 'blocked', 'none'] }
+        capacity: { type: [integer, "null"], minimum: 1, maximum: 10000 }
+        booking_fee_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        min_advance_days: { type: [integer, "null"], minimum: 0, maximum: 365 }
+        max_advance_days: { type: [integer, "null"], minimum: 0, maximum: 730 }
+        opening_time: { type: [string, "null"], pattern: "^\\d{2}:\\d{2}$", examples: ["08:00"] }
+        closing_time: { type: [string, "null"], pattern: "^\\d{2}:\\d{2}$", examples: ["08:00"] }
+        rules: { type: [string, "null"], maxLength: 4000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    CommonAreas:
+      allOf:
+        - $ref: '#/components/schemas/CommonAreasInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    LinkableAreasInput:
+      type: object
+      required: [condominium_id, kind, identifier]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        kind: { type: [string, "null"], enum: ['vaga', 'deposito', 'box', 'outro'] }
+        identifier: { type: [string, "null"], maxLength: 40 }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        location: { type: [string, "null"], maxLength: 120 }
+        fraction: { type: [number, "null"], minimum: 0, maximum: 100 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    LinkableAreas:
+      allOf:
+        - $ref: '#/components/schemas/LinkableAreasInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    AssetsInput:
+      type: object
+      required: [condominium_id, description, category, condition]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        description: { type: [string, "null"], maxLength: 160 }
+        asset_number: { type: [string, "null"], maxLength: 30 }
+        category: { type: [string, "null"], enum: ['mobiliario', 'equipamento', 'eletronico', 'ferramenta', 'seguranca', 'lazer', 'outro'] }
+        condition: { type: [string, "null"], enum: ['bom', 'regular', 'manutencao', 'inservivel'] }
+        acquired_on: { type: [string, "null"], format: date }
+        value_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        location: { type: [string, "null"], maxLength: 120 }
+        supplier_name: { type: [string, "null"], maxLength: 160 }
+        invoice_number: { type: [string, "null"], maxLength: 30 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Assets:
+      allOf:
+        - $ref: '#/components/schemas/AssetsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
 paths:
   /units:
     get:
@@ -837,6 +907,180 @@ paths:
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     delete:
       tags: ['Contatos úteis']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /common-areas:
+    get:
+      tags: ['Áreas comuns']
+      summary: 'Lista áreas comuns (permissão erp.common_areas.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por booking_mode', schema: { type: string, enum: ['approval', 'free', 'blocked', 'none'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/CommonAreas' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Áreas comuns']
+      summary: 'Cadastra (permissão erp.common_areas.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CommonAreasInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/CommonAreas' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /common-areas/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Áreas comuns']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/CommonAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Áreas comuns']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CommonAreasInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/CommonAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Áreas comuns']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CommonAreasInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/CommonAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Áreas comuns']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /linkable-areas:
+    get:
+      tags: ['Áreas vinculáveis']
+      summary: 'Lista áreas vinculáveis (permissão erp.linkable_areas.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['vaga', 'deposito', 'box', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/LinkableAreas' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Áreas vinculáveis']
+      summary: 'Cadastra (permissão erp.linkable_areas.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LinkableAreasInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/LinkableAreas' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /linkable-areas/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Áreas vinculáveis']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/LinkableAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Áreas vinculáveis']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LinkableAreasInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/LinkableAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Áreas vinculáveis']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LinkableAreasInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/LinkableAreas' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Áreas vinculáveis']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /assets:
+    get:
+      tags: ['Patrimônio']
+      summary: 'Lista patrimônio (permissão erp.assets.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por category', schema: { type: string, enum: ['mobiliario', 'equipamento', 'eletronico', 'ferramenta', 'seguranca', 'lazer', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Assets' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Patrimônio']
+      summary: 'Cadastra (permissão erp.assets.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AssetsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Assets' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /assets/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Patrimônio']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Assets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Patrimônio']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AssetsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Assets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Patrimônio']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AssetsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Assets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Patrimônio']
       summary: Exclusão lógica (o histórico de auditoria é mantido)
       security: [{ session: [], csrf: [] }]
       responses:

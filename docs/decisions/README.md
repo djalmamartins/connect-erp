@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0018.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0019.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -42,3 +42,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0015](../Organic%20Code/decisions/0015-inspections-gps-photos.md) | Vistoria presencial: check-in por GPS, fotos privadas e relatório |
 | [0016](../Organic%20Code/decisions/0016-code-map-and-watchdog.md) | Mapa do código (`docs/map/`) e vigia de 30 minutos com issues como fila |
 | [0017](../Organic%20Code/decisions/0017-units-and-unit-links.md) | Unidades (AP-006) e troca de `unit_label` por `unit_id` |
+| [0018](../Organic%20Code/decisions/0018-condominium-areas-assets.md) | Áreas comuns, áreas vinculáveis e patrimônio pelo motor de cadastros |
