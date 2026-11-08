@@ -4,25 +4,24 @@ Camada única de componentes do ERP: `container/erp/connect/v1/assets/css/erp.cs
 
 ## Referência
 
-- **Estrutura**: padrão do Realizze Empresa (shell com sidebar e navbar, menus agrupados em `<details>`, cabeçalho de página com ações, cards, tabelas em região rolável, estados vazios honestos). Nada da marca, dos textos ou dos dados do Realizze foi copiado.
-- **Identidade**: a do Studio (ADR-003: neutros, Gotham, sidebar clara, raios e sombras), com o **dourado Connect** como cor principal no lugar do roxo do Studio. Decisão de Djalma em 2026-11-07.
+- **Visual**: igual ao Realizze PJ (contexto Empresa do App Realizze): sidebar verde profunda sobre canvas verde-claro, Inter, menus agrupados em `<details>`, cards suaves, tabelas em região rolável, estados vazios honestos. Decisão de Djalma em 2026-11-08, que substitui a identidade do Studio com dourado (2026-11-07).
+- **Marca**: o logotipo do site da Connect, o mesmo do cabeçalho da web (`site_logo_url()`, que usa o logo das configurações e cai em `logo-connect-condominios.svg`), em branco sobre a sidebar. Nada da marca, dos textos ou dos dados do Realizze foi copiado.
+- **Login**: continua a tela do Studio, que Djalma pediu para reaproveitar.
 
 ## Tokens
 
 | Grupo | Tokens |
 |---|---|
-| Marca (dourado) | `--erp-brand` `#c9a227` (fundos), `--erp-brand-strong` `#a8841a` (hover), `--erp-brand-soft` `#fbf5e3`, `--erp-brand-line`, `--erp-brand-ink` `#7d6210` (texto dourado sobre branco), `--erp-on-brand` `#172038` (texto sobre o dourado), `--erp-ring` |
-| Sidebar | `--erp-sidebar` branco, `--erp-sidebar-ink` `#69717e`, `--erp-sidebar-muted`, `--erp-sidebar-hover`, `--erp-sidebar-active` (= brand-soft) |
-| Superfícies | `--erp-canvas` `#f7f8fa`, `--erp-surface`, `--erp-surface-muted`, `--erp-border` `#e7e9ee`, `--erp-border-strong` |
-| Texto | `--erp-text` `#172038`, `--erp-muted` `#74809a`, `--erp-faint` |
-| Estados | `--erp-success`, `--erp-warning`, `--erp-danger`, `--erp-info`, `--erp-neutral` (+ `-soft`), mesmos valores do Studio |
+| Marca | `--erp-brand` `#07884c`, `--erp-brand-strong` `#066f3e`, `--erp-brand-soft` `#eaf7ef`, `--erp-brand-line`, `--erp-brand-ink`, `--erp-on-brand` branco, `--erp-ring`; `--erp-accent` `#c5a131` (dourado Connect, só em detalhes) |
+| Sidebar | `--erp-sidebar` `#0d2e27`, `--erp-sidebar-ink` `#d5e4dc`, `--erp-sidebar-muted` `#8fb0a2`, `--erp-sidebar-strong` branco, `--erp-sidebar-accent` `#7fe8b6`, `--erp-sidebar-hover`, `--erp-sidebar-active`, `--erp-sidebar-line` |
+| Superfícies | `--erp-canvas` `#eef8f2`, `--erp-surface`, `--erp-surface-muted`, `--erp-border` `#dfe8e3`, `--erp-border-strong` |
+| Texto | `--erp-text` `#121a31`, `--erp-muted` `#65746d`, `--erp-faint` |
+| Estados | `--erp-success`, `--erp-warning`, `--erp-danger`, `--erp-info`, `--erp-neutral` (+ `-soft`) |
 | Espaço | `--erp-space-1` … `--erp-space-8` (4 a 40 px) |
-| Forma | `--erp-radius-sm` 7, `-md` 10, `-lg` 14, `-pill` |
+| Forma | `--erp-radius-sm` 8, `-md` 11, `-lg` 15, `-pill` |
 | Elevação | `--erp-shadow-card`, `--erp-shadow-raised`, `--erp-shadow-modal` |
 
-Contraste: texto branco sobre o dourado não passa no AA, por isso botões e itens dourados usam `--erp-on-brand` (azul-marinho do Studio) e textos dourados usam `--erp-brand-ink`.
-
-Tipografia: Gotham (fontes em `container/shared/assets/organic/fonts`) com fallback Inter/sistema, base 14 px; título de página 24 px (21 px no celular), título de card 16 px, rótulos 12–13 px. Números com `tabular-nums`.
+Tipografia: Inter com fallback de sistema, base 14 px; título de página 24 px (21 px no celular), título de card 16 px, rótulos 12–13 px. Números com `tabular-nums`.
 
 Breakpoints: 1100 px (grades reduzem), 900 px (sidebar vira gaveta, pesquisa some), 640 px (uma coluna, ações em largura total).
 

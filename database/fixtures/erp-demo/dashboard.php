@@ -23,10 +23,10 @@ return [
         'unit' => 'R$ mil',
     ],
     'delinquencyByAge' => [
-        ['label' => 'Até 30 dias', 'value' => 46, 'color' => '#c9a227'],
-        ['label' => '31 a 90 dias', 'value' => 28, 'color' => '#5b6680'],
+        ['label' => 'Até 30 dias', 'value' => 46, 'color' => '#07884c'],
+        ['label' => '31 a 90 dias', 'value' => 28, 'color' => '#c5a131'],
         ['label' => '91 a 180 dias', 'value' => 15, 'color' => '#d97a2b'],
-        ['label' => 'Acima de 180 dias', 'value' => 11, 'color' => '#bd3042'],
+        ['label' => 'Acima de 180 dias', 'value' => 11, 'color' => '#d92d36'],
     ],
     'alerts' => [
         ['tone' => 'danger', 'title' => '4 contas a pagar vencidas', 'text' => 'Residencial Jardim das Acácias e mais 2 condomínios', 'href' => '/erp/financeiro/contas-a-pagar'],

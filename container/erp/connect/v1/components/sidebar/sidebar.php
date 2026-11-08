@@ -20,7 +20,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
 <aside class="erp-sidebar" id="erp-sidebar" aria-label="Navegação do ERP">
     <div class="erp-sidebar__head">
         <a class="erp-brand" href="<?= url('/erp/dashboard') ?>" aria-label="Connect ERP — início">
-            <img class="erp-brand__logo" src="<?= theme('/assets/images/logo-connect-condominios.svg') ?>" alt="Connect Condomínios" width="150" height="40">
+            <img class="erp-brand__logo" src="<?= $this->e(function_exists('site_logo_url') ? site_logo_url() : theme('/assets/images/logo-connect-condominios.svg')) ?>" alt="Connect Condomínios" width="152" height="40">
             <img class="erp-brand__mark" src="<?= theme('/assets/images/marca_connect.svg') ?>" alt="" width="34" height="34">
         </a>
         <button type="button" class="erp-sidebar__collapse" data-erp-collapse aria-label="Recolher menu" aria-controls="erp-sidebar" aria-expanded="true"><?= $icon('chevron-left') ?></button>
