@@ -31,7 +31,7 @@ Revisão por leitura de código; os testes de integração dependem do banco (ro
 4. **Reset de 2FA por administrador** (`security.2fa.manage`): permissão criada, tela ainda não implementada. Até lá, reset é manual e deve ser auditado.
 5. **Rate limit por sessão**: `request_limit` usa a sessão; um atacante com a senha pode abrir novas sessões. O limite por desafio (5) também é por sessão. Próximo passo: limitador por usuário/IP no banco.
 6. **QR code**: não há gerador de QR no projeto; o cadastro usa chave manual e link `otpauth://`. Fica para o design system (`claude-layout`).
-7. **Controller ERP legado** (`Controllers/Erp/Connect/Erp.php`) aceita `condominium_id` sem checar escopo e cai no condomínio `0001`. Não está roteado hoje; será substituído pelo módulo Condomínios. Não rotear sem corrigir.
+7. **Controller ERP legado** (`Controllers/Erp/Connect/Erp.php`): ~~aceita `condominium_id` sem checar escopo e cai no condomínio `0001`~~. **Corrigido em 08/11/2026** (issue #7): `Erp::resolveCondominium` só aceita o id pedido ou o salvo em `session_condo` quando `CondominiumScope::canAccess` permite; fora do escopo, id inválido ou erro na consulta limpam `authCondo` em vez de usar um condomínio padrão. `ErpLegacyCondominiumScopeTest` cobre os casos. O controller continua sem rota e será substituído pelo módulo Condomínios.
 
 ## Testes
 
