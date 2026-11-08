@@ -21,8 +21,10 @@ catálogo com dados de demonstração. As fichas do APControle não confirmam ca
   super_admin.
 - O motor ganhou os tipos `int` (com `min`/`max_value`) e `time` (HH:MM) e a regra
   `not_below` (um campo numérico não pode ser menor que outro).
-- Área vinculável aponta a unidade em texto (`unit_label`). A troca por `unit_id` (ADR 0017)
-  precisa de migration posterior à 0401, que cria `erp_units`; fica PENDENTE.
+- Área vinculável aponta a unidade cadastrada (`unit_id`, ADR 0017) pela migration
+  `20261108_0404`, numerada depois da 0401 que cria `erp_units`. Vaga livre fica sem unidade;
+  `unit_label` continua gravado durante a transição, e a unidade com vaga vinculada não pode
+  ser excluída.
 - Patrimônio usa a situação "Em uso / Baixado": bem baixado continua no histórico.
 
 ## INFERIDO / PENDENTE

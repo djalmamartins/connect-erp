@@ -296,6 +296,7 @@ components:
         condominium_id: { type: [integer, "null"], minimum: 1 }
         kind: { type: [string, "null"], enum: ['vaga', 'deposito', 'box', 'outro'] }
         identifier: { type: [string, "null"], maxLength: 40 }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
         location: { type: [string, "null"], maxLength: 120 }
         fraction: { type: [number, "null"], minimum: 0, maximum: 100 }

@@ -43,7 +43,8 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 | Condomínio (`condominium_id`) | condominium | sim |
 | Tipo (`kind`) | select: Vaga de garagem, Depósito, Box, Outro | sim |
 | Identificação (`identifier`) | text | sim |
-| Unidade vinculada (`unit_label`) | text | não |
+| Unidade vinculada (`unit_id`) | unit | não |
+| Unidade vinculada (texto) (`unit_label`) | text | não |
 | Localização (`location`) | text | não |
 | Fração ideal (%) (`fraction`) | percent | não |
 | Observações (`notes`) | longtext | não |
