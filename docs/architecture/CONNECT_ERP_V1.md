@@ -112,7 +112,7 @@ connect/
 | `tests/` | `tests/legacy/` + `smoke.php` | OK |
 | `tools/` | Existe; `setup.py` ausente | OK |
 | `docker/` | `docker/app/` | OK |
-| MariaDB | 11.8 nos dois serviços | OK (C5 sobre qual banco). |
+| MariaDB | 11.8 nos dois serviços | OK. C5 resolvido em 2026-11-08: banco único `legacy-db` (ADR 0010). |
 
 ## 4. Conflitos encontrados
 
@@ -149,11 +149,16 @@ existe. Adaptação: A4. Resolvido em 2026-11-07 por A4 (ADR 0008) para `Auth::f
 estendem as tabelas existentes (`users`, `access_*`), então pertencem ao mesmo banco da
 aplicação. Decisão: um único banco (`legacy-db`) para o núcleo e o ERP; o serviço `db`
 fica sem uso até uma decisão explícita de removê-lo (não removido agora).
+**Resolvido em 2026-11-08** (ADR 0010, aprovado pelo Djalma): o serviço `db` saiu do
+`compose.yaml`, o volume `connect_db_data` foi preservado e os testes usam `movesos_test`
+no `legacy-db`.
 
 **C6. Esqueleto `source/Connect/` paralelo ao núcleo.** `Connect\Infrastructure\DatabaseConnection`
 e `Connect\Http\HealthController` duplicam `Source\Core\Connect` e o `/health` inline do
 `index.php`; só `tests/smoke.php` os usa. `Connect\Http\JsonResponse` é usado pela API.
-Adaptação: A5.
+Adaptação: A5. **Resolvido em 2026-11-08** (aprovado pelo Djalma): `tests/smoke.php` usa o
+autoload real, e `HealthController`, `DatabaseConnection` e `Support/bootstrap.php` foram
+removidos. Fica só `Connect\Http\JsonResponse`.
 
 **C7. Docroot é a raiz do projeto.** O vhost publica a raiz e protege as pastas por
 `.htaccess`; `public/` é só um repasse. Funciona, mas depende do `.htaccess` para não
@@ -216,6 +221,7 @@ Nenhuma delas foi aplicada nesta execução. Ordem sugerida:
   `Source\Support\Http\JsonResponse` só por ADR), remover `HealthController`,
   `DatabaseConnection` e `bootstrap.php` depois que `tests/smoke.php` usar o bootstrap
   real. Coordenar com a frente de remoção de `organic/`/`src/`.
+  **Aplicado em 2026-11-08** (ver C6).
 - **A6. Boot testável.** Fazer `Connect::getInstance()` lançar exceção quando chamado
   antes das constantes de URL (ou em `MOVESOS_ENV=testing`) em vez de redirecionar, para
   que a suíte `unit` rode sem banco e a `integration` rode no container.
@@ -341,11 +347,11 @@ subir o compose a partir do worktree.
 
 ## 10. Próximos passos
 
-1. Djalma roda os comandos da seção 9 e decide sobre C5 (banco único).
+1. C5 decidido em 2026-11-08: banco único (ADR 0010). Djalma confirma que `connect_erp` está
+   vazio antes de recriar o ambiente sem o serviço `db`.
 2. `claude-dev`: A3 (Access) e A6 (boot testável) aplicados em 2026-11-07; falta rodar a
    suíte `integration` no container e fechar a Fase 1 (`e007c18`).
 3. `claude-dev` + `claude-layout`: A1 e A2 aplicados em 2026-11-07 (Condomínios somente
    leitura); falta smoke de `/erp` no lab, visual pelo `claude-layout` e cadastro/edição
    após a spec AP-004.
-4. A4 aplicado em 2026-11-07 (ADR 0008). A5 aguarda aprovação para remover arquivos de
-   `source/Connect/`.
+4. A4 aplicado em 2026-11-07 (ADR 0008). A5 aplicado em 2026-11-08 (C6).
