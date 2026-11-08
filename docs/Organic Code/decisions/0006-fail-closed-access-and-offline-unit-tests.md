@@ -45,3 +45,18 @@ A auditoria `docs/architecture/CONNECT_ERP_V1.md` registrou dois bloqueios da Fa
 - Indisponibilidade do banco durante a checagem nega acesso também no Studio.
 - A suíte `integration` ainda precisa rodar no container (seção 9 do documento de
   arquitetura); os novos casos estão em `tests/legacy/Integration/AccessControlTest.php`.
+
+## Adendo (07/11/2026): permissão não cadastrada sempre nega
+
+O fallback por nível (`level >= 5`) liberava qualquer slug não cadastrado fora dos prefixos
+estritos, inclusive slugs digitados errado. Agora `Access::can()` só usa o fallback quando a
+permissão existe em `access_permissions` e o usuário não tem papel; slug não cadastrado nega
+para todos (inclusive `developer`) e gera log `permission_unregistered` no canal
+`authorization`.
+
+- Migration `20261107_0005_register_missing_permissions` cadastra `site.access` (atalho do
+  site no Studio) e garante `proposals.manage` (já criado pelo módulo de propostas), ambos
+  para `developer`, `super_admin` e `client_admin`, os mesmos perfis que o fallback liberava.
+- `AccessRegisteredPermissionsTest` (offline) varre `source/` e `container/` e falha se
+  algum slug usado no código não tiver `INSERT` em `access_permissions` numa migration.
+- Antes de subir: `composer db:migrate`. Sem a migration, o atalho "Site" some do Studio.
