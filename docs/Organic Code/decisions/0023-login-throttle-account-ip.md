@@ -15,9 +15,9 @@ sessão nova a cada tentativa, e o limite de 5 códigos por desafio do 2FA tamb�
   logs continuam no `AppLogger` (ADR-001).
 - **Serviço `Source\Services\LoginThrottle`**, usado por `Auth::login`, `Auth::completeTwoFactor`
   e `Auth::completeTwoFactorSetup`, que servem Studio, ERP e API:
-  - login: 10 falhas por conta (e-mail em minúsculas ou CPF/CNPJ só com dígitos) e 30 por IP em
+  - login: 6 falhas por conta (e-mail em minúsculas ou CPF/CNPJ só com dígitos) e 30 por IP em
     15 minutos;
-  - 2FA: 10 falhas por usuário e 30 por IP em 15 minutos;
+  - 2FA: 6 falhas por usuário e 30 por IP em 15 minutos;
   - sucesso apaga as falhas da conta, não as do IP;
   - eventos com mais de 24 horas são apagados a cada falha registrada.
 - **LGPD**: conta e IP nunca vão em texto; `subject_hash` é HMAC-SHA256 com a chave
@@ -31,7 +31,7 @@ sessão nova a cada tentativa, e o limite de 5 códigos por desafio do 2FA tamb�
 
 ## Consequências
 
-- Um atacante pode bloquear uma conta por 15 minutos errando a senha dela 10 vezes. Aceito por
+- Um atacante pode bloquear uma conta por 15 minutos errando a senha dela 6 vezes. Aceito por
   ser curto; a mensagem não confirma que a conta existe.
 - Atrás de proxy, `REMOTE_ADDR` é o IP do proxy e o limite por IP vira global (30 falhas em 15
   minutos para todos). Antes de publicar atrás de proxy, definir a lista de proxies confiáveis.
