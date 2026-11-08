@@ -247,6 +247,10 @@ class Auth extends Model
         }
 
         $mode = $this->secondFactorMode((int)$user->id, $twoFactor ?? new TwoFactorService());
+        if ($mode === "unavailable") {
+            $this->message->error("O acesso está temporariamente indisponível. Tente novamente em alguns minutos.");
+            return false;
+        }
         if ($mode !== null) {
             // Senha correta, mas a sessão só é elevada depois do segundo fator.
             (new Session())->regenerate()->set(self::PENDING_2FA, [
@@ -261,7 +265,7 @@ class Auth extends Model
         return true;
     }
 
-    /** "verify" (2FA ativo), "setup" (obrigatório e não configurado) ou null. */
+    /** "verify" (2FA ativo), "setup" (obrigatório e não configurado), "unavailable" (obrigatório sem tabela) ou null. */
     private function secondFactorMode(int $userId, TwoFactorService $twoFactor): ?string
     {
         try {
@@ -274,9 +278,18 @@ class Auth extends Model
                 throw $error;
             }
             AppLogger::log('error', 'Tabela de 2FA ausente: aplique as migrations', ['event_type' => 'two_factor', 'code' => 'TWO_FACTOR_SCHEMA_MISSING', 'status' => 'open'], 'authentication');
-            return null;
+            return self::modeWhenTwoFactorSchemaMissing();
         }
         return TwoFactorService::isEnforced() ? "setup" : null;
+    }
+
+    /**
+     * Tabela do 2FA ausente: com o 2FA obrigatório o login falha fechado ("unavailable");
+     * antes da data de obrigatoriedade segue sem 2FA, como antes (REVIEW_FASE1_2FA.md, risco 2).
+     */
+    public static function modeWhenTwoFactorSchemaMissing(?int $now = null): ?string
+    {
+        return TwoFactorService::isEnforced($now) ? "unavailable" : null;
     }
 
     private function finishLogin(User $user, string $email, bool $save): void
