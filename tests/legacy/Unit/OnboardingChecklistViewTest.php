@@ -26,6 +26,45 @@ final class OnboardingChecklistViewTest extends TestCase
         self::assertContains(['post', '/condominios/{id}/checklist/itens/{item}', 'CondominiumChecklist:update'], $route->calls);
         self::assertTrue(class_exists(\Source\Controllers\Erp\Connect\CondominiumChecklist::class));
         self::assertTrue(class_exists(\Source\Controllers\Api\V1\CondominiumOnboarding::class));
+        self::assertContains(['get', '/checklist/catalogo', 'OnboardingCatalog:index'], $route->calls);
+        self::assertContains(['post', '/checklist/catalogo', 'OnboardingCatalog:create'], $route->calls);
+        self::assertContains(['post', '/checklist/catalogo/{id}', 'OnboardingCatalog:update'], $route->calls);
+        self::assertTrue(class_exists(\Source\Controllers\Api\V1\OnboardingTemplates::class));
+    }
+
+    public function testCatalogPageListsAndEditsWithEscaping(): void
+    {
+        $user = new User();
+        $user->id = 1;
+        $user->first_name = 'Ana';
+        $user->last_name = 'Teste';
+        $template = ['id' => 5, 'code' => 'avcb', 'category' => 'seguranca', 'title' => 'AVCB <i>x</i>', 'description' => null,
+            'default_due_days' => 90, 'renewal_months' => null, 'position' => 10, 'active' => true, 'usage_count' => 3];
+        $view = new View(moves_container_path('erp', 'connect') . '/');
+        $html = $view->render('pages/checklist/catalog', (new Panel())->layoutData($user, 'AP-004', [
+            'templates' => [$template], 'editing' => $template, 'creating' => false], 'Catálogo'));
+
+        self::assertStringContainsString('AVCB &lt;i&gt;x&lt;/i&gt;', $html);
+        self::assertStringContainsString('Não vence', $html);
+        self::assertStringContainsString('/erp/checklist/catalogo/5', $html);
+        self::assertStringContainsString('Usado em 3 condomínio(s)', $html);
+        self::assertStringNotContainsString('name="code"', $html, 'Código não muda depois de criado.');
+
+        $new = $view->render('pages/checklist/catalog', (new Panel())->layoutData($user, 'AP-004', [
+            'templates' => [], 'editing' => null, 'creating' => true], 'Catálogo'));
+        self::assertStringContainsString('name="code"', $new);
+    }
+
+    public function testAlertMessageAndMailTemplate(): void
+    {
+        $item = ['title' => 'Extintores', 'situation' => 'expired', 'expires_at' => '2026-11-01', 'due_date' => null, 'protocol' => null];
+        self::assertSame('Extintores do Aurora venceu em 01/11/2026.', \Source\Services\OnboardingAlerts::message('Aurora', $item));
+        $overdue = ['title' => 'AVCB', 'situation' => 'overdue', 'expires_at' => null, 'due_date' => '2026-11-10', 'protocol' => 'CHK-2026-000004'];
+        self::assertSame('O prazo do protocolo CHK-2026-000004 (AVCB, Aurora) venceu em 10/11/2026.', \Source\Services\OnboardingAlerts::message('Aurora', $overdue));
+
+        $html = (new \Source\Support\MailTemplate())->render('checklist-alert', ['first_name' => '<b>Ana</b>', 'message' => 'Vence', 'protocol' => 'CHK-2026-000004', 'link' => 'https://erp.connect.lab/x']);
+        self::assertStringContainsString('&lt;b&gt;Ana&lt;/b&gt;', $html);
+        self::assertStringContainsString('CHK-2026-000004', $html);
     }
 
     public function testEmptyChecklistOffersStartOnlyToManagers(): void

@@ -52,6 +52,9 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/condominios/{id}/checklist/iniciar", "CondominiumChecklist:start");
     $route->post("/condominios/{id}/checklist/itens", "CondominiumChecklist:add");
     $route->post("/condominios/{id}/checklist/itens/{item}", "CondominiumChecklist:update");
+    $route->get("/checklist/catalogo", "OnboardingCatalog:index");
+    $route->post("/checklist/catalogo", "OnboardingCatalog:create");
+    $route->post("/checklist/catalogo/{id}", "OnboardingCatalog:update");
 
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.

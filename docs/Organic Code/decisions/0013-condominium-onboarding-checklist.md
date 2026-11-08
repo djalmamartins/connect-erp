@@ -33,3 +33,8 @@ Spec: `docs/specs/modules/checklist-de-chegada.md`.
 - Migration `20261108_0010_condominium_onboarding` (com `.down.sql`) semeia 21 itens.
   Valores de prazo/renovação são INFERIDOS e devem ser revisados pela Connect.
 - A fatia de cadastro (AP-004) deve chamar `start()` após criar o condomínio.
+- Migration `20261108_0011_onboarding_alerts` adiciona `alerted_situation`/`alerted_at` para o
+  job diário `service/jobs/onboarding-alerts.php` não repetir avisos. O job só enfileira
+  (notifications + mail_queue); o envio continua no worker de e-mail.
+- Catálogo editável em `/erp/checklist/catalogo` (e `/api/v1/onboarding/templates`) com
+  `erp.onboarding.catalog`.
