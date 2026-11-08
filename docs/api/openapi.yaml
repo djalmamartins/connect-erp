@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Connect ERP API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     API REST do Connect ERP sobre o núcleo Organic Code. Administradora única (ADR-002):
     todo dado de condomínio é limitado ao escopo do usuário no servidor.
@@ -86,7 +86,22 @@ components:
           type: [object, 'null']
           properties: { id: { type: integer }, name: { type: string } }
         resolved_at: { type: [string, 'null'] }
+        alerted_situation: { type: [string, 'null'], description: Última situação já avisada pelo job diário }
         updated_at: { type: string }
+    OnboardingTemplate:
+      type: object
+      required: [id, code, category, title, default_due_days, active]
+      properties:
+        id: { type: integer }
+        code: { type: string, pattern: '^[a-z0-9_]{2,60}$', description: Imutável depois de criado }
+        category: { type: string, enum: [documentacao, seguranca, manutencao, seguros, financeiro, pessoas] }
+        title: { type: string, maxLength: 160 }
+        description: { type: [string, 'null'], maxLength: 500 }
+        default_due_days: { type: integer, minimum: 1, maximum: 365 }
+        renewal_months: { type: [integer, 'null'], minimum: 1, maximum: 120 }
+        position: { type: integer, minimum: 0, maximum: 999 }
+        active: { type: boolean }
+        usage_count: { type: integer, readOnly: true }
     OnboardingSummary:
       type: object
       properties:
@@ -301,6 +316,52 @@ paths:
         '200':
           description: Item atualizado
           content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/OnboardingItem' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /onboarding/templates:
+    get:
+      operationId: listOnboardingTemplates
+      summary: Catálogo do checklist de chegada
+      description: Requer erp.access e erp.onboarding.catalog.
+      security: [{ session: [] }]
+      responses:
+        '200':
+          description: Itens do catálogo
+          content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/OnboardingTemplate' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createOnboardingTemplate
+      summary: Inclui item no catálogo (ativo por padrão)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OnboardingTemplate' } } }
+      responses:
+        '201':
+          description: Criado
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/OnboardingTemplate' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /onboarding/templates/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      operationId: updateOnboardingTemplate
+      summary: Altera item do catálogo (campos ausentes mantêm o valor; code é ignorado)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OnboardingTemplate' } } }
+      responses:
+        '200':
+          description: Atualizado
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/OnboardingTemplate' } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }

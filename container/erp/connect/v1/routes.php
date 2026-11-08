@@ -21,6 +21,9 @@ $route->get("/condominios/{id}/checklist", "CondominiumChecklist:show");
 $route->post("/condominios/{id}/checklist/iniciar", "CondominiumChecklist:start");
 $route->post("/condominios/{id}/checklist/itens", "CondominiumChecklist:add");
 $route->post("/condominios/{id}/checklist/itens/{item}", "CondominiumChecklist:update");
+$route->get("/checklist/catalogo", "OnboardingCatalog:index");
+$route->post("/checklist/catalogo", "OnboardingCatalog:create");
+$route->post("/checklist/catalogo/{id}", "OnboardingCatalog:update");
 
 $route->namespace(null);
 $route->group(null);
