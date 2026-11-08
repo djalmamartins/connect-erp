@@ -1,11 +1,15 @@
 <?php
 /**
- * Condomínios (AP-004) com dados reais, somente leitura (CondominiumScope).
+ * Condomínios (AP-004) com dados reais. Quem administra a carteira (canManage) vê também
+ * os inativos e pode cadastrar; os demais veem o próprio escopo (CondominiumScope).
  * @var list<array{id:int,name:string,document:?string,status:string}> $condominiums
+ * @var bool $canManage @var ?\Source\Support\Message $flash
  */
 $this->layout('default');
+$canManage = (bool)($canManage ?? false);
+$flash = $flash ?? null;
 ob_start(); ?>
-    <button type="button" class="erp-btn erp-btn--primary" data-erp-pending="Cadastro pendente: os campos do condomínio aguardam a confirmação da ficha AP-004. Nada foi criado."><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</button>
+    <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Condomínios',
@@ -14,14 +18,21 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
-<div class="erp-alert erp-alert--success" role="note"><?= $icon('shield') ?><div><strong>Dados reais, somente leitura</strong>A lista respeita o seu escopo de acesso. Cadastro e edição serão liberados com a ficha AP-004.</div></div>
+<?php if ($flash !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>
+    <div class="erp-alert erp-alert--<?= $ok ? 'success' : 'danger' ?>" role="status"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
+<?php endif; ?>
 
 <?php if ($condominiums === []): ?>
     <section class="erp-card">
         <div class="erp-empty" role="status">
             <span class="erp-empty__icon"><?= $icon('building') ?></span>
-            <h2>Nenhum condomínio disponível</h2>
-            <p>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.</p>
+            <h2><?= $canManage ? 'Nenhum condomínio cadastrado' : 'Nenhum condomínio disponível' ?></h2>
+            <?php if ($canManage): ?>
+                <p>Cadastre o primeiro condomínio da Connect para começar a usar os cadastros.</p>
+                <p><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a></p>
+            <?php else: ?>
+                <p>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.</p>
+            <?php endif; ?>
         </div>
     </section>
 <?php else: ?>
@@ -31,7 +42,7 @@ $this->insert('components/layout/page-head', [
             <div class="erp-field"><label for="condo-status">Situação</label><select class="erp-select" id="condo-status" data-erp-select-filter><option value="">Todas</option><option>Ativo</option><option>Inativo</option></select></div>
         </form>
         <div class="erp-card erp-card--flush" style="margin-top:16px">
-            <div class="erp-card__head"><div><h2>Condomínios acessíveis</h2><p><?= count($condominiums) ?> no seu escopo</p></div></div>
+            <div class="erp-card__head"><div><h2><?= $canManage ? 'Condomínios da Connect' : 'Condomínios acessíveis' ?></h2><p><?= count($condominiums) ?> <?= $canManage ? 'no total' : 'no seu escopo' ?></p></div></div>
             <div class="erp-table-wrap" data-erp-table data-per-page="10" role="region" aria-label="Condomínios acessíveis" tabindex="0">
                 <table class="erp-table">
                     <caption class="erp-sr-only">Condomínios acessíveis (<?= count($condominiums) ?>)</caption>

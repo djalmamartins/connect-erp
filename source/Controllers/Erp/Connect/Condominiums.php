@@ -9,13 +9,19 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\CondominiumService;
+use Source\Services\Erp\CondominiumValidationException;
 use Source\Support\Access;
+use Source\Support\Message;
+use Source\Core\Session;
 
 /**
- * ERP v1 — módulo Condomínios (somente leitura).
+ * ERP v1 — módulo Condomínios.
  *
- * Fluxo: rota MovesCode → este controller → CondominiumScope → MariaDB. É o mesmo
- * serviço usado por /api/v1/condominiums. Não depende do controller legado Erp
+ * Fluxo: rota MovesCode → este controller → CondominiumScope (leitura no escopo) ou
+ * CondominiumService (cadastro) → MariaDB. A leitura é a mesma de /api/v1/condominiums.
+ * Cadastrar e alterar exigem erp.condominiums.manage + acesso a todos os condomínios
+ * (administradora única, ADR-002); formulários por POST com CSRF e padrão PRG. Não depende do controller legado Erp
  * (sessão authCondo, AppWallet), que segue congelado (C11).
  */
 final class Condominiums extends Controller
@@ -36,8 +42,12 @@ final class Condominiums extends Controller
         if ($user === null) {
             return;
         }
+        $canManage = $this->canManage($user);
         echo $this->view->render('pages/condominiums/index', $this->layoutData($user, 'Condomínios', [
-            'condominiums' => (new CondominiumScope())->allowed($user),
+            // Quem administra a carteira vê também os inativos, para poder reativá-los.
+            'condominiums' => $canManage ? (new CondominiumService())->all() : (new CondominiumScope())->allowed($user),
+            'canManage' => $canManage,
+            'flash' => (new Session())->flash(),
         ]));
     }
 
@@ -47,7 +57,18 @@ final class Condominiums extends Controller
         if ($user === null) {
             return;
         }
-        $id = (int)(filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0);
+        $id = $this->id($data);
+        if ($this->canManage($user)) {
+            $condominium = (new CondominiumService())->find($id);
+            if ($condominium === null) {
+                $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+                return;
+            }
+            echo $this->view->render('pages/condominiums/show', $this->layoutData($user, $condominium['name'], [
+                'condominium' => $condominium, 'canManage' => true, 'flash' => (new Session())->flash(),
+            ]));
+            return;
+        }
         $scope = new CondominiumScope();
         try {
             $scope->assertAccess($user, $id);
@@ -59,12 +80,106 @@ final class Condominiums extends Controller
         foreach ($scope->allowed($user) as $condominium) {
             if ($condominium['id'] === $id) {
                 echo $this->view->render('pages/condominiums/show', $this->layoutData($user, $condominium['name'], [
-                    'condominium' => $condominium,
+                    'condominium' => $condominium, 'canManage' => false, 'flash' => null,
                 ]));
                 return;
             }
         }
         $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+    }
+
+    /** GET /condominios/novo */
+    public function create(): void
+    {
+        $user = $this->authorizeManage();
+        if ($user === null) {
+            return;
+        }
+        $this->renderForm($user, null, ['status' => 'active'], []);
+    }
+
+    /** GET /condominios/{id}/editar */
+    public function edit(array $data): void
+    {
+        $user = $this->authorizeManage();
+        if ($user === null) {
+            return;
+        }
+        $condominium = (new CondominiumService())->find($this->id($data));
+        if ($condominium === null) {
+            $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe.');
+            return;
+        }
+        $this->renderForm($user, $condominium['id'], $condominium, []);
+    }
+
+    /** POST /condominios (criar) e POST /condominios/{id} (alterar). */
+    public function save(array $data): void
+    {
+        $user = $this->authorizeManage();
+        if ($user === null) {
+            return;
+        }
+        $id = isset($data['id']) ? $this->id($data) : null;
+        $values = array_intersect_key($data, ['name' => 1, 'document' => 1, 'status' => 1]);
+        if (!csrf_verify($data)) {
+            http_response_code(419);
+            $this->renderForm($user, $id, $values, ['_form' => 'Sua sessão expirou. Confira os dados e envie de novo.']);
+            return;
+        }
+        $service = new CondominiumService();
+        if ($id !== null && $service->find($id) === null) {
+            $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe.');
+            return;
+        }
+        try {
+            $savedId = $service->save($values, $id);
+        } catch (CondominiumValidationException $exception) {
+            http_response_code(422);
+            $this->renderForm($user, $id, $values, $exception->errors);
+            return;
+        }
+        (new Message())->success($id === null ? 'Condomínio cadastrado com sucesso.' : 'Condomínio atualizado com sucesso.')->flash();
+        redirect(erp_url('/condominios/' . $savedId));
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $errors
+     */
+    private function renderForm(User $user, ?int $id, array $values, array $errors): void
+    {
+        $title = $id === null ? 'Novo condomínio' : (string)(($values['name'] ?? '') !== '' ? $values['name'] : 'Condomínio');
+        header('Cache-Control: no-store, private');
+        echo $this->view->render('pages/condominiums/form', $this->layoutData($user, $title, [
+            'recordId' => $id, 'values' => $values, 'errors' => $errors, 'statuses' => CondominiumService::STATUS,
+        ]));
+    }
+
+    /** Cadastro de condomínio: manage + acesso global explícito (erp.condominiums.all ou developer). */
+    private function canManage(User $user): bool
+    {
+        return Access::can('erp.condominiums.manage', $user) && (new CondominiumScope())->hasGlobalAccess($user);
+    }
+
+    private function authorizeManage(): ?User
+    {
+        $user = $this->authorize('erp.condominiums.view');
+        if ($user === null) {
+            return null;
+        }
+        if (!$this->canManage($user)) {
+            $this->state($user, 403, 'Acesso negado', 'Somente quem administra todos os condomínios da Connect pode cadastrar ou alterar condomínios.');
+            return null;
+        }
+        header('X-Frame-Options: DENY');
+        header('Referrer-Policy: same-origin');
+        return $user;
+    }
+
+    private function id(array $data): int
+    {
+        return (int)(filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0);
     }
 
     /**

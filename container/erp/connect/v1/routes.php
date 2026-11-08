@@ -9,6 +9,7 @@ declare(strict_types=1);
  * tools/erp-catalog.py; matriz em docs/ERP_V1_ROUTE_MATRIX.md).
  */
 
+use Source\Controllers\Erp\Connect\Condominiums;
 use Source\Controllers\Erp\Connect\Panel;
 use Source\Controllers\Erp\Connect\Registry;
 use Source\Services\Erp\Registry\Definitions as RegistryDefinitions;
@@ -41,6 +42,14 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     // Condomínios (AP-004) com dados reais e somente leitura: CondominiumScope → MariaDB,
     // o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
     $route->get("/condominios", "Condominiums:index");
+    // Cadastro de condomínio (manage + acesso a todos os condomínios). "novo" antes de {id}.
+    $route->post("/condominios", static function (array $data): void {
+        unset($data['id']);
+        (new Condominiums())->save($data);
+    });
+    $route->get("/condominios/novo", "Condominiums:create");
+    $route->get("/condominios/{id}/editar", "Condominiums:edit");
+    $route->post("/condominios/{id}", "Condominiums:save");
 
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.

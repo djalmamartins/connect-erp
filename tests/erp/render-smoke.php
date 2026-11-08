@@ -142,6 +142,17 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, '&lt;b&gt;Residencial') && str_contains($html, '12.345.678/0001-95') && str_contains($html, $erpRoot . '/condominios/7'), 'AP-004: dados reais escapados e com link de detalhe');
         $show = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive']], 'Edifício Exemplo'));
         $assert(str_contains($show, 'Inativo') && str_contains($show, 'role="tablist"') && str_contains($show, '<a href="' . $erpRoot . '/condominios">Condomínios</a>'), 'AP-004: detalhe com abas e trilha de volta');
+        $assert(!str_contains($html, '/condominios/novo') && !str_contains($show, '/editar') && !str_contains($html . $show, 'data-erp-pending'), 'AP-004: sem canManage não há Novo/Editar nem botões pendentes');
+        // Quem administra a carteira: Novo, Editar e o formulário com CSRF.
+        $managed = $render('pages/condominiums/index', $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => [], 'canManage' => true, 'flash' => null], 'Condomínios'));
+        $assert(str_contains($managed, $erpRoot . '/condominios/novo') && str_contains($managed, 'Nenhum condomínio cadastrado'), 'AP-004: lista vazia oferece Novo condomínio a quem administra');
+        $showManaged = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 9, 'name' => 'Edifício Exemplo', 'document' => null, 'status' => 'inactive'], 'canManage' => true, 'flash' => null], 'Edifício Exemplo'));
+        $assert(str_contains($showManaged, $erpRoot . '/condominios/9/editar'), 'AP-004: detalhe com Editar para quem administra');
+        $statuses = ['active' => 'Ativo', 'inactive' => 'Inativo'];
+        $newForm = $render('pages/condominiums/form', $layoutData->invoke($panel, $user, 'AP-004', ['recordId' => null, 'values' => ['status' => 'active'], 'errors' => [], 'statuses' => $statuses], 'Novo condomínio'));
+        $assert(str_contains($newForm, 'action="' . $erpRoot . '/condominios"') && str_contains($newForm, "name='csrf'") && str_contains($newForm, 'name="name"') && str_contains($newForm, 'name="document"') && str_contains($newForm, 'name="status"'), 'AP-004: formulário novo com CSRF e campos');
+        $editForm = $render('pages/condominiums/form', $layoutData->invoke($panel, $user, 'AP-004', ['recordId' => 9, 'values' => ['name' => '<i>X</i>', 'document' => '123', 'status' => 'inactive'], 'errors' => ['document' => 'CNPJ inválido.'], 'statuses' => $statuses], '<i>X</i>'));
+        $assert(str_contains($editForm, 'action="' . $erpRoot . '/condominios/9"') && str_contains($editForm, '&lt;i&gt;X') && !str_contains($editForm, '<i>X</i>') && str_contains($editForm, 'CNPJ inválido.') && str_contains($editForm, 'aria-invalid="true"'), 'AP-004: edição escapada e com erro por campo');
         $user->granted = ['erp.access'];
         $denied = $render('pages/condominiums/index', $layoutData->invoke($panel, $user, 'AP-004', ['condominiums' => []], 'Condomínios'));
         $assert(!str_contains($denied, '<a href="' . $erpRoot . '/condominios"'), 'sem erp.condominiums.view: item some do menu');

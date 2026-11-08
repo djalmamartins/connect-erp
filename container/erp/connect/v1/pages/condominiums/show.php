@@ -1,19 +1,25 @@
 <?php
 /**
- * Detalhe de um condomínio (dados reais, somente leitura).
+ * Detalhe de um condomínio (dados reais). Edição só para quem administra a carteira.
  * @var array{id:int,name:string,document:?string,status:string} $condominium
+ * @var bool $canManage @var ?\Source\Support\Message $flash
  */
 $this->layout('default');
+$canManage = (bool)($canManage ?? false);
+$flash = $flash ?? null;
 $active = $condominium['status'] === 'active';
 ob_start(); ?>
     <a class="erp-btn" href="<?= erp_url('/condominios') ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Voltar</a>
-    <button type="button" class="erp-btn erp-btn--primary" data-erp-pending="Edição pendente: os campos do condomínio aguardam a confirmação da ficha AP-004. Nada foi alterado."><?= $icon('edit', 'erp-icon--sm') ?>Editar</button>
+    <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/' . (int)$condominium['id'] . '/editar') ?>"><?= $icon('edit', 'erp-icon--sm') ?>Editar</a><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Condomínio',
     'pageTitle' => $condominium['name'],
     'pageActions' => $actions,
 ]);
+if ($flash !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>
+    <div class="erp-alert erp-alert--<?= $ok ? 'success' : 'danger' ?>" role="status"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
+<?php endif;
 $tabs = ['Dados', 'Unidades', 'Contas bancárias', 'Configurações', 'Vínculos', 'Histórico'];
 ?>
 <section class="erp-card">
