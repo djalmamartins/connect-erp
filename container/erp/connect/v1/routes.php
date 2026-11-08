@@ -10,6 +10,8 @@ declare(strict_types=1);
  */
 
 use Source\Controllers\Erp\Connect\Panel;
+use Source\Controllers\Erp\Connect\Registry;
+use Source\Services\Erp\Registry\Definitions as RegistryDefinitions;
 
 $erpCatalog = require __DIR__ . '/components/layout/catalog.php';
 
@@ -19,6 +21,8 @@ $route->namespace("Source\\Controllers\\Erp\\Connect");
 // antigos e para o retorno do 2FA (/studio/login/2fa?next=erp). Nos demais hosts, só /erp.
 $erpBases = erp_host() ? ['', '/erp'] : ['/erp'];
 $erpPageRoutes = array_column($erpCatalog['pages'], 'route');
+$erpRegistries = RegistryDefinitions::all();
+$erpRegistryPages = array_column($erpRegistries, 'page');
 foreach ($erpBases as $erpIndex => $erpBase) {
     $erpName = static fn (string $name): ?string => $erpIndex === 0 ? $name : null;
     $route->group($erpBase);
@@ -38,6 +42,31 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     // o mesmo serviço da API /api/v1/condominiums (frente claude-dev, ADR 0007).
     $route->get("/condominios", "Condominiums:index");
 
+    // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
+    // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.
+    foreach ($erpRegistries as $registrySlug => $registry) {
+        $base = $registry['route'];
+        $route->get($base, static function () use ($registrySlug): void {
+            (new Registry())->index($registrySlug);
+        }, $erpName('erp.' . strtolower($registry['page'])));
+        $route->post($base, static function (array $data) use ($registrySlug): void {
+            unset($data['id']);
+            (new Registry())->save($registrySlug, $data);
+        });
+        $route->get($base . '/novo', static function () use ($registrySlug): void {
+            (new Registry())->create($registrySlug);
+        });
+        $route->get($base . '/{id}', static function (array $data) use ($registrySlug): void {
+            (new Registry())->edit($registrySlug, $data);
+        });
+        $route->post($base . '/{id}', static function (array $data) use ($registrySlug): void {
+            (new Registry())->save($registrySlug, $data);
+        });
+        $route->post($base . '/{id}/excluir', static function (array $data) use ($registrySlug): void {
+            (new Registry())->destroy($registrySlug, $data);
+        });
+    }
+
     // Visão geral de cada módulo. O Dashboard não tem prefixo e, em Condomínios, a própria
     // listagem (AP-004) ocupa o prefixo /condominios.
     foreach ($erpCatalog['groups'] as $groupKey => $group) {
@@ -51,7 +80,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Uma rota por página do catálogo (exceto Dashboard e Condomínios, registrados acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios'], true)) {
+        if (in_array($page['route'], ['/dashboard', '/condominios'], true) || in_array($pageId, $erpRegistryPages, true)) {
             continue;
         }
         $route->get($page['route'], static function () use ($pageId): void {
@@ -63,6 +92,6 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/condominios/{id}", "Condominiums:show");
 }
 
-unset($erpCatalog, $erpPageRoutes, $erpBases, $erpBase, $erpIndex, $erpName);
+unset($erpCatalog, $erpPageRoutes, $erpRegistries, $erpRegistryPages, $registrySlug, $registry, $base, $erpBases, $erpBase, $erpIndex, $erpName);
 $route->namespace(null);
 $route->group(null);

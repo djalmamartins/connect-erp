@@ -1,0 +1,757 @@
+# Gerado por tools/registry-openapi.php a partir de Definitions.php. Não editar à mão.
+openapi: 3.1.0
+info:
+  title: Connect ERP API — Cadastros
+  version: 0.3.0
+  description: |
+    Cadastros do ERP (ADR 0014). Mesma autenticação de openapi.yaml: sessão do Organic Code,
+    X-CSRF-Token em POST/PUT/PATCH/DELETE. Permissões erp.<cadastro>.view (leitura) e
+    erp.<cadastro>.manage (escrita). Registros fora do escopo de condomínios respondem 404.
+    Listagens paginadas no servidor (25 por página). Exclusão lógica.
+servers:
+  - url: /api/v1
+security:
+  - session: []
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: PHPSESSID }
+    csrf: { type: apiKey, in: header, name: X-CSRF-Token }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_json, validation_failed] }
+            message: { type: string }
+            fields: { type: object, additionalProperties: { type: string }, description: Mensagem por campo (422) }
+    Meta:
+      type: object
+      properties: { total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } }
+    ResidentsInput:
+      type: object
+      required: [condominium_id, unit_label, relationship, name]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        relationship: { type: [string, "null"], enum: ['owner', 'tenant', 'resident', 'financial'] }
+        name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        starts_on: { type: [string, "null"], format: date }
+        ends_on: { type: [string, "null"], format: date }
+        billing_by_email: { type: boolean }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Residents:
+      allOf:
+        - $ref: '#/components/schemas/ResidentsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    BoardMembersInput:
+      type: object
+      required: [condominium_id, role, name, term_starts_on, term_ends_on]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        role: { type: [string, "null"], enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] }
+        name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        term_starts_on: { type: [string, "null"], format: date }
+        term_ends_on: { type: [string, "null"], format: date }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    BoardMembers:
+      allOf:
+        - $ref: '#/components/schemas/BoardMembersInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    EmployeesInput:
+      type: object
+      required: [condominium_id, job, name, document, hired_on]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        job: { type: [string, "null"], enum: ['zelador', 'porteiro', 'faxineiro', 'jardineiro', 'manutencao', 'vigia', 'administrativo', 'outro'] }
+        name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], pattern: "^\\d{11}$", description: 'CPF com DV válido; resposta só com dígitos.' }
+        hired_on: { type: [string, "null"], format: date }
+        terminated_on: { type: [string, "null"], format: date }
+        shift: { type: [string, "null"], enum: ['manha', 'tarde', 'noite', '12x36', 'comercial'] }
+        salary_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Employees:
+      allOf:
+        - $ref: '#/components/schemas/EmployeesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    SuppliersInput:
+      type: object
+      required: [legal_name, document, category]
+      properties:
+        legal_name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
+        trade_name: { type: [string, "null"], maxLength: 160 }
+        category: { type: [string, "null"], enum: ['manutencao', 'limpeza', 'seguranca', 'elevadores', 'jardinagem', 'portaria', 'concessionaria', 'outros'] }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        bank_code: { type: [string, "null"], maxLength: 3 }
+        bank_agency: { type: [string, "null"], maxLength: 10 }
+        bank_account: { type: [string, "null"], maxLength: 20 }
+        pix_key: { type: [string, "null"], maxLength: 140 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Suppliers:
+      allOf:
+        - $ref: '#/components/schemas/SuppliersInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            created_at: { type: string }
+            updated_at: { type: string }
+    LawyersInput:
+      type: object
+      required: [name, oab]
+      properties:
+        name: { type: [string, "null"], maxLength: 160 }
+        oab: { type: [string, "null"], examples: ["SP 123456"] }
+        document: { type: [string, "null"], pattern: "^\\d{11}$", description: 'CPF com DV válido; resposta só com dígitos.' }
+        firm: { type: [string, "null"], maxLength: 160 }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        fee_percent: { type: [number, "null"], minimum: 0, maximum: 100 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Lawyers:
+      allOf:
+        - $ref: '#/components/schemas/LawyersInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            created_at: { type: string }
+            updated_at: { type: string }
+    VehiclesInput:
+      type: object
+      required: [condominium_id, unit_label, plate, kind]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        plate: { type: [string, "null"], pattern: "^[A-Z]{3}\\d[A-Z0-9]\\d{2}$" }
+        kind: { type: [string, "null"], enum: ['carro', 'moto', 'utilitario', 'outro'] }
+        model: { type: [string, "null"], maxLength: 80 }
+        color: { type: [string, "null"], maxLength: 30 }
+        parking_spot: { type: [string, "null"], maxLength: 20 }
+        owner_name: { type: [string, "null"], maxLength: 160 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Vehicles:
+      allOf:
+        - $ref: '#/components/schemas/VehiclesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    VisitorsInput:
+      type: object
+      required: [condominium_id, unit_label, name]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], description: 'CPF válido ou RG/outro (5 a 20 caracteres alfanuméricos).' }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        permanent_access: { type: boolean }
+        valid_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Visitors:
+      allOf:
+        - $ref: '#/components/schemas/VisitorsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    PetsInput:
+      type: object
+      required: [condominium_id, unit_label, name, species]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        unit_label: { type: [string, "null"], maxLength: 40 }
+        name: { type: [string, "null"], maxLength: 80 }
+        species: { type: [string, "null"], enum: ['cao', 'gato', 'ave', 'outro'] }
+        size: { type: [string, "null"], enum: ['pequeno', 'medio', 'grande'] }
+        breed: { type: [string, "null"], maxLength: 80 }
+        tutor_name: { type: [string, "null"], maxLength: 160 }
+        vaccinated: { type: boolean }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Pets:
+      allOf:
+        - $ref: '#/components/schemas/PetsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    UsefulContactsInput:
+      type: object
+      required: [service, name, phone]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        service: { type: [string, "null"], enum: ['emergencia', 'encanador', 'eletricista', 'chaveiro', 'dedetizacao', 'gas', 'concessionaria', 'outro'] }
+        name: { type: [string, "null"], maxLength: 160 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    UsefulContacts:
+      allOf:
+        - $ref: '#/components/schemas/UsefulContactsInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+paths:
+  /residents:
+    get:
+      tags: ['Proprietários e inquilinos']
+      summary: 'Lista proprietários e inquilinos (permissão erp.residents.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por relationship', schema: { type: string, enum: ['owner', 'tenant', 'resident', 'financial'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Residents' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Proprietários e inquilinos']
+      summary: 'Cadastra (permissão erp.residents.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Residents' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /residents/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Proprietários e inquilinos']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Residents' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Proprietários e inquilinos']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Residents' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Proprietários e inquilinos']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Residents' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Proprietários e inquilinos']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /board-members:
+    get:
+      tags: ['Síndico e conselho']
+      summary: 'Lista síndico e conselho (permissão erp.board.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por role', schema: { type: string, enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/BoardMembers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Síndico e conselho']
+      summary: 'Cadastra (permissão erp.board.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BoardMembersInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/BoardMembers' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /board-members/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Síndico e conselho']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/BoardMembers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Síndico e conselho']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BoardMembersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/BoardMembers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Síndico e conselho']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BoardMembersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/BoardMembers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Síndico e conselho']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /employees:
+    get:
+      tags: ['Funcionários']
+      summary: 'Lista funcionários (permissão erp.employees.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por job', schema: { type: string, enum: ['zelador', 'porteiro', 'faxineiro', 'jardineiro', 'manutencao', 'vigia', 'administrativo', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Employees' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Funcionários']
+      summary: 'Cadastra (permissão erp.employees.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EmployeesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Employees' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /employees/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Funcionários']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Employees' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Funcionários']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EmployeesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Employees' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Funcionários']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EmployeesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Employees' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Funcionários']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /suppliers:
+    get:
+      tags: ['Fornecedores']
+      summary: 'Lista fornecedores (permissão erp.suppliers.view)'
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por category', schema: { type: string, enum: ['manutencao', 'limpeza', 'seguranca', 'elevadores', 'jardinagem', 'portaria', 'concessionaria', 'outros'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Suppliers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Fornecedores']
+      summary: 'Cadastra (permissão erp.suppliers.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SuppliersInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Suppliers' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /suppliers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Fornecedores']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Suppliers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Fornecedores']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SuppliersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Suppliers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Fornecedores']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SuppliersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Suppliers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Fornecedores']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /lawyers:
+    get:
+      tags: ['Advogados']
+      summary: 'Lista advogados (permissão erp.lawyers.view)'
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Lawyers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Advogados']
+      summary: 'Cadastra (permissão erp.lawyers.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LawyersInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Lawyers' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /lawyers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Advogados']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Lawyers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Advogados']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LawyersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Lawyers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Advogados']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LawyersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Lawyers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Advogados']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /vehicles:
+    get:
+      tags: ['Veículos']
+      summary: 'Lista veículos (permissão erp.vehicles.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Vehicles' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Veículos']
+      summary: 'Cadastra (permissão erp.vehicles.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VehiclesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Vehicles' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /vehicles/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Veículos']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Vehicles' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Veículos']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VehiclesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Vehicles' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Veículos']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VehiclesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Vehicles' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Veículos']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /visitors:
+    get:
+      tags: ['Visitantes']
+      summary: 'Lista visitantes (permissão erp.visitors.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Visitors' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Visitantes']
+      summary: 'Cadastra (permissão erp.visitors.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VisitorsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Visitors' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /visitors/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Visitantes']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Visitors' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Visitantes']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VisitorsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Visitors' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Visitantes']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VisitorsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Visitors' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Visitantes']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /pets:
+    get:
+      tags: ['Animais de estimação']
+      summary: 'Lista animais de estimação (permissão erp.pets.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por species', schema: { type: string, enum: ['cao', 'gato', 'ave', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Pets' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Animais de estimação']
+      summary: 'Cadastra (permissão erp.pets.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PetsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Pets' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /pets/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Animais de estimação']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Pets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Animais de estimação']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PetsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Pets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Animais de estimação']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PetsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Pets' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Animais de estimação']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /useful-contacts:
+    get:
+      tags: ['Contatos úteis']
+      summary: 'Lista contatos úteis (permissão erp.contacts.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por service', schema: { type: string, enum: ['emergencia', 'encanador', 'eletricista', 'chaveiro', 'dedetizacao', 'gas', 'concessionaria', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/UsefulContacts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Contatos úteis']
+      summary: 'Cadastra (permissão erp.contacts.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UsefulContactsInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/UsefulContacts' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /useful-contacts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Contatos úteis']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/UsefulContacts' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Contatos úteis']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UsefulContactsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/UsefulContacts' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Contatos úteis']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UsefulContactsInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/UsefulContacts' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Contatos úteis']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

@@ -8,6 +8,9 @@ info:
     Autenticação pela sessão do Organic Code (cookie). Quando o usuário tem 2FA ativo,
     a sessão só é autenticada depois de POST /auth/2fa/verify.
     Métodos que alteram estado exigem o cabeçalho X-CSRF-Token com o token da sessão.
+    Os cadastros (proprietários e inquilinos, síndico e conselho, funcionários, fornecedores,
+    advogados, veículos, visitantes, animais e contatos úteis) estão em registries.openapi.yaml,
+    gerado de Definitions.php por tools/registry-openapi.php (ADR 0014).
 servers:
   - url: /api/v1
 components:

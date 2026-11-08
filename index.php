@@ -38,6 +38,19 @@ $route->post("/auth/2fa/verify", "TwoFactor:verify");
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+
+// Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
+foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
+    $registryPath = "/" . $registryDefinition["api"];
+    $registryAuth = \Source\Support\Middleware\ApiAuthenticated::class;
+    $route->get($registryPath, static fn () => (new \Source\Controllers\Api\V1\Registry())->index($registrySlug), null, $registryAuth);
+    $route->post($registryPath, static fn () => (new \Source\Controllers\Api\V1\Registry())->store($registrySlug), null, $registryAuth);
+    $route->get($registryPath . "/{id}", static fn (array $data) => (new \Source\Controllers\Api\V1\Registry())->show($registrySlug, $data), null, $registryAuth);
+    $route->put($registryPath . "/{id}", static fn (array $data) => (new \Source\Controllers\Api\V1\Registry())->update($registrySlug, $data), null, $registryAuth);
+    $route->patch($registryPath . "/{id}", static fn (array $data) => (new \Source\Controllers\Api\V1\Registry())->update($registrySlug, $data), null, $registryAuth);
+    $route->delete($registryPath . "/{id}", static fn (array $data) => (new \Source\Controllers\Api\V1\Registry())->destroy($registrySlug, $data), null, $registryAuth);
+}
+unset($registrySlug, $registryDefinition, $registryPath, $registryAuth);
 $route->namespace(null);
 
 

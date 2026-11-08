@@ -9,6 +9,7 @@ use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\DemoData;
+use Source\Services\Erp\Registry\Definitions;
 use Source\Support\Access;
 use Source\Support\Erp\FieldSpec;
 
@@ -26,6 +27,12 @@ final class Panel extends Controller
 
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
     public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view'];
+
+    /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
+    public static function pagePermissions(): array
+    {
+        return self::PAGE_PERMISSIONS + Definitions::pagePermissions();
+    }
 
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
     private array $catalog;
@@ -234,7 +241,7 @@ final class Panel extends Controller
             'withNavigation' => true,
             'anchor' => static fn (string $text): string => self::anchor($text),
             // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
-            'canSee' => static fn (string $pageId): bool => !isset(self::PAGE_PERMISSIONS[$pageId]) || $user->can(self::PAGE_PERMISSIONS[$pageId]),
+            'canSee' => static fn (string $pageId): bool => !isset(self::pagePermissions()[$pageId]) || $user->can(self::pagePermissions()[$pageId]),
             'icon' => static function (string $name, string $class = '') use ($icons): string {
                 $paths = $icons[$name] ?? $icons['info'];
                 return '<svg class="erp-icon ' . htmlspecialchars($class, ENT_QUOTES) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths . '</svg>';

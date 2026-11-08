@@ -28,6 +28,7 @@ RENAMES = {
     "AP-002": "Painel do condomínio",
     "AP-003": "Painel da unidade",
     "AP-005": "Proprietários e inquilinos",
+    "AP-014": "Síndico e conselho",
     "AP-020": "Lançamentos",
     "AP-021": "Lançamentos fixos",
     "AP-059": "Inadimplentes (Detalhado)",
@@ -95,8 +96,9 @@ def ids(*items):
 GROUP_OF = {}
 for key, members in {
     "dashboard": ids(1),
-    "condominios": ids(4, 2, 3, 6, 8, 7, 14, 19),
-    "cadastros": ids(5, 9, 10, 16, 11, 12, 13, 15),
+    "condominios": ids(4, 2, 3, 6, 8, 7, 19),
+    # Síndico e conselho (AP-014) fica em Cadastros por decisão do Djalma (08/11/2026).
+    "cadastros": ids(5, 14, 9, 10, 16, 11, 12, 13, 15),
     "financeiro": ids(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 40),
     "cobranca": ids(117, 33, 34, 35, 37, 36, 38, 39, 116),
     "prestacao-contas": ids(101, 94, 51, 52, 53, 54, 56, 79, 80, 81, 82, 83),
