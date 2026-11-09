@@ -748,3 +748,19 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 47 (sha256 9032eb15), porta
 - Consultas com código válido não contam no limite. Quem já tem um código pode consultá-lo à vontade, mas a resposta não traz dado pessoal.
 - O modo padrão é `off`. Sem clamd no servidor, os envios ficam como `unscanned`.
 - A integração (`DocumentVerificationIntegrationTest`) não rodou aqui. Ela roda no container, no banco `*_test`.
+
+## 28ª rodada: código e link de verificação nos documentos (ciclo 48)
+
+Data: 2026-11-09. Código revisado: o patch do ciclo 48 (sha256 cfb009ea) e o guia, portados sobre o `claude-dev` ac8c8f9. ADR 0099.
+
+| Ponto | Situação |
+|---|---|
+| As rotas `/verificar` estavam no `routes.php` da web. Por isso não respondiam no host do ERP, que é o de `url()` no link impresso, nem com `CONF_ACCESS_SITE` desligado | CORRIGIDO: as rotas foram para o `index.php`, antes do `if (erp_host())`, fora de qualquer bloco. O `DocumentVerifyRouteTest` confere isso |
+| O link leva o código no fragmento (`/verificar#CODIGO`), que o navegador não manda ao servidor. O JS só preenche o campo e limpa o endereço; quem envia o formulário é a pessoa | CONFIRMADO |
+| O código digitado aceita hífens, espaços e os traços tipográficos, com no máximo 64 bytes antes de normalizar. A base do link precisa ser `http(s)://host` | CONFIRMADO (teste unitário) |
+| O QR code é gerado no servidor pelo `QrCode::svg`. Sem a biblioteca, o rodapé só mostra o código e o link | CONFIRMADO |
+
+### Lacunas
+
+- Não houve teste de fumaça HTTP de `/verificar` aqui, porque sem banco o `index.php` não sobe. Falta conferir no Mac.
+- A falha do `render-smoke` em `communication/addresses.php` (chave nula no PHP 8.5) já tinha sido corrigida no commit 43388bb, que está na main. O worktree do Avançar estava desatualizado.

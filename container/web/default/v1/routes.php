@@ -16,10 +16,6 @@ $route->post("/forget", "Web:forget");
 $route->get("/forget/{code}", "Web:reset");
 $route->post("/reset", "Web:reset");
 
-//verificação pública de documento emitido (ADR 0098): sem login, CSRF e limite por IP no POST
-$route->get("/verificar", "DocumentVerify:form");
-$route->post("/verificar", "DocumentVerify:verify");
-
 
 //articles
 $route->group("/artigos");
