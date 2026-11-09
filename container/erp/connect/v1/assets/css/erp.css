@@ -565,6 +565,24 @@ p { margin: 0; }
 .erp-disk-name .erp-muted { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .erp-disk-layout { grid-template-columns: 1fr; } .erp-disk-search { width: 100%; } .erp-disk-search .erp-input { min-width: 0; flex: 1; } }
 
+/* Anexo do Disco Virtual nos cadastros (ADR 0052). */
+.erp-attachment { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius, 12px); background: var(--erp-surface); }
+.erp-attachment.is-invalid { border-color: var(--erp-danger); }
+.erp-form__grid:has(.erp-attachment) { align-items: start; }
+.erp-attachment__current { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.erp-attachment__icon { display: inline-flex; color: var(--erp-muted); }
+.erp-attachment__label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.erp-attachment__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.erp-attachment__search { display: flex; gap: 8px; flex-wrap: wrap; }
+.erp-attachment__search .erp-input { flex: 1 1 220px; }
+.erp-attachment__search .erp-select { flex: 0 1 200px; }
+.erp-attachment__results { max-height: 300px; overflow: auto; }
+.erp-attachment__list { list-style: none; margin: 0; padding: 0; display: grid; }
+.erp-attachment__list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--erp-border); }
+.erp-attachment__list li > div { min-width: 0; overflow-wrap: anywhere; }
+.erp-attachment__upload { border: 1px dashed var(--erp-border); border-radius: var(--erp-radius, 12px); padding: 12px 14px; display: grid; gap: 10px; margin: 0; }
+.erp-attachment__upload legend { font-weight: 600; padding: 0 4px; }
+
 /* Documentos da unidade (ADR 0046): folha para imprimir com o código de verificação. */
 .erp-unit-doc { display: grid; gap: 18px; padding: 28px; }
 .erp-unit-doc__head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid var(--erp-border); padding-bottom: 14px; }

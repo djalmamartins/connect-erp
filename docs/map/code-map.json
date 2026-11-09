@@ -197,6 +197,10 @@
    "title": "0050 — Avisos de recebimento, cópias de cheques, empenhos e malotes"
   },
   {
+   "file": "docs/Organic Code/decisions/0052-registry-attachment-picker.md",
+   "title": "0052 — Seletor do Disco Virtual no anexo dos cadastros (AP-126 a AP-129)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -849,6 +853,7 @@
   },
   "Source\\Controllers\\Erp\\Connect\\Registry": {
    "deps": [
+    "Source\\Core\\Connect",
     "Source\\Core\\Controller",
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
@@ -859,7 +864,9 @@
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+    "Source\\Services\\Erp\\VirtualDisk",
     "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
     "Source\\Support\\Erp\\CondominiumContext",
     "Source\\Support\\Message"
    ],
@@ -1278,6 +1285,7 @@
    "tests": [
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php",
@@ -2201,6 +2209,7 @@
     "erp_pets"
    ],
    "tests": [
+    "tests/erp/render-smoke.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Unit/AgreementsTest.php",
@@ -2208,6 +2217,7 @@
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/DocumentRegistriesTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
+    "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/InvoicesTest.php",
     "tests/legacy/Unit/MeterReadingsTest.php",
@@ -3034,7 +3044,7 @@
   }
  },
  "counts": {
-  "adrs": 52,
+  "adrs": 53,
   "classes": 173,
   "dynamic_route_lines": {
    "erp": 8,
@@ -3043,7 +3053,7 @@
   "erp_pages": 172,
   "routes": 260,
   "tables": 89,
-  "tests": 107
+  "tests": 108
  },
  "erp_pages": [
   {
@@ -7396,6 +7406,7 @@
    "Source\\Services\\Erp\\FinancialReports",
    "Source\\Services\\Erp\\LateCharges",
    "Source\\Services\\Erp\\MonthClosing",
+   "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Support\\Erp\\CondominiumContext",
    "Source\\Support\\QrCode"
   ],
@@ -7752,6 +7763,10 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
+  "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php": [
+   "Source\\Core\\View",
+   "Source\\Services\\Erp\\Registry\\Definitions"
+  ],
   "tests/legacy/Unit/ErpThemeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "Source\\Controllers\\Erp\\Connect\\Panel",
