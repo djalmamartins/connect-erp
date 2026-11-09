@@ -190,6 +190,19 @@ $route->post("/announcements", "Announcements:store", null, \Source\Support\Midd
 $route->post("/announcements/collection", "Announcements:collection", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/announcements/{id}", "Announcements:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/announcements/{id}/cancel", "Announcements:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/assemblies", "Assemblies:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies", "Assemblies:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/assemblies/{id}", "Assemblies:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/convene", "Assemblies:convene", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/open", "Assemblies:open", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/attendance", "Assemblies:checkIn", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/items/{item}/start", "Assemblies:startItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/items/{item}/votes", "Assemblies:vote", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/items/{item}/close", "Assemblies:closeItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/close", "Assemblies:close", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/assemblies/{id}/cancel", "Assemblies:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/assemblies/{id}/attendance-report", "Assemblies:attendanceReport", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/assemblies/{id}/results", "Assemblies:results", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/communication-addresses", "Announcements:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobrança e multas (ADR 0080): multas pendentes, atendimento de cobrança e casos judiciais (só acompanhamento).
 $route->get("/pending-fines", "Collections:fines", null, \Source\Support\Middleware\ApiAuthenticated::class);
