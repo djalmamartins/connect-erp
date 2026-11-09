@@ -121,6 +121,10 @@
    "title": "0031 — Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos"
   },
   {
+   "file": "docs/Organic Code/decisions/0032-finance-condominium-context.md",
+   "title": "0032 — Financeiro no contexto do condomínio da barra superior"
+  },
+  {
    "file": "docs/Organic Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md",
    "title": "0034 — Todo chamado na fila do Help Desk, e alternador ERP / Studio / Help Desk"
   },
@@ -557,6 +561,24 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\MonthClosings": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\RecurringEntries",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext",
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Controllers/Erp/Connect/MonthClosings.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
   "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog": {
    "deps": [
     "Source\\Core\\Controller",
@@ -577,11 +599,13 @@
   },
   "Source\\Controllers\\Erp\\Connect\\Panel": {
    "deps": [
+    "Source\\Core\\Connect",
     "Source\\Core\\Controller",
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
     "Source\\Services\\Erp\\DemoData",
+    "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Support\\Access",
@@ -1500,6 +1524,7 @@
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
+    "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
@@ -1527,6 +1552,7 @@
    "tests": [
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
+    "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php"
    ]
   },
@@ -1573,6 +1599,7 @@
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
+    "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
@@ -1655,9 +1682,11 @@
     "erp_chart_accounts",
     "erp_month_closings",
     "erp_bank_accounts",
+    "condominiums",
     "erp_entries"
    ],
    "tests": [
+    "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Unit/MonthClosingTest.php"
    ]
@@ -1791,6 +1820,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
+    "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
@@ -2440,16 +2470,16 @@
   }
  },
  "counts": {
-  "adrs": 34,
-  "classes": 149,
+  "adrs": 35,
+  "classes": 150,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 216,
+  "routes": 218,
   "tables": 65,
-  "tests": 73
+  "tests": 74
  },
  "erp_pages": [
   {
@@ -5595,10 +5625,28 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Erp\\Connect\\MonthClosings",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 123,
+   "method": "close",
+   "path": "/erp/financeiro/fechamento-mensal/fechar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\MonthClosings",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 124,
+   "method": "reopen",
+   "path": "/erp/financeiro/fechamento-mensal/reabrir",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "env": "erp",
    "file": "container/erp/connect/v1/routes.php",
-   "line": 132,
+   "line": 137,
    "method": "show",
    "path": "/erp/condominios/{id}",
    "verb": "GET"
@@ -5727,6 +5775,7 @@
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
     "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Inspections\\InspectionService",
     "Source\\Services\\OnboardingAlerts",
@@ -6257,6 +6306,13 @@
    "Source\\Services\\Erp\\Registry\\RegistryInUse",
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
+  "tests/legacy/Integration/FinanceContextIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\MonthClosing",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
   "tests/legacy/Integration/InspectionServiceTest.php": [
    "Source\\Models\\User",

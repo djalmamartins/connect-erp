@@ -45,6 +45,8 @@ final class Registry extends Controller
         $filters = [
             // Condomínio da barra superior (ADR 0030); o filtro ?condominio= troca o contexto no index.php.
             'condominium_id' => CondominiumContext::id(),
+            // Cadastros com padrão da Connect (escopo optional) mostram o padrão junto (ADR 0032).
+            'include_standard' => true,
             'status' => $_GET['situacao'] ?? null,
             'filter' => $_GET['tipo'] ?? null,
             'q' => $_GET['q'] ?? null,

@@ -39,6 +39,25 @@ final class MonthClosingTest extends TestCase
         self::assertSame(-2000, MonthClosing::summarize([['nature' => 'despesa', 'amount_cents' => 2000, 'paid_on' => null, 'account_code' => '2', 'account_name' => 'X', 'bank_account_id' => null, 'bank_name' => null]])['result_cents']);
     }
 
+    public function testOverviewTotalsCountReopenedAsOpen(): void
+    {
+        $row = static fn (string $status, int $revenue, int $expense, int $openRevenue = 0): array => [
+            'status' => $status, 'revenue_cents' => $revenue, 'expense_cents' => $expense, 'open_revenue_cents' => $openRevenue, 'open_expense_cents' => 0,
+        ];
+        $totals = MonthClosing::overviewTotals([$row('closed', 1000, 400), $row('reopened', 500, 900, 200), $row('open', 0, 0)]);
+        self::assertSame(['condominiums' => 3, 'closed' => 1, 'open' => 2, 'revenue_cents' => 1500, 'expense_cents' => 1300,
+            'open_revenue_cents' => 200, 'open_expense_cents' => 0, 'result_cents' => 200], $totals);
+        self::assertSame(0, MonthClosing::overviewTotals([])['condominiums']);
+    }
+
+    public function testCompetenceFromScreenFallsBackToCurrentMonth(): void
+    {
+        self::assertSame('2026-03', MonthClosing::competenceOrCurrent('2026-03'));
+        foreach ([null, '', '2026-13', '2026-3', ['2026-03'], "2026-03' OR 1=1"] as $invalid) {
+            self::assertSame(date('Y-m'), MonthClosing::competenceOrCurrent($invalid));
+        }
+    }
+
     public function testEntryDefinitionsAreLockedByClosing(): void
     {
         foreach (['entries', 'payables', 'receivables'] as $slug) {

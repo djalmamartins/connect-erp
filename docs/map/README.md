@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**216** rotas fixas · **149** classes em `source/` · **65** tabelas nas migrations · **73** arquivos de teste · **34** ADRs · **172** páginas no catálogo do ERP.
+**218** rotas fixas · **150** classes em `source/` · **65** tabelas nas migrations · **74** arquivos de teste · **35** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -136,6 +136,10 @@ flowchart LR
   Source_Controllers_Erp_Connect_Inspections --> Source_Services_Inspections_InspectionReport
   Source_Controllers_Erp_Connect_Inspections --> Source_Services_Inspections_InspectionService
   Source_Controllers_Erp_Connect_Login["Controllers/Erp/Connect/Login"]
+  Source_Controllers_Erp_Connect_MonthClosings["Controllers/Erp/Connect/MonthClosings"]
+  Source_Controllers_Erp_Connect_MonthClosings --> Source_Services_CondominiumAccessDenied
+  Source_Controllers_Erp_Connect_MonthClosings --> Source_Services_Erp_MonthClosing
+  Source_Controllers_Erp_Connect_MonthClosings --> Source_Services_Erp_RecurringEntries
   Source_Controllers_Erp_Connect_OnboardingCatalog["Controllers/Erp/Connect/OnboardingCatalog"]
   Source_Controllers_Erp_Connect_OnboardingCatalog --> Source_Services_OnboardingCatalog
   Source_Controllers_Erp_Connect_OnboardingCatalog --> Source_Services_OnboardingItemNotFound
@@ -143,6 +147,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Panel["Controllers/Erp/Connect/Panel"]
   Source_Services_Erp_DemoData["Services/Erp/DemoData"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_DemoData
+  Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_MonthClosing
   Source_Services_Erp_Registry_Definitions["Services/Erp/Registry/Definitions"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_Definitions
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_RegistryService
@@ -187,6 +192,7 @@ flowchart LR
   Source_Services_Erp_BankBalances --> t_erp_bank_accounts
   t_erp_entries[("erp_entries")]
   Source_Services_Erp_BankBalances --> t_erp_entries
+  Source_Services_Erp_MonthClosing --> t_condominiums
   Source_Services_Erp_MonthClosing --> t_erp_bank_accounts
   t_erp_chart_accounts[("erp_chart_accounts")]
   Source_Services_Erp_MonthClosing --> t_erp_chart_accounts
@@ -276,7 +282,7 @@ flowchart LR
 
 ## Rotas
 
-<details><summary><b>erp</b> (42 rotas)</summary>
+<details><summary><b>erp</b> (44 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -321,7 +327,9 @@ flowchart LR
 | POST | `/erp/operacional/vistorias/{id}/enviar` | `Controllers/Erp/Connect/Inspections::send` | [container/erp/connect/v1/routes.php:115](../../container/erp/connect/v1/routes.php#L115) |
 | GET | `/erp/operacional/chamados` | `Controllers/Erp/Connect/Tickets::index` | [container/erp/connect/v1/routes.php:118](../../container/erp/connect/v1/routes.php#L118) |
 | POST | `/erp/operacional/chamados` | `Controllers/Erp/Connect/Tickets::store` | [container/erp/connect/v1/routes.php:119](../../container/erp/connect/v1/routes.php#L119) |
-| GET | `/erp/condominios/{id}` | `Controllers/Erp/Connect/Condominiums::show` | [container/erp/connect/v1/routes.php:132](../../container/erp/connect/v1/routes.php#L132) |
+| POST | `/erp/financeiro/fechamento-mensal/fechar` | `Controllers/Erp/Connect/MonthClosings::close` | [container/erp/connect/v1/routes.php:123](../../container/erp/connect/v1/routes.php#L123) |
+| POST | `/erp/financeiro/fechamento-mensal/reabrir` | `Controllers/Erp/Connect/MonthClosings::reopen` | [container/erp/connect/v1/routes.php:124](../../container/erp/connect/v1/routes.php#L124) |
+| GET | `/erp/condominios/{id}` | `Controllers/Erp/Connect/Condominiums::show` | [container/erp/connect/v1/routes.php:137](../../container/erp/connect/v1/routes.php#L137) |
 
 </details>
 
@@ -549,7 +557,7 @@ flowchart LR
 | `brief` | `20260815_brief_testimonials.sql` | `20260816_branding_testimonial_rating.sql` | `Models/Brief/AppBrief` |
 | `condominium_geolocations` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `condominium_onboarding_items` | `20261108_0010_condominium_onboarding.sql` | `20261108_0011_onboarding_alerts.sql` | `Services/OnboardingAlerts`, `Services/OnboardingCatalog`, `Services/OnboardingChecklist` |
-| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/BankBalances`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
+| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/BankBalances`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
 | `erp_assets` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_bank_accounts` | `20261108_0504_bank_accounts.sql` | — | `Services/Erp/BankBalances`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/Definitions` |
 | `erp_board_members` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
@@ -606,7 +614,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (45)</summary>
+<details><summary><b>Controllers</b> (46)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -636,8 +644,9 @@ flowchart LR
 | [`Controllers/Erp/Connect/Finance`](../../source/Controllers/Erp/Connect/Finance.php) | App, AppCondominium, AppInvoice | — | — |
 | [`Controllers/Erp/Connect/Inspections`](../../source/Controllers/Erp/Connect/Inspections.php) | Controller, Session, Auth, User, CondominiumScope, ChecklistText, InspectionError, InspectionReport … | condominiums | — |
 | [`Controllers/Erp/Connect/Login`](../../source/Controllers/Erp/Connect/Login.php) | Controller, Auth, Access | — | — |
+| [`Controllers/Erp/Connect/MonthClosings`](../../source/Controllers/Erp/Connect/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, RecurringEntries, Access, AppLogger, CondominiumContext … | — | — |
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Controller, Session, Auth, User, DemoData, Definitions, RegistryService, Access … | notifications, pages | 4 |
+| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, DemoData, MonthClosing, Definitions … | notifications, pages | 4 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryLocked, RegistryNotFound … | condominiums | — |
 | [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, QrCode, SecretBox | — | — |
@@ -718,7 +727,7 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 23 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 24 |
 
 </details>
 
@@ -726,21 +735,21 @@ flowchart LR
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
-| [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 3 |
+| [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 4 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 15 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 16 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 2 |
 | [`Services/Erp/BankBalances`](../../source/Services/Erp/BankBalances.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_entries | 2 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
-| [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 2 |
+| [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 3 |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
 | [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 11 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 5 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 2 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 10 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 11 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 8 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 8 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |
@@ -833,6 +842,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0029 — QR code na configuração do 2FA, gerado no servidor](../../docs/Organic%20Code/decisions/0029-two-factor-qr-code.md)
 - [0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL](../../docs/Organic%20Code/decisions/0030-condominium-context-in-url.md)
 - [0031 — Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos](../../docs/Organic%20Code/decisions/0031-month-closing.md)
+- [0032 — Financeiro no contexto do condomínio da barra superior](../../docs/Organic%20Code/decisions/0032-finance-condominium-context.md)
 - [0034 — Todo chamado na fila do Help Desk, e alternador ERP / Studio / Help Desk](../../docs/Organic%20Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)

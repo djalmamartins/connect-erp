@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Erp\Connect;
 
+use Source\Core\Connect;
 use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\DemoData;
+use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Support\Access;
@@ -100,6 +102,32 @@ final class Panel extends Controller
         return $items;
     }
 
+    /**
+     * Dados reais do fechamento mensal (AP-030, ADR 0032) no contexto da barra superior: o
+     * condomínio escolhido ou, em "Todos", cada condomínio do escopo. A tela lê $closing
+     * (null = sem permissão ou banco indisponível, e a tela mostra a demonstração) e
+     * $canManageClosing para mostrar "Fechar" e "Reabrir" (só com um condomínio escolhido).
+     *
+     * @return array{closing: ?array, closingCompetence: string, canManageClosing: bool}
+     */
+    private function closingData(User $user): array
+    {
+        $competence = MonthClosing::competenceOrCurrent($_GET['competencia'] ?? null);
+        $data = ['closing' => null, 'closingCompetence' => $competence, 'canManageClosing' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.closing.view', $user)) {
+            return $data;
+        }
+        $context = CondominiumContext::id();
+        try {
+            $data['closing'] = (new MonthClosing())->overview($user, $context, $competence);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'month_closing_overview_failed', 'condominium_id' => $context]);
+            return $data;
+        }
+        $data['canManageClosing'] = $context !== null && Access::can('erp.closing.manage', $user);
+        return $data;
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -184,6 +212,9 @@ final class Panel extends Controller
             $cols = $id === 'AP-003' ? ['Vencimento:date', 'Descrição:text', 'Valor:money', 'Situação:status(Aberto|Pago|Vencido)'] : ['Vencimento:date', 'Fornecedor:text', 'Valor:money', 'Situação:status(A vencer|Vencida|Agendada)'];
             $data['columns'] = FieldSpec::parseAll($cols, 'c');
             $data['rows'] = DemoData::rows($id, $cols, 6);
+        }
+        if ($kind === 'closing') {
+            $data += $this->closingData($user);
         }
         $template = 'pages/modules/' . $kind;
         return [$template, $this->layoutData($user, $id, $data)];
