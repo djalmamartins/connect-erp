@@ -65,3 +65,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0038](../Organic%20Code/decisions/0038-banking-screens.md) | Telas da cobrança bancária: boletos, importar retorno e fila de divergências (sandbox) |
 | [0039](../Organic%20Code/decisions/0039-delinquency-and-agreements.md) | Inadimplência por unidade e acordos (AP-033/034): contas vencidas viram parcelas, sem dívida duplicada |
 | [0040](../Organic%20Code/decisions/0040-late-charges-and-agreement-breach.md) | Multa, juros, correção pelo IPCA e quebra de acordo, com padrões ajustáveis por condomínio (issue #46) |
+| [0041](../Organic%20Code/decisions/0041-agreements-screens.md) | Telas de inadimplência e acordos (AP-033/034) e lista de arquivos de retorno em AP-038 |

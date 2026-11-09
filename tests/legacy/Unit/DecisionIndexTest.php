@@ -6,7 +6,7 @@ namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-/** Issue #9: todo ADR está no índice único e não há dois ADRs com o mesmo número. */
+/** Issue #9: todo ADR está no índice único, não há dois ADRs com o mesmo número e o próximo livre está livre. */
 final class DecisionIndexTest extends TestCase
 {
     private const ROOT = __DIR__ . '/../../..';
@@ -22,6 +22,11 @@ final class DecisionIndexTest extends TestCase
             self::assertStringContainsString($name, $index, "ADR {$name} fora de docs/decisions/README.md");
         }
         self::assertSame(array_unique($numbers), $numbers, 'Dois ADRs com o mesmo número.');
+        // O "Próximo número livre" do índice é o que as threads usam para numerar: precisa
+        // estar acima do maior ADR existente, senão o próximo ADR colide com um já mergeado.
+        self::assertMatchesRegularExpression('/Próximo número livre: (\d{4})/u', $index);
+        preg_match('/Próximo número livre: (\d{4})/u', $index, $next);
+        self::assertGreaterThan(max(array_map('intval', $numbers)), (int)$next[1], 'Próximo número livre do índice já está em uso.');
         foreach (glob(self::ROOT . '/docs/decisions/ADR-*.md') ?: [] as $file) {
             self::assertStringContainsString(basename($file), $index);
         }
