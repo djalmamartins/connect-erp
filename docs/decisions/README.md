@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0094.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0094; Preparar: 0114, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0095.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0095; Preparar: 0114, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -119,6 +119,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0091](../Organic%20Code/decisions/0091-integration-status.md) | Integrações: estado do banco, do e-mail, dos índices e da fila, só leitura e sem credenciais |
 | [0092](../Organic%20Code/decisions/0092-resident-invitation-acceptance.md) | Aceite do convite do morador em /convite: token só na sessão, mensagem genérica, CPF do cadastro, limite por IP e token, conta comum sem login automático |
 | [0093](../Organic%20Code/decisions/0093-invite-hardening.md) | Convite do morador: limite de tentativas que falha fechado (abrir e aceitar) e CPF/CNPJ válido obrigatório para convidar e para aceitar |
+| [0094](../Organic%20Code/decisions/0094-quality-pass-37-42.md) | Passada de qualidade dos ciclos 37 a 42: listagem de imobiliárias com teto e escopo, desvínculo com escopo, valor vencido da presença só com erp.agreements.view e matriz de permissões das rotas novas |
 | [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
 | [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
 | [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |

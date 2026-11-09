@@ -136,7 +136,8 @@ final class Assemblies
     /** @param array{id?:string} $data */
     public function attendanceReport(array $data): void
     {
-        $this->report($data, 'attendance', static fn (Service $s, User $u, int $id): array => $s->attendanceReport($u, $id));
+        // ADR 0094: o valor vencido por unidade só para quem já vê a inadimplência.
+        $this->report($data, 'attendance', static fn (Service $s, User $u, int $id): array => $s->attendanceReport($u, $id, Access::can('erp.agreements.view', $u)));
     }
 
     /** @param array{id?:string} $data */

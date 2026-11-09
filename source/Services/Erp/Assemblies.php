@@ -34,6 +34,8 @@ final class Assemblies
     public const MIN_NOTICE_DAYS = 8;
     public const MAX_ITEMS = 20;
     public const MAX_LIST = 200;
+    /** Teto da lista de presença (uma linha por unidade; ADR 0094). */
+    public const MAX_ATTENDANCE = 5000;
     /** Pesos em milionésimos: a fração ideal tem 6 casas (decimal 9,6) e "uma unidade" vale 1.000000. */
     public const SCALE = 1000000;
     public const KINDS = ['ordinaria', 'extraordinaria'];
@@ -517,14 +519,18 @@ final class Assemblies
         return $out;
     }
 
-    /** Relatório de presença (AP-088): unidade, quem está presente, procuração e direito a voto. */
-    public function attendanceReport(User $user, int $id): array
+    /**
+     * Relatório de presença (AP-088): unidade, quem está presente, procuração e direito a voto.
+     *
+     * @param bool $withDebt ADR 0094: o valor vencido por unidade só aparece para quem tem erp.agreements.view.
+     */
+    public function attendanceReport(User $user, int $id, bool $withDebt = false): array
     {
         $assembly = $this->row($user, $id);
         $rows = array_map(static fn (array $a): array => [
             'unit_label' => (string)$a['unit_label'], 'attendee_name' => (string)$a['attendee_name'], 'is_proxy' => (bool)$a['is_proxy'],
             'proxy_document_id' => $a['proxy_document_id'] === null ? null : (int)$a['proxy_document_id'], 'eligible' => (bool)$a['eligible'],
-            'overdue_cents' => (int)$a['overdue_cents'], 'checked_in_at' => (string)$a['checked_in_at'],
+            'overdue_cents' => $withDebt ? (int)$a['overdue_cents'] : null, 'checked_in_at' => (string)$a['checked_in_at'],
         ], $this->attendance($id));
         return ['assembly' => $this->present($assembly), 'rows' => $rows, 'totals' => ['units' => count($rows),
             'proxies' => count(array_filter($rows, static fn (array $r): bool => $r['is_proxy'])),
@@ -632,7 +638,7 @@ final class Assemblies
     private function attendance(int $assembly): array
     {
         $stmt = $this->pdo->prepare('SELECT t.*, u.label AS unit_label FROM erp_assembly_attendance t JOIN erp_units u ON u.id = t.unit_id
-            WHERE t.assembly_id = :a ORDER BY u.label, t.id');
+            WHERE t.assembly_id = :a ORDER BY u.label, t.id LIMIT ' . self::MAX_ATTENDANCE);
         $stmt->execute(['a' => $assembly]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -31,6 +31,7 @@ final class PartnerAccess
     public const PARTNER_ROLE = 'erp_partner';
     public const MAX_USER_LEVEL = 1;
     public const MAX_VIEW_ROWS = 5000;
+    public const MAX_AGENCIES = 500;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -95,15 +96,18 @@ final class PartnerAccess
     /** @return list<array> imobiliárias com os usuários e os condomínios de cada um (só os do escopo de quem consulta). */
     public function listAgencies(User $admin): array
     {
-        $allowed = array_flip(array_map('intval', $this->scope->allowedIds($admin)));
-        $agencies = $this->pdo->query('SELECT * FROM erp_partner_agencies ORDER BY name, id LIMIT 500')->fetchAll(PDO::FETCH_ASSOC);
-        $users = $this->pdo->query('SELECT pu.agency_id, pu.user_id, u.first_name, u.last_name, u.email FROM erp_partner_agency_users pu JOIN users u ON u.id = pu.user_id ORDER BY pu.agency_id, u.first_name')->fetchAll(PDO::FETCH_ASSOC);
-        $grants = $this->pdo->query('SELECT uca.user_id, uca.condominium_id FROM user_condominium_access uca JOIN erp_partner_agency_users pu ON pu.user_id = uca.user_id')->fetchAll(PDO::FETCH_ASSOC);
+        $allowed = array_values(array_filter(array_map('intval', $this->scope->allowedIds($admin)), static fn (int $i): bool => $i > 0));
+        $agencies = $this->pdo->query('SELECT * FROM erp_partner_agencies ORDER BY name, id LIMIT ' . self::MAX_AGENCIES)->fetchAll(PDO::FETCH_ASSOC);
+        // ADR 0094: só os usuários das imobiliárias listadas e só as concessões do escopo de quem consulta, com teto.
+        $agencyIds = array_map(static fn (array $a): int => (int)$a['id'], $agencies);
+        $users = $agencyIds === [] ? [] : $this->pdo->query('SELECT pu.agency_id, pu.user_id, u.first_name, u.last_name, u.email FROM erp_partner_agency_users pu
+            JOIN users u ON u.id = pu.user_id WHERE pu.agency_id IN (' . implode(',', $agencyIds) . ') ORDER BY pu.agency_id, u.first_name LIMIT ' . self::MAX_VIEW_ROWS)->fetchAll(PDO::FETCH_ASSOC);
+        $userIds = array_map(static fn (array $u): int => (int)$u['user_id'], $users);
+        $grants = $userIds === [] || $allowed === [] ? [] : $this->pdo->query('SELECT user_id, condominium_id FROM user_condominium_access
+            WHERE user_id IN (' . implode(',', $userIds) . ') AND condominium_id IN (' . implode(',', $allowed) . ') LIMIT ' . self::MAX_VIEW_ROWS)->fetchAll(PDO::FETCH_ASSOC);
         $byUser = [];
         foreach ($grants as $g) {
-            if (isset($allowed[(int)$g['condominium_id']])) {
-                $byUser[(int)$g['user_id']][] = (int)$g['condominium_id'];
-            }
+            $byUser[(int)$g['user_id']][] = (int)$g['condominium_id'];
         }
         $byAgency = [];
         foreach ($users as $u) {
@@ -187,6 +191,7 @@ final class PartnerAccess
         $this->pdo->beginTransaction();
         try {
             $agency = $this->assertPartner($userId, true);
+            $this->assertScopeOverGrants($admin, [$userId]);
             $this->pdo->prepare('DELETE FROM user_condominium_access WHERE user_id = :u')->execute(['u' => $userId]);
             $this->pdo->prepare('DELETE ur FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id WHERE ur.user_id = :u AND r.slug = :s')
                 ->execute(['u' => $userId, 's' => self::PARTNER_ROLE]);
@@ -208,8 +213,11 @@ final class PartnerAccess
         $this->agency($agencyId);
         $stmt = $this->pdo->prepare('SELECT user_id FROM erp_partner_agency_users WHERE agency_id = :a');
         $stmt->execute(['a' => $agencyId]);
-        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $userId) {
-            $this->unlinkUser($admin, (int)$userId);
+        $userIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        // ADR 0094: confere o escopo de todos antes de desvincular o primeiro, para não parar no meio.
+        $this->assertScopeOverGrants($admin, $userIds);
+        foreach ($userIds as $userId) {
+            $this->unlinkUser($admin, $userId);
         }
         $this->pdo->prepare("UPDATE erp_partner_agencies SET status = 'inactive', updated_by = :u WHERE id = :id")->execute(['u' => (int)$admin->id, 'id' => $agencyId]);
         Audit::record('update', 'erp_partner_agencies', $agencyId, ['status' => 'active'], ['status' => 'inactive']);
@@ -258,6 +266,23 @@ final class PartnerAccess
                 $this->pdo->rollBack();
             }
             throw $error;
+        }
+    }
+
+    /**
+     * ADR 0094: quem desvincula precisa ver todos os condomínios concedidos aos parceiros; senão
+     * CondominiumAccessDenied (404), sem mexer em nada.
+     *
+     * @param list<int> $userIds
+     */
+    private function assertScopeOverGrants(User $admin, array $userIds): void
+    {
+        if ($userIds === []) {
+            return;
+        }
+        $granted = $this->pdo->query('SELECT DISTINCT condominium_id FROM user_condominium_access WHERE user_id IN (' . implode(',', array_map('intval', $userIds)) . ')');
+        foreach ($granted->fetchAll(PDO::FETCH_COLUMN) as $condominiumId) {
+            $this->scope->assertAccess($admin, (int)$condominiumId);
         }
     }
 
