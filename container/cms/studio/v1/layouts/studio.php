@@ -20,14 +20,14 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
 ?>
 <body class="studio-body studio-v2 studio-erp studio-app-<?= htmlspecialchars($app) ?>" data-environment="<?= $isHelpDeskEnvironment?'helpdesk':'studio' ?>" data-editor-upload="<?= url('/studio/media/editor') ?>">
 <a class="studio-skip-link" href="#main-content">Ir para o conteúdo</a>
-<div class="ajax_load studio-preloader" role="status" aria-live="polite"><div class="studio-preloader-card"><span class="studio-preloader-mark"><i></i><i></i><i></i></span><strong>CONNECT<small><?= $environmentName ?></small></strong><p class="ajax_load_box_title">Preparando seu painel</p><span class="studio-preloader-line"><i></i></span></div></div>
+<div class="ajax_load studio-preloader" role="status" aria-live="polite"><div class="studio-preloader-card"><span class="studio-preloader-mark"><i></i><i></i><i></i></span><strong>MOVES<small><?= $environmentName ?></small></strong><p class="ajax_load_box_title">Preparando seu painel</p><span class="studio-preloader-line"><i></i></span></div></div>
 <div class="ajax_response"><?= flash() ?></div>
 <div class="studio-shell">
     <aside class="studio-sidebar" id="studio-sidebar" aria-label="Navegação do <?= $environmentName ?>">
         <div class="studio-erp-sidebar-head">
-            <a class="studio-erp-brand" href="<?= url($environmentHome) ?>" aria-label="Connect <?= $environmentName ?> — início">
-                <img class="studio-erp-brand-logo" src="<?= htmlspecialchars(site_logo_url()) ?>" alt="Connect Condomínios" width="152" height="40">
-                <img class="studio-erp-brand-mark" src="<?= theme('/assets/images/marca_connect.svg') ?>" alt="" width="34" height="34">
+            <a class="studio-erp-brand" href="<?= url($environmentHome) ?>" aria-label="Moves <?= $environmentName ?> — início">
+                <img class="studio-erp-brand-logo" src="<?= themeStudio('/assets/images/moves-logo-white.svg', 'default') ?>" alt="Moves <?= $environmentName ?>" width="132" height="19">
+                <img class="studio-erp-brand-mark" src="<?= themeStudio('/assets/images/moves-mark-white.svg', 'default') ?>" alt="" width="34" height="24">
             </a>
             <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
         </div>

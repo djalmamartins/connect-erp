@@ -88,10 +88,10 @@ foreach ($cases as $label => [$host, $path, $environment]) {
 
     $assert(str_contains($html, 'class="studio-body studio-v2 studio-erp'), "$label: corpo com a moldura do ERP");
     $assert(str_contains($html, '/assets/css/connect-shell.css?v='), "$label: camada visual do ERP carregada");
-    $assert(str_contains($html, 'class="studio-erp-brand-logo"'), "$label: logotipo Connect na sidebar");
+    $assert(str_contains($html, '/assets/images/moves-logo-white.svg'), "$label: logotipo Moves na sidebar");
     $type = $environment === 'Help Desk' ? 'Atendimento' : 'CMS';
     $assert(str_contains($html, "<small>$type</small><strong>Moves $environment</strong>"), "$label: cabeçalho '$type / Moves $environment'");
-    $assert(!str_contains($html, 'MOVES<small>'), "$label: sem a marca antiga");
+    $assert(!str_contains($html, 'studio-logo.svg'), "$label: sem o logotipo antigo do Studio");
     $assert(!str_contains($html, 'studio-theme-toggle'), "$label: sem alternância de tema (o ERP não tem)");
     $assert(str_contains($html, 'data-studio-collapse'), "$label: botão de recolher na sidebar");
     $assert(str_contains($html, 'class="studio-erp-title"'), "$label: título e trilha na navbar");
@@ -106,6 +106,27 @@ foreach ($cases as $label => [$host, $path, $environment]) {
     $assert(str_contains($html, 'data-environment="' . ($environment === 'Help Desk' ? 'helpdesk' : 'studio') . '"'), "$label: ambiente marcado para a paleta");
     $siteLink = $host === 'studio.connect.lab' ? 'href="https://www.connect.lab/" target="_blank"' : 'href="https://www.connect.lab/" target="_blank"';
     $assert(str_contains($html, $siteLink), "$label: 'Visualizar site' aponta para o host do site");
+}
+
+// Telas do Studio (dados fictícios, sem banco): cada uma precisa renderizar sem aviso PHP.
+$_SERVER['HTTP_HOST'] = 'www.connect.lab';
+$_SERVER['REQUEST_URI'] = '/studio/dash';
+$base = ['head' => '<title>Studio - Connect</title>', 'user' => $user, 'currentVersion' => '1.0.0', 'adminBase' => '/studio'];
+$logs = [(object)['message' => 'Usuário entrou no Studio', 'created_at' => '2026-11-08 21:00:00'], (object)['message' => 'Página "Quem somos" atualizada', 'created_at' => '2026-11-08 20:10:00']];
+$screens = [
+    'dash' => ['components/dash/home', 'Dashboard', 'dash', ['accessDays' => [(object)['pages' => 120], (object)['pages' => 87]], 'pagesCount' => 12, 'postsCount' => 34, 'publishedCount' => 30, 'usersCount' => 8, 'onlineCount' => 2, 'dashboardLogs' => $logs, 'dashboardProposals' => []]],
+    'pages-form' => ['components/pages/form', 'Nova página', 'pages', ['page' => null]],
+    'blog-home' => ['components/blog/home', 'Artigos', 'blog', ['posts' => [], 'search' => '', 'paginator' => '']],
+    'blog-post' => ['components/blog/post', 'Novo artigo', 'blog', ['post' => null, 'categories' => [], 'authors' => []]],
+];
+foreach ($screens as $label => [$template, $title, $app, $data]) {
+    try {
+        $html = (new Source\Core\View($theme, 'php'))->render($template, $base + ['title' => $title, 'app' => $app] + $data);
+        if ($out) file_put_contents("$out/screen-$label.html", $html);
+        $assert(str_contains($html, 'studio-erp') && substr_count($html, '<main') === 1, "tela $label: moldura");
+    } catch (\Throwable $error) {
+        $assert(false, "tela $label: " . $error->getMessage());
+    }
 }
 
 // Host do Studio: helper reconhece só studio.*
