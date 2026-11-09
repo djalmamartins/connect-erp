@@ -49,7 +49,7 @@ final class FinancialReportsIntegrationTest extends TestCase
         $reports = new FinancialReports($this->pdo);
         $alpha = $reports->trialBalance($this->admin, $this->alpha, '2026-11', '2026-11');
         $rows = array_column($alpha['rows'], null, 'code');
-        self::assertSame(['1', '1.01', '2', '2.01'], array_keys($rows));
+        self::assertSame(['1', '1.01', '2', '2.01'], array_map('strval', array_keys($rows)), 'O PHP guarda as chaves "1" e "2" como inteiros.');
         self::assertSame([100000, 80000, 20000], [$rows['1']['planned_cents'], $rows['1']['realized_cents'], $rows['1']['open_cents']]);
         self::assertSame('Receitas', $rows['1']['name']);
         self::assertSame(70000, $alpha['totals']['planned_result_cents']);
