@@ -119,6 +119,7 @@ $route->get("/reports/sent-boletos", "RegistryReports:sentBoletos", null, \Sourc
 $route->get("/settings", "ErpSettings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/settings", "ErpSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/settings/reset", "ErpSettings:reset", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/integrations", "IntegrationStatus:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/cost-center-openings", "ErpSettings:openings", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/cost-center-openings", "ErpSettings:storeOpening", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/budgets", "ErpSettings:budget", null, \Source\Support\Middleware\ApiAuthenticated::class);

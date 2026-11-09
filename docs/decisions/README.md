@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0091.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0091; Preparar: 0112, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0092.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0092; Preparar: 0112, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -116,6 +116,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0088](../Organic%20Code/decisions/0088-assemblies-voting.md) | Assembleia e votação: edital pela outbox, presença com procuração, inadimplente sem voto, apuração por fração ou unidade e ata imutável com sha256 |
 | [0089](../Organic%20Code/decisions/0089-payment-calculation-transfer-reports.md) | Relatórios de pagamentos, memória de cálculo dos encargos (mesmo LateCharges da cobrança) e transferências entre contas, com CSV seguro |
 | [0090](../Organic%20Code/decisions/0090-partner-resident-access.md) | Acesso de imobiliárias parceiras (papel fixo erp_partner, só leitura mascarada), convite de morador de uso único e matriz do portal do morador desligada por padrão |
+| [0091](../Organic%20Code/decisions/0091-integration-status.md) | Integrações: estado do banco, do e-mail, dos índices e da fila, só leitura e sem credenciais |
 | [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
 | [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
 | [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |
