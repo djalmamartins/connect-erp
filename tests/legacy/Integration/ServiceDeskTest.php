@@ -14,6 +14,15 @@ use Source\Support\Communication;
 
 final class ServiceDeskTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Os controllers do Studio checam studio.access e outras permissões cadastradas.
+        if (isset($this->pdo)) {
+            $this->registerMigrationPermissions();
+        }
+    }
+
     public function testPublicWidgetCreatesAndFindsTicketByProtocol(): void
     {
         $_SESSION['csrf_token'] = 'widget-token';
