@@ -48,6 +48,13 @@ $this->insert('components/layout/page-head', [
     </form>
 
     <div class="erp-stack">
+    <?php if ($definition['slug'] === 'residents' && $canManage) {
+        // ADR 0162: reaproveitar a pessoa e vinculá-la a várias unidades (inclusive de outros condomínios).
+        $this->insert('components/cards/person-link', [
+            'person' => $isNew ? null : ['id' => (int)$recordId, 'name' => (string)($values['name'] ?? '')],
+            'units' => $units ?? [], 'condominiums' => $condominiums,
+        ]);
+    } ?>
     <?php if (($occurrenceTicket ?? null) !== null) {
         $this->insert('components/cards/occurrence-ticket', ['ticket' => $occurrenceTicket]);
     } ?>

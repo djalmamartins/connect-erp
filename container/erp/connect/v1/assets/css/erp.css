@@ -735,3 +735,18 @@ p { margin: 0; }
 .erp-coll-history .erp-list__body { min-width: 0; }
 .erp-coll-note { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
 .erp-coll-filter { margin: 0 0 16px; }
+
+/* Proprietários e inquilinos: busca de pessoa e vínculo com várias unidades (ADR 0162). */
+.erp-person-link__results > li { align-items: center; justify-content: space-between; }
+.erp-person-link__who { display: grid; gap: 2px; min-width: 0; }
+.erp-person-link__who small { color: var(--erp-muted); }
+.erp-person-link__chosen { display: grid; gap: 8px; margin-bottom: 12px; }
+.erp-person-link__chosen p { margin: 0; }
+.erp-chip--static { padding: 4px 12px; }
+.erp-person-link__units { border: 0; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.erp-person-link__units legend { font-weight: 600; font-size: 13px; padding: 0; margin-bottom: 4px; }
+.erp-person-link__units legend small { color: var(--erp-muted); font-weight: 400; }
+.erp-person-link__unit-list { display: grid; gap: 10px; max-height: 280px; overflow: auto; padding: 8px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); }
+.erp-person-link__condo { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.erp-person-link__condo > strong { flex-basis: 100%; font-size: 12px; color: var(--erp-muted); text-transform: uppercase; letter-spacing: .04em; }
+.erp-person-link__condo .is-linked { opacity: .55; text-decoration: line-through; }
