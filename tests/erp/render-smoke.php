@@ -443,6 +443,38 @@ $html = $agreementPage('AP-165', 'pages/finance/billing-rules', ['billingRule' =
 $assert(!str_contains($html, 'Salvar regra') && !str_contains($html, 'data-index-form') && str_contains($html, 'disabled') && str_contains($html, 'Nenhum mês do IPCA lançado'), 'AP-165: sem erp.billing_rules.manage só consulta');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-165', ['billingRule' => null]) === null, 'AP-165: sem permissão segue a demonstração');
 
+// Documentos da unidade (AP-123/124/125/130, ADR 0044 e 0046) com dados reais.
+$docRow = static fn (array $over = []): array => $over + ['id' => 31, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 9, 'unit_label' => 'Apto <101>',
+    'kind' => 'debt_certificate', 'kind_label' => 'Certidão de Débitos', 'as_of' => '2026-11-09', 'reference' => null, 'result' => 'debts', 'total_cents' => 52345,
+    'verification_code' => 'ABCDEFGHJKMNPQRS', 'verification_display' => 'ABCD-EFGH-JKMN-PQRS', 'status' => 'issued', 'issued_at' => '2026-11-09 10:00:00', 'cancelled_at' => null, 'cancel_reason' => null];
+$docUnits = [['id' => 9, 'condominium_id' => 1, 'label' => 'Apto <101>', 'condominium_name' => 'Residencial Aurora'], ['id' => 10, 'condominium_id' => 2, 'label' => 'Casa 2', 'condominium_name' => 'Vila Sol']];
+$docList = ['data' => [$docRow(), $docRow(['id' => 32, 'result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data errada'])], 'total' => 2, 'page' => 1, 'per_page' => 25, 'pages' => 1];
+$docData = static fn (string $kind, array $over = []): array => $over + ['documentKind' => $kind, 'unitDocuments' => $docList, 'unitDocument' => null, 'documentUnits' => $docUnits, 'documentError' => null, 'canManageDocuments' => true];
+foreach (Source\Controllers\Erp\Connect\Panel::UNIT_DOCUMENT_PAGES as $docPage => $docKind) {
+    $html = $agreementPage($docPage, 'pages/documents/unit-document', $docData($docKind), 'list');
+    $common($html, $docPage, 'Emitir');
+    $assert(str_contains($html, 'data-erp-unit-documents data-api="https://' . $smokeHost . '/api/v1/unit-documents" data-kind="' . $docKind . '"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html)
+        && str_contains($html, '<optgroup label="Vila Sol">') && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, 'ABCD-EFGH-JKMN-PQRS') && str_contains($html, 'data-unit-document-verify')
+        && substr_count($html, 'data-unit-document-cancel="') === 1 && str_contains($html, '?documento=31'), "{$docPage}: emitir, conferir, lista com código e cancelar só o emitido");
+    $assert(str_contains($html, 'name="until_competence"') === ($docKind === 'quittance') && str_contains($html, 'name="purpose"') === ($docKind === 'consent_letter'), "{$docPage}: campos próprios do tipo");
+}
+$html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['canManageDocuments' => false]));
+$assert(!str_contains($html, 'data-unit-document-form') && !str_contains($html, 'data-unit-document-cancel') && str_contains($html, 'data-unit-document-verify'), 'AP-123: sem erp.unit_documents.manage só consulta e confere');
+$docContent = ['overdue' => [['entry_id' => 1, 'description' => 'Taxa <out>', 'competence' => '2026-09', 'due_on' => '2026-09-10', 'amount_cents' => 50000, 'days_late' => 60, 'correction_cents' => 220, 'fine_cents' => 1004, 'interest_cents' => 1121, 'charges_cents' => 2345, 'total_cents' => 52345, 'missing_index' => ['2026-10']]],
+    'upcoming' => [['entry_id' => 2, 'description' => 'Taxa nov', 'competence' => '2026-11', 'due_on' => '2026-11-20', 'amount_cents' => 50000]], 'overdue_cents' => 50000, 'charges_cents' => 2345, 'upcoming_cents' => 50000, 'missing_index' => ['2026-10']];
+$html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['unitDocument' => $docRow(['content' => $docContent])]), 'doc');
+$assert(str_contains($html, 'Certidão de Débitos nº 31') && str_contains($html, 'Taxa &lt;out&gt;') && str_contains($html, 'R$ 523,45') && str_contains($html, 'R$ 10,04') && str_contains($html, 'Sem IPCA lançado de 10/2026')
+    && str_contains($html, 'Contas a vencer em aberto') && str_contains($html, 'data-erp-print') && str_contains($html, 'erp-unit-doc__code">ABCD-EFGH-JKMN-PQRS') && str_contains($html, 'Cancelar documento') && !str_contains($html, 'data-unit-document-form'), 'AP-123: certidão com débitos, encargos, código e imprimir');
+$html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['unitDocument' => $docRow(['result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data <errada>', 'content' => ['overdue' => [], 'upcoming' => []]])]));
+$assert(str_contains($html, 'Nada consta.') && str_contains($html, 'erp-unit-doc is-cancelled') && str_contains($html, 'Data &lt;errada&gt;') && !str_contains($html, 'data-unit-document-cancel="'), 'AP-123: nada consta cancelado, sem cancelar de novo');
+$html = $agreementPage('AP-125', 'pages/documents/unit-document', $docData('quittance', ['unitDocument' => $docRow(['kind' => 'quittance', 'kind_label' => 'Comprovante de Quitação', 'reference' => '2026-10', 'result' => 'clear', 'total_cents' => 600000, 'content' => ['until_competence' => '2026-10', 'paid_entries' => 12, 'paid_cents' => 600000]])]), 'doc');
+$assert(str_contains($html, 'competência até <strong>10/2026</strong>') && str_contains($html, '12 conta(s), no total de R$ 6.000,00'), 'AP-125: quitação até a competência');
+$html = $agreementPage('AP-130', 'pages/documents/unit-document', $docData('consent_letter', ['unitDocument' => $docRow(['kind' => 'consent_letter', 'kind_label' => 'Carta de Anuência', 'reference' => 'venda <da unidade>', 'result' => 'clear', 'total_cents' => 0, 'content' => ['overdue' => [], 'upcoming' => $docContent['upcoming']]])]), 'doc');
+$assert(str_contains($html, 'para fins de <strong>venda &lt;da unidade&gt;</strong>') && !str_contains($html, 'Contas a vencer em aberto'), 'AP-130: carta com a finalidade escapada, sem contas a vencer');
+$html = $agreementPage('AP-124', 'pages/documents/unit-document', $docData('delinquency_declaration', ['documentError' => 'Documento não encontrado no seu escopo.']));
+$assert(str_contains($html, 'Documento não encontrado no seu escopo.') && str_contains($html, 'data-unit-document-form'), 'AP-124: documento fora do escopo avisa e mantém a lista');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-130', ['unitDocuments' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-124', ['unitDocuments' => ['data' => []]]) === 'pages/documents/unit-document', 'documentos: sem permissão segue a demonstração');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);

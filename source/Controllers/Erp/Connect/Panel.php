@@ -18,7 +18,9 @@ use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Invoices;
 use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
+use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
+use Source\Services\Erp\UnitDocuments;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Erp\FieldSpec;
@@ -300,6 +302,68 @@ final class Panel extends Controller
         return $data;
     }
 
+    /** Documentos da unidade com tela própria (ADR 0044 e 0046): página => tipo do documento. */
+    public const UNIT_DOCUMENT_PAGES = ['AP-123' => 'debt_certificate', 'AP-124' => 'delinquency_declaration', 'AP-125' => 'quittance', 'AP-130' => 'consent_letter'];
+
+    /**
+     * Documentos da unidade (AP-123/124/125/130, ADR 0044) no contexto da barra superior: os emitidos
+     * do tipo da página ($unitDocuments, ?pagina=), as unidades para emitir ($documentUnits) e, com
+     * ?documento=ID, o documento com o conteúdo para imprimir ($unitDocument). null = sem permissão
+     * ou sem banco (a tela segue com a demonstração). Emitir e cancelar usam /api/v1/unit-documents.
+     *
+     * @return array<string, mixed>
+     */
+    private function unitDocumentData(User $user, string $id): array
+    {
+        $kind = self::UNIT_DOCUMENT_PAGES[$id];
+        $data = ['documentKind' => $kind, 'unitDocuments' => null, 'unitDocument' => null, 'documentUnits' => [], 'documentError' => null, 'canManageDocuments' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.unit_documents.view', $user)) {
+            return $data;
+        }
+        $context = CondominiumContext::id();
+        try {
+            $service = new UnitDocuments();
+            $data['unitDocuments'] = $service->list($user, $context, ['kind' => $kind, 'page' => $_GET['pagina'] ?? 1]);
+            $names = array_column($this->condominiumOptions($user), 'name', 'id');
+            $data['documentUnits'] = self::documentUnits((new RegistryService())->units($user), $names, $context);
+            $documentId = filter_var($_GET['documento'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($documentId !== false && $documentId !== null) {
+                try {
+                    $data['unitDocument'] = $service->find($user, (int)$documentId);
+                } catch (RegistryNotFound) {
+                    $data['documentError'] = 'Documento não encontrado no seu escopo.';
+                }
+            }
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_documents_screen_failed', 'page' => $id]);
+            return ['unitDocuments' => null, 'unitDocument' => null, 'canManageDocuments' => false] + $data;
+        }
+        $data['canManageDocuments'] = Access::can('erp.unit_documents.manage', $user);
+        return $data;
+    }
+
+    /**
+     * Unidades para o seletor dos documentos (regra pura): só as do condomínio em contexto, com o nome
+     * do condomínio (condomínio sem nome no escopo fica de fora), ordenadas por condomínio e unidade.
+     *
+     * @param list<array{id:int, condominium_id:int, label:string}> $units
+     * @param array<int, string> $names condomínio => nome, do escopo do usuário
+     * @return list<array{id:int, condominium_id:int, label:string, condominium_name:string}>
+     */
+    public static function documentUnits(array $units, array $names, ?int $context): array
+    {
+        $rows = [];
+        foreach ($units as $unit) {
+            $condo = (int)$unit['condominium_id'];
+            if (!isset($names[$condo]) || ($context !== null && $condo !== $context)) {
+                continue;
+            }
+            $rows[] = $unit + ['condominium_name' => (string)$names[$condo]];
+        }
+        usort($rows, static fn (array $a, array $b): int => [$a['condominium_name'], $a['label']] <=> [$b['condominium_name'], $b['label']]);
+        return $rows;
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -403,6 +467,9 @@ final class Panel extends Controller
         if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
+        if (isset(self::UNIT_DOCUMENT_PAGES[$id])) {
+            $data += $this->unitDocumentData($user, $id);
+        }
         return [self::ownTemplate($id, $data) ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
     }
 
@@ -421,6 +488,7 @@ final class Panel extends Controller
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
+            isset(self::UNIT_DOCUMENT_PAGES[$id]) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',

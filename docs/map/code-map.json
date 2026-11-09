@@ -173,6 +173,10 @@
    "title": "0044 — Documentos da unidade: certidão, declaração, quitação e anuência"
   },
   {
+   "file": "docs/Organic Code/decisions/0046-unit-documents-screens.md",
+   "title": "0046 — Telas dos documentos da unidade (AP-123, AP-124, AP-125 e AP-130)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -747,7 +751,9 @@
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\UnitDocuments",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Erp\\CondominiumContext",
@@ -768,6 +774,7 @@
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
+    "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
   },
@@ -2271,6 +2278,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
+    "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/UnitDocumentsTest.php"
    ]
   },
@@ -2904,7 +2912,7 @@
   }
  },
  "counts": {
-  "adrs": 46,
+  "adrs": 47,
   "classes": 169,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2913,7 +2921,7 @@
   "erp_pages": 172,
   "routes": 252,
   "tables": 81,
-  "tests": 97
+  "tests": 98
  },
  "erp_pages": [
   {
@@ -7467,6 +7475,10 @@
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Core\\View",
    "Source\\Models\\User"
+  ],
+  "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\UnitDocuments"
   ],
   "tests/legacy/Unit/FinancialReportsTest.php": [
    "Source\\Services\\Erp\\FinancialReports"

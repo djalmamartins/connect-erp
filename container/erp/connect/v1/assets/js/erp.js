@@ -880,6 +880,67 @@
     });
   });
 
+  /* AP-123/124/125/130: documentos da unidade pela API /api/v1/unit-documents (ADR 0044 e 0046). */
+  $$('[data-erp-print]').forEach(function (button) { button.addEventListener('click', function () { window.print(); }); });
+  $$('[data-erp-unit-documents]').forEach(function (root) {
+    var api = root.getAttribute('data-api');
+    var call = apiClient(root);
+    var routes = {};
+    try { routes = JSON.parse(root.getAttribute('data-kind-routes') || '{}'); } catch (e) { routes = {}; }
+    var open = function (kind, id) { window.location.href = (routes[kind] || root.getAttribute('data-route')) + '?documento=' + encodeURIComponent(id); };
+    var form = $('[data-unit-document-form]', root);
+    if (form && $('[name="unit_id"]', form)) form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var body = { kind: root.getAttribute('data-kind'), unit_id: parseInt($('[name="unit_id"]', form).value, 10), as_of: $('[name="as_of"]', form).value };
+      var until = $('[name="until_competence"]', form);
+      var purpose = $('[name="purpose"]', form);
+      if (until) body.until_competence = until.value;
+      if (purpose) body.purpose = purpose.value.replace(/\s+/g, ' ').trim();
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', api, body)
+        .then(function (json) { toast('Documento emitido.', 'success'); open(json.data.kind, json.data.id); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+    var verify = $('[data-unit-document-verify]', root);
+    if (verify) verify.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var code = $('[name="code"]', verify).value.replace(/[\s-]+/g, '').toUpperCase();
+      if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) { toast('O código tem 16 letras e números (sem 0, 1, I, L e O).', 'warning'); return; }
+      var button = $('[type="submit"]', verify);
+      busy(button, true);
+      call('GET', api + '/verify/' + code)
+        .then(function (json) {
+          var d = json.data || {};
+          toast(d.status === 'cancelled' ? 'Documento encontrado, mas está cancelado.' : 'Documento autêntico.', d.status === 'cancelled' ? 'warning' : 'success');
+          open(d.kind, d.id);
+        })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+    var cancelDialog = $('#unit-document-cancel', root);
+    var cancelForm = cancelDialog && $('[data-unit-document-cancel-form]', cancelDialog);
+    $$('[data-unit-document-cancel]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!cancelForm) return;
+        cancelForm.reset();
+        cancelForm.setAttribute('data-id', button.getAttribute('data-unit-document-cancel'));
+        $('[data-unit-document-cancel-label]', cancelDialog).textContent = button.getAttribute('data-label') + '.';
+        openDialog(cancelDialog);
+      });
+    });
+    if (cancelForm) cancelForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var reason = $('[name="reason"]', cancelForm).value.replace(/\s+/g, ' ').trim();
+      if (reason.length < 5) { toast('Explique o motivo do cancelamento (pelo menos 5 caracteres).', 'warning'); return; }
+      var button = $('[type="submit"]', cancelForm);
+      busy(button, true);
+      call('POST', api + '/' + cancelForm.getAttribute('data-id') + '/cancel', { reason: reason })
+        .then(function () { cancelDialog.close(); toast('Documento cancelado.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+  });
+
   /* AP-021: gerar os lançamentos do mês a partir dos fixos (API REST, ADR 0027) -- */
   $$('form[data-erp-generate-recurring]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
