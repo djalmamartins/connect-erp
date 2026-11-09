@@ -1604,6 +1604,7 @@
     "erp_entries"
    ],
    "tests": [
+    "tests/erp/render-smoke.php",
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Unit/MonthClosingTest.php"
@@ -2360,7 +2361,7 @@
   "erp_pages": 172,
   "routes": 211,
   "tables": 64,
-  "tests": 72
+  "tests": 73
  },
  "erp_pages": [
   {
@@ -6051,6 +6052,7 @@
    "Source\\Core\\View",
    "Source\\Models\\User",
    "Source\\Services\\Erp\\DemoData",
+   "Source\\Services\\Erp\\MonthClosing",
    "Source\\Support\\Erp\\CondominiumContext",
    "Source\\Support\\QrCode"
   ],
@@ -6268,6 +6270,7 @@
    "Source\\Controllers\\Erp\\Connect\\Erp"
   ],
   "tests/legacy/Unit/ErpLoginRedirectTest.php": [],
+  "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
   "tests/legacy/Unit/ErpThemeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "Source\\Controllers\\Erp\\Connect\\Panel",
