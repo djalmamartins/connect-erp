@@ -326,6 +326,16 @@
     toast(trigger.getAttribute('data-erp-pending') || 'Operação pendente: o backend deste módulo ainda não foi implementado.', 'warning');
   });
 
+  /* Formulários que pedem confirmação antes de enviar (ex.: fechar e reabrir a competência, AP-030) */
+  $$('form[data-erp-confirm]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity()) return;
+      if (!window.confirm(form.getAttribute('data-erp-confirm'))) { event.preventDefault(); return; }
+      var button = $('[type="submit"]', form);
+      if (button) { button.classList.add('is-loading'); button.setAttribute('aria-busy', 'true'); window.setTimeout(function () { button.disabled = true; }, 0); }
+    });
+  });
+
   /* AP-021: gerar os lançamentos do mês a partir dos fixos (API REST, ADR 0027) -- */
   $$('form[data-erp-generate-recurring]').forEach(function (form) {
     form.addEventListener('submit', function (event) {

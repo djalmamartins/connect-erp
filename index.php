@@ -87,6 +87,20 @@ $route->get("/inspections/{id}", "Inspections:show", null, \Source\Support\Middl
 $route->put("/inspections/{id}/items/{item}", "Inspections:answer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/items/{item}/photos", "Inspections:photo", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/complete", "Inspections:complete", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Chamados (ADR 0034): todo chamado cai na fila do Help Desk, com condomínio e unidade.
+$route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/tickets/{id}", "Tickets:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->namespace(null);
+
+/**
+ * TROCA DE AMBIENTE (ADR 0034): alternador da sidebar entre ERP, Studio e Help Desk, em
+ * qualquer host. Entre hosts diferentes passa por um código de uso único.
+ */
+$route->group(null);
+$route->namespace("Source\\Controllers\\Environments");
+$route->get("/ambiente/{environment}", "Handoff:go");
+$route->get("/ambiente/entrar/{environment}/{token}", "Handoff:enter");
 $route->namespace(null);
 
 

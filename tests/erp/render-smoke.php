@@ -187,6 +187,25 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(!str_contains($done, 'multipart/form-data') && str_contains($done, 'id="enviar"'), 'CN-001: concluída fica só leitura e oferece envio');
         continue;
     }
+    if ($id === 'CN-004') {
+        // Chamados (ADR 0034): abertura para o Help Desk com condomínio, unidade e solicitante.
+        $evil = '<b>Residencial</b>';
+        $ticket = ['id' => 3, 'protocol' => 'CH261109ABCD', 'subject' => 'Interfone <script>', 'message' => 'x', 'area' => 'general', 'origin' => 'erp', 'category' => null,
+            'priority' => 'high', 'status' => 'open', 'condominium' => ['id' => 7, 'name' => $evil], 'unit' => ['id' => 2, 'label' => 'B - 101'],
+            'requester' => ['user_id' => null, 'name' => 'Maria', 'email' => 'm@example.com', 'phone' => null], 'assigned_to' => null, 'due_at' => '2026-11-10 10:00:00', 'resolved_at' => null, 'created_at' => '2026-11-09 10:00:00'];
+        $html = $render('pages/tickets/index', $layoutData->invoke($panel, $user, 'CN-004', [
+            'base' => '/operacional/chamados', 'flash' => ['type' => 'success', 'text' => 'Ok <x>', 'protocol' => 'CH261109ABCD'], 'errors' => ['unit_id' => 'Unidade <i>'],
+            'old' => ['condominium_id' => 7, 'unit_id' => 2], 'condominiums' => [['id' => 7, 'name' => $evil]], 'unitsByCondominium' => [7 => [['id' => 2, 'label' => 'B - 101']]],
+            'tickets' => [$ticket], 'filters' => ['condominium_id' => 0, 'status' => '', 'q' => ''], 'helpdeskUrl' => 'https://studio.connect.lab/ambiente/helpdesk',
+        ]));
+        $common($html, $id, 'Chamados');
+        $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, 'Interfone <script>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Unidade <i>'), 'CN-004: escape');
+        $assert(str_contains($html, 'name="condominium_id"') && str_contains($html, 'name="unit_id"') && str_contains($html, 'name="requester_name"') && str_contains($html, '<option value="2" selected>'), 'CN-004: condomínio, unidade e solicitante no formulário');
+        $assert(str_contains($html, 'CH261109ABCD') && str_contains($html, 'Unid. B - 101') && str_contains($html, '/ambiente/helpdesk'), 'CN-004: lista com contexto e link do Help Desk');
+        $assert(str_contains($html, 'erp-envswitch') && str_contains($html, 'Help Desk') && str_contains($html, 'Studio'), 'sidebar: alternador de ambientes');
+        $save('cn-004', $html);
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';
@@ -248,6 +267,30 @@ foreach ([[403, false], [404, true]] as [$code, $nav]) {
     $assert(str_contains($html, "Erro $code"), "estado $code");
     $assert($nav === str_contains($html, 'erp-sidebar"'), "estado $code: navegação " . ($nav ? 'visível' : 'oculta'));
 }
+// Fechamento mensal (AP-030) com dados reais ($closing de Panel::closingData, ADR 0032): um condomínio
+// aberto, fechado e reaberto, sem permissão de fechar, e "Todos" (só consulta).
+$closingRow = static fn (array $over = []): array => $over + [
+    'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'status' => 'open', 'closed_at' => null, 'reopened_at' => null, 'reopen_reason' => null,
+    'revenue_cents' => 9632000, 'expense_cents' => 8894715, 'open_revenue_cents' => 120000, 'open_expense_cents' => 0, 'result_cents' => 737285, 'entries' => 41,
+];
+$closingPage = static function (?int $condominium, array $rows, bool $manage, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
+    $closing = ['competence' => '2026-10', 'condominium_id' => $condominium, 'rows' => $rows, 'totals' => Source\Services\Erp\MonthClosing::overviewTotals($rows)];
+    $html = $render('pages/modules/closing', $layoutData->invoke($panel, $user, 'AP-030', ['closing' => $closing, 'closingCompetence' => '2026-10', 'canManageClosing' => $manage]));
+    if ($name !== '') $save('page-ap-030-' . $name, $html);
+    return $html;
+};
+$html = $closingPage(7, [$closingRow()], true, 'open');
+$assert(str_contains($html, 'action="' . $erpRoot . '/financeiro/fechamento-mensal/fechar"') && str_contains($html, 'name="competence" value="2026-10"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'data-erp-confirm='), 'AP-030: aberta oferece Fechar (POST com CSRF, competência e confirmação)');
+$assert(str_contains($html, 'R$ 96.320,00') && str_contains($html, 'R$ 7.372,85') && str_contains($html, 'Residencial &lt;Exemplo&gt;') && str_contains($html, 'Ainda há lançamentos em aberto') && !str_contains($html, '/reabrir') && !str_contains($html, 'Checklist do fechamento'), 'AP-030: resumo real escapado, sem demonstração e sem Reabrir');
+$html = $closingPage(7, [$closingRow(['status' => 'closed', 'closed_at' => '2026-11-02 10:30:00', 'revenue_cents' => 100000, 'expense_cents' => 150000, 'result_cents' => -50000, 'open_revenue_cents' => 0])], true, 'closed');
+$assert(str_contains($html, 'Fechada em 02/11/2026 10:30') && str_contains($html, '-R$ 500,00') && str_contains($html, 'action="' . $erpRoot . '/financeiro/fechamento-mensal/reabrir"') && str_contains($html, 'name="reason" minlength="5" maxlength="255" required') && !str_contains($html, '/fechamento-mensal/fechar"'), 'AP-030: fechada oferece Reabrir com motivo de 5 a 255 caracteres');
+$html = $closingPage(7, [$closingRow(['status' => 'reopened', 'reopened_at' => '2026-11-03 08:00:00', 'reopen_reason' => 'Energia <errada>'])], true);
+$assert(str_contains($html, 'Reaberta em 03/11/2026 08:00') && str_contains($html, 'Energia &lt;errada&gt;') && str_contains($html, '/fechamento-mensal/fechar"'), 'AP-030: reaberta mostra o motivo e permite fechar de novo');
+$html = $closingPage(7, [$closingRow()], false);
+$assert(str_contains($html, 'R$ 96.320,00') && !str_contains($html, '/fechamento-mensal/fechar"') && !str_contains($html, '/reabrir"'), 'AP-030: sem erp.closing.manage só consulta');
+$html = $closingPage(null, [$closingRow(['status' => 'closed']), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false, 'all');
+$assert(str_contains($html, '1 de 2 fechados') && str_contains($html, 'Edifício Dois') && str_contains($html, 'escolha um condomínio na barra superior') && !str_contains($html, 'method="post" action="' . $erpRoot . '/financeiro'), 'AP-030: em Todos lista cada condomínio e pede para escolher um antes de fechar');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
