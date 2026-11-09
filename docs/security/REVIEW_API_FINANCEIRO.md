@@ -500,3 +500,29 @@ Escopo: `source/Services/Erp/RecurringEntries.php` e `POST /api/v1/recurring-ent
 - A geração percorre todos os modelos ativos do escopo sem limite. É aceitável para uma administradora,
   mas uma geração de todos os condomínios de uma vez faz uma transação por modelo na mesma requisição.
 
+## 16ª rodada — Fila de avisos
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em a20bdf7 · Correções: ADR 0108
+
+Escopo: `source/Services/Erp/NotificationOutbox.php` e `source/Services/Erp/NotificationDispatcher.php`.
+
+| Ponto | Situação |
+|---|---|
+| Fora de produção, nenhum e-mail sai para morador (modo log ou caixa de teste) | CONFIRMADO |
+| Destinatários só da unidade e do condomínio do evento; cobrança só com opt-in | CONFIRMADO |
+| Payload sem chaves sensíveis; e-mail na trilha em hash e mascarado | CONFIRMADO |
+| Consulta e reenvio pelo escopo do usuário (fora do escopo: 404) | CONFIRMADO |
+| Aviso não fica parado se o processo cair no meio | CONFIRMADO, com o achado 1 |
+
+### Achados corrigidos (ADR 0108)
+
+1. **Aviso preso.** Um processo que caísse durante o envio deixava o aviso em `processing` para sempre,
+   sem falha visível e sem reenvio. Agora a posse tem prazo de 15 minutos e o aviso é retomado.
+2. **Reenvio sem condição.** `retry` atualizava sem conferir a situação no `UPDATE`. Agora confere.
+
+### Lacunas
+
+- No modo production, `sent_to` guarda o e-mail do morador em claro na trilha. Ele já está no cadastro
+  da pessoa, mas a trilha poderia guardar só o id da `mail_queue`. Fica para decisão com a LGPD (#46).
+- Um e-mail enfileirado cuja trilha não foi gravada pode sair duas vezes na retomada.
+

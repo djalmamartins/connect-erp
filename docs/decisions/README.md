@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0090.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0090; Preparar: 0108, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0090; Preparar: 0109, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -123,3 +123,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0105](../Organic%20Code/decisions/0105-unit-documents-reference-date.md) | Documentos da unidade apurados na data de referência, só com contas do condomínio da unidade; cancelamento sem auditoria dupla |
 | [0106](../Organic%20Code/decisions/0106-recurring-generation-errors.md) | Geração dos lançamentos fixos desfaz a transação do modelo em qualquer erro; dado inválido vai para failed |
 | [0107](../Organic%20Code/decisions/0107-assembly-vote-tally-lock.md) | Assembleia: voto com o item travado em modo compartilhado e apuração com o item travado antes de somar, sem voto fora do resultado |
+| [0108](../Organic%20Code/decisions/0108-notification-processing-lease.md) | Fila de avisos: posse com prazo em processing, aviso preso é retomado e reenvio manual só a partir de failed ou cancelled |
