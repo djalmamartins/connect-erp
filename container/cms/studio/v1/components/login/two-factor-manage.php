@@ -21,7 +21,12 @@
                 <p>A verificação em duas etapas ainda não está configurada no servidor (CONNECT_2FA_KEY). Avise o administrador.</p>
             <?php elseif (!$enabled && $setup): ?>
                 <div class="connect-login__setup">
-                    <p>1. Adicione a conta no seu aplicativo autenticador com a chave:</p>
+                    <?php if (!empty($setup['qr'])): ?>
+                        <p>1. Escaneie o QR code no seu aplicativo autenticador ou use a chave:</p>
+                        <div class="connect-login__qr" style="margin:12px 0;text-align:center"><span style="display:inline-block;padding:8px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;line-height:0"><?= $setup['qr'] ?></span></div>
+                    <?php else: ?>
+                        <p>1. Adicione a conta no seu aplicativo autenticador com a chave:</p>
+                    <?php endif; ?>
                     <p><code class="connect-login__secret"><?= htmlspecialchars(trim(chunk_split($setup['secret'], 4, ' '))) ?></code></p>
                     <p><a href="<?= htmlspecialchars($setup['uri']) ?>">Abrir no aplicativo autenticador</a></p>
                     <p>2. Informe o código gerado para ativar.</p>

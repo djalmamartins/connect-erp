@@ -16,6 +16,10 @@
             <div class="ajax_response"><?= flash() ?></div>
             <?php if ($mode === 'setup' && $setup): ?>
                 <div class="connect-login__setup">
+                    <?php if (!empty($setup['qr'])): ?>
+                        <p><strong>Escaneie o QR code</strong> no aplicativo autenticador. Se preferir, use a chave abaixo.</p>
+                        <div class="connect-login__qr" style="margin:12px 0;text-align:center"><span style="display:inline-block;padding:8px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;line-height:0"><?= $setup['qr'] ?></span></div>
+                    <?php endif; ?>
                     <p><strong>Chave de configuração</strong></p>
                     <p><code class="connect-login__secret"><?= htmlspecialchars(trim(chunk_split($setup['secret'], 4, ' '))) ?></code></p>
                     <p><a href="<?= htmlspecialchars($setup['uri']) ?>">Abrir no aplicativo autenticador</a></p>

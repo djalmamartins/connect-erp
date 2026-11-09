@@ -84,6 +84,7 @@ final class TwoFactor extends Controller
             $user = (new User())->findById((int)$pending->user);
             $secret = $twoFactor->beginSetup((int)$pending->user);
             $setup = ["secret" => $secret, "uri" => $twoFactor->provisioningUri((int)$pending->user, $secret, (string)($user->email ?? "usuario"))];
+            $setup["qr"] = \Source\Support\QrCode::svg($setup["uri"], 196, "QR code para o aplicativo autenticador");
         }
 
         echo $this->view->render("components/login/two-factor", [
@@ -159,6 +160,7 @@ final class TwoFactor extends Controller
         if (!$enabled && SecretBox::isConfigured()) {
             $secret = $twoFactor->beginSetup((int)$user->id);
             $setup = ["secret" => $secret, "uri" => $twoFactor->provisioningUri((int)$user->id, $secret, (string)$user->email)];
+            $setup["qr"] = \Source\Support\QrCode::svg($setup["uri"], 196, "QR code para o aplicativo autenticador");
         }
         $codes = null;
         if ($session->has("auth2faRecoveryCodes")) {
