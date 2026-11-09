@@ -41,7 +41,10 @@ final class Panel extends Controller
     private const THEME = __DIR__ . '/../../../../container/erp/connect/v1/';
 
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
-    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view', 'AP-114' => 'erp.reservations.view', 'CN-005' => 'erp.notifications.view'];
+    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view', 'AP-114' => 'erp.reservations.view', 'CN-005' => 'erp.notifications.view',
+        // Lançamentos avulsos e recibos (ADR 0057 e 0073).
+        'AP-024' => 'erp.entries.view', 'AP-025' => 'erp.entries.view', 'AP-026' => 'erp.entries.view', 'AP-027' => 'erp.invoices.view', 'AP-028' => 'erp.invoices.view',
+        'AP-029' => 'erp.entries.view', 'AP-040' => 'erp.unit_documents.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -350,6 +353,9 @@ final class Panel extends Controller
     /** Documentos da unidade com tela própria (ADR 0044 e 0046): página => tipo do documento. */
     public const UNIT_DOCUMENT_PAGES = ['AP-123' => 'debt_certificate', 'AP-124' => 'delinquency_declaration', 'AP-125' => 'quittance', 'AP-130' => 'consent_letter'];
 
+    /** Recibo (AP-040, ADR 0057 e 0073): a mesma tela dos documentos, com as contas pagas da unidade para escolher. */
+    public const RECEIPT_PAGE = 'AP-040';
+
     /**
      * Documentos da unidade (AP-123/124/125/130, ADR 0044) no contexto da barra superior: os emitidos
      * do tipo da página ($unitDocuments, ?pagina=), as unidades para emitir ($documentUnits) e, com
@@ -360,8 +366,9 @@ final class Panel extends Controller
      */
     private function unitDocumentData(User $user, string $id): array
     {
-        $kind = self::UNIT_DOCUMENT_PAGES[$id];
-        $data = ['documentKind' => $kind, 'unitDocuments' => null, 'unitDocument' => null, 'documentUnits' => [], 'documentError' => null, 'canManageDocuments' => false];
+        $kind = self::UNIT_DOCUMENT_PAGES[$id] ?? 'receipt';
+        $data = ['documentKind' => $kind, 'unitDocuments' => null, 'unitDocument' => null, 'documentUnits' => [], 'documentError' => null, 'canManageDocuments' => false,
+            'receiptUnit' => null, 'receiptEntries' => []];
         if (Connect::databaseDisabled() || !Access::can('erp.unit_documents.view', $user)) {
             return $data;
         }
@@ -371,6 +378,12 @@ final class Panel extends Controller
             $data['unitDocuments'] = $service->list($user, $context, ['kind' => $kind, 'page' => $_GET['pagina'] ?? 1]);
             $names = array_column($this->condominiumOptions($user), 'name', 'id');
             $data['documentUnits'] = self::documentUnits((new RegistryService())->units($user), $names, $context);
+            $receiptUnit = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($kind === 'receipt' && $receiptUnit !== false && $receiptUnit !== null && in_array((int)$receiptUnit, array_column($data['documentUnits'], 'id'), true)) {
+                // Contas pagas sem recibo válido da unidade escolhida (?unidade=); a emissão confere de novo.
+                $data['receiptUnit'] = (int)$receiptUnit;
+                $data['receiptEntries'] = (new \Source\Services\Erp\ReceiptCandidates())->forUnit($user, (int)$receiptUnit);
+            }
             $documentId = filter_var($_GET['documento'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if ($documentId !== false && $documentId !== null) {
                 try {
@@ -735,8 +748,11 @@ final class Panel extends Controller
         if ($id === 'AP-003') {
             $data += $this->unitPanelData($user);
         }
-        if (isset(self::UNIT_DOCUMENT_PAGES[$id])) {
+        if (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) {
             $data += $this->unitDocumentData($user, $id);
+        }
+        if (isset(EntryShortcutScreens::PAGES[$id])) {
+            $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
         return [self::ownTemplate($id, $data) ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
     }
@@ -756,7 +772,8 @@ final class Panel extends Controller
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
-            isset(self::UNIT_DOCUMENT_PAGES[$id]) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
+            (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
+            isset(EntryShortcutScreens::PAGES[$id]) && ($data['shortcutReady'] ?? false) => EntryShortcutScreens::PAGES[$id],
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',

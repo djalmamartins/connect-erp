@@ -575,6 +575,19 @@ p { margin: 0; }
 .erp-panel-negative { color: var(--erp-danger, #b42318); }
 .erp-panel-subtitle { font-size: 14px; margin: 20px 0 4px; }
 .erp-queue-name { min-width: 150px; }
+/* Lançamentos avulsos e recibo (ADR 0057 e 0073) */
+.erp-charge-units, .erp-receipt-entries { border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); padding: 12px 16px; margin: 0; min-width: 0; }
+.erp-charge-units legend, .erp-receipt-entries legend { padding: 0 4px; font-size: 13px; font-weight: 650; }
+.erp-charge-units__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px 12px; margin-top: 8px; max-height: 240px; overflow-y: auto; }
+.erp-receipt-entries { display: grid; gap: 2px; max-height: 340px; overflow-y: auto; margin-top: 12px; }
+.erp-receipt-entries__all { padding: 4px 0 8px; font-weight: 600; }
+.erp-receipt-entry { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--erp-border); }
+.erp-receipt-entry span:first-of-type { display: grid; gap: 2px; }
+.erp-receipt-entry__value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.erp-receipt-total { margin: 10px 0; font-weight: 600; }
+.erp-unit-pick--inline { padding: 0 0 4px; }
+.erp-discount-rules { padding: 12px 20px 16px; margin: 0; }
+[data-form-error] .erp-alert { margin: 12px 0 0; }
 .erp-queue-error { display: inline-block; max-width: 260px; font-size: 12px; overflow-wrap: anywhere; }
 .erp-queue-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
 .erp-queue-facts dt { color: var(--erp-muted); }

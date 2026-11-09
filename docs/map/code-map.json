@@ -241,6 +241,10 @@
    "title": "0062 — Recibo sem oráculo de id, teto nos valores e limite de unidades por cobrança"
   },
   {
+   "file": "docs/Organic Code/decisions/0063-imports-hardening.md",
+   "title": "0063 — Importações: valores sem estouro e XLSX sem explosão de memória"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -251,6 +255,10 @@
   {
    "file": "docs/Organic Code/decisions/0072-notification-queue-screen.md",
    "title": "0072 — Tela da fila de avisos, com trilha mascarada e reenvio manual"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0073-entry-shortcut-screens.md",
+   "title": "0073 — Telas dos lançamentos avulsos e do recibo (AP-024 a AP-029 e AP-040)"
   },
   {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
@@ -828,6 +836,26 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\EntryShortcuts",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/EntryShortcutScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpEntryShortcutScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\Erp": {
    "deps": [
     "Source\\Core\\Controller",
@@ -972,6 +1000,7 @@
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\PanelSummaries",
+    "Source\\Services\\Erp\\ReceiptCandidates",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
@@ -997,6 +1026,7 @@
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
+    "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpNotificationQueueScreenTest.php",
@@ -2290,7 +2320,8 @@
    "tests": [
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
-    "tests/legacy/Unit/EntryShortcutsTest.php"
+    "tests/legacy/Unit/EntryShortcutsTest.php",
+    "tests/legacy/Unit/ErpEntryShortcutScreensTest.php"
    ]
   },
   "Source\\Services\\Erp\\FinancialReports": {
@@ -2318,12 +2349,15 @@
    ]
   },
   "Source\\Services\\Erp\\Imports\\ImportRules": {
-   "deps": [],
+   "deps": [
+    "Source\\Services\\Erp\\Invoices"
+   ],
    "file": "source/Services/Erp/Imports/ImportRules.php",
    "kind": "class",
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2332,6 +2366,8 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -2344,12 +2380,14 @@
    "tables": [
     "erp_bank_statement_lines",
     "erp_chart_accounts",
+    "erp_meter_readings",
     "erp_bank_transfers",
     "erp_bank_accounts",
     "erp_suppliers",
     "condominiums",
     "erp_entries",
     "erp_imports",
+    "erp_meters",
     "erp_units"
    ],
    "tests": [
@@ -2364,6 +2402,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2374,6 +2413,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2404,6 +2444,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/InvoicesTest.php"
    ]
   },
@@ -2592,6 +2633,24 @@
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
+  },
+  "Source\\Services\\Erp\\ReceiptCandidates": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound"
+   ],
+   "file": "source/Services/Erp/ReceiptCandidates.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_unit_document_entries",
+    "erp_unit_documents",
+    "erp_entries",
+    "erp_units"
+   ],
+   "tests": []
   },
   "Source\\Services\\Erp\\RecurringEntries": {
    "deps": [
@@ -2875,6 +2934,7 @@
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php",
+    "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/UnitDocumentsTest.php"
    ]
@@ -3544,16 +3604,16 @@
   }
  },
  "counts": {
-  "adrs": 66,
-  "classes": 192,
+  "adrs": 68,
+  "classes": 194,
   "dynamic_route_lines": {
-   "erp": 8,
+   "erp": 9,
    "index": 6
   },
   "erp_pages": 172,
   "routes": 290,
   "tables": 105,
-  "tests": 127
+  "tests": 129
  },
  "erp_pages": [
   {
@@ -7368,7 +7428,7 @@
    "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "env": "erp",
    "file": "container/erp/connect/v1/routes.php",
-   "line": 146,
+   "line": 155,
    "method": "show",
    "path": "/erp/condominios/{id}",
    "verb": "GET"
@@ -7715,6 +7775,7 @@
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
+    "Source\\Services\\Erp\\ReceiptCandidates",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\UnitDocuments"
@@ -7742,7 +7803,9 @@
    ]
   },
   "erp_imports": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0536_import_readings.sql"
+   ],
    "created_in": "database/migrations/20261108_0535_imports.sql",
    "used_by": [
     "Source\\Services\\Erp\\Imports\\Imports"
@@ -7815,6 +7878,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings"
    ]
   },
@@ -7822,6 +7886,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -7947,6 +8012,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0534_entry_shortcuts.sql",
    "used_by": [
+    "Source\\Services\\Erp\\ReceiptCandidates",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments"
    ]
@@ -7957,6 +8023,7 @@
    ],
    "created_in": "database/migrations/20261108_0526_unit_documents.sql",
    "used_by": [
+    "Source\\Services\\Erp\\ReceiptCandidates",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments"
    ]
@@ -7972,6 +8039,7 @@
     "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\PanelSummaries",
+    "Source\\Services\\Erp\\ReceiptCandidates",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments",
@@ -8333,6 +8401,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
    "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Controllers\\Erp\\Connect\\Registry",
@@ -8783,6 +8852,12 @@
    "Source\\Core\\Router",
    "Source\\Support\\Erp\\CondominiumContext"
   ],
+  "tests/legacy/Unit/ErpEntryShortcutScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\EntryShortcuts",
+   "Source\\Services\\Erp\\UnitDocuments"
+  ],
   "tests/legacy/Unit/ErpFinancialReportsScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
@@ -8831,6 +8906,12 @@
   ],
   "tests/legacy/Unit/HelpDeskSupportThemesTest.php": [
    "Source\\Controllers\\Studio\\Studio"
+  ],
+  "tests/legacy/Unit/ImportsHardeningTest.php": [
+   "Source\\Services\\Erp\\Imports\\ImportRules",
+   "Source\\Services\\Erp\\Imports\\OfxParser",
+   "Source\\Services\\Erp\\Imports\\SpreadsheetReader",
+   "Source\\Services\\Erp\\Invoices"
   ],
   "tests/legacy/Unit/ImportsTest.php": [
    "Source\\Services\\Erp\\Imports\\ImportRules",

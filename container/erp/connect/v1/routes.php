@@ -132,9 +132,18 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/configuracoes/fila-de-avisos", "NotificationQueue:index");
     $route->post("/configuracoes/fila-de-avisos/{id}/reenviar", "NotificationQueue:retry");
 
+    // Lançar despesa e receita (AP-024 e AP-025, ADR 0057 e 0073): abrem o "novo" de contas a pagar e
+    // a receber, que é o mesmo lançamento com a natureza fixa.
+    foreach (\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES as $erpFrom => $erpTo) {
+        $route->get($erpFrom, static function () use ($erpTo): void {
+            redirect(erp_url($erpTo));
+        });
+    }
+
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos'], true) || in_array($pageId, $erpRegistryPages, true)) {
+        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos'], true) || in_array($pageId, $erpRegistryPages, true)
+            || isset(\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES[$page['route']])) {
             continue;
         }
         $route->get($page['route'], static function () use ($pageId): void {
@@ -146,6 +155,6 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/condominios/{id}", "Condominiums:show");
 }
 
-unset($erpCatalog, $erpPageRoutes, $erpRegistries, $erpRegistryPages, $registrySlug, $registry, $base, $erpBases, $erpBase, $erpIndex, $erpName);
+unset($erpFrom, $erpTo, $erpCatalog, $erpPageRoutes, $erpRegistries, $erpRegistryPages, $registrySlug, $registry, $base, $erpBases, $erpBase, $erpIndex, $erpName);
 $route->namespace(null);
 $route->group(null);
