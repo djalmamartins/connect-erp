@@ -159,3 +159,18 @@ Escopo: as rotas `/imports`, `/imports/preview`, `/imports/{id}/apply` e `/bank-
 - **Duas conciliações ao mesmo tempo para o mesmo lançamento.** A chave única em `entry_id` barra a segunda, mas ela responde 500 em vez de 409.
 - **XML em UTF-16.** A checagem de `DOCTYPE` é por texto e um XML em UTF-16 passaria por ela. Fica protegido pelo padrão do libxml 2.9 ou mais novo, que não carrega entidades externas (não se usa `LIBXML_NOENT`).
 - **Frequência.** Continua sem limite de requisições na API. A prévia lê e valida o arquivo inteiro a cada envio.
+
+### Ciclo 27: importação de leituras e conferência do saldo do OFX
+
+| Ponto | Situação |
+|---|---|
+| Importação de leituras: tipo `readings` com permissão de destino `erp.meter_readings.manage`. Relógio buscado só entre os ativos do condomínio da importação | CONFIRMADO |
+| Leitura com até 9 dígitos inteiros e 3 casas (`MeterReadings::parseReading`), dentro do `decimal(12,3)` | CONFIRMADO |
+| Mesmas regras do lançamento manual: não menor que a anterior, competência não cobrada e aberta, sem leitura posterior, data até hoje. A aplicação grava por `MeterReadings::record`, que revalida e confere o escopo, na transação da importação (tudo ou nada) | CONFIRMADO |
+| Saldo do OFX: só mostra a diferença entre o saldo do banco e o calculado, nunca ajusta. O valor do `BALAMT` passa pelo teto do achado 1 | CONFIRMADO |
+
+Nada novo a corrigir. Fica uma lacuna junto à de "quem vê o extrato importado": a conferência do saldo grava o saldo calculado da conta no resumo da importação. Esse resumo aparece a quem tem `erp.imports.view`, mesmo sem `erp.bank_accounts.view`. Na prévia, o saldo só aparece com `erp.entries.manage`, porque o tipo OFX exige essa permissão.
+
+Teste de ponta a ponta: `ImportsCycleIntegrationTest`.
+- O saldo do extrato bate com o calculado depois da baixa, da transferência e da despesa.
+- As leituras por XLSX viram conta a receber da unidade na cobrança.

@@ -15,6 +15,7 @@ use Source\Services\Erp\Banking\SandboxBankAdapter;
 use Source\Services\Erp\EntryShortcuts;
 use Source\Services\Erp\Imports\Imports;
 use Source\Services\Erp\Invoices;
+use Source\Services\Erp\MeterReadings;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use ZipArchive;
@@ -23,7 +24,8 @@ use ZipArchive;
  * Importações de ponta a ponta (ciclo 26, ADR 0058), encadeadas com o financeiro: frações por XLSX
  * → fatura rateada pela fração → boleto e retorno dão baixa → inadimplentes antigos por planilha
  * entram na inadimplência → extrato OFX concilia a baixa e a transferência, e o que sobra é
- * conciliado à mão → o mesmo FITID em outro arquivo não duplica. No fim, um usuário de outro
+ * conciliado à mão, e o saldo do extrato confere com o calculado → o mesmo FITID em outro arquivo não
+ * duplica → leituras por XLSX viram cobrança (ciclo 27). No fim, um usuário de outro
  * condomínio não alcança nada, e conta bancária de outro condomínio não serve para o extrato.
  */
 final class ImportsCycleIntegrationTest extends TestCase
@@ -97,8 +99,11 @@ final class ImportsCycleIntegrationTest extends TestCase
         $ofx = "<OFX><BANKACCTFROM><BANKID>001<ACCTID>56789</BANKACCTFROM><BANKTRANLIST>"
             . "<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>{$day}<TRNAMT>300.00<FITID>X1<MEMO>BOLETO 101</STMTTRN>"
             . "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>{$day}<TRNAMT>-100.00<FITID>X2<MEMO>TRANSF RESERVA</STMTTRN>"
-            . "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>{$day}<TRNAMT>-89.90<FITID>X3<MEMO>LIMPEZA</STMTTRN></BANKTRANLIST></OFX>";
+            . "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>{$day}<TRNAMT>-89.90<FITID>X3<MEMO>LIMPEZA</STMTTRN></BANKTRANLIST>"
+            . "<LEDGERBAL><BALAMT>110.10<DTASOF>{$day}</LEDGERBAL></OFX>";
         $statement = $this->imports->preview($this->admin, 'ofx', ['condominium_id' => $this->alpha, 'bank_account_id' => $bankA], $this->upload($ofx, 'extrato.ofx'));
+        // Saldo do banco = 300,00 recebidos − 100,00 transferidos − 89,90 pagos: bate com o calculado (ciclo 27, só informa).
+        self::assertSame(['bank_cents' => 11010, 'system_cents' => 11010, 'difference_cents' => 0, 'matches' => true], $statement['summary']['balance_check']);
         $applied = $this->imports->apply($this->admin, $statement['id']);
         self::assertSame(['lines' => 3, 'matched' => 2, 'unmatched' => 1, 'already' => 0], $applied['summary']['applied']);
         $lines = array_column($applied['lines'], null, 'fitid');
@@ -116,7 +121,21 @@ final class ImportsCycleIntegrationTest extends TestCase
         self::assertSame(['lines' => 2, 'already' => 1], ['lines' => $again['summary']['applied']['lines'], 'already' => $again['summary']['applied']['already']]);
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_bank_statement_lines WHERE bank_account_id = {$bankA} AND fitid = 'X1'")->fetchColumn());
 
-        // 6. Conta bancária de outro condomínio não serve para o extrato do Alpha.
+        // 6. Leituras por XLSX (ciclo 27) seguem as regras do relógio e viram conta a receber na cobrança.
+        $this->service->save($this->admin, 'meters', ['condominium_id' => $this->alpha, 'unit_id' => $units['102'], 'kind' => 'agua', 'number' => 'H-102', 'initial_reading' => '100']);
+        $this->service->save($this->admin, 'tariffs', ['kind' => 'agua', 'name' => 'Faixa única', 'from_amount' => '0', 'to_amount' => '',
+            'price_cents' => '5,00', 'valid_from' => '2026-01-01']);
+        $readings = $this->imports->preview($this->admin, 'readings', ['condominium_id' => $this->alpha],
+            $this->upload(self::xlsx([['relogio', 'tipo', 'competencia', 'leitura'], ['H-102', 'Água', date('m/Y'), '112']]), 'leituras.xlsx'));
+        self::assertSame([0, 12.0], [$readings['error_count'], (float)$readings['summary']['consumption']]);
+        self::assertSame(['readings' => 1, 'amount_cents' => 6000], $this->imports->apply($this->admin, $readings['id'])['summary']['applied']);
+        $billed = (new MeterReadings($this->pdo))->bill($this->admin, ['condominium_id' => $this->alpha, 'competence' => date('Y-m'), 'kind' => 'agua',
+            'chart_account_id' => $fee, 'due_on' => $due]);
+        self::assertCount(1, $billed['created']);
+        self::assertSame([6000, $units['102']], [(int)$this->service->find($this->admin, 'entries', $billed['created'][0])['amount_cents'],
+            (int)$this->service->find($this->admin, 'entries', $billed['created'][0])['unit_id']]);
+
+        // 7. Conta bancária de outro condomínio não serve para o extrato do Alpha.
         $betaBank = $this->service->save($this->admin, 'bank_accounts', ['condominium_id' => $this->beta, 'name' => 'Beta', 'bank_code' => '001',
             'branch' => '1234', 'account_number' => '5678-9', 'kind' => 'corrente'])['id'];
         try {
@@ -126,7 +145,7 @@ final class ImportsCycleIntegrationTest extends TestCase
             self::addToAssertionCount(1);
         }
 
-        // 7. Usuário só do Beta não alcança nada do Alpha.
+        // 8. Usuário só do Beta não alcança nada do Alpha.
         $outsider = $this->user([$this->beta]);
         foreach ([
             fn () => $this->imports->preview($outsider, 'fractions', ['condominium_id' => $this->alpha], $this->upload("unidade;fracao\n101;1\n", 'f.csv')),
