@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0075.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079, Avançar 0080–0099 (0055–0059 já usados pelo Avançar).
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0081.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0075; Avançar: 0081; Preparar: o próximo após o último 006x).
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -96,3 +96,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
 | [0073](../Organic%20Code/decisions/0073-entry-shortcut-screens.md) | Telas dos lançamentos avulsos (AP-024 a AP-029) e do recibo (AP-040): desconto, multa, cobrança extra, transferência e recibo de contas pagas |
 | [0074](../Organic%20Code/decisions/0074-import-screens.md) | Telas de importação (AP-140, AP-142 a AP-146 e AP-044): envio, prévia por linha, aplicar e fila de linhas pendentes do extrato |
+| [0080](../Organic%20Code/decisions/0080-collections-and-fines.md) | Cobrança e multas: multas pendentes com a origem (AP-116), atendimento de cobrança com promessa quebrada (AP-117) e cobrança judicial só como acompanhamento (AP-039) |
