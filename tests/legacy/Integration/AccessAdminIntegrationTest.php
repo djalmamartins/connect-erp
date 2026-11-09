@@ -88,7 +88,7 @@ final class AccessAdminIntegrationTest extends TestCase
     {
         $registry = new RegistryService($this->pdo);
         $unit = $registry->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '102', 'type' => 'apartamento'])['id'];
-        $resident = (int)$registry->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'relationship' => 'owner', 'name' => 'Caio', 'email' => 'caio@morador.test'])['id'];
+        $resident = (int)$registry->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'relationship' => 'owner', 'name' => 'Caio', 'document' => self::validCpf(), 'email' => 'caio@morador.test'])['id'];
         $service = new ResidentInvitations($this->pdo);
         if (!in_array(ResidentInvitations::EVENT, NotificationOutbox::EVENTS, true)) {
             $this->expectFailure(fn () => $service->invite($this->admin, $this->alpha, [$resident]), DomainException::class, 'convite antes do evento existir na outbox');
