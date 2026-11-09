@@ -709,5 +709,18 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 45 (sha256 45536963), porta
 
 ### Lacunas
 
-- O filtro de domínio solto do `PlainText` pode recusar um texto legítimo que pareça endereço (por exemplo, "site.com.br"). Isso foi aceito: o banner é curto e a mensagem explica o motivo.
-- `auditValue` só mascara os tipos que o `AuditMask` conhece (e-mail e telefone). Os demais tipos vão como estão, e nenhum deles é dado pessoal.
+- O filtro de domínio solto do `PlainText` podia recusar texto legítimo, e o `auditValue` só mascarava e-mail e telefone. As duas lacunas foram fechadas no ADR 0097 (26ª rodada).
+
+## 26ª rodada — Precisão do texto simples e auditoria das configurações (ciclo 46)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 46 (sha256 acb3fd02), portado sobre `claude-dev` a235065 · ADR 0097
+
+| Ponto | Situação |
+|---|---|
+| `PlainText` continua recusando HTML, entidade, esquema de link, `//host`, `www.` e domínio com TLD comum ou `.com.br` | CONFIRMADO |
+| Aceita "Sr.João", "R$1.500", "Bloco A.2", "obs.: trazer RG" e "10.000,00" | CONFIRMADO (teste unitário) |
+| `auditValue` passa o texto pelo `AuditMask::text` (CPF, CNPJ, e-mail e telefone) | CONFIRMADO |
+
+### Lacunas
+
+- Um domínio com TLD fora da lista (por exemplo, ".shop") passa, mas a view escapa o texto e o banner não vira link.

@@ -161,7 +161,9 @@ final class ErpSettings
     /** ADR 0096: na auditoria, o valor passa pelo AuditMask conforme o tipo (e-mail e telefone mascarados). */
     public static function auditValue(array $spec, mixed $value): mixed
     {
-        return AuditMask::fields(['value' => $value], ['value' => ['type' => (string)($spec['type'] ?? 'text')]])['value'];
+        $value = AuditMask::fields(['value' => $value], ['value' => ['type' => (string)($spec['type'] ?? 'text')]])['value'];
+        // ADR 0097: texto livre também passa pelo AuditMask::text (CPF, CNPJ, e-mail e telefone no meio do texto).
+        return is_string($value) ? AuditMask::text($value) : $value;
     }
 
     /** Volta a chave ao padrão de cima (do condomínio → Connect; da Connect → código), com auditoria. */
