@@ -192,6 +192,11 @@ CONNECT_PAGES = [
      "route": "/operacional/chamados", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-004-chamados.md", "reference": "",
      "note": "Abertura de chamados para o Help Desk com condomínio, unidade e solicitante (pedido do proprietário, 09/11/2026)"},
+    # Fila de avisos do ERP (outbox e trilha de entrega, ADR 0055), com reenvio manual (ADR 0072).
+    {"id": "CN-005", "name": "Fila de avisos", "group": "configuracoes", "section": "Aplicativo e notificações", "order": 100,
+     "route": "/configuracoes/fila-de-avisos", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-005-fila-de-avisos.md", "reference": "",
+     "note": "Avisos do ERP enviados pela fila (e-mail), com situação, trilha de entrega mascarada e reenvio manual"},
 ]
 for p in CONNECT_PAGES:
     pages.append(p)
@@ -240,6 +245,8 @@ for ap, orig, name, route, status, note in matrix:
         comp, actions, impl = "pages/inspections/*", "check-in GPS, checklist, fotos, concluir, relatório HTML/PDF, envio por e-mail, configurar modelos/planos/localização", "completa (dados reais)"
     elif p and p["id"] == "CN-004":
         comp, actions, impl = "pages/tickets/index", "abrir chamado (condomínio, unidade, solicitante), filtros, link para a fila do Help Desk", "completa (dados reais)"
+    elif p and p["id"] == "CN-005":
+        comp, actions, impl = "pages/notifications/index", "filtrar por situação, ver a trilha de entrega mascarada, reenviar aviso com falha", "completa (dados reais)"
     elif p:
         comp = "pages/modules/" + p["kind"]
         actions = {

@@ -128,9 +128,13 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/operacional/agendamentos-pendentes/{id}/confirmar", "PendingReservations:confirm");
     $route->post("/operacional/agendamentos-pendentes/{id}/recusar", "PendingReservations:refuse");
 
+    // Fila de avisos (CN-005, ADR 0055 e 0072): lista com a trilha e reenvio manual com CSRF.
+    $route->get("/configuracoes/fila-de-avisos", "NotificationQueue:index");
+    $route->post("/configuracoes/fila-de-avisos/{id}/reenviar", "NotificationQueue:retry");
+
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados'], true) || in_array($pageId, $erpRegistryPages, true)) {
+        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos'], true) || in_array($pageId, $erpRegistryPages, true)) {
             continue;
         }
         $route->get($page['route'], static function () use ($pageId): void {

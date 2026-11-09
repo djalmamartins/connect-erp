@@ -225,6 +225,10 @@
    "title": "0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)"
   },
   {
+   "file": "docs/Organic Code/decisions/0072-notification-queue-screen.md",
+   "title": "0072 — Tela da fila de avisos, com trilha mascarada e reenvio manual"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -850,6 +854,29 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\NotificationQueue": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\NotificationDispatcher",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext",
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Controllers/Erp/Connect/NotificationQueue.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpNotificationQueueScreenTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\OnboardingCatalog": {
    "deps": [
     "Source\\Core\\Controller",
@@ -912,6 +939,7 @@
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
+    "tests/legacy/Unit/ErpNotificationQueueScreenTest.php",
     "tests/legacy/Unit/ErpOperationalScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
@@ -2299,6 +2327,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
+    "tests/legacy/Unit/ErpNotificationQueueScreenTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
   },
@@ -3289,16 +3318,16 @@
   }
  },
  "counts": {
-  "adrs": 59,
-  "classes": 183,
+  "adrs": 60,
+  "classes": 184,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 272,
+  "routes": 274,
   "tables": 99,
-  "tests": 117
+  "tests": 118
  },
  "erp_pages": [
   {
@@ -6948,10 +6977,28 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 132,
+   "method": "index",
+   "path": "/erp/configuracoes/fila-de-avisos",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 133,
+   "method": "retry",
+   "path": "/erp/configuracoes/fila-de-avisos/{id}/reenviar",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "env": "erp",
    "file": "container/erp/connect/v1/routes.php",
-   "line": 142,
+   "line": 146,
    "method": "show",
    "path": "/erp/condominios/{id}",
    "verb": "GET"
@@ -7851,6 +7898,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Controllers\\Erp\\Connect\\Registry",
    "Source\\Core\\View",
@@ -8246,6 +8294,11 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
+  "tests/legacy/Unit/ErpNotificationQueueScreenTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\NotificationOutbox"
+  ],
   "tests/legacy/Unit/ErpOperationalScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Controllers\\Erp\\Connect\\PendingReservations",
