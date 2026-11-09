@@ -7,7 +7,6 @@ namespace Source\Services\Erp;
 use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
-use Source\Services\LoginThrottle;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
 
@@ -15,11 +14,11 @@ use Source\Support\Audit;
  * Aceite do convite do morador (AP-152, ADR 0092), para a página pública /convite.
  * - preview(): convite pendente e válido → nome e e-mail mascarado; qualquer outro caso → null, sem
  *   dizer se o token não existe, venceu, foi usado ou revogado (GENERIC);
- * - accept(): numa transação, trava o convite (FOR UPDATE), confere o CPF/CNPJ (igual ao cadastro, quando
- *   o cadastro tem), cria a conta comum (nível 1, papel "user" se existir), marca o convite como aceito
+ * - accept(): numa transação, trava o convite (FOR UPDATE), confere o CPF/CNPJ (sempre igual ao do
+ *   cadastro; ADR 0093: cadastro sem documento válido recusa), cria a conta comum (nível 1, papel "user" se existir), marca o convite como aceito
  *   (UPDATE condicionado) e liga o morador à conta. Qualquer falha desfaz tudo;
  * - não faz login: a pessoa entra depois pelo login normal, com o 2FA e a sessão do Studio;
- * - limite de tentativas por IP e por token (auth_throttle_events, escopo THROTTLE_SCOPE, só hashes);
+ * - limite de tentativas por IP e por token (InviteThrottle, ADR 0093): falha fechado, sem a tabela recusa;
  * - o token nunca vai para log nem para a auditoria.
  */
 final class ResidentInvitationAcceptance
@@ -28,9 +27,9 @@ final class ResidentInvitationAcceptance
     public const MISMATCH = 'Os dados informados não conferem com o cadastro. Confira e tente de novo.';
     public const EXISTING = 'Já existe uma conta com este e-mail ou documento. Entre pelo login ou recupere a senha.';
     public const THROTTLED = 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
-    public const THROTTLE_SCOPE = 'invite';
-    /** [tipo => [máximo de falhas, janela em segundos]] */
-    public const LIMITS = ['ip' => [20, 900], 'token' => [5, 900]];
+    public const THROTTLE_SCOPE = InviteThrottle::SCOPE;
+    /** [tipo => [máximo de falhas, janela em segundos]] (ADR 0093: o limite mora em InviteThrottle). */
+    public const LIMITS = InviteThrottle::LIMITS;
 
     private PDO $pdo;
 
@@ -62,27 +61,16 @@ final class ResidentInvitationAcceptance
         return [$first === '' ? 'Morador' : $first, $last === '' ? ($first === '' ? 'Morador' : $first) : $last];
     }
 
-    /** CPF/CNPJ informado confere com o cadastro (regra pura)? Cadastro sem documento aceita o informado. */
+    /** CPF/CNPJ informado confere com o cadastro (regra pura)? ADR 0093: cadastro sem documento válido nunca confere. */
     public static function documentMatches(?string $registered, string $typed): bool
     {
-        $typed = preg_replace('/\D/', '', $typed) ?? '';
-        $registered = preg_replace('/\D/', '', (string)$registered) ?? '';
-        if ($typed === '') {
-            return false;
-        }
-        return $registered === '' || hash_equals($registered, $typed);
+        return InvitationRules::documentMatches($registered, $typed);
     }
 
     /** Identificadores do limite (regra pura): hash do IP e hash do token, nunca o valor. */
     public static function subjects(?string $ip, string $token): array
     {
-        $subjects = [];
-        $ip = $ip !== null ? (filter_var($ip, FILTER_VALIDATE_IP) ?: '') : '';
-        if ($ip !== '') {
-            $subjects['ip'] = LoginThrottle::hash('invite-ip:' . $ip);
-        }
-        $subjects['token'] = LoginThrottle::hash('invite-token:' . hash('sha256', $token));
-        return $subjects;
+        return InviteThrottle::subjects($ip, $token);
     }
 
     /** @return ?array{invitation_id:int, name:string, email:string} */
@@ -91,39 +79,6 @@ final class ResidentInvitationAcceptance
         $row = $this->find($token, false);
         return $row === null ? null : ['invitation_id' => (int)$row['invitation_id'], 'name' => (string)$row['name'],
             'email' => RegistryReports::maskEmail((string)$row['email'])];
-    }
-
-    public function blocked(array $subjects, ?int $now = null): bool
-    {
-        $now ??= time();
-        try {
-            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM auth_throttle_events WHERE scope = :s AND subject_hash = :h AND created_at > :since');
-            foreach ($subjects as $type => $hash) {
-                [$max, $window] = self::LIMITS[$type] ?? [null, null];
-                if ($max === null) {
-                    continue;
-                }
-                $stmt->execute(['s' => self::THROTTLE_SCOPE, 'h' => $hash, 'since' => $now - $window]);
-                if ((int)$stmt->fetchColumn() >= $max) {
-                    return true;
-                }
-            }
-        } catch (\Throwable $error) {
-            AppLogger::log('error', 'Limite do convite indisponível', ['event_type' => 'invite_throttle_unavailable', 'error' => $error->getMessage()], 'authentication');
-        }
-        return false;
-    }
-
-    public function fail(array $subjects, ?int $now = null): void
-    {
-        try {
-            $insert = $this->pdo->prepare('INSERT INTO auth_throttle_events (scope, subject_hash, created_at) VALUES (:s, :h, :t)');
-            foreach ($subjects as $hash) {
-                $insert->execute(['s' => self::THROTTLE_SCOPE, 'h' => $hash, 't' => $now ?? time()]);
-            }
-        } catch (\Throwable $error) {
-            AppLogger::log('error', 'Limite do convite indisponível', ['event_type' => 'invite_throttle_unavailable', 'error' => $error->getMessage()], 'authentication');
-        }
     }
 
     /**
@@ -136,9 +91,12 @@ final class ResidentInvitationAcceptance
         if (ResidentInvitations::hashOf($token) === null) {
             return ['ok' => false, 'message' => self::GENERIC];
         }
-        $subjects = self::subjects($ip, (string)$token);
-        if ($this->blocked($subjects)) {
-            return ['ok' => false, 'message' => self::THROTTLED];
+        // ADR 0093: o limite falha fechado; sem conseguir ler a tabela, o aceite é recusado.
+        $throttle = new InviteThrottle($this->pdo);
+        $subjects = InviteThrottle::subjects($ip, (string)$token);
+        $state = $throttle->check($subjects);
+        if ($state !== InviteThrottle::OK) {
+            return ['ok' => false, 'message' => $state === InviteThrottle::BLOCKED ? self::THROTTLED : InviteThrottle::UNAVAILABLE_MESSAGE];
         }
         $problem = self::passwordProblem($password, $repeat);
         if ($problem !== null) {
@@ -147,15 +105,14 @@ final class ResidentInvitationAcceptance
         $this->pdo->beginTransaction();
         try {
             $row = $this->find($token, true);
-            if ($row === null || $row['user_id'] !== null) {
+            // ADR 0093: morador que ficou sem documento válido depois do convite não aceita (mensagem genérica).
+            if ($row === null || $row['user_id'] !== null || !InvitationRules::validDocument($row['document'])) {
                 $this->pdo->rollBack();
-                $this->fail($subjects);
-                return ['ok' => false, 'message' => self::GENERIC];
+                return ['ok' => false, 'message' => $throttle->fail($subjects) ? self::GENERIC : InviteThrottle::UNAVAILABLE_MESSAGE];
             }
-            if (!self::documentMatches($row['document'], $document) || !is_document($document)) {
+            if (!InvitationRules::documentMatches($row['document'], $document)) {
                 $this->pdo->rollBack();
-                $this->fail($subjects);
-                return ['ok' => false, 'message' => self::MISMATCH];
+                return ['ok' => false, 'message' => $throttle->fail($subjects) ? self::MISMATCH : InviteThrottle::UNAVAILABLE_MESSAGE];
             }
             $digits = preg_replace('/\D/', '', $document) ?? '';
             $exists = $this->pdo->prepare('SELECT COUNT(*) FROM users WHERE email = :e OR document = :d');

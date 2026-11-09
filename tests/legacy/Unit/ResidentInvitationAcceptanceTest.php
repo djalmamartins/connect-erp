@@ -35,7 +35,7 @@ final class ResidentInvitationAcceptanceTest extends TestCase
         self::assertSame(['Caio', 'Caio'], Acceptance::splitName('Caio'));
         self::assertTrue(Acceptance::documentMatches('52998224725', '529.982.247-25'));
         self::assertFalse(Acceptance::documentMatches('52998224725', '11144477735'));
-        self::assertTrue(Acceptance::documentMatches(null, '111.444.777-35'), 'Cadastro sem documento aceita o informado.');
+        self::assertFalse(Acceptance::documentMatches(null, '111.444.777-35'), 'ADR 0093: cadastro sem documento nunca confere.');
         self::assertFalse(Acceptance::documentMatches(null, ''));
     }
 

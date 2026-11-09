@@ -651,3 +651,20 @@ Data: 2026-11-09 · Código revisado: `PaymentReports` e `Api/V1/PaymentReports`
 ### Lacunas
 
 - O teto de passos de índice foi estimado, sem medir no servidor.
+
+## 22ª rodada — Endurecimento do convite (ciclo 42)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 42 (sha256 6377f0fb), portado sobre `claude-dev` fc7e6dc · ADR 0093
+
+| Ponto | Situação |
+|---|---|
+| Limite falha fechado: erro de leitura recusa, erro de gravação recusa com "tente mais tarde" | CONFIRMADO |
+| Abrir passa pelo limite por IP no `GET /convite/{token}` e no `POST /convite/abrir` (ADR 0112) | CONFIRMADO (portado nos dois) |
+| Convite só para morador com CPF/CNPJ válido (422 com os ids) | CONFIRMADO |
+| Aceite sempre confere o documento; cadastro que perdeu o documento recebe a mensagem genérica | CONFIRMADO |
+| Log do limite sem token, IP nem hash | CONFIRMADO |
+
+### Lacunas
+
+- Abrir só lê o limite e não registra falha. Isso não abre ataque: o token tem 256 bits e o aceite conta as falhas.
+- As lacunas 1 e 2 do ADR 0112 ficam fechadas. Continuam abertas a do log de produção fora do Docker e a das corridas, que só têm teste de integração no Mac.

@@ -69,12 +69,15 @@ final class ResidentInvitations
         if (count($ids) > self::MAX_BATCH) {
             throw new InvalidArgumentException(sprintf('Convide até %d moradores por vez.', self::MAX_BATCH));
         }
-        $stmt = $this->pdo->prepare("SELECT id, email FROM erp_residents WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' AND id IN (" . implode(',', array_map('intval', $ids)) . ')');
+        $stmt = $this->pdo->prepare("SELECT id, email, document FROM erp_residents WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' AND id IN (" . implode(',', array_map('intval', $ids)) . ')');
         $stmt->execute(['c' => $condominiumId]);
         $found = [];
+        $documents = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $found[(int)$row['id']] = (string)($row['email'] ?? '');
+            $documents[(int)$row['id']] = $row['document'];
         }
+        InvitationRules::assertInvitable($documents);   // ADR 0093: sem CPF/CNPJ válido no cadastro, nada de convite (422)
         $skipped = [];
         $invited = 0;
         $this->pdo->beginTransaction();
