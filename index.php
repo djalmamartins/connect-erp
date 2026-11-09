@@ -133,6 +133,13 @@ $route->get("/bank-transfers", "EntryShortcuts:transfers", null, \Source\Support
 $route->post("/bank-transfers", "EntryShortcuts:storeTransfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-transfers/{id}", "EntryShortcuts:transfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-transfers/{id}/cancel", "EntryShortcuts:cancelTransfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Importações (ADR 0058): prévia, aplicação e conciliação do extrato OFX. /preview antes de /{id}.
+$route->get("/imports", "Imports:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/imports/preview", "Imports:preview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/imports/{id}", "Imports:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/imports/{id}/apply", "Imports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-statement-lines", "Imports:pendingLines", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-statement-lines/{id}/resolve", "Imports:resolveLine", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
