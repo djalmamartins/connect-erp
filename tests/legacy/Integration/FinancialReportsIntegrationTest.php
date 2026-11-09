@@ -90,6 +90,20 @@ final class FinancialReportsIntegrationTest extends TestCase
         self::assertSame(2500, $off['totals']['difference_cents']);
     }
 
+    /** ADR 0102: na conciliação, a conta só soma o que é do próprio condomínio e até o fim do período. */
+    public function testStatementBankUsesOnlyOwnCondominiumUpToThePeriodEnd(): void
+    {
+        $this->entry($this->alpha, 'receita', $this->fee, '800,00', '2026-11', '2026-11-10');
+        // Gravados direto, fora da regra do cadastro: um pago depois do período e um da Beta apontando para a conta da Alpha.
+        $insert = $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, bank_account_id, description, amount_cents, competence, due_on, paid_on)
+            VALUES (?, 'receita', ?, ?, ?, ?, ?, ?, ?)");
+        $insert->execute([$this->alpha, $this->fee, $this->bank, 'Depois', 40000, '2026-12', '2026-12-05', '2026-12-05']);
+        $insert->execute([$this->beta, $this->fee, $this->bank, 'Inconsistente', 7000, '2026-11', '2026-11-05', '2026-11-05']);
+
+        $bank = (new FinancialReports($this->pdo))->statement($this->admin, null, '2026-11-01', '2026-11-30')['banks'][0];
+        self::assertSame([100000, 80000, 0, 180000], [$bank['opening_cents'], $bank['received_cents'], $bank['paid_cents'], $bank['closing_cents']]);
+    }
+
     private function entry(int $condominium, string $nature, int $account, string $amount, string $competence, ?string $paidOn = null): int
     {
         $input = ['condominium_id' => $condominium, 'nature' => $nature, 'chart_account_id' => $account, 'amount_cents' => $amount,

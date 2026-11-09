@@ -379,3 +379,22 @@ Escopo: `source/Services/Erp/Occurrences.php`, `BankBalances.php` e `ReceiptCand
 
 - A corrida do chamado não tem teste automatizado (ver ADR 0101).
 
+## 11ª rodada — Balancete, prestação de contas e encargos
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 312a5ce · Correções: ADR 0102
+
+Escopo: `source/Services/Erp/FinancialReports.php` e `LateCharges.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: condomínio por `assertAccess`; "Todos" só com os do escopo; nomes das contas sintéticas só do padrão e dos condomínios do escopo | CONFIRMADO |
+| Tetos: 24 competências no balancete e 366 dias na prestação de contas; agregados por conta | CONFIRMADO |
+| Conciliação por conta bancária | CONFIRMADO, com o achado 1 |
+| Encargos: regra pura, laço de índices limitado a 600 meses, índice ausente informado em `missing_index` | CONFIRMADO |
+| SQL: datas e competências por parâmetro; listas de ids são inteiros | CONFIRMADO |
+
+### Achado corrigido (ADR 0102)
+
+1. **Conciliação sem filtro de condomínio e sem fim.** A conta juntava os lançamentos pagos de qualquer
+   condomínio e de qualquer data posterior. Agora junta só os do condomínio da conta e só até o fim do período.
+
