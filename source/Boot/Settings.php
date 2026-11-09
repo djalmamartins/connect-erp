@@ -127,16 +127,19 @@ const VERSION_SUPPORT = "1.0.0";
 /**
  * MAIL
  */
-define("CONF_MAIL_HOST", "{$setup->mail_host}");
-define("CONF_MAIL_PORT", "{$setup->mail_port}");
-define("CONF_MAIL_USER", "{$setup->mail_user}");
-define("CONF_MAIL_PASS", "{$setup->mail_pass}");
-define("CONF_MAIL_SENDER", ["name" => "{$setup->mail_name}", "address" => "{$setup->mail_address}"]);
+// Credenciais SMTP do ambiente (MOVESOS_SMTP_*), que vale sobre a tabela settings (ADR 0060).
+$mailConfig = \Source\Support\MailConfig::current($setup);
+define("CONF_MAIL_HOST", $mailConfig["host"]);
+define("CONF_MAIL_PORT", $mailConfig["port"]);
+define("CONF_MAIL_USER", $mailConfig["user"]);
+define("CONF_MAIL_PASS", $mailConfig["pass"]);
+define("CONF_MAIL_SENDER", ["name" => $mailConfig["from_name"], "address" => $mailConfig["from_address"]]);
 define("CONF_MAIL_SUPPORT", "{$setup->mail_suport}");
 define("CONF_MAIL_OPTION_LANG", "{$setup->mail_lang}");
 define("CONF_MAIL_OPTION_HTML", $setup->mail_html);
-define("CONF_MAIL_OPTION_AUTH", $setup->mail_auth);
-define("CONF_MAIL_OPTION_SECURE", "{$setup->mail_secure}");
+define("CONF_MAIL_OPTION_AUTH", $mailConfig["auth"]);
+define("CONF_MAIL_OPTION_SECURE", $mailConfig["secure"]);
+unset($mailConfig);
 define("CONF_MAIL_OPTION_CHARSET", "{$setup->mail_charset}");
 
 /**
