@@ -25,6 +25,8 @@ use Source\Support\Audit;
 final class BillingRules
 {
     public const INDEXES = ['IPCA', 'NONE'];
+    /** Teto de meses num arquivo de índices: 50 anos (ADR 0110). */
+    public const MAX_INDEX_MONTHS = 600;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -55,12 +57,14 @@ final class BillingRules
     }
 
     /**
-     * Linhas "AAAA-MM;variação" (vírgula ou ponto decimal), uma por mês (regra pura).
+     * Linhas "AAAA-MM;variação" (vírgula ou ponto decimal), uma por mês (regra pura). Mês futuro não
+     * tem índice publicado e é recusado; no máximo MAX_INDEX_MONTHS meses por arquivo (ADR 0110).
      *
      * @return array<string, float> competência => variação em %
      */
-    public static function parseIndexFile(string $content): array
+    public static function parseIndexFile(string $content, ?string $currentCompetence = null): array
     {
+        $currentCompetence ??= date('Y-m');
         $rates = [];
         foreach (preg_split('/\r\n|\r|\n/', trim($content)) ?: [] as $index => $line) {
             $line = trim($line);
@@ -71,6 +75,9 @@ final class BillingRules
             if (!preg_match('/^(\d{4}-(?:0[1-9]|1[0-2]))\s*[;,\t]\s*(-?\d{1,3}(?:[.,]\d{1,6})?)$/', $line, $m)) {
                 throw new InvalidArgumentException("Linha {$n}: use AAAA-MM;variação (ex.: 2026-10;0,44).");
             }
+            if ($m[1] > $currentCompetence) {
+                throw new InvalidArgumentException("Linha {$n}: competência {$m[1]} ainda não tem índice publicado.");
+            }
             if (isset($rates[$m[1]])) {
                 throw new InvalidArgumentException("Linha {$n}: competência {$m[1]} repetida.");
             }
@@ -79,6 +86,9 @@ final class BillingRules
                 throw new InvalidArgumentException("Linha {$n}: variação fora do intervalo.");
             }
             $rates[$m[1]] = $rate;
+            if (count($rates) > self::MAX_INDEX_MONTHS) {
+                throw new InvalidArgumentException(sprintf('Importe no máximo %d meses por arquivo.', self::MAX_INDEX_MONTHS));
+            }
         }
         if ($rates === []) {
             throw new InvalidArgumentException('Arquivo de índices vazio.');

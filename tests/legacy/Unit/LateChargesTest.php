@@ -70,9 +70,11 @@ final class LateChargesTest extends TestCase
             }
         }
         self::assertSame(['2026-09' => 0.48, '2026-10' => -0.02, '2026-11' => 0.3], BillingRules::parseIndexFile("# IPCA\n2026-09;0,48\r\n2026-10;-0.02\n\n2026-11\t0,3\n"));
-        foreach (["", "2026-13;0,4", "2026-09;0,4\n2026-09;0,5", "2026-09;abc", "2026-09;150"] as $bad) {
+        self::assertSame(['2026-11' => 0.3], BillingRules::parseIndexFile('2026-11;0,3', '2026-11'), 'Mês corrente aceito.');
+        $tooMany = implode("\n", array_map(static fn (int $i): string => sprintf('%04d-%02d;0,1', 1900 + intdiv($i, 12), $i % 12 + 1), range(0, BillingRules::MAX_INDEX_MONTHS)));
+        foreach (["", "2026-13;0,4", "2026-09;0,4\n2026-09;0,5", "2026-09;abc", "2026-09;150", "2026-12;0,4", $tooMany] as $bad) {
             try {
-                BillingRules::parseIndexFile($bad);
+                BillingRules::parseIndexFile($bad, '2026-11');
                 self::fail('Arquivo de índice inválido aceito: ' . json_encode($bad));
             } catch (InvalidArgumentException) {
                 self::addToAssertionCount(1);
