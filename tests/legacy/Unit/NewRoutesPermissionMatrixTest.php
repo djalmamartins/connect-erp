@@ -20,13 +20,18 @@ final class NewRoutesPermissionMatrixTest extends TestCase
         'PaymentReports' => ["'erp.access'", "'erp.entries.view'", "'erp.agreements.view'", "'erp.bank_accounts.view'"],
         'AccessAdmin' => ["'erp.access'", "'erp.access_admin.view'", "'erp.access_admin.manage'", "'erp.partner.view'", "'erp.residents.view'"],
         'IntegrationStatus' => ["'erp.access'", "'erp.settings.view'"],
+        // ADR 0096: módulos revisados no ciclo 45.
+        'ErpSettings' => ["'erp.access'", "'erp.settings.view'", "'erp.settings.manage'", "'erp.units.manage'"],
+        'RegistryReports' => ["'erp.access'", "'erp.residents.view'", "'erp.audit.view'", "'erp.units.view'", "'erp.entries.view'"],
+        'EntryShortcuts' => ["'erp.access'", "'erp.entries.view'", "'erp.entries.manage'", "'erp.invoices.view'", "'erp.invoices.manage'"],
+        'Agreements' => ["'erp.access'", "'erp.agreements.view'", "'erp.agreements.manage'"],
     ];
 
     public function testEveryPublicActionGoesThroughAuthorization(): void
     {
         foreach (array_keys(self::REQUIRED) as $controller) {
             foreach ($this->publicMethods($controller) as $method => $body) {
-                self::assertMatchesRegularExpression('/\$this->(authorize|write|report)\(|Auth::user\(\)/', $body, "{$controller}::{$method} não passa por autorização.");
+                self::assertMatchesRegularExpression('/\$this->(authorize|write|report)\(|\$this->run\(\'[a-z-]+\', \[|Auth::user\(\)/', $body, "{$controller}::{$method} não passa por autorização.");
             }
         }
     }
@@ -59,6 +64,32 @@ final class NewRoutesPermissionMatrixTest extends TestCase
         foreach (['Assemblies' => 'erp.assemblies.manage', 'AccessAdmin' => 'erp.access_admin.manage'] as $controller => $manage) {
             $source = (string)file_get_contents(self::DIR . $controller . '.php');
             self::assertMatchesRegularExpression('/private function write\(.*?\{.*?' . preg_quote($controller === 'Assemblies' ? 'authorize(true' : $manage, '/') . '/s', $source, "{$controller}::write sem {$manage}.");
+        }
+    }
+
+    /** ADR 0096: ações sensíveis dos módulos revisados no ciclo 45. */
+    public function testReviewedModulesSensitiveActions(): void
+    {
+        $settings = $this->publicMethods('ErpSettings');
+        self::assertStringContainsString("'erp.units.manage'", $settings['fractions'], 'Frações em lote exigem gerenciar unidades.');
+        foreach (['store', 'reset', 'storeOpening', 'storeBudget', 'fractions'] as $write) {
+            self::assertStringContainsString('$this->write(', $settings[$write], "ErpSettings::{$write} não é escrita.");
+        }
+        $reports = $this->publicMethods('RegistryReports');
+        self::assertStringContainsString("'erp.residents.view'", $reports['people'], 'Pessoas exigem ver moradores.');
+        self::assertStringContainsString("'erp.audit.view'", $reports['logs']);
+        self::assertStringContainsString("'erp.audit.view'", $reports['accessPeople']);
+        $shortcuts = $this->publicMethods('EntryShortcuts');
+        foreach (['discount', 'storeCharge', 'cancelCharge', 'storeTransfer', 'cancelTransfer'] as $write) {
+            self::assertStringContainsString('$this->write(', $shortcuts[$write], "EntryShortcuts::{$write} não é escrita.");
+        }
+        $agreements = $this->publicMethods('Agreements');
+        foreach (['store', 'cancel', 'breach'] as $write) {
+            self::assertMatchesRegularExpression('/\$this->write\(|authorize\(\'manage\'\)/', $agreements[$write], "Agreements::{$write} não exige gerenciar.");
+        }
+        foreach (['ErpSettings' => 'erp.settings.manage', 'EntryShortcuts' => 'manage', 'Agreements' => 'erp.agreements.manage'] as $controller => $needle) {
+            $source = (string)file_get_contents(self::DIR . $controller . '.php');
+            self::assertMatchesRegularExpression('/private function (write|authorize)\(.*?' . preg_quote($needle, '/') . '/s', $source, "{$controller} sem {$needle} na escrita.");
         }
     }
 
