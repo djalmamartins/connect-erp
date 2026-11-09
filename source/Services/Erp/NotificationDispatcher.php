@@ -219,7 +219,8 @@ final class NotificationDispatcher
                     if ($token === null) {
                         return $this->finish($id, 'cancelled', $count, 'Convite vencido, revogado ou já aceito.');
                     }
-                    $vars['invitation_link'] = url("/convite/{$token}");
+                    // Token depois do "#": o navegador não o envia ao servidor, e ele não vai para o log de acesso (ADR 0112).
+                    $vars['invitation_link'] = url('/convite') . '#' . $token;
                 }
                 $body = $mail->render($template, $vars + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
                 // Assunto numa linha só, mesmo para dado antigo (ADR 0065).
