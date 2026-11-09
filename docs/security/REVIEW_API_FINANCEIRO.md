@@ -634,3 +634,20 @@ e a entrega do convite no `NotificationDispatcher`.
 - O limite falha aberto se o banco estiver indisponível.
 - Log do servidor de produção fora do Docker não conferido.
 - As corridas só têm teste de integração (Mac).
+
+## 21ª rodada — Pagamentos, memória de cálculo e transferências
+
+Data: 2026-11-09 · Código revisado: `PaymentReports` e `Api/V1/PaymentReports` em `claude-dev` 88a98a0 · Correção: ADR 0113
+
+| Ponto | Situação |
+|---|---|
+| Permissões por relatório (`erp.entries.view` e, conforme o caso, `erp.agreements.view` / `erp.bank_accounts.view`) | CONFIRMADO |
+| Escopo por condomínio (`assertAccess` / `allowedIds`), 404 fora do escopo | CONFIRMADO |
+| Unidade filtrada junto com o condomínio na memória de cálculo | CONFIRMADO |
+| Período até `MAX_DAYS`, teto de 20 mil linhas, SQL parametrizado (ids e LIMIT só inteiros) | CONFIRMADO |
+| CSV seguro (ADR 0081), limite de exportações (ADR 0087), documento do fornecedor mascarado | CONFIRMADO |
+| `as_of` sem limite na memória de cálculo | Corrigido (ADR 0113) |
+
+### Lacunas
+
+- O teto de passos de índice foi estimado, sem medir no servidor.

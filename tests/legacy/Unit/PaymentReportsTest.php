@@ -27,6 +27,21 @@ final class PaymentReportsTest extends TestCase
         self::assertSame([], PaymentReports::indexSteps('2026-08-10', '2026-11-09', 'NONE', $rates), 'Sem índice, sem passos.');
     }
 
+    public function testAsOfIsBoundedAhead(): void
+    {
+        self::assertSame('2026-11-09', PaymentReports::asOf(null, '2026-11-09'), 'Padrão é hoje.');
+        self::assertSame('2027-01-08', PaymentReports::asOf('2027-01-08', '2026-11-09'), 'Até 60 dias à frente.');
+        self::assertSame('2020-01-01', PaymentReports::asOf('2020-01-01', '2026-11-09'));
+        foreach (['2027-01-09', '2070-01-01', '2026-02-30', 'hoje'] as $bad) {
+            try {
+                PaymentReports::asOf($bad, '2026-11-09');
+                self::fail("Aceitou {$bad}");
+            } catch (InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     public function testCsvIsSafe(): void
     {
         $table = PaymentReports::csvTable('payments', ['rows' => [['condominium_name' => 'Alpha', 'nature' => 'despesa', 'paid_on' => '2026-11-01', 'due_on' => '2026-10-30',
