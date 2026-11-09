@@ -20,7 +20,7 @@ until_arg=()
 echo "== 0/4 dependências (composer install)"
 docker compose exec -T app composer install --no-interaction --no-progress --prefer-dist
 
-echo "== 1/4 backup do banco e dos arquivos privados (storage/private/documents)"
+echo "== 1/4 backup do banco e dos arquivos privados (storage/private/documents e imports)"
 backup=$(bash tools/backup-database.sh)
 [ -s "$backup" ] || { echo "Backup vazio: $backup" >&2; exit 1; }
 echo "backup: $backup ($(du -h "$backup" | cut -f1))"

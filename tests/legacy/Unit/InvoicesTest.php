@@ -57,4 +57,14 @@ final class InvoicesTest extends TestCase
         self::assertNotContains('paid_on', Definitions::INVOICE_LOCK['columns'], 'A baixa continua livre.');
         self::assertContains('erp_entries', Definitions::get('units')['referenced_by'], 'Unidade com lançamento não sai.');
     }
+
+    public function testCentsHasCeilingAndNeverOverflows(): void
+    {
+        self::assertSame(Invoices::MAX_CENTS, Invoices::cents('999.999.999,99'));
+        self::assertSame(Invoices::MAX_CENTS, Invoices::cents(Invoices::MAX_CENTS));
+        foreach (['1.000.000.000,00', '99999999999999999999', '99999999999999999999,99', Invoices::MAX_CENTS + 1, PHP_INT_MAX] as $tooBig) {
+            self::assertNull(Invoices::cents($tooBig), var_export($tooBig, true));
+        }
+        self::assertSame(100, Invoices::cents('0000000000001,00'), 'Zeros à esquerda não contam para o teto.');
+    }
 }

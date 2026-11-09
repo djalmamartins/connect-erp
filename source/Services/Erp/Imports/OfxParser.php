@@ -86,11 +86,11 @@ final class OfxParser
         return "{$m[1]}-{$m[2]}-{$m[3]}";
     }
 
-    /** "-1234.56" ou "1234,56" → centavos com sinal (regra pura). */
+    /** "-1234.56" ou "1234,56" → centavos com sinal (regra pura). Até 10 dígitos inteiros, o teto de Invoices::MAX_CENTS (ADR 0063). */
     public static function amount(?string $value): ?int
     {
         $value = trim((string)$value);
-        if (!preg_match('/^([+-]?)(\d+)(?:[.,](\d{1,2}))?$/', $value, $m)) {
+        if (!preg_match('/^([+-]?)0*(\d{1,10})(?:[.,](\d{1,2}))?$/', $value, $m)) {
             return null;
         }
         $cents = (int)$m[2] * 100 + (int)str_pad($m[3] ?? '0', 2, '0');

@@ -23,7 +23,7 @@ $this->insert('components/layout/page-head', [
     'pageActions' => '',
 ]);
 ?>
-<form class="erp-card erp-unit-pick" method="get" action="<?= $this->e($route) ?>" role="search" aria-label="Escolher unidade">
+<form class="erp-card erp-unit-pick" method="get" action="<?= $this->e($route) ?>" role="search" aria-label="Escolher unidade" data-erp-loading>
     <label for="unit-panel-pick">Unidade<?= $context !== null ? ' do ' . $this->e((string)$context['name']) : '' ?></label>
     <select class="erp-select" id="unit-panel-pick" name="unidade" data-erp-autosubmit<?= $unitPanelUnits === [] ? ' disabled' : '' ?>>
         <option value="">Selecione</option>

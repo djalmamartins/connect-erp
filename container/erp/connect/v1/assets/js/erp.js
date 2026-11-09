@@ -1268,7 +1268,14 @@
         var status = document.querySelector('form [name="status"]');
         if (status && status.value === 'active') status.value = 'running';
         toast('Chamado ' + (data.protocol || '') + ' aberto no Help Desk.', 'success');
-      }).catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        var done = $('[data-ticket-result]', box);
+        if (done) done.innerHTML = '';
+      }).catch(function (error) {
+        busy(button, false);
+        var result = $('[data-ticket-result]', box);
+        if (result) result.innerHTML = '<div class="erp-alert erp-alert--warning" role="alert"><div>' + esc(error.message) + '</div></div>';
+        else toast(error.message, 'danger');
+      });
     });
   });
 
@@ -1297,8 +1304,12 @@
   });
 
   /* Filtros GET que se aplicam ao escolher (ex.: unidade do painel AP-003). -- */
+  /* Pelo teclado as setas trocam a opção sem abrir a lista: aí não envia, e o botão do formulário aplica (WCAG 3.2.2). */
   $$('select[data-erp-autosubmit]').forEach(function (select) {
-    select.addEventListener('change', function () { if (select.value !== '' && select.form) select.form.submit(); });
+    var byKey = false;
+    select.addEventListener('keydown', function (event) { byKey = event.key !== 'Enter'; if (event.key === 'Enter' && select.value !== '' && select.form) { event.preventDefault(); select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit(); } });
+    select.addEventListener('pointerdown', function () { byKey = false; });
+    select.addEventListener('change', function () { if (byKey || select.value === '' || !select.form) return; select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit(); });
   });
 
   /* Botões de envio mostram carregamento (formulários reais) --------------- */

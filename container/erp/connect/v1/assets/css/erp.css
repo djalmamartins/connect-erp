@@ -574,6 +574,12 @@ p { margin: 0; }
 .erp-panel-bars .erp-progress { margin: 0; }
 .erp-panel-negative { color: var(--erp-danger, #b42318); }
 .erp-panel-subtitle { font-size: 14px; margin: 20px 0 4px; }
+.erp-queue-name { min-width: 150px; }
+.erp-queue-error { display: inline-block; max-width: 260px; font-size: 12px; overflow-wrap: anywhere; }
+.erp-queue-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
+.erp-queue-facts dt { color: var(--erp-muted); }
+.erp-queue-facts dd { margin: 0; overflow-wrap: anywhere; }
+.erp-table tr.is-selected td { background: var(--erp-brand-soft); }
 .erp-occurrence-ticket__status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
 .erp-disk-name .erp-muted { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .erp-disk-layout { grid-template-columns: 1fr; } .erp-disk-search { width: 100%; } .erp-disk-search .erp-input { min-width: 0; flex: 1; } }

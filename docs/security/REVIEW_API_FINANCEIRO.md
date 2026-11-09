@@ -45,3 +45,117 @@ Testes: unitário `AgreementsTest::testEntryIdsAreNormalizedAndCapped`. Integra�
 - **Chamados**: `GET /tickets/{id}` também mostra o chamado a quem o abriu ou é o solicitante, mesmo sem escopo no condomínio. É o comportamento atual (`TicketService::findFor`) e fica registrado aqui: confirmar se é o desejado.
 - **Mensagens de validação de outros serviços** podem ter oráculos parecidos com o dos acordos. A revisão olhou os pontos com lista de ids. Uma varredura por teste automático (escopo × id alheio para cada rota) seria mais segura e fica para os testes de integração dos ciclos 8 a 16.
 - **Limite de requisições na API**: não existe no `ApiAuthenticated`. Upload e importação de retorno têm limite de tamanho, mas não de frequência.
+
+## Segunda rodada: Disco Virtual ligado, anexos, Operacional, dashboard e avisos (ciclos 18 a 22)
+
+Escopo: rotas `/documents` (agora no `index.php`); anexos dos cadastros
+(`RegistryService::attachmentRules`); `POST /occurrences/{id}/ticket`; `GET /dashboard`;
+`POST /reservations/{id}/call-waitlist` e `/maintenances/{id}/next`; `GET /panels/*`; e
+`/notifications`.
+
+| Ponto | Situação |
+|---|---|
+| Disco Virtual com rotas no `ApiAuthenticated`, `view`/`manage` e escopo em toda busca por id | CONFIRMADO |
+| Anexo de cadastro só aceita arquivo não excluído do mesmo condomínio do registro | CONFIRMADO |
+| Ocorrência → chamado, lista de espera e próxima manutenção: carregam o registro e conferem o escopo antes de agir | CONFIRMADO |
+| Avisos: listar, ver e reenviar por escopo. Destinatários vêm de moradores da mesma unidade e condomínio do evento | CONFIRMADO |
+
+### Achados corrigidos (ADR 0061)
+
+1. **Painéis com dados de módulos sem permissão.** O painel do condomínio e o da unidade pediam só
+   `erp.units.view`, mas mostravam saldos bancários, inadimplência, acordos, fechamento, contas a
+   vencer, moradores com contato e documentos emitidos. Agora exigem a permissão de cada um desses
+   módulos (403 / mensagem na tela).
+2. **Dashboard com valores do financeiro para qualquer usuário do ERP.** Os cartões de contas a
+   receber e a pagar agora só aparecem para quem tem `erp.entries.view`.
+3. **Disparo da fila de avisos de todos os condomínios por usuário com escopo parcial.** Agora
+   exige `erp.condominiums.all`.
+
+### Lacunas
+
+- A OpenAPI ainda não descreve o 403 novo de `/panels/*` e de `/notifications/dispatch`.
+- `GET /dashboard` continua mostrando contagens operacionais (manutenções, ocorrências, entregas)
+  a quem só tem `erp.access`. São contagens sem dado pessoal, mas seguem sem permissão de módulo.
+
+## Terceira rodada: lançamentos avulsos, recibo e importações (ciclo 24)
+
+Escopo: as rotas `/entries/{id}/discount`, `/entries/{id}/adjustments`, `/extra-charges` e
+`/bank-transfers` (`Controllers/Api/V1/EntryShortcuts`, `Services/Erp/EntryShortcuts`), o recibo
+(`UnitDocuments::receipt`) e a soma das transferências nos saldos e na prestação de contas. As
+importações de OFX e de planilha ainda não estão no código; para elas fica a lista de requisitos
+abaixo.
+
+| Ponto | Situação |
+|---|---|
+| Rotas no `ApiAuthenticated`. Desconto e transferência pedem `erp.entries.*`, multa e cobrança extra pedem `erp.invoices.*`, e toda escrita pede `.manage` | CONFIRMADO |
+| Escopo em toda busca por id e na criação (condomínio, unidades, contas bancárias, conta de referência da multa e conta do plano do padrão ou do próprio condomínio) | CONFIRMADO |
+| Desconto: só conta a receber em aberto, nunca zera a conta, recusado em acordo, com boleto ativo ou com competência fechada. Trilha com antes, depois e motivo | CONFIRMADO |
+| Cobrança e transferência canceláveis só pela origem, com motivo, respeitando o fechamento | CONFIRMADO |
+| Transferência só entre duas contas ativas do mesmo condomínio, com data até hoje. Soma zero na conciliação | CONFIRMADO |
+| Verificação do recibo pelo código: exige sessão, permissão e escopo. Não é pública | CONFIRMADO (verificação pública segue pendente, issue #46) |
+
+### Achados corrigidos (ADR 0062)
+
+1. **Recibo com oráculo de id de outro condomínio**, o mesmo padrão já corrigido nos acordos. A busca agora filtra o condomínio da unidade.
+2. **`Invoices::cents` sem teto.** Um texto longo virava erro 500 e um inteiro enorme passava pela validação. Agora vale o teto do motor de cadastros.
+3. **Cobrança extra sem limite de unidades.** Agora são no máximo 1000 unidades.
+
+### Lacunas
+
+- **Fechamento contra transferência simultânea.** Transferência e cancelamento de transferência conferem o fechamento fora de transação. Um fechamento no mesmo instante pode deixar passar uma transferência na competência recém-fechada. A janela é pequena e o caso fica na auditoria.
+- **Desconto sem limite próprio.** Quem tem `erp.entries.manage` pode dar desconto de qualquer valor menor que a conta. Isso segue a regra aprovada na ADR 0057, e a trilha registra cada desconto. Se a Connect quiser alçada (teto por perfil), será uma decisão nova.
+
+### Requisitos para as importações de OFX e planilha (ainda não implementadas)
+
+Para revisar quando o código chegar:
+
+- **Upload:**
+  - `is_uploaded_file`;
+  - tipo pelo conteúdo (finfo) numa lista fechada;
+  - limite de tamanho (o retorno bancário usa o do PHP; definir um próprio);
+  - arquivo guardado fora da pasta pública, ou só processado em memória.
+- **Repetição:** o mesmo arquivo enviado de novo é reconhecido pelo hash, como no retorno do banco, e uma linha já importada é ignorada.
+- **OFX 2 (XML):**
+  - parser sem entidades externas e sem rede (XXE);
+  - limite de profundidade e de número de transações.
+- **OFX 1 (SGML):** parser próprio com limite de linhas, nunca `eval` nem regex com retrocesso exponencial.
+- **Planilhas:**
+  - XLSX é um ZIP, então limitar o tamanho descompactado e o número de entradas (zip bomb);
+  - ler só os valores, nunca avaliar fórmulas;
+  - limitar o número de linhas.
+- **Fórmulas na exportação:** células que começam com `=`, `+`, `-`, `@`, tabulação ou retorno de carro saem com `'` na frente em CSV e XLSX gerados pelo sistema. Vale também para o texto vindo de importação.
+- **Escopo:**
+  - a importação vale para uma conta bancária ou um condomínio no escopo do usuário;
+  - toda linha cai nesse condomínio, sem aceitar `condominium_id` vindo do arquivo;
+  - o resultado é auditado com arquivo, hash, quem importou e quantas linhas.
+- **Frequência:** continua não havendo limite de requisições na API (lacuna da primeira rodada). Importação é o caso mais caro e o primeiro a precisar dele.
+
+## Quarta rodada: importações de OFX e planilha (ciclo 26)
+
+Escopo: as rotas `/imports`, `/imports/preview`, `/imports/{id}/apply` e `/bank-statement-lines`
+(`Controllers/Api/V1/Imports`) e os serviços `Services/Erp/Imports` (`Imports`, `OfxParser`,
+`SpreadsheetReader` e `ImportRules`), conferidos contra a lista de requisitos da terceira rodada.
+
+| Requisito | Situação |
+|---|---|
+| Upload: `is_uploaded_file`, até 2 MB, extensão por tipo e assinatura do conteúdo (`PK` no XLSX, sem byte nulo em CSV e OFX). Nome do arquivo limpo | CONFIRMADO |
+| Arquivo em `storage/private/imports`, com `.htaccess` negando acesso. Caminho gravado validado por regex ao reler | CONFIRMADO |
+| Repetição: hash único por condomínio e tipo. Arquivo já aplicado é recusado. A aplicação relê e confere o hash, revalida tudo e grava numa transação, com trava na linha da importação | CONFIRMADO |
+| OFX: lido por expressão, sem parser XML (sem XXE), com até 5000 transações. Repetição de FITID por conta é barrada por chave única | CONFIRMADO |
+| XLSX: `DOCTYPE` recusado e `LIBXML_NONET`, com até 5000 linhas. Fórmulas entram só pelo valor gravado, nunca avaliadas. Zip bomb | CONFIRMADO, com os ajustes do achado 2 |
+| Escopo: condomínio do usuário, conta bancária do mesmo condomínio, linhas validadas contra os cadastros daquele condomínio (`condominium_id` não vem do arquivo). Busca por id fora do escopo dá 404 | CONFIRMADO |
+| Permissão: `erp.imports.*` mais a do destino (`erp.entries.manage` ou `erp.units.manage`) na prévia e na aplicação. Conciliar uma linha pede `erp.entries.manage` | CONFIRMADO |
+| O OFX não cria nem baixa lançamento: só concilia com conta paga da mesma conta bancária, e o que não bate fica pendente | CONFIRMADO |
+
+### Achados corrigidos (ADR 0063)
+
+1. **Valores do OFX e da planilha sem teto.** Um número de 20 dígitos dava erro 500, como em `Invoices::cents`. Agora valem até 10 dígitos e `MAX_CENTS`.
+2. **XLSX esparso e tamanho do ZIP.** Uma célula `XFD1` ou uma linha `1048576`, em poucos bytes, esgotava a memória. Agora a planilha tem limite de colunas (200) e de posição de linha (20.000), e a leitura das partes do ZIP para em 30 MB, mesmo que o arquivo declare menos.
+
+### Lacunas
+
+- **Injeção de fórmula na exportação.** O ERP ainda não exporta CSV ou XLSX. Quando exportar, as células que começam com `=`, `+`, `-`, `@`, tabulação ou retorno de carro precisam sair com `'` na frente, inclusive o texto que veio de uma importação (descrição, histórico do OFX).
+- **Quem vê o extrato importado.** As linhas pendentes e o detalhe da importação pedem só `erp.imports.view`, e mostram o histórico do extrato (nomes de quem pagou). Se `erp.imports.view` for dado a perfis sem acesso ao financeiro, vale exigir também `erp.entries.view`. Fica como decisão de perfil.
+- **Duas conciliações ao mesmo tempo para o mesmo lançamento.** A chave única em `entry_id` barra a segunda, mas ela responde 500 em vez de 409.
+- **XML em UTF-16.** A checagem de `DOCTYPE` é por texto e um XML em UTF-16 passaria por ela. Fica protegido pelo padrão do libxml 2.9 ou mais novo, que não carrega entidades externas (não se usa `LIBXML_NOENT`).
+- **Frequência.** Continua sem limite de requisições na API. A prévia lê e valida o arquivo inteiro a cada envio.

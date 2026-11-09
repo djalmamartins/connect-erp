@@ -79,7 +79,7 @@ $date = static fn(?string $value): string => $value ? date('d/m/Y', strtotime($v
             <div class="erp-table-wrap">
                 <table class="erp-table chk-table">
                     <thead>
-                    <tr><th scope="col">Item</th><th scope="col">Situação</th><th scope="col">Protocolo</th><th scope="col">Prazo</th><th scope="col">Validade</th><th scope="col">Responsável</th><?php if ($canManage): ?><th scope="col"><span class="erp-visually-hidden">Ações</span></th><?php endif; ?></tr>
+                    <tr><th scope="col">Item</th><th scope="col">Situação</th><th scope="col">Protocolo</th><th scope="col">Prazo</th><th scope="col">Validade</th><th scope="col">Responsável</th><?php if ($canManage): ?><th scope="col"><span class="erp-sr-only">Ações</span></th><?php endif; ?></tr>
                     </thead>
                     <tbody>
                     <?php foreach ($grouped[$category] as $item): ?>

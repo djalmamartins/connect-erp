@@ -3,7 +3,7 @@
 Gerada por `tools/erp-catalog.py` a partir de `docs/specs/routes.json` (inventário de 172 rotas da auditoria APControle).
 As rotas de referência do APControle não são rotas do Connect ERP: cada página recebeu uma rota própria em `/erp`.
 
-- Inventário: 172 · Validadas: 170 · Removidas: 3 · Fundidas: 3
+- Inventário: 172 · Validadas: 171 · Removidas: 3 · Fundidas: 3
 
 Componente: template que renderiza a rota hoje. Implementação: `interface proposta (demonstração)` = rota registrada e protegida, com a interface do seu tipo, colunas e campos propostos (a confirmar nas fichas) e dados fictícios; operações de negócio ficam pendentes até o backend. Teste: resultado de `tests/erp/render-smoke.php`.
 
@@ -185,3 +185,4 @@ Componente: template que renderiza a rota hoje. Implementação: `interface prop
 | CN-002 | Centros de custo | Centros de custo | `/erp/financeiro/centros-de-custo` | Financeiro | list | pages/modules/list | default.php | filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação | CONNECT | interface proposta (demonstração) | smoke OK | Cadastro de centros de custo (padrão da Connect e por condomínio), base de lançamentos e relatórios |
 | CN-003 | Contas bancárias | Contas bancárias | `/erp/financeiro/contas-bancarias` | Financeiro | list | pages/modules/list | default.php | filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação | CONNECT | interface proposta (demonstração) | smoke OK | Contas bancárias de cada condomínio (banco, agência, conta, carteira), base de boletos e conciliação |
 | CN-004 | Chamados | Chamados | `/erp/operacional/chamados` | Operacional | list | pages/tickets/index | default.php | abrir chamado (condomínio, unidade, solicitante), filtros, link para a fila do Help Desk | CONNECT | completa (dados reais) | smoke OK | Abertura de chamados para o Help Desk com condomínio, unidade e solicitante (pedido do proprietário, 09/11/2026) |
+| CN-005 | Fila de avisos | Fila de avisos | `/erp/configuracoes/fila-de-avisos` | Configurações | list | pages/notifications/index | default.php | filtrar por situação, ver a trilha de entrega mascarada, reenviar aviso com falha | CONNECT | completa (dados reais) | smoke OK | Avisos do ERP enviados pela fila (e-mail), com situação, trilha de entrega mascarada e reenvio manual |

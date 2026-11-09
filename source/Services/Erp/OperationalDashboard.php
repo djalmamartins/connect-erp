@@ -31,13 +31,30 @@ final class OperationalDashboard
     public const RENEWAL_DAYS = 30;
     public const FREQUENCY_MONTHS = ['mensal' => 1, 'trimestral' => 3, 'semestral' => 6, 'anual' => 12];
 
+    /** Cartões com valores do financeiro: só para quem tem erp.entries.view (ADR 0061). */
+    public const FINANCE_CARDS = ['receivables_overdue_cents', 'receivables_week_cents', 'payables_week_cents'];
+
     private PDO $pdo;
     private CondominiumScope $scope;
+    /** @var callable(string, User): bool */
+    private $can;
 
-    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null)
+    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?callable $can = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
+        $this->can = $can ?? static fn (string $permission, User $user): bool => \Source\Support\Access::can($permission, $user);
+    }
+
+    /**
+     * Tira os cartões de valores do financeiro de quem não tem permissão para vê-los (regra pura).
+     *
+     * @param array<string, int> $cards
+     * @return array<string, int>
+     */
+    public static function withoutFinance(array $cards, bool $canSeeFinance): array
+    {
+        return $canSeeFinance ? $cards : array_diff_key($cards, array_flip(self::FINANCE_CARDS));
     }
 
     /** Situação de vigência (regra pura): vigente, a_renovar (até 30 dias para vencer) ou vencido; sem fim = vigente. */
@@ -118,6 +135,7 @@ final class OperationalDashboard
                 AND nature = 'despesa' AND paid_on IS NULL AND due_on BETWEEN :t AND :w", ['t' => $today, 'w' => $week]),
         ];
         $cards['waitlist_to_call'] = count($this->waitlistCandidates($in, $today));
+        $cards = self::withoutFinance($cards, ($this->can)('erp.entries.view', $user));
 
         $alerts = [];
         $add = static function (array &$alerts, string $kind, string $severity, int $count, string $message, string $route): void {

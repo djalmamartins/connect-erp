@@ -9,6 +9,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\OperationalDashboard;
 use Source\Services\Erp\PanelSummaries;
+use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 
@@ -46,7 +47,17 @@ final class PanelSummariesIntegrationTest extends TestCase
             $this->service->save($this->admin, 'entries', ['condominium_id' => $this->alpha, 'nature' => 'receita', 'chart_account_id' => $this->fee,
                 'amount_cents' => $amount, 'competence' => substr($due, 0, 7), 'description' => 'Taxa', 'due_on' => $due, 'unit_id' => $this->unit]);
         }
-        $panels = new PanelSummaries($this->pdo);
+        // Permissões dos módulos do painel (ADR 0061) liberadas aqui; a recusa é testada abaixo.
+        $panels = new PanelSummaries($this->pdo, null, static fn (string $permission, User $user): bool => true);
+        $partial = new PanelSummaries($this->pdo, null, static fn (string $permission, User $user): bool => $permission === 'erp.units.view');
+        foreach ([fn () => $partial->condominium($this->admin, $this->alpha, $today), fn () => $partial->unit($this->admin, $this->unit, $today)] as $call) {
+            try {
+                $call();
+                self::fail('Painel abriu sem as permissões dos módulos que mostra.');
+            } catch (RegistryForbidden) {
+                self::addToAssertionCount(1);
+            }
+        }
         $condo = $panels->condominium($this->admin, $this->alpha, $today);
         self::assertSame(['units' => 2, 'occupied' => 1, 'vacant' => 1, 'rate' => 50.0], $condo['occupancy']);
         self::assertSame([50000, 1], [$condo['finance']['delinquency_cents'], $condo['finance']['delinquent_units']]);

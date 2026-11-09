@@ -20,4 +20,5 @@
             <p class="erp-field__hint">Nenhum chamado aberto para esta ocorrência.</p>
         <?php endif; ?>
     </div>
+    <div data-ticket-result aria-live="polite"></div>
 </section>

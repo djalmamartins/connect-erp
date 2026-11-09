@@ -206,6 +206,29 @@ foreach ($catalog['pages'] as $id => $page) {
         $save('cn-004', $html);
         continue;
     }
+    if ($id === 'CN-005') {
+        // Fila de avisos (ADR 0055 e 0072): situação, trilha mascarada e reenviar.
+        $notice = static fn (array $over = []): array => $over + ['id' => 11, 'condominium_id' => 7, 'event_type' => 'waitlist.called', 'status' => 'failed', 'delivery_mode' => null,
+            'recipients_count' => 0, 'attempts' => 5, 'available_at' => '2026-11-09 10:00:00', 'processed_at' => '2026-11-09 10:05:00', 'last_error' => 'SMTP <recusou>', 'created_at' => '2026-11-09 09:00:00'];
+        $queueData = static fn (array $over = []): array => $over + ['queue' => ['data' => [$notice(), $notice(['id' => 12, 'status' => 'sent', 'delivery_mode' => 'sandbox', 'recipients_count' => 1, 'attempts' => 1, 'last_error' => null]),
+            $notice(['id' => 13, 'status' => 'pending', 'attempts' => 2, 'last_error' => null])], 'total' => 3],
+            'queueStatus' => null, 'queueMode' => 'sandbox', 'queueDetail' => null, 'queueError' => null, 'canRetry' => true, 'flash' => null];
+        $detail = Source\Controllers\Erp\Connect\NotificationQueue::maskDetail($notice(['id' => 12, 'status' => 'sent', 'delivery_mode' => 'sandbox', 'recipients_count' => 1, 'attempts' => 1, 'last_error' => null,
+            'deliveries' => [['delivery_mode' => 'sandbox', 'recipient_masked' => 'a***@exemplo.com', 'sent_to' => 'caixa.teste@connect.lab', 'mail_queue_id' => 99, 'created_at' => '2026-11-09 10:05:00']]]));
+        $html = $render('pages/notifications/index', $layoutData->invoke($panel, $user, 'CN-005', $queueData(['queueDetail' => $detail])));
+        $common($html, $id, 'Fila de avisos');
+        $save('cn-005', $html);
+        $assert(str_contains($html, 'Lista de espera chamada') && str_contains($html, 'Falhou') && str_contains($html, 'Enviado') && str_contains($html, 'Pendente') && str_contains($html, 'SMTP &lt;recusou&gt;')
+            && substr_count($html, '/reenviar"') === 1 && str_contains($html, '/configuracoes/fila-de-avisos/11/reenviar') && str_contains($html, 'Caixa de teste') && str_contains($html, 'data-queue-detail'), 'CN-005: lista com situação e reenviar só no que falhou');
+        $assert(str_contains($html, 'a***@exemplo.com') && str_contains($html, 'c******@connect.lab') && !str_contains($html, 'caixa.teste@') && str_contains($html, 'fila de e-mail nº 99'), 'CN-005: trilha com endereços mascarados');
+        $html = $render('pages/notifications/index', $layoutData->invoke($panel, $user, 'CN-005', $queueData(['canRetry' => false, 'queueMode' => 'log'])));
+        $assert(!str_contains($html, '/reenviar') && str_contains($html, 'Nenhum e-mail sai'), 'CN-005: sem manage não reenvia; modo log');
+        $html = $render('pages/notifications/index', $layoutData->invoke($panel, $user, 'CN-005', $queueData(['queue' => ['data' => [], 'total' => 0], 'queueStatus' => 'failed'])));
+        $assert(str_contains($html, 'Nenhum aviso nesta situação') && str_contains($html, 'aria-current="page">Falhou'), 'CN-005: filtro sem avisos');
+        $html = $render('pages/notifications/index', $layoutData->invoke($panel, $user, 'CN-005', $queueData(['queue' => null])));
+        $assert(str_contains($html, 'Fila indisponível'), 'CN-005: sem banco');
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';

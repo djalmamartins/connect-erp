@@ -7,6 +7,7 @@ namespace Source\Controllers\Api\V1;
 use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Services\Erp\PanelSummaries;
+use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Access;
 
@@ -43,6 +44,8 @@ final class Panels
             $data = $action($user);
             header('Cache-Control: no-store, private');
             JsonResponse::send(200, ['data' => $data]);
+        } catch (RegistryForbidden) {
+            JsonResponse::send(403, ['error' => ['code' => 'forbidden', 'message' => 'O painel mostra dados financeiros, de pessoas e documentos: falta permissão em algum desses módulos.']]);
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Não encontrado no seu escopo.']]);
         }

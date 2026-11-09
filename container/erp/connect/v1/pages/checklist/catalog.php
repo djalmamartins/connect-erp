@@ -76,9 +76,9 @@ $form = $editing ?? ($creating ? ['id' => null, 'code' => '', 'category' => 'doc
 
 <div class="erp-table-wrap">
     <table class="erp-table chk-table">
-        <caption class="erp-visually-hidden">Itens do catálogo (<?= count($templates) ?>)</caption>
+        <caption class="erp-sr-only">Itens do catálogo (<?= count($templates) ?>)</caption>
         <thead>
-        <tr><th scope="col">Item</th><th scope="col">Categoria</th><th scope="col">Prazo</th><th scope="col">Renovação</th><th scope="col">Situação</th><th scope="col">Em uso</th><th scope="col"><span class="erp-visually-hidden">Ações</span></th></tr>
+        <tr><th scope="col">Item</th><th scope="col">Categoria</th><th scope="col">Prazo</th><th scope="col">Renovação</th><th scope="col">Situação</th><th scope="col">Em uso</th><th scope="col"><span class="erp-sr-only">Ações</span></th></tr>
         </thead>
         <tbody>
         <?php foreach ($templates as $template): ?>

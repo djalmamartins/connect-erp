@@ -30,7 +30,7 @@ $this->insert('components/layout/page-head', [
 ]);
 ?>
 <?php if (($flash ?? null) !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>
-    <div class="erp-alert erp-alert--<?= $ok ? 'success' : (str_contains((string)$flash->getType(), 'warning') ? 'warning' : 'danger') ?>" role="status"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
+    <div class="erp-alert erp-alert--<?= $ok ? 'success' : (str_contains((string)$flash->getType(), 'warning') ? 'warning' : 'danger') ?>" role="<?= $ok ? 'status' : 'alert' ?>"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
 <?php endif; ?>
 
 <section class="erp-card" aria-labelledby="pending-title" data-erp-pending-reservations>
@@ -41,17 +41,17 @@ $this->insert('components/layout/page-head', [
         <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('check') ?></span><strong>Nenhuma reserva pendente</strong><p>As reservas das áreas que exigem aprovação aparecem aqui. As de reserva livre já entram confirmadas.</p></div>
     <?php else: ?>
         <div class="erp-table-wrap" role="region" aria-labelledby="pending-title" tabindex="0"><table class="erp-table">
-            <thead><tr><th>Data</th><th>Área comum</th><th>Unidade e morador</th><th class="is-num">Taxa</th><th class="is-num">Ações</th></tr></thead>
+            <thead><tr><th scope="col">Data</th><th scope="col">Área comum</th><th scope="col">Unidade e morador</th><th scope="col" class="is-num">Taxa</th><th scope="col" class="is-num">Ações</th></tr></thead>
             <tbody><?php foreach ($rows as $r): $id = (int)$r['id']; $label = ($pendingAreas[(int)$r['common_area_id']] ?? 'Área nº ' . (int)$r['common_area_id']) . ' em ' . $day($r['reserved_on']); ?><tr>
                 <td class="erp-nowrap"><strong><?= $this->e($day($r['reserved_on'])) ?></strong><br><span class="erp-muted"><?= $this->e($weekday($r['reserved_on'])) ?> · <?= $this->e($hours($r)) ?></span></td>
                 <td><?= $this->e($pendingAreas[(int)$r['common_area_id']] ?? 'Área nº ' . (int)$r['common_area_id']) ?><?php if ($context === null): ?><br><span class="erp-muted"><?= $this->e((string)($r['condominium_name'] ?? '')) ?></span><?php endif; ?></td>
                 <td><?= $this->e($pendingUnits[(int)$r['unit_id']] ?? 'Unidade nº ' . (int)$r['unit_id']) ?><br><span class="erp-muted"><?= $this->e((string)$r['resident_name']) ?></span></td>
                 <td class="is-num erp-nowrap"><?= $this->e($money($r['fee_cents'] ?? null)) ?></td>
                 <td class="is-num"><div class="erp-table__actions">
-                    <a class="erp-btn erp-btn--sm" href="<?= $this->e($reservationsRoute . '/' . $id) ?>">Abrir</a>
+                    <a class="erp-btn erp-btn--sm" href="<?= $this->e($reservationsRoute . '/' . $id) ?>" aria-label="Abrir a reserva de <?= $this->e($label) ?>">Abrir</a>
                     <?php if ($canDecideReservations): ?>
-                        <form method="post" action="<?= $this->e($route . '/' . $id . '/confirmar') ?>"><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary"><?= $icon('check', 'erp-icon--sm') ?>Confirmar</button></form>
-                        <form method="post" action="<?= $this->e($route . '/' . $id . '/recusar') ?>" data-erp-confirm="Recusar a reserva de <?= $this->e($label) ?>? O horário fica livre para outra reserva."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm">Recusar</button></form>
+                        <form method="post" action="<?= $this->e($route . '/' . $id . '/confirmar') ?>" data-erp-loading><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary" aria-label="Confirmar a reserva de <?= $this->e($label) ?>"><?= $icon('check', 'erp-icon--sm') ?>Confirmar</button></form>
+                        <form method="post" action="<?= $this->e($route . '/' . $id . '/recusar') ?>" data-erp-confirm="Recusar a reserva de <?= $this->e($label) ?>? O horário fica livre para outra reserva."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm" aria-label="Recusar a reserva de <?= $this->e($label) ?>">Recusar</button></form>
                     <?php endif; ?>
                 </div></td>
             </tr><?php endforeach; ?></tbody>
