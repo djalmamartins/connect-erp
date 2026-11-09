@@ -45,3 +45,34 @@ Testes: unitário `AgreementsTest::testEntryIdsAreNormalizedAndCapped`. Integra�
 - **Chamados**: `GET /tickets/{id}` também mostra o chamado a quem o abriu ou é o solicitante, mesmo sem escopo no condomínio. É o comportamento atual (`TicketService::findFor`) e fica registrado aqui: confirmar se é o desejado.
 - **Mensagens de validação de outros serviços** podem ter oráculos parecidos com o dos acordos. A revisão olhou os pontos com lista de ids. Uma varredura por teste automático (escopo × id alheio para cada rota) seria mais segura e fica para os testes de integração dos ciclos 8 a 16.
 - **Limite de requisições na API**: não existe no `ApiAuthenticated`. Upload e importação de retorno têm limite de tamanho, mas não de frequência.
+
+## Segunda rodada: Disco Virtual ligado, anexos, Operacional, dashboard e avisos (ciclos 18 a 22)
+
+Escopo: rotas `/documents` (agora no `index.php`); anexos dos cadastros
+(`RegistryService::attachmentRules`); `POST /occurrences/{id}/ticket`; `GET /dashboard`;
+`POST /reservations/{id}/call-waitlist` e `/maintenances/{id}/next`; `GET /panels/*`; e
+`/notifications`.
+
+| Ponto | Situação |
+|---|---|
+| Disco Virtual com rotas no `ApiAuthenticated`, `view`/`manage` e escopo em toda busca por id | CONFIRMADO |
+| Anexo de cadastro só aceita arquivo não excluído do mesmo condomínio do registro | CONFIRMADO |
+| Ocorrência → chamado, lista de espera e próxima manutenção: carregam o registro e conferem o escopo antes de agir | CONFIRMADO |
+| Avisos: listar, ver e reenviar por escopo. Destinatários vêm de moradores da mesma unidade e condomínio do evento | CONFIRMADO |
+
+### Achados corrigidos (ADR 0061)
+
+1. **Painéis com dados de módulos sem permissão.** O painel do condomínio e o da unidade pediam só
+   `erp.units.view`, mas mostravam saldos bancários, inadimplência, acordos, fechamento, contas a
+   vencer, moradores com contato e documentos emitidos. Agora exigem a permissão de cada um desses
+   módulos (403 / mensagem na tela).
+2. **Dashboard com valores do financeiro para qualquer usuário do ERP.** Os cartões de contas a
+   receber e a pagar agora só aparecem para quem tem `erp.entries.view`.
+3. **Disparo da fila de avisos de todos os condomínios por usuário com escopo parcial.** Agora
+   exige `erp.condominiums.all`.
+
+### Lacunas
+
+- A OpenAPI ainda não descreve o 403 novo de `/panels/*` e de `/notifications/dispatch`.
+- `GET /dashboard` continua mostrando contagens operacionais (manutenções, ocorrências, entregas)
+  a quem só tem `erp.access`. São contagens sem dado pessoal, mas seguem sem permissão de módulo.

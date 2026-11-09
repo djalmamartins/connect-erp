@@ -8,6 +8,7 @@ use Connect\Http\JsonResponse;
 use DomainException;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\CondominiumScope;
 use Source\Services\Erp\NotificationDispatcher;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Access;
@@ -51,9 +52,15 @@ final class Notifications
     public function dispatch(): void
     {
         $user = $this->authorize('manage');
-        if ($user !== null) {
-            $this->run(fn () => (new NotificationDispatcher())->dispatch(50));
+        if ($user === null) {
+            return;
         }
+        // A fila é de todos os condomínios: disparar à mão exige acesso a todos (ADR 0061).
+        if (!(new CondominiumScope())->hasGlobalAccess($user)) {
+            JsonResponse::send(403, ['error' => ['code' => 'forbidden', 'message' => 'Disparar a fila de avisos exige acesso a todos os condomínios.']]);
+            return;
+        }
+        $this->run(fn () => (new NotificationDispatcher())->dispatch(50));
     }
 
     private function run(callable $action, bool $wrap = true): void

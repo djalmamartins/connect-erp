@@ -559,6 +559,8 @@ final class Panel extends Controller
         }
         try {
             $data['condoPanel'] = (new \Source\Services\Erp\PanelSummaries())->condominium($user, $context);
+        } catch (\Source\Services\Erp\Registry\RegistryForbidden) {
+            $data['condoPanelError'] = 'Seu perfil não tem permissão para todos os dados do painel do condomínio (financeiro e fechamento).';
         } catch (RegistryNotFound) {
             $data['condoPanelError'] = 'Condomínio fora do seu escopo de acesso.';
         } catch (\Throwable $error) {
@@ -594,6 +596,8 @@ final class Panel extends Controller
         $data['unitPanelSelected'] = (int)$selected;
         try {
             $data['unitPanel'] = (new \Source\Services\Erp\PanelSummaries())->unit($user, (int)$selected);
+        } catch (\Source\Services\Erp\Registry\RegistryForbidden) {
+            $data['unitPanelError'] = 'Seu perfil não tem permissão para todos os dados do painel da unidade (pessoas, financeiro e documentos).';
         } catch (RegistryNotFound) {
             $data['unitPanelError'] = 'Unidade não encontrada no seu escopo de condomínios.';
         } catch (\Throwable $error) {
