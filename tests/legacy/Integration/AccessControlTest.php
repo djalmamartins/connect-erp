@@ -55,7 +55,7 @@ final class AccessControlTest extends TestCase
 
         self::assertFalse(Access::can('erp.ledger.manage', $user));
         self::assertFalse(Access::can('api.anything', $user));
-        self::assertTrue(Access::can('unregistered.studio.permission', $user), 'Permissões não estritas mantêm o legado por nível.');
+        self::assertFalse(Access::can('unregistered.studio.permission', $user), 'Slug não cadastrado é negado mesmo para nível alto (fail-closed, ADR 0006).');
     }
 
     public function testRegisteredErpPermissionDeniesUserWithoutRole(): void

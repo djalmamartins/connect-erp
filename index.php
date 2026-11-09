@@ -282,13 +282,16 @@ $route->namespace(null);
  * compartilhado e a recuperação de senha do núcleo.
  */
 /**
- * VERIFICAÇÃO PÚBLICA DE DOCUMENTOS (ADRs 0098 e 0099): em qualquer host, sem login. O link impresso
+ * VERIFICAÇÃO PÚBLICA DE DOCUMENTOS (ADRs 0098, 0099 e 0115): em qualquer host, sem login. Endereço fixo
+ * /verificar-certidao-debitos; o /verificar dos documentos antigos redireciona para ele. O link impresso
  * nos documentos usa url(), que pode ser o host do ERP, e a página precisa responder mesmo com o site
  * desligado (CONF_ACCESS_SITE). O POST exige CSRF e tem limite por IP.
  */
 $route->group(null);
 $route->namespace("Source\\Controllers\\Web\\Connect");
-$route->get("/verificar", "DocumentVerify:form");
+$route->get("/verificar-certidao-debitos", "DocumentVerify:form");
+$route->post("/verificar-certidao-debitos", "DocumentVerify:verify");
+$route->get("/verificar", "DocumentVerify:legacy");
 $route->post("/verificar", "DocumentVerify:verify");
 $route->namespace(null);
 

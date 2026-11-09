@@ -66,9 +66,10 @@ final class QualityPassIntegrationTest extends TestCase
         }
         self::assertSame('draft', $service->find($this->admin, $id)['status'], 'Nada mudou.');
 
+        // O edital sai como comunicado e exige ao menos uma unidade ativa (ADR 0088).
+        $unit = (new RegistryService($this->pdo))->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '11', 'type' => 'apartamento'])['id'];
         $service->convene($this->admin, $id);
         $service->open($this->admin, $id, $first->modify('+1 minute'));
-        $unit = (new RegistryService($this->pdo))->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '11', 'type' => 'apartamento'])['id'];
         $service->checkIn($this->admin, $id, ['unit_id' => $unit, 'attendee_name' => 'Gil'], $first->modify('+2 minutes'));
         self::assertNull($service->attendanceReport($this->admin, $id)['rows'][0]['overdue_cents'], 'Sem erp.agreements.view, sem valor vencido.');
         self::assertSame(0, $service->attendanceReport($this->admin, $id, true)['rows'][0]['overdue_cents']);

@@ -8,6 +8,7 @@
 # *_test) -> status e apply das migrations no banco do lab -> rebuild do serviço scheduler.
 # Para no primeiro erro: se a integração falhar, nada é migrado.
 # Rode a partir do checkout principal (www/connect), que é o que o compose monta.
+# Para o ciclo completo (pull da main, unitários, smoke, HTTP e resumo), use tools/testar-main.sh.
 set -euo pipefail
 
 project=$(cd "$(dirname "$0")/.." && pwd)
@@ -28,7 +29,9 @@ files_backup=$(bash tools/backup-files.sh)
 echo "arquivos privados: $files_backup ($(du -h "$files_backup" | cut -f1))"
 
 echo "== 2/4 testes de integração (banco *_test)"
-docker compose exec -T app composer test:integration
+MOVESOS_TEST_DB_PASS=$(grep -E '^LEGACY_DB_ROOT_PASSWORD=' .env | tail -1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//")
+export MOVESOS_TEST_DB_PASS
+docker compose exec -T -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS app composer test:integration
 
 echo "== 3/4 migrations ${until_prefix:+(até $until_prefix)}"
 docker compose exec -T app php service/commands/database-migrate.php status ${until_arg[@]+"${until_arg[@]}"} || true

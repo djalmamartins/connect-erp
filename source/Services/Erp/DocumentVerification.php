@@ -93,10 +93,14 @@ final class DocumentVerification
         return $normalized === null ? null : implode('-', str_split($normalized, 4));
     }
 
+    /** Endereço fixo da verificação pública (ADR 0115). O /verificar antigo continua e redireciona para cá. */
+    public const PATH = '/verificar-certidao-debitos';
+    public const LEGACY_PATH = '/verificar';
+
     /**
-     * Link impresso no documento (regra pura): a página pública com o código no fragmento
-     * ("…/verificar#ABCD-EFGH-JKMN-PQRS"). O navegador não manda o fragmento ao servidor, então o código
-     * não vai para o log de acesso; a página só preenche o campo, sem enviar sozinha.
+     * Link impresso no documento (regra pura, ADR 0115): o endereço fixo da página pública, igual em todos os
+     * documentos. A pessoa abre o link e digita o código impresso. O código não vai no link, então o endereço
+     * não muda de documento para documento e não chega ao log de acesso. Sem código válido = null (sem rodapé).
      */
     public static function link(?string $code, ?string $base): ?string
     {
@@ -106,7 +110,7 @@ final class DocumentVerification
         if ($formatted === null || preg_match('~^https?://[^\s/?#@]+(?:/[^\s?#@]*)?$~i', $base) !== 1) {
             return null;
         }
-        return $base . '/verificar#' . $formatted;
+        return $base . self::PATH;
     }
 
     /**
@@ -125,8 +129,8 @@ final class DocumentVerification
     }
 
     /**
-     * Rodapé de verificação dos documentos da unidade (regra pura, ADR 0099): o código formatado, o
-     * endereço para conferir (sem o código) e o link com o código no fragmento.
+     * Rodapé de verificação dos documentos da unidade (regra pura, ADRs 0099 e 0115): o código formatado e o
+     * endereço fixo para conferir (o link é o mesmo endereço).
      *
      * @return array{code:string, address:string, link:string}|null
      */
@@ -136,7 +140,7 @@ final class DocumentVerification
         if ($link === null) {
             return null;
         }
-        return ['code' => (string)self::formatCode($code), 'address' => rtrim(trim((string)$base), '/') . '/verificar', 'link' => $link];
+        return ['code' => (string)self::formatCode($code), 'address' => $link, 'link' => $link];
     }
 
     /**

@@ -31,7 +31,8 @@ final class AccessAdminIntegrationTest extends TestCase
         foreach (['erp_resident_portal_permissions', 'erp_resident_invitations', 'erp_partner_agency_users', 'erp_partner_agencies'] as $table) {
             $this->pdo->exec("DELETE FROM {$table}");   // a lista do TestCase ganha estas tabelas no alinhamento
         }
-        // O TestCase limpa access_roles: o papel da migration volta aqui, com as duas permissões.
+        // O TestCase limpa access_roles e access_permissions: as permissões e o papel da migration voltam aqui.
+        $this->registerMigrationPermissions();
         $this->pdo->exec("INSERT IGNORE INTO access_roles (name, slug, level, description) VALUES ('Imobiliária parceira', 'erp_partner', 1, 'teste')");
         $this->pdo->exec("INSERT IGNORE INTO access_role_permissions (role_id, permission_id) SELECT r.id, p.id FROM access_roles r JOIN access_permissions p
             WHERE r.slug = 'erp_partner' AND p.slug IN ('erp.access', 'erp.partner.view')");

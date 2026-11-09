@@ -68,7 +68,8 @@ final class DocumentVerificationIntegrationTest extends TestCase
         self::assertTrue($ok['ok']);
         self::assertSame(['kind' => 'Certidão de Débitos', 'issued_on' => date('d/m/Y'), 'condominium' => 'Residencial Alpha'], $ok['document']);
         $flat = (string)json_encode($ok, JSON_UNESCAPED_UNICODE);
-        foreach (['804', 'clear', 'Nada consta', (string)$certificate['id'], $certificate['verification_code']] as $private) {
+        self::assertArrayNotHasKey('id', $ok['document'], 'Vazou o id do documento.');
+        foreach (['804', 'clear', 'Nada consta', '"id"', $certificate['verification_code']] as $private) {
             self::assertStringNotContainsString($private, $flat, 'Vazou: ' . $private);
         }
 

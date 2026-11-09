@@ -371,8 +371,9 @@ final class ManagementReports
                 }
             }
         }
-        return $base + ['blocked' => false, 'rows' => $rows, 'totals' => ['expenses' => count($expenses),
-            'amount_cents' => array_sum(array_map(static fn (array $e): int => (int)$e['amount_cents'], $expenses))]];
+        // array_merge, não "+": $base já tem 'rows' => [], e a união manteria a lista vazia.
+        return array_merge($base, ['blocked' => false, 'rows' => $rows, 'totals' => ['expenses' => count($expenses),
+            'amount_cents' => array_sum(array_map(static fn (array $e): int => (int)$e['amount_cents'], $expenses))]]);
     }
 
     /**
