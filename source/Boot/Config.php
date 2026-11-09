@@ -12,6 +12,9 @@ if (is_file($environmentFile)) {
         "MOVESOS_TEST_DB_USER", "MOVESOS_TEST_DB_PASS", "MOVESOS_TEST_DB_SOCKET",
         "INTER_API_URL", "INTER_CLIENT_ID", "INTER_CLIENT_SECRET",
         "INTER_SCOPE", "INTER_CERT_PATH", "INTER_KEY_PATH",
+        // SMTP (ADR 0060): credenciais fora do banco e fora do Git.
+        "MOVESOS_SMTP_HOST", "MOVESOS_SMTP_PORT", "MOVESOS_SMTP_USER", "MOVESOS_SMTP_PASS",
+        "MOVESOS_SMTP_SECURE", "MOVESOS_SMTP_AUTH", "MOVESOS_SMTP_FROM_ADDRESS", "MOVESOS_SMTP_FROM_NAME",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {

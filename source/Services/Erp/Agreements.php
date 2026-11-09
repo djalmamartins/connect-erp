@@ -31,6 +31,8 @@ use Source\Support\Audit;
 final class Agreements
 {
     public const MAX_INSTALLMENTS = 60;
+    /** Contas por acordo ou simulação: limita o IN (...) e o FOR UPDATE de um único pedido. */
+    public const MAX_ENTRIES = 120;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -166,11 +168,13 @@ final class Agreements
     {
         $asOf ??= date('Y-m-d');
         $unit = $this->unit($user, $unitId);
-        $ids = array_values(array_unique(array_filter(array_map('intval', $entryIds))));
+        $ids = self::entryIds($entryIds);
         if ($ids === []) {
             throw new InvalidArgumentException('Escolha as contas vencidas.');
         }
-        $stmt = $this->pdo->query('SELECT * FROM erp_entries WHERE id IN (' . implode(',', $ids) . ')');
+        // Só contas do condomínio da unidade: id de outro condomínio responde igual a id inexistente.
+        $stmt = $this->pdo->prepare('SELECT * FROM erp_entries WHERE id IN (' . implode(',', $ids) . ') AND condominium_id = :c');
+        $stmt->execute(['c' => (int)$unit['condominium_id']]);
         $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($entries) !== count($ids)) {
             throw new InvalidArgumentException('Alguma conta escolhida não existe.');
@@ -266,7 +270,7 @@ final class Agreements
     public function create(User $user, array $input): array
     {
         $unit = $this->unit($user, (int)filter_var($input['unit_id'] ?? 0, FILTER_VALIDATE_INT));
-        $entryIds = is_array($input['entry_ids'] ?? null) ? array_values(array_unique(array_filter(array_map('intval', $input['entry_ids'])))) : [];
+        $entryIds = self::entryIds(is_array($input['entry_ids'] ?? null) ? $input['entry_ids'] : []);
         if ($entryIds === []) {
             throw new InvalidArgumentException('Escolha as contas vencidas que entram no acordo.');
         }
@@ -281,7 +285,10 @@ final class Agreements
         $this->pdo->beginTransaction();
         try {
             $in = implode(',', $entryIds);
-            $originals = $this->pdo->query("SELECT * FROM erp_entries WHERE id IN ({$in}) FOR UPDATE")->fetchAll(PDO::FETCH_ASSOC);
+            // Trava só contas do condomínio da unidade (nunca linhas de outro condomínio).
+            $stmt = $this->pdo->prepare("SELECT * FROM erp_entries WHERE id IN ({$in}) AND condominium_id = :c FOR UPDATE");
+            $stmt->execute(['c' => $condominium]);
+            $originals = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($originals) !== count($entryIds)) {
                 throw new InvalidArgumentException('Alguma conta escolhida não existe.');
             }
@@ -437,6 +444,27 @@ final class Agreements
             }
         }
         return $agreement;
+    }
+
+    /**
+     * Ids das contas escolhidas: inteiros positivos, sem repetição, no máximo MAX_ENTRIES (regra pura).
+     *
+     * @param array<mixed> $raw
+     * @return list<int>
+     */
+    public static function entryIds(array $raw): array
+    {
+        $ids = [];
+        foreach ($raw as $value) {
+            $id = filter_var(is_string($value) ? trim($value) : $value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id !== false) {
+                $ids[$id] = $id;
+            }
+        }
+        if (count($ids) > self::MAX_ENTRIES) {
+            throw new InvalidArgumentException('Escolha no máximo ' . self::MAX_ENTRIES . ' contas por acordo.');
+        }
+        return array_values($ids);
     }
 
     private function assertRenegotiable(array $entry, array $unit): void

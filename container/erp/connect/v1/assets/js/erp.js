@@ -1296,6 +1296,11 @@
     });
   });
 
+  /* Filtros GET que se aplicam ao escolher (ex.: unidade do painel AP-003). -- */
+  $$('select[data-erp-autosubmit]').forEach(function (select) {
+    select.addEventListener('change', function () { if (select.value !== '' && select.form) select.form.submit(); });
+  });
+
   /* Botões de envio mostram carregamento (formulários reais) --------------- */
   $$('form[data-erp-loading]').forEach(function (form) {
     form.addEventListener('submit', function () { var b = $('[type="submit"]', form); if (b) { b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true'); } });

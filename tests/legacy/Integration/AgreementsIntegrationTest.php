@@ -140,6 +140,23 @@ final class AgreementsIntegrationTest extends TestCase
             self::addToAssertionCount(1);
         }
 
+        // Conta de outro condomínio responde como inexistente (não revela que o id existe) e
+        // não é travada: a consulta só olha contas do condomínio da unidade.
+        $betaUnit = $this->service->save($this->admin, 'units', ['condominium_id' => $this->beta, 'number' => '201', 'type' => 'apartamento'])['id'];
+        $betaDebt = $this->service->save($this->admin, 'entries', ['condominium_id' => $this->beta, 'nature' => 'receita', 'chart_account_id' => $this->fee,
+            'description' => 'Taxa Beta', 'amount_cents' => '100,00', 'competence' => '2026-09', 'due_on' => '2026-09-10', 'unit_id' => $betaUnit])['id'];
+        foreach ([
+            fn () => $this->agreements->create($this->admin, $this->input('101', ['entry_ids' => [$this->debts['101'][0], $betaDebt]])),
+            fn () => $this->agreements->suggestion($this->admin, $this->units['101'], [$this->debts['101'][0], $betaDebt], '2026-11-09'),
+        ] as $call) {
+            try {
+                $call();
+                self::fail('Aceitou conta de outro condomínio.');
+            } catch (InvalidArgumentException $error) {
+                self::assertSame('Alguma conta escolhida não existe.', $error->getMessage());
+            }
+        }
+
         $outsider = $this->user([$this->beta]);
         self::assertSame(0, $this->agreements->delinquency($outsider, null, '2026-11-09')['totals']['entries']);
         $this->expectException(RegistryNotFound::class);

@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0071.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0072.**
   Faixas reservadas por frente: Avançar 0055–0059, Preparar 0060–0069, layout 0070 em diante.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
@@ -82,4 +82,6 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0054](../Organic%20Code/decisions/0054-condominium-unit-panels.md) | Painéis do condomínio (AP-002) e da unidade (AP-003) e outbox de notificações (sem envio ainda) |
 | [0055](../Organic%20Code/decisions/0055-notification-dispatch.md) | Fila de envio dos avisos do ERP: modelo do send, log ou caixa de teste fora de produção, retentativas e trilha |
 | [0056](../Organic%20Code/decisions/0056-notification-events.md) | Avisos de fatura, boleto, acordo, quebra e reserva aprovada pela outbox, com opt-in de cobrança por e-mail |
+| [0060](../Organic%20Code/decisions/0060-smtp-credentials-from-environment.md) | Credenciais SMTP pelo ambiente (`MOVESOS_SMTP_*`), valendo sobre a tabela settings |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
+| [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
