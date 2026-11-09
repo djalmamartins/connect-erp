@@ -92,6 +92,30 @@ final class DocumentVerificationIntegrationTest extends TestCase
         }
     }
 
+    /** ADR 0099: o código impresso no rodapé (com hífens, ou digitado em minúsculas e com espaços) confere em /verificar. */
+    public function testPrintedCodeVerifies(): void
+    {
+        $registry = new RegistryService($this->pdo);
+        $unit = $registry->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '905', 'type' => 'apartamento'])['id'];
+        $documents = new UnitDocuments($this->pdo);
+        $service = new DocumentVerification($this->pdo);
+        foreach (['debt_certificate', 'consent_letter'] as $kind) {
+            $issued = $documents->issue($this->admin, ['kind' => $kind, 'unit_id' => $unit, 'as_of' => date('Y-m-d')] + ($kind === 'consent_letter' ? ['purpose' => 'Venda da unidade'] : []));
+            $footer = DocumentVerification::footer($issued['verification_code'], 'https://www.exemplo.test');
+            self::assertNotNull($footer);
+            self::assertSame($issued['verification_display'], $footer['code'], 'O rodapé imprime o mesmo código da tela.');
+            $fragment = (string)parse_url($footer['link'], PHP_URL_FRAGMENT);
+            self::assertSame($footer['code'], $fragment, 'O link leva o código só no fragmento.');
+            self::assertNull(parse_url($footer['link'], PHP_URL_QUERY));
+            foreach ([$footer['code'], $fragment, strtolower(str_replace('-', ' ', $footer['code']))] as $typed) {
+                $result = $service->check($typed, self::IP);
+                self::assertTrue($result['ok'], $kind . ': ' . $typed);
+                self::assertSame(UnitDocuments::ALL_KINDS[$kind], $result['document']['kind']);
+            }
+        }
+        self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM auth_throttle_events WHERE scope = 'doc_verify'")->fetchColumn(), 'Código certo não conta no limite.');
+    }
+
     public function testUploadRecordsScanStatusAndRefusedFilesAreNotStored(): void
     {
         $off = new VirtualDisk($this->pdo, null, $this->root, true, new UploadScanPolicy('off'));
