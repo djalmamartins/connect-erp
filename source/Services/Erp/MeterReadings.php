@@ -92,7 +92,11 @@ final class MeterReadings
             throw new InvalidArgumentException('Leitura inválida (número com até 3 casas decimais).');
         }
 
-        $this->pdo->beginTransaction();
+        // Dentro da importação (ADR 0058) a transação é da importação inteira: tudo ou nada.
+        $own = !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
         try {
             $this->pdo->prepare('SELECT id FROM erp_meters WHERE id = :id FOR UPDATE')->execute(['id' => $meter['id']]);
             $existing = $this->pdo->prepare('SELECT * FROM erp_meter_readings WHERE meter_id = :m AND competence = :c');
@@ -125,9 +129,11 @@ final class MeterReadings
                 ->execute($values + ['u2' => (int)$user->id]);
             $existing->execute(['m' => $meter['id'], 'c' => $competence]);
             $after = $existing->fetch(PDO::FETCH_ASSOC);
-            $this->pdo->commit();
+            if ($own) {
+                $this->pdo->commit();
+            }
         } catch (\Throwable $error) {
-            if ($this->pdo->inTransaction()) {
+            if ($own && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $error;

@@ -90,6 +90,31 @@ final class ImportRules
         };
     }
 
+    /** Tipo do relógio: água, gás ou energia (com ou sem acento, maiúsculas). */
+    public static function meterKind(string $value): ?string
+    {
+        $value = SpreadsheetReader::normalizeHeader($value);
+        return match ($value) {
+            'agua' => 'agua', 'gas' => 'gas', 'energia', 'luz' => 'energia',
+            default => null,
+        };
+    }
+
+    /**
+     * Conferência do saldo do extrato (regra pura): diferença = saldo do banco − saldo calculado.
+     * Só informa; nada é ajustado. Sem saldo no extrato, não há conferência.
+     *
+     * @return array{bank_cents:?int, system_cents:?int, difference_cents:?int, matches:?bool}
+     */
+    public static function balanceCheck(?int $bankCents, ?int $systemCents): array
+    {
+        if ($bankCents === null || $systemCents === null) {
+            return ['bank_cents' => $bankCents, 'system_cents' => $systemCents, 'difference_cents' => null, 'matches' => null];
+        }
+        $difference = $bankCents - $systemCents;
+        return ['bank_cents' => $bankCents, 'system_cents' => $systemCents, 'difference_cents' => $difference, 'matches' => $difference === 0];
+    }
+
     /**
      * Conciliação do extrato (regra pura). Cada linha procura candidatos do mesmo sentido (crédito =
      * entrada, débito = saída), mesmo valor e até MATCH_DAYS dias de diferença, ainda não usados.

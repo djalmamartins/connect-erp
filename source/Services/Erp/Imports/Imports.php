@@ -48,6 +48,8 @@ final class Imports
             'required' => ['unidade', 'fracao'], 'optional' => [], 'permission' => 'erp.units.manage'],
         'delinquents' => ['page' => 'AP-142', 'label' => 'Inadimplentes (planilha)', 'formats' => ['csv', 'xlsx'],
             'required' => ['unidade', 'descricao', 'valor', 'competencia', 'vencimento', 'conta'], 'optional' => ['documento'], 'permission' => 'erp.entries.manage'],
+        'readings' => ['page' => 'AP-044', 'label' => 'Importação de leituras', 'formats' => ['csv', 'xlsx'],
+            'required' => ['relogio', 'tipo', 'competencia', 'leitura'], 'optional' => ['data_leitura'], 'permission' => 'erp.meter_readings.manage'],
     ];
     /** Soma das frações aceita (o arquivo traz todas as unidades ativas). */
     public const FRACTION_TOLERANCE = 0.0001;
@@ -146,6 +148,7 @@ final class Imports
             $applied = match ($kind) {
                 'ofx' => $this->applyOfx($user, $importId, $bankAccount, $result),
                 'fractions' => $this->applyFractions($user, $result['rows']),
+                'readings' => $this->applyReadings($user, $result['rows']),
                 default => $this->applyEntries($user, $importId, $result['rows']),
             };
             $summary = $result['summary'] + ['applied' => $applied];
@@ -270,6 +273,9 @@ final class Imports
             throw new InvalidArgumentException('Faltam colunas obrigatórias: ' . implode(', ', $missing) . '. Esperadas: ' . implode(', ', $definition['required'])
                 . ($definition['optional'] !== [] ? ' (opcionais: ' . implode(', ', $definition['optional']) . ')' : '') . '.');
         }
+        if ($kind === 'readings') {
+            return $this->validateReadings($condominium, $sheet['rows']);
+        }
         $lookups = $this->lookups($condominium);
         $rows = [];
         $errors = 0;
@@ -393,6 +399,106 @@ final class Imports
         return ['rows' => $rows, 'error_count' => $errors, 'summary' => $summary];
     }
 
+    /**
+     * Leituras (AP-044): relógio ativo do condomínio pelo número e tipo, uma linha por relógio, e as
+     * mesmas regras do lançamento manual (ADR 0045): leitura não menor que a anterior, competência não
+     * cobrada, sem leitura posterior, data até hoje e competência aberta. Corrigir a leitura ainda não
+     * cobrada da mesma competência é aceito (status "replace" na prévia).
+     *
+     * @param list<array{line:int, values:array<string, string>}> $raw
+     */
+    private function validateReadings(int $condominium, array $raw): array
+    {
+        $stmt = $this->pdo->prepare("SELECT m.id, m.kind, m.number, m.initial_reading, u.label AS unit_label FROM erp_meters m JOIN erp_units u ON u.id = m.unit_id
+            WHERE m.condominium_id = :c AND m.deleted_at IS NULL AND m.status = 'active'");
+        $stmt->execute(['c' => $condominium]);
+        $meters = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $meter) {
+            $meters[$meter['kind'] . '|' . mb_strtolower(trim((string)$meter['number']))] = $meter;
+        }
+        $current = $this->pdo->prepare('SELECT entry_id FROM erp_meter_readings WHERE meter_id = :m AND competence = :c');
+        $later = $this->pdo->prepare('SELECT 1 FROM erp_meter_readings WHERE meter_id = :m AND competence > :c LIMIT 1');
+        $previous = $this->pdo->prepare('SELECT reading FROM erp_meter_readings WHERE meter_id = :m AND competence < :c ORDER BY competence DESC LIMIT 1');
+        $rows = [];
+        $errors = 0;
+        $seen = [];
+        $consumption = 0.0;
+        foreach ($raw as $line) {
+            $v = $line['values'];
+            $problems = [];
+            $kind = ImportRules::meterKind($v['tipo'] ?? '');
+            $meter = $kind !== null ? ($meters[$kind . '|' . mb_strtolower(trim($v['relogio'] ?? ''))] ?? null) : null;
+            $competence = ImportRules::competence($v['competencia'] ?? '');
+            $reading = \Source\Services\Erp\MeterReadings::parseReading($v['leitura'] ?? '');
+            $readOn = trim($v['data_leitura'] ?? '') !== '' ? ImportRules::date($v['data_leitura']) : date('Y-m-d');
+            $status = 'ok';
+            if ($kind === null) {
+                $problems[] = 'Tipo inválido (água, gás ou energia).';
+            } elseif ($meter === null) {
+                $problems[] = 'Relógio "' . ($v['relogio'] ?? '') . "\" de {$kind} não existe ativo neste condomínio.";
+            } elseif (isset($seen[$meter['id']])) {
+                $problems[] = 'Relógio repetido no arquivo (uma leitura por relógio).';
+            }
+            if ($competence === null) {
+                $problems[] = 'Competência inválida (MM/AAAA).';
+            } elseif ($this->registry->isClosed($condominium, $competence)) {
+                $problems[] = "A competência {$competence} está fechada.";
+            }
+            if ($reading === null) {
+                $problems[] = 'Leitura inválida (número com até 3 casas decimais).';
+            }
+            if ($readOn === null || $readOn > date('Y-m-d')) {
+                $problems[] = 'Data da leitura inválida (até hoje).';
+            }
+            $base = null;
+            if ($meter !== null && $competence !== null) {
+                $seen[$meter['id']] = true;
+                $current->execute(['m' => $meter['id'], 'c' => $competence]);
+                $existing = $current->fetch(PDO::FETCH_ASSOC);
+                if ($existing !== false && $existing['entry_id'] !== null) {
+                    $problems[] = "A leitura de {$competence} já foi cobrada e não pode mudar.";
+                } elseif ($existing !== false) {
+                    $status = 'replace';
+                }
+                $later->execute(['m' => $meter['id'], 'c' => $competence]);
+                if ($later->fetchColumn()) {
+                    $problems[] = 'Há leitura de competência posterior para este relógio.';
+                }
+                $previous->execute(['m' => $meter['id'], 'c' => $competence]);
+                $prior = $previous->fetchColumn();
+                $base = $prior !== false ? (float)$prior : (float)($meter['initial_reading'] ?? 0);
+                if ($reading !== null && $reading < $base) {
+                    $problems[] = sprintf('Leitura menor que a anterior (%s). Relógio trocado = cadastre o relógio novo.', number_format($base, 3, ',', '.'));
+                }
+            }
+            $ok = $problems === [];
+            if ($ok) {
+                $consumption += $reading - $base;
+            }
+            $rows[] = ['line' => $line['line'], 'status' => $ok ? $status : 'error', 'errors' => $problems, 'data' => [
+                'meter_id' => $meter['id'] ?? null, 'meter' => $v['relogio'] ?? '', 'kind' => $kind, 'unit_label' => $meter['unit_label'] ?? null,
+                'competence' => $competence, 'read_on' => $readOn, 'reading' => $reading, 'previous' => $base,
+                'consumption' => $ok ? round($reading - $base, 3) : null,
+            ]];
+            $errors += $ok ? 0 : 1;
+        }
+        return ['rows' => $rows, 'error_count' => $errors, 'summary' => ['rows' => count($rows), 'errors' => $errors,
+            'consumption' => round($consumption, 3), 'replace' => count(array_filter($rows, static fn (array $r): bool => $r['status'] === 'replace'))]];
+    }
+
+    /** @param list<array> $rows */
+    private function applyReadings(User $user, array $rows): array
+    {
+        $service = new \Source\Services\Erp\MeterReadings($this->pdo, $this->scope);
+        $amount = 0;
+        foreach ($rows as $row) {
+            $saved = $service->record($user, ['meter_id' => $row['data']['meter_id'], 'competence' => $row['data']['competence'],
+                'read_on' => $row['data']['read_on'], 'reading' => number_format((float)$row['data']['reading'], 3, '.', '')]);
+            $amount += (int)($saved['amount_cents'] ?? 0);
+        }
+        return ['readings' => count($rows), 'amount_cents' => $amount];
+    }
+
     private function validateOfx(int $condominium, array $bankAccount, string $content): array
     {
         $ofx = OfxParser::parse($content);
@@ -423,7 +529,29 @@ final class Imports
             'rows' => count($rows), 'errors' => $errors, 'account' => $ofx['account_id'], 'from' => $ofx['from'], 'to' => $ofx['to'],
             'credits_cents' => $credits, 'debits_cents' => $debits, 'ledger_balance_cents' => $ofx['ledger_balance_cents'], 'ledger_as_of' => $ofx['ledger_as_of'],
             'already' => count(array_filter($rows, static fn (array $r): bool => $r['status'] === 'already')),
+            // Conferência do saldo: só mostra a diferença, nunca ajusta nada.
+            'balance_check' => ImportRules::balanceCheck($ofx['ledger_balance_cents'],
+                $ofx['ledger_balance_cents'] !== null ? $this->systemBalance((int)$bankAccount['id'], (string)($ofx['ledger_as_of'] ?? $ofx['to'] ?? date('Y-m-d'))) : null),
         ]];
+    }
+
+    /**
+     * Saldo calculado da conta bancária no fim do dia $asOf (mesma regra do BankBalances, ADR 0024 e
+     * 0057): saldo inicial + receitas pagas − despesas pagas + transferências que entram − que saem,
+     * a partir da data do saldo inicial.
+     */
+    private function systemBalance(int $bankAccountId, string $asOf): int
+    {
+        $stmt = $this->pdo->prepare("SELECT COALESCE(b.opening_balance_cents, 0) AS opening,
+                COALESCE((SELECT SUM(CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -e.amount_cents END) FROM erp_entries e
+                    WHERE e.bank_account_id = b.id AND e.deleted_at IS NULL AND e.status = 'active' AND e.paid_on IS NOT NULL AND e.paid_on <= :d1
+                      AND (b.opened_on IS NULL OR e.paid_on >= b.opened_on)), 0) AS entries,
+                " . \Source\Services\Erp\BankBalances::transferSql('in', 'b', ' AND t.transferred_on <= :d2') . " AS tin,
+                " . \Source\Services\Erp\BankBalances::transferSql('out', 'b', ' AND t.transferred_on <= :d3') . " AS tout
+            FROM erp_bank_accounts b WHERE b.id = :id");
+        $stmt->execute(['d1' => $asOf, 'd2' => $asOf, 'd3' => $asOf, 'id' => $bankAccountId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)$row['opening'] + (int)$row['entries'] + (int)$row['tin'] - (int)$row['tout'];
     }
 
     /** Grava as linhas novas do extrato e concilia com os lançamentos pagos e as transferências da conta. */
