@@ -13,8 +13,11 @@ namespace Source\Services\Erp\Registry;
  * - marcação e entidades HTML;
  * - esquemas de link (http, https, ftp, javascript, data, mailto, tel) e "//" no início de um endereço;
  * - "www.";
- * - domínio solto: pelo menos um rótulo antes de um TLD só de letras (2 a 24), quando o TLD é um dos comuns
- *   (COMMON_TLDS) ou o domínio termina em ".com.br" ou ".net.br" etc.
+ * - domínio solto: pelo menos um rótulo antes de um TLD só de letras (2 a 24), quando
+ *   - o TLD é um dos comuns (COMMON_TLDS) ou o domínio termina em ".com.br", ".net.br" etc.;
+ *   - o TLD tem 2 letras minúsculas (código de país, ADR 0114), por exemplo "golpe.pt", exceto palavras curtas
+ *     do português (SHORT_WORDS: "Av.do Contorno");
+ *   - o domínio vem seguido de caminho ("golpe.shop/pix"), qualquer que seja o TLD (ADR 0114).
  *
  * Não recusa (ADR 0097): "Sr.João", "R$1.500", "Bloco A.2", "obs.: trazer RG", "10.000,00". O rótulo só
  * casa com letras e números ASCII; letra acentuada logo depois corta o TLD, e rótulo só de números não é TLD.
@@ -22,7 +25,12 @@ namespace Source\Services\Erp\Registry;
 final class PlainText
 {
     public const MESSAGE = 'Use só texto: sem HTML, sem link e sem endereço de site.';
-    public const COMMON_TLDS = ['com', 'net', 'org', 'br', 'io', 'info', 'app', 'xyz', 'top', 'online', 'site', 'link', 'me', 'co', 'ly', 'gl'];
+    public const COMMON_TLDS = ['com', 'net', 'org', 'br', 'io', 'info', 'app', 'xyz', 'top', 'online', 'site', 'link', 'me', 'co', 'ly', 'gl',
+        'shop', 'store', 'club', 'vip', 'live', 'pro', 'biz', 'tech', 'cloud', 'digital', 'click', 'website', 'space', 'fun', 'icu', 'buzz',
+        'page', 'dev', 'ai', 'tv', 'cc', 'ws', 'gov', 'edu', 'blog', 'news', 'bank', 'pay', 'money', 'finance', 'loan', 'win', 'bet', 'today',
+        'work', 'world', 'email', 'one', 'rest', 'cfd', 'sbs', 'lat', 'mobi', 'name', 'tk', 'ml', 'ga', 'cf', 'gq'];
+    /** Palavras de duas letras do português que não contam como código de país depois de um ponto ("Av.do Contorno"). */
+    public const SHORT_WORDS = ['da', 'de', 'do', 'em', 'no', 'na', 'os', 'as', 'ao', 'se', 'um', 'ou', 'eu', 'tu', 'ja', 'la', 'lo', 'el', 'nu', 'oi'];
 
     /** Problema (regra pura) ou null. */
     public static function problem(string $text): ?string
@@ -49,7 +57,7 @@ final class PlainText
      */
     public static function looseDomain(string $text): bool
     {
-        if (preg_match_all('/(?<![\p{L}\p{N}.\-])((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+)([a-z]{2,24})(?![\p{L}\p{N}\-])/iu', $text, $matches, PREG_SET_ORDER) === 0) {
+        if (preg_match_all('/(?<![\p{L}\p{N}.\-])((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+)([a-z]{2,24})(?![\p{L}\p{N}\-])(\/\S)?/iu', $text, $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL) === 0) {
             return false;
         }
         foreach ($matches as $m) {
@@ -61,6 +69,13 @@ final class PlainText
             $full = strtolower($m[1] . $m[2]);
             if (in_array($tld, self::COMMON_TLDS, true) || preg_match('/\.(com|net|org)\.br$/', $full) === 1) {
                 return true;
+            }
+            if (($m[3] ?? null) !== null) {
+                return true;    // caminho depois do domínio: "golpe.shop/pix" (ADR 0114)
+            }
+            if (preg_match('/^[a-z]{2}$/', $m[2]) === 1 && !in_array($m[2], self::SHORT_WORDS, true)
+                && preg_match('/[a-z]/i', $labels[count($labels) - 1]) === 1) {
+                return true;    // código de país em minúsculas: "golpe.pt" (ADR 0114)
             }
         }
         return false;

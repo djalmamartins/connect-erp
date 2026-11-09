@@ -29,6 +29,19 @@ final class PlainTextAndSettingsAuditTest extends TestCase
         }
     }
 
+    /** ADR 0114: TLD fora da lista recusado quando há caminho ou quando é código de país em minúsculas. */
+    public function testUncommonTldsWithPathOrCountryCodeAreRefused(): void
+    {
+        foreach (['Pague em golpe.shop', 'Pix em pagar.store/qr', 'Boleto em segunda-via.qualquercoisa/abc', 'Veja golpe.pt', 'Acesse banco.us',
+            'Link boleto.vip', 'Pague no pix.click'] as $bad) {
+            self::assertSame(PlainText::MESSAGE, PlainText::problem($bad), $bad);
+        }
+        foreach (['Obra na Av.do Contorno.', 'Portão da Rua.da Paz', 'Fim do ano.Bom descanso!', 'Bloco A.2/3 em obras.', 'Horário seg.a sex.',
+            'Ver item 3.a do regimento.', 'Sr.Paulo e Sra.Ana'] as $ok) {
+            self::assertNull(PlainText::problem($ok), $ok);
+        }
+    }
+
     public function testSettingsAuditMasksDocumentsInFreeText(): void
     {
         $text = ['type' => 'text'];
