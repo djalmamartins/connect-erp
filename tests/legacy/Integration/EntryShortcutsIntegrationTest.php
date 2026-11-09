@@ -166,6 +166,28 @@ final class EntryShortcutsIntegrationTest extends TestCase
         self::assertSame('receipt', $documents->issue($this->admin, $input)['kind'], 'Cancelado, libera a conta.');
     }
 
+    public function testPaymentWithValidReceiptCannotBeUndone(): void
+    {
+        $entry = $this->invoiceEntry();
+        $this->pdo->exec("UPDATE erp_entries SET paid_on = CURDATE(), bank_account_id = {$this->bankA} WHERE id = {$entry}");
+        $documents = new UnitDocuments($this->pdo);
+        $receipt = $documents->issue($this->admin, ['kind' => 'receipt', 'unit_id' => $this->units[0], 'entry_ids' => [$entry]]);
+
+        $row = $this->pdo->query("SELECT * FROM erp_entries WHERE id = {$entry}")->fetch(\PDO::FETCH_ASSOC);
+        $undo = ['paid_on' => '', 'bank_account_id' => ''] + $this->editable($row);
+        try {
+            $this->service->save($this->admin, 'entries', $undo, $entry);
+            self::fail('Estornou a baixa de conta com recibo válido.');
+        } catch (RegistryValidationException $error) {
+            self::assertStringContainsString('Cancele o recibo', (string)($error->errors['paid_on'] ?? ''));
+        }
+        self::assertNotNull($this->pdo->query("SELECT paid_on FROM erp_entries WHERE id = {$entry}")->fetchColumn(), 'Baixa continua.');
+
+        $documents->cancel($this->admin, $receipt['id'], 'Pagamento devolvido pelo banco');
+        $this->service->save($this->admin, 'entries', $undo, $entry);
+        self::assertNull($this->pdo->query("SELECT paid_on FROM erp_entries WHERE id = {$entry}")->fetchColumn(), 'Sem recibo válido, o estorno passa.');
+    }
+
     public function testScope(): void
     {
         $outsider = $this->user([$this->beta]);

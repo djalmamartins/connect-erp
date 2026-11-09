@@ -43,6 +43,10 @@ verificação, como no ADR 0044. As regras ficam na issue #46 para revisão da a
     mesma foto do conteúdo;
   - cobre contas a receber já pagas da unidade, escolhidas uma a uma (até 60);
   - cada conta só tem um recibo válido (`erp_unit_document_entries`); cancelar o recibo libera a conta;
+  - conta com recibo válido não tem a baixa estornada nem alterada (data, conta bancária, valor,
+    unidade, situação) e não é excluída: a chave `receipt_lock` do motor
+    (`Definitions::RECEIPT_LOCK`, nos cadastros de lançamentos, contas a pagar e contas a receber)
+    responde "Cancele o recibo antes de estornar ou alterar a baixa";
   - `UnitDocuments::KINDS` continua com os 4 documentos das páginas AP-123 a AP-130, e o recibo fica
     em `ALL_KINDS`.
 - **Permissões existentes:**
@@ -56,8 +60,6 @@ verificação, como no ADR 0044. As regras ficam na issue #46 para revisão da a
 - Remessa e pagamentos ao banco (AP-031 e AP-037) dependem do Djalma.
 - Não há aviso por e-mail de multa ou cobrança extra (pode entrar como evento da outbox depois).
 - Não há estorno de desconto: corrige-se com um novo lançamento ou cancelando a conta.
-- Estornar a baixa de uma conta com recibo válido não é bloqueado. O recibo é a foto do momento e
-  deve ser cancelado à mão (a revisar na issue #46).
 
 ## Consequências
 
