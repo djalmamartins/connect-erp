@@ -23,6 +23,7 @@ use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\UnitDocuments;
+use Source\Services\Erp\VirtualDisk;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Erp\FieldSpec;
@@ -443,6 +444,42 @@ final class Panel extends Controller
         return $rows;
     }
 
+    /**
+     * Disco Virtual (AP-122, ADR 0047 e 0049) no contexto da barra superior: arquivos por pasta
+     * (?pasta=, ?q=, ?pagina=) e os condomínios do escopo para enviar. null = sem permissão ou sem
+     * banco (a tela segue com a demonstração). Enviar, baixar e excluir usam /api/v1/documents.
+     *
+     * @return array<string, mixed>
+     */
+    private function virtualDiskData(User $user): array
+    {
+        $folder = is_string($_GET['pasta'] ?? null) && isset(VirtualDisk::FOLDERS[$_GET['pasta']]) ? $_GET['pasta'] : null;
+        $q = is_string($_GET['q'] ?? null) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
+        $data = ['diskFiles' => null, 'diskFolder' => $folder, 'diskQuery' => $q, 'diskCondominiums' => [], 'canManageFiles' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.documents.view', $user)) {
+            return $data;
+        }
+        try {
+            $data['diskFiles'] = (new VirtualDisk())->list($user, CondominiumContext::id(), ['folder' => $folder, 'q' => $q, 'page' => $_GET['pagina'] ?? 1]);
+            $data['diskCondominiums'] = $this->condominiumOptions($user);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'virtual_disk_screen_failed']);
+            return ['diskFiles' => null] + $data;
+        }
+        $data['canManageFiles'] = Access::can('erp.documents.manage', $user);
+        return $data;
+    }
+
+    /** Tamanho legível em pt-BR (regra pura): 512 B, 12,5 KB, 3,2 MB. */
+    public static function fileSize(int $bytes): string
+    {
+        if ($bytes < 1024) {
+            return $bytes . ' B';
+        }
+        $kb = $bytes / 1024;
+        return $kb < 1024 ? number_format($kb, 1, ',', '.') . ' KB' : number_format($kb / 1024, 1, ',', '.') . ' MB';
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -546,6 +583,9 @@ final class Panel extends Controller
         if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
+        if ($id === 'AP-122') {
+            $data += $this->virtualDiskData($user);
+        }
         if ($id === 'AP-042') {
             $data += $this->meterReadingData($user);
         }
@@ -572,6 +612,7 @@ final class Panel extends Controller
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
             isset(self::UNIT_DOCUMENT_PAGES[$id]) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
+            $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',

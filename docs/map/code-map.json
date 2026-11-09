@@ -189,6 +189,10 @@
    "title": "0048 — Tela de leituras do mês (AP-042)"
   },
   {
+   "file": "docs/Organic Code/decisions/0049-virtual-disk-screen.md",
+   "title": "0049 — Tela do Disco Virtual (AP-122)"
+  },
+  {
    "file": "docs/Organic Code/decisions/0050-document-registries.md",
    "title": "0050 — Avisos de recebimento, cópias de cheques, empenhos e malotes"
   },
@@ -802,6 +806,7 @@
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments",
+    "Source\\Services\\Erp\\VirtualDisk",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Erp\\CondominiumContext",
@@ -824,6 +829,7 @@
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
+    "tests/legacy/Unit/ErpVirtualDiskScreenTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
   },
@@ -2394,6 +2400,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/VirtualDiskIntegrationTest.php",
+    "tests/legacy/Unit/ErpVirtualDiskScreenTest.php",
     "tests/legacy/Unit/VirtualDiskTest.php"
    ]
   },
@@ -3027,7 +3034,7 @@
   }
  },
  "counts": {
-  "adrs": 51,
+  "adrs": 52,
   "classes": 173,
   "dynamic_route_lines": {
    "erp": 8,
@@ -3036,7 +3043,7 @@
   "erp_pages": 172,
   "routes": 260,
   "tables": 89,
-  "tests": 106
+  "tests": 107
  },
  "erp_pages": [
   {
@@ -7754,6 +7761,10 @@
   "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Services\\Erp\\UnitDocuments"
+  ],
+  "tests/legacy/Unit/ErpVirtualDiskScreenTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\VirtualDisk"
   ],
   "tests/legacy/Unit/FinancialReportsTest.php": [
    "Source\\Services\\Erp\\FinancialReports"

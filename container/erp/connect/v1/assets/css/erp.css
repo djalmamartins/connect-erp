@@ -544,6 +544,27 @@ p { margin: 0; }
 .erp-meter-actions [data-meter-changes] { margin-right: auto; }
 .erp-meter-note { margin: 8px 0 0; text-align: right; }
 
+/* Disco Virtual (ADR 0049): pastas, envio com arrastar e soltar e lista de arquivos. */
+.erp-disk-folders { display: flex; flex-wrap: wrap; gap: 8px; }
+.erp-disk-folder { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--erp-radius-pill); border: 1px solid var(--erp-border); background: var(--erp-surface, #fff); color: inherit; text-decoration: none; font-weight: 500; }
+.erp-disk-folder:hover { border-color: var(--erp-brand); }
+.erp-disk-folder.is-active { background: var(--erp-brand); border-color: var(--erp-brand); color: #fff; }
+.erp-disk-layout { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); align-items: start; }
+.erp-disk-layout > .erp-disk-list:only-child { grid-column: 1 / -1; }
+.erp-disk-upload { align-content: start; }
+.erp-dropzone { position: relative; display: grid; justify-items: center; gap: 4px; padding: 22px 14px; border: 2px dashed var(--erp-border); border-radius: var(--erp-radius, 12px); text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+.erp-dropzone:hover, .erp-dropzone.is-over { border-color: var(--erp-brand); background: var(--erp-success-soft); }
+.erp-dropzone:focus-within { outline: 2px solid var(--erp-brand); outline-offset: 2px; }
+.erp-dropzone strong { overflow-wrap: anywhere; }
+.erp-dropzone__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.erp-disk-search { display: flex; gap: 8px; align-items: center; }
+.erp-disk-search .erp-input { min-width: 220px; }
+.erp-disk-list .erp-card__head { flex-wrap: wrap; gap: 12px; }
+.erp-disk-title { overflow-wrap: anywhere; }
+.erp-disk-name { min-width: 200px; }
+.erp-disk-name .erp-muted { overflow-wrap: anywhere; }
+@media (max-width: 1000px) { .erp-disk-layout { grid-template-columns: 1fr; } .erp-disk-search { width: 100%; } .erp-disk-search .erp-input { min-width: 0; flex: 1; } }
+
 /* Documentos da unidade (ADR 0046): folha para imprimir com o código de verificação. */
 .erp-unit-doc { display: grid; gap: 18px; padding: 28px; }
 .erp-unit-doc__head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid var(--erp-border); padding-bottom: 14px; }
