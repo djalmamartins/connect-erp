@@ -1791,23 +1791,6 @@
     "tests/erp/render-smoke.php"
    ]
   },
-  "Source\\Services\\Erp\\FinancialReports": {
-   "deps": [
-    "Source\\Core\\Connect",
-    "Source\\Models\\User",
-    "Source\\Services\\CondominiumScope"
-   ],
-   "file": "source/Services/Erp/FinancialReports.php",
-   "kind": "class",
-   "layer": "Services",
-   "tables": [
-    "erp_chart_accounts",
-    "erp_bank_accounts",
-    "condominiums",
-    "erp_entries"
-   ],
-   "tests": []
-  },
   "Source\\Services\\Erp\\Invoices": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2648,7 +2631,7 @@
  },
  "counts": {
   "adrs": 37,
-  "classes": 159,
+  "classes": 158,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -6078,7 +6061,6 @@
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
     "Source\\Services\\Erp\\BankBalances",
-    "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -6101,7 +6083,6 @@
     "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
-    "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -6141,7 +6122,6 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0405_chart_of_accounts.sql",
    "used_by": [
-    "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -6177,7 +6157,6 @@
     "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
-    "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\RecurringEntries",
