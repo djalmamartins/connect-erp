@@ -316,6 +316,50 @@ $assert(str_contains($html, 'data-invoice-open=') && !str_contains($html, 'data-
 $html = $invoicePage([], true, 'empty');
 $assert(str_contains($html, 'Nenhuma fatura encontrada') && str_contains($html, 'Preparar fatura'), 'AP-032: lista vazia orienta a preparar');
 
+// Cobrança bancária (AP-035, AP-036, AP-038; ADR 0035 e 0038) com dados reais, só sandbox.
+$chargeRow = static fn (array $over = []): array => $over + [
+    'id' => 11, 'condominium_id' => 7, 'bank_account_id' => 3, 'entry_id' => 90, 'adapter' => 'sandbox', 'status' => 'registered', 'status_label' => 'Registrado',
+    'our_number' => '0000000001', 'amount_cents' => 90000, 'due_on' => '2026-11-10', 'external_id' => 'SBX-1', 'digitable_line' => 'SANDBOX <0001>', 'barcode' => 'SANDBOX',
+    'last_error' => null, 'paid_cents' => null, 'paid_on' => null, 'registered_at' => '2026-11-01 10:00:00', 'cancelled_at' => null,
+];
+$bankPage = static function (string $id, string $template, array $data, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
+    $html = $render($template, $layoutData->invoke($panel, $user, $id, $data + ['spec' => ['fileLabel' => 'Arquivo de retorno bancário']]));
+    if ($name !== '') $save('page-' . strtolower($id) . '-' . $name, $html);
+    return $html;
+};
+$charges = [$chargeRow(), $chargeRow(['id' => 12, 'status' => 'pending', 'status_label' => 'Aguardando banco', 'digitable_line' => null, 'last_error' => 'Sem resposta do <banco>']),
+    $chargeRow(['id' => 13, 'status' => 'paid', 'status_label' => 'Pago', 'paid_cents' => 85000, 'paid_on' => '2026-11-09']), $chargeRow(['id' => 14, 'status' => 'cancelled', 'status_label' => 'Cancelado'])];
+$html = $bankPage('AP-035', 'pages/finance/bank-charges', ['bankCharges' => ['data' => $charges, 'total' => 4, 'page' => 1, 'per_page' => 25, 'pages' => 2], 'bankReady' => true, 'canManageCharges' => true], 'list');
+$common($html, 'AP-035', 'Boletos');
+$assert(str_contains($html, 'data-erp-bank-charges data-api="https://' . $smokeHost . '/api/v1/bank-charges"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'Ambiente de testes'), 'AP-035: tela real fala com /api/v1/bank-charges, leva o CSRF e avisa que é sandbox');
+$assert(str_contains($html, 'SANDBOX &lt;0001&gt;') && str_contains($html, 'Sem resposta do &lt;banco&gt;') && str_contains($html, 'R$ 900,00') && str_contains($html, 'pago R$ 850,00') && !str_contains($html, 'Interface proposta'), 'AP-035: lista real escapada, pago com valor diferente, sem demonstração');
+$assert(substr_count($html, 'data-charge-refresh=') === 2 && substr_count($html, 'data-charge-cancel=') === 2 && substr_count($html, 'data-charge-copy=') === 1 && str_contains($html, 'id="charge-issue"') && str_contains($html, 'rel="next"'), 'AP-035: consultar e cancelar só aguardando ou registrado, copiar a linha, emitir e paginação');
+preg_match_all('~\sid="([^"]+)"~', $html, $ids);
+$assert(array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1)) === [], 'AP-035: sem ids duplicados');
+$html = $bankPage('AP-035', 'pages/finance/bank-charges', ['bankCharges' => ['data' => $charges, 'total' => 4, 'page' => 1, 'per_page' => 25, 'pages' => 1], 'bankReady' => true, 'canManageCharges' => false]);
+$assert(str_contains($html, 'data-charge-copy=') && !str_contains($html, 'data-charge-refresh=') && !str_contains($html, 'data-charge-cancel=') && !str_contains($html, 'id="charge-issue"'), 'AP-035: sem erp.bank_charges.manage só consulta');
+$html = $bankPage('AP-035', 'pages/finance/bank-charges', ['bankCharges' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'bankReady' => true, 'canManageCharges' => true], 'empty');
+$assert(str_contains($html, 'Nenhum boleto encontrado') && str_contains($html, 'Emitir boleto'), 'AP-035: lista vazia orienta a emitir');
+
+$html = $bankPage('AP-036', 'pages/finance/bank-return-import', ['bankReady' => true, 'canManageCharges' => true], 'form');
+$common($html, 'AP-036', 'Arquivo de Retorno');
+$assert(str_contains($html, 'data-erp-bank-return data-api="https://' . $smokeHost . '/api/v1/bank-returns"') && str_contains($html, 'type="file" id="ret-file" name="file" accept=".ret,.txt" required') && str_contains($html, 'data-return-accounts') && str_contains($html, 'SANDBOX-RETORNO;v1'), 'AP-036: importa pela API com conta bancária e arquivo, avisa o formato do sandbox');
+$html = $bankPage('AP-036', 'pages/finance/bank-return-import', ['bankReady' => true, 'canManageCharges' => false]);
+$assert(!str_contains($html, 'data-bank-return-form') && str_contains($html, 'Importar exige permissão'), 'AP-036: sem erp.bank_charges.manage não oferece importar');
+
+$event = static fn (array $over = []): array => $over + ['id' => 31, 'condominium_id' => 7, 'bank_account_id' => 3, 'return_file_id' => 2, 'charge_id' => 11, 'event_key' => 'E1', 'kind' => 'paid',
+    'our_number' => '0000000001', 'amount_cents' => 85000, 'occurred_on' => '2026-11-09', 'outcome' => 'divergence', 'outcome_label' => 'Divergência', 'note' => 'Valor pago (85000) diferente do título <90000>.', 'resolved_at' => null];
+$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [$event(), $event(['id' => 32, 'charge_id' => null, 'outcome' => 'unknown_charge', 'outcome_label' => 'Título não encontrado', 'our_number' => '0000000099'])], 'bankReady' => true, 'canManageCharges' => true], 'list');
+$common($html, 'AP-038', 'Retornos');
+$assert(str_contains($html, 'data-erp-bank-divergences data-api="https://' . $smokeHost . '/api/v1/bank-events"') && substr_count($html, 'data-divergence-resolve=') === 2 && str_contains($html, 'name="note" minlength="5" maxlength="255" required'), 'AP-038: fila de divergências com "revisada" e nota de 5 a 255');
+$assert(str_contains($html, 'título &lt;90000&gt;') && str_contains($html, 'Título não encontrado') && str_contains($html, 'R$ 850,00'), 'AP-038: motivo escapado e título desconhecido');
+$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [$event()], 'bankReady' => true, 'canManageCharges' => false]);
+$assert(!str_contains($html, 'data-divergence-resolve=') && !str_contains($html, 'id="divergence-resolve"'), 'AP-038: sem erp.bank_charges.manage só consulta');
+$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [], 'bankReady' => true, 'canManageCharges' => true], 'empty');
+$assert(str_contains($html, 'Nenhuma divergência pendente'), 'AP-038: fila vazia');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-035', ['bankCharges' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-036', ['bankReady' => false]) === null
+    && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-038', ['bankDivergences' => []]) === 'pages/finance/bank-divergences', 'cobrança: sem dados segue a demonstração; com dados, tela própria');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
