@@ -44,6 +44,8 @@ final class Collections
     ];
     public const MAX_PROMISE_DAYS = 90;
     public const MAX_NEXT_ACTION_DAYS = 180;
+    /** Contas por caso judicial (ADR 0066). */
+    public const MAX_CASE_ENTRIES = 200;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -65,6 +67,29 @@ final class Collections
     {
         return $stillOverdue && $lastContact !== null && ($lastContact['outcome'] ?? null) === 'promise'
             && !empty($lastContact['promise_on']) && (string)$lastContact['promise_on'] < $asOf;
+    }
+
+    /**
+     * Contas escolhidas para o caso (regra pura, ADR 0066): inteiros positivos, sem repetição, de 1 a
+     * MAX_CASE_ENTRIES. A lista é conferida antes de qualquer conversão.
+     *
+     * @return list<int>
+     */
+    public static function entryIds(mixed $raw): array
+    {
+        $message = sprintf('Escolha de 1 a %d contas vencidas da unidade.', self::MAX_CASE_ENTRIES);
+        if (!is_array($raw) || $raw === [] || count($raw) > self::MAX_CASE_ENTRIES) {
+            throw new InvalidArgumentException($message);
+        }
+        $ids = [];
+        foreach ($raw as $value) {
+            $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) {
+                throw new InvalidArgumentException($message);
+            }
+            $ids[(int)$id] = (int)$id;
+        }
+        return array_values($ids);
     }
 
     /** Data opcional entre hoje e hoje + $maxDays (regra pura). */
@@ -176,7 +201,9 @@ final class Collections
             throw new InvalidArgumentException('Informe o canal e o resultado do contato.');
         }
         $note = Announcements::text($input['note'] ?? null, 5, 1000, 'a nota do contato');
-        $name = is_string($input['contact_name'] ?? null) && trim($input['contact_name']) !== '' ? mb_substr(trim($input['contact_name']), 0, 160) : null;
+        // Nome do contato em uma linha, sem caracteres de controle (ADR 0066).
+        $name = is_string($input['contact_name'] ?? null) ? mb_substr(trim((string)preg_replace('/[\p{C}\s]+/u', ' ', $input['contact_name'])), 0, 160) : '';
+        $name = $name !== '' ? $name : null;
         $promiseOn = self::futureDate($input['promise_on'] ?? null, self::MAX_PROMISE_DAYS, 'da promessa');
         $promiseCents = ($input['promise_cents'] ?? '') !== '' && ($input['promise_cents'] ?? null) !== null ? Invoices::cents($input['promise_cents']) : null;
         if ($outcome === 'promise' && $promiseOn === null) {
@@ -221,10 +248,7 @@ final class Collections
     {
         $unit = $this->unit($user, $input['unit_id'] ?? null);
         $note = Announcements::text($input['note'] ?? null, 5, 1000, 'a nota de abertura');
-        $entryIds = is_array($input['entry_ids'] ?? null) ? array_values(array_unique(array_filter(array_map('intval', $input['entry_ids']), static fn (int $i): bool => $i > 0))) : [];
-        if ($entryIds === [] || count($entryIds) > 200) {
-            throw new InvalidArgumentException('Escolha de 1 a 200 contas vencidas da unidade.');
-        }
+        $entryIds = self::entryIds($input['entry_ids'] ?? null);
         $openedOn = is_string($input['opened_on'] ?? null) && $input['opened_on'] !== '' ? $input['opened_on'] : date('Y-m-d');
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $openedOn);
         if ($date === false || $date->format('Y-m-d') !== $openedOn || $openedOn > date('Y-m-d')) {
@@ -235,12 +259,14 @@ final class Collections
 
         $this->pdo->beginTransaction();
         try {
+            // Só as contas desta unidade e deste condomínio: conta de outro condomínio é tratada como
+            // inexistente (sem revelar que o id existe) e não fica travada (ADR 0066).
             $stmt = $this->pdo->prepare("SELECT id, amount_cents, unit_id, nature, status, paid_on, due_on, agreement_id, deleted_at FROM erp_entries
-                WHERE id IN (" . implode(',', $entryIds) . ') FOR UPDATE');
-            $stmt->execute();
+                WHERE id IN (" . implode(',', $entryIds) . ') AND unit_id = :u AND condominium_id = :c FOR UPDATE');
+            $stmt->execute(['u' => (int)$unit['id'], 'c' => (int)$unit['condominium_id']]);
             $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($entries) !== count($entryIds)) {
-                throw new InvalidArgumentException('Alguma conta escolhida não existe.');
+                throw new InvalidArgumentException('Alguma conta escolhida não existe nesta unidade.');
             }
             foreach ($entries as $entry) {
                 if ((int)$entry['unit_id'] !== (int)$unit['id'] || $entry['nature'] !== 'receita' || $entry['status'] !== 'active' || $entry['deleted_at'] !== null
@@ -309,6 +335,14 @@ final class Collections
         }
         $this->pdo->beginTransaction();
         try {
+            // Relê a situação com trava: dois andamentos ao mesmo tempo não reabrem um caso encerrado
+            // nem pulam a regra de transição (ADR 0066).
+            $lock = $this->pdo->prepare('SELECT status FROM erp_legal_cases WHERE id = :id FOR UPDATE');
+            $lock->execute(['id' => $caseId]);
+            $current = (string)$lock->fetchColumn();
+            if ($current !== (string)$case['status']) {
+                throw new DomainException('O caso mudou enquanto você registrava o andamento. Abra de novo e confira.');
+            }
             if ($to !== null) {
                 $changes['status'] = $to;
                 if ($to === 'closed') {

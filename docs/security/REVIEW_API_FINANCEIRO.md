@@ -174,3 +174,47 @@ Nada novo a corrigir. Fica uma lacuna junto à de "quem vê o extrato importado"
 Teste de ponta a ponta: `ImportsCycleIntegrationTest`.
 - O saldo do extrato bate com o calculado depois da baixa, da transferência e da despesa.
 - As leituras por XLSX viram conta a receber da unidade na cobrança.
+
+## Quinta rodada — Cobrança e multas (ADR 0080)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 49eda4f · Correções: ADR 0066
+
+Escopo: `source/Services/Erp/Collections.php`, `source/Controllers/Api/V1/Collections.php`, a origem
+da multa em `EntryShortcuts::createCharge` e a migration 20261108_0538.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: `erp.access` + `erp.collections.view` para ler e `.manage` para gravar. A fila e a abertura do caso pedem também `erp.agreements.view`. CSRF e 2FA no `ApiAuthenticated` | CONFIRMADO |
+| Escopo: unidade, caso e contatos buscados pelo id e conferidos com `CondominiumScope::canAccess`; fora do escopo dá 404. As listas filtram pelos condomínios do usuário | CONFIRMADO |
+| O caso judicial não envia nada a advogado ou tribunal, não cria lançamento nem encargo e não trava conta. O teste confere a contagem de lançamentos e de avisos na fila antes e depois | CONFIRMADO |
+| Um caso aberto por unidade, por chave única com coluna gerada; a segunda abertura responde 409, não 500 | CONFIRMADO |
+| Transições de situação por tabela fixa; encerrado é final e guarda o motivo | CONFIRMADO, com a trava do achado 2 |
+| Origem da multa: ocorrência do mesmo condomínio (da unidade ou sem unidade) ou reserva da própria unidade, conferidas ao lançar. A multa é de uma unidade só | CONFIRMADO |
+| Contato é histórico (sem rota de edição ou exclusão). Promessa até 90 dias, próxima ação até 180, valor prometido pelo teto de `Invoices::cents` | CONFIRMADO |
+| Advogado do cadastro AP-016 (global, sem condomínio), só ativo | CONFIRMADO |
+| SQL: valores por parâmetro; as listas de ids interpoladas são inteiros já convertidos; os nomes de coluna do `UPDATE` do caso vêm de chaves fixas do código | CONFIRMADO |
+
+### Achados corrigidos (ADR 0066)
+
+1. **Conta de outro condomínio na abertura do caso.** A busca era só pelo id, com `FOR UPDATE`, e a
+   mensagem para conta de outra unidade era diferente da conta inexistente: dava para saber que um id
+   existe em outro condomínio, e a linha dele ficava travada. Agora a busca filtra pela unidade e pelo
+   condomínio, e a lista de ids é validada antes (1 a 200, inteiros positivos).
+2. **Dois andamentos ao mesmo tempo.** A situação era lida fora da transação, e um encerramento
+   podia ser desfeito por um andamento simultâneo. Agora a situação é relida com trava e, se mudou,
+   a resposta é 409.
+3. **Nome do contato com quebra de linha e caracteres de controle.** Agora é uma linha só.
+
+### Lacunas
+
+- **Dado pessoal no atendimento.** As notas do contato e o nome de quem atendeu aparecem a quem tem
+  `erp.collections.view`. É dado de cobrança de pessoa física (LGPD): vale dar a permissão só ao
+  perfil de cobrança.
+- **Valor prometido sem relação com a dívida.** A promessa aceita qualquer valor até o teto, mesmo
+  acima do que está vencido. Não muda nada no financeiro; fica só como registro.
+- **Conta em caso e em acordo.** Por decisão do ADR 0080, o caso não trava as contas. Uma conta do
+  caso pode entrar depois num acordo; o detalhe do caso mostra a situação de cada conta.
+- **Frequência.** Continua sem limite de requisições na API.
+
+Teste de ponta a ponta: `CollectionsCycleIntegrationTest`.
+

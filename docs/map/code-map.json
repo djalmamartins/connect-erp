@@ -257,6 +257,10 @@
    "title": "0065 — Comunicação: assunto em uma linha, unidades com teto, trava e limite diário"
   },
   {
+   "file": "docs/Organic Code/decisions/0066-collections-hardening.md",
+   "title": "0066 — Cobrança e multas: contas do caso no escopo da unidade, trava no andamento e nome do contato limpo"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -291,6 +295,10 @@
   {
    "file": "docs/Organic Code/decisions/0081-collection-reports.md",
    "title": "0081 — Relatórios de cobrança: acordos, inadimplentes e recebimentos, com CSV seguro"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0082-management-reports.md",
+   "title": "0082 — Relatórios gerenciais: consumo, centros de custo, comparativo, demonstrativos, rateio, lançamentos e boletos"
   },
   {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
@@ -519,6 +527,22 @@
     "Source\\Support\\Access"
    ],
    "file": "source/Controllers/Api/V1/Invoices.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\ManagementReports": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\Erp\\CollectionReports",
+    "Source\\Services\\Erp\\ManagementReports",
+    "Source\\Support\\Access",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Controllers/Api/V1/ManagementReports.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -2107,6 +2131,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
@@ -2125,6 +2150,7 @@
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -2163,6 +2189,7 @@
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php"
    ]
@@ -2210,6 +2237,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
@@ -2229,6 +2257,7 @@
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -2532,6 +2561,7 @@
     "erp_units"
    ],
    "tests": [
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Unit/CollectionsTest.php",
     "tests/legacy/Unit/ErpCollectionScreensTest.php"
@@ -2573,9 +2603,11 @@
     "erp_units"
    ],
    "tests": [
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/ImportsCycleIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php",
     "tests/legacy/Unit/ErpEntryShortcutScreensTest.php"
@@ -2735,6 +2767,33 @@
    "tests": [
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/LateChargesTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\ManagementReports": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope"
+   ],
+   "file": "source/Services/Erp/ManagementReports.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_chart_accounts",
+    "erp_meter_readings",
+    "erp_bank_transfers",
+    "erp_bank_accounts",
+    "erp_cost_centers",
+    "erp_bank_charges",
+    "erp_suppliers",
+    "condominiums",
+    "erp_entries",
+    "erp_meters",
+    "erp_units"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Unit/ManagementReportsTest.php"
    ]
   },
   "Source\\Services\\Erp\\MeterReadings": {
@@ -3080,6 +3139,7 @@
     "tests/legacy/Integration/AgreementsIntegrationTest.php",
     "tests/legacy/Integration/AnnouncementsIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
@@ -3128,6 +3188,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
@@ -3143,6 +3204,7 @@
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -3898,16 +3960,16 @@
   }
  },
  "counts": {
-  "adrs": 76,
-  "classes": 205,
+  "adrs": 78,
+  "classes": 207,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 308,
+  "routes": 316,
   "tables": 110,
-  "tests": 141
+  "tests": 144
  },
  "erp_pages": [
   {
@@ -5460,10 +5522,82 @@
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Api\\V1\\Agreements",
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
    "env": "index",
    "file": "index.php",
    "line": 86,
+   "method": "consumption",
+   "path": "/api/v1/reports/consumption",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 87,
+   "method": "costCenters",
+   "path": "/api/v1/reports/cost-centers",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 88,
+   "method": "comparison",
+   "path": "/api/v1/reports/comparison",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 89,
+   "method": "statement",
+   "path": "/api/v1/reports/financial-statement",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 90,
+   "method": "accountStatement",
+   "path": "/api/v1/reports/account-statement",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 91,
+   "method": "apportionment",
+   "path": "/api/v1/reports/apportionment",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 92,
+   "method": "entries",
+   "path": "/api/v1/reports/entries",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\ManagementReports",
+   "env": "index",
+   "file": "index.php",
+   "line": 93,
+   "method": "bankCharges",
+   "path": "/api/v1/reports/bank-charges",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Agreements",
+   "env": "index",
+   "file": "index.php",
+   "line": 95,
    "method": "delinquency",
    "path": "/api/v1/delinquency",
    "verb": "GET"
@@ -5472,7 +5606,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 87,
+   "line": 96,
    "method": "index",
    "path": "/api/v1/agreements",
    "verb": "GET"
@@ -5481,7 +5615,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 88,
+   "line": 97,
    "method": "store",
    "path": "/api/v1/agreements",
    "verb": "POST"
@@ -5490,7 +5624,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 90,
+   "line": 99,
    "method": "suggestion",
    "path": "/api/v1/agreements/suggestion",
    "verb": "GET"
@@ -5499,7 +5633,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 91,
+   "line": 100,
    "method": "show",
    "path": "/api/v1/agreements/{id}",
    "verb": "GET"
@@ -5508,7 +5642,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 92,
+   "line": 101,
    "method": "cancel",
    "path": "/api/v1/agreements/{id}/cancel",
    "verb": "POST"
@@ -5517,7 +5651,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 93,
+   "line": 102,
    "method": "breach",
    "path": "/api/v1/agreements/{id}/breach",
    "verb": "POST"
@@ -5526,7 +5660,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
    "env": "index",
    "file": "index.php",
-   "line": 95,
+   "line": 104,
    "method": "show",
    "path": "/api/v1/billing-rules",
    "verb": "GET"
@@ -5535,7 +5669,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
    "env": "index",
    "file": "index.php",
-   "line": 96,
+   "line": 105,
    "method": "update",
    "path": "/api/v1/billing-rules",
    "verb": "PUT"
@@ -5544,7 +5678,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
    "env": "index",
    "file": "index.php",
-   "line": 97,
+   "line": 106,
    "method": "rates",
    "path": "/api/v1/price-indexes",
    "verb": "GET"
@@ -5553,7 +5687,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
    "env": "index",
    "file": "index.php",
-   "line": 98,
+   "line": 107,
    "method": "setRate",
    "path": "/api/v1/price-indexes",
    "verb": "POST"
@@ -5562,7 +5696,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
    "env": "index",
    "file": "index.php",
-   "line": 99,
+   "line": 108,
    "method": "import",
    "path": "/api/v1/price-indexes/import",
    "verb": "POST"
@@ -5571,7 +5705,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
    "env": "index",
    "file": "index.php",
-   "line": 101,
+   "line": 110,
    "method": "index",
    "path": "/api/v1/unit-documents",
    "verb": "GET"
@@ -5580,7 +5714,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
    "env": "index",
    "file": "index.php",
-   "line": 102,
+   "line": 111,
    "method": "store",
    "path": "/api/v1/unit-documents",
    "verb": "POST"
@@ -5589,7 +5723,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
    "env": "index",
    "file": "index.php",
-   "line": 103,
+   "line": 112,
    "method": "verify",
    "path": "/api/v1/unit-documents/verify/{code}",
    "verb": "GET"
@@ -5598,7 +5732,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
    "env": "index",
    "file": "index.php",
-   "line": 104,
+   "line": 113,
    "method": "show",
    "path": "/api/v1/unit-documents/{id}",
    "verb": "GET"
@@ -5607,7 +5741,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
    "env": "index",
    "file": "index.php",
-   "line": 105,
+   "line": 114,
    "method": "cancel",
    "path": "/api/v1/unit-documents/{id}/cancel",
    "verb": "POST"
@@ -5616,7 +5750,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\MeterReadings",
    "env": "index",
    "file": "index.php",
-   "line": 107,
+   "line": 116,
    "method": "index",
    "path": "/api/v1/meter-readings",
    "verb": "GET"
@@ -5625,7 +5759,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\MeterReadings",
    "env": "index",
    "file": "index.php",
-   "line": 108,
+   "line": 117,
    "method": "store",
    "path": "/api/v1/meter-readings",
    "verb": "POST"
@@ -5634,7 +5768,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\MeterReadings",
    "env": "index",
    "file": "index.php",
-   "line": 109,
+   "line": 118,
    "method": "bill",
    "path": "/api/v1/meter-readings/bill",
    "verb": "POST"
@@ -5643,7 +5777,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
    "env": "index",
    "file": "index.php",
-   "line": 111,
+   "line": 120,
    "method": "index",
    "path": "/api/v1/documents",
    "verb": "GET"
@@ -5652,7 +5786,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
    "env": "index",
    "file": "index.php",
-   "line": 112,
+   "line": 121,
    "method": "store",
    "path": "/api/v1/documents",
    "verb": "POST"
@@ -5661,7 +5795,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
    "env": "index",
    "file": "index.php",
-   "line": 113,
+   "line": 122,
    "method": "show",
    "path": "/api/v1/documents/{id}",
    "verb": "GET"
@@ -5670,7 +5804,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
    "env": "index",
    "file": "index.php",
-   "line": 114,
+   "line": 123,
    "method": "download",
    "path": "/api/v1/documents/{id}/download",
    "verb": "GET"
@@ -5679,7 +5813,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
    "env": "index",
    "file": "index.php",
-   "line": 115,
+   "line": 124,
    "method": "destroy",
    "path": "/api/v1/documents/{id}",
    "verb": "DELETE"
@@ -5688,7 +5822,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Occurrences",
    "env": "index",
    "file": "index.php",
-   "line": 117,
+   "line": 126,
    "method": "ticket",
    "path": "/api/v1/occurrences/{id}/ticket",
    "verb": "POST"
@@ -5697,7 +5831,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
    "env": "index",
    "file": "index.php",
-   "line": 119,
+   "line": 128,
    "method": "show",
    "path": "/api/v1/dashboard",
    "verb": "GET"
@@ -5706,7 +5840,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
    "env": "index",
    "file": "index.php",
-   "line": 120,
+   "line": 129,
    "method": "callWaitlist",
    "path": "/api/v1/reservations/{id}/call-waitlist",
    "verb": "POST"
@@ -5715,7 +5849,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
    "env": "index",
    "file": "index.php",
-   "line": 121,
+   "line": 130,
    "method": "nextMaintenance",
    "path": "/api/v1/maintenances/{id}/next",
    "verb": "POST"
@@ -5724,7 +5858,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Panels",
    "env": "index",
    "file": "index.php",
-   "line": 123,
+   "line": 132,
    "method": "condominium",
    "path": "/api/v1/panels/condominium/{id}",
    "verb": "GET"
@@ -5733,7 +5867,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Panels",
    "env": "index",
    "file": "index.php",
-   "line": 124,
+   "line": 133,
    "method": "unit",
    "path": "/api/v1/panels/unit/{id}",
    "verb": "GET"
@@ -5742,7 +5876,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Notifications",
    "env": "index",
    "file": "index.php",
-   "line": 126,
+   "line": 135,
    "method": "index",
    "path": "/api/v1/notifications",
    "verb": "GET"
@@ -5751,7 +5885,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Notifications",
    "env": "index",
    "file": "index.php",
-   "line": 127,
+   "line": 136,
    "method": "dispatch",
    "path": "/api/v1/notifications/dispatch",
    "verb": "POST"
@@ -5760,7 +5894,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Notifications",
    "env": "index",
    "file": "index.php",
-   "line": 128,
+   "line": 137,
    "method": "show",
    "path": "/api/v1/notifications/{id}",
    "verb": "GET"
@@ -5769,7 +5903,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Notifications",
    "env": "index",
    "file": "index.php",
-   "line": 129,
+   "line": 138,
    "method": "retry",
    "path": "/api/v1/notifications/{id}/retry",
    "verb": "POST"
@@ -5778,7 +5912,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 131,
+   "line": 140,
    "method": "discount",
    "path": "/api/v1/entries/{id}/discount",
    "verb": "POST"
@@ -5787,7 +5921,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 132,
+   "line": 141,
    "method": "adjustments",
    "path": "/api/v1/entries/{id}/adjustments",
    "verb": "GET"
@@ -5796,7 +5930,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 133,
+   "line": 142,
    "method": "charges",
    "path": "/api/v1/extra-charges",
    "verb": "GET"
@@ -5805,7 +5939,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 134,
+   "line": 143,
    "method": "storeCharge",
    "path": "/api/v1/extra-charges",
    "verb": "POST"
@@ -5814,7 +5948,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 135,
+   "line": 144,
    "method": "charge",
    "path": "/api/v1/extra-charges/{id}",
    "verb": "GET"
@@ -5823,7 +5957,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 136,
+   "line": 145,
    "method": "cancelCharge",
    "path": "/api/v1/extra-charges/{id}/cancel",
    "verb": "POST"
@@ -5832,7 +5966,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 137,
+   "line": 146,
    "method": "transfers",
    "path": "/api/v1/bank-transfers",
    "verb": "GET"
@@ -5841,7 +5975,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 138,
+   "line": 147,
    "method": "storeTransfer",
    "path": "/api/v1/bank-transfers",
    "verb": "POST"
@@ -5850,7 +5984,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 139,
+   "line": 148,
    "method": "transfer",
    "path": "/api/v1/bank-transfers/{id}",
    "verb": "GET"
@@ -5859,7 +5993,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\EntryShortcuts",
    "env": "index",
    "file": "index.php",
-   "line": 140,
+   "line": 149,
    "method": "cancelTransfer",
    "path": "/api/v1/bank-transfers/{id}/cancel",
    "verb": "POST"
@@ -5868,7 +6002,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 142,
+   "line": 151,
    "method": "index",
    "path": "/api/v1/imports",
    "verb": "GET"
@@ -5877,7 +6011,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 143,
+   "line": 152,
    "method": "preview",
    "path": "/api/v1/imports/preview",
    "verb": "POST"
@@ -5886,7 +6020,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 144,
+   "line": 153,
    "method": "show",
    "path": "/api/v1/imports/{id}",
    "verb": "GET"
@@ -5895,7 +6029,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 145,
+   "line": 154,
    "method": "apply",
    "path": "/api/v1/imports/{id}/apply",
    "verb": "POST"
@@ -5904,7 +6038,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 146,
+   "line": 155,
    "method": "pendingLines",
    "path": "/api/v1/bank-statement-lines",
    "verb": "GET"
@@ -5913,7 +6047,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Imports",
    "env": "index",
    "file": "index.php",
-   "line": 147,
+   "line": 156,
    "method": "resolveLine",
    "path": "/api/v1/bank-statement-lines/{id}/resolve",
    "verb": "POST"
@@ -5922,7 +6056,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 149,
+   "line": 158,
    "method": "index",
    "path": "/api/v1/announcements",
    "verb": "GET"
@@ -5931,7 +6065,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 150,
+   "line": 159,
    "method": "store",
    "path": "/api/v1/announcements",
    "verb": "POST"
@@ -5940,7 +6074,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 151,
+   "line": 160,
    "method": "collection",
    "path": "/api/v1/announcements/collection",
    "verb": "POST"
@@ -5949,7 +6083,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 152,
+   "line": 161,
    "method": "show",
    "path": "/api/v1/announcements/{id}",
    "verb": "GET"
@@ -5958,7 +6092,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 153,
+   "line": 162,
    "method": "cancel",
    "path": "/api/v1/announcements/{id}/cancel",
    "verb": "POST"
@@ -5967,7 +6101,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Announcements",
    "env": "index",
    "file": "index.php",
-   "line": 154,
+   "line": 163,
    "method": "addresses",
    "path": "/api/v1/communication-addresses",
    "verb": "GET"
@@ -5976,7 +6110,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 156,
+   "line": 165,
    "method": "fines",
    "path": "/api/v1/pending-fines",
    "verb": "GET"
@@ -5985,7 +6119,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 157,
+   "line": 166,
    "method": "desk",
    "path": "/api/v1/collection-desk",
    "verb": "GET"
@@ -5994,7 +6128,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 158,
+   "line": 167,
    "method": "contacts",
    "path": "/api/v1/units/{id}/collection-contacts",
    "verb": "GET"
@@ -6003,7 +6137,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 159,
+   "line": 168,
    "method": "storeContact",
    "path": "/api/v1/collection-contacts",
    "verb": "POST"
@@ -6012,7 +6146,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 160,
+   "line": 169,
    "method": "cases",
    "path": "/api/v1/legal-cases",
    "verb": "GET"
@@ -6021,7 +6155,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 161,
+   "line": 170,
    "method": "storeCase",
    "path": "/api/v1/legal-cases",
    "verb": "POST"
@@ -6030,7 +6164,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 162,
+   "line": 171,
    "method": "showCase",
    "path": "/api/v1/legal-cases/{id}",
    "verb": "GET"
@@ -6039,7 +6173,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Collections",
    "env": "index",
    "file": "index.php",
-   "line": 163,
+   "line": 172,
    "method": "caseEvent",
    "path": "/api/v1/legal-cases/{id}/events",
    "verb": "POST"
@@ -6048,7 +6182,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 179,
+   "line": 188,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -6057,7 +6191,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 180,
+   "line": 189,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -6066,7 +6200,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 181,
+   "line": 190,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -6075,7 +6209,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 182,
+   "line": 191,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -6084,7 +6218,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 183,
+   "line": 192,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -6093,7 +6227,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 184,
+   "line": 193,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -6102,7 +6236,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 185,
+   "line": 194,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -6111,7 +6245,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 186,
+   "line": 195,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -6120,7 +6254,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 188,
+   "line": 197,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -6129,7 +6263,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 189,
+   "line": 198,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -6138,7 +6272,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 190,
+   "line": 199,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -6147,7 +6281,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 199,
+   "line": 208,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -6156,7 +6290,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 200,
+   "line": 209,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -6165,79 +6299,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 214,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 215,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 216,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 217,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 220,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 221,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 222,
-   "method": "reset",
-   "path": "/forget/{code}",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 223,
-   "method": "reset",
-   "path": "/reset",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 224,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 225,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 226,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 236,
+   "line": 229,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -6246,7 +6344,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 237,
+   "line": 230,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -6255,7 +6353,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 238,
+   "line": 231,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -6264,7 +6362,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 239,
+   "line": 232,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -6273,7 +6371,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 255,
+   "line": 245,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 246,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 247,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 248,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 264,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -6282,7 +6416,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 257,
+   "line": 266,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -8022,6 +8156,7 @@
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Invoices",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\PanelSummaries",
@@ -8084,6 +8219,7 @@
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\UnitDocuments"
@@ -8096,7 +8232,8 @@
     "Source\\Services\\Erp\\Agreements",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
-    "Source\\Services\\Erp\\EntryShortcuts"
+    "Source\\Services\\Erp\\EntryShortcuts",
+    "Source\\Services\\Erp\\ManagementReports"
    ]
   },
   "erp_bank_events": {
@@ -8127,7 +8264,8 @@
    "used_by": [
     "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\EntryShortcuts",
-    "Source\\Services\\Erp\\Imports\\Imports"
+    "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\ManagementReports"
    ]
   },
   "erp_billing_rules": {
@@ -8154,6 +8292,7 @@
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -8201,6 +8340,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0503_cost_centers.sql",
    "used_by": [
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -8257,6 +8397,7 @@
     "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
     "Source\\Services\\Erp\\Invoices",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\ReceiptCandidates",
@@ -8389,6 +8530,7 @@
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MeterReadings"
    ]
   },
@@ -8397,6 +8539,7 @@
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -8514,6 +8657,7 @@
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -8558,6 +8702,7 @@
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
+    "Source\\Services\\Erp\\ManagementReports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\ReceiptCandidates",
@@ -9003,6 +9148,14 @@
    "Source\\Services\\Erp\\CollectionReports",
    "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
+  "tests/legacy/Integration/CollectionsCycleIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Collections",
+   "Source\\Services\\Erp\\EntryShortcuts",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/CollectionsIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -9170,6 +9323,14 @@
    "Source\\Services\\Erp\\Agreements",
    "Source\\Services\\Erp\\BillingRules",
    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
+  "tests/legacy/Integration/ManagementReportsIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\EntryShortcuts",
+   "Source\\Services\\Erp\\ManagementReports",
    "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
   "tests/legacy/Integration/MeterReadingsIntegrationTest.php": [
@@ -9551,6 +9712,9 @@
   ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
+  ],
+  "tests/legacy/Unit/ManagementReportsTest.php": [
+   "Source\\Services\\Erp\\ManagementReports"
   ],
   "tests/legacy/Unit/MeterReadingsTest.php": [
    "Source\\Services\\Erp\\MeterReadings",

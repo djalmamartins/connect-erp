@@ -1042,6 +1042,149 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/consumption:
+    get:
+      operationId: reportConsumption
+      summary: Consumo das leituras por tipo, geral (AP-045) ou por unidade (AP-046, by=unit) (erp.meter_readings.view)
+      description: Todos os relatórios gerenciais (ADR 0082) aceitam format=csv, com o mesmo CSV seguro do ADR 0081.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, example: '2026-01' } }
+        - { name: to, in: query, required: true, schema: { type: string, example: '2026-12' }, description: 'No máximo 24 competências' }
+        - { name: by, in: query, schema: { type: string, enum: [unit] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { from, to, by_unit, rows[{ kind, unit_label, readings, consumption, amount_cents, billed }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/cost-centers:
+    get:
+      operationId: reportCostCenters
+      summary: Previsto, realizado e em aberto por centro de custo e natureza (AP-049) (erp.entries.view e erp.cost_centers.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/comparison:
+    get:
+      operationId: reportComparison
+      summary: Comparativo de duas faixas de competência por conta do plano, com diferença e percentual (AP-050) (erp.entries.view e erp.chart.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from_a, in: query, required: true, schema: { type: string } }
+        - { name: to_a, in: query, required: true, schema: { type: string } }
+        - { name: from_b, in: query, required: true, schema: { type: string } }
+        - { name: to_b, in: query, required: true, schema: { type: string } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { a, b, rows[{ code, name, nature, a_cents, b_cents, difference_cents, percent }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/financial-statement:
+    get:
+      operationId: reportFinancialStatement
+      summary: Demonstrativo por conta (AP-052, view=accounts), analítico (AP-053, analytic) e por situação (AP-054, situation) (erp.entries.view e erp.chart.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: view, in: query, schema: { type: string, enum: [accounts, analytic, situation], default: accounts } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { view, rows[], totals{receita_cents, despesa_cents, result_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/account-statement:
+    get:
+      operationId: reportAccountStatement
+      summary: Extrato da conta bancária com saldo anterior e saldo corrido, lançamentos pagos e transferências (AP-056) (erp.entries.view e erp.bank_accounts.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: bank_account_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { opening_cents, rows[{ on_date, description, amount_cents, balance_cents }], totals{in_cents, out_cents, closing_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/apportionment:
+    get:
+      operationId: reportApportionment
+      summary: Rateio das despesas da competência pela fração ideal (AP-062 a AP-067) (erp.entries.view e erp.units.view)
+      description: >-
+        view unit (AP-062), compare (AP-063, com compare_with), unit_account (AP-064), unit_entries (AP-065,
+        com unit_id), entries (AP-066) e account (AP-067). Unidade sem fração ideal bloqueia o cálculo
+        (blocked e missing_fraction); o centavo que sobra vai pelo maior resto.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, required: true, schema: { type: string } }
+        - { name: view, in: query, schema: { type: string, enum: [unit, compare, unit_account, unit_entries, entries, account], default: unit } }
+        - { name: compare_with, in: query, schema: { type: string } }
+        - { name: unit_id, in: query, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { blocked, missing_fraction[], rows[], totals{expenses, amount_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/entries:
+    get:
+      operationId: reportEntries
+      summary: Relatório de lançamentos (AP-068) e detalhado com fornecedor, conta bancária, documento e origem (AP-069, detailed=1) (erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: nature, in: query, schema: { type: string, enum: [receita, despesa] } }
+        - { name: situation, in: query, schema: { type: string, enum: [paid, open, overdue, cancelled] } }
+        - { name: detailed, in: query, schema: { type: boolean } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{entries, receita_cents, despesa_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/bank-charges:
+    get:
+      operationId: reportBankCharges
+      summary: Relatório de boletos com vencimento no período, por situação (AP-070) (erp.bank_charges.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [pending, registered, rejected, paid, cancelled] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{charges, amount_cents, paid_cents, by_status} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /delinquency:
     get:

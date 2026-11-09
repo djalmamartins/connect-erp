@@ -82,6 +82,15 @@ $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatórios gerenciais (ADR 0082): consumo, centros de custo, comparativo, demonstrativos, extrato, rateio, lançamentos e boletos.
+$route->get("/reports/consumption", "ManagementReports:consumption", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/cost-centers", "ManagementReports:costCenters", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/comparison", "ManagementReports:comparison", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/financial-statement", "ManagementReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/account-statement", "ManagementReports:accountStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/apportionment", "ManagementReports:apportionment", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/entries", "ManagementReports:entries", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/bank-charges", "ManagementReports:bankCharges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
