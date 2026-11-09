@@ -75,14 +75,19 @@ final class Occurrences
             }
             throw $error;
         }
-        // O TicketService abre a própria transação; a chave única em ticket_id barra dois chamados.
-        $ticket = $this->tickets->open(self::ticketInput($occurrence), 'erp', $user);
-        $update = $this->pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t, status = CASE WHEN status = \'active\' THEN \'running\' ELSE status END, updated_by = :u
-            WHERE id = :id AND ticket_id IS NULL');
-        $update->execute(['t' => $ticket['id'], 'u' => (int)$user->id, 'id' => $occurrenceId]);
-        if ($update->rowCount() === 0) {
-            throw new DomainException('Esta ocorrência já tem chamado aberto no Help Desk.');
-        }
+        // O vínculo é gravado dentro da transação do chamado (ADR 0101): com a ocorrência travada, um segundo
+        // pedido ao mesmo tempo encontra o ticket_id já preenchido e desfaz o próprio chamado, em vez de
+        // deixar no Help Desk um chamado sem ocorrência.
+        $ticket = $this->tickets->open(self::ticketInput($occurrence), 'erp', $user, static function (PDO $pdo, int $ticketId) use ($occurrenceId, $user): void {
+            $lock = $pdo->prepare('SELECT ticket_id FROM erp_occurrences WHERE id = :id AND deleted_at IS NULL FOR UPDATE');
+            $lock->execute(['id' => $occurrenceId]);
+            $current = $lock->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($current) || $current['ticket_id'] !== null) {
+                throw new DomainException('Esta ocorrência já tem chamado aberto no Help Desk.');
+            }
+            $pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t, status = CASE WHEN status = \'active\' THEN \'running\' ELSE status END, updated_by = :u
+                WHERE id = :id AND ticket_id IS NULL')->execute(['t' => $ticketId, 'u' => (int)$user->id, 'id' => $occurrenceId]);
+        });
         Audit::record('update', 'erp_occurrences', $occurrenceId, ['ticket_id' => null], ['ticket_id' => $ticket['id'], 'protocol' => $ticket['protocol']]);
         return ['occurrence_id' => $occurrenceId, 'ticket_id' => (int)$ticket['id'], 'protocol' => (string)$ticket['protocol']];
     }

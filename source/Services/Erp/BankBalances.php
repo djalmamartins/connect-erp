@@ -38,7 +38,8 @@ final class BankBalances
     {
         $column = $direction === 'in' ? 'to_bank_account_id' : 'from_bank_account_id';
         $opening = $sinceOpening ? " AND ({$alias}.opened_on IS NULL OR t.transferred_on >= {$alias}.opened_on)" : '';
-        return "(SELECT COALESCE(SUM(t.amount_cents), 0) FROM erp_bank_transfers t WHERE t.{$column} = {$alias}.id AND t.status = 'active'{$opening}{$extra})";
+        // Só transferências do condomínio da própria conta (ADR 0101), como nos gráficos (ADR 0069).
+        return "(SELECT COALESCE(SUM(t.amount_cents), 0) FROM erp_bank_transfers t WHERE t.{$column} = {$alias}.id AND t.condominium_id = {$alias}.condominium_id AND t.status = 'active'{$opening}{$extra})";
     }
 
     /**
@@ -62,7 +63,7 @@ final class BankBalances
                 " . self::transferSql('in') . " AS transfers_in_cents, " . self::transferSql('out') . " AS transfers_out_cents
             FROM erp_bank_accounts b
             LEFT JOIN condominiums c ON c.id = b.condominium_id
-            LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.deleted_at IS NULL AND e.status = 'active'
+            LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.condominium_id = b.condominium_id AND e.deleted_at IS NULL AND e.status = 'active'
                 AND e.paid_on IS NOT NULL AND (b.opened_on IS NULL OR e.paid_on >= b.opened_on)
             WHERE b.deleted_at IS NULL AND b.status = 'active' AND b.condominium_id IN ({$in})
             GROUP BY b.id, b.condominium_id, c.name, b.name, b.is_main, b.opening_balance_cents, b.opened_on
