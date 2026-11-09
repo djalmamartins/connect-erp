@@ -400,7 +400,7 @@ final class Agreements
     /** @return array{data:list<array>, total:int, page:int, per_page:int, pages:int} */
     public function list(User $user, ?int $condominiumId = null, array $filters = []): array
     {
-        $ids = $this->ids($user, $condominiumId, false);
+        $ids = $this->ids($user, $condominiumId);   // ADR 0096: condomínio fora do escopo = 404, como nos outros módulos
         $perPage = 25;
         $page = max(1, (int)(filter_var($filters['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1));
         if ($ids === []) {

@@ -264,8 +264,23 @@ final class RegistryReports
             WHERE {$where} ORDER BY l.id DESC", $params);
         return ['from' => $from, 'to' => $to, 'rows' => array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'created_at' => (string)$r['created_at'],
             'user_name' => trim((string)$r['user_name']) !== '' ? (string)$r['user_name'] : 'Sistema', 'action' => (string)$r['action'], 'entity' => (string)$r['entity'],
-            'entity_id' => $r['entity_id'], 'severity' => (string)$r['severity'], 'ip' => $r['ip'], 'context' => AuditMask::text((string)($r['context'] ?? ''))], $rows),
+            'entity_id' => $r['entity_id'], 'severity' => (string)$r['severity'], 'ip' => self::maskIp($r['ip']), 'context' => AuditMask::text((string)($r['context'] ?? ''))], $rows),
             'totals' => ['logs' => count($rows)]];
+    }
+
+    /** IP mascarado (regra pura, ADR 0096): IPv4 sem o último octeto, IPv6 só com os 3 primeiros grupos. */
+    public static function maskIp(?string $ip): ?string
+    {
+        if ($ip === null || $ip === '') {
+            return $ip;
+        }
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return (string)preg_replace('/\.\d+$/', '.*', $ip);
+        }
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return implode(':', array_slice(explode(':', $ip), 0, 3)) . ':*';
+        }
+        return '*';
     }
 
     /** AP-098: quem tem acesso a cada condomínio do escopo (concessão explícita), com o e-mail mascarado. */
