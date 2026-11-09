@@ -9,6 +9,7 @@ use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Erp\Antivirus\UploadScanUnavailable;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\VirtualDisk as Service;
 use Source\Support\Access;
@@ -102,6 +103,8 @@ final class VirtualDisk
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'duplicate_file', 'message' => $exception->getMessage()]]);
+        } catch (UploadScanUnavailable $exception) {   // ADR 0098: modo enforce sem antivírus, falha fechada
+            JsonResponse::send(503, ['error' => ['code' => 'scan_unavailable', 'message' => $exception->getMessage()]]);
         } catch (\RuntimeException $exception) {
             AppLogger::exception($exception, 'erp', ['event_type' => 'virtual_disk_failed']);
             JsonResponse::send(500, ['error' => ['code' => 'storage_failed', 'message' => 'Não foi possível guardar o arquivo.']]);

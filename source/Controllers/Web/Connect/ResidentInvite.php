@@ -10,6 +10,7 @@ use Source\Models\Auth;
 use Source\Services\Erp\InviteThrottle;
 use Source\Services\Erp\ResidentInvitationAcceptance;
 use Source\Services\Erp\ResidentInvitations;
+use Source\Support\ClientIp;
 
 /**
  * Aceite do convite do morador (AP-152, ADR 0092), página pública.
@@ -95,7 +96,7 @@ final class ResidentInvite extends Controller
         $session = new Session();
         $token = $session->{self::SESSION_KEY} ?? null;
         $result = (new ResidentInvitationAcceptance())->accept($token, (string)($data['document'] ?? ''), (string)($data['password'] ?? ''),
-            (string)($data['password_re'] ?? ''), $_SERVER['REMOTE_ADDR'] ?? null);
+            (string)($data['password_re'] ?? ''), ClientIp::resolve());
         if ($result['ok']) {
             $session->unset(self::SESSION_KEY);
             $this->message->success($result['message'])->flash();
@@ -109,7 +110,7 @@ final class ResidentInvite extends Controller
     /** ADR 0093: abrir também passa pelo limite por IP, que falha fechado. */
     private function throttleAllows(Session $session): bool
     {
-        $state = (new InviteThrottle())->check(InviteThrottle::subjects($_SERVER['REMOTE_ADDR'] ?? null, null));
+        $state = (new InviteThrottle())->check(InviteThrottle::subjects(ClientIp::resolve(), null));
         if ($state === InviteThrottle::OK) {
             return true;
         }
