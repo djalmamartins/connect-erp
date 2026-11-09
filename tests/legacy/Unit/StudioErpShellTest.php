@@ -107,4 +107,13 @@ final class StudioErpShellTest extends TestCase
         self::assertStringContainsString('form[data-erp-generate-recurring]', $js);
         self::assertStringContainsString("'X-CSRF-Token'", $js);
     }
+
+    public function testTablesFitTheCardWithoutScrollBarsAboveMobile(): void
+    {
+        // O admin.css legado fixa min-width de 680px/820px nas tabelas e overflow:auto no invólucro.
+        $css = (string)file_get_contents(dirname(__DIR__, 3) . '/container/cms/studio/v1/assets/css/connect-shell.css');
+        self::assertStringContainsString('body.studio-erp .studio-table-wrap { overflow-x: auto; overflow-y: hidden', $css);
+        self::assertStringContainsString('body.studio-erp .studio-table { min-width: 0 !important', $css);
+        self::assertMatchesRegularExpression('~@media \(max-width: 760px\) \{\s*body\.studio-erp \.studio-table \{ min-width: 600px~', $css);
+    }
 }

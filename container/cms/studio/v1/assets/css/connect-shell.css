@@ -418,6 +418,26 @@ body.studio-erp .cx-card__head h2 { margin: 0; font-size: 16px; font-weight: 650
 body.studio-erp .cx-card__head p { margin: 2px 0 0; color: var(--cx-muted); font-size: 13px }
 body.studio-erp .cx-card--flush .studio-table-wrap { border-top: 1px solid var(--cx-border) }
 body.studio-erp .cx-card--flush .studio-table tr:last-child td { border-bottom: 0 }
+
+/* Tabelas cabem no card sem barra de rolagem (pedido do Djalma, 09/11). O admin.css legado fixa
+   min-width de 680px/820px nas tabelas e overflow:auto no invólucro, o que criava rolagem horizontal
+   (e às vezes vertical) em cards estreitos, como o de artigos recentes do dashboard. Acima de 760px
+   a tabela se ajusta à largura e o texto quebra; só em telas estreitas ela rola na horizontal. */
+body.studio-erp .studio-table-wrap { overflow-x: auto; overflow-y: hidden; max-width: 100% }
+body.studio-erp .studio-table { min-width: 0 !important; width: 100% }
+body.studio-erp .studio-table td,
+body.studio-erp .studio-table th { min-width: 0 !important }
+body.studio-erp .studio-table td { overflow-wrap: anywhere }
+body.studio-erp .studio-table .studio-content-item { min-width: 0 }
+body.studio-erp .studio-table .studio-content-item strong,
+body.studio-erp .studio-table .studio-content-item small { max-width: none; white-space: normal }
+body.studio-erp .studio-table td:has(.status),
+body.studio-erp .studio-table td:has(.studio-actions),
+body.studio-erp .studio-table td:last-child:has(a.studio-btn, button) { white-space: nowrap }
+@media (max-width: 760px) {
+    body.studio-erp .studio-table { min-width: 600px !important }
+    body.studio-erp .studio-table td { overflow-wrap: normal }
+}
 body.studio-erp .cx-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 20px }
 body.studio-erp .cx-kpi { display: grid; gap: 6px; transition: transform .18s, box-shadow .18s }
 body.studio-erp a.cx-kpi:hover { box-shadow: var(--cx-shadow-pop); text-decoration: none; transform: translateY(-2px) }

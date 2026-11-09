@@ -114,7 +114,7 @@ $_SERVER['REQUEST_URI'] = '/studio/dash';
 $base = ['head' => '<title>Studio - Connect</title>', 'user' => $user, 'currentVersion' => '1.0.0', 'adminBase' => '/studio'];
 $logs = [(object)['message' => 'Usuário entrou no Studio', 'created_at' => '2026-11-08 21:00:00'], (object)['message' => 'Página "Quem somos" atualizada', 'created_at' => '2026-11-08 20:10:00']];
 $screens = [
-    'dash' => ['components/dash/home', 'Dashboard', 'dash', ['accessDays' => [(object)['pages' => 120], (object)['pages' => 87]], 'pagesCount' => 12, 'postsCount' => 34, 'publishedCount' => 30, 'usersCount' => 8, 'onlineCount' => 2, 'dashboardLogs' => $logs, 'dashboardProposals' => []]],
+    'dash' => ['components/dash/home', 'Dashboard', 'dash', ['accessDays' => [(object)['pages' => 120], (object)['pages' => 87]], 'pagesCount' => 12, 'postsCount' => 34, 'publishedCount' => 30, 'usersCount' => 8, 'onlineCount' => 2, 'dashboardLogs' => $logs, 'dashboardProposals' => [], 'recentPosts' => [(object)['id' => 7, 'title' => 'Como funciona a assembleia virtual do condomínio e o que muda para os moradores', 'status' => 'post', 'post_at' => '2026-11-08 09:00:00'], (object)['id' => 8, 'title' => 'Rascunho <b>novo</b>', 'status' => 'draft', 'post_at' => null]]]],
     'pages-form' => ['components/pages/form', 'Nova página', 'pages', ['page' => null]],
     'blog-home' => ['components/blog/home', 'Artigos', 'blog', ['posts' => [], 'search' => '', 'paginator' => '']],
     'blog-post' => ['components/blog/post', 'Novo artigo', 'blog', ['post' => null, 'categories' => [], 'authors' => []]],
