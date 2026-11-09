@@ -175,7 +175,7 @@ Teste de ponta a ponta: `ImportsCycleIntegrationTest`.
 - O saldo do extrato bate com o calculado depois da baixa, da transferência e da despesa.
 - As leituras por XLSX viram conta a receber da unidade na cobrança.
 
-## Quinta rodada — Cobrança e multas (ciclo 29, ADR 0080)
+## Quinta rodada — Cobrança e multas (ADR 0080)
 
 Data: 2026-11-09 · Código revisado: `claude-dev` em 49eda4f · Correções: ADR 0066
 

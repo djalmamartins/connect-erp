@@ -15,7 +15,7 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 
 /**
- * Cobrança e multas de ponta a ponta (ciclo 29, ADR 0080 e 0066): ocorrência → multa avulsa com a
+ * Cobrança e multas de ponta a ponta (ADR 0080 e 0066): ocorrência → multa avulsa com a
  * origem → multas pendentes → fila de atendimento → promessa quebrada → caso judicial só com contas
  * da unidade → pagamento reduz o que segue em aberto → andamento até o encerramento, que é final.
  * Nada é enviado e nenhum lançamento é criado pelo caso. No fim, um usuário de outro condomínio não
