@@ -1566,6 +1566,15 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /integrations:
+    get:
+      operationId: integrationStatus
+      summary: Estado das integrações (AP-171), só leitura e sem credenciais (erp.settings.view)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ bank{ adapters[{ adapter, available, production }], note }, mail{ mode (log, sandbox, production), sandbox_inbox_configured, reaches_residents }, price_indexes[{ code, last_competence, state (ok, stale, missing) }], outbox{ pending, failed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /cost-center-openings:
     get:
       operationId: listCostCenterOpenings
