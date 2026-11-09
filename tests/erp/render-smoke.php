@@ -567,6 +567,54 @@ $html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData([
 $assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
 $assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
     && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+// Gráficos (AP-102 a AP-109; ADR 0083 e 0078).
+$CH = Source\Controllers\Erp\Connect\ChartScreens::class;
+$chData = static function (string $id, ?array $chart, array $over = []) use ($CH): array {
+    $kind = $CH::PAGES[$id];
+    $filters = $over['chartFilters'] ?? ['de' => '2026-09', 'ate' => '2026-11', 'natureza' => 'despesa', 'unidade' => $kind === 'consumption-unit' ? 5 : null];
+    return $over + ['chartReady' => true, 'chartKind' => $kind, 'chartFilters' => $filters, 'chartError' => null, 'chartNeedsUnit' => false,
+        'chartUnits' => [['id' => 5, 'condominium_id' => 1, 'label' => 'Apto <101>'], ['id' => 6, 'condominium_id' => 1, 'label' => 'Apto 102']],
+        'chartPanels' => $chart === null ? [] : $CH::panels($chart, $kind), 'chartTable' => $chart === null ? null : $CH::table($chart)];
+};
+$chMonths = ['2026-09', '2026-10', '2026-11'];
+$chCharts = [
+    'AP-102' => ['labels' => $chMonths, 'unit' => 'cents', 'series' => [['key' => 'receita', 'label' => 'Receitas', 'data' => [500000, 520000, 510000]], ['key' => 'despesa', 'label' => 'Despesas', 'data' => [450000, 600000, 480000]],
+        ['key' => 'result', 'label' => 'Resultado', 'data' => [50000, -80000, 30000]], ['key' => 'overdue', 'label' => 'Vencido em aberto', 'data' => [20000, 15000, 0]]]],
+    'AP-103' => ['labels' => $chMonths, 'unit' => 'cents', 'nature' => 'despesa', 'series' => [['key' => '2.1', 'label' => '2.1 <Pessoal>', 'data' => [300000, 300000, 310000]],
+        ['key' => '2.2', 'label' => '2.2 Manutenção', 'data' => [80000, 150000, 90000]], ['key' => 'others', 'label' => 'Outras', 'data' => [20000, 10000, 5000]]]],
+    'AP-104' => ['labels' => $chMonths, 'unit' => 'consumption', 'unit_id' => 5, 'series' => [['key' => 'agua', 'label' => 'Água', 'data' => [12.5, 11.25, 13.0]], ['key' => 'gas', 'label' => 'Gás', 'data' => [2.0, 2.5, 1.75]]]],
+    'AP-105' => ['labels' => $chMonths, 'unit' => 'consumption', 'unit_id' => null, 'series' => [['key' => 'agua', 'label' => 'Água', 'data' => [412.5, 398.0, 420.125]]]],
+    'AP-106' => ['labels' => $chMonths, 'unit' => 'cents', 'series' => [['key' => 'received', 'label' => 'Recebido', 'data' => [480000, 500000, 470000]], ['key' => 'paid', 'label' => 'Pago', 'data' => [450000, 610000, 400000]],
+        ['key' => 'net', 'label' => 'Saldo do mês', 'data' => [30000, -110000, 70000]]]],
+    'AP-107' => ['labels' => $chMonths, 'unit' => 'cents', 'series' => [['key' => 'billed', 'label' => 'Cobrado das unidades', 'data' => [400000, 400000, 0]], ['key' => 'overdue', 'label' => 'Vencido em aberto hoje', 'data' => [40000, 20000, 0]],
+        ['key' => 'rate', 'label' => 'Inadimplência (%)', 'unit' => 'percent', 'data' => [10.0, 5.0, null]]]],
+    'AP-108' => ['labels' => $chMonths, 'unit' => 'cents', 'series' => [['key' => 'b1', 'label' => 'Corrente <Itaú>', 'data' => [30000, -20000, 10000]], ['key' => 'b2', 'label' => 'Poupança', 'data' => [5000, 5000, 5000]]]],
+    'AP-109' => ['labels' => $chMonths, 'unit' => 'count', 'series' => [['key' => 'a1', 'label' => 'Salão de festas', 'data' => [4, 6, 3]], ['key' => 'a2', 'label' => 'Churrasqueira', 'data' => [2, 3, 5]]]],
+];
+foreach ($chCharts as $chPage => $chChart) {
+    $html = $agreementPage($chPage, 'pages/reports/chart', $chData($chPage, $chChart), 'real');
+    $common($html, $chPage, $catalog['pages'][$chPage]['name']);
+    $assert(str_contains($html, 'class="erp-vchart"') && str_contains($html, 'Tabela do gráfico') && str_contains($html, 'name="de" value="2026-09"') && str_contains($html, 'name="ate" value="2026-11"')
+        && str_contains($html, 'set/26') && !str_contains($html, 'Junho a novembro de 2026'), "{$chPage}: gráfico com tabela e período");
+}
+$html = $agreementPage('AP-102', 'pages/reports/chart', $chData('AP-102', $chCharts['AP-102']));
+$assert(str_contains($html, 'erp-vchart__zero') && str_contains($html, 'is-negative') && str_contains($html, '−R$ 800,00') && str_contains($html, 'R$ 15.300,00') && substr_count($html, 'erp-vchart-card') === 1, 'AP-102: um painel, linha do zero e resultado negativo');
+$html = $agreementPage('AP-103', 'pages/reports/chart', $chData('AP-103', $chCharts['AP-103']));
+$assert(str_contains($html, 'name="natureza"') && str_contains($html, '2.1 &lt;Pessoal&gt;') && str_contains($html, 'erp-swatch--other') && str_contains($html, 'is-stacked'), 'AP-103: contas empilhadas, "Outras" neutra');
+$html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', $chCharts['AP-104']));
+$assert(str_contains($html, 'name="unidade"') && str_contains($html, '<option value="5" selected>Apto &lt;101&gt;</option>') && substr_count($html, 'erp-vchart-card') === 2 && str_contains($html, '12,500'), 'AP-104: um painel por tipo de consumo');
+$html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', null, ['chartNeedsUnit' => true, 'chartFilters' => ['de' => '2026-09', 'ate' => '2026-11', 'natureza' => 'despesa', 'unidade' => null]]));
+$assert(str_contains($html, 'Escolha a unidade') && !str_contains($html, 'class="erp-vchart"'), 'AP-104: pede a unidade antes do gráfico');
+$html = $agreementPage('AP-107', 'pages/reports/chart', $chData('AP-107', $chCharts['AP-107']));
+$assert(substr_count($html, 'erp-vchart-card') === 2 && str_contains($html, 'Inadimplência (%)') && str_contains($html, '10,00%') && str_contains($html, '<span class="erp-muted">—</span>'), 'AP-107: taxa em painel próprio, sem total');
+$html = $agreementPage('AP-109', 'pages/reports/chart', $chData('AP-109', ['labels' => $chMonths, 'unit' => 'count', 'series' => []]));
+$assert(str_contains($html, 'Sem dados no período') && !str_contains($html, 'class="erp-vchart"'), 'AP-109: vazio');
+$html = $agreementPage('AP-106', 'pages/reports/chart', $chData('AP-106', null, ['chartError' => 'No máximo 24 competências.']));
+$assert(str_contains($html, 'No máximo 24 competências.') && !str_contains($html, 'Tabela do gráfico'), 'AP-106: erro de período');
+foreach (array_keys($CH::PAGES) as $chPage) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($chPage, ['chartReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($chPage, ['chartReady' => true]) === 'pages/reports/chart', "{$chPage}: tela própria só com dados");
+}
+
 // Relatórios de cobrança (AP-047, AP-048, AP-057 a AP-061, AP-071 e AP-072; ADR 0081 e 0077).
 $CR = Source\Controllers\Erp\Connect\CollectionReportScreens::class;
 $crData = static function (string $id, array $rows, array $over = []) use ($CR): array {
