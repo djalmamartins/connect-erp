@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**206** rotas fixas · **136** classes em `source/` · **63** tabelas nas migrations · **65** arquivos de teste · **29** ADRs · **172** páginas no catálogo do ERP.
+**206** rotas fixas · **139** classes em `source/` · **63** tabelas nas migrations · **68** arquivos de teste · **32** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -92,6 +92,8 @@ flowchart LR
   Source_Controllers_Api_V1_UserTwoFactor["Controllers/Api/V1/UserTwoFactor"]
   Source_Services_TwoFactorAdminReset["Services/TwoFactorAdminReset"]
   Source_Controllers_Api_V1_UserTwoFactor --> Source_Services_TwoFactorAdminReset
+  Source_Services_TwoFactorNotice["Services/TwoFactorNotice"]
+  Source_Controllers_Api_V1_UserTwoFactor --> Source_Services_TwoFactorNotice
   Source_Controllers_Api_V1_UserTwoFactor --> Source_Services_TwoFactorService
   Source_Controllers_Erp_Connect_Condo["Controllers/Erp/Connect/Condo"]
   Source_Controllers_Erp_Connect_Condominium["Controllers/Erp/Connect/Condominium"]
@@ -126,11 +128,11 @@ flowchart LR
   Source_Controllers_Erp_Connect_OnboardingCatalog --> Source_Services_OnboardingItemNotFound
   Source_Controllers_Erp_Connect_OnboardingCatalog --> Source_Services_OnboardingValidationError
   Source_Controllers_Erp_Connect_Panel["Controllers/Erp/Connect/Panel"]
-  Source_Controllers_Erp_Connect_Panel --> Source_Services_CondominiumScope
   Source_Services_Erp_DemoData["Services/Erp/DemoData"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_DemoData
   Source_Services_Erp_Registry_Definitions["Services/Erp/Registry/Definitions"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_Definitions
+  Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_Register["Controllers/Erp/Connect/Register"]
   Source_Controllers_Erp_Connect_Registry["Controllers/Erp/Connect/Registry"]
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryForbidden
@@ -139,6 +141,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryValidationException
   Source_Controllers_Erp_Connect_Security["Controllers/Erp/Connect/Security"]
+  Source_Controllers_Erp_Connect_Security --> Source_Services_TwoFactorNotice
   Source_Controllers_Erp_Connect_Security --> Source_Services_TwoFactorService
   Source_Controllers_Erp_Connect_Users["Controllers/Erp/Connect/Users"]
   t_condominiums[("condominiums")]
@@ -229,6 +232,8 @@ flowchart LR
   Source_Services_OnboardingCatalog --> t_onboarding_item_templates
   Source_Services_OnboardingChecklist --> t_condominium_onboarding_items
   Source_Services_OnboardingChecklist --> t_onboarding_item_templates
+  t_mail_queue[("mail_queue")]
+  Source_Services_TwoFactorNotice --> t_mail_queue
   t_user_recovery_codes[("user_recovery_codes")]
   Source_Services_TwoFactorService --> t_user_recovery_codes
   t_user_two_factor[("user_two_factor")]
@@ -527,7 +532,7 @@ flowchart LR
 | `inspection_template_items` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `inspection_templates` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `inspections` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
-| `mail_queue` | (legado) | `20260815_log_alerts.sql`, `20260815_mail_queue_scheduler.sql` | `Controllers/Studio/Studio`, `Services/OnboardingAlerts`, `Support/Communication`, `Support/Email` |
+| `mail_queue` | (legado) | `20260815_log_alerts.sql`, `20260815_mail_queue_scheduler.sql` | `Controllers/Studio/Studio`, `Services/OnboardingAlerts`, `Services/TwoFactorNotice`, `Support/Communication`, `Support/Email` |
 | `module_migrations` | `001_modules.sql` | — | `Support/StudioModules` |
 | `modules` | `001_modules.sql` | — | `Support/StudioModules` |
 | `movesos_versions` | `20260815_movesos_version_settings.sql` | `20260816_support_theme_version.sql` | `Controllers/Studio/Studio` |
@@ -568,7 +573,7 @@ flowchart LR
 | [`Controllers/Api/V1/RecurringEntriesGenerate`](../../source/Controllers/Api/V1/RecurringEntriesGenerate.php) | Auth, RecurringEntries, Access | — | — |
 | [`Controllers/Api/V1/Registry`](../../source/Controllers/Api/V1/Registry.php) | Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService, RegistryValidationException, Access | pages | 1 |
 | [`Controllers/Api/V1/TwoFactor`](../../source/Controllers/Api/V1/TwoFactor.php) | Auth, ApiAuthenticated | — | — |
-| [`Controllers/Api/V1/UserTwoFactor`](../../source/Controllers/Api/V1/UserTwoFactor.php) | Auth, AppLog, User, TwoFactorAdminReset, TwoFactorService, Access, AppLogger, Audit | user_two_factor | — |
+| [`Controllers/Api/V1/UserTwoFactor`](../../source/Controllers/Api/V1/UserTwoFactor.php) | Auth, AppLog, User, TwoFactorAdminReset, TwoFactorNotice, TwoFactorService, Access, AppLogger … | user_two_factor | — |
 | [`Controllers/App/Connect/App`](../../source/Controllers/App/Connect/App.php) | Controller, Auth, Access, Online, Access | — | — |
 | [`Controllers/App/Connect/Dash`](../../source/Controllers/App/Connect/Dash.php) | Auth, User | — | — |
 | [`Controllers/App/V1/App`](../../source/Controllers/App/V1/App.php) | Controller, Session, Auth, Access, Online, AppSession, User | — | — |
@@ -576,17 +581,17 @@ flowchart LR
 | [`Controllers/Erp/Connect/Condo`](../../source/Controllers/Erp/Connect/Condo.php) | View, Address, AppCondominium, AppOwner, AppUnits, User, Email, Upload | — | — |
 | [`Controllers/Erp/Connect/Condominium`](../../source/Controllers/Erp/Connect/Condominium.php) | Address, AppCondominium, AppCorporations, AppOwner, AppUnits, Notification, User, Pager … | — | — |
 | [`Controllers/Erp/Connect/CondominiumChecklist`](../../source/Controllers/Erp/Connect/CondominiumChecklist.php) | Controller, Auth, User, CondominiumAccessDenied, CondominiumScope, OnboardingChecklist, OnboardingItemNotFound, OnboardingValidationError … | — | 2 |
-| [`Controllers/Erp/Connect/Condominiums`](../../source/Controllers/Erp/Connect/Condominiums.php) | Controller, Auth, User, CondominiumAccessDenied, CondominiumRegistry, CondominiumScope, CondominiumValidator, Access | condominiums | 1 |
+| [`Controllers/Erp/Connect/Condominiums`](../../source/Controllers/Erp/Connect/Condominiums.php) | Controller, Auth, User, CondominiumAccessDenied, CondominiumRegistry, CondominiumScope, CondominiumValidator, Access … | condominiums | 1 |
 | [`Controllers/Erp/Connect/Dash`](../../source/Controllers/Erp/Connect/Dash.php) | Session, Auth, AppCondominium, AppLog, AppSession, User | — | — |
 | [`Controllers/Erp/Connect/Erp`](../../source/Controllers/Erp/Connect/Erp.php) | Controller, Session, Auth, AppWallet, Access, Online, AppSession, User … | — | 1 |
 | [`Controllers/Erp/Connect/Finance`](../../source/Controllers/Erp/Connect/Finance.php) | App, AppCondominium, AppInvoice | — | — |
 | [`Controllers/Erp/Connect/Inspections`](../../source/Controllers/Erp/Connect/Inspections.php) | Controller, Session, Auth, User, CondominiumScope, ChecklistText, InspectionError, InspectionReport … | condominiums | — |
 | [`Controllers/Erp/Connect/Login`](../../source/Controllers/Erp/Connect/Login.php) | Controller, Auth, Access | — | — |
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Controller, Session, Auth, User, CondominiumScope, DemoData, Definitions, Access … | notifications, pages | 4 |
+| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Controller, Session, Auth, User, DemoData, Definitions, RegistryService, Access … | notifications, pages | 4 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService … | condominiums | — |
-| [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorService, Access, SecretBox | — | — |
+| [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, QrCode, SecretBox | — | — |
 | [`Controllers/Erp/Connect/Users`](../../source/Controllers/Erp/Connect/Users.php) | View, Address, Auth, AppCondominium, User, Email, Pager, Upload | — | — |
 | [`Controllers/Erp/V1/Condominium`](../../source/Controllers/Erp/V1/Condominium.php) | Address, AppCondominium, AppCorporations, AppOwner, AppUnits, Notification, User, Pager … | notifications | — |
 | [`Controllers/Erp/V1/Corporations`](../../source/Controllers/Erp/V1/Corporations.php) | Address, AppCondominium, AppCorporations, Notification, Pager, Thumb, Upload | notifications | — |
@@ -596,7 +601,7 @@ flowchart LR
 | [`Controllers/Erp/V1/Users`](../../source/Controllers/Erp/V1/Users.php) | View, Address, AppCondominium, AppCorporations, Notification, AppSession, User, Email … | notifications | — |
 | [`Controllers/Pay/Pay`](../../source/Controllers/Pay/Pay.php) | Controller, Auth | — | — |
 | [`Controllers/Studio/Studio`](../../source/Controllers/Studio/Studio.php) | Connect, Controller, Address, Auth, AppBrief, Channel, Question, AuditLog … | access_permissions, access_roles, access_user_overrides, access_user_roles, app_log, mail_queue, movesos_versions, notification_messages, notifications, pages, posts, settings, studio_calendar_events, studio_support_templates, studio_support_ticket_attachments, studio_support_ticket_events, studio_support_ticket_messages, studio_support_tickets, support_articles, system_audit_logs | 2 |
-| [`Controllers/Studio/TwoFactor`](../../source/Controllers/Studio/TwoFactor.php) | Controller, Session, Auth, User, TwoFactorService, Access, SecretBox | — | — |
+| [`Controllers/Studio/TwoFactor`](../../source/Controllers/Studio/TwoFactor.php) | Controller, Session, Auth, User, TwoFactorNotice, TwoFactorService, Access, QrCode … | — | — |
 | [`Controllers/Web/Connect/Web`](../../source/Controllers/Web/Connect/Web.php) | Connect, Controller, Auth, AppBrief, Category, Page, Post, Access … | support_article_votes, support_articles | — |
 | [`Controllers/Web/Support/Support`](../../source/Controllers/Web/Support/Support.php) | Connect, Controller, SupportArticle, SupportCategory, AppLogger, Upload | studio_support_ticket_messages, studio_support_tickets, support_article_votes, support_articles | 1 |
 | [`Controllers/Web/V1/Web`](../../source/Controllers/Web/V1/Web.php) | Controller, Auth, AppLog, AppSession, User | — | — |
@@ -610,7 +615,7 @@ flowchart LR
 | [`Core/Connect`](../../source/Core/Connect.php) | AppLogger | — | 1 |
 | [`Core/Controller`](../../source/Core/Controller.php) | Message, Seo | — | — |
 | [`Core/Model`](../../source/Core/Model.php) | AppLogger, Audit, Message | — | — |
-| [`Core/Router`](../../source/Core/Router.php) | — | — | 1 |
+| [`Core/Router`](../../source/Core/Router.php) | — | — | 2 |
 | [`Core/Session`](../../source/Core/Session.php) | Message | — | 1 |
 | [`Core/View`](../../source/Core/View.php) | — | — | 7 |
 
@@ -667,7 +672,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>Services</b> (30)</summary>
+<details><summary><b>Services</b> (31)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -700,11 +705,12 @@ flowchart LR
 | [`Services/OnboardingValidationError`](../../source/Services/OnboardingValidationError.php) | — | — | 2 |
 | [`Services/PasswordResetService`](../../source/Services/PasswordResetService.php) | Connect, AppLogger, PasswordResetToken | user_password_resets | 1 |
 | [`Services/TwoFactorAdminReset`](../../source/Services/TwoFactorAdminReset.php) | — | — | 1 |
+| [`Services/TwoFactorNotice`](../../source/Services/TwoFactorNotice.php) | AppLogger, Email, MailTemplate | mail_queue | 1 |
 | [`Services/TwoFactorService`](../../source/Services/TwoFactorService.php) | Connect, AppLogger, SecretBox, Totp | user_recovery_codes, user_two_factor | 2 |
 
 </details>
 
-<details><summary><b>Support</b> (22)</summary>
+<details><summary><b>Support</b> (24)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -714,9 +720,10 @@ flowchart LR
 | [`Support/Communication`](../../source/Support/Communication.php) | Connect, Notification, NotificationCategory, NotificationMessage, User | mail_queue | 1 |
 | [`Support/Email`](../../source/Support/Email.php) | Connect | mail_queue | — |
 | [`Support/Erp/BrDocument`](../../source/Support/Erp/BrDocument.php) | — | — | 1 |
+| [`Support/Erp/CondominiumContext`](../../source/Support/Erp/CondominiumContext.php) | Session, Auth, User, CondominiumScope, Access, AppLogger | — | 2 |
 | [`Support/Erp/FieldSpec`](../../source/Support/Erp/FieldSpec.php) | — | — | — |
 | [`Support/Erp/RegistryFormat`](../../source/Support/Erp/RegistryFormat.php) | — | — | — |
-| [`Support/MailTemplate`](../../source/Support/MailTemplate.php) | View | — | 2 |
+| [`Support/MailTemplate`](../../source/Support/MailTemplate.php) | View | — | 3 |
 | [`Support/Message`](../../source/Support/Message.php) | Session | — | — |
 | [`Support/Middleware/ApiAuthenticated`](../../source/Support/Middleware/ApiAuthenticated.php) | Session, Auth | — | — |
 | [`Support/Pager`](../../source/Support/Pager.php) | — | — | — |
@@ -724,6 +731,7 @@ flowchart LR
 | [`Support/Proposal/ProposalMailer`](../../source/Support/Proposal/ProposalMailer.php) | Proposal, User | — | — |
 | [`Support/Proposal/ProposalPdf`](../../source/Support/Proposal/ProposalPdf.php) | Proposal, ProposalResponse | — | — |
 | [`Support/Proposal/ProposalService`](../../source/Support/Proposal/ProposalService.php) | Connect, Notification, NotificationCategory, NotificationMessage, Proposal, User, AppLogger, Email | access_roles, access_user_roles | — |
+| [`Support/QrCode`](../../source/Support/QrCode.php) | — | — | 3 |
 | [`Support/SecretBox`](../../source/Support/SecretBox.php) | — | — | 1 |
 | [`Support/Seo`](../../source/Support/Seo.php) | — | — | — |
 | [`Support/StudioModules`](../../source/Support/StudioModules.php) | Connect, User | module_migrations, modules | — |
@@ -765,6 +773,9 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0025 — Reset do 2FA de outro usuário por administrador](../../docs/Organic%20Code/decisions/0025-admin-two-factor-reset.md)
 - [0026 — Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio](../../docs/Organic%20Code/decisions/0026-studio-helpdesk-erp-shell.md)
 - [0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar](../../docs/Organic%20Code/decisions/0027-recurring-entries.md)
+- [0028 — Aviso por e-mail quando o 2FA da conta muda](../../docs/Organic%20Code/decisions/0028-two-factor-change-notice.md)
+- [0029 — QR code na configuração do 2FA, gerado no servidor](../../docs/Organic%20Code/decisions/0029-two-factor-qr-code.md)
+- [0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL](../../docs/Organic%20Code/decisions/0030-condominium-context-in-url.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)

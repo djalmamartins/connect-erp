@@ -8,10 +8,11 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
-use Source\Services\CondominiumScope;
 use Source\Services\Erp\DemoData;
 use Source\Services\Erp\Registry\Definitions;
+use Source\Services\Erp\Registry\RegistryService;
 use Source\Support\Access;
+use Source\Support\Erp\CondominiumContext;
 use Source\Support\Erp\FieldSpec;
 
 /**
@@ -30,7 +31,7 @@ final class Panel extends Controller
     public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
-    public const CONTEXT_KEY = 'erpCondominium';
+    public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
 
     /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
     public static function pagePermissions(): array
@@ -65,7 +66,38 @@ final class Panel extends Controller
         }
         echo $this->view->render('pages/dashboard/index', $this->layoutData($user, 'AP-001', [
             'dashboard' => DemoData::get('dashboard'),
+            'summary' => $this->summary($user, CondominiumContext::id()),
+            'condoTotal' => count($this->condominiumOptions($user)),
         ]));
+    }
+
+    /**
+     * Resumo com dados reais para o dashboard: quantos registros cada cadastro tem no
+     * condomínio da barra superior (ou em todos). Só cadastros que o usuário pode ver; os do
+     * financeiro ficam de fora até o dashboard financeiro ter dados reais.
+     *
+     * @return list<array{label:string, count:int, href:string, icon:string}>
+     */
+    private function summary(User $user, ?int $condominiumId): array
+    {
+        $service = new RegistryService();
+        $items = [];
+        foreach (Definitions::all() as $slug => $definition) {
+            if (!in_array($definition['group'] ?? 'cadastros', ['cadastros', 'condominios'], true) || ($condominiumId !== null && $definition['scope'] === 'none')) {
+                continue;
+            }
+            if (!Access::can($definition['permission'] . '.view', $user)) {
+                continue;
+            }
+            try {
+                $count = $service->count($user, $slug, $condominiumId);
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'dashboard_summary_failed', 'registry' => $slug]);
+                continue;
+            }
+            $items[] = ['label' => $definition['label'], 'count' => $count, 'href' => $definition['route'], 'icon' => ($definition['group'] ?? 'cadastros') === 'condominios' ? 'building' : 'user'];
+        }
+        return $items;
     }
 
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
@@ -177,8 +209,10 @@ final class Panel extends Controller
     }
 
     /**
-     * POST /contexto/condominio — troca o condomínio em contexto na navbar. Só aceita um
-     * condomínio do escopo do usuário (CondominiumScope); 0 volta para "todos".
+     * POST /contexto/condominio — troca o condomínio em contexto na navbar (ADR 0030). Só
+     * aceita um condomínio do escopo do usuário (CondominiumScope); 0 volta para "todos".
+     * Redireciona para a mesma tela com o slug do condomínio escolhido na URL. Em telas de
+     * detalhe (/…/{id}) volta para a lista, porque o registro é de outro condomínio.
      */
     public function setCondominium(?array $data): void
     {
@@ -187,54 +221,40 @@ final class Panel extends Controller
             return;
         }
         $back = (string)($data['back'] ?? '');
-        $back = str_starts_with($back, '/') && !str_starts_with($back, '//') && !preg_match('/[\x00-\x20\\\\]/', $back) ? $back : erp_base() . '/dashboard';
+        $back = str_starts_with($back, '/') && !str_starts_with($back, '//') && !preg_match('/[\x00-\x20\\\\?#]/', $back) ? $back : '/dashboard';
+        if (!CondominiumContext::aware($back)) {
+            $back = '/dashboard';
+        }
+        // Detalhe, edição ou cadastro novo: volta para a lista da mesma tela.
+        $back = (string)preg_replace('~/(?:\d+|novo|nova)(?:/.*)?$~', '', $back) ?: '/dashboard';
         if (!csrf_verify($data ?? [])) {
             $this->message->error('Sessão expirada. Atualize a página e tente novamente.')->flash();
-            redirect(url($back));
+            redirect(erp_url($back));
             return;
         }
         $id = (int)(filter_var($data['condominium'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) ?: 0);
         $session = new Session();
+        CondominiumContext::use($this->condominiumOptions($user), CondominiumContext::id());
         if ($id === 0) {
-            $session->unset(self::CONTEXT_KEY);
-        } elseif (in_array($id, array_column($this->condominiumOptions($user), 'id'), true)) {
-            $session->set(self::CONTEXT_KEY, $id);
-        } else {
+            $session->unset(CondominiumContext::SESSION_KEY);
+            redirect(erp_context_url($back, null));
+            return;
+        }
+        $target = CondominiumContext::option($id);
+        if ($target === null) {
             // Fora do escopo: não revela se o condomínio existe.
             $this->message->warning('Condomínio indisponível para a sua conta.')->flash();
+            redirect(erp_url($back));
+            return;
         }
-        redirect(url($back));
+        $session->set(CondominiumContext::SESSION_KEY, $target['id']);
+        redirect(erp_context_url($back, $target));
     }
 
     /** @return list<array{id:int,name:string}> */
     private function condominiumOptions(User $user): array
     {
-        if ($this->condominiumOptions !== null) {
-            return $this->condominiumOptions;
-        }
-        try {
-            $rows = (new CondominiumScope())->allowed($user);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'condominium_options_failed', 'users_id' => $user->id ?? null]);
-            $rows = [];
-        }
-        return $this->condominiumOptions = array_values(array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'name' => (string)$r['name']], array_filter($rows, static fn (array $r): bool => ($r['status'] ?? 'active') === 'active')));
-    }
-
-    /** Condomínio em contexto, revalidado a cada requisição contra o escopo atual. */
-    private function currentCondominium(User $user): ?array
-    {
-        $session = new Session();
-        $id = $session->has(self::CONTEXT_KEY) ? (int)$session->{self::CONTEXT_KEY} : 0;
-        foreach ($this->condominiumOptions($user) as $option) {
-            if ($option['id'] === $id) {
-                return $option;
-            }
-        }
-        if ($id !== 0) {
-            $session->unset(self::CONTEXT_KEY);
-        }
-        return null;
+        return $this->condominiumOptions ??= CondominiumContext::scopeOptions($user);
     }
 
     /** GET /erp/seguranca/codigos — códigos de recuperação mostrados uma única vez após ativar o 2FA. */
@@ -307,8 +327,8 @@ final class Panel extends Controller
             'demo' => DemoData::enabled(),
             'notifications' => $dashboard['notifications'] ?? [],
             'withNavigation' => true,
-            'condoOptions' => $this->condominiumOptions($user),
-            'condoCurrent' => $this->currentCondominium($user),
+            'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
+            'condoCurrent' => CondominiumContext::current(),
             'anchor' => static fn (string $text): string => self::anchor($text),
             // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
             'canSee' => static fn (string $pageId): bool => !isset(self::pagePermissions()[$pageId]) || $user->can(self::pagePermissions()[$pageId]),

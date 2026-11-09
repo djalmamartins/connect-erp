@@ -8,6 +8,7 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Services\TwoFactorService;
+use Source\Services\TwoFactorNotice;
 use Source\Support\Access;
 use Source\Support\SecretBox;
 
@@ -43,6 +44,7 @@ final class Security extends Controller
         if (!$enabled && SecretBox::isConfigured()) {
             $secret = $twoFactor->pendingSecret((int)$user->id) ?? $twoFactor->beginSetup((int)$user->id);
             $setup = ['secret' => $secret, 'uri' => $twoFactor->provisioningUri((int)$user->id, $secret, (string)$user->email)];
+            $setup['qr'] = \Source\Support\QrCode::svg($setup['uri'], 196, 'QR code para o aplicativo autenticador');
         }
         $codes = [];
         if ($session->has(self::CODES_KEY)) {
@@ -93,6 +95,7 @@ final class Security extends Controller
             } else {
                 $session->set(self::CODES_KEY, $codes);
                 $this->message->success('Verificação em duas etapas ativada.')->flash();
+                (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED);
             }
             redirect($back);
             return;
@@ -108,6 +111,7 @@ final class Security extends Controller
                     $this->message->warning('A verificação em duas etapas é obrigatória e não pode ser desativada.')->flash();
                 } else {
                     $twoFactor->disable($userId, $userId);
+                    (new TwoFactorNotice())->send($user, TwoFactorNotice::DISABLED);
                     $this->message->success('Verificação em duas etapas desativada.')->flash();
                 }
                 redirect($back);

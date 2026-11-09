@@ -15,6 +15,7 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Support\Access;
+use Source\Support\Erp\CondominiumContext;
 use Source\Support\Message;
 
 /**
@@ -42,7 +43,8 @@ final class Registry extends Controller
         }
         $service = new RegistryService();
         $filters = [
-            'condominium_id' => $_GET['condominio'] ?? null,
+            // Condomínio da barra superior (ADR 0030); o filtro ?condominio= troca o contexto no index.php.
+            'condominium_id' => CondominiumContext::id(),
             'status' => $_GET['situacao'] ?? null,
             'filter' => $_GET['tipo'] ?? null,
             'q' => $_GET['q'] ?? null,
@@ -67,7 +69,7 @@ final class Registry extends Controller
         if ($user === null) {
             return;
         }
-        $this->renderForm($user, $definition, null, ['status' => 'active'], []);
+        $this->renderForm($user, $definition, null, ['status' => 'active', 'condominium_id' => CondominiumContext::id()], []);
     }
 
     /** GET {rota}/{id}: detalhe com edição (somente leitura sem a permissão manage). */
@@ -83,6 +85,12 @@ final class Registry extends Controller
             $record = (new RegistryService())->find($user, $slug, $id);
         } catch (RegistryNotFound) {
             $this->notFound($user, $definition);
+            return;
+        }
+        // Registro de outro condomínio: a barra superior passa a mostrar o dele (ADR 0030).
+        $follow = CondominiumContext::follow(isset($record['condominium_id']) ? (int)$record['condominium_id'] : null);
+        if ($follow !== null) {
+            redirect(url(erp_base() . $follow));
             return;
         }
         $this->renderForm($user, $definition, $id, $record, []);

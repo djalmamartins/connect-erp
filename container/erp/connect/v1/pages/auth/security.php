@@ -33,9 +33,10 @@ $codeField = static fn (string $id): string => '<div class="erp-field erp-col-6"
             <div class="erp-alert erp-alert--danger"><?= $icon('alert') ?><div><strong>Não configurada no servidor</strong>A chave de criptografia do 2FA (CONNECT_2FA_KEY) não está definida. Avise o administrador.</div></div>
         <?php elseif (!$twoFactorEnabled && $twoFactorSetup): ?>
             <ol class="erp-steps-list">
-                <li>No Google Authenticator, Microsoft Authenticator ou similar, adicione uma conta com a chave abaixo (ou abra o link no celular).</li>
+                <li>No Google Authenticator, Microsoft Authenticator ou similar, <?= !empty($twoFactorSetup['qr']) ? 'escaneie o QR code ou adicione' : 'adicione' ?> uma conta com a chave abaixo (ou abra o link no celular).</li>
                 <li>Digite o código de 6 dígitos que o aplicativo mostrar.</li>
             </ol>
+            <?php if (!empty($twoFactorSetup['qr'])): ?><figure class="erp-qr"><?= $twoFactorSetup['qr'] ?><figcaption>Aponte a câmera do aplicativo autenticador</figcaption></figure><?php endif; ?>
             <p class="erp-secret"><code><?= $this->e(trim(chunk_split($twoFactorSetup['secret'], 4, ' '))) ?></code></p>
             <p><a href="<?= $this->e($twoFactorSetup['uri']) ?>">Abrir no aplicativo autenticador</a></p>
             <form class="erp-form" method="post" action="<?= erp_url('/seguranca') ?>" autocomplete="off" data-erp-validate data-erp-loading>

@@ -9,6 +9,9 @@ final class Router
 {
     private MovesRouter $router;
     private ?string $namespace = null;
+    private string $group = '';
+    /** @var array<string, true> primeiro segmento de cada rota registrada (contexto de condomínio, ADR 0030) */
+    private array $firstSegments = [];
 
     public function __construct(string $projectUrl, ?string $separator = ":")
     {
@@ -24,6 +27,7 @@ final class Router
 
     public function group(?string $group, array|string|null $middleware = null): self
     {
+        $this->group = trim((string)$group, '/');
         $this->router->group($group, $middleware);
         return $this;
     }
@@ -88,8 +92,21 @@ final class Router
         return $this->router->home();
     }
 
+    /** @return list<string> primeiros segmentos fixos das rotas registradas (sem parâmetros). */
+    public function firstSegments(): array
+    {
+        return array_keys($this->firstSegments);
+    }
+
     private function add(string $method, string $route, callable|string $handler, ?string $name, array|string|null $middleware): self
     {
+        // O segmento logo depois do grupo também conta: no host principal o ERP fica em /erp.
+        foreach ([trim($this->group . '/' . trim($route, '/'), '/'), trim($route, '/')] as $path) {
+            $segment = explode('/', $path)[0];
+            if ($segment !== '' && !str_contains($segment, '{')) {
+                $this->firstSegments[$segment] = true;
+            }
+        }
         $namespace = $this->namespace;
         $this->router->{$method}($route, function (array $data) use ($handler, $namespace): void {
             $requestData = array_merge($_POST, $data);

@@ -41,3 +41,28 @@ e dezenas de components que dependem das classes `studio-*`.
 - No lab, o host `studio.connect.lab` precisa de entrada no `hosts`, `ServerAlias` no vhost do
   Apache e certificado (mkcert), como foi feito para `erp.connect.lab`.
 - Reverter = remover o `<link>` da camada e restaurar o markup anterior do layout.
+
+## Atualização (09/11/2026, pedido do Djalma)
+
+- **Cores por ambiente**: a estrutura continua a do ERP, mas o verde saiu. O Studio usa tons de
+  roxo (`--cx-brand: #6b1fa8`, sidebar `#2a0f40`) e o Help Desk usa azul (`--cx-brand: #2563eb`,
+  sidebar `#0f1f45`). As paletas ficam em `connect-shell.css`, nos blocos
+  `body.studio-erp[data-environment="studio|helpdesk"]`. Só as medidas e a tipografia continuam
+  espelhando `erp.css`.
+- **Menu igual ao do ERP**: links diretos (Dashboard / Fila de chamados) e grupos em `<details>`
+  com submenu. O grupo da página atual abre sozinho; com o menu recolhido, clicar num grupo expande
+  o menu.
+- **Cabeçalho da sidebar**: o tipo do módulo fica em cima e o nome embaixo. São "CMS / Moves Studio",
+  "Atendimento / Moves Help Desk" e, no ERP, "ERP / Connect ERP".
+- **AP-021**: a lista de lançamentos fixos ganhou o botão "Gerar lançamentos do mês", que chama
+  `POST /api/v1/recurring-entries/generate` (ADR 0027) com o token CSRF e mostra o resultado
+  (gerados, já existentes e com erro). O botão só aparece com `erp.recurring_entries.manage` e
+  `erp.entries.manage`, e a API valida as duas de novo.
+- **Logotipo Moves** no Studio e no Help Desk, enviado pelo Djalma e salvo em
+  `container/cms/studio/v1/assets/images/moves-logo.svg`. Na sidebar escura entram a versão branca
+  (`moves-logo-white.svg`) e o símbolo recortado (`moves-mark-white.svg`, para o menu recolhido),
+  porque o fim roxo do degradê some no fundo roxo.
+- **Telas no padrão do ERP**: cabeçalhos, cards, botões, campos (brancos com contorno), tabelas e
+  selos de status seguem o `erp.css` pela camada `connect-shell.css`, sem reescrever os components.
+  O dashboard foi refeito com indicadores, gráfico de acessos dos últimos dias, ações rápidas e
+  artigos recentes (componentes `cx-*`).

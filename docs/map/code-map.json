@@ -105,6 +105,18 @@
    "title": "0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar"
   },
   {
+   "file": "docs/Organic Code/decisions/0028-two-factor-change-notice.md",
+   "title": "0028 — Aviso por e-mail quando o 2FA da conta muda"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0029-two-factor-qr-code.md",
+   "title": "0029 — QR code na configuração do 2FA, gerado no servidor"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0030-condominium-context-in-url.md",
+   "title": "0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -264,6 +276,7 @@
     "Source\\Models\\Session\\AppLog",
     "Source\\Models\\User",
     "Source\\Services\\TwoFactorAdminReset",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
@@ -395,7 +408,8 @@
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
     "Source\\Services\\CondominiumValidator",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext"
    ],
    "file": "source/Controllers/Erp/Connect/Condominiums.php",
    "kind": "class",
@@ -466,7 +480,8 @@
     "Source\\Services\\Inspections\\InspectionError",
     "Source\\Services\\Inspections\\InspectionReport",
     "Source\\Services\\Inspections\\InspectionService",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext"
    ],
    "file": "source/Controllers/Erp/Connect/Inspections.php",
    "kind": "class",
@@ -512,11 +527,12 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
-    "Source\\Services\\CondominiumScope",
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext",
     "Source\\Support\\Erp\\FieldSpec"
    ],
    "file": "source/Controllers/Erp/Connect/Panel.php",
@@ -559,6 +575,7 @@
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
     "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext",
     "Source\\Support\\Message"
    ],
    "file": "source/Controllers/Erp/Connect/Registry.php",
@@ -574,8 +591,10 @@
     "Source\\Core\\Controller",
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
+    "Source\\Support\\QrCode",
     "Source\\Support\\SecretBox"
    ],
    "file": "source/Controllers/Erp/Connect/Security.php",
@@ -803,8 +822,10 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
+    "Source\\Support\\QrCode",
     "Source\\Support\\SecretBox"
    ],
    "file": "source/Controllers/Studio/TwoFactor.php",
@@ -919,6 +940,7 @@
    "layer": "Core",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ErpCondominiumContextTest.php",
     "tests/smoke.php"
    ]
   },
@@ -970,6 +992,7 @@
     "Source\\Models\\Session\\AppLog",
     "Source\\Services\\LoginThrottle",
     "Source\\Services\\PasswordResetService",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Email",
@@ -1889,6 +1912,22 @@
     "tests/legacy/Unit/TwoFactorAdminResetTest.php"
    ]
   },
+  "Source\\Services\\TwoFactorNotice": {
+   "deps": [
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Email",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Services/TwoFactorNotice.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "mail_queue"
+   ],
+   "tests": [
+    "tests/legacy/Unit/TwoFactorNoticeTest.php"
+   ]
+  },
   "Source\\Services\\TwoFactorService": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2003,6 +2042,24 @@
     "tests/legacy/Unit/RegistryValidatorTest.php"
    ]
   },
+  "Source\\Support\\Erp\\CondominiumContext": {
+   "deps": [
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Support/Erp/CondominiumContext.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCondominiumContextTest.php"
+   ]
+  },
   "Source\\Support\\Erp\\FieldSpec": {
    "deps": [],
    "file": "source/Support/Erp/FieldSpec.php",
@@ -2029,7 +2086,8 @@
    "tables": [],
    "tests": [
     "tests/legacy/Unit/MailTemplateTest.php",
-    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php",
+    "tests/legacy/Unit/TwoFactorNoticeTest.php"
    ]
   },
   "Source\\Support\\Message": {
@@ -2114,6 +2172,18 @@
    ],
    "tests": []
   },
+  "Source\\Support\\QrCode": {
+   "deps": [],
+   "file": "source/Support/QrCode.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/QrCodeTest.php",
+    "tests/studio/render-smoke.php"
+   ]
+  },
   "Source\\Support\\SecretBox": {
    "deps": [],
    "file": "source/Support/SecretBox.php",
@@ -2179,8 +2249,8 @@
   }
  },
  "counts": {
-  "adrs": 29,
-  "classes": 136,
+  "adrs": 32,
+  "classes": 139,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -2188,7 +2258,7 @@
   "erp_pages": 172,
   "routes": 206,
   "tables": 63,
-  "tests": 65
+  "tests": 68
  },
  "erp_pages": [
   {
@@ -5591,6 +5661,7 @@
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
     "Source\\Services\\OnboardingAlerts",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Support\\Communication",
     "Source\\Support\\Email"
    ]
@@ -5820,7 +5891,9 @@
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Core\\View",
    "Source\\Models\\User",
-   "Source\\Services\\Erp\\DemoData"
+   "Source\\Services\\Erp\\DemoData",
+   "Source\\Support\\Erp\\CondominiumContext",
+   "Source\\Support\\QrCode"
   ],
   "tests/legacy/Integration/AccessControlTest.php": [
    "Source\\Models\\User",
@@ -6008,6 +6081,10 @@
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
+  "tests/legacy/Unit/ErpCondominiumContextTest.php": [
+   "Source\\Core\\Router",
+   "Source\\Support\\Erp\\CondominiumContext"
+  ],
   "tests/legacy/Unit/ErpLegacyCondominiumScopeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Erp"
   ],
@@ -6063,6 +6140,9 @@
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
+  "tests/legacy/Unit/QrCodeTest.php": [
+   "Source\\Support\\QrCode"
+  ],
   "tests/legacy/Unit/RecurringEntriesDefinitionTest.php": [
    "Source\\Services\\Erp\\RecurringEntries",
    "Source\\Services\\Erp\\Registry\\Definitions",
@@ -6088,6 +6168,10 @@
   "tests/legacy/Unit/TwoFactorAdminResetTest.php": [
    "Source\\Services\\TwoFactorAdminReset"
   ],
+  "tests/legacy/Unit/TwoFactorNoticeTest.php": [
+   "Source\\Services\\TwoFactorNotice",
+   "Source\\Support\\MailTemplate"
+  ],
   "tests/legacy/Unit/TwoFactorSchemaMissingTest.php": [
    "Source\\Models\\Auth"
   ],
@@ -6109,7 +6193,8 @@
   ],
   "tests/studio/render-smoke.php": [
    "Source\\Core\\View",
-   "Source\\Models\\User"
+   "Source\\Models\\User",
+   "Source\\Support\\QrCode"
   ]
  }
 }

@@ -8,6 +8,7 @@ use Source\Core\Controller;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\TwoFactorService;
+use Source\Services\TwoFactorNotice;
 use Source\Support\Access as AccessControl;
 use Source\Support\SecretBox;
 
@@ -83,6 +84,7 @@ final class TwoFactor extends Controller
             $user = (new User())->findById((int)$pending->user);
             $secret = $twoFactor->beginSetup((int)$pending->user);
             $setup = ["secret" => $secret, "uri" => $twoFactor->provisioningUri((int)$pending->user, $secret, (string)($user->email ?? "usuario"))];
+            $setup["qr"] = \Source\Support\QrCode::svg($setup["uri"], 196, "QR code para o aplicativo autenticador");
         }
 
         echo $this->view->render("components/login/two-factor", [
@@ -124,6 +126,7 @@ final class TwoFactor extends Controller
                     return;
                 }
                 $session->set("auth2faRecoveryCodes", $codes);
+                (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED);
                 echo json_encode(["redirect" => url("/studio/seguranca/2fa?novo=1")]);
                 return;
             }
@@ -139,6 +142,7 @@ final class TwoFactor extends Controller
                         return;
                     }
                     $twoFactor->disable((int)$user->id, (int)$user->id);
+                    (new TwoFactorNotice())->send($user, TwoFactorNotice::DISABLED);
                     $this->message->success("Autenticação em dois fatores desativada.")->flash();
                     echo json_encode(["redirect" => url("/studio/seguranca/2fa")]);
                     return;
@@ -156,6 +160,7 @@ final class TwoFactor extends Controller
         if (!$enabled && SecretBox::isConfigured()) {
             $secret = $twoFactor->beginSetup((int)$user->id);
             $setup = ["secret" => $secret, "uri" => $twoFactor->provisioningUri((int)$user->id, $secret, (string)$user->email)];
+            $setup["qr"] = \Source\Support\QrCode::svg($setup["uri"], 196, "QR code para o aplicativo autenticador");
         }
         $codes = null;
         if ($session->has("auth2faRecoveryCodes")) {
