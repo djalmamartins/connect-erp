@@ -1339,6 +1339,24 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /occurrences/{id}/ticket:
+    post:
+      operationId: openOccurrenceTicket
+      summary: Abre o chamado da ocorrência na fila do Help Desk (erp.occurrences.manage)
+      description: >-
+        Origem erp, com condomínio, unidade, assunto, descrição e prioridade da ocorrência (baixa,
+        média e alta viram low, medium e high). Uma ocorrência abre no máximo um chamado; o ticket_id
+        fica gravado na ocorrência (só leitura no cadastro /occurrences).
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '201': { description: '{ data: { occurrence_id, ticket_id, protocol } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: A ocorrência já tem chamado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: Chamado recusado pelo Help Desk (field e message) }
 
   /inspection-templates:
     get:

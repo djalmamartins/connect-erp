@@ -161,6 +161,9 @@ final class RegistryService
             $errors = $this->attachmentRules($definition, $values);
         }
         if ($errors === []) {
+            $errors = $this->reservationRules($definition, $values, $id);
+        }
+        if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
         // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
@@ -630,6 +633,95 @@ final class RegistryService
         }
         if (isset($definition['hierarchy']) && !isset($errors[$definition['hierarchy']['field']])) {
             $errors += $this->hierarchyRules($definition, $values);
+        }
+        // 'no_overlap' (ADR 0051): mesmo recurso (campos 'per') não pode ter dois registros válidos com
+        // horário sobreposto. Sem horário ('start'/'end' ausentes ou vazios), qualquer outro conflita.
+        foreach ($definition['no_overlap'] ?? [] as $rule) {
+            $ignored = $rule['ignore_status'] ?? [];
+            if (in_array($values['status'] ?? 'active', $ignored, true)) {
+                continue;
+            }
+            $where = ['deleted_at IS NULL'];
+            $params = [];
+            foreach ($rule['per'] as $field) {
+                if (($values[$field] ?? null) === null) {
+                    continue 2;
+                }
+                $where[] = "`{$field}` = :p_{$field}";
+                $params["p_{$field}"] = $values[$field];
+            }
+            foreach (array_values($ignored) as $i => $status) {
+                $where[] = "status <> :ig{$i}";
+                $params["ig{$i}"] = $status;
+            }
+            $start = $rule['start'] ?? null;
+            $end = $rule['end'] ?? null;
+            if ($start !== null && $end !== null && ($values[$start] ?? null) !== null && ($values[$end] ?? null) !== null) {
+                // Sobreposição: começa antes do fim do outro e termina depois do começo dele; registro sem horário ocupa o dia.
+                $where[] = "((`{$start}` IS NULL OR `{$end}` IS NULL) OR (`{$start}` < :o_end AND `{$end}` > :o_start))";
+                $params['o_end'] = $values[$end];
+                $params['o_start'] = $values[$start];
+            }
+            if ($id !== null) {
+                $where[] = 'id <> :self';
+                $params['self'] = $id;
+            }
+            $stmt = $this->pdo->prepare("SELECT 1 FROM `{$definition['table']}` WHERE " . implode(' AND ', $where) . ' LIMIT 1');
+            $stmt->execute($params);
+            if ($stmt->fetchColumn()) {
+                $errors[$start ?? end($rule['per'])] = $rule['message'];
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * 'reservation' (ADR 0051): regras da área comum (AP-008) na reserva. Área bloqueada ou não
+     * reservável recusa; data dentro da antecedência mínima e máxima (só ao criar); horário dentro do
+     * funcionamento; taxa vazia = taxa da área; área de reserva livre já nasce confirmada.
+     *
+     * @return array<string, string>
+     */
+    private function reservationRules(array $definition, array &$values, ?int $id): array
+    {
+        $rule = $definition['reservation'] ?? null;
+        if ($rule === null || ($values[$rule['area']] ?? null) === null) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT booking_mode, booking_fee_cents, min_advance_days, max_advance_days, opening_time, closing_time
+            FROM erp_common_areas WHERE id = :id AND deleted_at IS NULL');
+        $stmt->execute(['id' => (int)$values[$rule['area']]]);
+        $area = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($area)) {
+            return [$rule['area'] => 'Escolha uma área comum ativa deste condomínio.'];
+        }
+        if (in_array($area['booking_mode'], ['blocked', 'none'], true)) {
+            return [$rule['area'] => $area['booking_mode'] === 'blocked' ? 'A área está bloqueada para reservas.' : 'Esta área não aceita reservas.'];
+        }
+        $errors = [];
+        $date = (string)($values[$rule['date']] ?? '');
+        if ($id === null && $date !== '' && ($values['status'] ?? 'active') !== 'inactive') {
+            $days = (int)(new \DateTimeImmutable('today'))->diff(new \DateTimeImmutable($date))->format('%r%a');
+            if ($days < 0) {
+                $errors[$rule['date']] = 'Escolha uma data a partir de hoje.';
+            } elseif ($area['min_advance_days'] !== null && $days < (int)$area['min_advance_days']) {
+                $errors[$rule['date']] = sprintf('Esta área exige %d dia(s) de antecedência.', (int)$area['min_advance_days']);
+            } elseif ($area['max_advance_days'] !== null && (int)$area['max_advance_days'] > 0 && $days > (int)$area['max_advance_days']) {
+                $errors[$rule['date']] = sprintf('Esta área aceita reservas com até %d dia(s) de antecedência.', (int)$area['max_advance_days']);
+            }
+        }
+        $start = $values[$rule['start']] ?? null;
+        $end = $values[$rule['end']] ?? null;
+        $open = $area['opening_time'] !== null ? substr((string)$area['opening_time'], 0, 5) : null;
+        $close = $area['closing_time'] !== null ? substr((string)$area['closing_time'], 0, 5) : null;
+        if (($open !== null && $start !== null && substr((string)$start, 0, 5) < $open) || ($close !== null && $end !== null && substr((string)$end, 0, 5) > $close)) {
+            $errors[$rule['start']] = sprintf('Fora do horário da área (%s às %s).', $open ?? '—', $close ?? '—');
+        }
+        if (($values[$rule['fee']] ?? null) === null && $area['booking_fee_cents'] !== null) {
+            $values[$rule['fee']] = (int)$area['booking_fee_cents'];
+        }
+        if ($id === null && $area['booking_mode'] === 'free' && ($values['status'] ?? 'active') === 'active') {
+            $values['status'] = 'confirmed';
         }
         return $errors;
     }
