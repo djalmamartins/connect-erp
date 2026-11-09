@@ -169,6 +169,10 @@
    "title": "0043 — Telas de encargos: regra de cobrança, IPCA, sugestão e quebra de acordo"
   },
   {
+   "file": "docs/Organic Code/decisions/0044-unit-documents.md",
+   "title": "0044 — Documentos da unidade: certidão, declaração, quitação e anuência"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -422,6 +426,20 @@
     "Source\\Support\\Middleware\\ApiAuthenticated"
    ],
    "file": "source/Controllers/Api/V1/TwoFactor.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\UnitDocuments": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\UnitDocuments",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/UnitDocuments.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -1668,6 +1686,7 @@
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Integration/UserTest.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
@@ -1750,6 +1769,7 @@
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
@@ -2151,7 +2171,8 @@
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
-    "tests/legacy/Integration/RegistryServiceTest.php"
+    "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryService": {
@@ -2188,6 +2209,7 @@
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -2228,6 +2250,28 @@
     "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\UnitDocuments": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/UnitDocuments.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_unit_documents",
+    "condominiums",
+    "erp_units",
+    "pages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
+    "tests/legacy/Unit/UnitDocumentsTest.php"
    ]
   },
   "Source\\Services\\Inspections\\ChecklistText": {
@@ -2860,16 +2904,16 @@
   }
  },
  "counts": {
-  "adrs": 45,
-  "classes": 167,
+  "adrs": 46,
+  "classes": 169,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 247,
-  "tables": 80,
-  "tests": 95
+  "routes": 252,
+  "tables": 81,
+  "tests": 97
  },
  "erp_pages": [
   {
@@ -4494,10 +4538,55 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
+   "env": "index",
+   "file": "index.php",
+   "line": 96,
+   "method": "index",
+   "path": "/api/v1/unit-documents",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
+   "env": "index",
+   "file": "index.php",
+   "line": 97,
+   "method": "store",
+   "path": "/api/v1/unit-documents",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
+   "env": "index",
+   "file": "index.php",
+   "line": 98,
+   "method": "verify",
+   "path": "/api/v1/unit-documents/verify/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
+   "env": "index",
+   "file": "index.php",
+   "line": 99,
+   "method": "show",
+   "path": "/api/v1/unit-documents/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\UnitDocuments",
+   "env": "index",
+   "file": "index.php",
+   "line": 100,
+   "method": "cancel",
+   "path": "/api/v1/unit-documents/{id}/cancel",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 110,
+   "line": 116,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -4506,7 +4595,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 111,
+   "line": 117,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -4515,7 +4604,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 112,
+   "line": 118,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -4524,7 +4613,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 113,
+   "line": 119,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -4533,7 +4622,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 114,
+   "line": 120,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -4542,7 +4631,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 115,
+   "line": 121,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -4551,7 +4640,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 116,
+   "line": 122,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -4560,7 +4649,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 117,
+   "line": 123,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -4569,7 +4658,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 119,
+   "line": 125,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -4578,7 +4667,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 120,
+   "line": 126,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -4587,7 +4676,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 121,
+   "line": 127,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -4596,7 +4685,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 130,
+   "line": 136,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -4605,7 +4694,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 131,
+   "line": 137,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -4614,79 +4703,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 145,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 146,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 147,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 148,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 151,
-   "method": "forget",
-   "path": "/forget",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 152,
-   "method": "forget",
-   "path": "/forget",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "POST"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 153,
-   "method": "reset",
-   "path": "/forget/{code}",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 154,
-   "method": "reset",
-   "path": "/reset",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 167,
+   "line": 157,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -4695,7 +4748,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 168,
+   "line": 158,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -4704,7 +4757,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 169,
+   "line": 159,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -4713,7 +4766,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 170,
+   "line": 160,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -4722,7 +4775,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 186,
+   "line": 173,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 174,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 175,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 176,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 192,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -4731,7 +4820,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 188,
+   "line": 194,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -6432,6 +6521,7 @@
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\UnitDocuments",
     "Source\\Services\\Inspections\\InspectionService",
     "Source\\Services\\OnboardingAlerts",
     "Source\\Services\\Support\\TicketService"
@@ -6674,6 +6764,13 @@
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
+  "erp_unit_documents": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0526_unit_documents.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\UnitDocuments"
+   ]
+  },
   "erp_units": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0401_units.sql",
@@ -6683,6 +6780,7 @@
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\UnitDocuments",
     "Source\\Services\\Support\\TicketService"
    ]
   },
@@ -6866,7 +6964,8 @@
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\Invoices",
-    "Source\\Services\\Erp\\Registry\\RegistryService"
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\UnitDocuments"
    ]
   },
   "posts": {
@@ -7263,6 +7362,13 @@
    "Source\\Services\\TwoFactorService",
    "Source\\Support\\Totp"
   ],
+  "tests/legacy/Integration/UnitDocumentsIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\UnitDocuments"
+  ],
   "tests/legacy/Integration/UnitRegistryTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -7469,6 +7575,9 @@
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/UnitDocumentsTest.php": [
+   "Source\\Services\\Erp\\UnitDocuments"
   ],
   "tests/legacy/Unit/UploadSecurityTest.php": [
    "Source\\Support\\Upload"
