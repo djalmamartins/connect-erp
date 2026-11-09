@@ -121,7 +121,7 @@ final class PanelSummaries
             WHERE unit_id = :u AND deleted_at IS NULL AND status = 'active' ORDER BY name LIMIT 50");
         $people->execute(['u' => $unitId]);
 
-        $delinquency = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominium, $today);
+        $delinquency = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominium, $today, $unitId);
         $debts = array_values(array_filter($delinquency['units'], static fn (array $u): bool => (int)($u['unit_id'] ?? 0) === $unitId))[0] ?? null;
         $upcoming = $this->pdo->prepare("SELECT id, description, competence, due_on, amount_cents FROM erp_entries
             WHERE unit_id = :u AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL AND paid_on IS NULL AND due_on >= :t

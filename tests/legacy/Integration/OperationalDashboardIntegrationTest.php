@@ -78,8 +78,22 @@ final class OperationalDashboardIntegrationTest extends TestCase
         self::assertSame([$first['id'], 'Bia'], [$call['waitlist_id'], $call['resident_name']]);
         self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_reservations WHERE status IN ('active','confirmed')")->fetchColumn(), 'Não reserva sozinho.');
         self::assertSame(0, $this->dashboard->summary($this->admin, $this->alpha)['cards']['waitlist_to_call']);
+
+        // ADR 0103: com a Bia chamada e na lista, o próximo só é chamado depois que ela desistir.
+        $third = $this->service->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '103', 'type' => 'apartamento'])['id'];
+        $second = $this->service->save($this->admin, 'waitlist', ['condominium_id' => $this->alpha, 'common_area_id' => $area, 'unit_id' => $third,
+            'resident_name' => 'Caio', 'desired_on' => $date]);
+        try {
+            $this->dashboard->callWaitlist($this->admin, $reservation['id']);
+            self::fail('Chamou uma segunda pessoa para a mesma reserva.');
+        } catch (DomainException $error) {
+            self::assertStringContainsString('Já há uma pessoa chamada', $error->getMessage());
+        }
+        $this->pdo->prepare("UPDATE erp_waitlist SET status = 'inactive' WHERE id = ?")->execute([$first['id']]);
+        self::assertSame($second['id'], $this->dashboard->callWaitlist($this->admin, $reservation['id'])['waitlist_id'], 'Depois da desistência, chama o próximo.');
+
         $this->expectException(DomainException::class);
-        $this->dashboard->callWaitlist($this->admin, $reservation['id']);   // ninguém mais aguardando
+        $this->dashboard->callWaitlist($this->admin, $reservation['id']);   // o Caio segura a vez
     }
 
     public function testNextMaintenanceOnceAndOnlyWhenDone(): void
