@@ -93,6 +93,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0065](../Organic%20Code/decisions/0065-communications-hardening.md) | Comunicação: assunto em uma linha, unidades escolhidas com teto, trava por condomínio no aviso de cobrança e limite de 20 comunicados por dia |
 | [0066](../Organic%20Code/decisions/0066-collections-hardening.md) | Cobrança e multas: contas do caso judicial buscadas só na unidade e no condomínio, trava no andamento do caso e nome do contato em uma linha |
 | [0067](../Organic%20Code/decisions/0067-collection-reports-hardening.md) | Relatórios de cobrança: célula do CSV neutralizada também depois de espaço ou controle e em largura total, e teto de 20.000 recebimentos por consulta |
+| [0068](../Organic%20Code/decisions/0068-management-reports-hardening.md) | Relatórios gerenciais: conta bancária inexistente e de fora respondem igual, teto da matriz do rateio e data do extrato por parâmetro |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
 | [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |

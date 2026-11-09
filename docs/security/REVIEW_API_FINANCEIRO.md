@@ -254,3 +254,35 @@ Escopo: `source/Services/Erp/CollectionReports.php` e `source/Controllers/Api/V1
 
 Teste com dois condomínios: `CollectionReportsScopeIntegrationTest`.
 
+## Sétima rodada — Relatórios gerenciais (ADR 0082)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 19bd187 · Correções: ADR 0068
+
+Escopo: `source/Services/Erp/ManagementReports.php` e `source/Controllers/Api/V1/ManagementReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: cada relatório pede a leitura dos dados que mostra (`erp.entries.view` mais `erp.cost_centers.view`, `erp.chart.view`, `erp.bank_accounts.view` ou `erp.units.view`; `erp.meter_readings.view` no consumo e `erp.bank_charges.view` nos boletos) | CONFIRMADO |
+| Escopo: condomínio informado por `assertAccess`; sem condomínio, só os do escopo. O rateio exige condomínio, e o extrato confere o condomínio da conta | CONFIRMADO, com o achado 1; o teste com dois condomínios cobre todos os relatórios |
+| CSV: `CollectionReports::csv` e `csvCell`, então a correção do ADR 0067 (espaço, controle, LF, largura total) vale aqui; auditoria da exportação | CONFIRMADO |
+| Tetos: 24 competências ou 366 dias; 5.000 linhas nos relatórios em linhas (demonstrativo, extrato, lançamentos, boletos), com aviso em vez de corte silencioso. Os agregados (consumo, centros de custo, comparativo) ficam limitados pelo número de grupos | CONFIRMADO, com o achado 2 no rateio |
+| SQL: período e filtros por parâmetro; listas de ids são inteiros já convertidos | CONFIRMADO, com o achado 3 |
+
+### Achados corrigidos (ADR 0068)
+
+1. **Oráculo de id no extrato.** Conta inexistente dava 422 e conta de outro condomínio dava 404.
+   Agora as duas dão 404.
+2. **Rateio sem teto na matriz.** A visão unidade × conta não tinha limite de linhas, e a matriz
+   despesas × unidades era montada inteira. Agora são até 5.000 despesas e 500.000 células, e a visão
+   para em 5.000 linhas.
+3. **Data concatenada no SQL do extrato.** A data de abertura da conta agora vai por parâmetro.
+
+### Lacunas
+
+- **Comparativo entre condomínios.** Sem condomínio, o comparativo soma por conta do plano todos os
+  condomínios do escopo. É o esperado para a administradora, mas a linha não diz de qual condomínio
+  veio cada valor.
+- **Frequência.** Continua sem limite de requisições na API.
+
+Teste com dois condomínios: `ManagementReportsScopeIntegrationTest`.
+
