@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0093.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0093; Preparar: 0113, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0093; Preparar: 0114, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -131,3 +131,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0110](../Organic%20Code/decisions/0110-price-index-import-limits.md) | Índices de correção: mês futuro recusado e no máximo 600 meses por arquivo |
 | [0111](../Organic%20Code/decisions/0111-partner-access-review.md) | Revisão do ADR 0090: vínculo e concessão de parceiro com travas, painel operacional só com erp.units.view e entrega do convite com token novo só para quem ainda não recebeu |
 | [0112](../Organic%20Code/decisions/0112-invitation-token-fragment.md) | Convite do morador: token depois do "#" no link do e-mail, levado por POST com CSRF; caminho antigo fora do log de acesso |
+| [0113](../Organic%20Code/decisions/0113-calculation-report-limits.md) | Memória de cálculo: data de referência até 60 dias à frente e no máximo 120 mil meses de índice por consulta |

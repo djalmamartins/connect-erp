@@ -28,6 +28,10 @@ final class PaymentReports
 {
     public const MAX_ROWS = 20000;
     public const NATURES = ['despesa', 'receita', 'all'];
+    /** Memória de cálculo: data de referência até MAX_AHEAD_DAYS dias à frente de hoje (ADR 0113). */
+    public const MAX_AHEAD_DAYS = 60;
+    /** Memória de cálculo: no máximo MAX_INDEX_STEPS meses de índice somados em todas as linhas (ADR 0113). */
+    public const MAX_INDEX_STEPS = 120000;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -60,6 +64,25 @@ final class PaymentReports
             $steps[] = ['competence' => $month, 'rate_percent' => $rate === null ? null : number_format((float)$rate, 4, '.', ''), 'factor' => number_format($factor, 6, '.', '')];
         }
         return $steps;
+    }
+
+    /**
+     * Data de referência da memória de cálculo (regra pura): AAAA-MM-DD, até MAX_AHEAD_DAYS dias depois de
+     * hoje. Mais à frente não há índice publicado, e cada linha ganharia até 600 meses sem taxa (ADR 0113).
+     */
+    public static function asOf(?string $asOf, ?string $today = null): string
+    {
+        $today ??= date('Y-m-d');
+        $asOf ??= $today;
+        $ref = \DateTimeImmutable::createFromFormat('!Y-m-d', $asOf);
+        if ($ref === false || $ref->format('Y-m-d') !== $asOf) {
+            throw new InvalidArgumentException('Data de referência inválida (AAAA-MM-DD).');
+        }
+        $limit = (new \DateTimeImmutable($today))->modify('+' . self::MAX_AHEAD_DAYS . ' days');
+        if ($ref > $limit) {
+            throw new InvalidArgumentException(sprintf('A data de referência pode ser no máximo %d dias depois de hoje.', self::MAX_AHEAD_DAYS));
+        }
+        return $asOf;
     }
 
     /** Pagamentos do período (AP-074). */
@@ -105,11 +128,7 @@ final class PaymentReports
     /** Memória de cálculo dos encargos (AP-075) de um condomínio, opcionalmente de uma unidade. */
     public function calculation(User $user, int $condominiumId, ?int $unitId = null, ?string $asOf = null): array
     {
-        $asOf ??= date('Y-m-d');
-        $ref = \DateTimeImmutable::createFromFormat('!Y-m-d', $asOf);
-        if ($ref === false || $ref->format('Y-m-d') !== $asOf) {
-            throw new InvalidArgumentException('Data de referência inválida (AAAA-MM-DD).');
-        }
+        $asOf = self::asOf($asOf);
         $this->scope->assertAccess($user, $condominiumId);
         $rules = new BillingRules($this->pdo, $this->scope);
         $rule = $rules->rule($condominiumId);
@@ -129,12 +148,18 @@ final class PaymentReports
         $rates = strtoupper($index) === 'NONE' ? [] : $rules->rates($index, substr((string)$oldest, 0, 7), substr($asOf, 0, 7));
         $totals = ['entries' => 0, 'principal_cents' => 0, 'correction_cents' => 0, 'fine_cents' => 0, 'interest_cents' => 0, 'total_cents' => 0, 'missing_index' => []];
         $out = [];
+        $steps = 0;
         foreach ($rows as $r) {
+            $indexSteps = self::indexSteps((string)$r['due_on'], $asOf, $index, $rates);
+            $steps += count($indexSteps);
+            if ($steps > self::MAX_INDEX_STEPS) {
+                throw new InvalidArgumentException('Memória de cálculo grande demais: escolha uma unidade.');
+            }
             $charges = LateCharges::compute((int)$r['amount_cents'], (string)$r['due_on'], $asOf, $rule, $rates);
             $out[] = [
                 'id' => (int)$r['id'], 'unit_id' => $r['unit_id'] === null ? null : (int)$r['unit_id'], 'unit_label' => $r['unit_label'] ?? 'Sem unidade',
                 'description' => (string)$r['description'], 'competence' => (string)$r['competence'], 'due_on' => (string)$r['due_on'],
-                'principal_cents' => (int)$r['amount_cents'], 'index_steps' => self::indexSteps((string)$r['due_on'], $asOf, $index, $rates),
+                'principal_cents' => (int)$r['amount_cents'], 'index_steps' => $indexSteps,
             ] + $charges;
             $totals['entries']++;
             foreach (['correction_cents', 'fine_cents', 'interest_cents', 'total_cents'] as $k) {
