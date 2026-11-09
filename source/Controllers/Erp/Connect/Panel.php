@@ -601,6 +601,31 @@ final class Panel extends Controller
      * Painel da unidade (AP-003, ADR 0054 e 0071): escolhe-se a unidade (?unidade=) entre as do
      * condomínio da barra superior; os dados vêm do PanelSummaries (GET /api/v1/panels/unit/{id}).
      */
+    /**
+     * Fração ideal e área em grade (AP-167, ADR 0140): unidades ativas do condomínio da barra superior,
+     * pelo mesmo serviço de GET /api/v1/unit-measures. Gravar e dividir usam a API (erp.js).
+     */
+    private function unitMeasuresData(User $user): array
+    {
+        $data = ['measuresReady' => false, 'measures' => null, 'measuresError' => null, 'canManageMeasures' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
+            return $data;
+        }
+        $data['measuresReady'] = true;
+        $data['canManageMeasures'] = Access::can('erp.units.manage', $user);
+        $context = CondominiumContext::id();
+        if ($context === null) {
+            return $data;
+        }
+        try {
+            $data['measures'] = (new \Source\Services\Erp\UnitBatch())->measures($user, $context);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_measures_screen_failed']);
+            $data['measuresError'] = 'Não foi possível carregar as unidades agora. Tente de novo em instantes.';
+        }
+        return $data;
+    }
+
     private function unitPanelData(User $user): array
     {
         $data = ['unitPanelReady' => false, 'unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null, 'unitPanelError' => null];
@@ -762,6 +787,9 @@ final class Panel extends Controller
         if ($id === 'AP-003') {
             $data += $this->unitPanelData($user);
         }
+        if ($id === 'AP-167') {
+            $data += $this->unitMeasuresData($user);
+        }
         if (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) {
             $data += $this->unitDocumentData($user, $id);
         }
@@ -813,6 +841,7 @@ final class Panel extends Controller
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
             $id === 'AP-002' && ($data['condoPanelReady'] ?? false) => 'pages/condominiums/panel',
             $id === 'AP-003' && ($data['unitPanelReady'] ?? false) => 'pages/condominiums/unit-panel',
+            $id === 'AP-167' && ($data['measuresReady'] ?? false) => 'pages/condominiums/unit-measures',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',

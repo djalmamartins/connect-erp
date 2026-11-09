@@ -1904,4 +1904,165 @@
   $$('form[data-erp-loading]').forEach(function (form) {
     form.addEventListener('submit', function () { var b = $('[type="submit"]', form); if (b) { b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true'); } });
   });
+
+  /* Cadastro rápido de unidades (ADR 0140): pré-visualiza e cria pela API /api/v1/unit-batches. */
+  $$('[data-erp-unit-batch]').forEach(function (root) {
+    var api = root.getAttribute('data-api');
+    var call = apiClient(root);
+    var form = $('[data-unit-batch-form]', root);
+    var panel = $('[data-unit-batch-preview]', root);
+    if (!form || !panel) return;
+    var rows = $('[data-unit-batch-rows]', panel);
+    var summary = $('[data-unit-batch-summary]', panel);
+    var create = $('[data-unit-batch-create]', panel);
+    var createLabel = $('[data-unit-batch-create-label]', panel);
+    var last = null;
+    var body = function () {
+      var out = {};
+      ['condominium_id', 'blocks', 'floor_from', 'floor_to', 'units_per_floor', 'digits', 'first_position', 'skip_floors', 'skip_numbers', 'extra_numbers', 'type', 'private_area'].forEach(function (name) {
+        var field = form.elements[name];
+        if (field) out[name] = String(field.value || '').trim();
+      });
+      return out;
+    };
+    var mark = function (fields) {
+      $$('.is-invalid', form).forEach(function (el) { el.classList.remove('is-invalid'); });
+      var first = null;
+      Object.keys(fields || {}).forEach(function (name) { var el = form.elements[name]; if (el) { el.classList.add('is-invalid'); first = first || el; } });
+      return first;
+    };
+    form.addEventListener('input', function () { if (last) { last = null; panel.hidden = true; } });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      formError(form, '');
+      call('POST', api + '/preview', body()).then(function (json) {
+        var d = json.data;
+        last = body();
+        mark({});
+        rows.innerHTML = d.units.map(function (u) {
+          return '<tr><th scope="row" class="erp-nowrap">' + esc(u.label) + '</th><td>' + esc(u.block || '—') + '</td><td>' + esc(u.floor || '—') + '</td><td>' +
+            (u.exists ? '<span class="erp-badge erp-badge--plain">Já existe</span>' : '<span class="erp-badge erp-badge--info">Nova</span>') + '</td></tr>';
+        }).join('');
+        summary.textContent = d.total + ' unidade(s) na sequência: ' + d.new + ' nova(s)' + (d.existing ? ', ' + d.existing + ' já cadastrada(s) (ficam como estão).' : '.');
+        createLabel.textContent = d.new ? 'Criar ' + d.new + ' unidade(s)' : 'Nada a criar';
+        create.disabled = !d.new;
+        panel.hidden = false;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }).catch(function (error) {
+        var first = mark(error.fields);
+        formError(form, error.message, first);
+        panel.hidden = true;
+        last = null;
+      }).then(function () { busy(button, false); });
+    });
+    create.addEventListener('click', function () {
+      if (!last) return;
+      busy(create, true);
+      call('POST', api, last).then(function (json) {
+        var d = json.data;
+        toast(d.created + ' unidade(s) criada(s)' + (d.skipped ? '; ' + d.skipped + ' já existia(m).' : '.'), 'success');
+        window.setTimeout(function () { window.location.href = root.getAttribute('data-measures'); }, 900);
+      }).catch(function (error) {
+        busy(create, false);
+        toast(error.message, 'danger');
+      });
+    });
+  });
+
+  /* Fração ideal e área em grade (AP-167, ADR 0140): divide e grava pela API /api/v1/unit-measures. */
+  $$('[data-erp-unit-measures]').forEach(function (root) {
+    var api = root.getAttribute('data-api');
+    var condominium = parseInt(root.getAttribute('data-condominium') || '0', 10);
+    var call = apiClient(root);
+    var form = $('[data-unit-measures-form]', root);
+    if (!form) return;
+    var changes = $('[data-unit-measures-changes]', root);
+    var inputs = $$('input[name="ideal_fraction"], input[name="private_area"]', form);
+    var toNumber = function (text) {
+      var t = String(text || '').trim().replace(/\s/g, '');
+      if (t === '') return null;
+      var percent = /%$/.test(t);
+      t = t.replace(/%$/, '');
+      if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+      if (!/^\d+(\.\d+)?$/.test(t)) return NaN;
+      var n = parseFloat(t);
+      return percent ? n / 100 : n;
+    };
+    var pct = function (n) { return (n * 100).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + '%'; };
+    var dec = function (n, d) { return n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: false }); };
+    var changed = function () { return inputs.filter(function (input) { return input.value.trim() !== input.getAttribute('data-original'); }); };
+    var refresh = function () {
+      var sum = 0, area = 0;
+      $$('[data-unit-row]', form).forEach(function (row) {
+        var fractionInput = $('input[name="ideal_fraction"]', row);
+        var areaInput = $('input[name="private_area"]', row);
+        var f = toNumber(fractionInput.value);
+        var a = toNumber(areaInput.value);
+        fractionInput.classList.toggle('is-invalid', f !== null && (isNaN(f) || f <= 0 || f > 1));
+        areaInput.classList.toggle('is-invalid', a !== null && isNaN(a));
+        $('[data-unit-percent]', row).textContent = f === null || isNaN(f) ? '—' : pct(f);
+        if (f !== null && !isNaN(f)) sum += f;
+        if (a !== null && !isNaN(a)) area += a;
+      });
+      $('[data-unit-fraction-total]', form).textContent = dec(sum, 6);
+      $('[data-unit-percent-total]', form).textContent = pct(sum);
+      $('[data-unit-area-total]', form).textContent = area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var n = changed().length;
+      if (changes) changes.textContent = (n ? n + ' campo(s) alterado(s). ' : 'Nenhuma alteração. ') + 'Soma: ' + pct(sum) + (Math.abs(sum - 1) <= 0.0001 ? ' (fecha 100%)' : '');
+    };
+    inputs.forEach(function (input) {
+      input.addEventListener('input', refresh);
+      input.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        var row = input.closest('tr').nextElementSibling;
+        var next = row && $('input[name="' + input.name + '"]', row);
+        if (next) next.focus(); else $('[type="submit"]', form).focus();
+      });
+    });
+    $$('[data-unit-measures-distribute]', form).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var units = $$('[data-unit-row]', form).map(function (row) { return { id: parseInt(row.getAttribute('data-unit-row'), 10), private_area: $('input[name="private_area"]', row).value.trim() }; });
+        busy(button, true);
+        formError(form, '');
+        call('POST', api + '/distribute', { mode: button.getAttribute('data-unit-measures-distribute'), units: units }).then(function (json) {
+          var fractions = json.data.fractions || {};
+          $$('[data-unit-row]', form).forEach(function (row) {
+            var value = fractions[row.getAttribute('data-unit-row')];
+            if (value != null) $('input[name="ideal_fraction"]', row).value = dec(parseFloat(value), 6);
+          });
+          refresh();
+          toast('Frações preenchidas na grade. Confira e salve.', 'info');
+        }).catch(function (error) { formError(form, error.message); }).then(function () { busy(button, false); });
+      });
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var list = changed();
+      if (!list.length) { toast('Nenhuma alteração.', 'info'); return; }
+      var bad = $$('.is-invalid', form);
+      if (bad.length) { bad[0].focus(); toast('Corrija os campos marcados antes de salvar.', 'warning'); return; }
+      var byUnit = {};
+      list.forEach(function (input) {
+        var id = input.closest('tr').getAttribute('data-unit-row');
+        byUnit[id] = byUnit[id] || { id: parseInt(id, 10) };
+        byUnit[id][input.name] = input.value.trim();
+      });
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      formError(form, '');
+      call('PUT', api, { condominium_id: condominium, units: Object.keys(byUnit).map(function (k) { return byUnit[k]; }) }).then(function (json) {
+        toast(json.data.updated + ' unidade(s) atualizada(s).', 'success');
+        reload();
+      }).catch(function (error) {
+        busy(button, false);
+        var fields = error.fields || {};
+        var messages = Object.keys(fields).map(function (k) { return fields[k]; });
+        formError(form, messages.length > 1 ? messages.slice(0, 5).join(' ') : error.message);
+      });
+    });
+    refresh();
+  });
 })();

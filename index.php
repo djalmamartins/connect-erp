@@ -147,6 +147,12 @@ $route->get("/unit-documents/verify/{code}", "UnitDocuments:verify", null, \Sour
 $route->get("/unit-documents/{id}", "UnitDocuments:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-documents/{id}/cancel", "UnitDocuments:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Leituras e consumo (ADR 0045): lançar leitura, listar com consumo e valor, cobrar a competência.
+// Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140). Fora de /units/{id}.
+$route->post("/unit-batches/preview", "UnitBatches:preview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/unit-batches", "UnitBatches:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/unit-measures", "UnitBatches:measures", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
