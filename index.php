@@ -99,6 +99,28 @@ $route->get("/charts/cash", "ChartReports:cash", null, \Source\Support\Middlewar
 $route->get("/charts/delinquency", "ChartReports:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/charts/bank-accounts", "ChartReports:bankAccounts", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/charts/common-areas", "ChartReports:commonAreas", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatórios cadastrais e administrativos (ADR 0084); ?format=csv.
+$route->get("/reports/reservations", "RegistryReports:reservations", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/units", "RegistryReports:units", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/people", "RegistryReports:people", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/condominiums", "RegistryReports:condominiums", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/occurrences", "RegistryReports:occurrences", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/pending-payments", "RegistryReports:pendingPayments", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/closings", "RegistryReports:closings", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/moves", "RegistryReports:moves", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/addresses", "RegistryReports:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/logs", "RegistryReports:logs", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/access-people", "RegistryReports:accessPeople", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/sent-boletos", "RegistryReports:sentBoletos", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Configurações do ERP (ADR 0085): parâmetros, saldo inicial por centro de custo, previsão orçamentária e frações em lote.
+$route->get("/settings", "ErpSettings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/settings", "ErpSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/settings/reset", "ErpSettings:reset", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/cost-center-openings", "ErpSettings:openings", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/cost-center-openings", "ErpSettings:storeOpening", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/budgets", "ErpSettings:budget", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/budgets", "ErpSettings:storeBudget", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/unit-fractions", "ErpSettings:fractions", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);

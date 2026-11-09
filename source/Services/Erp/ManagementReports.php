@@ -9,6 +9,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\Registry\RegistryNotFound;
 
 /**
  * Relatórios gerenciais (ADR 0082), somente leitura, calculados dos lançamentos, leituras, boletos e
@@ -249,11 +250,12 @@ final class ManagementReports
         $stmt = $this->pdo->prepare('SELECT b.id, b.condominium_id, b.name, COALESCE(b.opening_balance_cents, 0) AS opening, b.opened_on FROM erp_bank_accounts b WHERE b.id = :id AND b.deleted_at IS NULL');
         $stmt->execute(['id' => $bankAccountId]);
         $bank = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($bank)) {
-            throw new InvalidArgumentException('Conta bancária não encontrada.');
+        // ADR 0087 (B2): conta inexistente e conta fora do escopo têm a mesma resposta (404).
+        if (!is_array($bank) || !$this->scope->canAccess($user, (int)$bank['condominium_id'])) {
+            throw new RegistryNotFound();
         }
-        $this->scope->assertAccess($user, (int)$bank['condominium_id']);
-        $since = $bank['opened_on'] !== null ? " AND x.on_date >= '" . $bank['opened_on'] . "'" : '';
+        // ADR 0087 (B1): a data do saldo inicial vai por bind.
+        $since = $bank['opened_on'] !== null ? ' AND x.on_date >= :o1' : '';
         // Movimentos: lançamentos pagos (receita +, despesa −) e transferências ativas (entra +, sai −).
         $moves = "SELECT * FROM (
             SELECT e.paid_on AS on_date, CONCAT('e', e.id) AS ref, e.description, CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -CAST(e.amount_cents AS SIGNED) END AS amount
@@ -262,7 +264,8 @@ final class ManagementReports
             SELECT t.transferred_on, CONCAT('t', t.id), t.description, CASE WHEN t.to_bank_account_id = :b2 THEN t.amount_cents ELSE -CAST(t.amount_cents AS SIGNED) END
               FROM erp_bank_transfers t WHERE (t.to_bank_account_id = :b3 OR t.from_bank_account_id = :b4) AND t.status = 'active'
         ) x WHERE 1 = 1{$since}";
-        $params = ['b1' => $bankAccountId, 'b2' => $bankAccountId, 'b3' => $bankAccountId, 'b4' => $bankAccountId];
+        $params = ['b1' => $bankAccountId, 'b2' => $bankAccountId, 'b3' => $bankAccountId, 'b4' => $bankAccountId]
+            + ($bank['opened_on'] !== null ? ['o1' => (string)$bank['opened_on']] : []);
         $before = $this->pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM ({$moves}) y WHERE y.on_date < :f");
         $before->execute($params + ['f' => $from]);
         $opening = (int)$bank['opening'] + (int)$before->fetchColumn();

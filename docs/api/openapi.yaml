@@ -1295,6 +1295,295 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/reservations:
+    get:
+      operationId: reportReservations
+      summary: Relatório de reservas (AP-085) no período, por área e situação (erp.reservations.view)
+      description: Os relatórios do ADR 0084 aceitam format=csv, com o CSV seguro do ADR 0081, e devolvem até 5.000 linhas.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [active, confirmed, inactive] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{reservations, confirmed, fee_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/units:
+    get:
+      operationId: reportUnits
+      summary: Relatório de unidades (AP-086), com fração, pessoas, relógios e contas vencidas (erp.units.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{units, without_fraction, fraction_sum, with_overdue} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /reports/people:
+    get:
+      operationId: reportPeople
+      summary: Listagem de pessoas (AP-087), com documento, e-mail e telefone mascarados (erp.residents.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: relationship, in: query, schema: { type: string, enum: [owner, tenant, resident, financial] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[{ name, relationship, document (mascarado), email (mascarado), phone (mascarado) }], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /reports/condominiums:
+    get:
+      operationId: reportCondominiums
+      summary: Relatório de condomínios do escopo (AP-089), com unidades, pessoas e contas bancárias (erp.condominiums.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/occurrences:
+    get:
+      operationId: reportOccurrences
+      summary: Relatório de ocorrências (AP-090) no período, com prioridade, situação e chamado (erp.occurrences.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [active, running, done] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{occurrences, by_status} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/pending-payments:
+    get:
+      operationId: reportPendingPayments
+      summary: Pagamentos pendentes (AP-093), contas a pagar em aberto até a data, padrão hoje + 30 dias (erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: until, in: query, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { until, rows[], totals{entries, amount_cents, overdue_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/closings:
+    get:
+      operationId: reportClosings
+      summary: Listagem de prestações de contas (AP-094), os fechamentos mensais na faixa de competência (erp.closing.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/moves:
+    get:
+      operationId: reportMoves
+      summary: Relatório de mudanças (AP-095) agendadas no período (erp.moves.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/addresses:
+    get:
+      operationId: reportAddresses
+      summary: Relatório de endereços (AP-096), o endereço e o contato de cada condomínio do escopo (erp.condominiums.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/logs:
+    get:
+      operationId: reportLogs
+      summary: Logs do ERP (AP-097), a auditoria das entidades erp_* no período (erp.audit.view e acesso a todos os condomínios)
+      security: [{ session: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: entity, in: query, schema: { type: string, example: erp_entries } }
+        - { name: action, in: query, schema: { type: string, enum: [create, update, delete, export] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[{ created_at, user_name, action, entity, entity_id, severity, ip, context }], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/access-people:
+    get:
+      operationId: reportAccessPeople
+      summary: Pessoas com acesso (AP-098) a cada condomínio do escopo, com o e-mail mascarado (erp.audit.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{grants, people}, note } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /reports/sent-boletos:
+    get:
+      operationId: reportSentBoletos
+      summary: Boletos enviados (AP-099), os avisos de boleto da fila no período, com a entrega e os destinatários (erp.notifications.view e erp.bank_charges.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { rows[], totals{notices, by_status, recipients} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /settings:
+    get:
+      operationId: listErpSettings
+      summary: Parâmetros do ERP por página (ADR 0085), com o valor efetivo e a origem (code, connect, condominium) (erp.settings.view)
+      description: Nenhuma credencial (banco, SMTP) é configurada aqui; vem do ambiente.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = padrão da Connect' }
+      responses:
+        '200': { description: '{ data: { condominium_id, groups[{ page, group, settings[{ key, label, type, scope, value, source, default, editable_here }] }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: setErpSetting
+      summary: Altera um parâmetro, com auditoria; condominium_id vazio = padrão da Connect (exige acesso a todos os condomínios) (erp.settings.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [key, value], properties: { condominium_id: { type: integer }, key: { type: string, example: finance.default_due_day }, value: {} } } } }
+      responses:
+        '200': { description: Parâmetros atualizados }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /settings/reset:
+    post:
+      operationId: resetErpSetting
+      summary: Volta o parâmetro ao padrão de cima, com auditoria (erp.settings.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [key], properties: { condominium_id: { type: integer }, key: { type: string } } } } }
+      responses:
+        '200': { description: Parâmetros atualizados }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /cost-center-openings:
+    get:
+      operationId: listCostCenterOpenings
+      summary: Saldo inicial por centro de custo (AP-162) (erp.settings.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { rows[{ cost_center_id, code, name, opened_on, amount_cents }], total_cents } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: setCostCenterOpening
+      summary: Define o saldo inicial (com sinal) de um centro de custo, com auditoria (erp.settings.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, cost_center_id, opened_on, amount_cents], properties: { condominium_id: { type: integer }, cost_center_id: { type: integer }, opened_on: { type: string, format: date }, amount_cents: { type: string, example: '-1.234,56' }, notes: { type: string } } } } }
+      responses:
+        '200': { description: Saldos atualizados }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /budgets:
+    get:
+      operationId: getBudget
+      summary: Previsão orçamentária do ano (AP-163) com o lançado por competência e a diferença (AP-084) (erp.settings.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: year, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { year, rows[{ code, name, nature, budget{1..12}, actual{1..12}, budget_total, actual_total, difference_cents, percent }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: setBudget
+      summary: Grava os 12 meses previstos de uma conta analítica no ano; competência fechada não muda (erp.settings.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, year, chart_account_id, months], properties: { condominium_id: { type: integer }, year: { type: integer }, chart_account_id: { type: integer }, months: { type: array, minItems: 12, maxItems: 12, items: { type: string } } } } } }
+      responses:
+        '200': { description: Previsão atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-fractions:
+    post:
+      operationId: setUnitFractions
+      summary: Frações ideais em lote (AP-167), todas as unidades ativas e soma 1, tudo ou nada (erp.settings.manage e erp.units.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, fractions], properties: { condominium_id: { type: integer }, fractions: { type: object, additionalProperties: { type: string }, example: { '12': '0,25', '13': '75%' } } } } } }
+      responses:
+        '200': { description: '{ data: { units, fraction_sum } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /delinquency:
     get:
@@ -1960,7 +2249,7 @@ paths:
       security: [{ session: [] }]
       parameters:
         - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
-        - { name: kind, in: query, schema: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings] } }
+        - { name: kind, in: query, schema: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings, nfe] } }
       responses:
         '200': { description: '{ data[], total }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1979,7 +2268,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { multipart/form-data: { schema: { type: object, required: [kind, condominium_id, file], properties: { kind: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings] }, condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Obrigatório no OFX' }, file: { type: string, format: binary, description: 'Até 2 MB' } } } } }
+        content: { multipart/form-data: { schema: { type: object, required: [kind, condominium_id, file], properties: { kind: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings, nfe] }, condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Obrigatório no OFX' }, chart_account_id: { type: integer, description: 'NF-e (ADR 0086): conta analítica de despesa' }, due_on: { type: string, format: date, description: 'NF-e sem duplicata: vencimento' }, file: { type: string, format: binary, description: 'Até 2 MB (NF-e: até 1 MB)' } } } } }
       responses:
         '201': { description: '{ data: { id, status: previewed, rows_count, error_count, summary, preview[{ line, status ok|error|already, errors[], data }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }

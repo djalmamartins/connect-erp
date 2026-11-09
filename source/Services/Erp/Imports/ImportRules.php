@@ -104,6 +104,30 @@ final class ImportRules
     }
 
     /**
+     * Situação da competência no histórico de um relógio (regra pura, ADR 0087 M4): se já há leitura
+     * nela (e se foi cobrada), se há leitura posterior e a leitura anterior mais recente.
+     *
+     * @param list<array{competence:string, reading:string|float, entry_id:mixed}> $history ordenado por competência
+     * @return array{exists:bool, billed:bool, later:bool, previous:?float}
+     */
+    public static function readingContext(array $history, string $competence): array
+    {
+        $out = ['exists' => false, 'billed' => false, 'later' => false, 'previous' => null];
+        foreach ($history as $row) {
+            $month = (string)$row['competence'];
+            if ($month < $competence) {
+                $out['previous'] = (float)$row['reading'];
+            } elseif ($month === $competence) {
+                $out['exists'] = true;
+                $out['billed'] = $row['entry_id'] !== null;
+            } else {
+                $out['later'] = true;
+            }
+        }
+        return $out;
+    }
+
+    /**
      * Conferência do saldo do extrato (regra pura): diferença = saldo do banco − saldo calculado.
      * Só informa; nada é ajustado. Sem saldo no extrato, não há conferência.
      *

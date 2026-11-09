@@ -30,6 +30,8 @@ final class CollectionReports
     public const MAX_DAYS = 366;
     /** Teto de recebimentos lidos numa consulta (ADR 0067): acima disso, reduza o período ou escolha um condomínio. */
     public const MAX_RECEIPT_ROWS = 20000;
+    /** Teto do relatório de acordos (ADR 0087, M1), como o dos recebimentos. */
+    public const MAX_AGREEMENT_ROWS = 20000;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -97,9 +99,13 @@ final class CollectionReports
             FROM erp_agreements a JOIN condominiums c ON c.id = a.condominium_id JOIN erp_units u ON u.id = a.unit_id
             LEFT JOIN erp_entries e ON e.agreement_id = a.id AND e.agreement_role = 'installment' AND e.deleted_at IS NULL
             WHERE a.condominium_id IN (" . implode(',', $ids) . ") AND a.created_at BETWEEN :f AND :t{$where}
-            GROUP BY a.id ORDER BY c.name, a.created_at, a.id");
+            GROUP BY a.id ORDER BY c.name, a.created_at, a.id LIMIT " . (self::MAX_AGREEMENT_ROWS + 1));
         $stmt->execute($params + ['d2' => $asOf]);
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $found = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($found) > self::MAX_AGREEMENT_ROWS) {
+            throw new InvalidArgumentException(sprintf('O período tem mais de %d acordos. Reduza o período ou escolha um condomínio.', self::MAX_AGREEMENT_ROWS));
+        }
+        foreach ($found as $row) {
             $item = [
                 'id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'condominium_name' => (string)$row['condominium_name'],
                 'unit_id' => (int)$row['unit_id'], 'unit_label' => (string)$row['unit_label'], 'status' => (string)$row['status'],
@@ -199,7 +205,9 @@ final class CollectionReports
                 ORDER BY relationship = 'financial' DESC, relationship = 'owner' DESC, id")->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as $row) {
                 $people[(int)$row['unit_id']] ??= ['name' => (string)$row['name'], 'document' => self::maskDocument($row['document']),
-                    'email' => (string)($row['email'] ?? ''), 'phone' => (string)($row['phone'] ?? ''), 'relationship' => (string)$row['relationship']];
+                    // ADR 0087 (M2): e-mail e telefone mascarados, como na listagem de pessoas (AP-087).
+                    'email' => RegistryReports::maskEmail($row['email'] ?? null), 'phone' => RegistryReports::maskPhone($row['phone'] ?? null),
+                    'relationship' => (string)$row['relationship']];
             }
         }
         return ['as_of' => $base['as_of'], 'view' => $view, 'rows' => self::delinquentView($base, $view, $accounts, $people), 'totals' => $base['totals']];

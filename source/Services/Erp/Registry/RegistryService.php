@@ -11,6 +11,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\NotificationOutbox;
 use Source\Support\Audit;
+use Source\Support\AuditMask;
 
 /**
  * Serviço único dos cadastros do ERP: listagem, leitura, gravação e exclusão lógica,
@@ -259,7 +260,7 @@ final class RegistryService
         }
 
         $after = $this->rawRow($definition, $id);
-        Audit::record($before === null ? 'create' : 'update', $definition['table'], $id, $before ? $this->auditable($before, $columns) : null, $this->auditable($after ?? [], $columns));
+        Audit::record($before === null ? 'create' : 'update', $definition['table'], $id, $before ? $this->auditable($definition, $before, $columns) : null, $this->auditable($definition, $after ?? [], $columns));
         return $this->present($definition, $after ?? []);
     }
 
@@ -840,9 +841,10 @@ final class RegistryService
     }
 
     /** @return array<string, mixed> */
-    private function auditable(array $row, array $columns): array
+    /** Colunas gravadas, com os campos pessoais (documento, e-mail, telefone) mascarados (ADR 0087, A1). */
+    private function auditable(array $definition, array $row, array $columns): array
     {
-        return array_intersect_key($row, array_flip($columns));
+        return AuditMask::fields(array_intersect_key($row, array_flip($columns)), $definition['fields']);
     }
 
     /**

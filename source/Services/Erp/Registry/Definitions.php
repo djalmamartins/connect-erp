@@ -707,6 +707,46 @@ final class Definitions
             'order' => 'received_on',
         ];
 
+        // Configurações (ADR 0085): banners do aplicativo (AP-156) e impostos (AP-164). Sem condomínio = vale para todos.
+        // O banner é só texto, sem link (sem risco de phishing nem de HTML); o imposto é referência para a retenção.
+        $definitions['banners'] = [
+            'page' => 'AP-156', 'table' => 'erp_banners', 'route' => '/configuracoes/banners',
+            'api' => 'banners', 'permission' => 'erp.settings', 'label' => 'Banners', 'group' => 'configuracoes',
+            'entity' => 'banner', 'gender' => 'o', 'scope' => 'optional',
+            'lead' => 'Avisos curtos no topo do aplicativo, por período. Sem condomínio, o banner aparece para todos.',
+            'fields' => [
+                'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: todos os condomínios'],
+                'title' => ['label' => 'Título', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true],
+                'message' => ['label' => 'Texto', 'type' => 'longtext', 'required' => true, 'max' => 500, 'span' => 12],
+                'starts_on' => ['label' => 'Início', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'ends_on' => ['label' => 'Fim', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true, 'after' => 'starts_on'],
+                'position' => ['label' => 'Ordem', 'type' => 'int', 'span' => 3, 'hint' => 'Menor aparece primeiro'],
+            ],
+            'title' => 'title',
+            'order' => 'starts_on',
+        ];
+        $definitions['taxes'] = [
+            'page' => 'AP-164', 'table' => 'erp_taxes', 'route' => '/configuracoes/imposto',
+            'api' => 'taxes', 'permission' => 'erp.settings', 'label' => 'Impostos', 'group' => 'configuracoes',
+            'entity' => 'imposto', 'gender' => 'o', 'scope' => 'optional',
+            'lead' => 'Alíquotas de retenção para conferir as notas de serviço. Sem condomínio, vale para todos. Não calcula nem lança sozinho.',
+            'fields' => [
+                'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: padrão da Connect'],
+                'kind' => ['label' => 'Imposto', 'type' => 'select', 'required' => true, 'span' => 6, 'list' => true, 'filter' => true, 'options' => [
+                    'iss' => 'ISS', 'irrf' => 'IRRF', 'inss' => 'INSS', 'pis_cofins_csll' => 'PIS/COFINS/CSLL', 'outro' => 'Outro',
+                ]],
+                'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true],
+                'rate' => ['label' => 'Alíquota (%)', 'type' => 'percent', 'required' => true, 'span' => 3, 'list' => true],
+                'applies_to' => ['label' => 'Aplica-se a', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'options' => [
+                    'servicos' => 'Serviços', 'materiais' => 'Materiais', 'todos' => 'Serviços e materiais',
+                ]],
+                'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+            ],
+            'unique' => [['fields' => ['condominium_id', 'kind', 'name'], 'nullable' => ['condominium_id'], 'message' => 'Já existe este imposto com esse nome aqui.']],
+            'title' => 'name',
+            'order' => 'name',
+        ];
+
         // Leituras e consumo (AP-041 e AP-043, ADR 0045). As leituras (AP-042) têm serviço próprio
         // (MeterReadings): o consumo e o valor dependem da leitura anterior e das faixas vigentes.
         $meterKinds = ['agua' => 'Água', 'gas' => 'Gás', 'energia' => 'Energia'];
