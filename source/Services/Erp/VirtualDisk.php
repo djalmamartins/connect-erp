@@ -10,6 +10,8 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\Antivirus\ScanStatus;
+use Source\Services\Erp\Antivirus\UploadScanPolicy;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
 
@@ -23,6 +25,9 @@ use Source\Support\Audit;
  * - O mesmo arquivo (sha256) já enviado na mesma pasta do condomínio é recusado.
  * - Download só com permissão e escopo (o controller manda como anexo, com nosniff).
  * - Exclusão lógica, auditada: o arquivo continua guardado.
+ * - Antivírus (ADR 0098): o arquivo passa pela UploadScanPolicy antes de ir para a pasta privada. Com
+ *   ERP_AV_MODE=enforce, infectado é recusado (422) e antivírus fora do ar também (503); no modo off
+ *   (padrão) entra com scan_status=unscanned.
  */
 final class VirtualDisk
 {
@@ -47,13 +52,16 @@ final class VirtualDisk
     private string $root;
     /** Testes e importações locais: aceita arquivo que não veio de upload HTTP. */
     private bool $acceptLocalFiles;
+    private ?UploadScanPolicy $scan;
 
-    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?string $root = null, bool $acceptLocalFiles = false)
+    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?string $root = null, bool $acceptLocalFiles = false,
+        ?UploadScanPolicy $scan = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
         $this->root = rtrim($root ?? self::defaultRoot(), '/');
         $this->acceptLocalFiles = $acceptLocalFiles;
+        $this->scan = $scan;
     }
 
     public static function defaultRoot(): string
@@ -124,6 +132,8 @@ final class VirtualDisk
         if ($dup->fetchColumn()) {
             throw new DomainException('Este arquivo já está nesta pasta do condomínio.');
         }
+        // ADR 0098: verifica antes de guardar. Recusa lança exceção, e nada vai para a pasta privada.
+        $scanStatus = ($this->scan ??= new UploadScanPolicy())->check($temporary, ['condominium_id' => $condominium, 'sha256' => $sha]);
 
         $relative = sprintf('%d/%s/%s.%s', $condominium, date('Y'), bin2hex(random_bytes(16)), $extension);
         $target = $this->root . '/' . $relative;
@@ -134,16 +144,17 @@ final class VirtualDisk
         }
         @chmod($target, 0640);
         try {
-            $this->pdo->prepare('INSERT INTO erp_documents (condominium_id, folder, title, original_name, path, mime, size_bytes, sha256, uploaded_by)
-                VALUES (:c, :f, :t, :o, :p, :m, :s, :h, :u)')->execute([
+            $this->pdo->prepare('INSERT INTO erp_documents (condominium_id, folder, title, original_name, path, mime, size_bytes, sha256, uploaded_by, scan_status, scanned_at)
+                VALUES (:c, :f, :t, :o, :p, :m, :s, :h, :u, :ss, :sa)')->execute([
                 'c' => $condominium, 'f' => $folder, 't' => $title, 'o' => $original, 'p' => $relative, 'm' => $mime, 's' => $size, 'h' => $sha, 'u' => (int)$user->id,
+                'ss' => $scanStatus, 'sa' => $scanStatus === ScanStatus::UNSCANNED ? null : date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $error) {
             @unlink($target);   // sem registro, o arquivo recém-copiado não fica órfão
             throw $error;
         }
         $id = (int)$this->pdo->lastInsertId();
-        Audit::record('create', 'erp_documents', $id, null, ['folder' => $folder, 'title' => $title, 'mime' => $mime, 'size_bytes' => $size, 'sha256' => $sha]);
+        Audit::record('create', 'erp_documents', $id, null, ['folder' => $folder, 'title' => $title, 'mime' => $mime, 'size_bytes' => $size, 'sha256' => $sha, 'scan_status' => $scanStatus]);
         return $this->find($user, $id);
     }
 
@@ -252,6 +263,7 @@ final class VirtualDisk
             'folder' => (string)$row['folder'], 'folder_label' => self::FOLDERS[$row['folder']] ?? (string)$row['folder'],
             'title' => (string)$row['title'], 'original_name' => (string)$row['original_name'], 'mime' => (string)$row['mime'],
             'size_bytes' => (int)$row['size_bytes'], 'sha256' => (string)$row['sha256'], 'uploaded_at' => $row['created_at'],
+            'scan_status' => (string)($row['scan_status'] ?? ScanStatus::UNSCANNED), 'scanned_at' => $row['scanned_at'] ?? null,
         ];
     }
 }
