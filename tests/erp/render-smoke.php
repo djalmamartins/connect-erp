@@ -494,6 +494,7 @@ $assert(str_contains($html, 'Certidão de Débitos nº 31') && str_contains($htm
 // e nunca um link montado com o Host da requisição ($smokeHost).
 $assert(str_contains($html, 'erp-unit-doc__code">ABCD-EFGH-JKMN-PQRS') && !str_contains($html, $smokeHost . '/verificar') && !str_contains($html, '/verificar?'),
     'AP-123: rodapé com o código; link só com a URL configurada, nunca com o Host (ADR 0099 e 0160)');
+$assert(str_contains($html, 'data-unit-document-signatures') && str_contains($html, 'Síndico(a)') && str_contains($html, 'Responsável pela emissão'), 'AP-123: linhas de assinatura do síndico e da administradora (ADR 0115)');
 $html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['unitDocument' => $docRow(['result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data <errada>', 'content' => ['overdue' => [], 'upcoming' => []]])]));
 $assert(str_contains($html, 'Nada consta.') && str_contains($html, 'erp-unit-doc is-cancelled') && str_contains($html, 'Data &lt;errada&gt;') && !str_contains($html, 'data-unit-document-cancel="'), 'AP-123: nada consta cancelado, sem cancelar de novo');
 $html = $agreementPage('AP-125', 'pages/documents/unit-document', $docData('quittance', ['unitDocument' => $docRow(['kind' => 'quittance', 'kind_label' => 'Comprovante de Quitação', 'reference' => '2026-10', 'result' => 'clear', 'total_cents' => 600000, 'content' => ['until_competence' => '2026-10', 'paid_entries' => 12, 'paid_cents' => 600000]])]), 'doc');

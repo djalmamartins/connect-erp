@@ -35,15 +35,17 @@ final class DocumentVerificationFooterTest extends TestCase
             self::assertMatchesRegularExpression('/^[A-HJKMNP-Z2-9]{4}(-[A-HJKMNP-Z2-9]{4}){3}$/', (string)DocumentVerification::formatCode($code));
             self::assertSame($code, DocumentVerification::normalize(DocumentVerification::formatCode($code)), 'O código impresso volta ao gravado.');
         }
-        self::assertSame('https://www.exemplo.test/verificar#ABCD-EFGH-JKMN-PQRS', DocumentVerification::link('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test/'));
-        self::assertSame('http://localhost/connect/verificar#ABCD-EFGH-JKMN-PQRS', DocumentVerification::link('abcd efgh jkmn pqrs', 'http://localhost/connect'));
+        // ADR 0115: endereço fixo, igual em todos os documentos; o código é digitado na página.
+        self::assertSame('https://www.exemplo.test/verificar-certidao-debitos', DocumentVerification::link('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test/'));
+        self::assertSame('http://localhost/connect/verificar-certidao-debitos', DocumentVerification::link('abcd efgh jkmn pqrs', 'http://localhost/connect'));
         foreach (['', 'javascript:alert(1)', '//sem-esquema.test', 'https://exemplo.test/?q=1', 'https://exemplo.test/#x', 'ftp://exemplo.test'] as $badBase) {
             self::assertNull(DocumentVerification::link('ABCDEFGHJKMNPQRS', $badBase), $badBase);
         }
         self::assertNull(DocumentVerification::link('invalido', 'https://www.exemplo.test'));
-        self::assertSame(['code' => 'ABCD-EFGH-JKMN-PQRS', 'address' => 'https://www.exemplo.test/verificar', 'link' => 'https://www.exemplo.test/verificar#ABCD-EFGH-JKMN-PQRS'],
+        self::assertSame(['code' => 'ABCD-EFGH-JKMN-PQRS', 'address' => 'https://www.exemplo.test/verificar-certidao-debitos', 'link' => 'https://www.exemplo.test/verificar-certidao-debitos'],
             DocumentVerification::footer('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test'));
         self::assertStringNotContainsString('ABCD', DocumentVerification::footer('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test')['address'], 'O endereço mostrado não leva o código.');
+        self::assertStringNotContainsString('ABCD', DocumentVerification::footer('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test')['link'], 'Nem o link.');
     }
 
     public function testEveryUnitDocumentPrintsTheFooter(): void
@@ -52,7 +54,7 @@ final class DocumentVerificationFooterTest extends TestCase
         // Todos os tipos (certidão, declaração, quitação, anuência e recibo) usam este mesmo modelo de impressão.
         self::assertSame(['debt_certificate', 'delinquency_declaration', 'quittance', 'consent_letter', 'receipt'], array_keys(UnitDocuments::ALL_KINDS));
         self::assertSame(1, substr_count($view, '<footer class="erp-unit-doc__foot"'), 'Um rodapé, comum a todos os tipos.');
-        foreach (['DocumentVerification::footer(', 'DocumentVerification::configuredBase())', 'Código de verificação: <strong>', 'Confira em <a href="<?= $this->e($verification[\'link\']) ?>"',
+        foreach (['DocumentVerification::footer(', 'DocumentVerification::configuredBase())', 'Para conferir a autenticidade, acesse <a href="<?= $this->e($verification[\'link\']) ?>"', 'data-unit-document-signatures', 'Síndico(a)',
             '$this->e($verification[\'address\'])', '\Source\Support\QrCode::svg($verification[\'link\']'] as $needle) {
             self::assertStringContainsString($needle, $view, $needle);
         }
@@ -60,7 +62,7 @@ final class DocumentVerificationFooterTest extends TestCase
         self::assertStringNotContainsString('getenv(', $view);
 
         $page = (string)file_get_contents(dirname(__DIR__, 3) . '/container/web/default/v1/pages/verify.php');
-        self::assertStringContainsString('window.location.hash', $page, 'A página lê o código do fragmento.');
+        self::assertStringContainsString('window.location.hash', $page, 'Documentos antigos (/verificar#código) ainda preenchem o campo.');
         self::assertStringContainsString('history.replaceState', $page, 'E tira o código do endereço.');
         self::assertStringNotContainsString('.submit()', $page, 'Não envia sozinha.');
         self::assertStringNotContainsString('requestSubmit', $page);

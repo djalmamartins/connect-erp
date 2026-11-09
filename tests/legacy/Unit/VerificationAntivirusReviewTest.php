@@ -79,7 +79,7 @@ final class VerificationAntivirusReviewTest extends TestCase
         self::assertNull(DocumentVerification::footer('ABCDEFGHJKMNPQRS', null), 'Sem configuração válida, o rodapé sai sem link.');
         $link = (string)DocumentVerification::link('ABCDEFGHJKMNPQRS', 'https://www.exemplo.test');
         self::assertNull(parse_url($link, PHP_URL_QUERY), 'O código não vai na query.');
-        self::assertSame('ABCD-EFGH-JKMN-PQRS', parse_url($link, PHP_URL_FRAGMENT), 'Só no fragmento (o mesmo texto vai no QR).');
+        self::assertNull(parse_url($link, PHP_URL_FRAGMENT), 'ADR 0115: o link é o endereço fixo, sem o código (a pessoa digita).');
         self::assertStringNotContainsString('ABCD', (string)parse_url($link, PHP_URL_PATH));
 
         $view = (string)file_get_contents(self::ROOT . '/container/erp/connect/v1/pages/documents/unit-document.php');

@@ -115,17 +115,28 @@ $this->insert('components/layout/page-head', [
                     <tbody><?php foreach ($upcoming as $u): ?><tr><td><?= $this->e((string)$u['description']) ?></td><td><?= $this->e($month((string)$u['competence'])) ?></td><td><?= $this->e($date((string)$u['due_on'])) ?></td><td class="is-num"><?= $this->e($brl((int)$u['amount_cents'])) ?></td></tr><?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>
-            <?php // ADR 0099: código e link da verificação pública impressos no rodapé; o código vai no fragmento do link (não chega ao servidor).
+            <?php // ADR 0115: assinatura do síndico e da administradora, local e data, antes do rodapé de verificação.
+            $issuedOn = $date($doc['issued_at'] ?? $doc['created_at'] ?? $doc['as_of'] ?? null); ?>
+            <section class="erp-unit-doc__sign" aria-label="Assinaturas" data-unit-document-signatures>
+                <p class="erp-unit-doc__place"><?= $this->e((string)$doc['condominium_name']) ?>, <?= $this->e($issuedOn) ?>.</p>
+                <div class="erp-unit-doc__sign-grid">
+                    <div class="erp-unit-doc__sign-line"><span>Síndico(a)</span><small>Nome e assinatura</small></div>
+                    <div class="erp-unit-doc__sign-line"><span>Connect · administradora de condomínios</span><small>Responsável pela emissão</small></div>
+                </div>
+            </section>
+            <?php // ADR 0099 e 0115: código impresso e endereço fixo da verificação pública (o código não vai no link).
             // ADR 0160: a base do link vem só da configuração (CONF_URL_SSL), nunca do Host da requisição.
             $verification = \Source\Services\Erp\DocumentVerification::footer((string)($doc['verification_code'] ?? $doc['verification_display'] ?? ''), \Source\Services\Erp\DocumentVerification::configuredBase());
-            $verificationQr = $verification !== null ? \Source\Support\QrCode::svg($verification['link'], 96, 'QR code para conferir este documento') : null; ?>
+            $verificationQr = $verification !== null ? \Source\Support\QrCode::svg($verification['link'], 96, 'QR code para abrir a página de verificação') : null; ?>
             <footer class="erp-unit-doc__foot" data-unit-document-verification>
                 <div><span class="erp-muted">Código de verificação</span><strong class="erp-unit-doc__code"><?= $this->e((string)$doc['verification_display']) ?></strong></div>
-                <?php if ($verification !== null): ?>
-                    <p class="erp-unit-doc__verify">Código de verificação: <strong><?= $this->e($verification['code']) ?></strong><br>Confira em <a href="<?= $this->e($verification['link']) ?>" rel="noreferrer"><?= $this->e($verification['address']) ?></a></p>
-                    <?php if ($verificationQr !== null): ?><span class="erp-unit-doc__qr"><?= $verificationQr ?></span><?php endif; ?>
-                <?php endif; ?>
-                <p class="erp-muted">Qualquer pessoa pode conferir a autenticidade com este código, sem login. Documento emitido a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p>
+                <div class="erp-unit-doc__verify-text">
+                    <?php if ($verification !== null): ?>
+                        <p class="erp-unit-doc__verify">Para conferir a autenticidade, acesse <a href="<?= $this->e($verification['link']) ?>" rel="noreferrer"><?= $this->e($verification['address']) ?></a> e digite o código ao lado.</p>
+                    <?php endif; ?>
+                    <p class="erp-muted">Qualquer pessoa pode conferir, sem login. Documento emitido a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p>
+                </div>
+                <?php if ($verificationQr !== null): ?><span class="erp-unit-doc__qr"><?= $verificationQr ?></span><?php endif; ?>
             </footer>
         </article>
         <?php if ($canManageDocuments && !$cancelled): ?>
