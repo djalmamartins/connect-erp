@@ -2034,6 +2034,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
@@ -2134,6 +2135,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CondominiumChecklistControllerTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
@@ -2245,6 +2247,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/AnnouncementsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Unit/AnnouncementsTest.php"
    ]
   },
@@ -2695,6 +2698,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/AnnouncementsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Unit/AnnouncementsTest.php",
@@ -2958,6 +2962,7 @@
     "tests/legacy/Integration/AnnouncementsIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
@@ -3004,6 +3009,7 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
+    "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/DocumentRegistriesIntegrationTest.php",
     "tests/legacy/Integration/EntriesTest.php",
@@ -3781,7 +3787,7 @@
   "erp_pages": 172,
   "routes": 304,
   "tables": 110,
-  "tests": 136
+  "tests": 137
  },
  "erp_pages": [
   {
@@ -8825,6 +8831,14 @@
    "Source\\Services\\CondominiumScope",
    "Source\\Services\\Erp\\Collections",
    "Source\\Services\\Erp\\EntryShortcuts",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
+  "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Announcements",
+   "Source\\Services\\Erp\\NotificationDispatcher",
    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
    "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
