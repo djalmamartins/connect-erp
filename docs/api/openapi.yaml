@@ -2410,6 +2410,186 @@ paths:
         '409': { description: Já cancelado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies:
+    get:
+      operationId: listAssemblies
+      summary: Assembleias dos condomínios do escopo (erp.assemblies.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+      responses:
+        '200': { description: '{ data[], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createAssembly
+      summary: Rascunho da assembleia com a pauta (AP-018, erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, kind, mode, title, location, first_call_at, items], properties: { condominium_id: { type: integer }, kind: { type: string, enum: [ordinaria, extraordinaria] }, mode: { type: string, enum: [presencial, virtual, hibrida] }, title: { type: string, minLength: 5, maxLength: 160 }, location: { type: string, minLength: 3, maxLength: 255 }, first_call_at: { type: string, description: 'AAAA-MM-DD HH:MM' }, second_call_at: { type: string, description: 'AAAA-MM-DD HH:MM, 30 minutos depois da primeira ou mais' }, items: { type: array, minItems: 1, maxItems: 20, items: { type: object, required: [title, vote_basis, quorum], properties: { title: { type: string }, description: { type: string }, vote_basis: { type: string, enum: [fraction, unit] }, quorum: { type: string, enum: [simple, absolute, two_thirds, unanimity] } } } } } } } }
+      responses:
+        '201': { description: Assembleia em rascunho }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies/{id}:
+    get:
+      operationId: getAssembly
+      summary: Assembleia com a pauta, a contagem da presença e a ata (erp.assemblies.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Assembleia }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /assemblies/{id}/convene:
+    post:
+      operationId: conveneAssembly
+      summary: Publica o edital pela outbox, com 8 dias de antecedência ou mais (erp.assemblies.manage e erp.announcements.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Convocada, com announcement_id }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não é rascunho, ou antecedência menor que 8 dias }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /assemblies/{id}/open:
+    post:
+      operationId: openAssembly
+      summary: Abre a assembleia convocada, a partir da primeira convocação (erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Aberta }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não convocada, ou antes do horário }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /assemblies/{id}/attendance:
+    post:
+      operationId: checkInAssembly
+      summary: Presença de uma unidade (AP-088); inadimplente fica presente sem voto (erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [unit_id, attendee_name], properties: { unit_id: { type: integer }, attendee_name: { type: string, minLength: 3, maxLength: 160 }, is_proxy: { type: boolean }, proxy_document_id: { type: integer, description: 'Arquivo do Disco Virtual; obrigatório com is_proxy' } } } } }
+      responses:
+        '201': { description: '{ id, unit_id, unit_label, is_proxy, eligible, overdue_cents }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Assembleia não aberta, ou presença já registrada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies/{id}/items/{item}/start:
+    post:
+      operationId: startAssemblyItem
+      summary: Põe o item em votação; um por vez (erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }, { name: item, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Assembleia com o item em votação }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Item já votado, ou outro em votação }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /assemblies/{id}/items/{item}/votes:
+    post:
+      operationId: voteAssemblyItem
+      summary: Voto de uma unidade presente e quite (AP-017, erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }, { name: item, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [unit_id, choice], properties: { unit_id: { type: integer }, choice: { type: string, enum: [yes, no, abstain] } } } } }
+      responses:
+        '201': { description: '{ id, item_id, unit_id, choice, weight }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Item fora de votação, unidade sem presença, inadimplente (art. 1.335, III), sem fração ou voto repetido' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies/{id}/items/{item}/close:
+    post:
+      operationId: closeAssemblyItem
+      summary: Apura o item pelo quórum sobre o total do condomínio (erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }, { name: item, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: 'Assembleia com o result do item (yes, no, abstain, total em milionésimos, votes, approved)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Item fora de votação }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /assemblies/{id}/close:
+    post:
+      operationId: closeAssembly
+      summary: Encerra com a ata e o sha256; depois disso nada muda (AP-092, erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Encerrada, com minutes e minutes_sha256 }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não aberta, ou item ainda não apurado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /assemblies/{id}/cancel:
+    post:
+      operationId: cancelAssembly
+      summary: Cancela o rascunho ou a convocada e para o edital que ainda não saiu (erp.assemblies.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Aberta ou encerrada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies/{id}/attendance-report:
+    get:
+      operationId: assemblyAttendanceReport
+      summary: Lista de presença (AP-088), em JSON ou CSV seguro (erp.assemblies.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ assembly, rows[{ unit_label, attendee_name, is_proxy, proxy_document_id, eligible, overdue_cents, checked_in_at }], totals }, ou CSV' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { description: Mais de 30 exportações em CSV na última hora }
+  /assemblies/{id}/results:
+    get:
+      operationId: assemblyResults
+      summary: Resultado de cada item e a ata (AP-092), em JSON ou CSV seguro (erp.assemblies.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ assembly (com minutes e minutes_sha256), rows[{ position, title, vote_basis, quorum, status, yes, no, abstain, total, votes, approved }] }, ou CSV' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { description: Mais de 30 exportações em CSV na última hora }
   /communication-addresses:
     get:
       operationId: listCommunicationAddresses
