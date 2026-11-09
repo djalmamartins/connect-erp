@@ -562,6 +562,11 @@ p { margin: 0; }
 .erp-disk-list .erp-card__head { flex-wrap: wrap; gap: 12px; }
 .erp-disk-title { overflow-wrap: anywhere; }
 .erp-disk-name { min-width: 200px; }
+.erp-kpi-link { display: block; color: inherit; text-decoration: none; border-radius: var(--erp-radius-lg, 16px); }
+.erp-kpi-link:hover .erp-kpi { box-shadow: 0 0 0 2px var(--erp-brand) inset; }
+.erp-kpi-link:focus-visible { outline: 2px solid var(--erp-brand); outline-offset: 2px; }
+.erp-dash-alerts .erp-list__body a { color: inherit; }
+.erp-occurrence-ticket__status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
 .erp-disk-name .erp-muted { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .erp-disk-layout { grid-template-columns: 1fr; } .erp-disk-search { width: 100%; } .erp-disk-search .erp-input { min-width: 0; flex: 1; } }
 

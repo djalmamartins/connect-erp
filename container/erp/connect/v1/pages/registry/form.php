@@ -12,7 +12,7 @@ $readonly = !$canManage;
 $action = erp_url($isNew ? $route : $route . '/' . (int)$recordId);
 $actionLabels = ['create' => 'Cadastro criado', 'update' => 'Cadastro alterado', 'delete' => 'Cadastro excluído'];
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => (($definition['group'] ?? 'cadastros') === 'condominios' ? 'Condomínios' : 'Cadastros') . ' · ' . $definition['label'],
+    'pageEyebrow' => ($catalog['groups'][$definition['group'] ?? 'cadastros']['label'] ?? 'Cadastros') . ' · ' . $definition['label'],
     'pageTitle' => $title,
     'pageLead' => $isNew ? 'Preencha os dados e salve. Campos com * são obrigatórios.' : ($readonly ? 'Você tem acesso somente para consulta.' : 'Altere os dados e salve. Toda alteração fica registrada no histórico.'),
 ]);
@@ -47,6 +47,13 @@ $this->insert('components/layout/page-head', [
         </div>
     </form>
 
+    <div class="erp-stack">
+    <?php if (($occurrenceTicket ?? null) !== null) {
+        $this->insert('components/cards/occurrence-ticket', ['ticket' => $occurrenceTicket]);
+    } ?>
+    <?php if (($recordAction ?? null) !== null) {
+        $this->insert('components/cards/record-action', ['action' => $recordAction]);
+    } ?>
     <aside class="erp-card" aria-labelledby="reg-history-title">
         <div class="erp-card__head"><div><h2 id="reg-history-title">Histórico</h2><p>Registro de auditoria deste cadastro</p></div></div>
         <?php if ($isNew || $history === []): ?>
@@ -65,6 +72,7 @@ $this->insert('components/layout/page-head', [
             <div style="margin-top:16px"><button type="button" class="erp-btn erp-btn--danger erp-btn--block" data-erp-modal-open="reg-delete"><?= $icon('trash', 'erp-icon--sm') ?>Excluir <?= $this->e($definition['entity']) ?></button></div>
         <?php endif; ?>
     </aside>
+    </div>
 </div>
 
 <?php if (!$isNew && !$readonly): ?>
