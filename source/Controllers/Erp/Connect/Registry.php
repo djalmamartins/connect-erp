@@ -14,6 +14,7 @@ use Source\Services\Erp\Registry\RegistryLocked;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
+use Source\Services\Erp\VirtualDisk;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Message;
@@ -196,7 +197,35 @@ final class Registry extends Controller
             'units' => RegistryService::hasUnitField($definition) ? $service->units($user) : [],
             'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
+            'registryAttachment' => self::attachmentData($user, $definition, $values),
         ]));
+    }
+
+    /**
+     * Campo de anexo do Disco Virtual (ADR 0050 e 0052): o arquivo escolhido (título e nome, para
+     * mostrar e baixar) e se quem edita pode procurar e enviar arquivos. null = cadastro sem anexo.
+     * Arquivo excluído ou fora do escopo aparece só pelo número; o servidor confere ao salvar.
+     *
+     * @return array{field:string, file:?array, canBrowse:bool, canUpload:bool}|null
+     */
+    private static function attachmentData(User $user, array $definition, array $values): ?array
+    {
+        $field = $definition['attachment'] ?? null;
+        if (!is_string($field)) {
+            return null;
+        }
+        $data = ['field' => $field, 'file' => null, 'canBrowse' => Access::can('erp.documents.view', $user), 'canUpload' => Access::can('erp.documents.manage', $user)];
+        $id = filter_var($values[$field] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($id !== false && $id !== null && $data['canBrowse'] && !\Source\Core\Connect::databaseDisabled()) {
+            try {
+                $data['file'] = (new VirtualDisk())->find($user, (int)$id);
+            } catch (RegistryNotFound) {
+                $data['file'] = null;
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'registry_attachment_failed']);
+            }
+        }
+        return $data;
     }
 
     private function authorize(array $definition, string $action): ?User

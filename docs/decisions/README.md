@@ -73,5 +73,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0046](../Organic%20Code/decisions/0046-unit-documents-screens.md) | Telas dos documentos da unidade (AP-123/124/125/130): emitir, conferir pelo código, imprimir e cancelar |
 | [0047](../Organic%20Code/decisions/0047-virtual-disk.md) | Disco Virtual (AP-122): arquivos fora da pasta pública, tipo conferido pelo conteúdo, download só com permissão e escopo |
 | [0048](../Organic%20Code/decisions/0048-meter-readings-screen.md) | Tela de leituras do mês (AP-042): lançamento em lote, consumo e valor por unidade e faturar |
+| [0049](../Organic%20Code/decisions/0049-virtual-disk-screen.md) | Tela do Disco Virtual (AP-122): pastas, envio multipart com progresso, baixar e excluir |
 | [0050](../Organic%20Code/decisions/0050-document-registries.md) | Avisos de recebimento, cópias de cheques, empenhos e malotes (AP-126 a AP-129), com anexo do Disco Virtual |
 | [0051](../Organic%20Code/decisions/0051-operational-registries.md) | Operacional (AP-110 a AP-121): manutenções, ocorrências com chamado no Help Desk, reservas pelas regras da área comum, mudanças, seguros e contratos |
+| [0052](../Organic%20Code/decisions/0052-registry-attachment-picker.md) | Seletor do Disco Virtual no anexo dos cadastros AP-126 a 129: escolher, enviar e anexar no formulário |

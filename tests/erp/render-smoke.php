@@ -501,6 +501,36 @@ $html = $agreementPage('AP-042', 'pages/operational/meter-readings', $mrPage(['m
 $assert(str_contains($html, 'Nenhum relógio de energia ativo') && str_contains($html, '0,000 kWh'), 'AP-042: sem relógios do tipo');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-042', ['meterSheet' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-042', ['meterSheet' => []]) === 'pages/operational/meter-readings', 'AP-042: sem permissão segue a demonstração');
 
+// Disco Virtual (AP-122, ADR 0047 e 0049) com dados reais.
+$diskRow = static fn (array $over = []): array => $over + ['id' => 7, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'folder' => 'atas', 'folder_label' => 'Atas',
+    'title' => 'Ata <AGO> 2026', 'original_name' => 'ata-ago.pdf', 'mime' => 'application/pdf', 'size_bytes' => 1572864, 'sha256' => str_repeat('a', 64), 'uploaded_at' => '2026-11-09 10:00:00'];
+$diskData = static fn (array $over = []): array => $over + ['diskFiles' => ['data' => [$diskRow(), $diskRow(['id' => 8, 'folder' => 'plantas', 'folder_label' => 'Plantas', 'title' => 'Planta', 'original_name' => 'planta.png', 'mime' => 'image/png', 'size_bytes' => 900])], 'total' => 2, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+    'diskFolder' => null, 'diskQuery' => '', 'diskCondominiums' => [['id' => 1, 'name' => 'Residencial Aurora'], ['id' => 2, 'name' => 'Vila <Sol>']], 'canManageFiles' => true];
+$html = $agreementPage('AP-122', 'pages/documents/virtual-disk', $diskData(), 'manage');
+$common($html, 'AP-122', 'Disco Virtual');
+$assert(str_contains($html, 'data-erp-virtual-disk data-api="https://' . $smokeHost . '/api/v1/documents"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'data-disk-upload')
+    && str_contains($html, 'Vila &lt;Sol&gt;') && str_contains($html, 'Ata &lt;AGO&gt; 2026') && str_contains($html, '1,5 MB') && str_contains($html, '900 B') && str_contains($html, '/api/v1/documents/7/download')
+    && substr_count($html, 'data-disk-delete="') === 2 && str_contains($html, '<th>Pasta</th>') && str_contains($html, 'aria-current="page"'), 'AP-122: enviar, lista com baixar e excluir');
+$html = $agreementPage('AP-122', 'pages/documents/virtual-disk', $diskData(['canManageFiles' => false, 'diskFolder' => 'atas', 'diskQuery' => 'ata']));
+$assert(!str_contains($html, 'data-disk-upload') && !str_contains($html, 'data-disk-delete') && str_contains($html, '/api/v1/documents/7/download') && !str_contains($html, '<th>Pasta</th>') && str_contains($html, 'com "ata"') && str_contains($html, 'name="pasta" value="atas"'), 'AP-122: sem erp.documents.manage só consulta e baixa');
+$html = $agreementPage('AP-122', 'pages/documents/virtual-disk', $diskData(['diskFiles' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 50, 'pages' => 0]]));
+$assert(str_contains($html, 'Pasta vazia'), 'AP-122: pasta vazia');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-122', ['diskFiles' => null]) === null && Source\Controllers\Erp\Connect\Panel::fileSize(1023) === '1023 B' && Source\Controllers\Erp\Connect\Panel::fileSize(1536) === '1,5 KB', 'AP-122: sem permissão segue a demonstração; tamanhos legíveis');
+
+// Anexo do Disco Virtual nos cadastros AP-126 a 129 (ADR 0050 e 0052): formulário com o seletor.
+$attachForm = static fn (array $attachment, array $values = []): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-127', [
+    'title' => 'Nova cópia de cheque', 'definition' => Source\Services\Erp\Registry\Definitions::get('check_copies'), 'recordId' => null,
+    'values' => $values + ['condominium_id' => 1], 'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora'], ['id' => 2, 'name' => 'Vila Sol']],
+    'units' => [], 'refs' => [], 'canManage' => true,
+    'registryAttachment' => $attachment + ['field' => 'document_id', 'file' => null, 'canBrowse' => true, 'canUpload' => true],
+], 'Nova cópia de cheque'));
+$html = $attachForm(['file' => ['id' => 12, 'title' => 'Cheque <123>', 'original_name' => 'cheque.jpg']], ['document_id' => 12]);
+$save('page-ap-127-attach', $html);
+$assert(str_contains($html, 'data-erp-attachment data-api="https://' . $smokeHost . '/api/v1/documents"') && str_contains($html, 'Cheque &lt;123&gt;') && str_contains($html, '/api/v1/documents/12/download')
+    && str_contains($html, 'data-attachment-send') && str_contains($html, '<label for="f-document_id-pick">') && substr_count($html, 'data-erp-attachment ') === 1, 'AP-127: anexo com seletor e envio do Disco Virtual');
+$html = $attachForm(['canBrowse' => false, 'canUpload' => false]);
+$assert(!str_contains($html, 'data-attachment-open') && str_contains($html, 'Nenhum arquivo anexado'), 'AP-127: sem acesso ao Disco Virtual não oferece escolher');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
