@@ -281,6 +281,8 @@ $registered = [$erpPrefix . '/seguranca' => true, $erpPrefix . '/dashboard' => t
 foreach ($catalog['pages'] as $p) $registered[$erpPrefix . $p['route']] = true;
 foreach ($catalog['groups'] as $g) if ($g['prefix'] !== '') $registered[$erpPrefix . $g['prefix']] = true;
 $registered['/studio/seguranca/2fa'] = true; // registrada também no host do ERP (index.php)
+// Alternador de ambiente (ADR 0034): /ambiente/{environment} vale em qualquer host, sem o prefixo do ERP (index.php).
+foreach (Source\Services\Environments::keys() as $environment) $registered['/ambiente/' . $environment] = true;
 foreach (array_keys($hrefs) as $h) if (!str_starts_with($h, '/container/')) $assert(isset($registered[$h]), "link sem rota: $h");
 
 // Estados
@@ -565,6 +567,66 @@ $html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData([
 $assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
 $assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
     && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+// Cobrança e multas (AP-116, AP-117 e AP-039; ADR 0080 e 0076).
+$Coll = Source\Controllers\Erp\Connect\CollectionScreens::class;
+$collBase = ['collReady' => true, 'collContext' => 1, 'collError' => null, 'collCanManage' => true];
+$fine = static fn (array $over = []): array => $over + ['id' => 12, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto <101>', 'description' => 'Multa <barulho>',
+    'reason' => 'Art. 12 <regulamento>', 'entry_id' => 90, 'amount_cents' => 25000, 'due_on' => '2026-10-10', 'paid_on' => null, 'state' => 'overdue', 'occurrence_id' => 44, 'reservation_id' => null];
+$html = $agreementPage('AP-116', 'pages/collections/pending-fines', $collBase + ['finesPaid' => false, 'fines' => ['data' => [$fine(), $fine(['id' => 13, 'state' => 'open', 'occurrence_id' => null, 'reservation_id' => 8, 'due_on' => '2026-12-10']),
+    $fine(['id' => 14, 'state' => 'open', 'occurrence_id' => null])], 'totals' => ['fines' => 3, 'open_cents' => 75000, 'overdue' => 1]]], 'list');
+$common($html, 'AP-116', 'Multas Pendentes');
+$assert(str_contains($html, 'Multa &lt;barulho&gt;') && str_contains($html, 'Art. 12 &lt;regulamento&gt;') && str_contains($html, '/operacional/ocorrencias/44') && str_contains($html, 'Reserva nº 8') && str_contains($html, 'Não registrada')
+    && str_contains($html, '>Vencida</span>') && str_contains($html, 'em aberto R$ 750,00') && str_contains($html, '/financeiro/lancar-multa-avulsa?cobranca=12') && str_contains($html, '?pagas=1'), 'AP-116: multas com origem, situação e totais');
+$html = $agreementPage('AP-116', 'pages/collections/pending-fines', $collBase + ['finesPaid' => true, 'fines' => ['data' => [], 'totals' => ['fines' => 0, 'open_cents' => 0, 'overdue' => 0]]]);
+$assert(str_contains($html, 'Nenhuma multa pendente') && str_contains($html, '?pagas=1" aria-current="page"'), 'AP-116: vazio com o filtro das pagas');
+
+$deskRow = static fn (array $over = []): array => $over + ['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto <101>', 'entries' => 2, 'amount_cents' => 185000, 'total_cents' => 190000,
+    'max_days_late' => 122, 'last_contact' => ['id' => 3, 'at' => '2026-11-01 10:00:00', 'channel' => 'phone', 'outcome' => 'promise', 'promise_on' => '2026-11-05', 'next_action_on' => '2026-11-08'],
+    'promise_broken' => true, 'action_due' => true, 'legal_case' => null];
+$deskData = $collBase + ['desk' => ['as_of' => '2026-11-09', 'data' => [$deskRow(), $deskRow(['unit_id' => 6, 'unit_label' => 'Apto 102', 'last_contact' => null, 'promise_broken' => false, 'action_due' => false, 'legal_case' => ['id' => 9, 'status' => 'filed']])],
+    'totals' => ['units' => 2, 'entries' => 4, 'amount_cents' => 370000, 'promise_broken' => 1, 'action_due' => 1, 'without_contact' => 1]], 'deskUnit' => null, 'deskContacts' => null];
+$html = $agreementPage('AP-117', 'pages/collections/desk', $deskData, 'list');
+$common($html, 'AP-117', 'Atendimento Cobrança');
+$assert(str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '>Promessa quebrada</span>') && str_contains($html, 'Promessa de pagamento para 05/11/2026') && str_contains($html, '08/11/2026 (vencida)')
+    && str_contains($html, 'Caso judicial: Ajuizado') && str_contains($html, '?unidade=5#atender') && str_contains($html, 'R$ 3.700,00') && !str_contains($html, 'data-contact-form'), 'AP-117: fila com promessa quebrada, ação vencida e caso');
+$html = $agreementPage('AP-117', 'pages/collections/desk', ['deskUnit' => $deskRow(), 'deskContacts' => [['id' => 3, 'unit_id' => 5, 'channel' => 'phone', 'outcome' => 'promise', 'outcome_label' => 'Promessa de pagamento', 'contact_name' => 'Ana <S>',
+    'promise_on' => '2026-11-05', 'promise_cents' => 50000, 'next_action_on' => '2026-11-08', 'note' => "Disse que <paga>\nsexta", 'open_cents' => 185000, 'created_by' => 1, 'created_at' => '2026-11-01 10:00:00']]] + $deskData, 'unit');
+$assert(str_contains($html, 'id="atender"') && str_contains($html, 'data-contact-form data-api="https://' . $smokeHost . '/api/v1/collection-contacts" data-unit="5"') && str_contains($html, 'Disse que &lt;paga&gt;<br />') && str_contains($html, 'Ana &lt;S&gt;')
+    && str_contains($html, '(R$ 500,00)') && str_contains($html, '?abrir=5#abrir-caso') && str_contains($html, 'aria-current="true"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-117: histórico e registrar contato');
+$html = $agreementPage('AP-117', 'pages/collections/desk', ['collCanManage' => false, 'deskUnit' => $deskRow(), 'deskContacts' => []] + $deskData);
+$assert(!str_contains($html, 'data-contact-form') && !str_contains($html, '?abrir=') && str_contains($html, 'Nenhum contato registrado'), 'AP-117: sem permissão só consulta');
+
+$caseRow = static fn (array $over = []): array => $over + ['id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 6, 'unit_label' => 'Apto 102', 'lawyer_id' => 3, 'lawyer_name' => 'Dra. <Lima>',
+    'status' => 'filed', 'status_label' => 'Ajuizado', 'case_number' => '0001234-56.2026.8.26.0100', 'court' => '2ª Vara Cível', 'opened_on' => '2026-10-01', 'claimed_cents' => 185000, 'closed_on' => null, 'close_reason' => null,
+    'next_statuses' => ['suspended', 'agreement', 'closed']];
+$lateUnit = ['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto <101>', 'amount_cents' => 185000, 'max_days_late' => 122, 'oldest_due_on' => '2026-07-10',
+    'entries' => [['id' => 70, 'description' => 'Taxa <julho>', 'competence' => '2026-07', 'due_on' => '2026-07-10', 'amount_cents' => 92500, 'days_late' => 122], ['id' => 71, 'description' => 'Taxa agosto', 'competence' => '2026-08', 'due_on' => '2026-08-10', 'amount_cents' => 92500, 'days_late' => 91]]];
+$caseData = $collBase + ['caseStatus' => null, 'cases' => ['data' => [$caseRow(), $caseRow(['id' => 10, 'status' => 'closed', 'lawyer_name' => null, 'case_number' => null, 'court' => null])], 'total' => 2],
+    'caseDetail' => null, 'caseOpenUnit' => null, 'caseOpenUnits' => [$lateUnit], 'caseLawyers' => [['id' => 3, 'name' => 'Dra. <Lima>', 'oab' => 'SP 123456']]];
+$html = $agreementPage('AP-039', 'pages/collections/legal-cases', $caseData, 'list');
+$common($html, 'AP-039', 'Cobrança Judicial');
+$assert(str_contains($html, 'Só acompanhamento: nada é enviado') && str_contains($html, 'name="abrir"') && str_contains($html, 'Apto &lt;101&gt; · R$ 1.850,00') && str_contains($html, '>Ajuizado</span>') && str_contains($html, 'Dra. &lt;Lima&gt;')
+    && str_contains($html, '?caso=9') && str_contains($html, '?situacao=closed') && !str_contains($html, 'data-case-open-form'), 'AP-039: lista, filtro e escolher a unidade');
+$html = $agreementPage('AP-039', 'pages/collections/legal-cases', ['caseOpenUnit' => $lateUnit] + $caseData, 'open');
+$assert(str_contains($html, 'data-case-open-form data-api="https://' . $smokeHost . '/api/v1/legal-cases" data-unit="5"') && substr_count($html, 'name="entry_ids"') === 2 && str_contains($html, 'Taxa &lt;julho&gt;')
+    && str_contains($html, 'id="abrir-caso"') && str_contains($html, 'Dra. &lt;Lima&gt; · OAB SP 123456') && !str_contains($html, 'name="abrir"'), 'AP-039: abrir caso com as contas da unidade');
+$detail = $caseRow() + ['still_open_cents' => 92500, 'entries' => [['entry_id' => 70, 'description' => 'Taxa <julho>', 'due_on' => '2026-07-10', 'claimed_cents' => 92500, 'amount_cents' => 92500, 'paid_on' => '2026-11-02', 'status' => 'active'],
+    ['entry_id' => 71, 'description' => 'Taxa agosto', 'due_on' => '2026-08-10', 'claimed_cents' => 92500, 'amount_cents' => 92500, 'paid_on' => null, 'status' => 'active']],
+    'events' => [['id' => 1, 'kind' => 'opened', 'from_status' => null, 'to_status' => 'preparing', 'note' => 'Aberto <nota>', 'happened_on' => '2026-10-01', 'created_by' => 1, 'created_at' => '2026-10-01 09:00:00'],
+        ['id' => 2, 'kind' => 'status', 'from_status' => 'preparing', 'to_status' => 'filed', 'note' => 'Protocolado', 'happened_on' => '2026-10-15', 'created_by' => 1, 'created_at' => '2026-10-15 09:00:00']]];
+$html = $agreementPage('AP-039', 'pages/collections/legal-cases', ['caseDetail' => $detail] + $caseData, 'detail');
+$assert(str_contains($html, 'Caso judicial nº 9') && str_contains($html, 'Ainda em aberto') && str_contains($html, 'R$ 925,00') && str_contains($html, 'Paga em 02/11/2026') && str_contains($html, 'Em preparação → Ajuizado')
+    && str_contains($html, 'Aberto &lt;nota&gt;') && str_contains($html, '/api/v1/legal-cases/9/events') && str_contains($html, '<option value="closed">Encerrado</option>') && str_contains($html, 'value="3" selected')
+    && str_contains($html, 'min="2026-10-01"') && !str_contains($html, 'name="abrir"'), 'AP-039: detalhe com contas, andamento e transições');
+$html = $agreementPage('AP-039', 'pages/collections/legal-cases', ['caseDetail' => ['status' => 'closed', 'closed_on' => '2026-11-01', 'close_reason' => 'Acordo <pago>', 'next_statuses' => []] + $detail] + $caseData);
+$assert(!str_contains($html, 'data-case-event-form') && str_contains($html, 'Acordo &lt;pago&gt;') && str_contains($html, 'Encerrado em'), 'AP-039: encerrado não recebe andamento');
+$html = $agreementPage('AP-039', 'pages/collections/legal-cases', ['collContext' => null, 'caseOpenUnits' => []] + $caseData);
+$assert(str_contains($html, 'Escolha um condomínio na barra superior para abrir um caso') && str_contains($html, 'Residencial Aurora'), 'AP-039: todos os condomínios');
+$assert($Coll::fineBadge('overdue') === ['Vencida', 'danger'] && $Coll::caseBadge('closed')[0] === 'Encerrado' && $Coll::eventTitle(['kind' => 'closed']) === 'Encerrado', 'cobrança: regras puras');
+foreach ($Coll::PAGES as $collPage => $collTemplate) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($collPage, ['collReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($collPage, ['collReady' => true]) === $collTemplate, "{$collPage}: tela própria só com dados");
+}
+
 // Comunicação (AP-111, AP-137, AP-138 e AP-139; ADR 0059 e 0075).
 $Comm = Source\Controllers\Erp\Connect\CommunicationScreens::class;
 $future = date('Y-m-d H:i:s', strtotime('+3 days'));
@@ -620,13 +682,14 @@ $addrData = ['commReady' => true, 'commContext' => 1, 'commError' => null, 'comm
     ['unit_id' => 5, 'unit_label' => 'Apto <101>', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [$person(), $person(['resident_id' => 22, 'name' => 'Bruno', 'relationship' => 'tenant', 'notices' => false, 'billing' => false])], 'notices' => 1, 'billing' => 1],
     ['unit_id' => 6, 'unit_label' => 'Apto 102', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [$person(['resident_id' => 23, 'name' => 'Carla', 'email' => null, 'valid_email' => false, 'notices' => false, 'billing' => false])], 'notices' => 0, 'billing' => 0],
     ['unit_id' => 7, 'unit_label' => 'Apto 103', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [], 'notices' => 0, 'billing' => 0]],
-    'totals' => ['units' => 3, 'without_notices' => 2, 'without_billing' => 2]]];
+    'totals' => ['units' => 3, 'without_notices' => 2, 'without_billing' => 2]], 'addressRelationships' => $Comm::RELATIONSHIPS];
+$addrData['addressUnits'] = $addrData['addresses']['data'];
 $html = $agreementPage('AP-139', 'pages/communication/addresses', $addrData, 'list');
 $common($html, 'AP-139', 'Endereços');
 $assert(str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'a***@e***.com') && str_contains($html, 'Proprietário') && str_contains($html, 'Inquilino') && str_contains($html, '>Recusou</span>') && str_contains($html, '>Não autorizou</span>')
     && str_contains($html, 'Sem e-mail válido') && str_contains($html, 'Nenhuma pessoa ativa nesta unidade') && str_contains($html, '/cadastros/proprietarios-e-inquilinos/21') && str_contains($html, 'rowspan="2"')
     && str_contains($html, '<th scope="row"') && str_contains($html, '3 unidade(s).'), 'AP-139: pessoas por unidade, e-mail mascarado e o que recebem');
-$html = $agreementPage('AP-139', 'pages/communication/addresses', ['addressFilter' => 'comunicado'] + $addrData);
+$html = $agreementPage('AP-139', 'pages/communication/addresses', ['addressFilter' => 'comunicado', 'addressUnits' => $Comm::filterAddresses($addrData['addresses']['data'], 'comunicado')] + $addrData);
 $assert(str_contains($html, '2 unidade(s) no filtro') && !str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, '?sem=comunicado" aria-current="page"'), 'AP-139: filtro sem comunicado');
 $assert($Comm::statusOf(['status' => 'active', 'scheduled' => false, 'delivery' => ['failed' => 1]]) === ['Com falha', 'danger'] && $Comm::cancellable(['status' => 'active', 'delivery' => ['pending' => 1]])
     && !$Comm::cancellable(['status' => 'cancelled', 'delivery' => ['pending' => 1]]) && $Comm::referenceDate('2999-01-01') === null, 'comunicação: regras puras');

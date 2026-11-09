@@ -34,6 +34,9 @@ final class CommunicationScreens
     /** Tipo dos comunicados de cada página; AP-138 mostra os dois tipos, só os agendados. */
     public const KINDS = ['AP-111' => 'general', 'AP-137' => 'collection', 'AP-138' => null];
 
+    /** Rótulos do vínculo da pessoa com a unidade (os mesmos do cadastro de pessoas, AP-005). */
+    public const RELATIONSHIPS = ['owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro'];
+
     /** Permissão extra, além de erp.announcements.view, como na API. */
     public const EXTRA_PERMISSION = ['AP-137' => 'erp.agreements.view', 'AP-139' => 'erp.residents.view'];
 
@@ -46,13 +49,19 @@ final class CommunicationScreens
             || ($extra !== null && !Access::can($extra, $user))) {
             return $data;
         }
-        $context = CondominiumContext::id();
-        $data += ['commContext' => $context, 'commError' => null, 'commCanManage' => Access::can('erp.announcements.manage', $user)];
         try {
+            $context = CondominiumContext::id();
+            $data += ['commContext' => $context, 'commError' => null, 'commCanManage' => Access::can('erp.announcements.manage', $user)];
             $service = new Announcements();
             if ($id === 'AP-139') {
-                $data['addresses'] = $service->addresses($user, $context);
-                $data['addressFilter'] = in_array($_GET['sem'] ?? null, ['comunicado', 'cobranca'], true) ? $_GET['sem'] : null;
+                // A tela recebe tudo pronto (unidades já filtradas e os rótulos do vínculo): não lê
+                // cadastro nem banco ao renderizar.
+                $addresses = $service->addresses($user, $context);
+                $filter = in_array($_GET['sem'] ?? null, ['comunicado', 'cobranca'], true) ? $_GET['sem'] : null;
+                $data['addresses'] = $addresses;
+                $data['addressFilter'] = $filter;
+                $data['addressUnits'] = self::filterAddresses($addresses['data'], $filter);
+                $data['addressRelationships'] = self::RELATIONSHIPS;
             } else {
                 $kind = self::KINDS[$id];
                 $data['commKind'] = $kind;

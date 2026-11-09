@@ -673,3 +673,7 @@ p { margin: 0; }
 .erp-comm-filter { display: flex; flex-wrap: wrap; gap: 8px; }
 .erp-form__actions [data-collection-count] { margin-right: auto; align-self: center; }
 [data-collection-form] .erp-field__hint { margin-top: 12px; }
+/* Cobrança (ADR 0076) */
+.erp-coll-history .erp-list__body { min-width: 0; }
+.erp-coll-note { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.erp-coll-filter { margin: 0 0 16px; }
