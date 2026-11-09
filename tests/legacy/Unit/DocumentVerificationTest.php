@@ -54,9 +54,10 @@ final class DocumentVerificationTest extends TestCase
         foreach (['TUVW-XYZ2-3456-789A', 'BCDE-FGHJ-KMNP-QRST', 'nao-e-codigo', '', "' OR 1=1 --"] as $code) {
             self::assertSame($generic, $service->check($code, self::IP), $code);
         }
-        self::assertSame(5, (int)$pdo->query("SELECT COUNT(*) FROM auth_throttle_events WHERE scope = 'doc_verify'")->fetchColumn(), 'Cada erro conta no limite.');
+        // ADR 0160: cada erro conta no IP e no total (2 linhas por erro).
+        self::assertSame(10, (int)$pdo->query("SELECT COUNT(*) FROM auth_throttle_events WHERE scope = 'doc_verify'")->fetchColumn(), 'Cada erro conta no limite.');
         $service->check('ABCD-EFGH-JKMN-PQRS', self::IP);
-        self::assertSame(5, (int)$pdo->query('SELECT COUNT(*) FROM auth_throttle_events')->fetchColumn(), 'Acerto não conta.');
+        self::assertSame(10, (int)$pdo->query('SELECT COUNT(*) FROM auth_throttle_events')->fetchColumn(), 'Acerto não conta.');
     }
 
     public function testThrottleBlocksAndFailsClosed(): void

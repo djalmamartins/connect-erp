@@ -23,6 +23,13 @@ final class DocumentVerificationThrottle
     public const SCOPE = 'doc_verify';
     public const MAX_FAILURES = 20;
     public const WINDOW = 900;
+    /**
+     * ADR 0160: teto global de falhas na mesma janela, somando todos os IPs (contra varredura distribuída e
+     * carga no banco). Passando dele, todos recebem "muitas tentativas" até a janela andar. O valor é alto
+     * de propósito: com 16 caracteres de 31 símbolos (~79 bits), o limite por IP já basta contra força bruta,
+     * e o global não deve virar uma forma fácil de derrubar a página para todos.
+     */
+    public const GLOBAL_MAX_FAILURES = 5000;
 
     private ?PDO $pdo;
 
@@ -38,12 +45,24 @@ final class DocumentVerificationThrottle
         return $ip !== '' ? LoginThrottle::hash('doc-verify-ip:' . $ip) : null;
     }
 
+    /** Identificador do contador global (regra pura): um HMAC fixo, distinto de qualquer IP. */
+    public static function globalSubject(): string
+    {
+        return LoginThrottle::hash('doc-verify-global');
+    }
+
     public function check(string $subject, ?int $now = null): string
     {
         try {
             $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM auth_throttle_events WHERE scope = :s AND subject_hash = :h AND created_at > :since');
-            $stmt->execute(['s' => self::SCOPE, 'h' => $subject, 'since' => ($now ?? time()) - self::WINDOW]);
-            return (int)$stmt->fetchColumn() >= self::MAX_FAILURES ? self::BLOCKED : self::OK;
+            $since = ($now ?? time()) - self::WINDOW;
+            foreach ([[$subject, self::MAX_FAILURES], [self::globalSubject(), self::GLOBAL_MAX_FAILURES]] as [$hash, $max]) {
+                $stmt->execute(['s' => self::SCOPE, 'h' => $hash, 'since' => $since]);
+                if ((int)$stmt->fetchColumn() >= $max) {
+                    return self::BLOCKED;
+                }
+            }
+            return self::OK;
         } catch (\Throwable $error) {
             self::unavailable('read', $error);
             return self::UNAVAILABLE;
@@ -54,8 +73,10 @@ final class DocumentVerificationThrottle
     public function fail(string $subject, ?int $now = null): bool
     {
         try {
-            $this->pdo()->prepare('INSERT INTO auth_throttle_events (scope, subject_hash, created_at) VALUES (:s, :h, :t)')
-                ->execute(['s' => self::SCOPE, 'h' => $subject, 't' => $now ?? time()]);
+            $insert = $this->pdo()->prepare('INSERT INTO auth_throttle_events (scope, subject_hash, created_at) VALUES (:s, :h, :t)');
+            foreach ([$subject, self::globalSubject()] as $hash) {   // conta no IP e no total (ADR 0160)
+                $insert->execute(['s' => self::SCOPE, 'h' => $hash, 't' => $now ?? time()]);
+            }
             return true;
         } catch (\Throwable $error) {
             self::unavailable('write', $error);

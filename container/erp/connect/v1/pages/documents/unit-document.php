@@ -116,7 +116,8 @@ $this->insert('components/layout/page-head', [
                 </table></div>
             <?php endif; ?>
             <?php // ADR 0099: código e link da verificação pública impressos no rodapé; o código vai no fragmento do link (não chega ao servidor).
-            $verification = \Source\Services\Erp\DocumentVerification::footer((string)($doc['verification_code'] ?? $doc['verification_display'] ?? ''), url());
+            // ADR 0160: a base do link vem só da configuração (CONF_URL_SSL), nunca do Host da requisição.
+            $verification = \Source\Services\Erp\DocumentVerification::footer((string)($doc['verification_code'] ?? $doc['verification_display'] ?? ''), \Source\Services\Erp\DocumentVerification::configuredBase());
             $verificationQr = $verification !== null ? \Source\Support\QrCode::svg($verification['link'], 96, 'QR code para conferir este documento') : null; ?>
             <footer class="erp-unit-doc__foot" data-unit-document-verification>
                 <div><span class="erp-muted">Código de verificação</span><strong class="erp-unit-doc__code"><?= $this->e((string)$doc['verification_display']) ?></strong></div>

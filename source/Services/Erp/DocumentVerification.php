@@ -23,6 +23,8 @@ final class DocumentVerification
     public const THROTTLED = 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
     public const UNAVAILABLE = 'Não foi possível verificar o documento agora. Tente de novo mais tarde.';
     public const AUTHENTIC = 'Documento autêntico.';
+    /** Valor de consulta para código malformado: tem caracteres fora do alfabeto, então nunca existe (ADR 0160). */
+    private const NEVER_CODE = '0O1I0O1I0O1I0O1I';
 
     private ?PDO $pdo;
     private DocumentVerificationThrottle $throttle;
@@ -46,17 +48,21 @@ final class DocumentVerification
         if ($state !== DocumentVerificationThrottle::OK) {
             return self::refusal($state === DocumentVerificationThrottle::BLOCKED ? self::THROTTLED : self::UNAVAILABLE);
         }
+        // ADR 0160: o caminho é o mesmo para código malformado, inexistente e cancelado. O malformado também
+        // faz a consulta (com um valor que nunca existe, porque tem 0, O, 1 e I), para não responder mais rápido.
         $normalized = self::normalize($code);
-        $row = null;
-        if ($normalized !== null) {
-            try {
-                $stmt = $this->pdo()->prepare('SELECT d.kind, d.status, d.created_at, c.name AS condominium_name
-                    FROM erp_unit_documents d JOIN condominiums c ON c.id = d.condominium_id WHERE d.verification_code = :c LIMIT 1');
-                $stmt->execute(['c' => $normalized]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            } catch (\Throwable) {
-                return self::refusal(self::UNAVAILABLE);
-            }
+        try {
+            $stmt = $this->pdo()->prepare('SELECT d.kind, d.status, d.created_at, d.verification_code, c.name AS condominium_name
+                FROM erp_unit_documents d JOIN condominiums c ON c.id = d.condominium_id WHERE d.verification_code = :c LIMIT 1');
+            $stmt->execute(['c' => $normalized ?? self::NEVER_CODE]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (\Throwable) {
+            return self::refusal(self::UNAVAILABLE);
+        }
+        // Confere de novo, em tempo constante, o código devolvido pelo banco (o collation do MySQL compara sem
+        // diferenciar maiúsculas; aqui vale a igualdade exata do código normalizado).
+        if (is_array($row) && ($normalized === null || !hash_equals((string)$row['verification_code'], $normalized))) {
+            $row = null;
         }
         $document = is_array($row) ? self::present($row) : null;
         if ($document === null) {
@@ -92,14 +98,30 @@ final class DocumentVerification
      * ("…/verificar#ABCD-EFGH-JKMN-PQRS"). O navegador não manda o fragmento ao servidor, então o código
      * não vai para o log de acesso; a página só preenche o campo, sem enviar sozinha.
      */
-    public static function link(?string $code, string $base): ?string
+    public static function link(?string $code, ?string $base): ?string
     {
         $formatted = self::formatCode($code);
-        $base = rtrim(trim($base), '/');
-        if ($formatted === null || preg_match('~^https?://[^\s/?#]+(?:/[^\s?#]*)?$~i', $base) !== 1) {
+        $base = rtrim(trim((string)$base), '/');
+        // Sem "@" no host (ADR 0160): "https://site.test@outro.test" levaria a outro domínio.
+        if ($formatted === null || preg_match('~^https?://[^\s/?#@]+(?:/[^\s?#@]*)?$~i', $base) !== 1) {
             return null;
         }
         return $base . '/verificar#' . $formatted;
+    }
+
+    /**
+     * URL base do link impresso (ADR 0160): só a configuração (CONF_URL_SSL), nunca o Host da requisição.
+     * O url() do sistema usa o Host em hosts locais (*.lab, localhost), e um Host forjado poria outro domínio
+     * no link e no QR. Configuração ausente ou inválida = null, e o rodapé sai sem link (o código continua).
+     */
+    public static function configuredBase(): ?string
+    {
+        $base = defined('CONF_URL_SSL') ? constant('CONF_URL_SSL') : null;
+        if (!is_string($base)) {
+            return null;
+        }
+        $base = rtrim(trim($base), '/');
+        return preg_match('~^https?://[^\s/?#@]+(?:/[^\s?#@]*)?$~i', $base) === 1 ? $base : null;
     }
 
     /**
@@ -108,13 +130,13 @@ final class DocumentVerification
      *
      * @return array{code:string, address:string, link:string}|null
      */
-    public static function footer(?string $code, string $base): ?array
+    public static function footer(?string $code, ?string $base): ?array
     {
         $link = self::link($code, $base);
         if ($link === null) {
             return null;
         }
-        return ['code' => (string)self::formatCode($code), 'address' => rtrim(trim($base), '/') . '/verificar', 'link' => $link];
+        return ['code' => (string)self::formatCode($code), 'address' => rtrim(trim((string)$base), '/') . '/verificar', 'link' => $link];
     }
 
     /**
