@@ -45,6 +45,10 @@ final class NotificationDispatcher
         'agreement.created' => ['template' => 'agreement-created', 'subject' => 'Seu acordo e as parcelas', 'audience' => 'billing'],
         'agreement.breached' => ['template' => 'agreement-breached', 'subject' => 'Acordo encerrado por falta de pagamento', 'audience' => 'billing'],
         'reservation.approved' => ['template' => 'reservation-approved', 'subject' => 'Reserva aprovada', 'audience' => 'unit'],
+        // Comunicação (ADR 0059). 'notices' = pessoas ativas da unidade com e-mail que não recusaram comunicado
+        // (notices_opt_out). O assunto e o texto do comunicado vêm de erp_announcements.
+        'announcement.published' => ['template' => 'announcement', 'subject' => 'Comunicado do condomínio', 'audience' => 'notices'],
+        'collection.reminder' => ['template' => 'collection-reminder', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'billing'],
     ];
 
     private PDO $pdo;
@@ -169,12 +173,18 @@ final class NotificationDispatcher
                 return $this->finish($id, 'cancelled', 0, 'Tipo de aviso sem modelo de e-mail.');
             }
             $template = $notice['template'];
+            $context = $this->context($event, $payload);
+            if (($context['cancelled'] ?? false) === true) {
+                return $this->finish($id, 'cancelled', 0, 'Comunicado cancelado.');
+            }
             $recipients = $this->recipients($event, $payload, $notice['audience']);
             if ($recipients === []) {
-                return $this->finish($id, 'cancelled', 0, $notice['audience'] === 'billing'
-                    ? 'Ninguém da unidade autorizou receber cobrança por e-mail.' : 'Nenhum destinatário com e-mail cadastrado.');
+                return $this->finish($id, 'cancelled', 0, match ($notice['audience']) {
+                    'billing' => 'Ninguém da unidade autorizou receber cobrança por e-mail.',
+                    'notices' => 'Ninguém da unidade com e-mail aceita comunicados.',
+                    default => 'Nenhum destinatário com e-mail cadastrado.',
+                });
             }
-            $context = $this->context($event, $payload);
             $mail = new MailTemplate();
             $count = 0;
             $done = $this->pdo->prepare('SELECT 1 FROM erp_notification_deliveries WHERE outbox_id = :o AND recipient_hash = :h');
@@ -185,7 +195,7 @@ final class NotificationDispatcher
                     continue;
                 }
                 $body = $mail->render($template, $context + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
-                $subject = $notice['subject'];
+                $subject = (string)($context['subject'] ?? $notice['subject']);
                 $sentTo = null;
                 $queueId = null;
                 if ($this->mode === 'log') {
@@ -235,7 +245,8 @@ final class NotificationDispatcher
                 AND status = 'active' AND billing_by_email = 1 AND email IS NOT NULL AND email <> ''
                 ORDER BY relationship = 'financial' DESC, relationship = 'owner' DESC, id LIMIT 5"
             : "SELECT name, email FROM erp_residents WHERE unit_id = :u AND condominium_id = :c AND deleted_at IS NULL
-                AND status = 'active' AND email IS NOT NULL AND email <> '' ORDER BY relationship = 'owner' DESC, id LIMIT 5";
+                AND status = 'active' AND email IS NOT NULL AND email <> ''" . ($audience === 'notices' ? ' AND notices_opt_out = 0' : '')
+                . " ORDER BY relationship = 'owner' DESC, id LIMIT 5";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['u' => (int)$payload['unit_id'], 'c' => (int)$event['condominium_id']]);
         $out = [];
@@ -283,6 +294,17 @@ final class NotificationDispatcher
             $area = $this->pdo->prepare('SELECT name FROM erp_common_areas WHERE id = :id AND condominium_id = :c');
             $area->execute(['id' => (int)$payload['common_area_id'], 'c' => (int)$event['condominium_id']]);
             $context['area'] = (string)($area->fetchColumn() ?: 'área comum');
+        }
+        // Comunicado e aviso de cobrança (ADR 0059): assunto e texto da origem; cancelado não sai.
+        if (isset($payload['announcement_id'])) {
+            $stmt = $this->pdo->prepare('SELECT subject, body, status FROM erp_announcements WHERE id = :id AND condominium_id = :c');
+            $stmt->execute(['id' => (int)$payload['announcement_id'], 'c' => (int)$event['condominium_id']]);
+            $announcement = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($announcement) || $announcement['status'] !== 'active') {
+                return $context + ['cancelled' => true];
+            }
+            $context['subject'] = (string)$announcement['subject'];
+            $context['body'] = (string)($announcement['body'] ?? '');
         }
         return $context;
     }

@@ -161,6 +161,8 @@ final class Definitions
                     'starts_on' => ['label' => 'Início do vínculo', 'type' => 'date', 'span' => 4],
                     'ends_on' => ['label' => 'Fim do vínculo', 'type' => 'date', 'span' => 4, 'after' => 'starts_on'],
                     'billing_by_email' => ['label' => 'Recebe boleto por e-mail', 'type' => 'bool', 'span' => 4],
+                    // ADR 0059: desmarcado = recebe comunicado geral; marcado = não recebe (o aviso de cobrança segue o opt-in acima).
+                    'notices_opt_out' => ['label' => 'Não quer receber comunicados por e-mail', 'type' => 'bool', 'span' => 4],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'unique' => [['fields' => ['condominium_id', 'unit_label', 'relationship', 'document'], 'message' => 'Esta pessoa já tem este vínculo com a unidade.']],
