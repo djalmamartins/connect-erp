@@ -34,6 +34,8 @@ final class EntryShortcuts
 {
     public const CHARGE_KINDS = ['extra' => 'Cobrança extra', 'fine' => 'Multa avulsa'];
     public const METHODS = ['fixed' => 'Valor fixo por unidade', 'equal' => 'Total dividido igualmente', 'fraction' => 'Total rateado pela fração ideal'];
+    /** Unidades por cobrança extra: limita o IN (...) e as contas geradas numa só transação (ADR 0062). */
+    public const MAX_UNITS = 1000;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -54,6 +56,23 @@ final class EntryShortcuts
             throw new InvalidArgumentException("Informe o motivo {$what} (5 a 255 caracteres).");
         }
         return $reason;
+    }
+
+    /**
+     * Unidades escolhidas (regra pura): inteiros positivos, sem repetição, de 1 a MAX_UNITS.
+     *
+     * @return list<int>
+     */
+    public static function unitIds(mixed $raw): array
+    {
+        $ids = is_array($raw) ? array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $i): bool => $i > 0))) : [];
+        if ($ids === []) {
+            throw new InvalidArgumentException('Escolha ao menos uma unidade.');
+        }
+        if (count($ids) > self::MAX_UNITS) {
+            throw new InvalidArgumentException('Escolha no máximo ' . self::MAX_UNITS . ' unidades por cobrança.');
+        }
+        return $ids;
     }
 
     /** Desconto aceito (regra pura): maior que zero e menor que o valor da conta (nunca zera). */
@@ -201,10 +220,7 @@ final class EntryShortcuts
         if ($this->registry->isClosed($condominium, $competence)) {
             throw new DomainException("A competência {$competence} está fechada. Reabra o fechamento mensal para lançar.");
         }
-        $unitIds = is_array($input['unit_ids'] ?? null) ? array_values(array_unique(array_filter(array_map('intval', $input['unit_ids']), static fn (int $i): bool => $i > 0))) : [];
-        if ($unitIds === []) {
-            throw new InvalidArgumentException('Escolha ao menos uma unidade.');
-        }
+        $unitIds = self::unitIds($input['unit_ids'] ?? null);
         if ($kind === 'fine' && count($unitIds) !== 1) {
             throw new InvalidArgumentException('A multa avulsa é de uma unidade só.');
         }

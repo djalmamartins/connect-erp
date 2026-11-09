@@ -188,6 +188,26 @@ final class EntryShortcutsIntegrationTest extends TestCase
         self::assertNull($this->pdo->query("SELECT paid_on FROM erp_entries WHERE id = {$entry}")->fetchColumn(), 'Sem recibo válido, o estorno passa.');
     }
 
+    public function testReceiptTreatsOtherCondominiumEntryAsMissing(): void
+    {
+        $betaUnit = $this->service->save($this->admin, 'units', ['condominium_id' => $this->beta, 'number' => '901', 'type' => 'apartamento'])['id'];
+        $betaEntry = $this->service->save($this->admin, 'entries', ['condominium_id' => $this->beta, 'nature' => 'receita', 'chart_account_id' => $this->fee,
+            'amount_cents' => '10,00', 'competence' => $this->competence, 'description' => 'Taxa Beta', 'due_on' => $this->due, 'unit_id' => $betaUnit])['id'];
+        $this->pdo->exec("UPDATE erp_entries SET paid_on = CURDATE() WHERE id = {$betaEntry}");
+        $documents = new UnitDocuments($this->pdo);
+        $messages = [];
+        foreach ([$betaEntry, 99999999] as $id) {
+            try {
+                $documents->issue($this->admin, ['kind' => 'receipt', 'unit_id' => $this->units[0], 'entry_ids' => [$id]]);
+                self::fail('Emitiu recibo com conta que não é do condomínio da unidade.');
+            } catch (InvalidArgumentException $error) {
+                $messages[] = $error->getMessage();
+            }
+        }
+        self::assertSame(['Alguma conta escolhida não existe.', 'Alguma conta escolhida não existe.'], $messages,
+            'Id de outro condomínio responde igual a id inexistente (ADR 0062).');
+    }
+
     public function testScope(): void
     {
         $outsider = $this->user([$this->beta]);
