@@ -129,3 +129,33 @@ Para revisar quando o código chegar:
   - toda linha cai nesse condomínio, sem aceitar `condominium_id` vindo do arquivo;
   - o resultado é auditado com arquivo, hash, quem importou e quantas linhas.
 - **Frequência:** continua não havendo limite de requisições na API (lacuna da primeira rodada). Importação é o caso mais caro e o primeiro a precisar dele.
+
+## Quarta rodada: importações de OFX e planilha (ciclo 26)
+
+Escopo: as rotas `/imports`, `/imports/preview`, `/imports/{id}/apply` e `/bank-statement-lines`
+(`Controllers/Api/V1/Imports`) e os serviços `Services/Erp/Imports` (`Imports`, `OfxParser`,
+`SpreadsheetReader` e `ImportRules`), conferidos contra a lista de requisitos da terceira rodada.
+
+| Requisito | Situação |
+|---|---|
+| Upload: `is_uploaded_file`, até 2 MB, extensão por tipo e assinatura do conteúdo (`PK` no XLSX, sem byte nulo em CSV e OFX). Nome do arquivo limpo | CONFIRMADO |
+| Arquivo em `storage/private/imports`, com `.htaccess` negando acesso. Caminho gravado validado por regex ao reler | CONFIRMADO |
+| Repetição: hash único por condomínio e tipo. Arquivo já aplicado é recusado. A aplicação relê e confere o hash, revalida tudo e grava numa transação, com trava na linha da importação | CONFIRMADO |
+| OFX: lido por expressão, sem parser XML (sem XXE), com até 5000 transações. Repetição de FITID por conta é barrada por chave única | CONFIRMADO |
+| XLSX: `DOCTYPE` recusado e `LIBXML_NONET`, com até 5000 linhas. Fórmulas entram só pelo valor gravado, nunca avaliadas. Zip bomb | CONFIRMADO, com os ajustes do achado 2 |
+| Escopo: condomínio do usuário, conta bancária do mesmo condomínio, linhas validadas contra os cadastros daquele condomínio (`condominium_id` não vem do arquivo). Busca por id fora do escopo dá 404 | CONFIRMADO |
+| Permissão: `erp.imports.*` mais a do destino (`erp.entries.manage` ou `erp.units.manage`) na prévia e na aplicação. Conciliar uma linha pede `erp.entries.manage` | CONFIRMADO |
+| O OFX não cria nem baixa lançamento: só concilia com conta paga da mesma conta bancária, e o que não bate fica pendente | CONFIRMADO |
+
+### Achados corrigidos (ADR 0063)
+
+1. **Valores do OFX e da planilha sem teto.** Um número de 20 dígitos dava erro 500, como em `Invoices::cents`. Agora valem até 10 dígitos e `MAX_CENTS`.
+2. **XLSX esparso e tamanho do ZIP.** Uma célula `XFD1` ou uma linha `1048576`, em poucos bytes, esgotava a memória. Agora a planilha tem limite de colunas (200) e de posição de linha (20.000), e a leitura das partes do ZIP para em 30 MB, mesmo que o arquivo declare menos.
+
+### Lacunas
+
+- **Injeção de fórmula na exportação.** O ERP ainda não exporta CSV ou XLSX. Quando exportar, as células que começam com `=`, `+`, `-`, `@`, tabulação ou retorno de carro precisam sair com `'` na frente, inclusive o texto que veio de uma importação (descrição, histórico do OFX).
+- **Quem vê o extrato importado.** As linhas pendentes e o detalhe da importação pedem só `erp.imports.view`, e mostram o histórico do extrato (nomes de quem pagou). Se `erp.imports.view` for dado a perfis sem acesso ao financeiro, vale exigir também `erp.entries.view`. Fica como decisão de perfil.
+- **Duas conciliações ao mesmo tempo para o mesmo lançamento.** A chave única em `entry_id` barra a segunda, mas ela responde 500 em vez de 409.
+- **XML em UTF-16.** A checagem de `DOCTYPE` é por texto e um XML em UTF-16 passaria por ela. Fica protegido pelo padrão do libxml 2.9 ou mais novo, que não carrega entidades externas (não se usa `LIBXML_NOENT`).
+- **Frequência.** Continua sem limite de requisições na API. A prévia lê e valida o arquivo inteiro a cada envio.
