@@ -105,6 +105,10 @@
    "title": "0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar"
   },
   {
+   "file": "docs/Organic Code/decisions/0028-two-factor-change-notice.md",
+   "title": "0028 — Aviso por e-mail quando o 2FA da conta muda"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -264,6 +268,7 @@
     "Source\\Models\\Session\\AppLog",
     "Source\\Models\\User",
     "Source\\Services\\TwoFactorAdminReset",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
@@ -574,6 +579,7 @@
     "Source\\Core\\Controller",
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
     "Source\\Support\\SecretBox"
@@ -803,6 +809,7 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
     "Source\\Support\\SecretBox"
@@ -970,6 +977,7 @@
     "Source\\Models\\Session\\AppLog",
     "Source\\Services\\LoginThrottle",
     "Source\\Services\\PasswordResetService",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Email",
@@ -1889,6 +1897,22 @@
     "tests/legacy/Unit/TwoFactorAdminResetTest.php"
    ]
   },
+  "Source\\Services\\TwoFactorNotice": {
+   "deps": [
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Email",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Services/TwoFactorNotice.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "mail_queue"
+   ],
+   "tests": [
+    "tests/legacy/Unit/TwoFactorNoticeTest.php"
+   ]
+  },
   "Source\\Services\\TwoFactorService": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2029,7 +2053,8 @@
    "tables": [],
    "tests": [
     "tests/legacy/Unit/MailTemplateTest.php",
-    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php",
+    "tests/legacy/Unit/TwoFactorNoticeTest.php"
    ]
   },
   "Source\\Support\\Message": {
@@ -2179,8 +2204,8 @@
   }
  },
  "counts": {
-  "adrs": 29,
-  "classes": 136,
+  "adrs": 30,
+  "classes": 137,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -2188,7 +2213,7 @@
   "erp_pages": 172,
   "routes": 206,
   "tables": 63,
-  "tests": 65
+  "tests": 66
  },
  "erp_pages": [
   {
@@ -5591,6 +5616,7 @@
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
     "Source\\Services\\OnboardingAlerts",
+    "Source\\Services\\TwoFactorNotice",
     "Source\\Support\\Communication",
     "Source\\Support\\Email"
    ]
@@ -6087,6 +6113,10 @@
   ],
   "tests/legacy/Unit/TwoFactorAdminResetTest.php": [
    "Source\\Services\\TwoFactorAdminReset"
+  ],
+  "tests/legacy/Unit/TwoFactorNoticeTest.php": [
+   "Source\\Services\\TwoFactorNotice",
+   "Source\\Support\\MailTemplate"
   ],
   "tests/legacy/Unit/TwoFactorSchemaMissingTest.php": [
    "Source\\Models\\Auth"
