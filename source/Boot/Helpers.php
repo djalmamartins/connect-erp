@@ -870,6 +870,32 @@ function erp_host(): bool
     return (bool)preg_match('/^erp\.[a-z0-9.-]+(?::\d+)?$/', $host);
 }
 
+/**
+ * Studio (CMS) em host próprio (studio.connect.lab, studio.<domínio>), como o ERP (ADR 0026).
+ * As rotas continuam em /studio e /helpdesk; no host do Studio a raiz leva ao painel e o
+ * site institucional não responde (isolamento por hostname).
+ */
+function studio_host(): bool
+{
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    return (bool)preg_match('/^studio\.[a-z0-9.-]+(?::\d+)?$/', $host);
+}
+
+/**
+ * Endereço do site institucional. No host do Studio aponta para o host do site
+ * (www.<domínio>), porque a raiz do host do Studio é o próprio painel.
+ */
+function site_home_url(): string
+{
+    if (!studio_host()) {
+        return url('/');
+    }
+    $host = (string)preg_replace('/^studio\./i', 'www.', (string)($_SERVER['HTTP_HOST'] ?? ''));
+    $https = (($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off')
+        || strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0])) === 'https';
+    return ($https ? 'https' : 'http') . '://' . $host . '/';
+}
+
 function erp_base(): string
 {
     return erp_host() ? '' : '/erp';

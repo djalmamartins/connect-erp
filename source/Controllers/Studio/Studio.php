@@ -1183,7 +1183,12 @@ class Studio extends Controller
         }
         $defaultRole = null;
         if (!$targetUser) { foreach ($roles as $availableRole) { if ($availableRole->slug === "user") { $defaultRole = $availableRole; break; } } }
-        echo $this->view->render("components/users/form", $this->viewData($targetUser ? "Acessos do usuário" : "Novo usuário", "users", $user, ["targetUser" => $targetUser, "address" => $targetUser ? $targetUser->address("main") : null, "roles" => $roles, "permissions" => $permissions, "overrides" => $overrides, "selectedRole" => $targetUser ? AccessControl::role($targetUser) : $defaultRole]));
+        // Reset do 2FA por administrador (ADR 0025): o botão só aparece para quem pode usar a API.
+        $twoFactorReset = null;
+        if ($targetUser && (int)$targetUser->id !== (int)$user->id && \Source\Support\Access::can(\Source\Services\TwoFactorAdminReset::PERMISSION, $user)) {
+            $twoFactorReset = ["enabled" => (new \Source\Services\TwoFactorService())->isEnabled((int)$targetUser->id), "url" => url("/api/v1/users/{$targetUser->id}/2fa")];
+        }
+        echo $this->view->render("components/users/form", $this->viewData($targetUser ? "Acessos do usuário" : "Novo usuário", "users", $user, ["twoFactorReset" => $twoFactorReset, "targetUser" => $targetUser, "address" => $targetUser ? $targetUser->address("main") : null, "roles" => $roles, "permissions" => $permissions, "overrides" => $overrides, "selectedRole" => $targetUser ? AccessControl::role($targetUser) : $defaultRole]));
     }
 
     public function testimonials(?array $data): void
@@ -1990,7 +1995,7 @@ class Studio extends Controller
             \Source\Support\AppLogger::exception($exception, "versioning", ["event_type" => "current_version_lookup_failed"]);
         }
         return array_merge(["head" => $this->seo->render(
-            $title . " - MovesOS",
+            $title . " - Connect",
             CONF_SITE_DESC,
             url($this->isHelpDeskRequest() ? "/helpdesk" : "/studio"),
             themeStudio("/assets/images/favicon.png", "default")

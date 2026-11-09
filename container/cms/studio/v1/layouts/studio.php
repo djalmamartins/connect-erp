@@ -6,27 +6,38 @@
     <?= $head ?>
     <?php $studioCss=dirname(__DIR__).'/assets/studio.min.css'; $studioJs=dirname(__DIR__).'/assets/studio.min.js'; ?>
     <link rel="stylesheet" href="<?= themeStudio('/assets/studio.min.css', 'default') . '?v=' . filemtime($studioCss) ?>">
-    <link rel="icon" href="<?= themeStudio('/assets/images/favicon.png', 'default') ?>">
+    <?php /* Camada visual do ERP sobre os componentes do Studio e do Help Desk (ADR 0026). */ $connectShellCss=dirname(__DIR__).'/assets/css/connect-shell.css'; ?>
+    <link rel="stylesheet" href="<?= themeStudio('/assets/css/connect-shell.css', 'default') . '?v=' . filemtime($connectShellCss) ?>">
+    <link rel="icon" href="<?= theme('/assets/images/favicon-32x32.png') ?>">
 </head>
-<?php $requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? ''); $isHelpDeskEnvironment=(bool)preg_match('~/helpdesk(?:/|$)~',$requestPath); ?>
-<body class="studio-body studio-v2 studio-app-<?= htmlspecialchars($app) ?>" data-environment="<?= $isHelpDeskEnvironment?'helpdesk':'studio' ?>" data-editor-upload="<?= url('/studio/media/editor') ?>">
+<?php
+$requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');
+$isHelpDeskEnvironment=(bool)preg_match('~/helpdesk(?:/|$)~',$requestPath);
+$environmentName=$isHelpDeskEnvironment?'Help Desk':'Studio';
+$environmentHome=$isHelpDeskEnvironment?'/helpdesk/tickets':'/studio/dash';
+$userInitial=mb_strtoupper(mb_substr(trim((string)($user->first_name ?? $user->fullName() ?? 'C')),0,1));
+$siteHome=function_exists('site_home_url')?site_home_url():url('/');
+?>
+<body class="studio-body studio-v2 studio-erp studio-app-<?= htmlspecialchars($app) ?>" data-environment="<?= $isHelpDeskEnvironment?'helpdesk':'studio' ?>" data-editor-upload="<?= url('/studio/media/editor') ?>">
 <a class="studio-skip-link" href="#main-content">Ir para o conteúdo</a>
-<div class="ajax_load studio-preloader" role="status" aria-live="polite"><div class="studio-preloader-card"><span class="studio-preloader-mark"><i></i><i></i><i></i></span><strong>MOVES<small>OS</small></strong><p class="ajax_load_box_title">Preparando seu painel</p><span class="studio-preloader-line"><i></i></span></div></div>
+<div class="ajax_load studio-preloader" role="status" aria-live="polite"><div class="studio-preloader-card"><span class="studio-preloader-mark"><i></i><i></i><i></i></span><strong>CONNECT<small><?= $environmentName ?></small></strong><p class="ajax_load_box_title">Preparando seu painel</p><span class="studio-preloader-line"><i></i></span></div></div>
 <div class="ajax_response"><?= flash() ?></div>
 <div class="studio-shell">
-    <aside class="studio-sidebar">
-        <button class="studio-brand-v2 studio-system-toggle" type="button" aria-expanded="false" aria-controls="studio-system-panel">
-            <img src="<?= themeStudio('/assets/images/studio-logo.svg', 'default') ?>" alt="<?= $isHelpDeskEnvironment?'Help Desk':'Studio' ?>">
-            <?php if($isHelpDeskEnvironment): ?>
-                <span>MOVES<small>Help Desk</small></span>
-            <?php else: ?>
-                <span>MOVES<small>Studio</small></span>
-            <?php endif; ?>
+    <aside class="studio-sidebar" id="studio-sidebar" aria-label="Navegação do <?= $environmentName ?>">
+        <div class="studio-erp-sidebar-head">
+            <a class="studio-erp-brand" href="<?= url($environmentHome) ?>" aria-label="Connect <?= $environmentName ?> — início">
+                <img class="studio-erp-brand-logo" src="<?= htmlspecialchars(site_logo_url()) ?>" alt="Connect Condomínios" width="152" height="40">
+                <img class="studio-erp-brand-mark" src="<?= theme('/assets/images/marca_connect.svg') ?>" alt="" width="34" height="34">
+            </a>
+            <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
+        </div>
+        <button class="studio-brand-v2 studio-system-toggle studio-erp-context" type="button" aria-expanded="false" aria-controls="studio-system-panel" title="Trocar de ambiente">
+            <span><small>Administradora</small><strong>Connect · <?= $environmentName ?></strong></span>
             <ion-icon name="chevron-down-outline"></ion-icon>
         </button>
         <div class="studio-system-panel" id="studio-system-panel" hidden>
-            <small>AMBIENTES MOVES</small>
-            <?php $systems=[['Studio','Gestão de conteúdo e operação','/studio/dash','grid-outline','studio.access',!$isHelpDeskEnvironment],['ERP','Gestão administrativa','/erp','business-outline','erp.access',false],['Help Desk','Atendimento e chamados','/helpdesk','headset-outline','support.manage',$isHelpDeskEnvironment],['Moradores','Portal de moradores','/app','home-outline','app.access',false],['Site','Site institucional','/','globe-outline','site.access',false]]; foreach($systems as [$systemName,$systemDescription,$systemUrl,$systemIcon,$systemPermission,$current]): if(!$user->can($systemPermission))continue; ?><a href="<?= url($systemUrl) ?>" class="<?= $current?'current':'' ?>"><ion-icon name="<?= $systemIcon ?>"></ion-icon><span><strong><?= $systemName ?></strong><small><?= $systemDescription ?></small></span><?= $current?'<em>Atual</em>':'' ?></a><?php endforeach; ?>
+            <small>AMBIENTES CONNECT</small>
+            <?php $systems=[['Studio','Gestão de conteúdo e operação','/studio/dash','grid-outline','studio.access',!$isHelpDeskEnvironment],['ERP','Gestão administrativa','/erp','business-outline','erp.access',false],['Help Desk','Atendimento e chamados','/helpdesk','headset-outline','support.manage',$isHelpDeskEnvironment],['Moradores','Portal de moradores','/app','home-outline','app.access',false],['Site','Site institucional','/','globe-outline','site.access',false]]; foreach($systems as [$systemName,$systemDescription,$systemUrl,$systemIcon,$systemPermission,$current]): if(!$user->can($systemPermission))continue; $systemHref=$systemUrl==='/'?$siteHome:url($systemUrl); ?><a href="<?= $systemHref ?>" class="<?= $current?'current':'' ?>"><ion-icon name="<?= $systemIcon ?>"></ion-icon><span><strong><?= $systemName ?></strong><small><?= $systemDescription ?></small></span><?= $current?'<em>Atual</em>':'' ?></a><?php endforeach; ?>
         </div>
         <?php $nav = function(string $key,string $href,string $label,string $icon,string $permission) use($app,$user){if(!$user->can($permission))return '';$active=$app===$key?'active':''; return '<a class="'.$active.'" href="'.url($href).'" title="'.htmlspecialchars($label).'"><ion-icon name="'.$icon.'" class="studio-nav-icon"></ion-icon><span>'.$label.'</span></a>';}; ?>
         <nav class="studio-nav-v2">
@@ -62,32 +73,34 @@
             <?= $nav('system-logs','/studio/system-logs','Log','bug-outline','logs.view') ?>
             <?php endif; ?>
         </nav>
-        <div class="studio-sidebar-footer"><a href="<?= url('/') ?>" target="_blank"><ion-icon name="open-outline"></ion-icon><span>Visualizar site</span></a><a href="<?= url('/studio/sair') ?>"><ion-icon name="log-out-outline"></ion-icon><span>Sair</span></a></div>
+        <div class="studio-sidebar-footer studio-erp-sidebar-foot">
+            <a class="studio-erp-profile" href="<?= url(($isHelpDeskEnvironment?'/helpdesk':'/studio').'/user/'.$user->id) ?>" title="Minha conta"><span class="studio-erp-avatar" aria-hidden="true"><?= htmlspecialchars($userInitial) ?></span><span><strong><?= htmlspecialchars($user->fullName()) ?></strong><small>Connect · administradora</small></span></a>
+        </div>
     </aside>
     <button class="studio-sidebar-backdrop" type="button" aria-label="Fechar menu"></button>
     <main class="studio-main" id="main-content" tabindex="-1">
-        <header class="studio-topbar">
-            <button class="studio-menu" type="button" aria-label="Abrir menu"><ion-icon name="apps-outline"></ion-icon></button>
-            <form class="studio-global-search" action="<?= url('/studio/buscar') ?>" method="get"><ion-icon name="search-outline"></ion-icon><input name="q" value="<?= htmlspecialchars((string)($_GET['q'] ?? '')) ?>" placeholder="Buscar páginas, artigos, categorias ou usuários..." autocomplete="off"></form>
+        <header class="studio-topbar studio-erp-navbar">
+            <button class="studio-menu" type="button" aria-label="Abrir menu" aria-controls="studio-sidebar"><ion-icon name="menu-outline"></ion-icon></button>
+            <div class="studio-erp-title"><strong><?= htmlspecialchars((string)($title ?? $environmentName)) ?></strong><nav aria-label="Você está em"><a href="<?= url($environmentHome) ?>"><?= $environmentName ?></a><span aria-hidden="true">/</span><span aria-current="page"><?= htmlspecialchars((string)($title ?? '')) ?></span></nav></div>
+            <form class="studio-global-search" action="<?= url('/studio/buscar') ?>" method="get" role="search"><ion-icon name="search-outline"></ion-icon><label class="studio-erp-sr-only" for="studio-global-search-input">Buscar no <?= $environmentName ?></label><input id="studio-global-search-input" name="q" value="<?= htmlspecialchars((string)($_GET['q'] ?? '')) ?>" placeholder="Buscar páginas, artigos, categorias ou usuários..." autocomplete="off"></form>
             <nav class="studio-header-actions" aria-label="Atalhos do painel">
-                <button class="studio-theme-toggle" type="button" title="Alternar tema" aria-label="Ativar modo escuro" aria-pressed="false"><ion-icon name="moon-outline"></ion-icon></button>
-                <a class="studio-context-help" href="<?= $app==='notifications' ? url('/suporte/comunicacao/como-cadastrar-uma-comunicacao') : url('/suporte/buscar?q='.urlencode($title)) ?>" target="_blank" title="Ajuda sobre esta tela" aria-label="Abrir ajuda sobre esta tela"><ion-icon name="help-circle-outline"></ion-icon></a>
-                <a href="<?= url('/') ?>" target="_blank" title="Visualizar site"><ion-icon name="globe-outline"></ion-icon></a>
+                <a class="studio-context-help" href="<?= rtrim($siteHome,'/') . ($app==='notifications' ? '/suporte/comunicacao/como-cadastrar-uma-comunicacao' : '/suporte/buscar?q='.urlencode((string)$title)) ?>" target="_blank" title="Ajuda sobre esta tela" aria-label="Abrir ajuda sobre esta tela"><ion-icon name="help-circle-outline"></ion-icon></a>
                 <div class="studio-notifications">
-                    <button class="studio-notification-toggle" type="button" title="Notificações" data-count="<?= url('/studio/notifications/count') ?>" data-list="<?= url('/studio/notifications/list') ?>"><ion-icon name="notifications-outline"></ion-icon><small>0</small></button>
+                    <button class="studio-notification-toggle" type="button" title="Notificações" aria-label="Notificações" data-count="<?= url('/studio/notifications/count') ?>" data-list="<?= url('/studio/notifications/list') ?>"><ion-icon name="notifications-outline"></ion-icon><small>0</small></button>
                     <div class="studio-notification-panel"><header><span><strong>Notificações</strong><small>Atualizações do sistema</small></span><a href="<?= url('/studio/notifications') ?>">Gerenciar</a></header><div role="status" aria-live="polite"><p>Não há notificações.</p></div></div>
                 </div>
-                <?php $headerPhoto=$user->photo()?image($user->photo(),160,160):themeStudio('/assets/images/avatar.jpg','default'); $headerRole=$user->accessRole(); ?>
-                <div class="studio-header-profile" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false">
-                    <img src="<?= $headerPhoto ?>" alt="<?= htmlspecialchars($user->fullName()) ?>">
-                    <span><strong><?= htmlspecialchars($user->fullName()) ?></strong><small>Administrador</small></span>
+                <?php if($user->can('settings.manage')): ?><a href="<?= url(($isHelpDeskEnvironment?'/helpdesk':'/studio').'/settings') ?>" title="Configurações" aria-label="Configurações"><ion-icon name="settings-outline"></ion-icon></a><?php endif; ?>
+                <?php $headerPhoto=$user->photo()?image($user->photo(),160,160):themeStudio('/assets/images/avatar.jpg','default'); ?>
+                <div class="studio-header-profile" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" aria-label="Menu do usuário">
+                    <span class="studio-erp-avatar" aria-hidden="true"><?= htmlspecialchars($userInitial) ?></span>
+                    <span><strong><?= htmlspecialchars((string)($user->first_name ?? $user->fullName())) ?></strong></span>
                     <ion-icon name="chevron-down-outline"></ion-icon>
-                    <div class="studio-profile-menu" role="menu"><header><img src="<?= $headerPhoto ?>" alt=""><span><strong><?= htmlspecialchars($user->fullName()) ?></strong><small><?= htmlspecialchars((string)$user->email) ?></small></span></header><nav><a role="menuitem" href="<?= url('/studio/user/'.$user->id) ?>"><ion-icon name="person-outline"></ion-icon><span>Minha conta</span></a><a role="menuitem" href="<?= $user->can('settings.manage')?url('/studio/settings'):url('/studio/user/'.$user->id.'#preferencias') ?>"><ion-icon name="options-outline"></ion-icon><span>Preferências</span></a><a role="menuitem" class="danger" href="<?= url('/studio/sair') ?>"><ion-icon name="log-out-outline"></ion-icon><span>Sair</span></a></nav></div>
+                    <div class="studio-profile-menu" role="menu"><header><img src="<?= $headerPhoto ?>" alt=""><span><strong><?= htmlspecialchars($user->fullName()) ?></strong><small><?= htmlspecialchars((string)$user->email) ?></small></span></header><nav><a role="menuitem" href="<?= url('/studio/user/'.$user->id) ?>"><ion-icon name="person-outline"></ion-icon><span>Minha conta</span></a><a role="menuitem" href="<?= url('/studio/seguranca/2fa') ?>"><ion-icon name="shield-checkmark-outline"></ion-icon><span>Segurança e 2FA</span></a><a role="menuitem" href="<?= $user->can('settings.manage')?url('/studio/settings'):url('/studio/user/'.$user->id.'#preferencias') ?>"><ion-icon name="options-outline"></ion-icon><span>Preferências</span></a><a role="menuitem" href="<?= $siteHome ?>" target="_blank"><ion-icon name="globe-outline"></ion-icon><span>Visualizar site</span></a><a role="menuitem" class="danger" href="<?= url(($isHelpDeskEnvironment?'/helpdesk':'/studio').'/sair') ?>"><ion-icon name="log-out-outline"></ion-icon><span>Sair</span></a></nav></div>
                 </div>
             </nav>
         </header>
         <div class="studio-content"><?= $this->section('content') ?></div>
-        <footer class="studio-footer"><span>Copyright © <?= date('Y') ?> MovesOS. Todos os direitos reservados.</span><nav><a class="studio-footer-version" href="<?= url('/studio/versions?product=studio') ?>">Studio v<?= htmlspecialchars($currentVersion ?? VERSION_STUDIO) ?></a></nav></footer>
+        <footer class="studio-footer"><span>© <?= date('Y') ?> Connect Condomínios</span><nav><a class="studio-footer-version" href="<?= url('/studio/versions?product=studio') ?>"><?= $environmentName ?> v<?= htmlspecialchars($currentVersion ?? VERSION_STUDIO) ?></a></nav></footer>
     </main>
 </div>
 <div class="studio-library-picker" id="studio-library-picker" data-library-url="<?= url('/studio/media/library') ?>" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="studio-library-title"><div class="studio-library-dialog"><header><div><small>BIBLIOTECA DE MÍDIA</small><h2 id="studio-library-title">Escolha uma imagem</h2></div><button type="button" data-library-close aria-label="Fechar"><ion-icon name="close-outline"></ion-icon></button></header><label class="studio-library-search"><ion-icon name="search-outline"></ion-icon><input type="search" placeholder="Buscar pelo nome do arquivo" data-library-search></label><div class="studio-library-grid" data-library-grid><p>Carregando imagens...</p></div><footer><span data-library-count></span><a class="studio-btn" href="<?= url('/studio/media') ?>" target="_blank"><ion-icon name="images-outline"></ion-icon>Abrir biblioteca completa</a></footer></div></div>
@@ -115,15 +128,16 @@
 <?php $editorJs=dirname(__DIR__).'/assets/js/editor.js'; ?>
 <script type="module" src="<?= themeStudio('/assets/js/editor.js', 'default') . '?v=' . filemtime($editorJs) ?>"></script>
 <script>
-const studioThemeButton=document.querySelector('.studio-theme-toggle');
-const studioApplyTheme=theme=>{document.documentElement.dataset.theme=theme;localStorage.setItem('studio-theme',theme);const dark=theme==='dark';studioThemeButton?.setAttribute('aria-pressed',String(dark));studioThemeButton?.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');studioThemeButton?.querySelector('ion-icon')?.setAttribute('name',dark?'sunny-outline':'moon-outline')};
-studioApplyTheme(localStorage.getItem('studio-theme')||'light');
-studioThemeButton?.addEventListener('click',()=>studioApplyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
+// O ERP não tem modo escuro; o Studio e o Help Desk seguem a mesma moldura clara (ADR 0026).
+document.documentElement.dataset.theme='light';try{localStorage.removeItem('studio-theme')}catch(e){}
 const studioMenuButton=document.querySelector('.studio-menu');
 const studioIsMobile=()=>window.matchMedia('(max-width:1024px)').matches;
-const studioSetMenuState=()=>studioMenuButton?.setAttribute('aria-expanded',studioIsMobile()?String(document.body.classList.contains('menu-open')):String(!document.body.classList.contains('menu-collapsed')));
+const studioSetMenuState=()=>{studioMenuButton?.setAttribute('aria-expanded',studioIsMobile()?String(document.body.classList.contains('menu-open')):String(!document.body.classList.contains('menu-collapsed')));const collapse=document.querySelector('[data-studio-collapse]');if(collapse){const collapsed=!studioIsMobile()&&document.body.classList.contains('menu-collapsed');collapse.setAttribute('aria-expanded',String(!collapsed));collapse.setAttribute('aria-label',studioIsMobile()?'Fechar menu':(collapsed?'Expandir menu':'Recolher menu'))}};
 if(!studioIsMobile()&&localStorage.getItem('studio-menu-collapsed')==='1')document.body.classList.add('menu-collapsed');
-studioMenuButton?.addEventListener('click',()=>{if(studioIsMobile()){document.body.classList.toggle('menu-open')}else{document.body.classList.toggle('menu-collapsed');localStorage.setItem('studio-menu-collapsed',document.body.classList.contains('menu-collapsed')?'1':'0')}studioSetMenuState()});
+const studioCollapseButton=document.querySelector('[data-studio-collapse]');
+const studioToggleMenu=()=>{if(studioIsMobile()){document.body.classList.toggle('menu-open')}else{document.body.classList.toggle('menu-collapsed');localStorage.setItem('studio-menu-collapsed',document.body.classList.contains('menu-collapsed')?'1':'0')}studioSetMenuState()};
+studioMenuButton?.addEventListener('click',studioToggleMenu);
+studioCollapseButton?.addEventListener('click',()=>{if(studioIsMobile()){document.body.classList.remove('menu-open');studioSetMenuState()}else studioToggleMenu()});
 document.querySelector('.studio-sidebar-backdrop')?.addEventListener('click',()=>{document.body.classList.remove('menu-open');studioSetMenuState()});
 window.addEventListener('resize',()=>{if(!studioIsMobile())document.body.classList.remove('menu-open');studioSetMenuState()});
 studioSetMenuState();
