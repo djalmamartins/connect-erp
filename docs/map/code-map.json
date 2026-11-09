@@ -217,6 +217,10 @@
    "title": "0055 — Fila de envio dos avisos do ERP pelo container send"
   },
   {
+   "file": "docs/Organic Code/decisions/0060-smtp-credentials-from-environment.md",
+   "title": "0060 — Credenciais SMTP pelo ambiente, valendo sobre a tabela settings"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -3134,6 +3138,18 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Support\\MailConfig": {
+   "deps": [],
+   "file": "source/Support/MailConfig.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "settings"
+   ],
+   "tests": [
+    "tests/legacy/Unit/MailConfigTest.php"
+   ]
+  },
   "Source\\Support\\MailTemplate": {
    "deps": [
     "Source\\Core\\View"
@@ -3318,8 +3334,8 @@
   }
  },
  "counts": {
-  "adrs": 60,
-  "classes": 184,
+  "adrs": 61,
+  "classes": 185,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -3327,7 +3343,7 @@
   "erp_pages": 172,
   "routes": 274,
   "tables": 99,
-  "tests": 118
+  "tests": 119
  },
  "erp_pages": [
   {
@@ -7762,7 +7778,8 @@
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
     "Source\\Models\\Settings\\Settings",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\MailConfig"
    ]
   },
   "studio_calendar_events": {
@@ -8357,6 +8374,9 @@
   "tests/legacy/Unit/LoginThrottleTest.php": [
    "Source\\Models\\Auth",
    "Source\\Services\\LoginThrottle"
+  ],
+  "tests/legacy/Unit/MailConfigTest.php": [
+   "Source\\Support\\MailConfig"
   ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
