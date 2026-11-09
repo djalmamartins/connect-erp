@@ -56,15 +56,31 @@ final class StudioErpShellTest extends TestCase
         self::assertFileExists($root . '/assets/css/connect-shell.css');
     }
 
-    public function testVisualLayerMirrorsErpTokens(): void
+    public function testVisualLayerMirrorsErpStructure(): void
     {
         $erp = (string)file_get_contents(moves_container_path('erp', CONF_VIEW_ERP) . '/assets/css/erp.css');
         $shell = (string)file_get_contents(moves_container_path('studio', 'default') . '/assets/css/connect-shell.css');
-        foreach (['brand', 'brand-strong', 'brand-soft', 'sidebar', 'sidebar-ink', 'sidebar-accent', 'canvas', 'border', 'text', 'muted'] as $token) {
-            self::assertMatchesRegularExpression('/--erp-' . preg_quote($token, '/') . ':\s*([^;]+);/', $erp, $token);
+        foreach (['font', 'sidebar-width', 'sidebar-collapsed', 'navbar-height'] as $token) {
             preg_match('/--erp-' . preg_quote($token, '/') . ':\s*([^;]+);/', $erp, $erpValue);
             preg_match('/--cx-' . preg_quote($token, '/') . ':\s*([^;]+);/', $shell, $shellValue);
-            self::assertSame(trim($erpValue[1]), trim($shellValue[1] ?? ''), "token $token igual ao do ERP");
+            self::assertNotEmpty($erpValue[1] ?? '', $token);
+            self::assertSame(trim($erpValue[1]), trim($shellValue[1] ?? ''), "medida $token igual à do ERP");
+        }
+    }
+
+    public function testEachEnvironmentHasItsOwnPalette(): void
+    {
+        $shell = (string)file_get_contents(moves_container_path('studio', 'default') . '/assets/css/connect-shell.css');
+        $palette = static function (string $environment) use ($shell): string {
+            preg_match('/body\.studio-v2\.studio-erp\[data-environment="' . $environment . '"\]\s*\{([^}]*)\}/', $shell, $block);
+            return $block[1] ?? '';
+        };
+        self::assertStringContainsString('--cx-brand: #6b1fa8', $palette('studio'), 'Studio em roxo');
+        self::assertStringContainsString('--cx-brand: #2563eb', $palette('helpdesk'), 'Help Desk em azul');
+        foreach (['studio', 'helpdesk'] as $environment) {
+            foreach (['--cx-sidebar:', '--cx-canvas:', '--cx-brand-soft:', '--cx-sidebar-accent:'] as $token) {
+                self::assertStringContainsString($token, $palette($environment), "$environment define $token");
+            }
         }
     }
 
@@ -76,5 +92,18 @@ final class StudioErpShellTest extends TestCase
         self::assertStringNotContainsString("moves_container_path('web'", $branch[1] ?? '');
         self::assertStringContainsString("moves_container_path('studio', 'default')", $branch[1] ?? '');
         self::assertStringContainsString("moves_container_path('helpdesk', 'default')", $branch[1] ?? '');
+    }
+
+    public function testRecurringEntriesPageOffersMonthlyGeneration(): void
+    {
+        $root = moves_container_path('erp', CONF_VIEW_ERP);
+        $page = (string)file_get_contents($root . '/pages/registry/index.php');
+        self::assertStringContainsString("'AP-021'", $page);
+        self::assertStringContainsString("url('/api/v1/recurring-entries/generate')", $page);
+        self::assertStringContainsString("Access::can('erp.entries.manage')", $page);
+        self::assertStringContainsString('csrf_input()', $page);
+        $js = (string)file_get_contents($root . '/assets/js/erp.js');
+        self::assertStringContainsString('form[data-erp-generate-recurring]', $js);
+        self::assertStringContainsString("'X-CSRF-Token'", $js);
     }
 }

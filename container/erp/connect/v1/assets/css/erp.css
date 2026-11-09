@@ -202,6 +202,8 @@ p { margin: 0; }
 .erp-page-head h1 { font-size: 24px; letter-spacing: -.02em; }
 .erp-page-head p { margin-top: 4px; color: var(--erp-muted); max-width: 70ch; }
 .erp-page-head__actions { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); }
+.erp-generate-month { display: flex; flex-wrap: wrap; align-items: center; gap: var(--erp-space-2); }
+.erp-generate-month .erp-input { width: auto; min-width: 150px; }
 .erp-eyebrow { display: inline-block; margin-bottom: 4px; color: var(--erp-brand-ink); font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 
 /* 7. Botões ------------------------------------------------------------------ */

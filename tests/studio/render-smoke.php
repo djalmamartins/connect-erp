@@ -89,15 +89,21 @@ foreach ($cases as $label => [$host, $path, $environment]) {
     $assert(str_contains($html, 'class="studio-body studio-v2 studio-erp'), "$label: corpo com a moldura do ERP");
     $assert(str_contains($html, '/assets/css/connect-shell.css?v='), "$label: camada visual do ERP carregada");
     $assert(str_contains($html, 'class="studio-erp-brand-logo"'), "$label: logotipo Connect na sidebar");
-    $assert(str_contains($html, "<strong>Connect · $environment</strong>"), "$label: contexto 'Connect · $environment'");
+    $type = $environment === 'Help Desk' ? 'Atendimento' : 'CMS';
+    $assert(str_contains($html, "<small>$type</small><strong>Moves $environment</strong>"), "$label: cabeçalho '$type / Moves $environment'");
     $assert(!str_contains($html, 'MOVES<small>'), "$label: sem a marca antiga");
     $assert(!str_contains($html, 'studio-theme-toggle'), "$label: sem alternância de tema (o ERP não tem)");
     $assert(str_contains($html, 'data-studio-collapse'), "$label: botão de recolher na sidebar");
     $assert(str_contains($html, 'class="studio-erp-title"'), "$label: título e trilha na navbar");
     $assert(substr_count($html, '<main') === 1, "$label: um <main>");
     $assert(str_contains($html, 'Serviços &lt;para condomínios&gt;'), "$label: conteúdo escapado");
-    $assert(str_contains($html, 'class="active" href="https://' . $host . ($environment === 'Help Desk' ? '/helpdesk/tickets' : '/studio/pages') . '"')
-        || $label === 'helpdesk', "$label: item ativo no menu");
+    $activeHref = 'https://' . $host . ($environment === 'Help Desk' ? '/helpdesk/tickets' : '/studio/pages');
+    if ($label !== 'helpdesk') {
+        $assert(str_contains($html, 'href="' . $activeHref . '" aria-current="page"'), "$label: item ativo no menu");
+        $assert((bool)preg_match('~<details class="studio-erp-nav-group" open>\s*<summary class="is-active"[^>]*>.*?Conteúdo~s', $html), "$label: grupo da página atual aberto");
+    }
+    $assert(substr_count($html, 'class="studio-erp-nav-group"') >= 2, "$label: grupos do menu em <details>, como no ERP");
+    $assert(str_contains($html, 'data-environment="' . ($environment === 'Help Desk' ? 'helpdesk' : 'studio') . '"'), "$label: ambiente marcado para a paleta");
     $siteLink = $host === 'studio.connect.lab' ? 'href="https://www.connect.lab/" target="_blank"' : 'href="https://www.connect.lab/" target="_blank"';
     $assert(str_contains($html, $siteLink), "$label: 'Visualizar site' aponta para o host do site");
 }
