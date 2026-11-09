@@ -67,6 +67,28 @@ final class ChartReportsIntegrationTest extends TestCase
         $this->charts->cash($outsider, $this->alpha, date('Y-m'), date('Y-m'));
     }
 
+    /** ADR 0069: lançamento ou transferência de outro condomínio apontando para a conta não entra no saldo dela. */
+    public function testBankAccountsCountOnlyMovementsOfTheSameCondominium(): void
+    {
+        $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Beta', 'active']);
+        $beta = (int)$this->pdo->lastInsertId();
+        $month = date('Y-m');
+        $own = $this->entry($month, date('Y-m-d'), '50,00');
+        $foreign = $this->entry($month, date('Y-m-d'), '700,00');
+        $this->pdo->exec("UPDATE erp_entries SET paid_on = CURDATE(), bank_account_id = {$this->bank} WHERE id IN ({$own}, {$foreign})");
+        $this->pdo->exec("UPDATE erp_entries SET condominium_id = {$beta} WHERE id = {$foreign}");
+        $both = $this->user([$this->alpha, $beta]);
+        $betaBank = $this->service->save($both, 'bank_accounts', ['condominium_id' => $beta, 'name' => 'Beta', 'bank_code' => '001', 'branch' => '4321', 'account_number' => '9876-5', 'kind' => 'corrente'])['id'];
+        $this->pdo->prepare('INSERT INTO erp_bank_transfers (condominium_id, from_bank_account_id, to_bank_account_id, amount_cents, transferred_on, description) VALUES (?, ?, ?, ?, CURDATE(), ?)')
+            ->execute([$beta, $betaBank, $this->bank, 30000, 'Inconsistente']);
+
+        $series = $this->charts->bankAccounts($this->admin, $this->alpha, $month, $month)['series'];
+        self::assertSame([[5000]], array_column($series, 'data'), 'Só o lançamento do próprio condomínio.');
+        $all = array_column($this->charts->bankAccounts($both, null, $month, $month)['series'], 'data', 'key');
+        self::assertSame([5000], $all['b' . $this->bank], 'Com os dois no escopo, a conta da Alpha continua só com o que é da Alpha.');
+        self::assertSame([-30000], $all['b' . $betaBank], 'A saída fica na conta da Beta, que é da transferência.');
+    }
+
     private function entry(string $competence, string $due, string $amount): int
     {
         return $this->service->save($this->admin, 'entries', ['condominium_id' => $this->alpha, 'nature' => 'receita', 'chart_account_id' => $this->revenue,

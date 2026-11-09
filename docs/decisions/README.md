@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0084.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0077; Avançar: 0084; Preparar: o próximo após o último 006x). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0077; Avançar: 0084; Preparar: 0100, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -94,6 +94,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0066](../Organic%20Code/decisions/0066-collections-hardening.md) | Cobrança e multas: contas do caso judicial buscadas só na unidade e no condomínio, trava no andamento do caso e nome do contato em uma linha |
 | [0067](../Organic%20Code/decisions/0067-collection-reports-hardening.md) | Relatórios de cobrança: célula do CSV neutralizada também depois de espaço ou controle e em largura total, e teto de 20.000 recebimentos por consulta |
 | [0068](../Organic%20Code/decisions/0068-management-reports-hardening.md) | Relatórios gerenciais: conta bancária inexistente e de fora respondem igual, teto da matriz do rateio e data do extrato por parâmetro |
+| [0069](../Organic%20Code/decisions/0069-chart-data-hardening.md) | Dados dos gráficos: saldo por conta bancária filtrado por condomínio dentro da subconsulta e com as 8 contas de maior movimento |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
 | [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
