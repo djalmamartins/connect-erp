@@ -265,6 +265,10 @@
    "title": "0067 — Relatórios de cobrança: CSV mais estrito e teto de recebimentos"
   },
   {
+   "file": "docs/Organic Code/decisions/0068-management-reports-hardening.md",
+   "title": "0068 — Relatórios gerenciais: extrato sem oráculo de id, rateio com teto e SQL só por parâmetro"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -295,6 +299,10 @@
   {
    "file": "docs/Organic Code/decisions/0077-collection-report-screens.md",
    "title": "0077 — Telas dos relatórios de cobrança: acordos, inadimplentes e recebimentos"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0078-chart-screens.md",
+   "title": "0078 — Telas dos gráficos: um eixo por painel e a tabela equivalente"
   },
   {
    "file": "docs/Organic Code/decisions/0080-collections-and-fines.md",
@@ -869,6 +877,25 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\ChartScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\ChartReports",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/ChartScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpChartScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens": {
    "deps": [
     "Source\\Core\\Connect",
@@ -1238,6 +1265,7 @@
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
+    "tests/legacy/Unit/ErpChartScreensTest.php",
     "tests/legacy/Unit/ErpCollectionReportScreensTest.php",
     "tests/legacy/Unit/ErpCollectionScreensTest.php",
     "tests/legacy/Unit/ErpCommunicationScreensTest.php",
@@ -2200,6 +2228,7 @@
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -2241,6 +2270,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
     "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php"
    ]
@@ -2311,6 +2341,7 @@
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -2854,6 +2885,7 @@
    "deps": [
     "Source\\Core\\Connect",
     "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
     "Source\\Services\\CondominiumScope"
    ],
    "file": "source/Services/Erp/ManagementReports.php",
@@ -2874,6 +2906,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php",
     "tests/legacy/Unit/ManagementReportsTest.php"
    ]
   },
@@ -3288,6 +3321,7 @@
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/ManagementReportsIntegrationTest.php",
+    "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
@@ -4043,8 +4077,8 @@
   }
  },
  "counts": {
-  "adrs": 81,
-  "classes": 210,
+  "adrs": 83,
+  "classes": 211,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -4052,7 +4086,7 @@
   "erp_pages": 172,
   "routes": 323,
   "tables": 110,
-  "tests": 148
+  "tests": 150
  },
  "erp_pages": [
   {
@@ -9223,6 +9257,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\ChartScreens",
    "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens",
    "Source\\Controllers\\Erp\\Connect\\CollectionScreens",
    "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
@@ -9505,6 +9540,13 @@
    "Source\\Services\\Erp\\ManagementReports",
    "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
+  "tests/legacy/Integration/ManagementReportsScopeIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\ManagementReports",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/MeterReadingsIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -9765,6 +9807,10 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpBillingScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpChartScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\ChartScreens",
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpCollectionReportScreensTest.php": [

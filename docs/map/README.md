@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**323** rotas fixas · **210** classes em `source/` · **110** tabelas nas migrations · **148** arquivos de teste · **81** ADRs · **172** páginas no catálogo do ERP.
+**323** rotas fixas · **211** classes em `source/` · **110** tabelas nas migrations · **150** arquivos de teste · **83** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 9, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -203,6 +203,9 @@ flowchart LR
   Source_Controllers_Api_V1_VirtualDisk --> Source_Services_Erp_Registry_RegistryNotFound
   Source_Services_Erp_VirtualDisk["Services/Erp/VirtualDisk"]
   Source_Controllers_Api_V1_VirtualDisk --> Source_Services_Erp_VirtualDisk
+  Source_Controllers_Erp_Connect_ChartScreens["Controllers/Erp/Connect/ChartScreens"]
+  Source_Controllers_Erp_Connect_ChartScreens --> Source_Services_Erp_ChartReports
+  Source_Controllers_Erp_Connect_ChartScreens --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_CollectionReportScreens["Controllers/Erp/Connect/CollectionReportScreens"]
   Source_Controllers_Erp_Connect_CollectionReportScreens --> Source_Services_Erp_CollectionReports
   Source_Controllers_Erp_Connect_CollectionScreens["Controllers/Erp/Connect/CollectionScreens"]
@@ -1119,7 +1122,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (72)</summary>
+<details><summary><b>Controllers</b> (73)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -1159,6 +1162,7 @@ flowchart LR
 | [`Controllers/App/V1/App`](../../source/Controllers/App/V1/App.php) | Controller, Session, Auth, Access, Online, AppSession, User | — | — |
 | [`Controllers/App/V1/Dash`](../../source/Controllers/App/V1/Dash.php) | Controller, Auth | — | — |
 | [`Controllers/Environments/Handoff`](../../source/Controllers/Environments/Handoff.php) | Session, Auth, AppLog, User, Environments, SessionRevocation, AppLogger, Audit | — | — |
+| [`Controllers/Erp/Connect/ChartScreens`](../../source/Controllers/Erp/Connect/ChartScreens.php) | Connect, User, ChartReports, RegistryService, Access, AppLogger, CondominiumContext | — | 2 |
 | [`Controllers/Erp/Connect/CollectionReportScreens`](../../source/Controllers/Erp/Connect/CollectionReportScreens.php) | Connect, User, CollectionReports, Access, AppLogger, CondominiumContext | condominiums | 2 |
 | [`Controllers/Erp/Connect/CollectionScreens`](../../source/Controllers/Erp/Connect/CollectionScreens.php) | Connect, User, Agreements, CollectionScreenOptions, Collections, RegistryNotFound, Access, AppLogger … | — | 2 |
 | [`Controllers/Erp/Connect/CommunicationScreens`](../../source/Controllers/Erp/Connect/CommunicationScreens.php) | Connect, User, Agreements, Announcements, RegistryNotFound, RegistryService, Access, AppLogger … | — | 3 |
@@ -1176,7 +1180,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/MonthClosings`](../../source/Controllers/Erp/Connect/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, RecurringEntries, Access, AppLogger, CondominiumContext … | — | — |
 | [`Controllers/Erp/Connect/NotificationQueue`](../../source/Controllers/Erp/Connect/NotificationQueue.php) | Connect, Controller, Session, Auth, User, NotificationDispatcher, RegistryNotFound, Access … | — | 2 |
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 18 |
+| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 19 |
 | [`Controllers/Erp/Connect/PendingReservations`](../../source/Controllers/Erp/Connect/PendingReservations.php) | Auth, RegistryNotFound, RegistryService, RegistryValidationException, Access, AppLogger, Message | — | 1 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Connect, Controller, Session, Auth, User, Environments, RegistryForbidden, RegistryInUse … | condominiums | 2 |
@@ -1258,7 +1262,7 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 53 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 54 |
 
 </details>
 
@@ -1266,9 +1270,9 @@ flowchart LR
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
-| [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 11 |
+| [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 12 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 45 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 46 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 3 |
 | [`Services/Erp/Agreements`](../../source/Services/Erp/Agreements.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_agreement_originals, erp_agreements, erp_bank_charges, erp_entries, erp_units, pages | 7 |
@@ -1294,7 +1298,7 @@ flowchart LR
 | [`Services/Erp/Imports/StatementLineCandidates`](../../source/Services/Erp/Imports/StatementLineCandidates.php) | Connect, User, CondominiumScope, RegistryNotFound | erp_bank_accounts, erp_bank_statement_lines, erp_entries, erp_units | — |
 | [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 9 |
 | [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 2 |
-| [`Services/Erp/ManagementReports`](../../source/Services/Erp/ManagementReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_transfers, erp_chart_accounts, erp_cost_centers, erp_entries, erp_meter_readings, erp_meters, erp_suppliers, erp_units | 2 |
+| [`Services/Erp/ManagementReports`](../../source/Services/Erp/ManagementReports.php) | Connect, User, CondominiumAccessDenied, CondominiumScope | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_transfers, erp_chart_accounts, erp_cost_centers, erp_entries, erp_meter_readings, erp_meters, erp_suppliers, erp_units | 3 |
 | [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 3 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 9 |
 | [`Services/Erp/NotificationDispatcher`](../../source/Services/Erp/NotificationDispatcher.php) | Connect, User, CondominiumScope, RegistryNotFound, AppLogger, Audit, Email, MailTemplate | condominiums, erp_announcements, erp_common_areas, erp_notification_deliveries, erp_notification_outbox, erp_residents, mail_queue | 6 |
@@ -1309,7 +1313,7 @@ flowchart LR
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 10 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 21 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, NotificationOutbox, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_unit_document_entries, erp_unit_documents, erp_units, pages, system_audit_logs | 40 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, NotificationOutbox, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_unit_document_entries, erp_unit_documents, erp_units, pages, system_audit_logs | 41 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 13 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 9 |
 | [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_bank_accounts, erp_entries, erp_unit_document_entries, erp_unit_documents, erp_units, pages | 7 |
@@ -1445,6 +1449,7 @@ Services sem teste que os cite (3): `Services/Erp/CollectionScreenOptions`, `Ser
 - [0065 — Comunicação: assunto em uma linha, unidades com teto, trava e limite diário](../../docs/Organic%20Code/decisions/0065-communications-hardening.md)
 - [0066 — Cobrança e multas: contas do caso no escopo da unidade, trava no andamento e nome do contato limpo](../../docs/Organic%20Code/decisions/0066-collections-hardening.md)
 - [0067 — Relatórios de cobrança: CSV mais estrito e teto de recebimentos](../../docs/Organic%20Code/decisions/0067-collection-reports-hardening.md)
+- [0068 — Relatórios gerenciais: extrato sem oráculo de id, rateio com teto e SQL só por parâmetro](../../docs/Organic%20Code/decisions/0068-management-reports-hardening.md)
 - [0070 — Telas do Operacional e dashboard com dados reais](../../docs/Organic%20Code/decisions/0070-operational-screens.md)
 - [0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)](../../docs/Organic%20Code/decisions/0071-condominium-unit-panel-screens.md)
 - [0072 — Tela da fila de avisos, com trilha mascarada e reenvio manual](../../docs/Organic%20Code/decisions/0072-notification-queue-screen.md)
@@ -1453,6 +1458,7 @@ Services sem teste que os cite (3): `Services/Erp/CollectionScreenOptions`, `Ser
 - [0075 — Telas de comunicação: comunicado, aviso de cobrança, agendados e endereços](../../docs/Organic%20Code/decisions/0075-communication-screens.md)
 - [0076 — Telas de cobrança: multas pendentes, atendimento e cobrança judicial](../../docs/Organic%20Code/decisions/0076-collection-screens.md)
 - [0077 — Telas dos relatórios de cobrança: acordos, inadimplentes e recebimentos](../../docs/Organic%20Code/decisions/0077-collection-report-screens.md)
+- [0078 — Telas dos gráficos: um eixo por painel e a tabela equivalente](../../docs/Organic%20Code/decisions/0078-chart-screens.md)
 - [0080 — Cobrança e multas: multas pendentes, atendimento e acompanhamento judicial](../../docs/Organic%20Code/decisions/0080-collections-and-fines.md)
 - [0081 — Relatórios de cobrança: acordos, inadimplentes e recebimentos, com CSV seguro](../../docs/Organic%20Code/decisions/0081-collection-reports.md)
 - [0082 — Relatórios gerenciais: consumo, centros de custo, comparativo, demonstrativos, rateio, lançamentos e boletos](../../docs/Organic%20Code/decisions/0082-management-reports.md)
