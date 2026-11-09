@@ -34,10 +34,12 @@ final class CondominiumValidator
         $data['name'] = $this->text($value('name'), 160, true, 3, 'name', 'Nome', $errors);
         $data['legal_name'] = $this->text($value('legal_name'), 160, true, 3, 'legal_name', 'Razão social', $errors);
 
-        $data['document'] = $digits('document');
-        if ($data['document'] === '') {
-            $errors['document'] = 'Informe o CNPJ.';
-        } elseif (!self::isValidCnpj($data['document'])) {
+        // ADR 0162: CNPJ opcional (há prédios sem CNPJ). Vazio vira NULL, para não colidir no índice único;
+        // preenchido continua validado pelos dígitos (e a unicidade fica em CondominiumRegistry).
+        $data['document'] = $digits('document') ?: null;
+        if ($data['document'] === null && $value('document') !== '') {
+            $errors['document'] = 'CNPJ inválido.';
+        } elseif ($data['document'] !== null && !self::isValidCnpj($data['document'])) {
             $errors['document'] = 'CNPJ inválido.';
         }
 

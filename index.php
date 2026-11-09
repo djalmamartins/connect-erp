@@ -231,6 +231,9 @@ $route->get("/communication-addresses", "Announcements:addresses", null, \Source
 $route->get("/pending-fines", "Collections:fines", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/collection-desk", "Collections:desk", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/units/{id}/collection-contacts", "Collections:contacts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0162: busca e vínculo de pessoas (proprietário e inquilino)
+$route->get("/people/search", "People:search", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/people/{id}/links", "People:links", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/collection-contacts", "Collections:storeContact", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/legal-cases", "Collections:cases", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/legal-cases", "Collections:storeCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
