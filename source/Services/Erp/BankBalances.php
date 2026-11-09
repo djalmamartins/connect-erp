@@ -27,10 +27,18 @@ final class BankBalances
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
     }
 
-    /** Regra pura do saldo, em centavos (pode ficar negativo). */
-    public static function balance(int $openingCents, int $receivedCents, int $paidCents): int
+    /** Regra pura do saldo, em centavos (pode ficar negativo); transferências entre contas (ADR 0057) entram e saem. */
+    public static function balance(int $openingCents, int $receivedCents, int $paidCents, int $transfersInCents = 0, int $transfersOutCents = 0): int
     {
-        return $openingCents + $receivedCents - $paidCents;
+        return $openingCents + $receivedCents - $paidCents + $transfersInCents - $transfersOutCents;
+    }
+
+    /** SQL da soma das transferências ativas que entram ou saem da conta $alias.id (a partir da data do saldo inicial). */
+    public static function transferSql(string $direction, string $alias = 'b', string $extra = '', bool $sinceOpening = true): string
+    {
+        $column = $direction === 'in' ? 'to_bank_account_id' : 'from_bank_account_id';
+        $opening = $sinceOpening ? " AND ({$alias}.opened_on IS NULL OR t.transferred_on >= {$alias}.opened_on)" : '';
+        return "(SELECT COALESCE(SUM(t.amount_cents), 0) FROM erp_bank_transfers t WHERE t.{$column} = {$alias}.id AND t.status = 'active'{$opening}{$extra})";
     }
 
     /**
@@ -50,7 +58,8 @@ final class BankBalances
         $stmt = $this->pdo->query("SELECT b.id, b.condominium_id, c.name AS condominium_name, b.name, b.is_main,
                 COALESCE(b.opening_balance_cents, 0) AS opening_cents, b.opened_on,
                 COALESCE(SUM(CASE WHEN e.nature = 'receita' THEN e.amount_cents END), 0) AS received_cents,
-                COALESCE(SUM(CASE WHEN e.nature = 'despesa' THEN e.amount_cents END), 0) AS paid_cents
+                COALESCE(SUM(CASE WHEN e.nature = 'despesa' THEN e.amount_cents END), 0) AS paid_cents,
+                " . self::transferSql('in') . " AS transfers_in_cents, " . self::transferSql('out') . " AS transfers_out_cents
             FROM erp_bank_accounts b
             LEFT JOIN condominiums c ON c.id = b.condominium_id
             LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.deleted_at IS NULL AND e.status = 'active'
@@ -62,13 +71,15 @@ final class BankBalances
             $opening = (int)$row['opening_cents'];
             $received = (int)$row['received_cents'];
             $paid = (int)$row['paid_cents'];
+            $in = (int)$row['transfers_in_cents'];
+            $out = (int)$row['transfers_out_cents'];
             return [
                 'id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'],
                 'condominium_name' => $row['condominium_name'] !== null ? (string)$row['condominium_name'] : null,
                 'name' => (string)$row['name'], 'is_main' => (bool)$row['is_main'],
                 'opening_cents' => $opening, 'opened_on' => $row['opened_on'] !== null ? (string)$row['opened_on'] : null,
-                'received_cents' => $received, 'paid_cents' => $paid,
-                'balance_cents' => self::balance($opening, $received, $paid),
+                'received_cents' => $received, 'paid_cents' => $paid, 'transfers_in_cents' => $in, 'transfers_out_cents' => $out,
+                'balance_cents' => self::balance($opening, $received, $paid, $in, $out),
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }

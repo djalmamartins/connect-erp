@@ -43,9 +43,9 @@ final class Definitions
      * parcela): só a baixa (pago em, conta bancária), o documento e as notas mudam aqui.
      */
     public const INVOICE_LOCK = [
-        'fields' => ['invoice_item_id', 'agreement_id'],
+        'fields' => ['invoice_item_id', 'agreement_id', 'extra_charge_id'],
         'columns' => ['condominium_id', 'nature', 'chart_account_id', 'amount_cents', 'competence', 'due_on', 'unit_id', 'status', 'description'],
-        'message' => 'Lançamento gerado por fatura ou ligado a acordo: altere ou cancele pela origem.',
+        'message' => 'Lançamento gerado por fatura, acordo, cobrança extra ou multa: altere ou cancele pela origem.',
     ];
 
     /** O registro foi gerado por outro módulo (algum campo de origem preenchido)? */
