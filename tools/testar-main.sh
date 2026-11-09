@@ -8,6 +8,7 @@
 #   SEM_PULL=1          não faz git pull (testa o que já está na pasta)
 #   MIGRATE_UNTIL=20261108_0546   aplica as migrations só até esse prefixo
 #   SEM_HTTP=1          pula a conferência das páginas por HTTP
+#   LAB_SEM_2FA=1       não cria nem liga o 2FA no .env (passo 6b)
 #   FORCAR_MIGRATIONS=1 aplica as migrations mesmo com falha na integração (o backup é feito antes)
 #
 # Ordem e travas:
@@ -201,6 +202,40 @@ else
     add "Migrations" OK "$pending aplicada(s); última: $(grep '^\[executada\]' "$logs/migrations-apply.log" | tail -1 | sed 's/\[executada\] //')"
   else
     add "Migrations" FALHOU "ver migrations-apply.log; restaurar com o backup $(basename "$backup") se preciso"
+  fi
+fi
+
+# --- 6b. 2FA do lab ---------------------------------------------------------------------------
+# O login do ERP só pede 2FA com CONNECT_2FA_ENFORCE_FROM no .env, e o cofre TOTP precisa de
+# CONNECT_2FA_KEY (32 bytes em base64). Sem as duas, o login entrava direto. O script cria o que
+# faltar no .env local (fora do Git) e só liga a obrigatoriedade com a tabela do 2FA já aplicada,
+# porque obrigatório sem tabela bloqueia todo login. LAB_SEM_2FA=1 pula este passo.
+env_has() { grep -qE "^$1=.+" .env; }
+if [ "${LAB_SEM_2FA:-0}" = "1" ]; then
+  add "2FA no login" PULADO "LAB_SEM_2FA=1"
+else
+  docker compose exec -T app php service/commands/database-migrate.php status >"$logs/migrations-2fa.log" 2>&1
+  if ! grep -q '^\[aplicada\] 20261107_0001_two_factor' "$logs/migrations-2fa.log"; then
+    add "2FA no login" ATENÇÃO "tabela do 2FA ainda não aplicada; obrigatoriedade não ligada"
+  else
+    changed=""
+    [ -z "$(tail -c1 .env)" ] || echo >>.env   # garante quebra de linha no fim antes de acrescentar
+    if ! env_has CONNECT_2FA_KEY; then
+      key=$(openssl rand -base64 32)
+      sed -i.bak '/^CONNECT_2FA_KEY=/d' .env && rm -f .env.bak
+      printf '\n# 2FA (gerado por tools/testar-main.sh): chave do cofre TOTP. Trocar a chave invalida os 2FA já cadastrados.\nCONNECT_2FA_KEY=%s\n' "$key" >>.env
+      changed="chave criada"
+    fi
+    if ! env_has CONNECT_2FA_ENFORCE_FROM; then
+      sed -i.bak '/^CONNECT_2FA_ENFORCE_FROM=/d' .env && rm -f .env.bak
+      printf '# 2FA obrigatório no login a partir desta data (AAAA-MM-DD).\nCONNECT_2FA_ENFORCE_FROM=%s\n' "$(date +%Y-%m-%d)" >>.env
+      changed="${changed:+$changed, }obrigatório a partir de hoje"
+    fi
+    if [ -n "$changed" ]; then
+      add "2FA no login" OK "$changed (.env); no próximo login o ERP pede para configurar o autenticador"
+    else
+      add "2FA no login" OK "já configurado no .env (desde $(grep -E '^CONNECT_2FA_ENFORCE_FROM=' .env | tail -1 | cut -d= -f2-))"
+    fi
   fi
 fi
 

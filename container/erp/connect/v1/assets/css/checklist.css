@@ -1,5 +1,5 @@
 /* Checklist de chegada do condomínio (ADR 0013). Usa os tokens --erp-* de erp.css. */
-.chk-summary { display: flex; flex-wrap: wrap; gap: var(--erp-space); align-items: center; background: var(--erp-surface); border: 1px solid var(--erp-border); border-radius: var(--erp-radius); padding: var(--erp-space); margin-bottom: 24px; }
+.chk-summary { display: flex; flex-wrap: wrap; gap: var(--erp-space); align-items: center; }
 .chk-progress { display: grid; gap: 4px; min-width: 220px; flex: 1; }
 .chk-progress-label { font-weight: 600; font-size: 1.125rem; }
 .chk-progress progress { width: 100%; height: 10px; accent-color: var(--erp-accent); }
@@ -8,8 +8,12 @@
 .chk-counters dt { font-size: .875rem; color: var(--erp-muted); }
 .chk-counters dd { margin: 0; font-size: 1.5rem; font-weight: 600; }
 .chk-counters .chk-alert dd { color: #b42318; }
-.chk-group { margin-bottom: 24px; }
-.chk-group h2 { font-size: 1.125rem; margin: 0 0 8px; }
+.chk-start { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 40px 24px; }
+.chk-start p { max-width: 560px; margin: 0 0 8px; color: var(--erp-muted); }
+.chk-start > .erp-icon { width: 32px; height: 32px; color: var(--erp-accent); }
+.chk-sync { display: inline; margin: 0; }
+.chk-group .chk-form { padding: 0 var(--erp-space, 20px) var(--erp-space, 20px); }
+.chk-edit .chk-form { padding: 8px 0; }
 .chk-table td { vertical-align: top; }
 .chk-notes { display: inline-block; margin-top: 4px; }
 .chk-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8125rem; font-weight: 600; white-space: nowrap; background: #eef1f5; color: #3b4756; }
@@ -21,7 +25,6 @@
 .chk-edit td { background: var(--erp-bg); }
 .chk-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .chk-form label { display: grid; gap: 4px; font-size: .875rem; color: var(--erp-muted); }
-.chk-form input, .chk-form select, .chk-form textarea { font: inherit; color: var(--erp-text); padding: 8px; border: 1px solid var(--erp-border); border-radius: 6px; background: var(--erp-surface); }
 .chk-wide, .chk-hint, .chk-actions { grid-column: 1 / -1; }
 .chk-hint { margin: 0; font-size: .8125rem; color: var(--erp-muted); }
 .chk-actions { display: flex; gap: 16px; align-items: center; }

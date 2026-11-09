@@ -15,6 +15,11 @@ if (is_file($environmentFile)) {
         // SMTP (ADR 0060): credenciais fora do banco e fora do Git.
         "MOVESOS_SMTP_HOST", "MOVESOS_SMTP_PORT", "MOVESOS_SMTP_USER", "MOVESOS_SMTP_PASS",
         "MOVESOS_SMTP_SECURE", "MOVESOS_SMTP_AUTH", "MOVESOS_SMTP_FROM_ADDRESS", "MOVESOS_SMTP_FROM_NAME",
+        // 2FA (ADR 0023/0028): chave do cofre TOTP e data a partir da qual o 2FA é obrigatório.
+        // Sem estas chaves aqui, o Apache do lab (xampp) nunca as recebia e o login entrava sem 2FA.
+        "CONNECT_2FA_KEY", "CONNECT_2FA_ENFORCE_FROM", "CONNECT_TRUSTED_PROXIES",
+        // ERP: dados de exemplo, entrega de avisos (log/sandbox/production) e antivírus do Disco Virtual.
+        "ERP_DEMO_DATA", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {

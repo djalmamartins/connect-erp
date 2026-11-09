@@ -61,7 +61,7 @@ $this->insert('components/layout/page-head', [
         <div class="erp-form__grid">
             <?= $field('name', 'Nome', 6, 'text', ['required' => true, 'maxlength' => 160]) ?>
             <?= $field('legal_name', 'Razão social', 6, 'text', ['required' => true, 'maxlength' => 160]) ?>
-            <?= $field('document', 'CNPJ', 4, 'text', ['required' => true, 'inputmode' => 'numeric', 'maxlength' => 18, 'placeholder' => '00.000.000/0000-00']) ?>
+            <?= $field('document', 'CNPJ', 4, 'text', ['inputmode' => 'numeric', 'maxlength' => 18, 'placeholder' => '00.000.000/0000-00'], 'Opcional: deixe em branco se o condomínio não tiver CNPJ.') ?>
             <?= $select('status', 'Situação', 4, $statuses, false) ?>
         </div>
     </fieldset>
@@ -69,7 +69,7 @@ $this->insert('components/layout/page-head', [
     <fieldset class="erp-fieldset">
         <legend>Endereço</legend>
         <div class="erp-form__grid">
-            <?= $field('zip_code', 'CEP', 3, 'text', ['required' => true, 'inputmode' => 'numeric', 'maxlength' => 9, 'placeholder' => '00000-000']) ?>
+            <?= $field('zip_code', 'CEP', 3, 'text', ['required' => true, 'inputmode' => 'numeric', 'maxlength' => 9, 'placeholder' => '00000-000', 'autocomplete' => 'postal-code'], 'O endereço é preenchido pelo CEP.') ?>
             <?= $field('street', 'Logradouro', 6, 'text', ['required' => true, 'maxlength' => 160]) ?>
             <?= $field('number', 'Número', 3, 'text', ['required' => true, 'maxlength' => 20]) ?>
             <?= $field('complement', 'Complemento', 3, 'text', ['maxlength' => 80]) ?>
