@@ -46,6 +46,7 @@ final class NewRoutesPermissionMatrixTest extends TestCase
         $assemblies = $this->publicMethods('Assemblies');
         self::assertStringContainsString("'erp.announcements.manage'", $assemblies['convene'], 'Convocar publica comunicado.');
         self::assertStringContainsString("'erp.agreements.view'", $assemblies['attendanceReport'], 'O valor vencido só com a inadimplência.');
+        self::assertStringContainsString("'erp.agreements.view'", $assemblies['checkIn'], 'ADR 0095: o check-in também esconde o valor vencido.');
         $access = $this->publicMethods('AccessAdmin');
         self::assertStringContainsString("'erp.partner.view'", $access['partnerView']);
         self::assertStringNotContainsString('erp.access_admin', $access['partnerView'], 'A consulta do parceiro não exige papel de administrador.');

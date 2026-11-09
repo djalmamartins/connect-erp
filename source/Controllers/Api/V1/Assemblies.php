@@ -84,7 +84,8 @@ final class Assemblies
     {
         [$user, $body] = $this->write();
         if ($user !== null) {
-            $this->run(201, fn () => (new Service())->checkIn($user, $this->id($data), $body));
+            // ADR 0095: o valor vencido da unidade só para quem já vê a inadimplência.
+            $this->run(201, fn () => (new Service())->checkIn($user, $this->id($data), $body, null, Access::can('erp.agreements.view', $user)));
         }
     }
 
