@@ -4,7 +4,7 @@
 #   bash tools/lab-atualizar.sh                                # aplica todas as pendentes
 #   MIGRATE_UNTIL=20261108_0399 bash tools/lab-atualizar.sh    # só até esse prefixo
 #
-# Passos: backup do banco (tools/backup-database.sh) -> composer test:integration (banco
+# Passos: composer install (dependências novas do composer.lock) -> backup do banco (tools/backup-database.sh) -> composer test:integration (banco
 # *_test) -> status e apply das migrations no banco do lab -> rebuild do serviço scheduler.
 # Para no primeiro erro: se a integração falhar, nada é migrado.
 # Rode a partir do checkout principal (www/connect), que é o que o compose monta.
@@ -16,6 +16,9 @@ cd "$project"
 until_prefix=${MIGRATE_UNTIL-}
 until_arg=()
 [ -n "$until_prefix" ] && until_arg=("--until=$until_prefix")
+
+echo "== 0/4 dependências (composer install)"
+docker compose exec -T app composer install --no-interaction --no-progress --prefer-dist
 
 echo "== 1/4 backup do banco"
 backup=$(bash tools/backup-database.sh)

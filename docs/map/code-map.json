@@ -109,6 +109,10 @@
    "title": "0028 — Aviso por e-mail quando o 2FA da conta muda"
   },
   {
+   "file": "docs/Organic Code/decisions/0029-two-factor-qr-code.md",
+   "title": "0029 — QR code na configuração do 2FA, gerado no servidor"
+  },
+  {
    "file": "docs/Organic Code/decisions/0030-condominium-context-in-url.md",
    "title": "0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL"
   },
@@ -590,6 +594,7 @@
     "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
+    "Source\\Support\\QrCode",
     "Source\\Support\\SecretBox"
    ],
    "file": "source/Controllers/Erp/Connect/Security.php",
@@ -820,6 +825,7 @@
     "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
+    "Source\\Support\\QrCode",
     "Source\\Support\\SecretBox"
    ],
    "file": "source/Controllers/Studio/TwoFactor.php",
@@ -2166,6 +2172,18 @@
    ],
    "tests": []
   },
+  "Source\\Support\\QrCode": {
+   "deps": [],
+   "file": "source/Support/QrCode.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/QrCodeTest.php",
+    "tests/studio/render-smoke.php"
+   ]
+  },
   "Source\\Support\\SecretBox": {
    "deps": [],
    "file": "source/Support/SecretBox.php",
@@ -2231,8 +2249,8 @@
   }
  },
  "counts": {
-  "adrs": 31,
-  "classes": 138,
+  "adrs": 32,
+  "classes": 139,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -2240,7 +2258,7 @@
   "erp_pages": 172,
   "routes": 206,
   "tables": 63,
-  "tests": 67
+  "tests": 68
  },
  "erp_pages": [
   {
@@ -5874,7 +5892,8 @@
    "Source\\Core\\View",
    "Source\\Models\\User",
    "Source\\Services\\Erp\\DemoData",
-   "Source\\Support\\Erp\\CondominiumContext"
+   "Source\\Support\\Erp\\CondominiumContext",
+   "Source\\Support\\QrCode"
   ],
   "tests/legacy/Integration/AccessControlTest.php": [
    "Source\\Models\\User",
@@ -6121,6 +6140,9 @@
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
+  "tests/legacy/Unit/QrCodeTest.php": [
+   "Source\\Support\\QrCode"
+  ],
   "tests/legacy/Unit/RecurringEntriesDefinitionTest.php": [
    "Source\\Services\\Erp\\RecurringEntries",
    "Source\\Services\\Erp\\Registry\\Definitions",
@@ -6171,7 +6193,8 @@
   ],
   "tests/studio/render-smoke.php": [
    "Source\\Core\\View",
-   "Source\\Models\\User"
+   "Source\\Models\\User",
+   "Source\\Support\\QrCode"
   ]
  }
 }

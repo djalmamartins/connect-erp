@@ -15,7 +15,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 2);
 $vendor = getenv('VENDOR') ?: $root . '/vendor';
 // Só os namespaces necessários: o autoload do Composer carrega Boot/Settings.php, que exige o banco.
-$psr4 = ['Source\\' => $root . '/source/', 'MovesCode\\View\\' => $vendor . '/movescode/view/src/'];
+$psr4 = ['Source\\' => $root . '/source/', 'MovesCode\\View\\' => $vendor . '/movescode/view/src/', 'BaconQrCode\\' => $vendor . '/bacon/bacon-qr-code/src/', 'DASPRiD\\Enum\\' => $vendor . '/dasprid/enum/src/'];
 spl_autoload_register(static function (string $class) use ($psr4): void {
     foreach ($psr4 as $prefix => $dir) {
         if (str_starts_with($class, $prefix)) {
@@ -255,6 +255,10 @@ $assert(str_contains($html, 'AAAA-BBBB') && str_contains($html, '&lt;b&gt;x&lt;/
 $assert(!str_contains($security(['twoFactorEnabled' => true, 'twoFactorEnforced' => true]), 'value="disable"'), 'segurança: 2FA obrigatório não oferece desativar');
 $html = $security(['twoFactorSetup' => ['secret' => 'JBSWY3DPEHPK3PXP', 'uri' => 'otpauth://totp/Connect%20ERP:ana?secret=JBSWY3DPEHPK3PXP']]);
 $assert(str_contains($html, 'JBSW Y3DP EHPK 3PXP') && str_contains($html, 'value="confirm"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'segurança: configuração com chave, código e CSRF');
+$uri = 'otpauth://totp/Connect%20ERP:ana?secret=JBSWY3DPEHPK3PXP';
+$html = $security(['twoFactorSetup' => ['secret' => 'JBSWY3DPEHPK3PXP', 'uri' => $uri, 'qr' => Source\Support\QrCode::svg($uri, 196, 'QR code para o aplicativo autenticador')]]);
+$assert(str_contains($html, '<figure class="erp-qr"><svg role="img" aria-label="QR code para o aplicativo autenticador"') && !str_contains($html, '<?xml'), 'segurança: QR code do 2FA gerado no servidor, em SVG embutido');
+$assert(!str_contains($security(['twoFactorSetup' => ['secret' => 'JBSWY3DPEHPK3PXP', 'uri' => $uri, 'qr' => null]]), 'erp-qr'), 'segurança: sem a biblioteca de QR a tela segue só com a chave');
 $assert(str_contains($security(['twoFactorConfigured' => false]), 'CONNECT_2FA_KEY'), 'segurança: servidor sem chave avisa o administrador');
 
 // Demonstração desligada: dashboard mostra estado vazio

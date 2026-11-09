@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**206** rotas fixas · **138** classes em `source/` · **63** tabelas nas migrations · **67** arquivos de teste · **31** ADRs · **172** páginas no catálogo do ERP.
+**206** rotas fixas · **139** classes em `source/` · **63** tabelas nas migrations · **68** arquivos de teste · **32** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -591,7 +591,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Controller, Session, Auth, User, DemoData, Definitions, RegistryService, Access … | notifications, pages | 4 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService … | condominiums | — |
-| [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, SecretBox | — | — |
+| [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, QrCode, SecretBox | — | — |
 | [`Controllers/Erp/Connect/Users`](../../source/Controllers/Erp/Connect/Users.php) | View, Address, Auth, AppCondominium, User, Email, Pager, Upload | — | — |
 | [`Controllers/Erp/V1/Condominium`](../../source/Controllers/Erp/V1/Condominium.php) | Address, AppCondominium, AppCorporations, AppOwner, AppUnits, Notification, User, Pager … | notifications | — |
 | [`Controllers/Erp/V1/Corporations`](../../source/Controllers/Erp/V1/Corporations.php) | Address, AppCondominium, AppCorporations, Notification, Pager, Thumb, Upload | notifications | — |
@@ -601,7 +601,7 @@ flowchart LR
 | [`Controllers/Erp/V1/Users`](../../source/Controllers/Erp/V1/Users.php) | View, Address, AppCondominium, AppCorporations, Notification, AppSession, User, Email … | notifications | — |
 | [`Controllers/Pay/Pay`](../../source/Controllers/Pay/Pay.php) | Controller, Auth | — | — |
 | [`Controllers/Studio/Studio`](../../source/Controllers/Studio/Studio.php) | Connect, Controller, Address, Auth, AppBrief, Channel, Question, AuditLog … | access_permissions, access_roles, access_user_overrides, access_user_roles, app_log, mail_queue, movesos_versions, notification_messages, notifications, pages, posts, settings, studio_calendar_events, studio_support_templates, studio_support_ticket_attachments, studio_support_ticket_events, studio_support_ticket_messages, studio_support_tickets, support_articles, system_audit_logs | 2 |
-| [`Controllers/Studio/TwoFactor`](../../source/Controllers/Studio/TwoFactor.php) | Controller, Session, Auth, User, TwoFactorNotice, TwoFactorService, Access, SecretBox | — | — |
+| [`Controllers/Studio/TwoFactor`](../../source/Controllers/Studio/TwoFactor.php) | Controller, Session, Auth, User, TwoFactorNotice, TwoFactorService, Access, QrCode … | — | — |
 | [`Controllers/Web/Connect/Web`](../../source/Controllers/Web/Connect/Web.php) | Connect, Controller, Auth, AppBrief, Category, Page, Post, Access … | support_article_votes, support_articles | — |
 | [`Controllers/Web/Support/Support`](../../source/Controllers/Web/Support/Support.php) | Connect, Controller, SupportArticle, SupportCategory, AppLogger, Upload | studio_support_ticket_messages, studio_support_tickets, support_article_votes, support_articles | 1 |
 | [`Controllers/Web/V1/Web`](../../source/Controllers/Web/V1/Web.php) | Controller, Auth, AppLog, AppSession, User | — | — |
@@ -710,7 +710,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>Support</b> (23)</summary>
+<details><summary><b>Support</b> (24)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -731,6 +731,7 @@ flowchart LR
 | [`Support/Proposal/ProposalMailer`](../../source/Support/Proposal/ProposalMailer.php) | Proposal, User | — | — |
 | [`Support/Proposal/ProposalPdf`](../../source/Support/Proposal/ProposalPdf.php) | Proposal, ProposalResponse | — | — |
 | [`Support/Proposal/ProposalService`](../../source/Support/Proposal/ProposalService.php) | Connect, Notification, NotificationCategory, NotificationMessage, Proposal, User, AppLogger, Email | access_roles, access_user_roles | — |
+| [`Support/QrCode`](../../source/Support/QrCode.php) | — | — | 3 |
 | [`Support/SecretBox`](../../source/Support/SecretBox.php) | — | — | 1 |
 | [`Support/Seo`](../../source/Support/Seo.php) | — | — | — |
 | [`Support/StudioModules`](../../source/Support/StudioModules.php) | Connect, User | module_migrations, modules | — |
@@ -773,6 +774,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0026 — Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio](../../docs/Organic%20Code/decisions/0026-studio-helpdesk-erp-shell.md)
 - [0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar](../../docs/Organic%20Code/decisions/0027-recurring-entries.md)
 - [0028 — Aviso por e-mail quando o 2FA da conta muda](../../docs/Organic%20Code/decisions/0028-two-factor-change-notice.md)
+- [0029 — QR code na configuração do 2FA, gerado no servidor](../../docs/Organic%20Code/decisions/0029-two-factor-qr-code.md)
 - [0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL](../../docs/Organic%20Code/decisions/0030-condominium-context-in-url.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)

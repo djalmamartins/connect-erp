@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0029.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0030.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -53,4 +53,5 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0026](../Organic%20Code/decisions/0026-studio-helpdesk-erp-shell.md) | Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio |
 | [0027](../Organic%20Code/decisions/0027-recurring-entries.md) | Lançamentos fixos (AP-021) e geração do mês sem duplicar |
 | [0028](../Organic%20Code/decisions/0028-two-factor-change-notice.md) | Aviso por e-mail quando o 2FA da conta muda |
+| [0029](../Organic%20Code/decisions/0029-two-factor-qr-code.md) | QR code na configuração do 2FA, gerado no servidor |
 | [0030](../Organic%20Code/decisions/0030-condominium-context-in-url.md) | Condomínio da barra superior como contexto global do ERP, com slug na URL |

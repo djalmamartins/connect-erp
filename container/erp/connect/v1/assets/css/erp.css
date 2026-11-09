@@ -299,6 +299,9 @@ p { margin: 0; }
 .erp-codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; font: 600 15px/1.6 ui-monospace, Menlo, Consolas, monospace; }
 .erp-codes li { padding: 8px 12px; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); border: 1px solid var(--erp-border); text-align: center; }
 .erp-secret code { display: inline-block; padding: 8px 12px; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); border: 1px dashed var(--erp-border-strong); font: 600 16px/1.4 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; overflow-wrap: anywhere; }
+.erp-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; padding: 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: #fff; }
+.erp-qr svg { display: block; width: 196px; max-width: 100%; height: auto; }
+.erp-qr figcaption { font-size: 13px; color: var(--erp-muted); }
 .erp-steps-list { display: grid; gap: 6px; margin: 0 0 12px; padding-left: 20px; color: var(--erp-muted); }
 
 /* 11. Formulários e filtros ------------------------------------------------- */
