@@ -8,6 +8,7 @@ use Source\Core\Controller;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\TwoFactorService;
+use Source\Services\TwoFactorNotice;
 use Source\Support\Access as AccessControl;
 use Source\Support\SecretBox;
 
@@ -124,6 +125,7 @@ final class TwoFactor extends Controller
                     return;
                 }
                 $session->set("auth2faRecoveryCodes", $codes);
+                (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED);
                 echo json_encode(["redirect" => url("/studio/seguranca/2fa?novo=1")]);
                 return;
             }
@@ -139,6 +141,7 @@ final class TwoFactor extends Controller
                         return;
                     }
                     $twoFactor->disable((int)$user->id, (int)$user->id);
+                    (new TwoFactorNotice())->send($user, TwoFactorNotice::DISABLED);
                     $this->message->success("Autenticação em dois fatores desativada.")->flash();
                     echo json_encode(["redirect" => url("/studio/seguranca/2fa")]);
                     return;

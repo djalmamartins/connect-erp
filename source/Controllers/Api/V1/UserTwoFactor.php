@@ -10,6 +10,7 @@ use Source\Models\Session\AppLog;
 use Source\Models\User;
 use Source\Services\TwoFactorAdminReset;
 use Source\Services\TwoFactorService;
+use Source\Services\TwoFactorNotice;
 use Source\Support\Access;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
@@ -54,6 +55,7 @@ final class UserTwoFactor
         $twoFactor->disable($targetId, (int)$actor->id);
         Audit::record('delete', 'user_two_factor', $targetId, ['enabled' => true], ['enabled' => false]);
         (new AppLog())->register((int)$actor->id, "Redefiniu o 2FA do usuário #{$targetId}");
+        (new TwoFactorNotice())->send($target, TwoFactorNotice::RESET_BY_ADMIN);
         JsonResponse::send(200, ['data' => ['user_id' => $targetId, 'two_factor_enabled' => false]]);
     }
 }
