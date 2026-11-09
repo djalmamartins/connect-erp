@@ -98,6 +98,26 @@ if (erp_host()) {
     $route->get("/forget/{code}", "Web:reset");
     $route->post("/reset", "Web:reset");
     $route->namespace(null);
+} elseif (studio_host()) {
+    /**
+     * Host próprio do Studio (studio.connect.lab, ADR 0026): só Studio, Help Desk e a
+     * recuperação de senha do núcleo. A raiz leva ao painel; o site não responde aqui.
+     */
+    $route->namespace(null);
+    $route->group(null);
+    $route->get("/", static function (): void {
+        header("Location: " . url("/studio"), true, 302);
+    });
+    $route->namespace("Source\\Controllers\\Web\\Connect");
+    $route->get("/forget", "Web:forget");
+    $route->post("/forget", "Web:forget");
+    $route->get("/forget/{code}", "Web:reset");
+    $route->post("/reset", "Web:reset");
+    require moves_container_path('studio', 'default') . "/routes.php";
+    $helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/routes.php";
+    if (is_file($helpDeskRoutes)) {
+        require $helpDeskRoutes;
+    }
 } else {
 
 /**
@@ -166,7 +186,8 @@ if ($route->error() && erp_host()) {
     $isHelpDesk = (bool)preg_match("~/helpdesk(?:/|$)~", $requestPath);
     $isSystemArea = (bool)preg_match("~/(?:studio|helpdesk|app|erp|suporte)(?:/|$)~", $requestPath);
     $publicError = !CONF_ACCESS_SITE && !$developerBypass && !$isSystemArea ? "indisponivel" : $route->error();
-    $route->redirect(($isHelpDesk ? "/helpdesk/ops/" : ($isStudio ? "/studio/ops/" : "/ops/")) . $publicError);
+    // No host do Studio não existe /ops do site: todo erro vai para a página de erro do painel.
+    $route->redirect(($isHelpDesk ? "/helpdesk/ops/" : ($isStudio || studio_host() ? "/studio/ops/" : "/ops/")) . $publicError);
 }
 
 ob_end_flush();
