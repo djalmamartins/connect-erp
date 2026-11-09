@@ -221,6 +221,10 @@
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
   {
+   "file": "docs/Organic Code/decisions/0071-condominium-unit-panel-screens.md",
+   "title": "0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -881,6 +885,7 @@
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
+    "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
@@ -3284,7 +3289,7 @@
   }
  },
  "counts": {
-  "adrs": 58,
+  "adrs": 59,
   "classes": 183,
   "dynamic_route_lines": {
    "erp": 8,

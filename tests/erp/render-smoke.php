@@ -594,6 +594,43 @@ $save('page-ap-110-next', $html);
 $assert(str_contains($html, 'data-kind="next" data-api="https://' . $smokeHost . '/api/v1/maintenances/8/next"') && str_contains($html, 'Gerar próxima'), 'AP-110: manutenção concluída recorrente gera a próxima');
 $assert(!str_contains($actionForm('maintenances', 'AP-110', ['status' => 'done', 'frequency' => 'unica']), 'data-erp-record-action') && !str_contains($actionForm('maintenances', 'AP-110', ['status' => 'active', 'frequency' => 'mensal']), 'data-erp-record-action'), 'AP-110: única ou não concluída não gera próxima');
 
+// Painéis do condomínio (AP-002) e da unidade (AP-003), ADR 0054 e 0071.
+$condoPanel = ['condominium' => ['id' => 7, 'name' => 'Residencial <Aurora>', 'status' => 'active'], 'as_of' => '2026-11-09',
+    'occupancy' => ['units' => 40, 'occupied' => 36, 'vacant' => 4, 'rate' => 90.0],
+    'finance' => ['bank_balance_cents' => 4567890, 'bank_accounts' => [['id' => 1, 'name' => 'Itaú <principal>', 'is_main' => true, 'received_cents' => 100000, 'paid_cents' => 50000, 'balance_cents' => 4567890]],
+        'delinquency_cents' => 300000, 'delinquency_charges_cents' => 12345, 'delinquent_units' => 3, 'buckets' => ['1-30' => 100000, '31-60' => 0, '61-90' => 50000, '90+' => 150000],
+        'competence' => '2026-11', 'closing_status' => 'open', 'competence_result_cents' => -2000],
+    'operations' => ['as_of' => '2026-11-09', 'condominium_id' => 7, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]];
+$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => $condoPanel, 'condoPanelError' => null], 'real');
+$common($html, 'AP-002', 'Residencial <Aurora>');
+$assert(str_contains($html, 'data-erp-condo-panel') && str_contains($html, '36 ocupadas · 4 vagas (90,0%)') && str_contains($html, 'R$ 45.678,90') && str_contains($html, 'Itaú &lt;principal&gt;')
+    && str_contains($html, 'encargos R$ 123,45') && str_contains($html, 'Resultado de 11/2026') && str_contains($html, 'Competência Aberta') && str_contains($html, 'Acima de 90 dias')
+    && str_contains($html, 'Manutenções atrasadas') && str_contains($html, '/condominios/7'), 'AP-002: painel com ocupação, financeiro e alertas');
+$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => null, 'condoPanelError' => null]);
+$assert(str_contains($html, 'Escolha um condomínio') && str_contains($html, '/condominios/painel-do-condominio'), 'AP-002: em todos os condomínios pede a escolha');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-002', ['condoPanelReady' => false]) === null, 'AP-002: sem permissão ou banco segue a demonstração');
+
+$unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025], 'as_of' => '2026-11-09',
+    'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'phone' => '(11) 99999-0000', 'email' => 'ana@example.com']],
+    'finance' => ['overdue' => [['id' => 3, 'description' => 'Taxa <outubro>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'amount_cents' => 80000, 'days_late' => 30, 'bucket' => '1-30']],
+        'overdue_cents' => 80000, 'charges_cents' => 2400, 'max_days_late' => 30,
+        'upcoming' => [['id' => 4, 'description' => 'Taxa novembro', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 80000]],
+        'agreements' => [['id' => 2, 'status' => 'breached', 'total_cents' => 150000, 'installments' => 3, 'first_due_on' => '2026-08-10']]],
+    'documents' => [['id' => 5, 'kind_label' => 'Certidão de débitos', 'verification_display' => 'ABCD-EFGH', 'issued_at' => '2026-11-01 10:00:00', 'status' => 'issued']],
+    'operations' => ['deliveries_waiting' => 1, 'reservations_upcoming' => 2, 'occurrences_open' => 1, 'vehicles' => 1, 'pets' => 0]];
+$unitData = static fn (array $over = []): array => $over + ['unitPanelReady' => true, 'unitPanel' => $unitPanel, 'unitPanelUnits' => [['id' => 9, 'condominium_id' => 7, 'label' => 'A-101'], ['id' => 10, 'condominium_id' => 7, 'label' => 'A-102']], 'unitPanelSelected' => 9, 'unitPanelError' => null];
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(), 'real');
+$common($html, 'AP-003', 'Unidade A-101');
+$assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 824,00') && str_contains($html, 'Taxa &lt;outubro&gt;') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Proprietário')
+    && str_contains($html, 'Quebrado') && str_contains($html, 'ABCD-EFGH') && str_contains($html, '<option value="9" selected>') && str_contains($html, 'data-erp-autosubmit')
+    && str_contains($html, '1 entrega(s) · 1 ocorrência(s) · 2 reserva(s)'), 'AP-003: painel da unidade');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'Escolha uma unidade') && !str_contains($html, 'data-erp-unit-panel'), 'AP-003: sem unidade escolhida pede a escolha');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => 99, 'unitPanelError' => 'Unidade não encontrada no seu escopo de condomínios.']));
+$assert(str_contains($html, 'Unidade não encontrada') && !str_contains($html, 'Escolha uma unidade'), 'AP-003: unidade fora do escopo');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem unidades');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
