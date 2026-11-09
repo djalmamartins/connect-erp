@@ -224,6 +224,8 @@ final class ChartReports
         ]];
     }
 
+    // Só entra na conta o que é do mesmo condomínio dela (ADR 0069): um lançamento ou uma transferência
+    // de outro condomínio apontando para a conta não muda o saldo, mesmo com os dois no escopo.
     public function bankAccounts(User $user, ?int $condominiumId, string $from, string $to): array
     {
         $months = self::months($from, $to);
@@ -235,16 +237,16 @@ final class ChartReports
             $params = ['f' => $months[0] . '-01', 't' => end($months) . '-01', 'f2' => $months[0] . '-01', 't2' => end($months) . '-01',
                 'f3' => $months[0] . '-01', 't3' => end($months) . '-01'];
             $stmt = $this->pdo->prepare("SELECT b.id, b.name, x.month, SUM(x.amount) AS total FROM erp_bank_accounts b JOIN (
-                    SELECT e.bank_account_id AS bank, DATE_FORMAT(e.paid_on, '%Y-%m') AS month, CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -CAST(e.amount_cents AS SIGNED) END AS amount
+                    SELECT e.bank_account_id AS bank, e.condominium_id AS condo, DATE_FORMAT(e.paid_on, '%Y-%m') AS month, CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -CAST(e.amount_cents AS SIGNED) END AS amount
                       FROM erp_entries e WHERE e.paid_on BETWEEN :f AND LAST_DAY(:t) AND e.status = 'active' AND e.deleted_at IS NULL AND e.bank_account_id IS NOT NULL
                         AND e.condominium_id IN ({$in})
                     UNION ALL
-                    SELECT t.to_bank_account_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), t.amount_cents FROM erp_bank_transfers t
+                    SELECT t.to_bank_account_id, t.condominium_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), t.amount_cents FROM erp_bank_transfers t
                       WHERE t.status = 'active' AND t.condominium_id IN ({$in}) AND t.transferred_on BETWEEN :f2 AND LAST_DAY(:t2)
                     UNION ALL
-                    SELECT t.from_bank_account_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), -CAST(t.amount_cents AS SIGNED) FROM erp_bank_transfers t
+                    SELECT t.from_bank_account_id, t.condominium_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), -CAST(t.amount_cents AS SIGNED) FROM erp_bank_transfers t
                       WHERE t.status = 'active' AND t.condominium_id IN ({$in}) AND t.transferred_on BETWEEN :f3 AND LAST_DAY(:t3)
-                ) x ON x.bank = b.id
+                ) x ON x.bank = b.id AND x.condo = b.condominium_id
                 WHERE b.condominium_id IN ({$in}) AND b.deleted_at IS NULL GROUP BY b.id, b.name, x.month");
             $stmt->execute($params);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {

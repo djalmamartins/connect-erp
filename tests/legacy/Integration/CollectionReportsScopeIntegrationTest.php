@@ -11,6 +11,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\Agreements;
 use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\Registry\RegistryService;
+use Source\Services\Erp\Registry\RegistryNotFound;
 
 /**
  * Relatórios de cobrança (ADR 0081 e 0067) com dois condomínios: o contexto "Todos" soma só o escopo
@@ -74,7 +75,12 @@ final class CollectionReportsScopeIntegrationTest extends TestCase
         foreach (CollectionReports::DELINQUENT_VIEWS as $view) {
             self::assertSame([$betaId], $only($reports->delinquents($beta, null, null, $view)['rows']), "Visão {$view}");
         }
-        self::assertSame([], $reports->delinquents($beta, $this->sites['Alpha']['condominium'], null, 'unit')['rows'], 'Condomínio de fora: nada.');
+        try {
+            $reports->delinquents($beta, $this->sites['Alpha']['condominium'], null, 'unit');
+            self::fail('Condomínio de fora respondeu.');
+        } catch (RegistryNotFound) {
+            self::addToAssertionCount(1);   // fora do escopo responde como inexistente (404)
+        }
         self::assertSame(0, $reports->agreements($beta, null, $today, $today)['totals']['agreements'], 'O acordo é do Alpha.');
         self::assertSame([], $reports->agreementFees($beta, null, $today, $today)['condominiums']);
         foreach (CollectionReports::RECEIPT_GROUPS as $group) {
@@ -101,7 +107,7 @@ final class CollectionReportsScopeIntegrationTest extends TestCase
             self::assertStringNotContainsString(substr($digits, 0, 9), $resident);
             self::assertStringContainsString('*********' . substr($digits, -2), $resident);
         }
-        self::assertStringContainsString(";'@SUM(A1) Morador;", $resident);
+        self::assertStringContainsString(";\"'@SUM(A1) Morador\";", $resident, 'Fórmula vira texto (o espaço faz o CSV pôr aspas).');
         $detailed = CollectionReports::csv(CollectionReports::csvTable('delinquents-detailed', $reports->delinquents($beta, null, null, 'detailed')));
         self::assertStringContainsString(";\"'=HYPERLINK(\"\"http://x\"\") Beta\";", $detailed, 'Fórmula do cadastro vira texto.');
         self::assertStringNotContainsString('Alpha', $detailed);
