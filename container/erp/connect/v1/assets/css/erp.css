@@ -318,6 +318,13 @@ p { margin: 0; }
 .erp-filters .erp-field.erp-field--compact { flex: 0 1 240px; }
 .erp-muted { color: var(--erp-muted); }
 .erp-trace { margin-top: 8px; font-size: 12px; }
+.erp-invoice-item { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.erp-invoice-item .erp-input { width: 120px; min-height: 34px; padding: 6px 10px; text-align: right; }
+.erp-table td small.erp-muted { display: block; font-size: 12px; }
+.erp-invoice-link { padding: 0; border: 0; background: none; color: var(--erp-text); font: inherit; font-weight: 650; text-align: left; text-decoration: underline; text-decoration-color: var(--erp-border-strong); text-underline-offset: 3px; cursor: pointer; }
+.erp-invoice-link:hover, .erp-invoice-link:focus-visible { color: var(--erp-brand-ink); text-decoration-color: currentColor; }
+.erp-invoice-actions { white-space: nowrap; }
+.erp-modal__body > p { margin-bottom: 12px; }
 .erp-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; padding: 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: #fff; }
 .erp-qr svg { display: block; width: 196px; max-width: 100%; height: auto; }
 .erp-qr figcaption { font-size: 13px; color: var(--erp-muted); }
