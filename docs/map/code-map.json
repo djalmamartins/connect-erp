@@ -2658,7 +2658,9 @@
    "kind": "class",
    "layer": "Services",
    "tables": [
+    "erp_unit_document_entries",
     "erp_month_closings",
+    "erp_unit_documents",
     "system_audit_logs",
     "erp_common_areas",
     "erp_documents",
@@ -7760,6 +7762,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0534_entry_shortcuts.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments"
    ]
   },
@@ -7769,6 +7772,7 @@
    ],
    "created_in": "database/migrations/20261108_0526_unit_documents.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments"
    ]
   },

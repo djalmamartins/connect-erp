@@ -452,6 +452,10 @@ flowchart LR
   t_erp_documents[("erp_documents")]
   Source_Services_Erp_Registry_RegistryService --> t_erp_documents
   Source_Services_Erp_Registry_RegistryService --> t_erp_month_closings
+  t_erp_unit_document_entries[("erp_unit_document_entries")]
+  Source_Services_Erp_Registry_RegistryService --> t_erp_unit_document_entries
+  t_erp_unit_documents[("erp_unit_documents")]
+  Source_Services_Erp_Registry_RegistryService --> t_erp_unit_documents
   Source_Services_Erp_Registry_RegistryService --> t_erp_units
   Source_Services_Erp_Registry_RegistryService --> t_pages
   t_system_audit_logs[("system_audit_logs")]
@@ -459,9 +463,7 @@ flowchart LR
   Source_Services_Erp_UnitDocuments --> t_condominiums
   Source_Services_Erp_UnitDocuments --> t_erp_bank_accounts
   Source_Services_Erp_UnitDocuments --> t_erp_entries
-  t_erp_unit_document_entries[("erp_unit_document_entries")]
   Source_Services_Erp_UnitDocuments --> t_erp_unit_document_entries
-  t_erp_unit_documents[("erp_unit_documents")]
   Source_Services_Erp_UnitDocuments --> t_erp_unit_documents
   Source_Services_Erp_UnitDocuments --> t_erp_units
   Source_Services_Erp_UnitDocuments --> t_pages
@@ -897,8 +899,8 @@ flowchart LR
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/NotificationDispatcher`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_tariffs` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
-| `erp_unit_document_entries` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/UnitDocuments` |
-| `erp_unit_documents` | `20261108_0526_unit_documents.sql` | `20261108_0534_entry_shortcuts.sql` | `Services/Erp/UnitDocuments` |
+| `erp_unit_document_entries` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
+| `erp_unit_documents` | `20261108_0526_unit_documents.sql` | `20261108_0534_entry_shortcuts.sql` | `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
 | `erp_units` | `20261108_0401_units.sql` | — | `Controllers/Studio/Studio`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/EntryShortcuts`, `Services/Erp/MeterReadings`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Support/TicketService` |
 | `erp_useful_contacts` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_vehicles` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
@@ -1109,7 +1111,7 @@ flowchart LR
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 10 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 13 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, NotificationOutbox, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_units, pages, system_audit_logs | 28 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, NotificationOutbox, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_unit_document_entries, erp_unit_documents, erp_units, pages, system_audit_logs | 28 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 13 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 9 |
 | [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_bank_accounts, erp_entries, erp_unit_document_entries, erp_unit_documents, erp_units, pages | 5 |
