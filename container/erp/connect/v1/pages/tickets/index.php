@@ -33,7 +33,7 @@ $this->insert('components/layout/page-head', [
 ]);
 ?>
 <?php if (!empty($flash)): ?>
-    <div class="erp-alert erp-alert--<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="<?= $flash['type'] === 'success' ? 'status' : 'alert' ?>"><?= $this->e($flash['text']) ?></div>
+    <div class="erp-alert erp-alert--<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="<?= $flash['type'] === 'success' ? 'status' : 'alert' ?>"><?= $this->e($flash['text']) ?><?php if (!empty($flash['ticket_id'])): ?> <a href="<?= erp_url($base . '/' . (int)$flash['ticket_id']) ?>">Acompanhar o chamado</a><?php endif; ?></div>
 <?php endif; ?>
 
 <form class="erp-card erp-form" id="abrir" method="post" action="<?= erp_url($base) ?>" novalidate>
@@ -153,8 +153,8 @@ $this->insert('components/layout/page-head', [
                 <tbody>
                 <?php foreach ($tickets as $ticket): ?>
                     <tr>
-                        <td><strong><?= $this->e($ticket['protocol']) ?></strong></td>
-                        <td><?= $this->e($ticket['subject']) ?></td>
+                        <td><a class="erp-ticket-link" href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['protocol']) ?></a></td>
+                        <td><a href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['subject']) ?></a></td>
                         <td><?= $this->e($ticket['condominium']['name'] ?? '—') ?><?php if ($ticket['unit'] !== null): ?><br><small><?= $this->e('Unid. ' . $ticket['unit']['label']) ?></small><?php endif; ?></td>
                         <td><?= $this->e($ticket['requester']['name'] ?? '—') ?></td>
                         <td><?= $this->e(TicketService::ORIGIN_LABELS[$ticket['origin']] ?? $ticket['origin']) ?></td>

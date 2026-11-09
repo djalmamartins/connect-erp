@@ -59,7 +59,7 @@ final class Tickets extends Controller
         $current = $layout['condoCurrent']['id'] ?? null;
         echo $this->view->render('pages/tickets/index', $panel->layoutData($user, self::PAGE_ID, [
             'base' => self::BASE,
-            'flash' => $flash !== null ? ['type' => $flash['type'], 'text' => $flash['text'], 'protocol' => $flash['protocol'] ?? null] : null,
+            'flash' => $flash !== null ? ['type' => $flash['type'], 'text' => $flash['text'], 'protocol' => $flash['protocol'] ?? null, 'ticket_id' => $flash['ticket_id'] ?? null] : null,
             'errors' => $flash['errors'] ?? [],
             'old' => $old + ['condominium_id' => $current !== null ? (int)$current : 0],
             'condominiums' => $condominiums,
@@ -104,8 +104,91 @@ final class Tickets extends Controller
             redirect(erp_url(self::BASE . '#abrir'));
             return;
         }
-        $this->flash(['type' => 'success', 'text' => "Chamado {$opened['protocol']} aberto. A equipe do Help Desk já foi avisada.", 'protocol' => $opened['protocol']]);
+        $this->flash(['type' => 'success', 'text' => "Chamado {$opened['protocol']} aberto. A equipe do Help Desk já foi avisada.", 'protocol' => $opened['protocol'], 'ticket_id' => $opened['id']]);
         redirect(erp_url(self::BASE));
+    }
+
+    /** GET /operacional/chamados/{id} — o chamado com a conversa pública e a resposta (ADR 0142). */
+    public function show(array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $ticket = $this->find($user, $data);
+        if ($ticket === null) {
+            return;
+        }
+        $session = new Session();
+        $flash = $session->has(self::FLASH) ? (array)$session->{self::FLASH} : null;
+        $session->unset(self::FLASH);
+        $canAttend = Access::can('support.manage', $user);
+        echo $this->view->render('pages/tickets/show', (new Panel())->layoutData($user, self::PAGE_ID, [
+            'base' => self::BASE,
+            'ticket' => $ticket,
+            'messages' => $this->service->conversation($ticket),
+            'flash' => $flash !== null ? ['type' => $flash['type'], 'text' => $flash['text']] : null,
+            'errors' => $flash['errors'] ?? [],
+            'old' => $flash['old'] ?? [],
+            'helpdeskUrl' => $canAttend ? Environments::link('helpdesk', TicketService::helpdeskPath((int)$ticket['id'])) : null,
+        ], 'Chamado ' . $ticket['protocol']));
+    }
+
+    /** POST /operacional/chamados/{id}/responder — mensagem de quem pediu para a equipe. */
+    public function reply(array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $id = (int)filter_var($data['id'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['default' => 0, 'min_range' => 1]]);
+        $back = erp_url(self::BASE . '/' . $id);
+        if (!csrf_verify($_POST)) {
+            $this->flash(['type' => 'danger', 'text' => 'Sua sessão expirou. Envie de novo.']);
+            redirect($back);
+            return;
+        }
+        if (request_limit('erp_ticket_reply', 30, 300)) {
+            $this->flash(['type' => 'danger', 'text' => 'Muitas mensagens em pouco tempo. Aguarde alguns minutos.']);
+            redirect($back);
+            return;
+        }
+        try {
+            $result = $this->service->replyAsRequester($user, $id, (string)($_POST['message'] ?? ''));
+        } catch (TicketError $error) {
+            if ($error->getCode() === 404) {
+                $this->notFound($user);
+                return;
+            }
+            $this->flash(['type' => 'danger', 'text' => $error->getMessage(), 'errors' => [$error->field => $error->getMessage()], 'old' => $_POST]);
+            redirect($back . '#responder');
+            return;
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_reply_failed', 'users_id' => (int)$user->id, 'ticket_id' => $id]);
+            $this->flash(['type' => 'danger', 'text' => 'Não foi possível enviar a mensagem agora. Tente novamente.', 'old' => $_POST]);
+            redirect($back . '#responder');
+            return;
+        }
+        $this->flash(['type' => 'success', 'text' => $result['status'] === 'open' ? 'Mensagem enviada e chamado reaberto. A equipe foi avisada.' : 'Mensagem enviada. A equipe do Help Desk foi avisada.']);
+        redirect($back . '#conversa');
+    }
+
+    private function find(User $user, array $data): ?array
+    {
+        $id = (int)filter_var($data['id'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['default' => 0, 'min_range' => 1]]);
+        $ticket = $id > 0 ? $this->service->findFor($user, $id) : null;
+        if ($ticket === null) {
+            $this->notFound($user);
+        }
+        return $ticket;
+    }
+
+    private function notFound(User $user): void
+    {
+        http_response_code(404);
+        echo $this->view->render('pages/system/state', (new Panel())->layoutData($user, self::PAGE_ID, [
+            'stateCode' => 404, 'stateTitle' => 'Chamado não encontrado', 'stateMessage' => 'O chamado não existe ou não é de um condomínio seu.', 'withNavigation' => true,
+        ], 'Chamado não encontrado'));
     }
 
     private function guard(): ?User

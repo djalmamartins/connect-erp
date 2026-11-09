@@ -750,3 +750,24 @@ p { margin: 0; }
 .erp-person-link__condo { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .erp-person-link__condo > strong { flex-basis: 100%; font-size: 12px; color: var(--erp-muted); text-transform: uppercase; letter-spacing: .04em; }
 .erp-person-link__condo .is-linked { opacity: .55; text-decoration: line-through; }
+/* Chamado no ERP (CN-004, ADR 0142): conversa com o Help Desk. */
+.erp-ticket-thread { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--erp-space-3); }
+.erp-ticket-msg { padding: var(--erp-space-3) var(--erp-space-4); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); max-width: 92%; }
+.erp-ticket-msg--requester { background: var(--erp-surface-muted); }
+.erp-ticket-msg--team { margin-left: auto; border-color: var(--erp-success-soft); background: var(--erp-success-soft); }
+.erp-ticket-msg header { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-bottom: 6px; }
+.erp-ticket-msg header small { color: var(--erp-muted); font-size: 12px; }
+.erp-ticket-msg p { margin: 0; overflow-wrap: anywhere; }
+.erp-ticket-msg footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 13px; }
+.erp-ticket-msg footer a { display: inline-flex; gap: 4px; align-items: center; }
+.erp-ticket-wait { display: flex; gap: 8px; align-items: center; margin: var(--erp-space-4) 0 0; color: var(--erp-muted); font-size: 13px; }
+.erp-table a.erp-ticket-link { font-weight: 700; }
+
+/* Sino do ERP com as notificações compartilhadas com Studio e Help Desk (ADR 0142). */
+.erp-icon-button__count { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--erp-radius-pill); background: var(--erp-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.erp-dropdown__panel--wide { width: 360px; }
+.erp-dropdown__item.is-unread span::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--erp-success); vertical-align: middle; }
+.erp-dropdown__item time { display: block; color: var(--erp-faint); font-size: 11px; margin-top: 2px; }
+.erp-dropdown__foot { display: block; padding: 8px 10px 4px; font-size: 13px; font-weight: 600; }
+.erp-dropdown__panel--wide { max-height: min(70vh, 560px); overflow-y: auto; }
+.erp-dropdown__panel--wide .erp-dropdown__item small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

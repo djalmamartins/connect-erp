@@ -1,6 +1,7 @@
 <?php
 /**
- * Navbar: menu móvel, título e breadcrumbs, pesquisa de páginas, notificações e perfil.
+ * Navbar: menu móvel, título e breadcrumbs, pesquisa de páginas, suporte, notificações e perfil.
+ * O sino mostra as notificações reais da pessoa, as mesmas do Studio e do Help Desk (ADR 0142).
  * A pesquisa procura nas páginas do catálogo (lado do cliente); não consulta dados.
  *
  * @var string $title
@@ -48,15 +49,33 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
     </div>
     <div class="erp-navbar__actions">
         <details class="erp-dropdown" data-erp-dropdown>
-            <summary class="erp-icon-button" aria-label="Notificações"><?= $icon('bell') ?><?php if ($notifications): ?><span class="erp-icon-button__dot"></span><?php endif; ?></summary>
+            <summary class="erp-icon-button" aria-label="Suporte" title="Suporte"><?= $icon('help') ?></summary>
             <div class="erp-dropdown__panel">
-                <h2>Notificações <?php if ($demo && $notifications): ?><span class="erp-demo-flag">Demonstração</span><?php endif; ?></h2>
+                <h2>Suporte</h2>
+                <?php foreach ($supportMenu ?? [] as $support): ?>
+                    <a class="erp-dropdown__item" href="<?= $this->e($support['href']) ?>"><?= $icon($support['icon'], 'erp-icon--sm') ?><span><?= $this->e($support['label']) ?><small><?= $this->e($support['text']) ?></small></span></a>
+                <?php endforeach; ?>
+            </div>
+        </details>
+        <?php $unread = (int)($notificationCount ?? 0); ?>
+        <details class="erp-dropdown" data-erp-dropdown>
+            <summary class="erp-icon-button" aria-label="Notificações<?= $unread > 0 ? ' (' . $unread . ' não lidas)' : '' ?>"><?= $icon('bell') ?><?php if ($unread > 0): ?><span class="erp-icon-button__count" aria-hidden="true"><?= $unread > 99 ? '99+' : $unread ?></span><?php elseif ($notifications && empty($notificationsReal)): ?><span class="erp-icon-button__dot"></span><?php endif; ?></summary>
+            <div class="erp-dropdown__panel erp-dropdown__panel--wide">
+                <h2>Notificações <?php if ($demo && $notifications && empty($notificationsReal)): ?><span class="erp-demo-flag">Demonstração</span><?php endif; ?></h2>
                 <?php if (!$notifications): ?>
                     <p class="erp-dropdown__item"><span>Nenhuma notificação no momento.</span></p>
                 <?php endif; ?>
                 <?php foreach ($notifications as $notification): ?>
-                    <a class="erp-dropdown__item" href="<?= erp_url($notification['href']) ?>"><?= $icon('info', 'erp-icon--sm') ?><span><?= $this->e($notification['title']) ?><small><?= $this->e($notification['text']) ?></small></span></a>
+                    <a class="erp-dropdown__item<?= !empty($notification['unread']) ? ' is-unread' : '' ?>" href="<?= erp_url($notification['href']) ?>"><?= $icon('info', 'erp-icon--sm') ?><span><?= $this->e($notification['title']) ?><small><?= $this->e($notification['text']) ?></small><?php if (!empty($notification['when'])): ?><time><?= $this->e($notification['when']) ?></time><?php endif; ?></span></a>
                 <?php endforeach; ?>
+                <?php if ($unread > 0): ?>
+                    <div class="erp-dropdown__sep"></div>
+                    <form method="post" action="<?= erp_url('/notificacoes/lidas') ?>">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="back" value="<?= $this->e(\Source\Support\Erp\CondominiumContext::relativePath()) ?>">
+                        <button type="submit" class="erp-dropdown__item"><?= $icon('check', 'erp-icon--sm') ?><span>Marcar todas como lidas</span></button>
+                    </form>
+                <?php endif; ?>
             </div>
         </details>
         <a class="erp-icon-button" href="<?= erp_url('/configuracoes') ?>" aria-label="Configurações" title="Configurações"><?= $icon('settings') ?></a>

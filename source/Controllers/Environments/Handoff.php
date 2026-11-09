@@ -21,6 +21,9 @@ use Source\Support\Audit;
  *
  * GET /ambiente/entrar/{environment}/{token}: no host de destino, troca o código pela sessão.
  * O código vale 60 s, uma vez, só para o ambiente emitido e só no host desse ambiente.
+ *
+ * As duas rotas aceitam ?ir=/caminho (ADR 0142) para abrir uma página do ambiente, como o chamado
+ * no Help Desk a partir do ERP. O caminho passa por Environments::safePath() nas duas pontas.
  */
 final class Handoff
 {
@@ -32,7 +35,9 @@ final class Handoff
             $this->fail();
             return;
         }
-        $target = Environments::target($key);
+        // Deep link (ADR 0142): ?ir=/caminho leva a uma página do ambiente, não só à inicial.
+        $next = Environments::safePath($key, isset($_GET['ir']) ? (string)$_GET['ir'] : null);
+        $target = Environments::target($key, null, $next);
         $user = Auth::user();
         if ($user === null) {
             // Sem sessão: o destino mostra o próprio login.
@@ -59,7 +64,7 @@ final class Handoff
             redirect(Environments::absolute($target['host'], $target['path']));
             return;
         }
-        redirect(Environments::absolute($target['host'], '/ambiente/entrar/' . $key . '/' . $token));
+        redirect(Environments::absolute($target['host'], '/ambiente/entrar/' . $key . '/' . $token . ($next !== null ? '?ir=' . rawurlencode($next) : '')));
     }
 
     public function enter(array $data): void
@@ -71,7 +76,8 @@ final class Handoff
             $this->fail();
             return;
         }
-        $target = Environments::target($key);
+        $next = Environments::safePath($key, isset($_GET['ir']) ? (string)$_GET['ir'] : null);
+        $target = Environments::target($key, null, $next);
         $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
         if ($target['host'] !== $host) {
             // Código emitido para outro host: não abre sessão aqui.

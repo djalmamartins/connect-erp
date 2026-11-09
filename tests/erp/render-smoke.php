@@ -964,7 +964,7 @@ $html = $occurrenceForm(['ticket_id' => null]);
 $save('page-ap-112-ticket', $html);
 $assert(str_contains($html, 'data-erp-occurrence-ticket data-api="https://' . $smokeHost . '/api/v1/occurrences/5/ticket"') && str_contains($html, 'data-ticket-open') && str_contains($html, 'Operacional · Ocorrências'), 'AP-112: abrir chamado no Help Desk');
 $html = $occurrenceForm(['ticket_id' => '77']);
-$assert(!str_contains($html, 'data-ticket-open') && str_contains($html, 'nº 77') && str_contains($html, '/helpdesk/tickets?ticket=77'), 'AP-112: chamado aberto com link');
+$assert(!str_contains($html, 'data-ticket-open') && str_contains($html, 'nº 77') && str_contains($html, '/operacional/chamados/77'), 'AP-112: chamado aberto com link');
 $html = $occurrenceForm(['ticket_id' => null], false);
 $assert(!str_contains($html, 'data-ticket-open') && str_contains($html, 'Nenhum chamado aberto'), 'AP-112: sem manage não abre chamado');
 
