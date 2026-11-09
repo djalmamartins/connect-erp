@@ -111,6 +111,19 @@ p { margin: 0; }
 .erp-sidebar__context { margin: 0 var(--erp-space-1); padding: 10px 12px; border: 1px solid var(--erp-sidebar-line); border-radius: var(--erp-radius-md); background: rgba(255, 255, 255, .06); }
 .erp-sidebar__context small { display: block; color: var(--erp-sidebar-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .erp-sidebar__context strong { display: block; color: var(--erp-sidebar-strong); font-size: 13px; }
+.erp-envswitch > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none; }
+.erp-envswitch > summary::-webkit-details-marker { display: none; }
+.erp-envswitch__chevron { color: var(--erp-sidebar-muted); transition: transform .2s; }
+.erp-envswitch[open] .erp-envswitch__chevron { transform: rotate(90deg); }
+.erp-envswitch__panel { display: grid; gap: 2px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--erp-sidebar-line); }
+.erp-envswitch__title { padding: 0 4px 4px; }
+.erp-envswitch__panel a { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: var(--erp-radius-md); color: var(--erp-sidebar-ink); }
+.erp-envswitch__panel a:hover { background: var(--erp-sidebar-hover); color: var(--erp-sidebar-strong); text-decoration: none; }
+.erp-envswitch__panel a[aria-current="page"] { background: var(--erp-sidebar-active); }
+.erp-envswitch__panel a span { flex: 1; min-width: 0; }
+.erp-envswitch__panel a strong { font-size: 13px; }
+.erp-envswitch__panel a small { text-transform: none; letter-spacing: 0; }
+.erp-envswitch__panel em { font-style: normal; font-size: 11px; color: var(--erp-sidebar-accent); }
 .erp-nav { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .erp-nav__link, .erp-nav__group > summary {
   display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border-radius: var(--erp-radius-md);

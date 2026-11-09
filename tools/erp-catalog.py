@@ -187,6 +187,11 @@ CONNECT_PAGES = [
      "route": "/financeiro/contas-bancarias", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-003-contas-bancarias.md", "reference": "",
      "note": "Contas bancárias de cada condomínio (banco, agência, conta, carteira), base de boletos e conciliação"},
+    # Chamados abertos no ERP caem na fila do Help Desk com condomínio e unidade (ADR 0034).
+    {"id": "CN-004", "name": "Chamados", "group": "operacional", "section": "Rotina", "order": -1,
+     "route": "/operacional/chamados", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-004-chamados.md", "reference": "",
+     "note": "Abertura de chamados para o Help Desk com condomínio, unidade e solicitante (pedido do proprietário, 09/11/2026)"},
 ]
 for p in CONNECT_PAGES:
     pages.append(p)
@@ -233,6 +238,8 @@ for ap, orig, name, route, status, note in matrix:
         comp, actions, impl = "pages/dashboard/index", "período, exportar (pendente), comunicado rápido (modal), filtro/ordenação/paginação", "completa (demonstração)"
     elif p and p["id"] == "CN-001":
         comp, actions, impl = "pages/inspections/*", "check-in GPS, checklist, fotos, concluir, relatório HTML/PDF, envio por e-mail, configurar modelos/planos/localização", "completa (dados reais)"
+    elif p and p["id"] == "CN-004":
+        comp, actions, impl = "pages/tickets/index", "abrir chamado (condomínio, unidade, solicitante), filtros, link para a fila do Help Desk", "completa (dados reais)"
     elif p:
         comp = "pages/modules/" + p["kind"]
         actions = {

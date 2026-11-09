@@ -57,12 +57,17 @@ final class AccessRegisteredPermissionsTest extends TestCase
             preg_match_all("/\\['[^']*','[^']*','[^']*','[^']*','([a-z0-9_]+\\.[a-z0-9_.]+)',/", $code, $m4);
             $slugs = array_merge($slugs, $m4[1]);
         }
+        // Alternador de ambientes (ADR 0034): 'permission' de Environments.php é o slug completo
+        // que canAccess() vai exigir quando a permissão por usuário entrar.
+        $environments = (string)file_get_contents(self::ROOT . '/source/Services/Environments.php');
+        preg_match_all("/['\"]permission['\"]\\s*=>\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]/", $environments, $m5);
+        $slugs = array_merge($slugs, $m5[1]);
         // Cadastros do ERP: cada 'permission' de Definitions.php é prefixo de .view e .manage.
         $definitions = (string)file_get_contents(self::ROOT . '/source/Services/Erp/Registry/Definitions.php');
         preg_match_all("/['\"]permission['\"]\\s*=>\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]/", $definitions, $prefixes);
         foreach ($prefixes[1] as $prefix) { $slugs[] = $prefix . '.view'; $slugs[] = $prefix . '.manage'; }
         $slugs = array_values(array_unique($slugs));
-        self::assertContains('site.access', $slugs, 'A varredura deveria encontrar os atalhos do layout do Studio.');
+        self::assertContains('site.access', $slugs, 'A varredura deveria encontrar os ambientes do alternador (Environments.php).');
         return $slugs;
     }
 

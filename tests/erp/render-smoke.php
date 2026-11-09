@@ -187,6 +187,25 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(!str_contains($done, 'multipart/form-data') && str_contains($done, 'id="enviar"'), 'CN-001: concluída fica só leitura e oferece envio');
         continue;
     }
+    if ($id === 'CN-004') {
+        // Chamados (ADR 0034): abertura para o Help Desk com condomínio, unidade e solicitante.
+        $evil = '<b>Residencial</b>';
+        $ticket = ['id' => 3, 'protocol' => 'CH261109ABCD', 'subject' => 'Interfone <script>', 'message' => 'x', 'area' => 'general', 'origin' => 'erp', 'category' => null,
+            'priority' => 'high', 'status' => 'open', 'condominium' => ['id' => 7, 'name' => $evil], 'unit' => ['id' => 2, 'label' => 'B - 101'],
+            'requester' => ['user_id' => null, 'name' => 'Maria', 'email' => 'm@example.com', 'phone' => null], 'assigned_to' => null, 'due_at' => '2026-11-10 10:00:00', 'resolved_at' => null, 'created_at' => '2026-11-09 10:00:00'];
+        $html = $render('pages/tickets/index', $layoutData->invoke($panel, $user, 'CN-004', [
+            'base' => '/operacional/chamados', 'flash' => ['type' => 'success', 'text' => 'Ok <x>', 'protocol' => 'CH261109ABCD'], 'errors' => ['unit_id' => 'Unidade <i>'],
+            'old' => ['condominium_id' => 7, 'unit_id' => 2], 'condominiums' => [['id' => 7, 'name' => $evil]], 'unitsByCondominium' => [7 => [['id' => 2, 'label' => 'B - 101']]],
+            'tickets' => [$ticket], 'filters' => ['condominium_id' => 0, 'status' => '', 'q' => ''], 'helpdeskUrl' => 'https://studio.connect.lab/ambiente/helpdesk',
+        ]));
+        $common($html, $id, 'Chamados');
+        $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, 'Interfone <script>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Unidade <i>'), 'CN-004: escape');
+        $assert(str_contains($html, 'name="condominium_id"') && str_contains($html, 'name="unit_id"') && str_contains($html, 'name="requester_name"') && str_contains($html, '<option value="2" selected>'), 'CN-004: condomínio, unidade e solicitante no formulário');
+        $assert(str_contains($html, 'CH261109ABCD') && str_contains($html, 'Unid. B - 101') && str_contains($html, '/ambiente/helpdesk'), 'CN-004: lista com contexto e link do Help Desk');
+        $assert(str_contains($html, 'erp-envswitch') && str_contains($html, 'Help Desk') && str_contains($html, 'Studio'), 'sidebar: alternador de ambientes');
+        $save('cn-004', $html);
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';

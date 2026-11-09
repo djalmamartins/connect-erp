@@ -1397,33 +1397,16 @@ class Studio extends Controller
                 $files=$_FILES['attachments']??null;if($files&&!empty($files['tmp_name'])&&is_array($files['tmp_name'])){foreach($files['tmp_name'] as $index=>$temporary){if(!$temporary)continue;$file=['name'=>$files['name'][$index]??'arquivo','type'=>$files['type'][$index]??'','tmp_name'=>$temporary,'error'=>$files['error'][$index]??UPLOAD_ERR_NO_FILE,'size'=>$files['size'][$index]??0];$upload=new Upload();$path=$upload->file($file,'ticket-'.$ticketId.'-'.bin2hex(random_bytes(4)));if(!$path){$this->jsonMessage('Um dos anexos não é válido.','warning');return;}$attachment=$pdo->prepare("INSERT INTO studio_support_ticket_attachments(ticket_id,message_id,user_id,file_path,original_name,mime_type,file_size) VALUES(?,?,?,?,?,?,?)");$attachment->execute([$ticketId,$messageId,$user->id,$path,mb_substr(basename((string)$file['name']),0,255),$file['type']?:null,(int)$file['size']]);}}
                 echo json_encode(["redirect" => url("/helpdesk/tickets?ticket=" . $ticketId)]); return;
             }
-            $subject = trim(strip_tags((string)($data["subject"] ?? "")));
-            $message = trim(strip_tags((string)($data["message"] ?? "")));
-            $areas = ["general", "technical", "financial"];
-            $priorities = ["low", "medium", "high", "urgent"];
-            if (mb_strlen($subject) < 4 || mb_strlen($message) < 10) { $this->jsonMessage("Informe assunto e uma descrição com pelo menos 10 caracteres.", "warning"); return; }
-            // A coluna protocol possui 12 caracteres: CH + data (aammdd) + 4 caracteres aleatórios.
-            $protocol = "CH" . date("ymd") . strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
-            $priority = in_array($data["priority"] ?? "", $priorities, true) ? $data["priority"] : "medium";
-            $assignedTo = ($id = (int)($data["assigned_to"] ?? 0)) ?: null;
-            $dueAt = date("Y-m-d H:i:s", strtotime("+" . $this->ticketSlaHours($priority) . " hours"));
-            $requesterId = ($id = (int)($data["requester_id"] ?? 0)) ?: $user->id;
-            if (!(new User())->findById($requesterId)) { $this->jsonMessage("Selecione um solicitante válido.", "warning"); return; }
+            // Abertura pelo serviço único (ADR 0034): mesma regra do ERP, do site e da API.
             try {
-                $pdo->beginTransaction();
-                $stmt = $pdo->prepare("INSERT INTO studio_support_tickets(protocol,subject,message,area,priority,requester_id,assigned_to,created_by,due_at) VALUES(:protocol,:subject,:message,:area,:priority,:requester,:assigned,:creator,:due_at)");
-                $stmt->execute(["protocol" => $protocol, "subject" => $subject, "message" => $message, "area" => in_array($data["area"] ?? "", $areas, true) ? $data["area"] : "general", "priority" => $priority, "requester" => $requesterId, "assigned" => $assignedTo, "creator" => $user->id, "due_at" => $dueAt]);
-                $newTicketId = (int)$pdo->lastInsertId();
-                $pdo->commit();
+                $opened = (new \Source\Services\Support\TicketService())->open($data, 'helpdesk', $user);
+            } catch (\Source\Services\Support\TicketError $error) {
+                $this->jsonMessage($error->getMessage(), "warning"); return;
             } catch (\Throwable $exception) {
-                if ($pdo->inTransaction()) $pdo->rollBack();
                 \Source\Support\AppLogger::exception($exception, "tickets", ["event_type" => "ticket_create_failed", "users_id" => $user->id]);
                 $this->jsonMessage("Não foi possível cadastrar o chamado. Tente novamente.", "error"); return;
             }
-            try { $this->notifyTicketOpened($newTicketId, $protocol, $subject, $priority, $dueAt, $assignedTo, $requesterId); }
-            catch (\Throwable $exception) { \Source\Support\AppLogger::exception($exception, "tickets", ["event_type" => "ticket_notification_failed", "ticket_id" => $newTicketId]); }
-            \Source\Support\Audit::record("create", "studio_support_tickets", $newTicketId, [], ["protocol" => $protocol, "subject" => $subject, "priority" => $priority, "due_at" => $dueAt]);
-            $this->message->success("Chamado {$protocol} cadastrado.")->flash();
+            $this->message->success("Chamado {$opened['protocol']} cadastrado.")->flash();
             echo json_encode(["redirect" => url("/helpdesk/tickets")]); return;
         }
         $status = (string)($_GET["status"] ?? "");
@@ -1436,52 +1419,23 @@ class Studio extends Controller
         if($priorityFilter){$terms[]='t.priority=:priority';$params['priority']=$priorityFilter;}
         if($assignedFilter==='unassigned'){$terms[]='t.assigned_to IS NULL';}elseif(ctype_digit($assignedFilter)&&((int)$assignedFilter)>0){$terms[]='t.assigned_to=:assigned_filter';$params['assigned_filter']=(int)$assignedFilter;}
         if($dueFilter==='today'){$terms[]='DATE(t.due_at)=CURDATE()';}elseif($dueFilter==='overdue'){$terms[]="t.due_at<NOW() AND t.status NOT IN ('resolved','closed')";}
-        $query = "SELECT t.*, COALESCE(NULLIF(TRIM(CONCAT(r.first_name,' ',r.last_name)),''),t.requester_name,'Solicitante') requester_name, CONCAT(a.first_name,' ',a.last_name) assigned_name FROM studio_support_tickets t LEFT JOIN users r ON r.id=t.requester_id LEFT JOIN users a ON a.id=t.assigned_to" . ($terms ? " WHERE " . implode(" AND ", $terms) : "") . " ORDER BY FIELD(t.status,'open','in_progress','waiting_customer','resolved','closed'), FIELD(t.priority,'urgent','high','medium','low'), t.created_at DESC LIMIT 100";
+        // Condomínio e origem (ADR 0034): o chamado chega com o contexto de quem abriu.
+        $condominiumFilter=(int)filter_var($_GET['condominium']??0,FILTER_VALIDATE_INT,['options'=>['default'=>0,'min_range'=>0]]);if($condominiumFilter>0){$terms[]='t.condominium_id=:condominium_filter';$params['condominium_filter']=$condominiumFilter;}
+        $originFilter=in_array($_GET['origin']??'',\Source\Services\Support\TicketService::ORIGINS,true)?$_GET['origin']:'';if($originFilter){$terms[]='t.origin=:origin_filter';$params['origin_filter']=$originFilter;}
+        $query = "SELECT t.*, COALESCE(NULLIF(TRIM(CONCAT(r.first_name,' ',r.last_name)),''),t.requester_name,'Solicitante') requester_name, CONCAT(a.first_name,' ',a.last_name) assigned_name,c.name condominium_name,un.label unit_label FROM studio_support_tickets t LEFT JOIN users r ON r.id=t.requester_id LEFT JOIN users a ON a.id=t.assigned_to LEFT JOIN condominiums c ON c.id=t.condominium_id LEFT JOIN erp_units un ON un.id=t.unit_id" . ($terms ? " WHERE " . implode(" AND ", $terms) : "") . " ORDER BY FIELD(t.status,'open','in_progress','waiting_customer','resolved','closed'), FIELD(t.priority,'urgent','high','medium','low'), t.created_at DESC LIMIT 100";
         $stmt = $pdo->prepare($query); $stmt->execute($params);
         $counts = $pdo->query("SELECT status,COUNT(*) total FROM studio_support_tickets GROUP BY status")->fetchAll() ?: [];
         $statusCounts = array_fill_keys(["open","in_progress","waiting_customer","resolved","closed"], 0); foreach ($counts as $row) $statusCounts[$row->status] = (int)$row->total;
         $ticketId = (int)($_GET["ticket"] ?? 0);
         $selectedTicket = null; $messages = []; $events=[]; $attachments=[];
         if ($ticketId) {
-            $selected = $pdo->prepare("SELECT t.*,COALESCE(NULLIF(TRIM(CONCAT(r.first_name,' ',r.last_name)),''),t.requester_name,'Solicitante') requester_name,CONCAT(a.first_name,' ',a.last_name) assigned_name FROM studio_support_tickets t LEFT JOIN users r ON r.id=t.requester_id LEFT JOIN users a ON a.id=t.assigned_to WHERE t.id=:id");
+            $selected = $pdo->prepare("SELECT t.*,COALESCE(NULLIF(TRIM(CONCAT(r.first_name,' ',r.last_name)),''),t.requester_name,'Solicitante') requester_name,CONCAT(a.first_name,' ',a.last_name) assigned_name,c.name condominium_name,un.label unit_label FROM studio_support_tickets t LEFT JOIN users r ON r.id=t.requester_id LEFT JOIN users a ON a.id=t.assigned_to LEFT JOIN condominiums c ON c.id=t.condominium_id LEFT JOIN erp_units un ON un.id=t.unit_id WHERE t.id=:id");
             $selected->execute(["id" => $ticketId]); $selectedTicket = $selected->fetch() ?: null;
             if ($selectedTicket) { $history = $pdo->prepare("SELECT m.*,CONCAT(u.first_name,' ',u.last_name) user_name FROM studio_support_ticket_messages m JOIN users u ON u.id=m.user_id WHERE m.ticket_id=:ticket ORDER BY m.created_at"); $history->execute(["ticket" => $ticketId]); $messages = $history->fetchAll() ?: []; $eventStmt=$pdo->prepare("SELECT e.*,CONCAT(u.first_name,' ',u.last_name) user_name FROM studio_support_ticket_events e LEFT JOIN users u ON u.id=e.user_id WHERE e.ticket_id=:ticket ORDER BY e.created_at");$eventStmt->execute(['ticket'=>$ticketId]);$events=$eventStmt->fetchAll()?:[];$attachmentStmt=$pdo->prepare("SELECT * FROM studio_support_ticket_attachments WHERE ticket_id=:ticket ORDER BY created_at");$attachmentStmt->execute(['ticket'=>$ticketId]);$attachments=$attachmentStmt->fetchAll()?:[]; }
         }
         $templates=$pdo->query("SELECT * FROM studio_support_templates WHERE active=1 ORDER BY title")->fetchAll()?:[];
-        echo $this->view->render("components/tickets/home", $this->viewData("Chamados", "tickets", $user, ["tickets" => $stmt->fetchAll() ?: [], "users" => (new User())->find("status != :status", "status=trash")->order("first_name,last_name")->fetch(true) ?: [], "status" => $status, "search" => $search,"priorityFilter"=>$priorityFilter,"assignedFilter"=>$assignedFilter,"dueFilter"=>$dueFilter, "counts" => $statusCounts, "selectedTicket" => $selectedTicket, "messages" => $messages,"events"=>$events,"attachments"=>$attachments,"templates"=>$templates, "settings" => Settings::dados()]));
-    }
-
-    private function ticketSlaHours(string $priority): int
-    {
-        return ["urgent" => 24, "high" => 48, "medium" => 72, "low" => 120][$priority] ?? 72;
-    }
-
-    private function notifyTicketOpened(int $ticketId, string $protocol, string $subject, string $priority, string $dueAt, ?int $assignedTo, int $requesterId): void
-    {
-        $recipientIds = [$requesterId, $assignedTo];
-        foreach ($this->supportTeamRecipients() as $teamMember) $recipientIds[] = (int)$teamMember->id;
-        $category = $this->studioNotificationCategory();
-        $priorityLabel = ["urgent" => "Urgente", "high" => "Alta", "medium" => "Média", "low" => "Baixa"][$priority] ?? "Média";
-        foreach (array_unique(array_filter($recipientIds)) as $recipientId) {
-            $recipient = (new User())->findById((int)$recipientId);
-            if (!$recipient) continue;
-            if ($category) {
-                $notification = new Notification();
-                $notification->users_id = $recipient->id;
-                $notification->category = $category->id;
-                $notification->image = "images/default.svg";
-                $notification->title = "Novo chamado {$protocol}";
-                $notification->body = "{$priorityLabel}: {$subject}. SLA até " . date_fmt($dueAt, "d/m H:i");
-                $notification->severity = in_array($priority, ["urgent", "high"], true) ? "warning" : "info";
-                $notification->link = url("/helpdesk/tickets?ticket={$ticketId}");
-                $notification->view = 0;
-                $notification->save();
-            }
-            if (is_email((string)$recipient->email)) {
-                $body = "<p>Olá, " . htmlspecialchars($recipient->first_name, ENT_QUOTES, "UTF-8") . ".</p><p>Foi aberto o chamado <strong>" . htmlspecialchars($protocol, ENT_QUOTES, "UTF-8") . "</strong>: " . htmlspecialchars($subject, ENT_QUOTES, "UTF-8") . ".</p><p>Prioridade: <strong>{$priorityLabel}</strong>. Prazo de atendimento: <strong>" . date_fmt($dueAt, "d/m/Y H:i") . "</strong>.</p><p><a href=\"" . htmlspecialchars(url("/helpdesk/tickets?ticket={$ticketId}"), ENT_QUOTES, "UTF-8") . "\">Abrir chamado no MovesOS</a></p>";
-                (new Email())->bootstrap("[{$protocol}] Novo chamado: {$subject}", $body, $recipient->email, $recipient->fullName())->queue(CONF_MAIL_SENDER["address"], CONF_MAIL_SENDER["name"], date("Y-m-d H:i:s"), null, $recipient->id);
-            }
-        }
+        $ticketCondominiums=(new \Source\Services\CondominiumScope($pdo))->allowed($user);$ticketUnits=(new \Source\Services\Support\TicketService($pdo))->unitsByCondominium(array_column($ticketCondominiums,'id'));
+        echo $this->view->render("components/tickets/home", $this->viewData("Chamados", "tickets", $user, ["tickets" => $stmt->fetchAll() ?: [], "users" => (new User())->find("status != :status", "status=trash")->order("first_name,last_name")->fetch(true) ?: [], "status" => $status, "search" => $search,"priorityFilter"=>$priorityFilter,"assignedFilter"=>$assignedFilter,"dueFilter"=>$dueFilter, "counts" => $statusCounts, "selectedTicket" => $selectedTicket, "messages" => $messages,"events"=>$events,"attachments"=>$attachments,"templates"=>$templates,"condominiums"=>$ticketCondominiums,"unitsByCondominium"=>$ticketUnits,"condominiumFilter"=>$condominiumFilter,"originFilter"=>$originFilter, "settings" => Settings::dados()]));
     }
 
     private function notifyAgendaEvent(int $eventId, string $title, string $startsAt, string $type, ?int $assignedTo, User $creator): void
@@ -1514,14 +1468,7 @@ class Studio extends Controller
 
     private function studioNotificationCategory(): ?NotificationCategory
     {
-        $category = (new NotificationCategory())->findByUri("studio");
-        if ($category) return $category;
-        $category = new NotificationCategory();
-        $category->title = "Studio";
-        $category->uri = "studio";
-        $category->description = "Avisos operacionais do Studio";
-        $category->type = "system";
-        return $category->save() ? $category : null;
+        return \Source\Services\Support\TicketService::notificationCategory();
     }
 
     /** @return array<int, User> */
