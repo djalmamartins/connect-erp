@@ -681,7 +681,13 @@ p { margin: 0; }
 .erp-unit-doc__text p { margin: 0 0 8px; line-height: 1.6; }
 .erp-unit-doc__clear { font-size: 1.15rem; font-weight: 700; color: var(--erp-success); }
 .erp-unit-doc__caption { caption-side: top; text-align: left; font-weight: 600; padding: 0 0 6px; }
-.erp-unit-doc__foot { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; border-top: 1px dashed var(--erp-border); padding-top: 14px; }
+.erp-unit-doc__foot { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; border-top: 1px dashed var(--erp-border); padding-top: 14px; }
+.erp-unit-doc__verify-text { display: grid; gap: 4px; }
+.erp-unit-doc__sign { display: grid; gap: 28px; margin-top: 12px; page-break-inside: avoid; break-inside: avoid; }
+.erp-unit-doc__place { margin: 0; text-align: right; }
+.erp-unit-doc__sign-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
+.erp-unit-doc__sign-line { display: grid; gap: 2px; text-align: center; border-top: 1px solid var(--erp-text, #1f2933); padding-top: 6px; margin-top: 36px; font-size: .88rem; }
+.erp-unit-doc__sign-line small { color: var(--erp-muted); font-size: .76rem; }
 .erp-unit-doc__foot > div { display: grid; gap: 2px; }
 .erp-unit-doc__foot p { margin: 0; font-size: .82rem; }
 .erp-unit-doc__code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.1rem; letter-spacing: .08em; }
@@ -692,12 +698,15 @@ p { margin: 0; }
 .erp-nowrap { white-space: nowrap; }
 .erp-unit-doc.is-cancelled { position: relative; }
 .erp-unit-doc.is-cancelled::after { content: "CANCELADO"; position: absolute; inset: 40% 0 auto; text-align: center; font-size: 4rem; font-weight: 800; color: var(--erp-danger); opacity: .14; transform: rotate(-14deg); pointer-events: none; }
-@media (max-width: 640px) { .erp-unit-doc { padding: 18px; } .erp-unit-doc__foot { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .erp-unit-doc { padding: 18px; } .erp-unit-doc__foot, .erp-unit-doc__sign-grid { grid-template-columns: 1fr; } }
 
 @media print {
   .erp-sidebar, .erp-navbar, .erp-page-head__actions, .erp-filters, .erp-pagination, .erp-toasts { display: none !important; }
   .erp-unit-doc__actions, .erp-trace { display: none !important; }
-  .erp-unit-doc { border: 0; padding: 0; }
+  .erp-unit-doc { border: 0; padding: 0; font-size: 11pt; }
+  .erp-unit-doc__head, .erp-unit-doc__foot, .erp-unit-doc__sign { break-inside: avoid; }
+  .erp-unit-doc .erp-table-wrap { overflow: visible; border: 0; }
+  .erp-page-head { display: none !important; }
   .erp-shell { display: block; }
   .erp-card { box-shadow: none; border: 1px solid #ccc; }
 }

@@ -11,10 +11,13 @@ use Source\Support\ClientIp;
 
 /**
  * Verificação pública de documento emitido (ADR 0098), sem login.
- *  GET  /verificar  formulário do código
- *  POST /verificar  CSRF, limite por IP que falha fechado; responde só autêntico, tipo, data de emissão e
+ *  GET  /verificar-certidao-debitos  formulário do código (endereço fixo impresso nos documentos, ADR 0115)
+ *  POST /verificar-certidao-debitos  CSRF, limite por IP que falha fechado; responde só autêntico, tipo, data de emissão e
  *                   condomínio, ou a mensagem genérica
- * O resultado é mostrado na resposta do POST (não fica na sessão nem na URL).
+ *  GET  /verificar  documentos antigos: 301 para o endereço fixo (o navegador mantém o #código, e a página
+ *                   preenche o campo); POST /verificar segue aceito para abas abertas antes da mudança
+ * O resultado é mostrado na resposta do POST (não fica na sessão nem na URL). O formulário é ajax_off: o
+ * scripts.js do site mandaria por AJAX esperando JSON e o carregamento não terminava.
  * Referrer-Policy: no-referrer, sem cache e noindex. O IP vem de ClientIp::resolve() (ADR 0023): atrás de
  * proxy confiável, cada visitante tem o seu limite, e não um limite único para todos.
  */
@@ -29,6 +32,15 @@ final class DocumentVerify extends Controller
     {
         $this->headers();
         $this->page(null);
+    }
+
+    /** GET /verificar (documentos antigos): redireciona para o endereço fixo. */
+    public function legacy(): void
+    {
+        $this->headers();
+        if (!headers_sent()) {
+            header('Location: ' . url(DocumentVerification::PATH), true, 301);
+        }
     }
 
     /** @param array<string, mixed> $data */
@@ -47,7 +59,8 @@ final class DocumentVerify extends Controller
     private function page(?array $result): void
     {
         echo $this->view->render('pages/verify', [
-            'head' => $this->seo->render('Verificar documento - ' . CONF_SITE_NAME, CONF_SITE_DESC, url('/verificar'), theme('/assets/images/share.jpg'), false),
+            'head' => $this->seo->render('Verificar documento - ' . CONF_SITE_NAME, CONF_SITE_DESC, url(DocumentVerification::PATH), theme('/assets/images/share.jpg'), false),
+            'action' => url(DocumentVerification::PATH),
             'result' => $result,
         ]);
     }
