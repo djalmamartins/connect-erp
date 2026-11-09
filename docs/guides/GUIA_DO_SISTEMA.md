@@ -46,12 +46,17 @@ O script `tools/testar-main.sh` faz, nesta ordem, e para no primeiro problema gr
 | 4 | `composer install` no container | Para |
 | 5 | Testes unitários, de integração e smoke das telas, todos no banco `movesos_test` | Continua, mas não aplica migrations |
 | 6 | Migrations no banco do lab (todas as pendentes) | Mostra o backup para restaurar |
-| 7 | Reconstrói o scheduler e confere 8 endereços por HTTP sem login | Marca no resumo |
+| 6b | Cria `CONNECT_2FA_KEY` (se faltar) e liga `CONNECT_2FA_ENFORCE_FROM` no `.env` local, só com a tabela do 2FA aplicada | Marca ATENÇÃO e não liga o 2FA |
+| 7 | Reconstrói o scheduler e confere 9 endereços por HTTP sem login | Marca no resumo |
 | 8 | Mostra o resumo com OK/FALHOU por etapa | |
 
 Os registros de cada passo ficam em `.local/logs/testar-main-AAAAMMDD-HHMMSS/`. Opções:
-`SEM_PULL=1`, `SEM_HTTP=1`, `MIGRATE_UNTIL=20261108_0546` e `FORCAR_MIGRATIONS=1` (aplica as
-migrations mesmo com a integração falhando; o backup já foi feito).
+`SEM_PULL=1`, `SEM_HTTP=1`, `MIGRATE_UNTIL=20261108_0546`, `LAB_SEM_2FA=1` (não mexe no 2FA) e
+`FORCAR_MIGRATIONS=1` (aplica as migrations mesmo com a integração falhando; o backup já foi feito).
+
+> **Migrations pendentes escondem páginas.** Uma permissão só existe depois que a migration que a
+> cria roda; até lá a página some do menu, até para o papel `developer`. Se algo não aparece no
+> menu, confira primeiro a linha "Migrations pendentes agora" do resumo.
 
 > **Nunca rode `vendor/bin/phpunit` direto.** Em 07/11 isso esvaziou o banco real
 > `connect_legacy`. Os testes só rodam por `composer test:unit` e `composer test:integration`, que
@@ -68,27 +73,59 @@ gunzip -c .local/backups/connect-erp-AAAAMMDD-HHMMSS.sql.gz | docker compose exe
 
 ## 3. Roteiro para testar clicando (15 a 30 minutos)
 
+Os nomes abaixo são os do menu lateral. Em Financeiro, Operacional, Relatórios e Configurações o menu
+é dividido em seções (por exemplo "Rotina"): clique na seção para abrir a lista de páginas. A lupa no
+topo (Ctrl + K) acha qualquer página pelo nome.
+
 1. Entre em `https://erp.connect.lab/login` com um usuário de papel `developer` ou `super_admin`.
-   O 2FA é obrigatório: na primeira vez o sistema pede para ativar e mostra os códigos de recuperação.
-   Usuário sem papel não entra no ERP (é de propósito).
+   **2FA:** depois de rodar o `tools/testar-main.sh` desta versão, o login pede para configurar o
+   aplicativo autenticador (Google Authenticator, Microsoft Authenticator, 1Password etc.) e mostra
+   os códigos de recuperação. Guarde os códigos. Antes desta versão o lab entrava sem 2FA porque as
+   chaves `CONNECT_2FA_KEY` e `CONNECT_2FA_ENFORCE_FROM` não chegavam ao PHP; o script agora cria as
+   duas no seu `.env` (ver passo 6b da seção 2). Usuário sem papel não entra no ERP (é de propósito).
 2. No topo, escolha um condomínio na barra superior. A maioria das telas trabalha no condomínio
    escolhido; "Todos" soma o que a sua conta pode ver.
-3. **Base:** Condomínios → Novo condomínio; depois Condomínios → Unidades (ou o cadastro rápido de
-   unidades) e Proprietários e inquilinos.
-4. **Financeiro:** Configurações → Plano de contas e Tipos de faturas; Financeiro → Contas bancárias;
-   Financeiro → Faturas (preparar, emitir); Cobrança → Boletos (registrar no sandbox).
-5. **Retorno e conciliação:** Cobrança → Importar retorno; Cobrança → Divergências.
-6. **Acordo:** Cobrança → Acordos (simular encargos e criar).
-7. **Documentos:** Documentos → Certidão de débitos; anote o código e confira em
-   `https://erp.connect.lab/verificar` (sem login).
-8. **Fechamento:** Financeiro → Fechamento mensal; depois Prestação de contas → Balancete e
-   Demonstrativo.
-9. **Operacional:** Ocorrências, Reservas, Manutenções, Vistorias e Chamados (o chamado aparece no
-   Help Desk).
-10. **Comunicação:** Comunicado geral (vai para a fila em modo log; nada sai de verdade);
-    Configurações → Fila de avisos mostra o que teria sido enviado.
+3. **Base:** Condomínios → Condomínios → Novo condomínio. O CNPJ é opcional; ao digitar o CEP o
+   endereço é preenchido sozinho; telefone, CEP, CPF/CNPJ e e-mail ganham máscara enquanto você
+   digita. Ao salvar, o sistema abre o **Checklist de chegada** do condomínio (clique em "Iniciar
+   checklist de chegada"). Depois: Condomínios → Unidades (ou o cadastro rápido de unidades) e
+   Cadastros → Proprietários e inquilinos.
+4. **Financeiro:** Configurações → seção "Financeiro e parâmetros" → **Plano de Contas** e Tipos de
+   faturas; Financeiro → seção "Cadastros financeiros" → Contas bancárias; Financeiro → seção
+   "Contas e pagamentos" → Faturas (preparar, emitir); Cobrança → Boletos (registrar no sandbox).
+5. **Retorno e conciliação:** Cobrança → **Arquivo de Retorno** (importar o arquivo do banco) e
+   Cobrança → **Retornos** (lista dos retornos importados e das divergências de cada um).
+6. **Acordo:** Cobrança → Acordos (simular encargos e criar). Para ter inadimplência para testar,
+   use os dados de exemplo do lab (comando `tools/lab-dados-exemplo.php`, descrito na seção 2
+   quando estiver na main).
+7. **Documentos:** Documentos → Certidão de débitos. Imprima: o documento tem as linhas de assinatura
+   do síndico e da administradora. Confira o código em
+   `https://erp.connect.lab/verificar-certidao-debitos` (sem login): digite o código e a página diz se
+   o documento é autêntico. O endereço antigo `/verificar` redireciona para ele.
+8. **Fechamento:** Financeiro → seção "Fechamento" → Fechamento mensal; depois Prestação de contas →
+   **Balancete Verificação** e **Demonstrativo** (há também Demonstrativo Contas, Analítico e
+   Situação).
+9. **Operacional:** Operacional → seção **Rotina** → Ocorrências, Reservas Áreas Comuns, Manutenções,
+   Vistorias e Chamados (o chamado aparece no Help Desk).
+10. **Comunicação:** Comunicação → Comunicado geral. No lab **nenhum e-mail sai**: a tela mostra o modo
+    de entrega ("só registro" ou "caixa de teste") e o que teria sido enviado fica em Configurações →
+    Fila de avisos. Para receber de verdade numa caixa de teste, ponha no `.env`
+    `ERP_MAIL_DELIVERY=sandbox` e `ERP_MAIL_SANDBOX_TO=<sua caixa de teste>`.
 
 Se uma tela mostrar o aviso de dados de exemplo, confira na tabela da seção 5 se ela é 🟡 ou ⚪.
+
+### O que mudou depois do teste de 09/11 (23:18)
+
+| Item do teste | O que foi feito |
+|---|---|
+| 1. Entrou sem 2FA | As chaves do 2FA agora são lidas do `.env` e o `testar-main.sh` cria e liga o 2FA (passo 6b) |
+| 3. Cadastro de condomínio | CNPJ opcional, CEP preenche o endereço, máscaras de telefone/CEP/CPF/CNPJ/e-mail, checklist de chegada redesenhado no padrão do ERP |
+| 3. Pessoa com várias unidades | Busca de pessoa existente e vínculo com várias unidades: em andamento (API e tela) |
+| 4, 5, 8, 9. Páginas "sumidas" | Existiam, mas o menu escondia as páginas dos grupos grandes e o guia usava outros nomes. O menu agora mostra todas as páginas por seção e este roteiro usa os nomes do menu |
+| 6. Sem inadimplência | Dados de exemplo para o lab: em andamento |
+| 7. Impressão e verificação | Assinaturas do síndico e da administradora, endereço fixo `/verificar-certidao-debitos` e a página não fica mais carregando |
+| 9. Chamados não abriram | Em correção junto com a integração ERP / Help Desk |
+| 10. Comunicado "não enviou" | A tela agora explica que no lab nada sai e mostra o modo de entrega |
 
 ## 4. Ambientes e endereços
 
@@ -100,7 +137,7 @@ Se uma tela mostrar o aviso de dados de exemplo, confira na tabela da seção 5 
 | Troca de ambiente | `/ambiente/{erp\|studio\|helpdesk}` | Alternador da barra lateral, com código de uso único entre hosts | Funciona (ADR 0034) | `source/Controllers/Environments/Handoff.php` |
 | Site público | `https://www.connect.lab` | Página inicial, "Solicite sua proposta", política e termos, recuperar senha | Funciona quando o site está aberto (`CONF_ACCESS_SITE`); senão mostra "indisponível" | `container/web/default/v1/routes.php`, `source/Controllers/Web/Connect/Web.php` |
 | Central de ajuda pública | `https://www.connect.lab/suporte` (tema `support`) | Artigos do Help Desk para o público | Funciona quando `CONF_ACCESS_SUPPORT` está ligado | `container/web/support/v1/routes.php` |
-| Verificação de documentos | `/verificar` em qualquer host | Qualquer pessoa digita o código impresso numa certidão, declaração ou recibo e vê se é autêntico | Funciona; tem CSRF e limite por IP (ADR 0098, 0099, 0160). Falta rodar a migration 0546 e o teste de integração no Mac | `source/Controllers/Web/Connect/DocumentVerify.php` |
+| Verificação de documentos | `/verificar-certidao-debitos` em qualquer host (o antigo `/verificar` redireciona) | Qualquer pessoa digita o código impresso numa certidão, declaração ou recibo e vê se é autêntico | Funciona; tem CSRF e limite por IP (ADR 0098, 0099, 0115, 0160) | `source/Controllers/Web/Connect/DocumentVerify.php` |
 | Convite de morador | `/convite/{token}` (ERP e Studio) | O morador recebe o link, confirma o CPF e cria a senha | Página pronta e testada (ADR 0092, 0093, 0112). O envio do convite está **desligado**: nenhum e-mail sai fora de produção | `source/Controllers/Web/Connect/ResidentInvite.php` |
 | Recuperar senha | `/forget` | Link de troca de senha por e-mail | Funciona (ADR 0009). O e-mail depende do SMTP configurado | `source/Controllers/Web/Connect/Web.php` |
 | API REST | `http://127.0.0.1:8088/api/v1` | Tudo que o ERP faz, em JSON, com sessão + 2FA e CSRF | Funciona; contrato em `docs/api/openapi.yaml` e `docs/api/registries.openapi.yaml` | `index.php` (grupo `/api/v1`), `source/Controllers/Api/V1/` |
