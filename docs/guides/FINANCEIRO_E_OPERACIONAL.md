@@ -5,7 +5,7 @@ prestação de contas e as rotinas do Operacional, na ordem em que o operador fa
 rota, a regra que barra o erro comum e a ADR que decidiu. Os textos de erro citados são os do código
 (`source/Services/Erp/`).
 
-Situação: **CONFIRMADO** por código e testes no `claude-dev` de 09/11/2026. O cenário de ponta a ponta
+Situação: **CONFIRMADO** por código e testes no `claude-dev` de 09/11/2026 (até o ciclo 28: atalhos, importações e comunicação). O cenário de ponta a ponta
 está em `tests/legacy/Integration/FinanceCycleIntegrationTest.php`, que roda só no lab
 (`composer test:integration` com banco `*_test`). Banco real ainda não foi usado: o boleto roda no
 adaptador sandbox (ADR 0035).
@@ -167,6 +167,43 @@ Os relatórios ficam em `GET /reports/...` (ADR 0037):
 
 Sem `condominium_id`, os relatórios somam todos os condomínios do escopo do usuário. Fora do escopo, a resposta é acesso negado. Um usuário sem nenhum condomínio recebe a lista vazia.
 
+### Atalhos de lançamento
+
+São atalhos sobre os lançamentos (ADR 0057 e 0062), e todos respeitam o fechamento (passo 7):
+
+- **Desconto** (`POST /entries/{id}/discount`, com valor e motivo): reduz uma conta a receber em aberto e guarda o antes e o depois em `GET /entries/{id}/adjustments`. Não zera a conta (para perdoar, cancele). Também não vale em parcela de acordo nem com boleto ativo, porque o valor no banco ficaria diferente. Para o boleto sair com desconto, dê o desconto antes de emitir.
+- **Multa avulsa e cobrança extra** (`POST /extra-charges`, `kind` `fine` ou `extra`): cria uma conta a receber por unidade escolhida, até 1.000 unidades. O valor pode ser fixo por unidade, o total dividido igualmente ou o total rateado pela fração ideal. As contas ficam travadas no cadastro e se cancelam pela origem (`POST /extra-charges/{id}/cancel`).
+- **Transferência entre contas** (`POST /bank-transfers`): move saldo entre duas contas bancárias do mesmo condomínio. Não é receita nem despesa. Entra nos saldos e na conciliação da prestação de contas, onde soma zero.
+
+O recibo de uma conta paga sai em Documentos da unidade (passo 6), e o código confere o recibo.
+
+### Importações
+
+Planilhas e extratos entram em duas etapas (ADR 0058 e 0063):
+
+1. **`POST /imports/preview`** recebe o arquivo (`multipart`, até 2 MB) e o tipo. Lê e valida todas as linhas contra os cadastros do condomínio e mostra o erro de cada uma. Nada é gravado.
+2. **`POST /imports/{id}/apply`** relê o arquivo guardado, valida tudo de novo e, sem nenhum erro, grava tudo numa transação só. Uma linha com erro bloqueia o arquivo inteiro.
+
+| Tipo | Colunas obrigatórias | Permissão de destino |
+|---|---|---|
+| `entries` | natureza, descricao, valor, competencia, vencimento, conta | `erp.entries.manage` |
+| `unit_entries` | unidade, descricao, valor, competencia, vencimento, conta | `erp.entries.manage` |
+| `payables` | descricao, valor, competencia, vencimento, conta | `erp.entries.manage` |
+| `delinquents` | unidade, descricao, valor, competencia, vencimento, conta | `erp.entries.manage` |
+| `fractions` | unidade, fracao (o arquivo traz todas as unidades ativas e a soma dá 1) | `erp.units.manage` |
+| `readings` | relogio, tipo, competencia, leitura (e `data_leitura`, opcional) | `erp.meter_readings.manage` |
+| `ofx` | extrato do banco, com `bank_account_id` de uma conta do condomínio | `erp.entries.manage` |
+
+Regras que valem para todos os tipos:
+- CSV com `;` ou XLSX, com no máximo 5.000 linhas (o OFX, 5.000 transações). O XLSX tem no máximo 200 colunas e é lido pelo valor gravado: fórmula nunca é calculada, e `DOCTYPE` é recusado.
+- Valores com até 10 dígitos inteiros.
+- O mesmo arquivo (mesmo conteúdo) não entra duas vezes no mesmo condomínio e tipo.
+- O `condominium_id` vem da requisição, nunca do arquivo.
+
+Por tipo:
+- **Leituras.** Seguem as regras do lançamento manual (passo 2, ADR 0045): a leitura não pode ser menor que a anterior e não pode haver leitura posterior. Reenviar a mesma competência substitui a leitura (`replace` na prévia). Leitura já cobrada não muda mais.
+- **Extrato OFX.** Não cria nem baixa lançamento: só concilia cada linha com uma conta já paga da mesma conta bancária e do mesmo valor, ou com uma transferência. Um FITID já importado é ignorado (`already`). O que não bate fica em `GET /bank-statement-lines`, para resolver à mão com `POST /bank-statement-lines/{id}/resolve` (vincular a um lançamento ou ignorar, com nota). Quando o arquivo traz `LEDGERBAL`, a prévia mostra a diferença entre o saldo do banco e o calculado, sem ajustar nada (`balance_check`).
+
 ## Operacional
 
 ### Cadastros do dia a dia
@@ -206,20 +243,41 @@ Sem `condominium_id`, os relatórios somam todos os condomínios do escopo do us
 - o download sai como anexo;
 - a exclusão é lógica.
 
-### Avisos por e-mail
+### Comunicação
 
-Os eventos acima entram na fila (`erp_notification_outbox`) sem enviar nada na hora (ADR 0055 e 0056). Os destinatários são os moradores da unidade do evento.
+Comunicados e avisos de cobrança saem pela fila de avisos, nunca direto (ADR 0059 e 0065). Cada unidade vira um aviso na fila.
 
-O despacho:
-- tenta até 5 vezes, com espera de 1, 5, 15, 60 e 240 minutos;
-- em `sandbox`, manda tudo para a caixa de teste (`ERP_MAIL_SANDBOX_TO`);
-- só envia de verdade em produção, com configuração explícita.
+- **Comunicado geral** (`POST /announcements`): assunto de 5 a 120 caracteres, em uma linha só, e texto de 10 a 5.000. Vai para todas as unidades ativas ou para as escolhidas (até 2.000). Recebem as pessoas ativas da unidade com e-mail que não recusaram comunicado (campo "Não quer receber comunicados por e-mail" no cadastro de pessoas).
+- **Aviso de cobrança** (`POST /announcements/collection`): vai para as unidades com conta vencida há pelo menos `min_days_late` dias (padrão 1), e só para quem autorizou cobrança por e-mail. O e-mail traz a quantidade de contas, o valor sem encargos e o vencimento mais antigo. A unidade avisada nos últimos 7 dias fica de fora (`skipped_recent`). A unidade em que ninguém autorizou não conta como avisada, mas também não recebe nada. Exige também `erp.agreements.view`.
+- **Agendamento:** `send_at` vazio é agora; agendado, vai até 60 dias à frente. `GET /announcements?scheduled=1` lista os que ainda vão sair. `POST /announcements/{id}/cancel`, com motivo, cancela o comunicado e o que ainda não saiu; os já enviados ficam como estão.
+- **Endereços** (`GET /communication-addresses`): por unidade, quem recebe comunicado e quem recebe cobrança, com o e-mail mascarado. Os totais mostram as unidades sem ninguém para cada um. A correção é feita no cadastro de pessoas. Exige também `erp.residents.view`.
+- **Limite:** até 20 comunicados e avisos por condomínio em 24 horas. Passou disso, a resposta é 409.
 
-As credenciais SMTP vêm do ambiente (`MOVESOS_SMTP_*`, ADR 0060).
+Cada comunicado mostra a situação da entrega: pendentes, enviados, com falha, cancelados e o total de destinatários.
 
-Para acompanhar a fila:
-- `GET /notifications` lista os avisos;
-- `POST /notifications/{id}/retry` reenvia um aviso que falhou;
+### Fila de avisos por e-mail
+
+Os eventos do ERP entram na fila (`erp_notification_outbox`) sem enviar nada na hora (ADR 0054, 0055 e 0056):
+
+| Evento | Quem recebe |
+|---|---|
+| `invoice.issued`, `bank_charge.issued`, `agreement.created`, `agreement.breached`, `collection.reminder` | Quem autorizou cobrança por e-mail na unidade |
+| `announcement.published` | Quem não recusou comunicado |
+| `reservation.approved`, `waitlist.called` | As pessoas da unidade com e-mail |
+
+São até 5 pessoas por unidade. A mesma pessoa não recebe o mesmo aviso duas vezes, e a trilha guarda o e-mail em hash e mascarado. Aviso sem ninguém para receber termina como `cancelled`, com o motivo.
+
+Modo de entrega:
+- **`log`** (padrão): só registra no log, nada sai.
+- **`sandbox`:** tudo vai para a caixa de teste (`ERP_MAIL_SANDBOX_TO`), com `[TESTE]` no assunto. Sem essa caixa, cai para `log`.
+- **`production`:** só com `APP_ENV=production` e `ERP_MAIL_DELIVERY=production`. Fora de produção, nenhum e-mail sai para morador, qualquer que seja a configuração.
+
+O despacho pega até 500 avisos por rodada, só os que já chegaram na hora (`available_at`). Ele tenta até 5 vezes, com espera crescente de 1, 5, 15, 60 e 240 minutos; esgotadas as tentativas, o aviso fica `failed`. As credenciais SMTP vêm do ambiente (`MOVESOS_SMTP_*`, ADR 0060).
+
+Para acompanhar:
+- `GET /notifications?status=` lista os avisos do escopo (`pending`, `processing`, `sent`, `failed`, `cancelled`);
+- `GET /notifications/{id}` mostra a trilha de entrega;
+- `POST /notifications/{id}/retry` devolve à fila um aviso que falhou ou foi cancelado;
 - `POST /notifications/dispatch` processa a fila de todos os condomínios e exige `erp.condominiums.all` (ADR 0061).
 
 ## Onde conferir
@@ -235,10 +293,14 @@ Para acompanhar a fila:
 | Leituras e documentos | `MeterReadingsIntegrationTest`, `UnitDocumentsIntegrationTest` |
 | Operacional | `OperationalDashboardIntegrationTest`, `OperationalRegistriesIntegrationTest`, `GatehouseIntegrationTest` |
 | Painéis e avisos | `PanelSummariesIntegrationTest`, `NotificationDispatcherIntegrationTest` |
+| Atalhos e recibo | `EntryShortcutsIntegrationTest`, `ShortcutsCycleIntegrationTest` |
+| Importações e extrato | `ImportsIntegrationTest`, `ImportsCycleIntegrationTest` |
+| Comunicação | `AnnouncementsIntegrationTest`, `CommunicationsCycleIntegrationTest` |
+| Operacional de ponta a ponta | `OperationsCycleIntegrationTest` |
 | Disco Virtual | `VirtualDiskIntegrationTest` |
 
 O contrato completo das rotas está em `docs/api/openapi.yaml`. Os riscos de segurança que ainda
-ficam estão em `docs/security/REVIEW_API_FINANCEIRO.md`.
+ficam estão em `docs/security/REVIEW_API_FINANCEIRO.md` e `docs/security/REVIEW_COMUNICACAO.md`.
 
 ## Lacunas
 

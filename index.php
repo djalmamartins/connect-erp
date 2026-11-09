@@ -77,6 +77,11 @@ $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Suppo
 // Relatórios financeiros (ADR 0037): balancete de verificação e prestação de contas com conciliação.
 $route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
+$route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -147,6 +152,15 @@ $route->post("/announcements/collection", "Announcements:collection", null, \Sou
 $route->get("/announcements/{id}", "Announcements:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/announcements/{id}/cancel", "Announcements:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/communication-addresses", "Announcements:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobrança e multas (ADR 0080): multas pendentes, atendimento de cobrança e casos judiciais (só acompanhamento).
+$route->get("/pending-fines", "Collections:fines", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/collection-desk", "Collections:desk", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/units/{id}/collection-contacts", "Collections:contacts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/collection-contacts", "Collections:storeContact", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/legal-cases", "Collections:cases", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/legal-cases", "Collections:storeCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/legal-cases/{id}", "Collections:showCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/legal-cases/{id}/events", "Collections:caseEvent", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
