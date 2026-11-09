@@ -2534,7 +2534,7 @@
   "erp_pages": 172,
   "routes": 224,
   "tables": 67,
-  "tests": 77
+  "tests": 78
  },
  "erp_pages": [
   {
@@ -6613,6 +6613,7 @@
    "Source\\Core\\Router",
    "Source\\Support\\Erp\\CondominiumContext"
   ],
+  "tests/legacy/Unit/ErpInvoicesScreenTest.php": [],
   "tests/legacy/Unit/ErpLegacyCondominiumScopeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Erp"
   ],

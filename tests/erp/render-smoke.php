@@ -291,6 +291,31 @@ $assert(str_contains($html, 'R$ 96.320,00') && !str_contains($html, '/fechamento
 $html = $closingPage(null, [$closingRow(['status' => 'closed']), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false, 'all');
 $assert(str_contains($html, '1 de 2 fechados') && str_contains($html, 'Edifício Dois') && str_contains($html, 'escolha um condomínio na barra superior') && !str_contains($html, 'method="post" action="' . $erpRoot . '/financeiro'), 'AP-030: em Todos lista cada condomínio e pede para escolher um antes de fechar');
 
+// Faturas (AP-032) com dados reais ($invoices de Panel::invoiceData, ADR 0033): lista, ações pela API e estados.
+$invoiceRow = static fn (array $over = []): array => $over + [
+    'id' => 5, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'invoice_type_id' => 2, 'type_name' => 'Taxa <condominial>',
+    'competence' => '2026-11', 'due_on' => '2026-11-10', 'status' => 'draft', 'status_label' => 'Em preparação', 'units_count' => 48, 'amount_cents' => 4320000,
+    'notes' => null, 'issued_at' => null, 'cancelled_at' => null, 'cancel_reason' => null,
+];
+$invoicePage = static function (array $rows, bool $manage, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
+    $invoices = ['data' => $rows, 'total' => count($rows), 'page' => 1, 'per_page' => 25, 'pages' => count($rows) > 0 ? 2 : 0];
+    $html = $render('pages/finance/invoices', $layoutData->invoke($panel, $user, 'AP-032', ['invoices' => $invoices, 'canManageInvoices' => $manage]));
+    if ($name !== '') $save('page-ap-032-' . $name, $html);
+    return $html;
+};
+$html = $invoicePage([$invoiceRow(), $invoiceRow(['id' => 6, 'status' => 'issued', 'status_label' => 'Emitida']), $invoiceRow(['id' => 8, 'status' => 'cancelled', 'status_label' => 'Cancelada', 'cancel_reason' => 'Rateio <revisto>'])], true, 'list');
+$common($html, 'AP-032', 'Faturas');
+$assert(str_contains($html, 'data-erp-invoices data-api="https://' . $smokeHost . '/api/v1/invoices"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-032: tela real fala com /api/v1/invoices e leva o CSRF');
+$assert(str_contains($html, 'Taxa &lt;condominial&gt;') && str_contains($html, 'Rateio &lt;revisto&gt;') && str_contains($html, 'R$ 43.200,00') && str_contains($html, '10/11/2026') && !str_contains($html, 'Interface proposta'), 'AP-032: lista real escapada, sem demonstração');
+$assert(substr_count($html, 'data-invoice-issue=') === 1 && substr_count($html, 'data-invoice-cancel=') === 2 && substr_count($html, 'data-invoice-open=') === 3, 'AP-032: emitir só em preparação, cancelar fora das canceladas, itens em todas');
+$assert(str_contains($html, 'id="invoice-prepare"') && str_contains($html, 'name="reason" minlength="5" maxlength="255" required') && str_contains($html, 'value="fraction"') && str_contains($html, 'rel="next"'), 'AP-032: preparar, cancelar com motivo, rateio e paginação');
+preg_match_all('~\sid="([^"]+)"~', $html, $ids);
+$assert(array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1)) === [], 'AP-032: sem ids duplicados');
+$html = $invoicePage([$invoiceRow()], false);
+$assert(str_contains($html, 'data-invoice-open=') && !str_contains($html, 'data-invoice-issue=') && !str_contains($html, 'data-invoice-cancel=') && !str_contains($html, 'id="invoice-prepare"'), 'AP-032: sem erp.invoices.manage só consulta');
+$html = $invoicePage([], true, 'empty');
+$assert(str_contains($html, 'Nenhuma fatura encontrada') && str_contains($html, 'Preparar fatura'), 'AP-032: lista vazia orienta a preparar');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
