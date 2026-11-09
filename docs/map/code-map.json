@@ -153,6 +153,10 @@
    "title": "0039 — Inadimplência e acordos (AP-033/034)"
   },
   {
+   "file": "docs/Organic Code/decisions/0040-late-charges-and-agreement-breach.md",
+   "title": "0040 — Multa, juros, correção pelo IPCA e quebra de acordo"
+  },
+  {
    "file": "docs/Organic Code/decisions/0041-agreements-screens.md",
    "title": "0041 — Telas de inadimplência e acordos (AP-033 e AP-034)"
   },
@@ -215,6 +219,22 @@
     "Source\\Support\\Access"
    ],
    "file": "source/Controllers/Api/V1/Banking.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\BillingRules": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\BillingRules",
+    "Source\\Services\\Erp\\RecurringEntries",
+    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/BillingRules.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -1629,6 +1649,7 @@
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
@@ -1710,6 +1731,7 @@
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
@@ -1769,6 +1791,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/AgreementsIntegrationTest.php",
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Unit/AgreementsTest.php"
    ]
   },
@@ -1878,6 +1901,27 @@
     "tests/legacy/Unit/BankingTest.php"
    ]
   },
+  "Source\\Services\\Erp\\BillingRules": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/BillingRules.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_billing_rules",
+    "erp_price_indexes"
+   ],
+   "tests": [
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
+    "tests/legacy/Unit/LateChargesTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\DemoData": {
    "deps": [],
    "file": "source/Services/Erp/DemoData.php",
@@ -1934,6 +1978,16 @@
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Unit/InvoicesTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\LateCharges": {
+   "deps": [],
+   "file": "source/Services/Erp/LateCharges.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/LateChargesTest.php"
    ]
   },
   "Source\\Services\\Erp\\MonthClosing": {
@@ -2035,6 +2089,7 @@
    "tables": [],
    "tests": [
     "tests/legacy/Integration/ChartOfAccountsTest.php",
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php"
    ]
   },
@@ -2107,6 +2162,7 @@
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
+    "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
@@ -2782,16 +2838,16 @@
   }
  },
  "counts": {
-  "adrs": 42,
-  "classes": 164,
+  "adrs": 43,
+  "classes": 167,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 240,
-  "tables": 73,
-  "tests": 91
+  "routes": 247,
+  "tables": 75,
+  "tests": 93
  },
  "erp_pages": [
   {
@@ -4338,7 +4394,16 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 84,
+   "line": 85,
+   "method": "suggestion",
+   "path": "/api/v1/agreements/suggestion",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Agreements",
+   "env": "index",
+   "file": "index.php",
+   "line": 86,
    "method": "show",
    "path": "/api/v1/agreements/{id}",
    "verb": "GET"
@@ -4347,16 +4412,70 @@
    "controller": "Source\\Controllers\\Api\\V1\\Agreements",
    "env": "index",
    "file": "index.php",
-   "line": 85,
+   "line": 87,
    "method": "cancel",
    "path": "/api/v1/agreements/{id}/cancel",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Agreements",
+   "env": "index",
+   "file": "index.php",
+   "line": 88,
+   "method": "breach",
+   "path": "/api/v1/agreements/{id}/breach",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
+   "env": "index",
+   "file": "index.php",
+   "line": 90,
+   "method": "show",
+   "path": "/api/v1/billing-rules",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
+   "env": "index",
+   "file": "index.php",
+   "line": 91,
+   "method": "update",
+   "path": "/api/v1/billing-rules",
+   "verb": "PUT"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
+   "env": "index",
+   "file": "index.php",
+   "line": 92,
+   "method": "rates",
+   "path": "/api/v1/price-indexes",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
+   "env": "index",
+   "file": "index.php",
+   "line": 93,
+   "method": "setRate",
+   "path": "/api/v1/price-indexes",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\BillingRules",
+   "env": "index",
+   "file": "index.php",
+   "line": 94,
+   "method": "import",
+   "path": "/api/v1/price-indexes/import",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 101,
+   "line": 110,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -4365,7 +4484,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 102,
+   "line": 111,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -4374,7 +4493,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 103,
+   "line": 112,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -4383,7 +4502,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 104,
+   "line": 113,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -4392,7 +4511,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 105,
+   "line": 114,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -4401,7 +4520,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 106,
+   "line": 115,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -4410,7 +4529,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 107,
+   "line": 116,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -4419,7 +4538,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 108,
+   "line": 117,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -4428,7 +4547,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 110,
+   "line": 119,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -4437,7 +4556,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 111,
+   "line": 120,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -4446,7 +4565,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 112,
+   "line": 121,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -4455,7 +4574,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 121,
+   "line": 130,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -4464,7 +4583,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 122,
+   "line": 131,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -4473,79 +4592,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 136,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 137,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 138,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 139,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 142,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 143,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 144,
-   "method": "reset",
-   "path": "/forget/{code}",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 145,
-   "method": "reset",
-   "path": "/reset",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 146,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 147,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 148,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 158,
+   "line": 151,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -4554,7 +4637,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 159,
+   "line": 152,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -4563,7 +4646,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 160,
+   "line": 153,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -4572,7 +4655,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 161,
+   "line": 154,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -4581,7 +4664,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 177,
+   "line": 167,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 168,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 169,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 170,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 186,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -4590,7 +4709,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 179,
+   "line": 188,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -6304,7 +6423,9 @@
    ]
   },
   "erp_agreements": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0523_agreement_breach.sql"
+   ],
    "created_in": "database/migrations/20261108_0519_agreements.sql",
    "used_by": [
     "Source\\Services\\Erp\\Agreements"
@@ -6350,6 +6471,13 @@
    "created_in": "database/migrations/20261108_0517_bank_returns.sql",
    "used_by": [
     "Source\\Services\\Erp\\Banking\\BankReturns"
+   ]
+  },
+  "erp_billing_rules": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0522_billing_rules_price_indexes.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\BillingRules"
    ]
   },
   "erp_board_members": {
@@ -6463,6 +6591,13 @@
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_price_indexes": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0522_billing_rules_price_indexes.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\BillingRules"
    ]
   },
   "erp_recurring_entries": {
@@ -6972,6 +7107,14 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/LateChargesIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Agreements",
+   "Source\\Services\\Erp\\BillingRules",
+   "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/MonthClosingIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumAccessDenied",
@@ -7175,6 +7318,10 @@
   "tests/legacy/Unit/InvoicesTest.php": [
    "Source\\Services\\Erp\\Invoices",
    "Source\\Services\\Erp\\Registry\\Definitions"
+  ],
+  "tests/legacy/Unit/LateChargesTest.php": [
+   "Source\\Services\\Erp\\BillingRules",
+   "Source\\Services\\Erp\\LateCharges"
   ],
   "tests/legacy/Unit/LoginThrottleTest.php": [
    "Source\\Models\\Auth",
