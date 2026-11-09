@@ -7,6 +7,7 @@ namespace Source\Controllers\Web\Connect;
 use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
+use Source\Services\Erp\InviteThrottle;
 use Source\Services\Erp\ResidentInvitationAcceptance;
 use Source\Services\Erp\ResidentInvitations;
 
@@ -35,6 +36,9 @@ final class ResidentInvite extends Controller
         $this->headers();
         $token = (string)($data['token'] ?? '');
         $session = new Session();
+        if (!$this->throttleAllows($session)) {
+            return;
+        }
         if (ResidentInvitations::hashOf($token) !== null) {
             $session->set(self::SESSION_KEY, $token);
         } else {
@@ -49,6 +53,9 @@ final class ResidentInvite extends Controller
         $this->headers();
         $session = new Session();
         $token = is_string($data['token'] ?? null) ? $data['token'] : '';
+        if (!$this->throttleAllows($session)) {
+            return;
+        }
         if (csrf_verify($data) && ResidentInvitations::hashOf($token) !== null) {
             $session->set(self::SESSION_KEY, $token);
         } else {
@@ -97,6 +104,19 @@ final class ResidentInvite extends Controller
         }
         $this->message->warning($result['message'])->flash();
         redirect('/convite');
+    }
+
+    /** ADR 0093: abrir também passa pelo limite por IP, que falha fechado. */
+    private function throttleAllows(Session $session): bool
+    {
+        $state = (new InviteThrottle())->check(InviteThrottle::subjects($_SERVER['REMOTE_ADDR'] ?? null, null));
+        if ($state === InviteThrottle::OK) {
+            return true;
+        }
+        $session->unset(self::SESSION_KEY);
+        $this->message->warning($state === InviteThrottle::BLOCKED ? ResidentInvitationAcceptance::THROTTLED : InviteThrottle::UNAVAILABLE_MESSAGE)->flash();
+        redirect('/convite');
+        return false;
     }
 
     private function headers(): void
