@@ -41,7 +41,7 @@ final class Panel extends Controller
     private const THEME = __DIR__ . '/../../../../container/erp/connect/v1/';
 
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
-    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view', 'AP-114' => 'erp.reservations.view', 'CN-005' => 'erp.notifications.view',
+    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view', 'AP-114' => 'erp.reservations.view', 'CN-005' => 'erp.notifications.view', 'AP-171' => 'erp.settings.view',
         // Lançamentos avulsos e recibos (ADR 0057 e 0073).
         'AP-024' => 'erp.entries.view', 'AP-025' => 'erp.entries.view', 'AP-026' => 'erp.entries.view', 'AP-027' => 'erp.invoices.view', 'AP-028' => 'erp.invoices.view',
         'AP-029' => 'erp.entries.view', 'AP-040' => 'erp.unit_documents.view',
@@ -540,6 +540,25 @@ final class Panel extends Controller
     }
 
     /**
+     * Integrações (AP-171, ADR 0091 e 0161), só leitura: o mesmo IntegrationStatus de GET /api/v1/integrations
+     * (banco, e-mail, índices, fila de avisos e antivírus), só com números e sem endereços. Sem banco ou sem
+     * erp.settings.view, null = a demonstração.
+     */
+    private function integrationData(User $user): array
+    {
+        $data = ['integrations' => null];
+        if (Connect::databaseDisabled() || !Access::can('erp.settings.view', $user)) {
+            return $data;
+        }
+        try {
+            $data['integrations'] = (new \Source\Services\Erp\IntegrationStatus())->overview($user);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integrations_screen_failed']);
+        }
+        return $data;
+    }
+
+    /**
      * Agendamentos Pendentes (AP-114, ADR 0051 e 0070): as reservas de áreas comuns aguardando
      * aprovação no condomínio da barra superior, pela listagem do motor (escopo e paginação dele).
      * Sem banco ou sem erp.reservations.view, null = a demonstração.
@@ -781,6 +800,9 @@ final class Panel extends Controller
         if ($id === 'AP-114') {
             $data += $this->pendingReservationData($user);
         }
+        if ($id === 'AP-171') {
+            $data += $this->integrationData($user);
+        }
         if ($id === 'AP-002') {
             $data += $this->condominiumPanelData($user);
         }
@@ -839,6 +861,7 @@ final class Panel extends Controller
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
+            $id === 'AP-171' && ($data['integrations'] ?? null) !== null => 'pages/settings/integrations',
             $id === 'AP-002' && ($data['condoPanelReady'] ?? false) => 'pages/condominiums/panel',
             $id === 'AP-003' && ($data['unitPanelReady'] ?? false) => 'pages/condominiums/unit-panel',
             $id === 'AP-167' && ($data['measuresReady'] ?? false) => 'pages/condominiums/unit-measures',
