@@ -344,6 +344,14 @@ p { margin: 0; }
 .erp-agreement-entries .erp-check { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 13px; }
 .erp-agreement-summary { margin-top: 12px; padding: 12px 14px; border-radius: var(--erp-radius-md); background: var(--erp-info-soft); color: #18406f; font-size: 14px; }
 .erp-agreement-subtitle { margin: 16px 0 8px; font-size: 14px; }
+.erp-agreement-breach { display: flex; gap: 4px; align-items: center; color: var(--erp-danger); font-size: 12px; margin-top: 2px; }
+.erp-billing-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: var(--erp-space-4); }
+.erp-billing-rates { max-height: 360px; overflow-y: auto; }
+.erp-billing-forms .erp-filters { align-items: flex-end; }
+.erp-billing-forms .erp-field.erp-field--compact { flex: 1 1 140px; }
+.erp-billing-note { margin: 12px 0 0; }
+[data-billing-rule-form] .erp-form__grid { align-items: start; }
+@media (max-width: 900px) { .erp-billing-forms { grid-template-columns: minmax(0, 1fr); } }
 .erp-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; padding: 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: #fff; }
 .erp-qr svg { display: block; width: 196px; max-width: 100%; height: auto; }
 .erp-qr figcaption { font-size: 13px; color: var(--erp-muted); }

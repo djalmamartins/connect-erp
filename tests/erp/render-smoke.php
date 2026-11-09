@@ -370,22 +370,28 @@ $delinquency = ['as_of' => '2026-11-09', 'units' => [
     ['condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => 12, 'unit_label' => 'Apto <101>', 'amount_cents' => 180000, 'oldest_due_on' => '2026-07-10', 'max_days_late' => 122,
         'entries' => [['id' => 90, 'description' => 'Taxa <julho>', 'competence' => '2026-07', 'due_on' => '2026-07-10', 'amount_cents' => 90000, 'days_late' => 122, 'bucket' => '90+'], ['id' => 91, 'description' => 'Taxa agosto', 'competence' => '2026-08', 'due_on' => '2026-08-10', 'amount_cents' => 90000, 'days_late' => 91, 'bucket' => '90+']]],
     ['condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => null, 'unit_label' => 'Sem unidade', 'amount_cents' => 5000, 'oldest_due_on' => '2026-11-01', 'max_days_late' => 8, 'entries' => [['id' => 95, 'description' => 'Avulso', 'competence' => '2026-11', 'due_on' => '2026-11-01', 'amount_cents' => 5000, 'days_late' => 8, 'bucket' => '1-30']]],
-], 'totals' => ['units' => 2, 'entries' => 3, 'amount_cents' => 185000, 'buckets' => ['1-30' => 5000, '31-60' => 0, '61-90' => 0, '90+' => 180000]]];
+], 'totals' => ['units' => 2, 'entries' => 3, 'amount_cents' => 185000, 'charges_cents' => 9300, 'total_cents' => 194300, 'missing_index' => ['2026-10'], 'buckets' => ['1-30' => 5000, '31-60' => 0, '61-90' => 0, '90+' => 180000]]];
+$delinquency['units'][0] += ['charges_cents' => 9200, 'total_cents' => 189200];
+$delinquency['units'][1] += ['charges_cents' => 100, 'total_cents' => 5100];
 $agreementPage = static function (string $id, string $template, array $data, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
     $html = $render($template, $layoutData->invoke($panel, $user, $id, $data));
     if ($name !== '') $save('page-' . strtolower($id) . '-' . $name, $html);
     return $html;
 };
-$agreementList = ['data' => [$agreementRow(), $agreementRow(['id' => 5, 'status' => 'cancelled', 'cancel_reason' => 'Desistiu <do acordo>']), $agreementRow(['id' => 6, 'paid_installments' => 3, 'settled' => true])], 'total' => 3, 'page' => 1, 'per_page' => 25, 'pages' => 1];
+$agreementList = ['data' => [$agreementRow(), $agreementRow(['id' => 5, 'status' => 'cancelled', 'cancel_reason' => 'Desistiu <do acordo>']), $agreementRow(['id' => 6, 'paid_installments' => 3, 'settled' => true]),
+    $agreementRow(['id' => 7, 'paid_installments' => 1, 'breach' => ['due' => true, 'overdue_installments' => 2, 'max_days_late' => 40, 'reasons' => ['2 parcelas vencidas em aberto']]]),
+    $agreementRow(['id' => 8, 'status' => 'breached', 'breach_reason' => 'Parou de <pagar>'])], 'total' => 5, 'page' => 1, 'per_page' => 25, 'pages' => 1];
 $html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => $delinquency, 'agreements' => $agreementList, 'canManageAgreements' => true], 'list');
 $common($html, 'AP-033', 'Acordos');
 $assert(str_contains($html, 'data-erp-agreements data-api="https://' . $smokeHost . '/api/v1/agreements"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'R$ 1.850,00') && str_contains($html, '122 dias') && !str_contains($html, 'Interface proposta'), 'AP-033: inadimplência real com faixas, API e CSRF');
 $assert(substr_count($html, 'data-agreement-unit=') === 1 && str_contains($html, 'Sem unidade') && str_contains($html, 'Taxa &lt;julho&gt;') && !str_contains($html, 'Taxa <julho>'), 'AP-033: fazer acordo só em unidade identificada, dados escapados');
-$assert(substr_count($html, 'data-agreement-cancel=') === 1 && substr_count($html, 'data-agreement-open=') === 3 && str_contains($html, 'Desistiu &lt;do acordo&gt;') && str_contains($html, 'Quitado') && str_contains($html, 'id="agreement-create"') && str_contains($html, 'name="reason" minlength="5" maxlength="255" required'), 'AP-033: cancelar só ativo sem parcela paga, ver todos, quitado e cancelado');
+$assert(substr_count($html, 'data-agreement-breach=') === 1 && str_contains($html, '2 parcelas vencidas em aberto') && str_contains($html, 'Quebrado') && str_contains($html, 'Parou de &lt;pagar&gt;') && str_contains($html, 'id="agreement-breach"')
+    && str_contains($html, 'R$ 1.892,00') && str_contains($html, '+ R$ 92,00 de encargos') && str_contains($html, 'Faltam meses do IPCA') && str_contains($html, '10/2026'), 'AP-033: encargos calculados, aviso de IPCA e quebra só quando a regra indica');
+$assert(substr_count($html, 'data-agreement-cancel=') === 1 && substr_count($html, 'data-agreement-open=') === 5 && str_contains($html, 'Desistiu &lt;do acordo&gt;') && str_contains($html, 'Quitado') && str_contains($html, 'id="agreement-create"') && str_contains($html, 'name="reason" minlength="5" maxlength="255" required'), 'AP-033: cancelar só ativo sem parcela paga, ver todos, quitado e cancelado');
 preg_match_all('~\sid="([^"]+)"~', $html, $ids);
 $assert(array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1)) === [], 'AP-033: sem ids duplicados');
 $html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => $delinquency, 'agreements' => $agreementList, 'canManageAgreements' => false]);
-$assert(!str_contains($html, 'data-agreement-unit=') && !str_contains($html, 'data-agreement-cancel=') && !str_contains($html, 'id="agreement-create"') && str_contains($html, 'data-agreement-open='), 'AP-033: sem erp.agreements.manage só consulta');
+$assert(!str_contains($html, 'data-agreement-breach=') && !str_contains($html, 'data-agreement-unit=') && !str_contains($html, 'data-agreement-cancel=') && !str_contains($html, 'id="agreement-create"') && str_contains($html, 'data-agreement-open='), 'AP-033: sem erp.agreements.manage só consulta');
 $html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => ['as_of' => '2026-11-09', 'units' => [], 'totals' => ['units' => 0, 'entries' => 0, 'amount_cents' => 0, 'buckets' => []]], 'agreements' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'canManageAgreements' => true], 'empty');
 $assert(str_contains($html, 'Nenhuma conta vencida') && str_contains($html, 'Nenhum acordo'), 'AP-033: sem inadimplência nem acordos');
 $parcels = Source\Controllers\Erp\Connect\Panel::flattenParcels([$agreementRow() + ['parcels' => [
@@ -427,6 +433,15 @@ $assert(str_contains($html, 'Diferença de R$ 1.000,00') && str_contains($html, 
 $html = $reportPage('AP-051', 'pages/reports/statement', ['statement' => ['accounts' => [], 'banks' => [], 'totals' => Source\Services\Erp\FinancialReports::reconcile(0, 0, 0)], 'reportPeriod' => ['from' => '2026-11-01', 'to' => '2026-11-09']], 'empty');
 $assert(str_contains($html, 'Conciliado') && str_contains($html, 'Nada recebido nem pago'), 'AP-051: período vazio conciliado');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-079', ['trialBalance' => null, 'reportError' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-051', ['statement' => null, 'reportError' => 'x']) === 'pages/reports/statement', 'relatórios: sem permissão segue a demonstração; erro de período usa a tela real');
+
+// Regra de cobrança e índices (AP-165, ADR 0040 e 0043) com dados reais.
+$billingRule = Source\Services\Erp\LateCharges::DEFAULT_RULE + ['condominium_id' => null, 'source' => 'default'];
+$html = $agreementPage('AP-165', 'pages/finance/billing-rules', ['billingRule' => $billingRule, 'priceIndexes' => [['competence' => '2026-10', 'rate_percent' => 0.44], ['competence' => '2026-09', 'rate_percent' => -0.1]], 'canManageBilling' => true], 'manage');
+$common($html, 'AP-165', 'Índices');
+$assert(str_contains($html, 'data-erp-billing data-rules-api="https://' . $smokeHost . '/api/v1/billing-rules"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'value="2.00"') && str_contains($html, 'value="1.00"') && str_contains($html, 'Padrão da Connect') && str_contains($html, '0,44%') && str_contains($html, '-0,10%') && str_contains($html, 'data-index-import') && str_contains($html, 'Salvar regra'), 'AP-165: regra padrão, índices e formulários para quem gerencia');
+$html = $agreementPage('AP-165', 'pages/finance/billing-rules', ['billingRule' => $billingRule, 'priceIndexes' => [], 'canManageBilling' => false]);
+$assert(!str_contains($html, 'Salvar regra') && !str_contains($html, 'data-index-form') && str_contains($html, 'disabled') && str_contains($html, 'Nenhum mês do IPCA lançado'), 'AP-165: sem erp.billing_rules.manage só consulta');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-165', ['billingRule' => null]) === null, 'AP-165: sem permissão segue a demonstração');
 
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));

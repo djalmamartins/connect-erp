@@ -714,6 +714,29 @@
         .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
     });
 
+    /* Quebra (ADR 0040): só quando a regra do condomínio indica; ação explícita com motivo. */
+    var breachDialog = $('#agreement-breach', root);
+    var breachForm = breachDialog && $('[data-agreement-breach-form]', breachDialog);
+    $$('[data-agreement-breach]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!breachForm) return;
+        breachForm.reset();
+        breachForm.setAttribute('data-id', button.getAttribute('data-agreement-breach'));
+        $('[data-agreement-breach-label]', breachDialog).textContent = 'Acordo ' + button.getAttribute('data-label') + '.';
+        openDialog(breachDialog);
+      });
+    });
+    if (breachForm) breachForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var reason = $('[name="reason"]', breachForm).value.replace(/\s+/g, ' ').trim();
+      if (reason.length < 5) { toast('Explique o motivo da quebra (pelo menos 5 caracteres).', 'warning'); return; }
+      var button = $('[type="submit"]', breachForm);
+      busy(button, true);
+      call('POST', api + '/' + breachForm.getAttribute('data-id') + '/breach', { reason: reason })
+        .then(function () { breachDialog.close(); toast('Acordo marcado como quebrado.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+
     /* Fazer acordo: contas vencidas da unidade, conta do plano (receita analítica), parcelas e encargos. */
     var createDialog = $('#agreement-create', root);
     var form = createDialog && $('[data-agreement-form]', createDialog);
@@ -747,8 +770,31 @@
       summary.innerHTML = '<div>Dívida <strong>' + brl(debt) + '</strong> + encargos ' + brl(fees) + ' − desconto ' + brl(discount) + ' = <strong>' + brl(total) + '</strong>' +
         (n > 0 && total > 0 ? ' em ' + n + 'x de ' + brl(each) + (total - each * n ? ' (a 1ª com ' + brl(each + total - each * n) + ')' : '') : '') + '</div>';
     };
+    var feesInput = $('[name="fees_cents"]', form);
+    var feesHint = $('[data-agreement-fees-hint]', form);
+    var feesTouched = false;
+    var suggestTimer = null;
+    var toBrl = function (cents) { return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var suggest = function () {
+      var ids = $$('[name="entry_ids"]:checked', form).map(function (box) { return box.value; });
+      if (!current || !ids.length) { feesHint.textContent = 'Escolha as contas para calcular os encargos.'; return; }
+      feesHint.textContent = 'Calculando os encargos…';
+      call('GET', api + '/suggestion?unit_id=' + current.unit_id + '&entry_ids=' + ids.join(','))
+        .then(function (json) {
+          var s = json.data || {};
+          if (!feesTouched) feesInput.value = toBrl(s.fees_cents || 0);
+          feesHint.textContent = 'Sugerido ' + brl(s.fees_cents || 0) + ': correção ' + brl(s.correction_cents || 0) + ' + multa ' + brl(s.fine_cents || 0) + ' + juros ' + brl(s.interest_cents || 0) +
+            ((s.missing_index || []).length ? ' (sem IPCA de ' + s.missing_index.join(', ') + ')' : '') + (feesTouched ? '. Você alterou o valor.' : '');
+          update();
+        })
+        .catch(function (error) { feesHint.textContent = 'Sem sugestão: ' + error.message; });
+    };
+    feesInput.addEventListener('input', function () { feesTouched = true; });
     form.addEventListener('input', update);
-    form.addEventListener('change', update);
+    form.addEventListener('change', function (event) {
+      update();
+      if (event.target && event.target.name === 'entry_ids') { window.clearTimeout(suggestTimer); suggestTimer = window.setTimeout(suggest, 250); }
+    });
     $$('[data-agreement-unit]', root).forEach(function (button) {
       button.addEventListener('click', function () {
         current = JSON.parse(button.getAttribute('data-agreement-unit'));
@@ -760,8 +806,10 @@
         }).join('');
         var next = new Date(); next.setDate(next.getDate() + 10);
         $('[name="first_due_on"]', form).value = next.toISOString().slice(0, 10);
+        feesTouched = false;
         update();
         openDialog(createDialog);
+        suggest();
         if (accounts) { fillChart(); return; }
         chart.innerHTML = '<option value="">Carregando…</option>';
         loadChart(1, []).then(function (list) { accounts = list; fillChart(); })
@@ -781,6 +829,54 @@
       call('POST', api, body)
         .then(function (json) { createDialog.close(); toast('Acordo nº ' + ((json.data && json.data.id) || '') + ' feito com ' + body.installments + ' parcela(s).', 'success'); reload(); })
         .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+  });
+
+  /* AP-165: regra de cobrança e índices pela API /api/v1/billing-rules e /price-indexes (ADR 0040). */
+  $$('[data-erp-billing]').forEach(function (root) {
+    var call = apiClient(root);
+    var ruleForm = $('[data-billing-rule-form]', root);
+    var bp = function (value) { return Math.round(parseFloat(String(value).replace(',', '.')) * 100); };
+    if (ruleForm) ruleForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!ruleForm.reportValidity()) return;
+      var condo = parseInt(ruleForm.getAttribute('data-condominium') || '0', 10);
+      var body = { condominium_id: condo > 0 ? condo : null, fine_bp: bp($('[name="fine_pct"]', ruleForm).value), monthly_interest_bp: bp($('[name="interest_pct"]', ruleForm).value),
+        price_index: $('[name="price_index"]', ruleForm).value, breach_days_late: parseInt($('[name="breach_days_late"]', ruleForm).value, 10),
+        breach_open_installments: parseInt($('[name="breach_open_installments"]', ruleForm).value, 10) };
+      if (!window.confirm(condo > 0 ? 'Salvar a regra própria deste condomínio? Ela passa a valer nos encargos calculados a partir de agora.' : 'Salvar o padrão da Connect? Ele vale para todos os condomínios sem regra própria.')) return;
+      var button = $('[type="submit"]', ruleForm);
+      busy(button, true);
+      call('PUT', root.getAttribute('data-rules-api'), body)
+        .then(function () { toast('Regra de cobrança salva.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+    var indexForm = $('[data-index-form]', root);
+    if (indexForm) indexForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!indexForm.reportValidity()) return;
+      var button = $('[type="submit"]', indexForm);
+      busy(button, true);
+      call('POST', root.getAttribute('data-indexes-api'), { code: 'IPCA', competence: $('[name="competence"]', indexForm).value, rate_percent: $('[name="rate_percent"]', indexForm).value.trim() })
+        .then(function () { toast('Mês do IPCA lançado.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+    var importForm = $('[data-index-import]', root);
+    if (importForm) importForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var file = ($('[name="file"]', importForm).files || [])[0];
+      if (!file) return;
+      if (file.size > 200000) { toast('Arquivo grande demais para uma tabela de índices.', 'warning'); return; }
+      var button = $('[type="submit"]', importForm);
+      busy(button, true);
+      var reader = new FileReader();
+      reader.onerror = function () { busy(button, false); toast('Não foi possível ler o arquivo.', 'danger'); };
+      reader.onload = function () {
+        call('POST', root.getAttribute('data-indexes-api') + '/import', { code: 'IPCA', content: String(reader.result || '') })
+          .then(function () { toast('Índices importados.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      };
+      reader.readAsText(file);
     });
   });
 

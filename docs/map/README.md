@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**247** rotas fixas · **167** classes em `source/` · **75** tabelas nas migrations · **93** arquivos de teste · **43** ADRs · **172** páginas no catálogo do ERP.
+**247** rotas fixas · **167** classes em `source/` · **75** tabelas nas migrations · **94** arquivos de teste · **44** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -175,6 +175,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Agreements
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Banking_BankCharges
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Banking_BankReturns
+  Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_BillingRules
   Source_Services_Erp_DemoData["Services/Erp/DemoData"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_DemoData
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_FinancialReports
@@ -762,7 +763,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/Login`](../../source/Controllers/Erp/Connect/Login.php) | Controller, Auth, Access | — | — |
 | [`Controllers/Erp/Connect/MonthClosings`](../../source/Controllers/Erp/Connect/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, RecurringEntries, Access, AppLogger, CondominiumContext … | — | — |
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 7 |
+| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 8 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryLocked, RegistryNotFound … | condominiums | — |
 | [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, QrCode, SecretBox | — | — |
@@ -867,7 +868,7 @@ flowchart LR
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
 | [`Services/Erp/FinancialReports`](../../source/Services/Erp/FinancialReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries | 3 |
 | [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 4 |
-| [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 1 |
+| [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 7 |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
 | [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 13 |
@@ -980,6 +981,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0039 — Inadimplência e acordos (AP-033/034)](../../docs/Organic%20Code/decisions/0039-delinquency-and-agreements.md)
 - [0040 — Multa, juros, correção pelo IPCA e quebra de acordo](../../docs/Organic%20Code/decisions/0040-late-charges-and-agreement-breach.md)
 - [0041 — Telas de inadimplência e acordos (AP-033 e AP-034)](../../docs/Organic%20Code/decisions/0041-agreements-screens.md)
+- [0043 — Telas de encargos: regra de cobrança, IPCA, sugestão e quebra de acordo](../../docs/Organic%20Code/decisions/0043-late-charges-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
