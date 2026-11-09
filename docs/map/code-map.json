@@ -249,6 +249,10 @@
    "title": "0063 — Importações: valores sem estouro e XLSX sem explosão de memória"
   },
   {
+   "file": "docs/Organic Code/decisions/0064-performance-indexes.md",
+   "title": "0064 — Índices por data de pagamento e EXPLAIN das consultas quentes"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -263,6 +267,10 @@
   {
    "file": "docs/Organic Code/decisions/0073-entry-shortcut-screens.md",
    "title": "0073 — Telas dos lançamentos avulsos e do recibo (AP-024 a AP-029 e AP-040)"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0074-import-screens.md",
+   "title": "0074 — Telas de importação: envio, prévia por linha, aplicar e fila do extrato"
   },
   {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
@@ -908,6 +916,27 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\ImportScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/ImportScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpImportScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\Inspections": {
    "deps": [
     "Source\\Core\\Controller",
@@ -1047,6 +1076,7 @@
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
+    "tests/legacy/Unit/ErpImportScreensTest.php",
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpNotificationQueueScreenTest.php",
     "tests/legacy/Unit/ErpOperationalScreensTest.php",
@@ -2444,6 +2474,7 @@
    "tests": [
     "tests/legacy/Integration/ImportsCycleIntegrationTest.php",
     "tests/legacy/Integration/ImportsIntegrationTest.php",
+    "tests/legacy/Unit/ErpImportScreensTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2468,6 +2499,24 @@
     "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
+  },
+  "Source\\Services\\Erp\\Imports\\StatementLineCandidates": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound"
+   ],
+   "file": "source/Services/Erp/Imports/StatementLineCandidates.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_bank_statement_lines",
+    "erp_bank_accounts",
+    "erp_entries",
+    "erp_units"
+   ],
+   "tests": []
   },
   "Source\\Services\\Erp\\Invoices": {
    "deps": [
@@ -3666,8 +3715,8 @@
   }
  },
  "counts": {
-  "adrs": 69,
-  "classes": 196,
+  "adrs": 71,
+  "classes": 198,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -3675,7 +3724,7 @@
   "erp_pages": 172,
   "routes": 296,
   "tables": 106,
-  "tests": 132
+  "tests": 134
  },
  "erp_pages": [
   {
@@ -7739,6 +7788,7 @@
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\UnitDocuments"
@@ -7772,7 +7822,8 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0535_imports.sql",
    "used_by": [
-    "Source\\Services\\Erp\\Imports\\Imports"
+    "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Imports\\StatementLineCandidates"
    ]
   },
   "erp_bank_transfers": {
@@ -7886,7 +7937,8 @@
     "database/migrations/20261108_0514_entry_unit_invoice_link.sql",
     "database/migrations/20261108_0520_entry_agreement_link.sql",
     "database/migrations/20261108_0534_entry_shortcuts.sql",
-    "database/migrations/20261108_0535_imports.sql"
+    "database/migrations/20261108_0535_imports.sql",
+    "database/migrations/20261109_0701_performance_indexes.sql"
    ],
    "created_in": "database/migrations/20261108_0506_entries.sql",
    "used_by": [
@@ -7897,6 +7949,7 @@
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
@@ -8166,6 +8219,7 @@
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Imports\\StatementLineCandidates",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\ReceiptCandidates",
@@ -8531,6 +8585,7 @@
  "tests": {
   "tests/erp/render-smoke.php": [
    "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
+   "Source\\Controllers\\Erp\\Connect\\ImportScreens",
    "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Controllers\\Erp\\Connect\\Registry",
@@ -8844,6 +8899,7 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/QueryPlanIntegrationTest.php": [],
   "tests/legacy/Integration/RecurringEntriesTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -9016,6 +9072,11 @@
   ],
   "tests/legacy/Unit/ErpFinancialReportsScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpImportScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\ImportScreens",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\Imports\\Imports"
   ],
   "tests/legacy/Unit/ErpInvoicesScreenTest.php": [],
   "tests/legacy/Unit/ErpLegacyCondominiumScopeTest.php": [

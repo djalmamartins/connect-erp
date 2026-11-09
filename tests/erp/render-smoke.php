@@ -565,6 +565,58 @@ $html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData([
 $assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
 $assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
     && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+// Importações (AP-140, AP-142 a AP-146 e AP-044; ADR 0058 e 0074).
+$Imp = Source\Controllers\Erp\Connect\ImportScreens::class;
+$importRow = static fn (array $over = []): array => $over + ['id' => 41, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'kind' => 'entries', 'kind_label' => 'Lançamentos (planilha)', 'page' => 'AP-144',
+    'bank_account_id' => null, 'original_name' => 'lancamentos <nov>.xlsx', 'sha256' => str_repeat('a', 64), 'size_bytes' => 2048, 'status' => 'applied', 'rows_count' => 12, 'error_count' => 0,
+    'summary' => ['rows' => 12, 'errors' => 0, 'total_cents' => 1250000, 'applied' => ['entries' => 12]], 'created_at' => '2026-11-09 09:00:00', 'applied_at' => '2026-11-09 09:05:00'];
+$importData = static fn (string $kind, array $over = []): array => $over + ['importReady' => true, 'importKind' => $kind, 'importContext' => 1, 'importDetail' => null, 'importError' => null,
+    'importBankAccounts' => [], 'pendingLines' => null, 'lineDetail' => null, 'canImport' => true, 'canResolveLines' => true,
+    'imports' => ['data' => [$importRow(['kind' => $kind]), $importRow(['id' => 42, 'kind' => $kind, 'status' => 'previewed', 'error_count' => 3, 'applied_at' => null])], 'total' => 2]];
+$html = $agreementPage('AP-144', 'pages/imports/import', $importData('entries'), 'list');
+$common($html, 'AP-144', 'Lançamentos (Planilha)');
+$assert(str_contains($html, 'data-erp-imports data-kind="entries"') && str_contains($html, 'data-import-form data-condominium="1"') && str_contains($html, 'accept=".csv,.xlsx"') && str_contains($html, '<code>natureza</code>')
+    && str_contains($html, '<code>pago_em</code>') && str_contains($html, 'download="modelo-entries.csv"') && str_contains($html, 'natureza%3Bdescricao%3Bvalor') && str_contains($html, '/api/v1/imports/preview')
+    && str_contains($html, 'data-import-preview') && str_contains($html, 'lancamentos &lt;nov&gt;.xlsx') && str_contains($html, '>Prévia com erros</span>') && str_contains($html, '>Aplicada</span>') && str_contains($html, '?importacao=42')
+    && !str_contains($html, 'Linhas pendentes') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-144: enviar, modelo, prévia e lista');
+$html = $agreementPage('AP-143', 'pages/imports/import', $importData('fractions', ['importContext' => null]));
+$assert(!str_contains($html, 'data-import-form') && str_contains($html, 'Escolha um condomínio na barra superior para importar'), 'AP-143: em todos os condomínios pede a escolha');
+$html = $agreementPage('AP-145', 'pages/imports/import', $importData('unit_entries', ['canImport' => false, 'imports' => ['data' => [], 'total' => 0]]));
+$assert(!str_contains($html, 'data-import-form') && str_contains($html, 'Nenhuma importação') && str_contains($html, 'As importações enviadas aparecem aqui.'), 'AP-145: sem permissão de gravar só consulta');
+$html = $agreementPage('AP-144', 'pages/imports/import', $importData('entries', ['importDetail' => $importRow(['status' => 'previewed', 'applied_at' => null, 'summary' => ['rows' => 12, 'errors' => 0, 'total_cents' => 1250000]])]), 'detail');
+$assert(str_contains($html, 'Importação nº 41') && str_contains($html, 'data-import-apply="41"') && str_contains($html, 'R$ 12.500,00') && str_contains($html, 'envie o mesmo arquivo') && !str_contains($html, 'data-import-form'), 'AP-144: detalhe em prévia com Aplicar');
+$html = $agreementPage('AP-144', 'pages/imports/import', $importData('entries', ['importDetail' => $importRow()]));
+$assert(!str_contains($html, 'data-import-apply="41"') && str_contains($html, 'Lançamentos: 12'), 'AP-144: aplicada mostra o que gravou, sem aplicar de novo');
+
+$stmtLine = static fn (array $over = []): array => $over + ['id' => 7, 'fitid' => 'F<1>', 'kind' => 'debit', 'posted_on' => '2026-11-03', 'amount_cents' => -45000, 'memo' => 'PAG <BOLETO>', 'status' => 'unmatched', 'entry_id' => null, 'transfer_id' => null, 'note' => null,
+    'bank_account_id' => 3, 'bank_account' => 'Corrente <Itaú>'];
+$ofxData = $importData('ofx', ['importBankAccounts' => [['id' => 3, 'condominium_id' => 1, 'label' => 'Corrente <Itaú>']],
+    'imports' => ['data' => [$importRow(['kind' => 'ofx', 'kind_label' => 'Extrato bancário (OFX)', 'original_name' => 'extrato.ofx'])], 'total' => 1],
+    'pendingLines' => ['data' => [$stmtLine(), $stmtLine(['id' => 8, 'amount_cents' => 120000, 'kind' => 'credit', 'memo' => 'PIX RECEBIDO'])], 'total' => 2],
+    'lineDetail' => ['line' => ['id' => 7, 'condominium_id' => 1, 'bank_account_id' => 3, 'bank_account' => 'Corrente <Itaú>', 'fitid' => 'F1', 'kind' => 'debit', 'posted_on' => '2026-11-03', 'amount_cents' => -45000, 'memo' => 'PAG <BOLETO>', 'status' => 'unmatched'],
+        'candidates' => [['id' => 61, 'description' => 'Elevador <manutenção>', 'paid_on' => '2026-11-02', 'amount_cents' => 45000, 'unit_label' => null, 'document_number' => 'NF 12', 'days' => 1],
+            ['id' => 62, 'description' => 'Limpeza', 'paid_on' => '2026-11-03', 'amount_cents' => 45000, 'unit_label' => null, 'document_number' => null, 'days' => 0]]]]);
+$html = $agreementPage('AP-140', 'pages/imports/import', $ofxData, 'pending');
+$common($html, 'AP-140', 'Extrato Bancário (OFX)');
+$assert(str_contains($html, 'name="bank_account_id" required') && str_contains($html, 'accept=".ofx"') && !str_contains($html, 'download="modelo-') && str_contains($html, 'Linhas pendentes') && str_contains($html, 'PAG &lt;BOLETO&gt;')
+    && str_contains($html, '− R$ 450,00') && str_contains($html, 'R$ 1.200,00') && str_contains($html, '?linha=8#conciliar') && str_contains($html, 'id="conciliar"') && str_contains($html, '/api/v1/bank-statement-lines/7/resolve')
+    && substr_count($html, 'name="choice"') === 3 && str_contains($html, 'Elevador &lt;manutenção&gt;') && str_contains($html, '(1 dia(s) de diferença)') && str_contains($html, '(mesmo dia)') && str_contains($html, 'value="ignore"')
+    && !str_contains($html, 'value="ignore" checked'), 'AP-140: fila de pendentes e resolver com candidatos ou ignorar');
+$html = $agreementPage('AP-140', 'pages/imports/import', ['lineDetail' => ['line' => $ofxData['lineDetail']['line'], 'candidates' => []], 'canResolveLines' => true] + $ofxData);
+$assert(str_contains($html, 'Nenhum lançamento pago desta conta') && str_contains($html, 'value="ignore" checked') && str_contains($html, 'lance a conta paga nesta conta bancária'), 'AP-140: sem candidato, ignorar já marcado');
+$html = $agreementPage('AP-140', 'pages/imports/import', ['canResolveLines' => false, 'pendingLines' => ['data' => [], 'total' => 0]] + $ofxData);
+$assert(!str_contains($html, 'data-line-form') && str_contains($html, 'Sua conta pode ver, mas não resolver') && str_contains($html, 'Nenhuma linha pendente'), 'AP-140: sem permissão não resolve; fila vazia');
+$html = $agreementPage('AP-140', 'pages/imports/import', $importData('ofx', ['importDetail' => $importRow(['kind' => 'ofx', 'kind_label' => 'Extrato bancário (OFX)', 'original_name' => 'extrato.ofx',
+    'summary' => ['rows' => 3, 'errors' => 0, 'from' => '2026-11-01', 'to' => '2026-11-05', 'credits_cents' => 120000, 'debits_cents' => 45000, 'already' => 0,
+        'balance_check' => ['bank_cents' => 500000, 'system_cents' => 480000, 'difference_cents' => 20000, 'matches' => false], 'applied' => ['lines' => 3, 'matched' => 1, 'unmatched' => 2, 'already' => 0]],
+    'lines' => [$stmtLine(['status' => 'matched', 'entry_id' => 61, 'note' => null]), $stmtLine(['id' => 8, 'status' => 'unmatched']), $stmtLine(['id' => 9, 'status' => 'ignored', 'note' => 'Tarifa <já lançada>'])]])]), 'ofx-detail');
+$assert(str_contains($html, 'O saldo do banco não confere') && str_contains($html, 'diferença R$ 200,00') && str_contains($html, '>Conferida</span>') && str_contains($html, '>Ignorada</span>') && str_contains($html, 'Tarifa &lt;já lançada&gt;')
+    && str_contains($html, '?linha=8#conciliar') && str_contains($html, 'Conferidas: 1') && str_contains($html, '01/11/2026 a 05/11/2026'), 'AP-140: detalhe do extrato com saldo e linhas');
+$assert($Imp::pages() === ['AP-140' => 'ofx', 'AP-144' => 'entries', 'AP-145' => 'unit_entries', 'AP-146' => 'payables', 'AP-143' => 'fractions', 'AP-142' => 'delinquents', 'AP-044' => 'readings']
+    && $Imp::templateHeader('fractions') === 'unidade;fracao' && $Imp::templateHeader('ofx') === null, 'importações: páginas e modelo');
+foreach (array_keys($Imp::pages()) as $importPage) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($importPage, ['importReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($importPage, ['importReady' => true]) === 'pages/imports/import', "{$importPage}: tela própria só com dados");
+}
 foreach (['AP-026', 'AP-027', 'AP-028', 'AP-029'] as $shortcutPage) {
     $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($shortcutPage, ['shortcutReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($shortcutPage, ['shortcutReady' => true]) === $Shortcut::PAGES[$shortcutPage], "{$shortcutPage}: tela própria só com dados");
 }

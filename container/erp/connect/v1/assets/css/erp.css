@@ -588,6 +588,21 @@ p { margin: 0; }
 .erp-unit-pick--inline { padding: 0 0 4px; }
 .erp-discount-rules { padding: 12px 20px 16px; margin: 0; }
 [data-form-error] .erp-alert { margin: 12px 0 0; }
+/* Importações (ADR 0058 e 0074) */
+.erp-import-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 20px; margin: 0 0 16px; }
+.erp-import-facts dt { font-size: 12px; color: var(--erp-muted); }
+.erp-import-facts dd { margin: 2px 0 0; font-weight: 600; }
+.erp-import-columns { margin-top: 12px; padding: 12px 14px; border-radius: var(--erp-radius-md); background: var(--erp-neutral-soft); font-size: 13px; }
+.erp-import-columns p { margin: 0 0 6px; }
+.erp-import-columns p:last-child { margin: 0; }
+.erp-import-columns code { padding: 1px 6px; border-radius: 6px; background: var(--erp-surface, #fff); border: 1px solid var(--erp-border); font-size: 12px; }
+.erp-import-preview-filter { margin: 0 0 8px; }
+.erp-import-errors { margin: 0; padding-left: 18px; color: var(--erp-danger); font-size: 13px; }
+.erp-table tr.is-error td { background: var(--erp-danger-soft); }
+.erp-line-options { border: 0; margin: 0 0 12px; padding: 0; display: grid; gap: 4px; min-width: 0; }
+.erp-line-options legend { font-size: 13px; font-weight: 650; margin-bottom: 6px; }
+.erp-line-option { display: grid; grid-template-columns: 16px 1fr; align-items: start; gap: 10px; padding: 8px 0; border-top: 1px solid var(--erp-border); }
+.erp-line-option span { display: grid; gap: 2px; }
 .erp-queue-error { display: inline-block; max-width: 260px; font-size: 12px; overflow-wrap: anywhere; }
 .erp-queue-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
 .erp-queue-facts dt { color: var(--erp-muted); }
