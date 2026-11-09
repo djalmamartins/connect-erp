@@ -36,6 +36,11 @@ final class MeterReadingsTest extends TestCase
         }
     }
 
+    public function testConsumptionUnit(): void
+    {
+        self::assertSame(['m³', 'm³', 'kWh'], [MeterReadings::unitOf('agua'), MeterReadings::unitOf('gas'), MeterReadings::unitOf('energia')]);
+    }
+
     public function testDefinitions(): void
     {
         $meters = Definitions::get('meters');

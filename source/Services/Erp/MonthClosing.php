@@ -21,6 +21,8 @@ use Source\Support\Audit;
  * - Fechar grava a foto do resumo e trava os lançamentos daquela competência (RegistryService,
  *   'closing_lock'). Reabrir exige motivo. Fechar e reabrir são auditados.
  * - Escopo por condomínio (ADR-002): fora do escopo = CondominiumAccessDenied.
+ * - Concorrência (ADR 0100): fechar grava a situação antes de somar, com a linha travada, e as
+ *   gravações de lançamento conferem a competência com leitura travada na mesma transação.
  */
 final class MonthClosing
 {
@@ -170,21 +172,22 @@ final class MonthClosing
             if (($before['status'] ?? null) === 'closed') {
                 throw new DomainException("A competência {$competence} já está fechada.");
             }
-            $summary = self::summarize($this->entryRows($condominiumId, $competence));
-            $values = [
-                'condominium_id' => $condominiumId, 'competence' => $competence,
-                'revenue_cents' => $summary['revenue_cents'], 'expense_cents' => $summary['expense_cents'],
-                'open_revenue_cents' => $summary['open_revenue_cents'], 'open_expense_cents' => $summary['open_expense_cents'],
-                'summary_json' => json_encode(['by_account' => $summary['by_account'], 'by_bank_account' => $summary['by_bank_account'], 'entries' => $summary['entries']], JSON_UNESCAPED_UNICODE),
-                'closed_by' => (int)$user->id,
-            ];
-            $this->pdo->prepare("INSERT INTO erp_month_closings
-                    (condominium_id, competence, status, revenue_cents, expense_cents, open_revenue_cents, open_expense_cents, summary_json, closed_by, closed_at)
-                VALUES (:condominium_id, :competence, 'closed', :revenue_cents, :expense_cents, :open_revenue_cents, :open_expense_cents, :summary_json, :closed_by, NOW())
-                ON DUPLICATE KEY UPDATE status = 'closed', revenue_cents = VALUES(revenue_cents), expense_cents = VALUES(expense_cents),
-                    open_revenue_cents = VALUES(open_revenue_cents), open_expense_cents = VALUES(open_expense_cents),
-                    summary_json = VALUES(summary_json), closed_by = VALUES(closed_by), closed_at = NOW()")
-                ->execute($values);
+            // Primeiro grava a situação "fechada" (ADR 0100). Com a linha travada, quem grava lançamento confere
+            // a competência com leitura travada e espera este fechamento; quem já gravou antes entra no resumo.
+            $this->pdo->prepare("INSERT INTO erp_month_closings (condominium_id, competence, status, closed_by, closed_at)
+                VALUES (:c, :m, 'closed', :u, NOW())
+                ON DUPLICATE KEY UPDATE status = 'closed', closed_by = VALUES(closed_by), closed_at = NOW()")
+                ->execute(['c' => $condominiumId, 'm' => $competence, 'u' => (int)$user->id]);
+            $summary = self::summarize($this->entryRows($condominiumId, $competence, true));
+            $this->pdo->prepare('UPDATE erp_month_closings SET revenue_cents = :revenue_cents, expense_cents = :expense_cents,
+                    open_revenue_cents = :open_revenue_cents, open_expense_cents = :open_expense_cents, summary_json = :summary_json
+                WHERE condominium_id = :c AND competence = :m')
+                ->execute([
+                    'c' => $condominiumId, 'm' => $competence,
+                    'revenue_cents' => $summary['revenue_cents'], 'expense_cents' => $summary['expense_cents'],
+                    'open_revenue_cents' => $summary['open_revenue_cents'], 'open_expense_cents' => $summary['open_expense_cents'],
+                    'summary_json' => json_encode(['by_account' => $summary['by_account'], 'by_bank_account' => $summary['by_bank_account'], 'entries' => $summary['entries']], JSON_UNESCAPED_UNICODE),
+                ]);
             $after = $this->closingRow($condominiumId, $competence);
             $this->pdo->commit();
         } catch (\Throwable $error) {
@@ -206,13 +209,24 @@ final class MonthClosing
         if (mb_strlen($reason) < 5 || mb_strlen($reason) > 255) {
             throw new InvalidArgumentException('Informe o motivo da reabertura (5 a 255 caracteres).');
         }
-        $before = $this->closingRow($condominiumId, $competence);
-        if (($before['status'] ?? null) !== 'closed') {
-            throw new DomainException("A competência {$competence} não está fechada.");
+        // Na mesma transação e com a linha travada (ADR 0100): duas reaberturas ao mesmo tempo não gravam
+        // nem auditam duas vezes.
+        $this->pdo->beginTransaction();
+        try {
+            $before = $this->closingRow($condominiumId, $competence, true);
+            if (($before['status'] ?? null) !== 'closed') {
+                throw new DomainException("A competência {$competence} não está fechada.");
+            }
+            $this->pdo->prepare("UPDATE erp_month_closings SET status = 'reopened', reopened_by = :user, reopened_at = NOW(), reopen_reason = :reason
+                WHERE id = :id AND status = 'closed'")->execute(['user' => (int)$user->id, 'reason' => $reason, 'id' => $before['id']]);
+            $after = $this->closingRow($condominiumId, $competence);
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
         }
-        $this->pdo->prepare("UPDATE erp_month_closings SET status = 'reopened', reopened_by = :user, reopened_at = NOW(), reopen_reason = :reason
-            WHERE id = :id AND status = 'closed'")->execute(['user' => (int)$user->id, 'reason' => $reason, 'id' => $before['id']]);
-        $after = $this->closingRow($condominiumId, $competence);
         Audit::record('update', 'erp_month_closings', (int)$after['id'], ['status' => 'closed'], ['status' => 'reopened', 'reopen_reason' => $reason]);
         return $this->presentClosing($after);
     }
@@ -226,7 +240,7 @@ final class MonthClosing
     }
 
     /** @return list<array> */
-    private function entryRows(int $condominiumId, string $competence): array
+    private function entryRows(int $condominiumId, string $competence, bool $lock = false): array
     {
         $stmt = $this->pdo->prepare("SELECT e.nature, e.amount_cents, e.paid_on, a.code AS account_code, a.name AS account_name,
                 e.bank_account_id, b.name AS bank_name
@@ -234,7 +248,7 @@ final class MonthClosing
             LEFT JOIN erp_chart_accounts a ON a.id = e.chart_account_id
             LEFT JOIN erp_bank_accounts b ON b.id = e.bank_account_id
             WHERE e.condominium_id = :c AND e.competence = :m AND e.deleted_at IS NULL AND e.status = 'active'
-            ORDER BY e.id");
+            ORDER BY e.id" . ($lock ? ' LOCK IN SHARE MODE' : ''));
         $stmt->execute(['c' => $condominiumId, 'm' => $competence]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

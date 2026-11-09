@@ -124,7 +124,7 @@ p { margin: 0; }
 .erp-envswitch__panel a strong { font-size: 13px; }
 .erp-envswitch__panel a small { text-transform: none; letter-spacing: 0; }
 .erp-envswitch__panel em { font-style: normal; font-size: 11px; color: var(--erp-sidebar-accent); }
-.erp-nav { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
+.erp-nav { flex: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .erp-nav__link, .erp-nav__group > summary {
   display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border-radius: var(--erp-radius-md);
   color: var(--erp-sidebar-ink); font-size: 14px; font-weight: 550; cursor: pointer; list-style: none; transition: background .18s, color .18s;
@@ -319,7 +319,7 @@ p { margin: 0; }
 .erp-muted { color: var(--erp-muted); }
 .erp-trace { margin-top: 8px; font-size: 12px; }
 .erp-invoice-item { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.erp-invoice-item .erp-input { width: 120px; min-height: 34px; padding: 6px 10px; text-align: right; }
+.erp-invoice-item .erp-input { width: 120px; height: 34px; min-height: 34px; padding: 6px 10px; text-align: right; }
 .erp-table td small.erp-muted { display: block; font-size: 12px; }
 .erp-invoice-link { padding: 0; border: 0; background: none; color: var(--erp-text); font: inherit; font-weight: 650; text-align: left; text-decoration: underline; text-decoration-color: var(--erp-border-strong); text-underline-offset: 3px; cursor: pointer; }
 .erp-invoice-link:hover, .erp-invoice-link:focus-visible { color: var(--erp-brand-ink); text-decoration-color: currentColor; }
@@ -359,20 +359,32 @@ p { margin: 0; }
 
 /* 11. Formulários e filtros ------------------------------------------------- */
 .erp-form { display: grid; gap: var(--erp-space-4); }
-.erp-form__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--erp-space-4); }
+/* Campos alinhados pelo topo: o texto de ajuda embaixo de um campo não empurra nem estica os vizinhos. */
+.erp-form__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--erp-space-4); align-items: start; }
 .erp-col-3 { grid-column: span 3; } .erp-col-4 { grid-column: span 4; } .erp-col-6 { grid-column: span 6; } .erp-col-8 { grid-column: span 8; } .erp-col-12 { grid-column: 1 / -1; }
-.erp-field { display: grid; gap: 6px; min-width: 0; }
+.erp-field { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .erp-field > label, .erp-field__label { font-size: 12.5px; font-weight: 650; color: var(--erp-text); }
 .erp-field__hint { color: var(--erp-muted); font-size: 12px; }
 .erp-field__error { color: var(--erp-danger); font-size: 12px; font-weight: 600; }
 .erp-input, .erp-select, .erp-textarea {
   width: 100%; min-height: var(--erp-control-height); padding: 8px 12px; border: 1px solid var(--erp-border-strong); border-radius: var(--erp-radius-md);
-  background: var(--erp-surface); color: var(--erp-text); transition: border-color .18s, box-shadow .18s;
+  background-color: var(--erp-surface); color: var(--erp-text); font: inherit; font-size: 14px; line-height: 1.4; transition: border-color .18s, box-shadow .18s;
 }
+/* Mesma altura para input e select em todas as telas (o select nativo do Safari/Chrome era mais alto). */
+.erp-input, .erp-select { height: var(--erp-control-height); }
+.erp-input[type="file"] { height: auto; padding: 6px 8px; }
+/* Seta própria do select, 12 px para dentro da borda direita. */
+.erp-select:not([multiple]):not([size]) {
+  appearance: none; -webkit-appearance: none; padding-right: 40px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2365746d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 16px 16px;
+}
+.erp-select[multiple], .erp-select[size] { height: auto; }
+@media (forced-colors: active) { .erp-select:not([multiple]):not([size]) { appearance: auto; -webkit-appearance: auto; background-image: none; padding-right: 12px; } }
 .erp-textarea { min-height: 96px; resize: vertical; }
 .erp-input:focus, .erp-select:focus, .erp-textarea:focus { border-color: var(--erp-brand); outline: none; box-shadow: 0 0 0 3px var(--erp-ring); }
 .erp-input[aria-invalid="true"], .erp-select[aria-invalid="true"], .erp-textarea[aria-invalid="true"] { border-color: var(--erp-danger); box-shadow: 0 0 0 3px rgba(180, 35, 24, .12); }
-.erp-input[disabled], .erp-select[disabled] { background: var(--erp-surface-muted); color: var(--erp-faint); }
+.erp-input[disabled], .erp-select[disabled] { background-color: var(--erp-surface-muted); color: var(--erp-faint); }
 .erp-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
 .erp-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
 .erp-form__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--erp-space-2); padding-top: var(--erp-space-4); border-top: 1px solid var(--erp-border); }
@@ -438,6 +450,36 @@ p { margin: 0; }
 .erp-bars__bar { width: min(18px, 40%); min-height: 2px; border-radius: 5px 5px 0 0; background: var(--erp-brand); transition: height .5s var(--erp-ease); }
 .erp-bars__bar.is-b { background: var(--erp-accent); }
 .erp-bars__labels { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; color: var(--erp-muted); font-size: 12px; text-align: center; }
+/* Gráficos com dados reais (ADR 0078): um eixo por painel, cores categóricas em ordem fixa
+   (paleta validada para daltonismo; "Outras" neutra) e a tabela equivalente logo abaixo. */
+.erp-vchart-card { --erp-series-1: #2a78d6; --erp-series-2: #eb6834; --erp-series-3: #1baf7a; --erp-series-4: #eda100;
+  --erp-series-5: #e87ba4; --erp-series-6: #008300; --erp-series-7: #6250d6; --erp-series-8: #e34948; --erp-series-other: #9aa5a0; }
+.erp-swatch--1 { background: var(--erp-series-1); } .erp-swatch--2 { background: var(--erp-series-2); } .erp-swatch--3 { background: var(--erp-series-3); }
+.erp-swatch--4 { background: var(--erp-series-4); } .erp-swatch--5 { background: var(--erp-series-5); } .erp-swatch--6 { background: var(--erp-series-6); }
+.erp-swatch--7 { background: var(--erp-series-7); } .erp-swatch--8 { background: var(--erp-series-8); } .erp-swatch--other { background: var(--erp-series-other); }
+.erp-vchart__legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 12px; padding: 0; list-style: none; color: var(--erp-text); font-size: 12.5px; }
+.erp-vchart__legend li { display: inline-flex; align-items: center; gap: 6px; }
+.erp-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.erp-vchart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.erp-vchart__axis { position: relative; height: 220px; min-width: 64px; color: var(--erp-muted); font-size: 11.5px; text-align: right; }
+.erp-vchart__axis span { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap; }
+.erp-vchart__scroll { overflow-x: auto; padding-top: 8px; }
+.erp-vchart__body { min-width: calc(var(--erp-vchart-cols) * max(30px, var(--erp-vchart-bars) * 9px + 10px)); }
+.erp-vchart__plot { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; height: 220px;
+  margin-top: -8px; border-bottom: 1px solid var(--erp-border); background: linear-gradient(var(--erp-border), var(--erp-border)) 0 0 / 100% 1px no-repeat; }
+.erp-vchart__zero { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--erp-border-strong); }
+.erp-vchart__col { position: relative; height: 100%; }
+.erp-vchart__col:hover { background: var(--erp-surface-muted); }
+.erp-vchart__cluster { position: absolute; top: 0; bottom: 0; left: 50%; width: min(100%, calc(var(--erp-vchart-bars) * 24px)); transform: translateX(-50%); }
+.erp-vchart__bar { position: absolute; left: calc(1px + var(--erp-vchart-i, 0) * (100% - 2px) / var(--erp-vchart-bars)); width: calc((100% - 2px) / var(--erp-vchart-bars) - 2px);
+  border-radius: 4px 4px 0 0; transition: height .4s var(--erp-ease); }
+.erp-vchart__bar.is-negative { border-radius: 0 0 4px 4px; }
+.erp-vchart__col.is-stacked .erp-vchart__bar { left: 15%; width: 70%; border-radius: 0; box-shadow: inset 0 2px 0 var(--erp-surface); }
+.erp-vchart__col.is-stacked .erp-vchart__bar:last-child { border-radius: 4px 4px 0 0; }
+.erp-vchart__labels { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 6px; color: var(--erp-muted); font-size: 11.5px; text-align: center; }
+@media (max-width: 640px) { .erp-vchart__axis { min-width: 52px; } }
+@media print { .erp-vchart__scroll { overflow: visible; } .erp-vchart__bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
 .erp-donut { display: flex; align-items: center; gap: var(--erp-space-5); }
 .erp-donut svg { width: 140px; height: 140px; transform: rotate(-90deg); }
 .erp-donut ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
@@ -673,3 +715,7 @@ p { margin: 0; }
 .erp-comm-filter { display: flex; flex-wrap: wrap; gap: 8px; }
 .erp-form__actions [data-collection-count] { margin-right: auto; align-self: center; }
 [data-collection-form] .erp-field__hint { margin-top: 12px; }
+/* Cobrança (ADR 0076) */
+.erp-coll-history .erp-list__body { min-width: 0; }
+.erp-coll-note { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.erp-coll-filter { margin: 0 0 16px; }

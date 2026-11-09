@@ -1168,3 +1168,32 @@ html[data-theme="dark"] .studio-v2 .moves-organic-toolbar select { background-co
 .studio-error h1 { margin: 16px 0 8px; font-size: 1.55rem }
 .studio-error p { color: var(--studio-muted) }
 .studio-error a { display: inline-flex; min-height: 42px; align-items: center; margin-top: 12px; padding: 9px 16px; border-radius: 9px; background: var(--studio-primary); color: #fff; font-weight: 600 }
+
+/* Lista de usuários sem barra de rolagem horizontal (pedido do Djalma, 09/11): a tabela cabe na
+   largura do painel. A coluna de usuário fica com o que sobra e corta nome e e-mail com reticências;
+   a de ações tem largura própria (antes ficava com 1% e o botão vazava). Em telas menores, saem
+   "Último acesso" e "Sessões", e no celular também "Função". */
+.studio-v2 .studio-list-panel .studio-table-wrap:has(.studio-user-table) { overflow-x: hidden }
+.studio-v2 .studio-list-panel .studio-user-table { width: 100%; min-width: 0 !important; table-layout: fixed }
+.studio-v2 .studio-list-panel .studio-user-table th:nth-child(1) { width: auto }
+.studio-v2 .studio-list-panel .studio-user-table th:nth-child(2) { width: 16% }
+.studio-v2 .studio-list-panel .studio-user-table th:nth-child(3) { width: 12% }
+.studio-v2 .studio-list-panel .studio-user-table th:nth-child(4) { width: 17% }
+.studio-v2 .studio-list-panel .studio-user-table th:nth-child(5) { width: 9% }
+.studio-v2 .studio-list-panel .studio-user-table th.studio-table-action { width: 72px }
+.studio-v2 .studio-list-panel .studio-user-table td { overflow: hidden; text-overflow: ellipsis }
+.studio-v2 .studio-list-panel .studio-user-table td:nth-child(2), .studio-v2 .studio-list-panel .studio-user-table td:nth-child(3) { white-space: nowrap }
+.studio-v2 .studio-list-panel .studio-user-table .studio-person-copy { min-width: 0 }
+.studio-v2 .studio-list-panel .studio-user-table .studio-person-copy strong, .studio-v2 .studio-list-panel .studio-user-table .studio-person-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+@media (max-width: 1100px) {
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(4), .studio-v2 .studio-list-panel .studio-user-table td:nth-child(4),
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(5), .studio-v2 .studio-list-panel .studio-user-table td:nth-child(5) { display: none }
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(2) { width: 24% }
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(3) { width: 18% }
+}
+@media (max-width: 600px) {
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(2), .studio-v2 .studio-list-panel .studio-user-table td:nth-child(2) { display: none }
+  .studio-v2 .studio-list-panel .studio-user-table th:nth-child(3) { width: 30% }
+  .studio-v2 .studio-list-panel .studio-user-table th.studio-table-action { width: 64px }
+  .studio-v2 .studio-list-panel .studio-user-table th, .studio-v2 .studio-list-panel .studio-user-table td { padding-left: 8px; padding-right: 8px }
+}

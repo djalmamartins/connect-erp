@@ -151,11 +151,14 @@ final class FinancialReports
                 " . BankBalances::transferSql('out', 'b', ' AND t.transferred_on BETWEEN :g4 AND :h2', false) . " AS period_tout
             FROM erp_bank_accounts b
             JOIN condominiums c ON c.id = b.condominium_id
-            LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.deleted_at IS NULL AND e.status = 'active' AND e.paid_on IS NOT NULL
+            LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.condominium_id = b.condominium_id AND e.deleted_at IS NULL AND e.status = 'active'
+                AND e.paid_on IS NOT NULL AND e.paid_on <= :t0
             WHERE b.condominium_id IN ({$in}) AND b.deleted_at IS NULL
             GROUP BY b.id, b.condominium_id, c.name, b.name, b.opening_balance_cents, b.opened_on
             ORDER BY c.name, b.name");
-        $stmt->execute(['f1' => $from, 'f2' => $from, 'f3' => $from, 't1' => $to, 'f4' => $from, 't2' => $to,
+        // Só lançamentos do condomínio da conta e até o fim do período (ADR 0102): os de depois não entram em
+        // nenhuma soma e só pesavam na junção.
+        $stmt->execute(['t0' => $to, 'f1' => $from, 'f2' => $from, 'f3' => $from, 't1' => $to, 'f4' => $from, 't2' => $to,
             'g1' => $from, 'g2' => $from, 'g3' => $from, 'h1' => $to, 'g4' => $from, 'h2' => $to]);
         $banks = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {

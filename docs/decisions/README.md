@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0088.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0077; Avançar: 0088; Preparar: o próximo após o último 006x). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0088; Preparar: 0107, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -93,6 +93,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0065](../Organic%20Code/decisions/0065-communications-hardening.md) | Comunicação: assunto em uma linha, unidades escolhidas com teto, trava por condomínio no aviso de cobrança e limite de 20 comunicados por dia |
 | [0066](../Organic%20Code/decisions/0066-collections-hardening.md) | Cobrança e multas: contas do caso judicial buscadas só na unidade e no condomínio, trava no andamento do caso e nome do contato em uma linha |
 | [0067](../Organic%20Code/decisions/0067-collection-reports-hardening.md) | Relatórios de cobrança: célula do CSV neutralizada também depois de espaço ou controle e em largura total, e teto de 20.000 recebimentos por consulta |
+| [0068](../Organic%20Code/decisions/0068-management-reports-hardening.md) | Relatórios gerenciais: conta bancária inexistente e de fora respondem igual, teto da matriz do rateio e data do extrato por parâmetro |
+| [0069](../Organic%20Code/decisions/0069-chart-data-hardening.md) | Dados dos gráficos: saldo por conta bancária filtrado por condomínio dentro da subconsulta e com as 8 contas de maior movimento |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
 | [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
@@ -100,6 +102,9 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0074](../Organic%20Code/decisions/0074-import-screens.md) | Telas de importação (AP-140, AP-142 a AP-146 e AP-044): envio, prévia por linha, aplicar e fila de linhas pendentes do extrato |
 | [0075](../Organic%20Code/decisions/0075-communication-screens.md) | Telas de comunicação (AP-111, AP-137, AP-138 e AP-139): comunicado, aviso de cobrança, agendados e endereços |
 | [0076](../Organic%20Code/decisions/0076-collection-screens.md) | Telas de cobrança (AP-116, AP-117 e AP-039): multas pendentes com origem, atendimento com histórico e cobrança judicial só como acompanhamento |
+| [0077](../Organic%20Code/decisions/0077-collection-report-screens.md) | Telas dos relatórios de cobrança (AP-047, AP-048, AP-057 a AP-061, AP-071 e AP-072): filtros, rodapé com somas e CSV pela API |
+| [0078](../Organic%20Code/decisions/0078-chart-screens.md) | Telas dos gráficos (AP-102 a AP-109): um eixo por painel, barras empilhadas nas composições e a tabela equivalente |
+| [0079](../Organic%20Code/decisions/0079-nfe-import-screen.md) | Tela da importação de NF-e em XML (AP-141): conta de despesa obrigatória, vencimento para nota sem duplicata e limite de 1 MB |
 | [0080](../Organic%20Code/decisions/0080-collections-and-fines.md) | Cobrança e multas: multas pendentes com a origem (AP-116), atendimento de cobrança com promessa quebrada (AP-117) e cobrança judicial só como acompanhamento (AP-039) |
 | [0081](../Organic%20Code/decisions/0081-collection-reports.md) | Relatórios de cobrança: acordos e taxas (AP-047/048), inadimplentes em 5 visões (AP-057 a AP-061) e recebimentos (AP-071/072), com CSV protegido contra injeção de fórmula |
 | [0082](../Organic%20Code/decisions/0082-management-reports.md) | Relatórios gerenciais: consumo (AP-045/046), centros de custo e comparativo (AP-049/050), demonstrativos e extrato (AP-052 a AP-056), rateio pela fração ideal (AP-062 a AP-067), lançamentos e boletos (AP-068 a AP-070) |
@@ -108,3 +113,10 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0085](../Organic%20Code/decisions/0085-erp-settings.md) | Configurações do ERP (AP-147 a AP-167): parâmetros por condomínio sobre o padrão, sem credenciais e auditados, saldo inicial por centro de custo, previsão orçamentária, frações em lote, banners e impostos |
 | [0086](../Organic%20Code/decisions/0086-nfe-import.md) | Importação de NF-e XML (AP-141): leitura segura sem DOCTYPE nem entidades, contas a pagar por duplicata depois da prévia, chave de acesso única por condomínio, sem SEFAZ |
 | [0087](../Organic%20Code/decisions/0087-erp-hardening.md) | Endurecimento do ERP: dados pessoais mascarados na auditoria e nos logs, tetos nos relatórios, índices de período, sem consulta por linha nas importações e limite de 30 CSV por hora |
+| [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
+| [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
+| [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |
+| [0103](../Organic%20Code/decisions/0103-unit-panel-and-waitlist-call.md) | Painel da unidade com a inadimplência só da unidade e chamada da lista de espera com a reserva travada, uma pessoa chamada por vez |
+| [0104](../Organic%20Code/decisions/0104-meter-reading-closed-competence.md) | Leitura manual e gravação da importação recusam competência fechada; consumo de energia em kWh |
+| [0105](../Organic%20Code/decisions/0105-unit-documents-reference-date.md) | Documentos da unidade apurados na data de referência, só com contas do condomínio da unidade; cancelamento sem auditoria dupla |
+| [0106](../Organic%20Code/decisions/0106-recurring-generation-errors.md) | Geração dos lançamentos fixos desfaz a transação do modelo em qualquer erro; dado inválido vai para failed |

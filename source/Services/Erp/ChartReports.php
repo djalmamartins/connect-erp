@@ -20,7 +20,8 @@ use Source\Services\CondominiumScope;
  * - consumption() (AP-104 por unidade, AP-105 geral): consumo por tipo.
  * - cash() (AP-106): recebido e pago por mês do pagamento (caixa) e o saldo do mês.
  * - delinquency() (AP-107): por competência, o faturado, o vencido em aberto hoje e a taxa (%).
- * - bankAccounts() (AP-108): saldo do mês (entradas − saídas, com transferências) por conta bancária.
+ * - bankAccounts() (AP-108): saldo do mês (entradas − saídas, com transferências) por conta bancária; as TOP de
+ *   maior movimento e o resto em "Outras", com os lançamentos e transferências já filtrados por condomínio (ADR 0069).
  * - commonAreas() (AP-109): reservas não canceladas por área comum e mês.
  *
  * Escopo por condomínio (ADR-002): um condomínio, ou todos os do usuário.
@@ -66,11 +67,13 @@ final class ChartReports
      *
      * @param array<string, array<string, int>> $byKey chave => [mês => valor]
      * @param array<string, string> $labels chave => rótulo
+     * @param bool $byMagnitude ordena pela soma dos valores absolutos (séries com sinal, como saldos; ADR 0069)
      * @return list<array{key:string, label:string, data:list<int|float>}>
      */
-    public static function top(array $months, array $byKey, array $labels, int $top = self::TOP): array
+    public static function top(array $months, array $byKey, array $labels, int $top = self::TOP, bool $byMagnitude = false): array
     {
-        uksort($byKey, static fn (string $a, string $b): int => [array_sum($byKey[$b]), $a] <=> [array_sum($byKey[$a]), $b]);
+        $weight = static fn (array $values): int|float => $byMagnitude ? array_sum(array_map('abs', $values)) : array_sum($values);
+        uksort($byKey, static fn (string $a, string $b): int => [$weight($byKey[$b]), $a] <=> [$weight($byKey[$a]), $b]);
         $series = [];
         $others = [];
         foreach ($byKey as $key => $values) {
@@ -234,12 +237,13 @@ final class ChartReports
             $stmt = $this->pdo->prepare("SELECT b.id, b.name, x.month, SUM(x.amount) AS total FROM erp_bank_accounts b JOIN (
                     SELECT e.bank_account_id AS bank, DATE_FORMAT(e.paid_on, '%Y-%m') AS month, CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -CAST(e.amount_cents AS SIGNED) END AS amount
                       FROM erp_entries e WHERE e.paid_on BETWEEN :f AND LAST_DAY(:t) AND e.status = 'active' AND e.deleted_at IS NULL AND e.bank_account_id IS NOT NULL
+                        AND e.condominium_id IN ({$in})
                     UNION ALL
                     SELECT t.to_bank_account_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), t.amount_cents FROM erp_bank_transfers t
-                      WHERE t.status = 'active' AND t.transferred_on BETWEEN :f2 AND LAST_DAY(:t2)
+                      WHERE t.status = 'active' AND t.condominium_id IN ({$in}) AND t.transferred_on BETWEEN :f2 AND LAST_DAY(:t2)
                     UNION ALL
                     SELECT t.from_bank_account_id, DATE_FORMAT(t.transferred_on, '%Y-%m'), -CAST(t.amount_cents AS SIGNED) FROM erp_bank_transfers t
-                      WHERE t.status = 'active' AND t.transferred_on BETWEEN :f3 AND LAST_DAY(:t3)
+                      WHERE t.status = 'active' AND t.condominium_id IN ({$in}) AND t.transferred_on BETWEEN :f3 AND LAST_DAY(:t3)
                 ) x ON x.bank = b.id
                 WHERE b.condominium_id IN ({$in}) AND b.deleted_at IS NULL GROUP BY b.id, b.name, x.month");
             $stmt->execute($params);
@@ -248,11 +252,7 @@ final class ChartReports
                 $labels['b' . $r['id']] = (string)$r['name'];
             }
         }
-        $series = [];
-        foreach ($byKey as $key => $values) {
-            $series[] = ['key' => $key, 'label' => $labels[$key], 'data' => self::fill($months, $values)];
-        }
-        return ['labels' => $months, 'unit' => 'cents', 'series' => $series];
+        return ['labels' => $months, 'unit' => 'cents', 'series' => self::top($months, $byKey, $labels, self::TOP, true)];
     }
 
     public function commonAreas(User $user, ?int $condominiumId, string $from, string $to): array

@@ -190,16 +190,6 @@ final class RegistryService
         if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
-        // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
-        if ($errors === [] && isset($definition['closing_lock'])) {
-            $field = $definition['closing_lock'];
-            foreach (array_filter([$before, $values]) as $state) {
-                if ($this->isClosed($state['condominium_id'] ?? null, $state[$field] ?? null)) {
-                    $errors[$field] = (new RegistryLocked((string)$state[$field]))->getMessage();
-                    break;
-                }
-            }
-        }
         // Registro gerado por outro módulo (ADR 0033/0039, fatura ou acordo): só a baixa muda aqui.
         if ($errors === [] && $before !== null && isset($definition['origin_lock']) && Definitions::lockedByOrigin($definition, $before)) {
             foreach ($definition['origin_lock']['columns'] as $column) {
@@ -222,11 +212,22 @@ final class RegistryService
 
         $columns = array_keys($values);
         $notify = self::notification($definition, $before, $values);
-        $own = $notify !== null && !$this->pdo->inTransaction();
+        // Competência fechada (ADR 0031) é conferida na mesma transação da gravação, com leitura travada
+        // (ADR 0100): quem fecha o mês ao mesmo tempo espera esta gravação, ou esta vê o mês já fechado.
+        $own = ($notify !== null || isset($definition['closing_lock'])) && !$this->pdo->inTransaction();
         if ($own) {
             $this->pdo->beginTransaction();   // gravação e aviso juntos: se um falhar, nenhum fica
         }
         try {
+            // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
+            if (isset($definition['closing_lock'])) {
+                $field = $definition['closing_lock'];
+                foreach (array_filter([$before, $values]) as $state) {
+                    if ($this->isClosed($state['condominium_id'] ?? null, $state[$field] ?? null)) {
+                        throw new RegistryValidationException([$field => (new RegistryLocked((string)$state[$field]))->getMessage()]);
+                    }
+                }
+            }
             if ($id === null) {
                 $values['created_by'] = (int)$user->id;
                 $values['updated_by'] = (int)$user->id;
@@ -333,8 +334,26 @@ final class RegistryService
                 throw new RegistryInUse();
             }
         }
-        $this->pdo->prepare("UPDATE `{$definition['table']}` SET deleted_at = CURRENT_TIMESTAMP, updated_by = :user WHERE id = :id AND deleted_at IS NULL")
-            ->execute(['id' => $id, 'user' => (int)$user->id]);
+        $own = isset($definition['closing_lock']) && !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            // Reconfere a competência com leitura travada, junto da exclusão (ADR 0100).
+            if (isset($definition['closing_lock']) && $this->isClosed($row['condominium_id'] ?? null, $row[$definition['closing_lock']] ?? null)) {
+                throw new RegistryLocked((string)$row[$definition['closing_lock']]);
+            }
+            $this->pdo->prepare("UPDATE `{$definition['table']}` SET deleted_at = CURRENT_TIMESTAMP, updated_by = :user WHERE id = :id AND deleted_at IS NULL")
+                ->execute(['id' => $id, 'user' => (int)$user->id]);
+            if ($own) {
+                $this->pdo->commit();
+            }
+        } catch (\Throwable $error) {
+            if ($own && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
         Audit::record('delete', $definition['table'], $id, ['status' => $row['status']], ['status' => 'deleted']);
     }
 
@@ -452,9 +471,13 @@ final class RegistryService
         if ($condominiumId === null || $competence === null || $competence === '') {
             return false;
         }
-        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_month_closings WHERE condominium_id = :c AND competence = :m AND status = 'closed' LIMIT 1");
+        // Dentro de uma transação, a leitura é travada (ADR 0100): enxerga o fechamento já gravado por outra
+        // sessão e segura a linha (ou o intervalo, se ainda não há linha) até o fim da gravação, de modo que
+        // MonthClosing::close espere. Fora de transação, é a leitura simples de antes.
+        $lock = $this->pdo->inTransaction() ? ' LOCK IN SHARE MODE' : '';
+        $stmt = $this->pdo->prepare("SELECT status FROM erp_month_closings WHERE condominium_id = :c AND competence = :m{$lock}");
         $stmt->execute(['c' => (int)$condominiumId, 'm' => (string)$competence]);
-        return (bool)$stmt->fetchColumn();
+        return $stmt->fetchColumn() === 'closed';
     }
 
     /** O cadastro tem algum campo de unidade? (a tela só carrega a lista quando precisa) */

@@ -54,6 +54,7 @@ final class EntryShortcutsTest extends TestCase
         self::assertSame(1300, BankBalances::balance(1000, 500, 200), 'Sem transferência, a regra antiga continua.');
         self::assertContains('extra_charge_id', Definitions::INVOICE_LOCK['fields'], 'Conta de cobrança extra ou multa trava no cadastro.');
         self::assertStringContainsString("t.status = 'active'", BankBalances::transferSql('in'), 'Transferência cancelada sai do saldo.');
+        self::assertStringContainsString('t.condominium_id = x.condominium_id', BankBalances::transferSql('out', 'x'), 'Só transferências do condomínio da conta (ADR 0101).');
     }
 
     public function testReceiptLocksPaymentOnEntryRegistries(): void

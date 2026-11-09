@@ -10,7 +10,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ManagementReports;
-use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\ReportExportLimit;
 
@@ -62,8 +62,8 @@ final class HardeningIntegrationTest extends TestCase
             try {
                 (new ManagementReports($this->pdo))->accountStatement($user, $id, date('Y-m-d'), date('Y-m-d'));
                 self::fail('Mostrou extrato fora do escopo ou inexistente.');
-            } catch (RegistryNotFound) {
-                self::addToAssertionCount(1);   // a mesma resposta nos dois casos
+            } catch (CondominiumAccessDenied) {
+                self::addToAssertionCount(1);   // a mesma resposta (404) nos dois casos, como na ADR 0068
             }
         }
 

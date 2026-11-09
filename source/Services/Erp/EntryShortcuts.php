@@ -407,9 +407,11 @@ final class EntryShortcuts
         if (mb_strlen($description) < 3 || mb_strlen($description) > 160) {
             throw new InvalidArgumentException('Informe a descrição (3 a 160 caracteres).');
         }
-        $this->pdo->prepare('INSERT INTO erp_bank_transfers (condominium_id, from_bank_account_id, to_bank_account_id, amount_cents, transferred_on, description, created_by)
-            VALUES (:c, :f, :t, :v, :d, :desc, :u)')->execute(['c' => $condominium, 'f' => $from, 't' => $to, 'v' => $amount, 'd' => $on, 'desc' => $description, 'u' => (int)$user->id]);
-        $id = (int)$this->pdo->lastInsertId();
+        $id = $this->closingGuarded($condominium, substr($on, 0, 7), 'lançar', function () use ($condominium, $from, $to, $amount, $on, $description, $user): int {
+            $this->pdo->prepare('INSERT INTO erp_bank_transfers (condominium_id, from_bank_account_id, to_bank_account_id, amount_cents, transferred_on, description, created_by)
+                VALUES (:c, :f, :t, :v, :d, :desc, :u)')->execute(['c' => $condominium, 'f' => $from, 't' => $to, 'v' => $amount, 'd' => $on, 'desc' => $description, 'u' => (int)$user->id]);
+            return (int)$this->pdo->lastInsertId();
+        });
         Audit::record('create', 'erp_bank_transfers', $id, null, ['from' => $from, 'to' => $to, 'amount_cents' => $amount, 'transferred_on' => $on]);
         return $this->findTransfer($user, $id);
     }
@@ -424,10 +426,40 @@ final class EntryShortcuts
         if ($this->registry->isClosed($row['condominium_id'], substr((string)$row['transferred_on'], 0, 7))) {
             throw new DomainException('A competência ' . substr((string)$row['transferred_on'], 0, 7) . ' está fechada. Reabra o fechamento mensal para cancelar.');
         }
-        $this->pdo->prepare("UPDATE erp_bank_transfers SET status = 'cancelled', cancelled_by = :u, cancelled_at = NOW(), cancel_reason = :r WHERE id = :id AND status = 'active'")
-            ->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $transferId]);
+        $this->closingGuarded((int)$row['condominium_id'], substr((string)$row['transferred_on'], 0, 7), 'cancelar', function () use ($user, $reason, $transferId): int {
+            $this->pdo->prepare("UPDATE erp_bank_transfers SET status = 'cancelled', cancelled_by = :u, cancelled_at = NOW(), cancel_reason = :r WHERE id = :id AND status = 'active'")
+                ->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $transferId]);
+            return $transferId;
+        });
         Audit::record('update', 'erp_bank_transfers', $transferId, ['status' => 'active'], ['status' => 'cancelled', 'cancel_reason' => $reason]);
         return $this->findTransfer($user, $transferId);
+    }
+
+    /**
+     * Grava na mesma transação em que reconfere a competência com leitura travada (ADR 0100), para não
+     * correr com o fechamento mensal. A conferência feita antes só adianta o erro.
+     */
+    private function closingGuarded(int $condominium, string $competence, string $action, callable $write): int
+    {
+        $own = !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            if ($this->registry->isClosed($condominium, $competence)) {
+                throw new DomainException("A competência {$competence} está fechada. Reabra o fechamento mensal para {$action}.");
+            }
+            $id = $write();
+            if ($own) {
+                $this->pdo->commit();
+            }
+            return $id;
+        } catch (\Throwable $error) {
+            if ($own && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
     }
 
     /** @return array{data:list<array>, total:int} */

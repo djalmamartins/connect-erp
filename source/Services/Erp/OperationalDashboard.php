@@ -165,7 +165,8 @@ final class OperationalDashboard
     {
         $this->pdo->beginTransaction();
         try {
-            $stmt = $this->pdo->prepare('SELECT * FROM erp_reservations WHERE id = :id AND deleted_at IS NULL');
+            // A reserva fica travada (ADR 0103): dois cliques ao mesmo tempo não chamam duas pessoas para a mesma vaga.
+            $stmt = $this->pdo->prepare('SELECT * FROM erp_reservations WHERE id = :id AND deleted_at IS NULL FOR UPDATE');
             $stmt->execute(['id' => $reservationId]);
             $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!is_array($reservation) || !$this->scope->canAccess($user, (int)$reservation['condominium_id'])) {
@@ -173,6 +174,15 @@ final class OperationalDashboard
             }
             if ($reservation['status'] !== 'inactive') {
                 throw new DomainException('Só reserva cancelada libera a vez para a lista de espera.');
+            }
+            // Quem já foi chamado para esta reserva e não desistiu segura a vez; chama-se o próximo só depois
+            // que a pessoa chamada sair da lista (status inactive).
+            $called = $this->pdo->prepare("SELECT resident_name FROM erp_waitlist WHERE called_for_reservation_id = :r
+                AND deleted_at IS NULL AND status IN ('active','served') LIMIT 1");
+            $called->execute(['r' => $reservationId]);
+            $already = $called->fetchColumn();
+            if ($already !== false) {
+                throw new DomainException('Já há uma pessoa chamada para esta reserva. Marque a desistência dela na lista de espera para chamar a próxima.');
             }
             if ($this->slotTaken((int)$reservation['common_area_id'], (string)$reservation['reserved_on'])) {
                 throw new DomainException('A data já tem outra reserva válida para esta área.');

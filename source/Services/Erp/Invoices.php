@@ -150,6 +150,10 @@ final class Invoices
 
         $this->pdo->beginTransaction();
         try {
+            // Reconfere com leitura travada, na transação (ADR 0100); a conferência acima só adianta o erro.
+            if ($this->registry->isClosed($condominium, $competence)) {
+                throw new DomainException("A competência {$competence} está fechada. Reabra o fechamento mensal para faturar.");
+            }
             $this->pdo->prepare('INSERT INTO erp_invoices (condominium_id, invoice_type_id, competence, due_on, status, notes, created_by)
                 VALUES (:c, :t, :m, :d, \'draft\', :n, :u)')
                 ->execute(['c' => $condominium, 't' => $typeId, 'm' => $competence, 'd' => $dueOn, 'n' => $notes, 'u' => (int)$user->id]);
@@ -160,9 +164,11 @@ final class Invoices
             }
             $this->refreshTotals($invoiceId);
             $this->pdo->commit();
-        } catch (PDOException $error) {
-            $this->pdo->rollBack();
-            if (($error->errorInfo[1] ?? null) === 1062) {
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            if ($error instanceof PDOException && ($error->errorInfo[1] ?? null) === 1062) {
                 throw new DomainException("Já existe uma fatura de {$type['name']} para {$competence} neste condomínio. Cancele-a para preparar outra.");
             }
             throw $error;

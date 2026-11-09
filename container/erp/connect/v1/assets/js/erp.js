@@ -1401,6 +1401,22 @@
       var method = $('[data-charge-method]', chargeForm);
       var amountLabel = $('[data-charge-amount-label]', chargeForm);
       if (method && amountLabel) method.addEventListener('change', function () { amountLabel.textContent = method.value === 'fixed' ? 'Valor por unidade (R$)' : 'Valor total a ratear (R$)'; });
+      /* Origem da multa (ADR 0080): só as ocorrências do condomínio ou da unidade escolhida e as reservas dela. */
+      var originSelect = $('[data-fine-origin]', chargeForm);
+      var fineUnit = $('[name="unit_id"]', chargeForm);
+      if (originSelect && fineUnit) {
+        var filterOrigins = function () {
+          $$('option[data-unit]', originSelect).forEach(function (option) {
+            var unit = option.getAttribute('data-unit');
+            var fits = option.value.indexOf('occurrence:') === 0 ? (unit === '' || unit === fineUnit.value) : unit === fineUnit.value;
+            option.hidden = !fits;
+            option.disabled = !fits;
+            if (!fits && option.selected) originSelect.value = '';
+          });
+        };
+        fineUnit.addEventListener('change', filterOrigins);
+        filterOrigins();
+      }
       var unitBoxes = $$('[name="unit_ids"]', chargeForm);
       var allUnits = $('[data-charge-units-all]', chargeForm);
       var count = $('[data-charge-units-count]', chargeForm);
@@ -1420,7 +1436,12 @@
         var body = { condominium_id: parseInt(chargeForm.getAttribute('data-condominium'), 10), kind: kind, description: value(chargeForm, 'description'),
           chart_account_id: parseInt(value(chargeForm, 'chart_account_id'), 10), competence: value(chargeForm, 'competence'), due_on: value(chargeForm, 'due_on'),
           method: method ? method.value : 'fixed', amount_cents: value(chargeForm, 'amount_cents'), unit_ids: units };
-        if (kind === 'fine') body.reason = value(chargeForm, 'reason');
+        if (kind === 'fine') {
+          body.reason = value(chargeForm, 'reason');
+          var origin = value(chargeForm, 'origin').split(':');
+          if (origin[0] === 'occurrence') body.occurrence_id = parseInt(origin[1], 10);
+          if (origin[0] === 'reservation') body.reservation_id = parseInt(origin[1], 10);
+        }
         send(chargeForm, chargeForm.getAttribute('data-api'), body, function (data) {
           toast((kind === 'fine' ? 'Multa' : 'Cobrança') + ' lançada: ' + (data.units_count || units.length) + ' conta(s), total ' + brl(data.total_cents || 0) + '.', 'success');
           window.setTimeout(function () { window.location.href = root.getAttribute('data-route') + '?cobranca=' + encodeURIComponent(data.id); }, 600);
@@ -1483,6 +1504,7 @@
       var d = row.data || {};
       if (row.line === null) return 'Arquivo inteiro';
       if (kind === 'ofx') return day(d.posted_on) + ' · ' + (d.memo || 'sem histórico') + ' · ' + signed(d.amount_cents || 0);
+      if (kind === 'nfe') return [d.number ? 'duplicata ' + d.number : '', d.description || '', d.amount_cents != null ? brl(d.amount_cents) : '', d.due_on ? 'vence ' + day(d.due_on) : ''].filter(Boolean).join(' · ');
       if (kind === 'fractions') return (d.unit || '') + (d.ideal_fraction != null ? ' · ' + num(d.ideal_fraction * 100, 4) + '%' : '');
       if (kind === 'readings') return (d.meter || '') + (d.unit_label ? ' (' + d.unit_label + ')' : '') + ' · ' + month(d.competence) + (d.reading != null ? ' · leitura ' + num(d.reading, 3) : '') + (d.consumption != null ? ' · consumo ' + num(d.consumption, 3) : '');
       var amount = d.amount_cents != null ? 'R$ ' + d.amount_cents : (d.amount ? 'R$ ' + d.amount : '');
@@ -1539,6 +1561,11 @@
         if (s.consumption != null) parts.push('consumo ' + num(s.consumption, 3));
         if (kind === 'ofx') { parts.push('entradas ' + brl(s.credits_cents || 0), 'saídas ' + brl(s.debits_cents || 0)); if (s.already) parts.push(s.already + ' já importada(s)'); }
         if (s.replace) parts.push(s.replace + ' substitui(em) leitura lançada');
+        if (kind === 'nfe' && s.access_key) {
+          parts.unshift('NF-e ' + (s.number || '') + (s.series ? '/' + s.series : '') + ' de ' + (s.issuer || 'emitente') + (s.issuer_document ? ' (' + s.issuer_document + ')' : '') + (s.issued_on ? ', emitida em ' + day(s.issued_on) : ''));
+          if (s.net_cents != null) parts.push('valor líquido ' + brl(s.net_cents));
+          if (s.installments != null) parts.push(s.installments + ' duplicata(s)');
+        }
         $('[data-import-preview-summary]', preview).textContent = data.original_name + ' · ' + parts.join(' · ') + '.';
         var alertBox = $('[data-import-preview-alert]', preview);
         var check = s.balance_check;
@@ -1561,12 +1588,17 @@
         var file = fileInput.files[0];
         var ext = (file.name.split('.').pop() || '').toLowerCase();
         if ((fileInput.getAttribute('accept') || '').split(',').indexOf('.' + ext) < 0) { formError(form, 'Envie um arquivo ' + fileInput.getAttribute('accept').replace(/\./g, '').toUpperCase().split(',').join(' ou ') + '.', fileInput); return; }
-        if (file.size < 1 || file.size > (parseInt(fileInput.getAttribute('data-max-bytes'), 10) || 2000000)) { formError(form, 'O arquivo está vazio ou passa de 2 MB.', fileInput); return; }
+        var maxBytes = parseInt(fileInput.getAttribute('data-max-bytes'), 10) || 2000000;
+        if (file.size < 1 || file.size > maxBytes) { formError(form, 'O arquivo está vazio ou passa de ' + Math.round(maxBytes / 1000000) + ' MB.', fileInput); return; }
         var body = new FormData();
         body.append('kind', kind);
         body.append('condominium_id', form.getAttribute('data-condominium'));
         var bank = $('[name="bank_account_id"]', form);
         if (bank) body.append('bank_account_id', bank.value);
+        var expense = $('[name="chart_account_id"]', form);
+        if (expense) body.append('chart_account_id', expense.value);
+        var dueOn = $('[name="due_on"]', form);
+        if (dueOn && dueOn.value) body.append('due_on', dueOn.value);
         body.append('file', file);
         var button = $('[type="submit"]', form);
         busy(button, true);
@@ -1737,6 +1769,93 @@
     }
   });
 
+  /* Cobrança (AP-117 e AP-039; ADR 0080 e 0076): registrar contato, abrir caso judicial e lançar o
+     andamento, pela API. O caso só acompanha: nada vai a advogado ou tribunal. */
+  $$('[data-erp-collections]').forEach(function (root) {
+    var call = apiClient(root);
+    var route = root.getAttribute('data-route');
+    var value = function (form, name) { var el = $('[name="' + name + '"]', form); return el ? el.value.trim() : ''; };
+    var post = function (form, url, body, done) {
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', url, body).then(function (json) { done(json.data || {}); }).catch(function (error) { busy(button, false); formError(form, error.message); });
+    };
+    var panel = $('#atender', root) || $('#abrir-caso', root);
+    if (panel && (window.location.hash === '#atender' || window.location.hash === '#abrir-caso')) panel.focus();
+
+    var contactForm = $('[data-contact-form]', root);
+    if (contactForm) {
+      var outcome = $('[data-contact-outcome]', contactForm);
+      var promiseFields = $$('[data-contact-promise]', contactForm);
+      var promiseOn = $('[name="promise_on"]', contactForm);
+      outcome.addEventListener('change', function () {
+        var promise = outcome.value === 'promise';
+        promiseFields.forEach(function (f) { f.hidden = !promise; });
+        if (promise) promiseOn.setAttribute('required', ''); else { promiseOn.removeAttribute('required'); promiseOn.removeAttribute('aria-invalid'); }
+      });
+      contactForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(contactForm)) return;
+        var promise = outcome.value === 'promise';
+        var unit = contactForm.getAttribute('data-unit');
+        post(contactForm, contactForm.getAttribute('data-api'), { unit_id: parseInt(unit, 10), channel: value(contactForm, 'channel'), outcome: outcome.value,
+          contact_name: value(contactForm, 'contact_name'), note: value(contactForm, 'note'), promise_on: promise ? value(contactForm, 'promise_on') : '',
+          promise_cents: promise ? value(contactForm, 'promise_cents') : '', next_action_on: value(contactForm, 'next_action_on') }, function () {
+          toast('Contato registrado.', 'success');
+          window.setTimeout(function () { window.location.href = route + '?unidade=' + encodeURIComponent(unit) + '#atender'; }, 600);
+        });
+      });
+    }
+
+    var openForm = $('[data-case-open-form]', root);
+    if (openForm) {
+      var entryBoxes = $$('[name="entry_ids"]', openForm);
+      var total = $('[data-case-total]', openForm);
+      var sum = function () {
+        var marked = entryBoxes.filter(function (b) { return b.checked; });
+        total.textContent = '(' + marked.length + ' de ' + entryBoxes.length + ' · ' + brl(marked.reduce(function (t, b) { return t + (parseInt(b.getAttribute('data-amount'), 10) || 0); }, 0)) + ')';
+      };
+      entryBoxes.forEach(function (b) { b.addEventListener('change', sum); });
+      sum();
+      openForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(openForm)) return;
+        var entries = entryBoxes.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
+        if (entries.length === 0) { formError(openForm, 'Escolha ao menos uma conta vencida.', entryBoxes[0]); return; }
+        if (!window.confirm('Abrir o caso judicial com ' + entries.length + ' conta(s)? É só acompanhamento: nada é enviado e nenhum encargo é criado.')) return;
+        var lawyer = value(openForm, 'lawyer_id');
+        post(openForm, openForm.getAttribute('data-api'), { unit_id: parseInt(openForm.getAttribute('data-unit'), 10), entry_ids: entries, lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10),
+          case_number: value(openForm, 'case_number'), court: value(openForm, 'court').replace(/\s+/g, ' '), opened_on: value(openForm, 'opened_on'), note: value(openForm, 'note') }, function (data) {
+          toast('Caso judicial nº ' + data.id + ' aberto.', 'success');
+          window.setTimeout(function () { window.location.href = route + '?caso=' + encodeURIComponent(data.id); }, 600);
+        });
+      });
+    }
+
+    var eventForm = $('[data-case-event-form]', root);
+    if (eventForm) {
+      var status = $('[data-case-status]', eventForm);
+      var closeHint = $('[data-case-close-hint]', eventForm);
+      var noteLabel = $('[data-case-note-label]', eventForm);
+      status.addEventListener('change', function () {
+        var closing = status.value === 'closed';
+        closeHint.hidden = !closing;
+        noteLabel.textContent = closing ? 'Motivo do encerramento' : 'Nota';
+      });
+      eventForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(eventForm)) return;
+        if (status.value === 'closed' && !window.confirm('Encerrar o caso? Encerrado é definitivo.')) return;
+        var lawyer = value(eventForm, 'lawyer_id');
+        post(eventForm, eventForm.getAttribute('data-api'), { happened_on: value(eventForm, 'happened_on'), to_status: status.value, note: value(eventForm, 'note'),
+          lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10), case_number: value(eventForm, 'case_number'), court: value(eventForm, 'court').replace(/\s+/g, ' ') }, function () {
+          toast(status.value === 'closed' ? 'Caso encerrado.' : 'Andamento registrado.', 'success');
+          reload();
+        });
+      });
+    }
+  });
+
   /* Filtros GET que se aplicam ao escolher (ex.: unidade do painel AP-003). -- */
   /* Pelo teclado as setas trocam a opção sem abrir a lista: aí não envia, e o botão do formulário aplica (WCAG 3.2.2). */
   $$('select[data-erp-autosubmit]').forEach(function (select) {
@@ -1745,6 +1864,41 @@
     select.addEventListener('pointerdown', function () { byKey = false; });
     select.addEventListener('change', function () { if (byKey || select.value === '' || !select.form) return; select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit(); });
   });
+
+  /* Campos da mesma linha alinhados (pedido do Djalma, 09/11) -------------------
+     O CSS alinha os campos pelo topo e dá a mesma altura a inputs e selects. Quando um rótulo
+     quebra em duas linhas, os controles da mesma linha ficariam em alturas diferentes: aqui os
+     rótulos de cada linha ganham a altura do maior. Recalcula quando o formulário muda de tamanho
+     (abrir um modal, mostrar um campo, redimensionar a janela). */
+  var alignFieldLabels = function (grid) {
+    var labels = [];
+    var rows = {};
+    Array.prototype.forEach.call(grid.children, function (field) {
+      if (!field.classList || !field.classList.contains('erp-field')) return;
+      var label = field.querySelector(':scope > label, :scope > .erp-field__label');
+      if (!label) return;
+      label.style.minHeight = '';
+      labels.push(label);
+    });
+    labels.forEach(function (label) {
+      if (!label.offsetParent) return;
+      var top = Math.round(label.parentNode.getBoundingClientRect().top);
+      (rows[top] = rows[top] || []).push(label);
+    });
+    Object.keys(rows).forEach(function (top) {
+      var row = rows[top];
+      if (row.length < 2) return;
+      var max = Math.max.apply(null, row.map(function (l) { return l.getBoundingClientRect().height; }));
+      row.forEach(function (l) { if (l.getBoundingClientRect().height < max - 0.5) l.style.minHeight = max + 'px'; });
+    });
+  };
+  var formGrids = $$('.erp-form__grid');
+  if (formGrids.length && 'ResizeObserver' in window) {
+    var gridObserver = new ResizeObserver(function (entries) { entries.forEach(function (entry) { alignFieldLabels(entry.target); }); });
+    formGrids.forEach(function (grid) { gridObserver.observe(grid); });
+  } else {
+    formGrids.forEach(alignFieldLabels);
+  }
 
   /* Botões de envio mostram carregamento (formulários reais) --------------- */
   $$('form[data-erp-loading]').forEach(function (form) {

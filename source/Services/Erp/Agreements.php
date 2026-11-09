@@ -104,7 +104,7 @@ final class Agreements
      *
      * @return array{as_of:string, units:list<array>, totals:array{units:int, entries:int, amount_cents:int, buckets:array<string,int>}}
      */
-    public function delinquency(User $user, ?int $condominiumId, ?string $asOf = null): array
+    public function delinquency(User $user, ?int $condominiumId, ?string $asOf = null, ?int $unitId = null): array
     {
         $asOf ??= date('Y-m-d');
         $ref = \DateTimeImmutable::createFromFormat('!Y-m-d', $asOf);
@@ -121,9 +121,10 @@ final class Agreements
                 e.description, e.competence, e.due_on, e.amount_cents
             FROM erp_entries e JOIN condominiums c ON c.id = e.condominium_id LEFT JOIN erp_units u ON u.id = e.unit_id
             WHERE e.condominium_id IN (" . implode(',', $ids) . ") AND e.nature = 'receita' AND e.status = 'active'
-              AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d
+              AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . "
             ORDER BY c.name, u.label, e.due_on, e.id LIMIT " . (self::MAX_DELINQUENCY_ROWS + 1));
-        $stmt->execute(['d' => $asOf]);
+        // $unitId (ADR 0103): o painel da unidade lê só as contas dela, não as do condomínio inteiro.
+        $stmt->execute(['d' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($rows) > self::MAX_DELINQUENCY_ROWS) {
             throw new InvalidArgumentException(sprintf('Mais de %d contas vencidas em aberto: escolha um condomínio.', self::MAX_DELINQUENCY_ROWS));

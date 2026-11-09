@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
+use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
-use Source\Services\Erp\Registry\RegistryNotFound;
 
 /**
  * Relatórios gerenciais (ADR 0082), somente leitura, calculados dos lançamentos, leituras, boletos e
@@ -250,12 +250,12 @@ final class ManagementReports
         $stmt = $this->pdo->prepare('SELECT b.id, b.condominium_id, b.name, COALESCE(b.opening_balance_cents, 0) AS opening, b.opened_on FROM erp_bank_accounts b WHERE b.id = :id AND b.deleted_at IS NULL');
         $stmt->execute(['id' => $bankAccountId]);
         $bank = $stmt->fetch(PDO::FETCH_ASSOC);
-        // ADR 0087 (B2): conta inexistente e conta fora do escopo têm a mesma resposta (404).
-        if (!is_array($bank) || !$this->scope->canAccess($user, (int)$bank['condominium_id'])) {
-            throw new RegistryNotFound();
+        // Conta inexistente e conta de outro condomínio respondem igual (404), sem revelar que o id existe (ADR 0068).
+        if (!is_array($bank)) {
+            throw new CondominiumAccessDenied(0);
         }
-        // ADR 0087 (B1): a data do saldo inicial vai por bind.
-        $since = $bank['opened_on'] !== null ? ' AND x.on_date >= :o1' : '';
+        $this->scope->assertAccess($user, (int)$bank['condominium_id']);
+        $since = $bank['opened_on'] !== null ? ' AND x.on_date >= :since' : '';
         // Movimentos: lançamentos pagos (receita +, despesa −) e transferências ativas (entra +, sai −).
         $moves = "SELECT * FROM (
             SELECT e.paid_on AS on_date, CONCAT('e', e.id) AS ref, e.description, CASE WHEN e.nature = 'receita' THEN e.amount_cents ELSE -CAST(e.amount_cents AS SIGNED) END AS amount
@@ -265,7 +265,7 @@ final class ManagementReports
               FROM erp_bank_transfers t WHERE (t.to_bank_account_id = :b3 OR t.from_bank_account_id = :b4) AND t.status = 'active'
         ) x WHERE 1 = 1{$since}";
         $params = ['b1' => $bankAccountId, 'b2' => $bankAccountId, 'b3' => $bankAccountId, 'b4' => $bankAccountId]
-            + ($bank['opened_on'] !== null ? ['o1' => (string)$bank['opened_on']] : []);
+            + ($bank['opened_on'] !== null ? ['since' => (string)$bank['opened_on']] : []);
         $before = $this->pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM ({$moves}) y WHERE y.on_date < :f");
         $before->execute($params + ['f' => $from]);
         $opening = (int)$bank['opening'] + (int)$before->fetchColumn();
@@ -317,9 +317,13 @@ final class ManagementReports
         }
         $expenses = $this->expenses($condominiumId, $competence);
         $shares = self::shares($expenses, $fractions);
+        // Despesas × unidades é a matriz em memória: o teto vale para ela, em toda visão (ADR 0068).
+        self::assertMatrix(count($expenses), count($fractions));
         $rows = [];
         if ($view === 'unit' || $view === 'compare') {
-            $other = $view === 'compare' ? self::shares($this->expenses($condominiumId, (string)$compareWith), $fractions) : [];
+            $previousExpenses = $view === 'compare' ? $this->expenses($condominiumId, (string)$compareWith) : [];
+            self::assertMatrix(count($previousExpenses), count($fractions));
+            $other = $view === 'compare' ? self::shares($previousExpenses, $fractions) : [];
             foreach ($fractions as $id => $fraction) {
                 $amount = array_sum(array_map(static fn (array $s): int => $s[$id], $shares));
                 $row = ['unit_id' => $id, 'unit_label' => $labels[$id], 'ideal_fraction' => (string)$fraction, 'amount_cents' => $amount];
@@ -348,6 +352,9 @@ final class ManagementReports
                 }
                 foreach ($account['units'] as $unit => $cents) {
                     $rows[] = ['unit_id' => $unit, 'unit_label' => $labels[$unit], 'code' => $account['code'], 'account' => $account['account'], 'amount_cents' => $cents];
+                    if (count($rows) > self::MAX_ROWS) {
+                        throw new InvalidArgumentException(sprintf('Mais de %d linhas: use a visão por unidade ou por conta.', self::MAX_ROWS));
+                    }
                 }
             }
         } else {
@@ -511,6 +518,16 @@ final class ManagementReports
             $rows[] = $line;
         }
         return ['header' => array_keys($columns), 'rows' => $rows];
+    }
+
+    /** Teto de células do rateio (regra pura, ADR 0068): despesas × unidades. */
+    public const MAX_APPORTIONMENT_CELLS = 500000;
+
+    public static function assertMatrix(int $expenses, int $units): void
+    {
+        if ($expenses > self::MAX_ROWS || $expenses * $units > self::MAX_APPORTIONMENT_CELLS) {
+            throw new InvalidArgumentException(sprintf('A competência tem %d despesas para %d unidades: é grande demais para o rateio na tela. Fale com o suporte.', $expenses, $units));
+        }
     }
 
     /** @return list<array> despesas válidas da competência, com a conta do plano */
