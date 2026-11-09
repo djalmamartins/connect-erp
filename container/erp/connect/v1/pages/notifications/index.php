@@ -28,7 +28,7 @@ $this->insert('components/layout/page-head', [
 ]);
 ?>
 <?php if (($flash ?? null) !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>
-    <div class="erp-alert erp-alert--<?= $ok ? 'success' : (str_contains((string)$flash->getType(), 'warning') ? 'warning' : 'danger') ?>" role="status"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
+    <div class="erp-alert erp-alert--<?= $ok ? 'success' : (str_contains((string)$flash->getType(), 'warning') ? 'warning' : 'danger') ?>" role="<?= $ok ? 'status' : 'alert' ?>"><?= $icon($ok ? 'check' : 'alert') ?><div><?= $flash->getText() ?></div></div>
 <?php endif; ?>
 <?php if ($queueError !== null): ?>
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><?= $this->e($queueError) ?></div></div>
@@ -58,14 +58,14 @@ $this->insert('components/layout/page-head', [
             <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('bell') ?></span><strong>Nenhum aviso<?= $queueStatus !== null ? ' nesta situação' : '' ?></strong><p>Os avisos aparecem aqui quando o ERP gera um, como ao chamar a lista de espera.</p></div>
         <?php else: ?>
             <div class="erp-table-wrap" role="region" aria-labelledby="queue-title" tabindex="0"><table class="erp-table">
-                <thead><tr><th>Aviso</th><th>Situação</th><th>Atualizado</th><th class="is-num">Ações</th></tr></thead>
+                <thead><tr><th scope="col">Aviso</th><th scope="col">Situação</th><th scope="col">Atualizado</th><th scope="col" class="is-num">Ações</th></tr></thead>
                 <tbody><?php foreach ($rows as $n): $id = (int)$n['id']; ?><tr<?= ($queueDetail['id'] ?? null) === $id ? ' class="is-selected"' : '' ?>>
                     <td class="erp-queue-name"><strong><?= $this->e(NotificationQueue::EVENTS[$n['event_type']] ?? $n['event_type']) ?></strong> <span class="erp-muted">nº <?= $id ?></span><br><span class="erp-muted"><?= $this->e((string)($names[$n['condominium_id']] ?? 'Condomínio nº ' . $n['condominium_id'])) ?></span></td>
                     <td><span class="erp-badge erp-badge--<?= $tones[$n['status']] ?? 'plain' ?>"><?= $this->e(NotificationQueue::STATUSES[$n['status']] ?? $n['status']) ?></span><br><span class="erp-muted"><?= (int)$n['attempts'] ?> de 5 tentativas</span><?php if ($n['last_error']): ?><br><span class="erp-muted erp-queue-error"><?= $this->e((string)$n['last_error']) ?></span><?php endif; ?></td>
                     <td class="erp-nowrap"><?= $this->e($stamp($n['processed_at'] ?? $n['created_at'])) ?><?php if ($n['status'] === 'pending' && $n['available_at']): ?><br><span class="erp-muted">próxima <?= $this->e($stamp($n['available_at'])) ?></span><?php endif; ?></td>
                     <td class="is-num"><div class="erp-table__actions">
-                        <a class="erp-btn erp-btn--sm" href="<?= $this->e($link(['aviso' => $id])) ?>">Trilha</a>
-                        <?php if ($canRetry && $retryable($n)): ?><form method="post" action="<?= $this->e($route . '/' . $id . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= $id ?>? Ele volta para a fila com as tentativas zeradas."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary">Reenviar</button></form><?php endif; ?>
+                        <a class="erp-btn erp-btn--sm" href="<?= $this->e($link(['aviso' => $id])) ?>#trilha" aria-label="Ver a trilha do aviso nº <?= $id ?>"<?= ($queueDetail['id'] ?? null) === $id ? ' aria-current="true"' : '' ?>>Trilha</a>
+                        <?php if ($canRetry && $retryable($n)): ?><form method="post" action="<?= $this->e($route . '/' . $id . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= $id ?>? Ele volta para a fila com as tentativas zeradas."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary" aria-label="Reenviar o aviso nº <?= $id ?>">Reenviar</button></form><?php endif; ?>
                     </div></td>
                 </tr><?php endforeach; ?></tbody>
             </table></div>
@@ -73,7 +73,7 @@ $this->insert('components/layout/page-head', [
     </section>
 
     <?php if ($queueDetail !== null): $d = $queueDetail; ?>
-        <aside class="erp-card" aria-labelledby="queue-detail-title" data-queue-detail>
+        <aside class="erp-card" id="trilha" tabindex="-1" aria-labelledby="queue-detail-title" data-queue-detail>
             <div class="erp-card__head"><div><h2 id="queue-detail-title">Aviso nº <?= (int)$d['id'] ?></h2><p><?= $this->e(NotificationQueue::EVENTS[$d['event_type']] ?? $d['event_type']) ?> · criado em <?= $this->e($stamp($d['created_at'])) ?></p></div></div>
             <dl class="erp-queue-facts">
                 <dt>Situação</dt><dd><span class="erp-badge erp-badge--<?= $tones[$d['status']] ?? 'plain' ?>"><?= $this->e(NotificationQueue::STATUSES[$d['status']] ?? $d['status']) ?></span></dd>
