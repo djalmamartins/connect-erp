@@ -96,6 +96,9 @@ final class LateChargesIntegrationTest extends TestCase
 
         $broken = $this->agreements->breach($this->admin, $agreement['id'], 'Parcela 1 sem pagamento há 45 dias');
         self::assertSame(['breached', 'Parcela 1 sem pagamento há 45 dias'], [$broken['status'], $broken['breach_reason']]);
+        $notice = $this->pdo->query("SELECT payload_json FROM erp_notification_outbox WHERE event_type = 'agreement.breached'")->fetchAll(\PDO::FETCH_COLUMN);
+        self::assertCount(1, $notice, 'Quebra deixa um aviso na outbox (ADR 0056).');
+        self::assertStringNotContainsString('45 dias', $notice[0], 'O motivo interno não vai no aviso.');
         self::assertSame(['active'], array_values(array_unique(array_column($broken['parcels'], 'status'))), 'Parcelas ficam como estão.');
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_agreements' AND context_json LIKE '%breached%'")->fetchColumn());
 

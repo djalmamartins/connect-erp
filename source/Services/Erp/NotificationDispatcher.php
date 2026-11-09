@@ -32,7 +32,20 @@ use Source\Support\MailTemplate;
 final class NotificationDispatcher
 {
     public const MAX_ATTEMPTS = 5;
-    private const TEMPLATES = ['waitlist.called' => 'waitlist-called'];
+
+    /**
+     * Aviso por tipo de evento (ADR 0055 e 0056): modelo de container/send, assunto e público.
+     * 'unit' = pessoas ativas da unidade com e-mail; 'billing' = só quem autorizou receber cobrança
+     * por e-mail no cadastro (billing_by_email, o opt-in), responsável financeiro e proprietário primeiro.
+     */
+    public const NOTICES = [
+        'waitlist.called' => ['template' => 'waitlist-called', 'subject' => 'Sua vez na lista de espera', 'audience' => 'unit'],
+        'invoice.issued' => ['template' => 'invoice-issued', 'subject' => 'Nova cobrança do condomínio', 'audience' => 'billing'],
+        'bank_charge.issued' => ['template' => 'bank-charge-issued', 'subject' => 'Seu boleto do condomínio', 'audience' => 'billing'],
+        'agreement.created' => ['template' => 'agreement-created', 'subject' => 'Seu acordo e as parcelas', 'audience' => 'billing'],
+        'agreement.breached' => ['template' => 'agreement-breached', 'subject' => 'Acordo encerrado por falta de pagamento', 'audience' => 'billing'],
+        'reservation.approved' => ['template' => 'reservation-approved', 'subject' => 'Reserva aprovada', 'audience' => 'unit'],
+    ];
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -151,13 +164,15 @@ final class NotificationDispatcher
         $event = $stmt->fetch(PDO::FETCH_ASSOC);
         $payload = json_decode((string)$event['payload_json'], true) ?: [];
         try {
-            $template = self::TEMPLATES[$event['event_type']] ?? null;
-            if ($template === null) {
+            $notice = self::NOTICES[$event['event_type']] ?? null;
+            if ($notice === null) {
                 return $this->finish($id, 'cancelled', 0, 'Tipo de aviso sem modelo de e-mail.');
             }
-            $recipients = $this->recipients($event, $payload);
+            $template = $notice['template'];
+            $recipients = $this->recipients($event, $payload, $notice['audience']);
             if ($recipients === []) {
-                return $this->finish($id, 'cancelled', 0, 'Nenhum destinatário com e-mail cadastrado.');
+                return $this->finish($id, 'cancelled', 0, $notice['audience'] === 'billing'
+                    ? 'Ninguém da unidade autorizou receber cobrança por e-mail.' : 'Nenhum destinatário com e-mail cadastrado.');
             }
             $context = $this->context($event, $payload);
             $mail = new MailTemplate();
@@ -170,7 +185,7 @@ final class NotificationDispatcher
                     continue;
                 }
                 $body = $mail->render($template, $context + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
-                $subject = 'Sua vez na lista de espera';
+                $subject = $notice['subject'];
                 $sentTo = null;
                 $queueId = null;
                 if ($this->mode === 'log') {
@@ -210,13 +225,18 @@ final class NotificationDispatcher
     }
 
     /** @return list<array{email:string, name:string}> */
-    private function recipients(array $event, array $payload): array
+    private function recipients(array $event, array $payload, string $audience): array
     {
-        if ($event['event_type'] !== 'waitlist.called' || empty($payload['unit_id'])) {
+        if (empty($payload['unit_id'])) {
             return [];
         }
-        $stmt = $this->pdo->prepare("SELECT name, email FROM erp_residents WHERE unit_id = :u AND condominium_id = :c AND deleted_at IS NULL
-            AND status = 'active' AND email IS NOT NULL AND email <> '' ORDER BY relationship = 'owner' DESC, id LIMIT 5");
+        $sql = $audience === 'billing'
+            ? "SELECT name, email FROM erp_residents WHERE unit_id = :u AND condominium_id = :c AND deleted_at IS NULL
+                AND status = 'active' AND billing_by_email = 1 AND email IS NOT NULL AND email <> ''
+                ORDER BY relationship = 'financial' DESC, relationship = 'owner' DESC, id LIMIT 5"
+            : "SELECT name, email FROM erp_residents WHERE unit_id = :u AND condominium_id = :c AND deleted_at IS NULL
+                AND status = 'active' AND email IS NOT NULL AND email <> '' ORDER BY relationship = 'owner' DESC, id LIMIT 5";
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['u' => (int)$payload['unit_id'], 'c' => (int)$event['condominium_id']]);
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -227,15 +247,44 @@ final class NotificationDispatcher
         return array_values($out);
     }
 
+    /**
+     * Variáveis do modelo a partir do payload (regra pura): "x_cents" vira "x" em reais
+     * ("R$ 1.234,56"), data AAAA-MM-DD vira DD/MM/AAAA, competência AAAA-MM vira MM/AAAA; o resto
+     * vai como texto. Ids (unit_id, ..._id) não entram no modelo.
+     */
+    public static function formatPayload(array $payload): array
+    {
+        $out = [];
+        foreach ($payload as $key => $value) {
+            if (!is_string($key) || $key === 'id' || str_ends_with($key, '_id')) {
+                continue;
+            }
+            if (str_ends_with($key, '_cents') && is_numeric($value)) {
+                $out[substr($key, 0, -6)] = 'R$ ' . number_format(((int)$value) / 100, 2, ',', '.');
+                continue;
+            }
+            $text = (string)($value ?? '');
+            if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $text, $m)) {
+                $text = "{$m[3]}/{$m[2]}/{$m[1]}";
+            } elseif ($key === 'competence' && preg_match('/^(\d{4})-(\d{2})$/', $text, $m)) {
+                $text = "{$m[2]}/{$m[1]}";
+            }
+            $out[$key] = $text;
+        }
+        return $out;
+    }
+
     private function context(array $event, array $payload): array
     {
-        $area = $this->pdo->prepare('SELECT name FROM erp_common_areas WHERE id = :id');
-        $area->execute(['id' => (int)($payload['common_area_id'] ?? 0)]);
         $condo = $this->pdo->prepare('SELECT name FROM condominiums WHERE id = :id');
         $condo->execute(['id' => (int)$event['condominium_id']]);
-        $date = (string)($payload['date'] ?? '');
-        return ['area' => (string)($area->fetchColumn() ?: 'área comum'), 'condominium' => (string)($condo->fetchColumn() ?: 'condomínio'),
-            'date' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? date('d/m/Y', strtotime($date)) : $date];
+        $context = self::formatPayload($payload) + ['condominium' => (string)($condo->fetchColumn() ?: 'condomínio')];
+        if (isset($payload['common_area_id'])) {
+            $area = $this->pdo->prepare('SELECT name FROM erp_common_areas WHERE id = :id AND condominium_id = :c');
+            $area->execute(['id' => (int)$payload['common_area_id'], 'c' => (int)$event['condominium_id']]);
+            $context['area'] = (string)($area->fetchColumn() ?: 'área comum');
+        }
+        return $context;
     }
 
     private function queueMail(string $subject, string $body, string $email, string $name): ?int

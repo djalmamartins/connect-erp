@@ -11,6 +11,7 @@ use PDOException;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\NotificationOutbox;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
 use Source\Support\AppLogger;
@@ -173,6 +174,45 @@ final class BankCharges
     private function apply(int $chargeId, array $result, string $before = 'pending'): array
     {
         $status = in_array($result['status'] ?? null, ['registered', 'pending', 'rejected'], true) ? $result['status'] : 'pending';
+        $this->pdo->beginTransaction();
+        try {
+            $this->update($chargeId, $status, $result);
+            $row = $this->rawRow($chargeId);
+            if ($before !== 'registered' && $row['status'] === 'registered') {
+                $this->recordIssued($row);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
+        Audit::record('update', 'erp_bank_charges', $chargeId, ['status' => $before], ['status' => $row['status']]);
+        return $this->present($row);
+    }
+
+    /**
+     * Aviso do boleto registrado à unidade (ADR 0056), na mesma transação da gravação. Só vai para
+     * quem autorizou receber cobrança por e-mail; a linha digitável não é segredo e segue no aviso.
+     */
+    private function recordIssued(array $charge): void
+    {
+        $stmt = $this->pdo->prepare('SELECT e.unit_id, e.description, u.label FROM erp_entries e LEFT JOIN erp_units u ON u.id = e.unit_id WHERE e.id = :id');
+        $stmt->execute(['id' => (int)$charge['entry_id']]);
+        $entry = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($entry) || $entry['unit_id'] === null) {
+            return;   // conta a receber sem unidade: não há a quem avisar
+        }
+        (new NotificationOutbox($this->pdo))->record('bank_charge.issued', 'bank_charge.issued:' . $charge['id'], (int)$charge['condominium_id'],
+            'erp_bank_charges', (int)$charge['id'], [
+                'unit_id' => (int)$entry['unit_id'], 'unit_label' => (string)($entry['label'] ?? ''), 'description' => (string)$entry['description'],
+                'amount_cents' => (int)$charge['amount_cents'], 'due_on' => (string)$charge['due_on'], 'digitable_line' => (string)($charge['digitable_line'] ?? ''),
+            ], isset($charge['created_by']) ? (int)$charge['created_by'] : null);
+    }
+
+    private function update(int $chargeId, string $status, array $result): void
+    {
         $this->pdo->prepare("UPDATE erp_bank_charges SET status = :s,
                 external_id = COALESCE(:x, external_id), digitable_line = COALESCE(:l, digitable_line), barcode = COALESCE(:bc, barcode),
                 last_error = :e, registered_at = CASE WHEN :s2 = 'registered' AND registered_at IS NULL THEN NOW() ELSE registered_at END
@@ -180,9 +220,6 @@ final class BankCharges
             's' => $status, 's2' => $status, 'x' => $result['external_id'] ?? null, 'l' => $result['digitable_line'] ?? null,
             'bc' => $result['barcode'] ?? null, 'e' => isset($result['error']) ? mb_substr((string)$result['error'], 0, 255) : null, 'id' => $chargeId,
         ]);
-        $row = $this->rawRow($chargeId);
-        Audit::record('update', 'erp_bank_charges', $chargeId, ['status' => $before], ['status' => $row['status']]);
-        return $this->present($row);
     }
 
     private function entry(User $user, int $entryId): array

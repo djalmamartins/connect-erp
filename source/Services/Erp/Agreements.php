@@ -224,8 +224,26 @@ final class Agreements
         if (!$status['due']) {
             throw new DomainException('O acordo não atende à regra de quebra do condomínio.');
         }
-        $this->pdo->prepare("UPDATE erp_agreements SET status = 'breached', breached_by = :u, breached_at = NOW(), breach_reason = :r
-            WHERE id = :id AND status = 'active'")->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $agreementId]);
+        $this->pdo->beginTransaction();
+        try {
+            $update = $this->pdo->prepare("UPDATE erp_agreements SET status = 'breached', breached_by = :u, breached_at = NOW(), breach_reason = :r
+                WHERE id = :id AND status = 'active'");
+            $update->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $agreementId]);
+            if ($update->rowCount() > 0) {
+                // Aviso da quebra à unidade (ADR 0056). O motivo é anotação interna e não vai no e-mail.
+                $label = $this->pdo->prepare('SELECT label FROM erp_units WHERE id = :id');
+                $label->execute(['id' => (int)$agreement['unit_id']]);
+                (new NotificationOutbox($this->pdo))->record('agreement.breached', 'agreement.breached:' . $agreementId, (int)$agreement['condominium_id'],
+                    'erp_agreements', $agreementId, ['unit_id' => (int)$agreement['unit_id'], 'unit_label' => (string)$label->fetchColumn(),
+                    'number' => $agreementId, 'total_cents' => (int)$agreement['total_cents'], 'overdue_installments' => $status['overdue_installments']], (int)$user->id);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
         Audit::record('update', 'erp_agreements', $agreementId, ['status' => 'active'], ['status' => 'breached', 'breach_reason' => $reason, 'rule' => $status['reasons']]);
         return $this->find($user, $agreementId);
     }
@@ -303,6 +321,12 @@ final class Agreements
                 ]);
                 $link->execute(['a' => $agreementId, 'n' => $parcel['number'], 'id' => $entry['id']]);
             }
+            // Aviso do acordo e das parcelas à unidade (ADR 0056), na mesma transação, só para quem autorizou.
+            $last = $plan[count($plan) - 1];
+            (new NotificationOutbox($this->pdo))->record('agreement.created', 'agreement.created:' . $agreementId, $condominium, 'erp_agreements', $agreementId, [
+                'unit_id' => (int)$unit['id'], 'unit_label' => (string)$unit['label'], 'number' => $agreementId, 'installments' => $installments,
+                'total_cents' => $total, 'installment_cents' => (int)$plan[0]['amount_cents'], 'first_due_on' => $firstDue, 'last_due_on' => (string)$last['due_on'],
+            ], (int)$user->id);
             $this->pdo->commit();
         } catch (\Throwable $error) {
             if ($this->pdo->inTransaction()) {
