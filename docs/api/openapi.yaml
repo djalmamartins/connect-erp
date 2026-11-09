@@ -35,6 +35,43 @@ components:
           properties:
             code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_code, validation_failed] }
             message: { type: string }
+    MonthClosingRecord:
+      type: object
+      description: Fechamento gravado (foto dos totais no momento do fechamento, ADR 0031)
+      properties:
+        id: { type: integer }
+        condominium_id: { type: integer }
+        competence: { type: string }
+        status: { type: string, enum: [closed, reopened] }
+        revenue_cents: { type: integer }
+        expense_cents: { type: integer }
+        open_revenue_cents: { type: integer }
+        open_expense_cents: { type: integer }
+        summary: { type: [object, "null"] }
+        closed_by: { type: [integer, "null"] }
+        closed_at: { type: [string, "null"] }
+        reopened_by: { type: [integer, "null"] }
+        reopened_at: { type: [string, "null"] }
+        reopen_reason: { type: [string, "null"] }
+    MonthClosingStatus:
+      type: object
+      properties:
+        condominium_id: { type: integer }
+        competence: { type: string }
+        status: { type: string, enum: [open, closed, reopened] }
+        closing: { oneOf: [{ $ref: '#/components/schemas/MonthClosingRecord' }, { type: 'null' }] }
+        summary:
+          type: object
+          description: Calculado agora a partir dos lançamentos válidos da competência
+          properties:
+            revenue_cents: { type: integer }
+            expense_cents: { type: integer }
+            open_revenue_cents: { type: integer }
+            open_expense_cents: { type: integer }
+            result_cents: { type: integer, description: Receitas menos despesas; pode ser negativo }
+            entries: { type: integer }
+            by_account: { type: array, items: { type: object } }
+            by_bank_account: { type: array, items: { type: object } }
     Condominium:
       type: object
       required: [id, name, status]
@@ -534,6 +571,55 @@ paths:
         '400': { description: JSON inválido }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /closings:
+    get:
+      operationId: getMonthClosing
+      summary: Resumo calculado e situação do fechamento de uma competência (ADR 0031)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+      responses:
+        '200':
+          description: Situação (open, closed ou reopened), fechamento gravado e resumo atual
+          content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/MonthClosingStatus' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: closeMonth
+      summary: Fecha a competência e trava os lançamentos dela (erp.closing.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, competence], properties: { condominium_id: { type: integer }, competence: { type: string } } } } }
+      responses:
+        '200': { description: Fechada, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/MonthClosingRecord' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência já fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /closings/reopen:
+    post:
+      operationId: reopenMonth
+      summary: Reabre a competência fechada, com motivo (erp.closing.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, competence, reason], properties: { condominium_id: { type: integer }, competence: { type: string }, reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Reaberta, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/MonthClosingRecord' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência não está fechada }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 

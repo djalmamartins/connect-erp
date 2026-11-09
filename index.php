@@ -53,6 +53,10 @@ $route->delete("/users/{id}/2fa", "UserTwoFactor:reset", null, \Source\Support\M
 $route->get("/bank-accounts/balances", "BankBalances:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Geração dos lançamentos do mês a partir dos lançamentos fixos (ADR 0027).
 $route->post("/recurring-entries/generate", "RecurringEntriesGenerate:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Fechamento mensal (ADR 0031): resumo, fechar e reabrir a competência de um condomínio.
+$route->get("/closings", "MonthClosings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/closings", "MonthClosings:close", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/closings/reopen", "MonthClosings:reopen", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

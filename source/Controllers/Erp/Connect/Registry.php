@@ -10,6 +10,7 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryInUse;
+use Source\Services\Erp\Registry\RegistryLocked;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
@@ -144,6 +145,10 @@ final class Registry extends Controller
         } catch (RegistryInUse) {
             // PRG: volta ao registro com o aviso (a API responde 409).
             (new Message())->error(ucfirst($definition['entity']) . ' em uso: há cadastros ativos vinculados. Altere ou exclua esses cadastros antes, ou inative o registro.')->flash();
+            redirect(erp_url($definition['route'] . '/' . $this->id($data)));
+            return;
+        } catch (RegistryLocked $locked) {
+            (new Message())->error($locked->getMessage())->flash();
             redirect(erp_url($definition['route'] . '/' . $this->id($data)));
             return;
         }

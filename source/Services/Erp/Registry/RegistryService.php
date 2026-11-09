@@ -155,6 +155,16 @@ final class RegistryService
         if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
+        // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
+        if ($errors === [] && isset($definition['closing_lock'])) {
+            $field = $definition['closing_lock'];
+            foreach (array_filter([$before, $values]) as $state) {
+                if ($this->isClosed($state['condominium_id'] ?? null, $state[$field] ?? null)) {
+                    $errors[$field] = (new RegistryLocked((string)$state[$field]))->getMessage();
+                    break;
+                }
+            }
+        }
         if ($errors !== []) {
             throw new RegistryValidationException($errors);
         }
@@ -193,6 +203,9 @@ final class RegistryService
             throw new RegistryNotFound();
         }
         $this->assertWritable($user, $definition, $row);
+        if (isset($definition['closing_lock']) && $this->isClosed($row['condominium_id'] ?? null, $row[$definition['closing_lock']] ?? null)) {
+            throw new RegistryLocked((string)$row[$definition['closing_lock']]);
+        }
         // Unidade com cadastros ativos vinculados não sai (eles perderiam a unidade escolhida).
         foreach ($definition['referenced_by'] ?? [] as $table) {
             $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE unit_id = :id AND deleted_at IS NULL");
@@ -323,6 +336,17 @@ final class RegistryService
             ], $stmt->fetchAll(PDO::FETCH_ASSOC));
         }
         return $options;
+    }
+
+    /** Competência fechada no fechamento mensal (ADR 0031)? Sem condomínio ou competência, não. */
+    public function isClosed(mixed $condominiumId, mixed $competence): bool
+    {
+        if ($condominiumId === null || $competence === null || $competence === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_month_closings WHERE condominium_id = :c AND competence = :m AND status = 'closed' LIMIT 1");
+        $stmt->execute(['c' => (int)$condominiumId, 'm' => (string)$competence]);
+        return (bool)$stmt->fetchColumn();
     }
 
     /** O cadastro tem algum campo de unidade? (a tela só carrega a lista quando precisa) */

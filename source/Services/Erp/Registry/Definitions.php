@@ -28,6 +28,7 @@ namespace Source\Services\Erp\Registry;
  *
  * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
  * 'base_where' + 'fixed' (ADR 0024): visão filtrada de outra tabela, que grava sempre os valores fixos.
+ * 'closing_lock' => campo da competência (ADR 0031): competência fechada trava gravação e exclusão.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  */
 final class Definitions
@@ -499,6 +500,8 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'requires' => [['field' => 'bank_account_id', 'when' => 'paid_on', 'message' => 'Informe a conta bancária do pagamento.']],
+                // Competência fechada no fechamento mensal trava criação, alteração e exclusão (ADR 0031).
+                'closing_lock' => 'competence',
                 'title' => 'description',
                 'order' => 'due_on',
             ],
@@ -547,6 +550,7 @@ final class Definitions
                 'base_where' => ['nature' => $nature, 'paid_on' => null],
                 'fixed' => ['nature' => $nature],
                 'requires' => $definitions['entries']['requires'],
+                'closing_lock' => 'competence',
                 'title' => 'description',
                 'order' => 'due_on',
             ];
