@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0084.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0084; Preparar: 0107, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0088.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0088; Preparar: 0107, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -109,6 +109,10 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0081](../Organic%20Code/decisions/0081-collection-reports.md) | Relatórios de cobrança: acordos e taxas (AP-047/048), inadimplentes em 5 visões (AP-057 a AP-061) e recebimentos (AP-071/072), com CSV protegido contra injeção de fórmula |
 | [0082](../Organic%20Code/decisions/0082-management-reports.md) | Relatórios gerenciais: consumo (AP-045/046), centros de custo e comparativo (AP-049/050), demonstrativos e extrato (AP-052 a AP-056), rateio pela fração ideal (AP-062 a AP-067), lançamentos e boletos (AP-068 a AP-070) |
 | [0083](../Organic%20Code/decisions/0083-chart-data.md) | Dados dos gráficos (AP-102 a AP-109): séries mensais de receitas e despesas, contas, consumo, caixa, inadimplência, contas bancárias e áreas comuns, só consulta |
+| [0084](../Organic%20Code/decisions/0084-registry-admin-reports.md) | Relatórios cadastrais e administrativos (AP-085 a AP-099): reservas, unidades, pessoas com dados mascarados, condomínios, ocorrências, pagamentos pendentes, prestações, mudanças, endereços, logs, acessos e boletos enviados |
+| [0085](../Organic%20Code/decisions/0085-erp-settings.md) | Configurações do ERP (AP-147 a AP-167): parâmetros por condomínio sobre o padrão, sem credenciais e auditados, saldo inicial por centro de custo, previsão orçamentária, frações em lote, banners e impostos |
+| [0086](../Organic%20Code/decisions/0086-nfe-import.md) | Importação de NF-e XML (AP-141): leitura segura sem DOCTYPE nem entidades, contas a pagar por duplicata depois da prévia, chave de acesso única por condomínio, sem SEFAZ |
+| [0087](../Organic%20Code/decisions/0087-erp-hardening.md) | Endurecimento do ERP: dados pessoais mascarados na auditoria e nos logs, tetos nos relatórios, índices de período, sem consulta por linha nas importações e limite de 30 CSV por hora |
 | [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
 | [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
 | [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |

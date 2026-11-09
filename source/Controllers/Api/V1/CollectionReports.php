@@ -10,6 +10,8 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\CollectionReports as Reports;
+use Source\Services\Erp\ReportExportLimit;
+use DomainException;
 use Source\Support\Access;
 use Source\Support\Audit;
 
@@ -73,6 +75,7 @@ final class CollectionReports
             $data = $report(new Reports(), $user, $condominium);
             header('Cache-Control: no-store, private');
             if ($this->text('format') === 'csv') {
+                (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): até 30 por hora
                 $content = Reports::csv(Reports::csvTable($kind, $data));
                 // Exportação de dados pessoais (visão por morador) fica na trilha de auditoria.
                 Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'bytes' => strlen($content)]);
@@ -87,6 +90,8 @@ final class CollectionReports
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
         } catch (CondominiumAccessDenied) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Condomínio não encontrado no seu escopo.']]);
+        } catch (DomainException $exception) {
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_exports', 'message' => $exception->getMessage()]]);
         }
     }
 

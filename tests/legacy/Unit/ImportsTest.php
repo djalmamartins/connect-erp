@@ -109,7 +109,8 @@ final class ImportsTest extends TestCase
 
     public function testKindsDeclarePageFormatsAndTargetPermission(): void
     {
-        self::assertSame(['AP-140', 'AP-144', 'AP-145', 'AP-146', 'AP-143', 'AP-142', 'AP-044'], array_column(Imports::KINDS, 'page'));
+        self::assertSame(['AP-140', 'AP-144', 'AP-145', 'AP-146', 'AP-143', 'AP-142', 'AP-044', 'AP-141'], array_column(Imports::KINDS, 'page'));
+        self::assertSame(['xml'], Imports::KINDS['nfe']['formats'], 'NF-e (ADR 0086) só em XML.');
         foreach (Imports::KINDS as $kind => $definition) {
             self::assertContains($definition['permission'], ['erp.entries.manage', 'erp.units.manage', 'erp.meter_readings.manage'], $kind);
         }

@@ -11,6 +11,9 @@ use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ManagementReports as Reports;
+use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Erp\ReportExportLimit;
+use DomainException;
 use Source\Support\Access;
 use Source\Support\Audit;
 
@@ -102,6 +105,7 @@ final class ManagementReports
             $data = $report(new Reports(), $user, $condominium);
             header('Cache-Control: no-store, private');
             if ($this->text('format') === 'csv') {
+                (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): até 30 por hora
                 $content = CollectionReports::csv(Reports::csvTable($kind, $data));
                 Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'bytes' => strlen($content)]);
                 header('Content-Type: text/csv; charset=utf-8');
@@ -113,8 +117,10 @@ final class ManagementReports
             JsonResponse::send(200, ['data' => $data]);
         } catch (InvalidArgumentException $exception) {
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
-        } catch (CondominiumAccessDenied) {
+        } catch (CondominiumAccessDenied | RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Condomínio ou conta não encontrado no seu escopo.']]);
+        } catch (DomainException $exception) {
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_exports', 'message' => $exception->getMessage()]]);
         }
     }
 

@@ -31,6 +31,8 @@ use Source\Support\Audit;
 final class Agreements
 {
     public const MAX_INSTALLMENTS = 60;
+    /** Contas vencidas lidas na inadimplência (ADR 0087, M1): acima disso, escolha um condomínio. */
+    public const MAX_DELINQUENCY_ROWS = 20000;
     /** Contas por acordo ou simulação: limita o IN (...) e o FOR UPDATE de um único pedido. */
     public const MAX_ENTRIES = 120;
 
@@ -120,10 +122,13 @@ final class Agreements
             FROM erp_entries e JOIN condominiums c ON c.id = e.condominium_id LEFT JOIN erp_units u ON u.id = e.unit_id
             WHERE e.condominium_id IN (" . implode(',', $ids) . ") AND e.nature = 'receita' AND e.status = 'active'
               AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . "
-            ORDER BY c.name, u.label, e.due_on, e.id");
+            ORDER BY c.name, u.label, e.due_on, e.id LIMIT " . (self::MAX_DELINQUENCY_ROWS + 1));
         // $unitId (ADR 0103): o painel da unidade lê só as contas dela, não as do condomínio inteiro.
         $stmt->execute(['d' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) > self::MAX_DELINQUENCY_ROWS) {
+            throw new InvalidArgumentException(sprintf('Mais de %d contas vencidas em aberto: escolha um condomínio.', self::MAX_DELINQUENCY_ROWS));
+        }
         // Encargos sugeridos (ADR 0040): regra de cada condomínio e índice dos meses de atraso.
         $rules = new BillingRules($this->pdo, $this->scope);
         $ruleBy = [];

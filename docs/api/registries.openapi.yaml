@@ -645,6 +645,46 @@ components:
             condominium_name: { type: [string, "null"] }
             created_at: { type: string }
             updated_at: { type: string }
+    BannersInput:
+      type: object
+      required: [title, message, starts_on, ends_on]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        title: { type: [string, "null"], maxLength: 80 }
+        message: { type: [string, "null"], maxLength: 500 }
+        starts_on: { type: [string, "null"], format: date }
+        ends_on: { type: [string, "null"], format: date }
+        position: { type: [integer, "null"], minimum: 0, maximum: 999999999 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Banners:
+      allOf:
+        - $ref: '#/components/schemas/BannersInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    TaxesInput:
+      type: object
+      required: [kind, name, rate, applies_to]
+      properties:
+        condominium_id: { type: [integer, "null"], minimum: 1 }
+        kind: { type: [string, "null"], enum: ['iss', 'irrf', 'inss', 'pis_cofins_csll', 'outro'] }
+        name: { type: [string, "null"], maxLength: 80 }
+        rate: { type: [number, "null"], minimum: 0, maximum: 100 }
+        applies_to: { type: [string, "null"], enum: ['servicos', 'materiais', 'todos'] }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    Taxes:
+      allOf:
+        - $ref: '#/components/schemas/TaxesInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
     MetersInput:
       type: object
       required: [condominium_id, unit_id, kind, number]
@@ -2458,6 +2498,121 @@ paths:
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     delete:
       tags: ['Entregas']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /banners:
+    get:
+      tags: ['Banners']
+      summary: 'Lista banners (permissão erp.settings.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Banners' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Banners']
+      summary: 'Cadastra (permissão erp.settings.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannersInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Banners' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /banners/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Banners']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Banners' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Banners']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Banners' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Banners']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Banners' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Banners']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /taxes:
+    get:
+      tags: ['Impostos']
+      summary: 'Lista impostos (permissão erp.settings.view)'
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['iss', 'irrf', 'inss', 'pis_cofins_csll', 'outro'] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Taxes' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Impostos']
+      summary: 'Cadastra (permissão erp.settings.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TaxesInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Taxes' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /taxes/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Impostos']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Taxes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Impostos']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TaxesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Taxes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Impostos']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TaxesInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Taxes' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Impostos']
       summary: Exclusão lógica (o histórico de auditoria é mantido)
       security: [{ session: [], csrf: [] }]
       responses:
