@@ -475,6 +475,32 @@ $html = $agreementPage('AP-124', 'pages/documents/unit-document', $docData('deli
 $assert(str_contains($html, 'Documento não encontrado no seu escopo.') && str_contains($html, 'data-unit-document-form'), 'AP-124: documento fora do escopo avisa e mantém a lista');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-130', ['unitDocuments' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-124', ['unitDocuments' => ['data' => []]]) === 'pages/documents/unit-document', 'documentos: sem permissão segue a demonstração');
 
+// Leituras do mês (AP-042, ADR 0045 e 0047) com dados reais.
+$mrReading = static fn (array $over = []): array => $over + ['id' => 1, 'condominium_id' => 1, 'meter_id' => 1, 'kind' => 'agua', 'meter_number' => 'A-1', 'unit_id' => 9, 'unit_label' => 'Apto 101',
+    'competence' => '2026-11', 'read_on' => '2026-11-05', 'previous_reading' => 100.0, 'reading' => 112.5, 'consumption' => 12.5, 'amount_cents' => 8750, 'tariff_valid_from' => '2026-01-01', 'entry_id' => null, 'billed' => false];
+$mrMeters = [['id' => 1, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 9, 'number' => 'A-1', 'initial_reading' => 0.0],
+    ['id' => 2, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 10, 'number' => 'A-<2>', 'initial_reading' => 50.0],
+    ['id' => 3, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 11, 'number' => 'A-3', 'initial_reading' => 0.0],
+    ['id' => 4, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 12, 'number' => 'A-4', 'initial_reading' => 0.0]];
+$mrSheet = Source\Controllers\Erp\Connect\Panel::readingSheet($mrMeters, [9 => 'Apto 101', 10 => 'Apto <102>', 11 => 'Apto 103', 12 => 'Apto 104'], [
+    $mrReading(), $mrReading(['id' => 2, 'meter_id' => 3, 'unit_label' => 'Apto 103', 'entry_id' => 55, 'billed' => true, 'amount_cents' => 4000]),
+    $mrReading(['id' => 3, 'meter_id' => 4, 'unit_label' => 'Apto 104', 'tariff_valid_from' => null, 'amount_cents' => 0]),
+    $mrReading(['id' => 4, 'meter_id' => 2, 'competence' => '2026-10', 'reading' => 77.25]),
+], '2026-11');
+$mrBy = array_column($mrSheet, null, 'meter_id');
+$assert(array_column($mrSheet, 'unit_label') === ['Apto 101', 'Apto 103', 'Apto 104', 'Apto <102>'] && $mrBy[2]['previous'] === 77.25 && $mrBy[2]['reading'] === null && $mrBy[1]['previous'] === 100.0 && $mrBy[3]['reading']['billed'] === true, 'AP-042: folha com a leitura anterior de cada relógio');
+$mrPage = static fn (array $over = []): array => $over + ['meterSheet' => $mrSheet, 'meterCompetence' => '2026-11', 'meterKind' => 'agua', 'canManageReadings' => true];
+$html = $agreementPage('AP-042', 'pages/operational/meter-readings', $mrPage(), 'manage');
+$common($html, 'AP-042', 'Leituras');
+$assert(str_contains($html, 'data-erp-meter-readings data-api="https://' . $smokeHost . '/api/v1/meter-readings"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'data-competence="2026-11" data-kind="agua"')
+    && substr_count($html, 'name="reading"') === 3 && str_contains($html, 'Apto &lt;102&gt;') && str_contains($html, 'A-&lt;2&gt;') && str_contains($html, '12,500 m³') && str_contains($html, 'R$ 87,50')
+    && str_contains($html, 'Cobrada') && str_contains($html, 'Sem tarifa') && str_contains($html, '1 leitura(s) sem tarifa vigente') && str_contains($html, 'Faturar 1 unidade(s)') && str_contains($html, 'Escolha um condomínio na barra superior para faturar'), 'AP-042: folha com leituras, cobrada travada, sem tarifa e faturar');
+$html = $agreementPage('AP-042', 'pages/operational/meter-readings', $mrPage(['canManageReadings' => false]));
+$assert(!str_contains($html, 'name="reading"') && !str_contains($html, 'data-meter-bill') && !str_contains($html, 'Salvar leituras') && str_contains($html, '112,500'), 'AP-042: sem erp.meter_readings.manage só consulta');
+$html = $agreementPage('AP-042', 'pages/operational/meter-readings', $mrPage(['meterSheet' => [], 'meterKind' => 'energia']));
+$assert(str_contains($html, 'Nenhum relógio de energia ativo') && str_contains($html, '0,000 kWh'), 'AP-042: sem relógios do tipo');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-042', ['meterSheet' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-042', ['meterSheet' => []]) === 'pages/operational/meter-readings', 'AP-042: sem permissão segue a demonstração');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);

@@ -185,6 +185,10 @@
    "title": "0047 — Disco Virtual (AP-122): arquivos do condomínio fora da pasta pública"
   },
   {
+   "file": "docs/Organic Code/decisions/0048-meter-readings-screen.md",
+   "title": "0048 — Tela de leituras do mês (AP-042)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -787,7 +791,9 @@
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
+    "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -811,6 +817,7 @@
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
+    "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
@@ -3004,7 +3011,7 @@
   }
  },
  "counts": {
-  "adrs": 49,
+  "adrs": 50,
   "classes": 173,
   "dynamic_route_lines": {
    "erp": 8,
@@ -3013,7 +3020,7 @@
   "erp_pages": 172,
   "routes": 260,
   "tables": 85,
-  "tests": 102
+  "tests": 103
  },
  "erp_pages": [
   {
@@ -7679,6 +7686,9 @@
    "Source\\Controllers\\Erp\\Connect\\Erp"
   ],
   "tests/legacy/Unit/ErpLoginRedirectTest.php": [],
+  "tests/legacy/Unit/ErpMeterReadingsScreenTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
   "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
   "tests/legacy/Unit/ErpThemeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Condominiums",
