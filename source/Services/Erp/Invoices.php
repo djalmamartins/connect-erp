@@ -84,18 +84,24 @@ final class Invoices
         return $shares;
     }
 
-    /** Centavos a partir de int (centavos) ou texto em reais ("1.234,56"); inválido = null. */
+    /** Teto de um valor em centavos, o mesmo do motor de cadastros (RegistryValidator, campo money). */
+    public const MAX_CENTS = 99_999_999_999;
+
+    /** Centavos a partir de int (centavos) ou texto em reais ("1.234,56"); inválido, zero ou acima do teto = null (ADR 0062). */
     public static function cents(mixed $value): ?int
     {
         if (is_int($value)) {
-            return $value > 0 ? $value : null;
+            return $value > 0 && $value <= self::MAX_CENTS ? $value : null;
         }
         if (!is_string($value) || !preg_match('/^\d{1,3}(\.?\d{3})*(,\d{1,2})?$|^\d+(,\d{1,2})?$/', trim($value))) {
             return null;
         }
         [$int, $dec] = array_pad(explode(',', str_replace('.', '', trim($value))), 2, '0');
+        if (strlen(ltrim($int, '0')) > 10) {
+            return null;   // acima do teto; barra antes de estourar o inteiro do PHP
+        }
         $cents = (int)$int * 100 + (int)str_pad(substr($dec, 0, 2), 2, '0');
-        return $cents > 0 ? $cents : null;
+        return $cents > 0 && $cents <= self::MAX_CENTS ? $cents : null;
     }
 
     /**
