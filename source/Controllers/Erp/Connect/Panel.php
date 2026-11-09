@@ -47,7 +47,9 @@ final class Panel extends Controller
         'AP-029' => 'erp.entries.view', 'AP-040' => 'erp.unit_documents.view',
         // Importações (ADR 0058 e 0074).
         'AP-140' => 'erp.imports.view', 'AP-142' => 'erp.imports.view', 'AP-143' => 'erp.imports.view', 'AP-144' => 'erp.imports.view',
-        'AP-145' => 'erp.imports.view', 'AP-146' => 'erp.imports.view', 'AP-044' => 'erp.imports.view'];
+        'AP-145' => 'erp.imports.view', 'AP-146' => 'erp.imports.view', 'AP-044' => 'erp.imports.view',
+        // Comunicação (ADR 0059 e 0075).
+        'AP-111' => 'erp.announcements.view', 'AP-137' => 'erp.announcements.view', 'AP-138' => 'erp.announcements.view', 'AP-139' => 'erp.announcements.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -757,6 +759,9 @@ final class Panel extends Controller
         if (isset(ImportScreens::pages()[$id])) {
             $data += (new ImportScreens())->data($user, $id);
         }
+        if (isset(CommunicationScreens::PAGES[$id])) {
+            $data += (new CommunicationScreens())->data($user, $id);
+        }
         if (isset(EntryShortcutScreens::PAGES[$id])) {
             $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
@@ -781,6 +786,7 @@ final class Panel extends Controller
             (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             isset(EntryShortcutScreens::PAGES[$id]) && ($data['shortcutReady'] ?? false) => EntryShortcutScreens::PAGES[$id],
             isset(ImportScreens::pages()[$id]) && ($data['importReady'] ?? false) => 'pages/imports/import',
+            isset(CommunicationScreens::PAGES[$id]) && ($data['commReady'] ?? false) => CommunicationScreens::PAGES[$id],
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',

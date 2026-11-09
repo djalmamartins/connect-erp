@@ -659,3 +659,17 @@ p { margin: 0; }
   .erp-shell { display: block; }
   .erp-card { box-shadow: none; border: 1px solid #ccc; }
 }
+/* Comunicação (ADR 0075) */
+.erp-comm-when { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; min-width: 0; }
+.erp-comm-when legend { font-size: 13px; font-weight: 650; padding: 0; margin-bottom: 6px; width: 100%; }
+.erp-comm-when__at { flex-basis: 100%; display: grid; gap: 4px; max-width: 320px; }
+.erp-comm-textarea { min-height: 180px; }
+.erp-comm-body { border-left: 3px solid var(--erp-border); padding: 4px 0 4px 14px; margin: 0 0 16px; overflow-wrap: anywhere; }
+.erp-comm-subtitle { font-size: 14px; margin: 0 0 8px; }
+.erp-comm-asof { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.erp-comm-asof label { font-size: 13px; }
+.erp-comm-asof .erp-input { width: auto; }
+.erp-comm-collection-grid { margin-top: 16px; }
+.erp-comm-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+.erp-form__actions [data-collection-count] { margin-right: auto; align-self: center; }
+[data-collection-form] .erp-field__hint { margin-top: 12px; }
