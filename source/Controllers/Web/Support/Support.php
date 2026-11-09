@@ -53,24 +53,21 @@ class Support extends Controller
             echo json_encode(['success' => false, 'message' => 'Preencha nome, e-mail, assunto e uma mensagem com pelo menos 10 caracteres.']); return;
         }
 
-        $pdo = Connect::getInstance();
-        $protocol = 'CH' . date('ymd') . strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
-        $token = hash('sha256', random_bytes(32));
-        $dueAt = date('Y-m-d H:i:s', strtotime('+72 hours'));
+        // Abertura pelo serviço único (ADR 0034): o chamado do site cai na fila do Help Desk.
         try {
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare("INSERT INTO studio_support_tickets(protocol,subject,message,area,priority,requester_id,requester_name,requester_email,access_token,assigned_to,created_by,due_at) VALUES(:protocol,:subject,:message,'general','medium',NULL,:name,:email,:token,NULL,NULL,:due)");
-            $stmt->execute(['protocol' => $protocol, 'subject' => $subject, 'message' => $message, 'name' => $name, 'email' => $email, 'token' => $token, 'due' => $dueAt]);
-            $ticketId = (int)$pdo->lastInsertId();
-            $this->saveWidgetAttachments($pdo, $ticketId);
-            $pdo->commit();
-            \Source\Support\AppLogger::log('info', 'Chamado aberto pelo widget', ['event_type' => 'public_ticket_created', 'ticket_id' => $ticketId, 'protocol' => $protocol], 'support');
-            echo json_encode(['success' => true, 'protocol' => $protocol, 'token' => $token, 'message' => 'Chamado enviado com sucesso.']);
+            $opened = (new \Source\Services\Support\TicketService())->open(
+                ['subject' => $subject, 'message' => $message, 'requester_name' => $name, 'requester_email' => $email],
+                'site',
+                null,
+                fn (\PDO $pdo, int $ticketId) => $this->saveWidgetAttachments($pdo, $ticketId)
+            );
+            \Source\Support\AppLogger::log('info', 'Chamado aberto pelo widget', ['event_type' => 'public_ticket_created', 'ticket_id' => $opened['id'], 'protocol' => $opened['protocol']], 'support');
+            echo json_encode(['success' => true, 'protocol' => $opened['protocol'], 'token' => $opened['access_token'], 'message' => 'Chamado enviado com sucesso.']);
+        } catch (\Source\Services\Support\TicketError $exception) {
+            echo json_encode(['success' => false, 'message' => $exception->getMessage()]);
         } catch (\InvalidArgumentException $exception) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
             echo json_encode(['success' => false, 'message' => $exception->getMessage()]);
         } catch (\Throwable $exception) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
             \Source\Support\AppLogger::exception($exception, 'support', ['event_type' => 'public_ticket_create_failed']);
             echo json_encode(['success' => false, 'message' => 'Não foi possível abrir o chamado agora. Tente novamente.']);
         }
