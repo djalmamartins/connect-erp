@@ -43,7 +43,10 @@ strip() { sed -E $'s/\x1b\\[[0-9;]*m//g'; }
 
 # Linha final do PHPUnit ("OK (501 tests, ...)" ou "Tests: 10, Assertions: ..., Failures: 1").
 phpunit_line() {
-  strip <"$1" | grep -E '^(OK \(|OK, but|Tests: |FAILURES!|ERRORS!|No tests executed)' | tail -1
+  local line
+  line=$(strip <"$1" | grep -E '^(OK \(|OK, but|Tests: |FAILURES!|ERRORS!|No tests executed)' | tail -1)
+  [ -n "$line" ] || line=$(strip <"$1" | grep -m1 -E 'Exception|Error:' | cut -c1-140)
+  echo "$line"
 }
 
 finish() {
@@ -151,8 +154,14 @@ fi
 
 # --- 5. testes --------------------------------------------------------------------------------
 say "5/8 testes (banco movesos_test, nunca o connect_legacy)"
+# A suíte cria o movesos_test no mesmo MariaDB (legacy-db) com o usuário root do .env. A senha vai
+# pelo ambiente (-e sem valor), não pela linha de comando.
+MOVESOS_TEST_DB_PASS=$(grep -E '^LEGACY_DB_ROOT_PASSWORD=' .env | tail -1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//")
+export MOVESOS_TEST_DB_PASS
+test_env=(-e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS)
+[ -n "$MOVESOS_TEST_DB_PASS" ] || echo "AVISO: LEGACY_DB_ROOT_PASSWORD não está no .env; os testes não vão conseguir criar o movesos_test." >&2
 echo "-- unitários"
-if docker compose exec -T app composer test:unit >"$logs/test-unit.log" 2>&1; then
+if docker compose exec -T "${test_env[@]}" app composer test:unit >"$logs/test-unit.log" 2>&1; then
   add "Testes unitários" OK "$(phpunit_line "$logs/test-unit.log")"
 else
   add "Testes unitários" FALHOU "$(phpunit_line "$logs/test-unit.log") (ver test-unit.log)"
@@ -161,7 +170,7 @@ tail -3 "$logs/test-unit.log" | strip
 
 echo "-- integração"
 integration_ok=0
-if docker compose exec -T app composer test:integration >"$logs/test-integration.log" 2>&1; then
+if docker compose exec -T "${test_env[@]}" app composer test:integration >"$logs/test-integration.log" 2>&1; then
   integration_ok=1
   add "Testes de integração" OK "$(phpunit_line "$logs/test-integration.log")"
 else
