@@ -43,8 +43,11 @@ final class AccessRegisteredPermissionsTest extends TestCase
         $slugs = [];
         foreach ($this->phpFiles(['source', 'container']) as $file) {
             $code = (string)file_get_contents($file);
-            // can('x.y'), authorize('x.y') e $nav(..., 'x.y') do layout do Studio.
-            preg_match_all("/(?:can|authorize)\\(\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]\\s*[,)]/", $code, $m1);
+            // can('x.y'), authorize('x.y'), guard('x.y') e $nav(..., 'x.y') do layout do Studio.
+            preg_match_all("/(?:can|authorize|guard)\\(\\s*['\"]([a-z0-9_]+(?:\\.[a-z0-9_]+)+)['\"]\\s*[,)]/", $code, $m1);
+            // Constantes de serviço com o slug (ex.: InspectionService::VIEW = 'erp.inspections.view').
+            preg_match_all("/const\\s+(?:string\\s+)?(?:[A-Z_]*PERMISSION[A-Z_]*|VIEW|MANAGE|PERFORM)\\s*=\\s*['\"]((?:erp|studio|api|security|support|site|helpdesk)(?:\\.[a-z0-9_]+)+)['\"]/", $code, $m6);
+            $slugs = array_merge($slugs, $m6[1]);
             preg_match_all("/\\\$nav\\([^;]*?,'([a-z0-9_]+(?:\\.[a-z0-9_]+)+)'\\)/", $code, $m2);
             $slugs = array_merge($slugs, $m1[1], $m2[1]);
             // Manifestos de módulo do Studio (*/module.php): 'permission' é o slug completo.

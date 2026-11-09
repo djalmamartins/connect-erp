@@ -9,6 +9,8 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Erp\Banking\BankCharges;
+use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
 use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Invoices;
@@ -155,6 +157,34 @@ final class Panel extends Controller
         return $data;
     }
 
+    /**
+     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 retornos com divergência;
+     * ADR 0035 e 0038), só no adaptador de sandbox. $bankCharges / $bankDivergences null = sem
+     * permissão ou sem banco (a tela segue com a demonstração). As ações usam a API /api/v1.
+     *
+     * @return array{bankCharges?: ?array, bankDivergences?: ?array, bankReady: bool, canManageCharges: bool}
+     */
+    private function bankingData(User $user, string $id): array
+    {
+        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null] : []);
+        if (Connect::databaseDisabled() || !Access::can('erp.bank_charges.view', $user)) {
+            return $data;
+        }
+        try {
+            if ($id === 'AP-035') {
+                $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
+            } elseif ($id === 'AP-038') {
+                $data['bankDivergences'] = (new BankReturns())->divergences($user, CondominiumContext::id());
+            }
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'banking_screen_failed', 'page' => $id]);
+            return $data;
+        }
+        $data['bankReady'] = true;
+        $data['canManageCharges'] = Access::can('erp.bank_charges.manage', $user);
+        return $data;
+    }
+
     /** Páginas da prestação de contas com dados reais (ADR 0037): balancete e demonstrativo. */
     public const REPORT_PAGES = ['AP-079', 'AP-051'];
 
@@ -283,9 +313,26 @@ final class Panel extends Controller
         if (in_array($id, self::REPORT_PAGES, true)) {
             $data += $this->reportData($user, $id);
         }
-        // AP-032 com dados reais tem tela própria (lista, itens por unidade, emitir e cancelar).
-        $template = $id === 'AP-032' && ($data['invoices'] ?? null) !== null ? 'pages/finance/invoices' : 'pages/modules/' . $kind;
-        return [$template, $this->layoutData($user, $id, $data)];
+        if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
+            $data += $this->bankingData($user, $id);
+        }
+        return [self::ownTemplate($id, $data) ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
+    }
+
+    /**
+     * Páginas com tela própria quando há dados reais: AP-032 faturas (lista, itens por unidade,
+     * emitir e cancelar), AP-035 boletos, AP-036 importar retorno e AP-038 retornos com
+     * divergência. Sem dados (sem permissão ou sem banco), null = segue a demonstração.
+     */
+    public static function ownTemplate(string $id, array $data): ?string
+    {
+        return match (true) {
+            $id === 'AP-032' && ($data['invoices'] ?? null) !== null => 'pages/finance/invoices',
+            $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
+            $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
+            $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
+            default => null,
+        };
     }
 
     /**

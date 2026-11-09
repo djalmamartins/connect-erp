@@ -62,4 +62,5 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0035](../Organic%20Code/decisions/0035-bank-charges-sandbox.md) | Boletos, retorno e conciliação pelo adaptador bancário (só sandbox, sem credencial nem banco real) |
 | [0036](../Organic%20Code/decisions/0036-logout-all-hosts.md) | Sair em um host encerra as sessões do usuário nos outros |
 | [0037](../Organic%20Code/decisions/0037-financial-reports.md) | Relatórios financeiros: balancete de verificação e prestação de contas com conciliação bancária |
+| [0038](../Organic%20Code/decisions/0038-banking-screens.md) | Telas da cobrança bancária: boletos, importar retorno e fila de divergências (sandbox) |
 | [0039](../Organic%20Code/decisions/0039-delinquency-and-agreements.md) | Inadimplência por unidade e acordos (AP-033/034): contas vencidas viram parcelas, sem dívida duplicada |
