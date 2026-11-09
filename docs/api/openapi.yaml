@@ -1357,6 +1357,50 @@ paths:
         '409': { description: A ocorrência já tem chamado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: Chamado recusado pelo Help Desk (field e message) }
+  /dashboard:
+    get:
+      operationId: operationalDashboard
+      summary: Números e alertas reais da administradora no contexto (erp.access)
+      description: >-
+        cards: maintenances_late, maintenances_week, insurances_renewal (até 30 dias), insurances_expired,
+        contracts_renewal, contracts_expired, reservations_pending, occurrences_open, deliveries_waiting,
+        receivables_overdue_cents, receivables_week_cents, payables_week_cents, waitlist_to_call.
+        alerts: [{kind, severity (danger, warning, info), count, message, route}] só com contagem maior que zero.
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }]
+      responses:
+        '200': { description: '{ data: { as_of, condominium_id, cards, alerts } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /reservations/{id}/call-waitlist:
+    post:
+      operationId: callWaitlist
+      summary: Chama o primeiro da lista de espera da data e da área de uma reserva cancelada (erp.reservations.manage)
+      description: Só registra a chamada (quem, quando, para qual reserva); a reserva nova é feita por quem foi chamado, pelas regras da área.
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: { reservation_id, waitlist_id, resident_name, unit_id, called_at } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Reserva não cancelada, data já reservada de novo ou ninguém aguardando' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /maintenances/{id}/next:
+    post:
+      operationId: nextMaintenance
+      summary: Gera a próxima manutenção de uma concluída pela periodicidade, uma vez só (erp.maintenances.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '201': { description: '{ data: { id, previous_id, planned_on, service, status } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Não concluída ou a próxima já foi gerada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: Manutenção única (sem periodicidade) }
 
   /inspection-templates:
     get:

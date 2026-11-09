@@ -110,6 +110,10 @@ $route->get("/documents/{id}/download", "VirtualDisk:download", null, \Source\Su
 $route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ocorrência abre chamado na fila do Help Desk (ADR 0034/0051). O cadastro é /occurrences, do motor.
 $route->post("/occurrences/{id}/ticket", "Occurrences:ticket", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Dashboard e continuações do Operacional (ADR 0053): alertas, lista de espera e próxima manutenção.
+$route->get("/dashboard", "OperationalDashboard:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/reservations/{id}/call-waitlist", "OperationalDashboard:callWaitlist", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/maintenances/{id}/next", "OperationalDashboard:nextMaintenance", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
