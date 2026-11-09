@@ -189,6 +189,10 @@
    "title": "0048 — Tela de leituras do mês (AP-042)"
   },
   {
+   "file": "docs/Organic Code/decisions/0049-virtual-disk-screen.md",
+   "title": "0049 — Tela do Disco Virtual (AP-122)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -798,6 +802,7 @@
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments",
+    "Source\\Services\\Erp\\VirtualDisk",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Erp\\CondominiumContext",
@@ -820,6 +825,7 @@
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
+    "tests/legacy/Unit/ErpVirtualDiskScreenTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
   },
@@ -2378,6 +2384,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/VirtualDiskIntegrationTest.php",
+    "tests/legacy/Unit/ErpVirtualDiskScreenTest.php",
     "tests/legacy/Unit/VirtualDiskTest.php"
    ]
   },
@@ -3011,7 +3018,7 @@
   }
  },
  "counts": {
-  "adrs": 50,
+  "adrs": 51,
   "classes": 173,
   "dynamic_route_lines": {
    "erp": 8,
@@ -3020,7 +3027,7 @@
   "erp_pages": 172,
   "routes": 260,
   "tables": 85,
-  "tests": 103
+  "tests": 104
  },
  "erp_pages": [
   {
@@ -7699,6 +7706,10 @@
   "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Services\\Erp\\UnitDocuments"
+  ],
+  "tests/legacy/Unit/ErpVirtualDiskScreenTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\VirtualDisk"
   ],
   "tests/legacy/Unit/FinancialReportsTest.php": [
    "Source\\Services\\Erp\\FinancialReports"
