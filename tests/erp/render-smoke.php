@@ -935,6 +935,22 @@ $html = $agreementPage('AP-114', 'pages/operational/pending-reservations', $pend
 $assert(str_contains($html, 'Nenhuma reserva pendente'), 'AP-114: sem pendentes');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-114', ['pendingReservations' => null]) === null, 'AP-114: sem dados segue a demonstração');
 
+// Integrações (AP-171, ADR 0161): só leitura, com o bloco do antivírus.
+$integrationData = static fn (array $av): array => ['integrations' => [
+    'bank' => ['adapters' => [['adapter' => 'sandbox', 'available' => true, 'production' => false]], 'note' => 'Banco real só depois de homologação.'],
+    'mail' => ['mode' => 'sandbox', 'sandbox_inbox_configured' => true, 'reaches_residents' => false],
+    'price_indexes' => [['code' => 'IPCA', 'last_competence' => '2026-10', 'state' => 'ok'], ['code' => 'IGPM', 'last_competence' => null, 'state' => 'missing']],
+    'outbox' => ['pending' => 3, 'failed' => 1],
+    'antivirus' => $av,
+]];
+$html = $agreementPage('AP-171', 'pages/settings/integrations', $integrationData(Source\Services\Erp\IntegrationStatus::antivirus('off', false, ['clean' => 2, 'unscanned' => 7, 'error' => 1])), 'antivirus');
+$common($html, 'AP-171', 'Integrações');
+$assert(str_contains($html, 'data-integrations-antivirus') && str_contains($html, 'Antivírus desligado') && str_contains($html, '8 arquivo(s) aguardando reverificação')
+    && substr_count($html, 'data-scan-status=') === 4 && str_contains($html, 'Nunca carregado') && str_contains($html, '/configuracoes/fila-de-avisos'), 'AP-171: antivírus, índices e fila');
+$html = $agreementPage('AP-171', 'pages/settings/integrations', $integrationData(Source\Services\Erp\IntegrationStatus::antivirus('enforce', false, [])));
+$assert(str_contains($html, 'Antivírus ligado sem endereço configurado'), 'AP-171: ligado sem antivírus configurado avisa');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-171', ['integrations' => null]) === null && Source\Controllers\Erp\Connect\Panel::pagePermissions()['AP-171'] === 'erp.settings.view', 'AP-171: sem dados segue a demonstração; exige erp.settings.view');
+
 // Ocorrência (AP-112): chamado no Help Desk no formulário.
 $occurrenceForm = static fn (array $values, bool $canManage = true): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-112', [
     'title' => 'Vazamento', 'definition' => Source\Services\Erp\Registry\Definitions::get('occurrences'), 'recordId' => 5,

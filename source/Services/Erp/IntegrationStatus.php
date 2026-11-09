@@ -8,6 +8,8 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\Antivirus\ScanStatus;
+use Source\Services\Erp\Antivirus\UploadScanPolicy;
 use Source\Services\Erp\Banking\BankAdapters;
 
 /**
@@ -17,7 +19,9 @@ use Source\Services\Erp\Banking\BankAdapters;
  * - e-mail: o modo efetivo da entrega (log, sandbox ou production, NotificationDispatcher::deliveryMode)
  *   e se há caixa de teste configurada, sem mostrar o endereço;
  * - índices de correção: a última competência carregada de cada índice e se está atrasada;
- * - fila de avisos: pendentes e com falha na outbox, só dos condomínios do escopo.
+ * - fila de avisos: pendentes e com falha na outbox, só dos condomínios do escopo;
+ * - antivírus (ADR 0161): o modo, se há antivírus configurado (sem o endereço) e a contagem de arquivos do
+ *   Disco Virtual por scan_status, só dos condomínios do escopo.
  */
 final class IntegrationStatus
 {
@@ -75,6 +79,45 @@ final class IntegrationStatus
             'mail' => self::mail(defined('CONF_APP_ENV') ? (string)CONF_APP_ENV : 'development', getenv('ERP_MAIL_DELIVERY') ?: 'log', getenv('ERP_MAIL_SANDBOX_TO') ?: null),
             'price_indexes' => $indexes,
             'outbox' => $outbox,
+            'antivirus' => self::antivirus((string)(getenv('ERP_AV_MODE') ?: ''), UploadScanPolicy::scannerFromEnvironment()->available(), $this->scanCounts($ids)),
         ];
+    }
+
+    /**
+     * Antivírus (regra pura, ADR 0161): o modo efetivo, se há antivírus configurado (sim ou não, sem o
+     * endereço) e quantos arquivos do Disco Virtual há em cada scan_status. Só números.
+     *
+     * @param array<string, int|string> $counts scan_status => quantidade
+     */
+    public static function antivirus(string $rawMode, bool $scannerConfigured, array $counts): array
+    {
+        $documents = array_fill_keys(ScanStatus::ALL, 0);
+        foreach ($counts as $status => $n) {
+            if (array_key_exists((string)$status, $documents)) {
+                $documents[(string)$status] = max(0, (int)$n);
+            }
+        }
+        return ['mode' => UploadScanPolicy::mode($rawMode), 'scanner_configured' => $scannerConfigured, 'documents' => $documents,
+            'pending_rescan' => $documents[ScanStatus::UNSCANNED] + $documents[ScanStatus::ERROR]];
+    }
+
+    /**
+     * Contagem por scan_status dos arquivos do Disco Virtual dos condomínios do escopo (sem excluídos).
+     *
+     * @param list<int> $ids
+     * @return array<string, int>
+     */
+    private function scanCounts(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $rows = $this->pdo->query('SELECT scan_status, COUNT(*) AS n FROM erp_documents WHERE deleted_at IS NULL AND condominium_id IN ('
+            . implode(',', $ids) . ') GROUP BY scan_status')->fetchAll(PDO::FETCH_ASSOC);
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(string)$row['scan_status']] = (int)$row['n'];
+        }
+        return $counts;
     }
 }
