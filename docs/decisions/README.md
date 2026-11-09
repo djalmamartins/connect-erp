@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0083.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0077; Avançar: 0083; Preparar: o próximo após o último 006x).
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0084.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0077; Avançar: 0084; Preparar: o próximo após o último 006x).
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -92,6 +92,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0064](../Organic%20Code/decisions/0064-performance-indexes.md) | Índices de `erp_entries` por data de pagamento (condomínio e conta bancária) e EXPLAIN das consultas quentes na suíte de integração |
 | [0065](../Organic%20Code/decisions/0065-communications-hardening.md) | Comunicação: assunto em uma linha, unidades escolhidas com teto, trava por condomínio no aviso de cobrança e limite de 20 comunicados por dia |
 | [0066](../Organic%20Code/decisions/0066-collections-hardening.md) | Cobrança e multas: contas do caso judicial buscadas só na unidade e no condomínio, trava no andamento do caso e nome do contato em uma linha |
+| [0067](../Organic%20Code/decisions/0067-collection-reports-hardening.md) | Relatórios de cobrança: célula do CSV neutralizada também depois de espaço ou controle e em largura total, e teto de 20.000 recebimentos por consulta |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
 | [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
@@ -102,3 +103,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0080](../Organic%20Code/decisions/0080-collections-and-fines.md) | Cobrança e multas: multas pendentes com a origem (AP-116), atendimento de cobrança com promessa quebrada (AP-117) e cobrança judicial só como acompanhamento (AP-039) |
 | [0081](../Organic%20Code/decisions/0081-collection-reports.md) | Relatórios de cobrança: acordos e taxas (AP-047/048), inadimplentes em 5 visões (AP-057 a AP-061) e recebimentos (AP-071/072), com CSV protegido contra injeção de fórmula |
 | [0082](../Organic%20Code/decisions/0082-management-reports.md) | Relatórios gerenciais: consumo (AP-045/046), centros de custo e comparativo (AP-049/050), demonstrativos e extrato (AP-052 a AP-056), rateio pela fração ideal (AP-062 a AP-067), lançamentos e boletos (AP-068 a AP-070) |
+| [0083](../Organic%20Code/decisions/0083-chart-data.md) | Dados dos gráficos (AP-102 a AP-109): séries mensais de receitas e despesas, contas, consumo, caixa, inadimplência, contas bancárias e áreas comuns, só consulta |

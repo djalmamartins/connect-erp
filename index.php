@@ -91,6 +91,14 @@ $route->get("/reports/account-statement", "ManagementReports:accountStatement", 
 $route->get("/reports/apportionment", "ManagementReports:apportionment", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/entries", "ManagementReports:entries", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/bank-charges", "ManagementReports:bankCharges", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Dados dos gráficos (ADR 0083): séries mensais, só consulta.
+$route->get("/charts/general", "ChartReports:general", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/accounts", "ChartReports:accounts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/consumption", "ChartReports:consumption", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/cash", "ChartReports:cash", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/delinquency", "ChartReports:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/bank-accounts", "ChartReports:bankAccounts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/charts/common-areas", "ChartReports:commonAreas", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);

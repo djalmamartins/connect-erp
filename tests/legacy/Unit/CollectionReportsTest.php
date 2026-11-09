@@ -70,6 +70,18 @@ final class CollectionReportsTest extends TestCase
         self::assertSame($rows, CollectionReports::groupReceipts($rows, 'entry'));
     }
 
+    /** ADR 0067: sinal depois de espaço ou controle, quebra de linha e formas de largura total também são neutralizados. */
+    public function testCsvCellCoversLeadingSpaceControlAndFullWidth(): void
+    {
+        foreach ([' =1+1', "  \t@SUM(A1)", "\u{00A0}+1", "\u{FEFF}=x", "\x01=x", "\nabc", '＝HYPERLINK("x")', '＋1', '－1', '＠x'] as $danger) {
+            self::assertSame("'" . $danger, CollectionReports::csvCell($danger), 'Prefixa ' . json_encode($danger));
+        }
+        foreach (['', 'Taxa 101', 'a=b', '101 - bloco A', 'ana@morador.test', '12,50'] as $safe) {
+            self::assertSame($safe, CollectionReports::csvCell($safe));
+        }
+        self::assertSame(20000, CollectionReports::MAX_RECEIPT_ROWS);
+    }
+
     public function testCsvIsSafeAgainstFormulaInjection(): void
     {
         foreach (['=HYPERLINK("x")', '+1', '-1', '@SUM(A1)', "\tx", "\rx"] as $danger) {
