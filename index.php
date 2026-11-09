@@ -122,6 +122,17 @@ $route->get("/notifications", "Notifications:index", null, \Source\Support\Middl
 $route->post("/notifications/dispatch", "Notifications:dispatch", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/notifications/{id}", "Notifications:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/notifications/{id}/retry", "Notifications:retry", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Lançamentos avulsos (ADR 0057): desconto, multa avulsa e cobrança extra, transferência entre contas.
+$route->post("/entries/{id}/discount", "EntryShortcuts:discount", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/entries/{id}/adjustments", "EntryShortcuts:adjustments", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/extra-charges/{id}/cancel", "EntryShortcuts:cancelCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-transfers", "EntryShortcuts:transfers", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-transfers", "EntryShortcuts:storeTransfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-transfers/{id}", "EntryShortcuts:transfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-transfers/{id}/cancel", "EntryShortcuts:cancelTransfer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

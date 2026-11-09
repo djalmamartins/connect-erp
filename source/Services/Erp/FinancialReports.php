@@ -144,19 +144,27 @@ final class FinancialReports
                 COALESCE(SUM(CASE WHEN e.paid_on < :f1 AND e.nature = 'receita' THEN e.amount_cents END), 0) AS before_in,
                 COALESCE(SUM(CASE WHEN e.paid_on < :f2 AND e.nature = 'despesa' THEN e.amount_cents END), 0) AS before_out,
                 COALESCE(SUM(CASE WHEN e.paid_on BETWEEN :f3 AND :t1 AND e.nature = 'receita' THEN e.amount_cents END), 0) AS period_in,
-                COALESCE(SUM(CASE WHEN e.paid_on BETWEEN :f4 AND :t2 AND e.nature = 'despesa' THEN e.amount_cents END), 0) AS period_out
+                COALESCE(SUM(CASE WHEN e.paid_on BETWEEN :f4 AND :t2 AND e.nature = 'despesa' THEN e.amount_cents END), 0) AS period_out,
+                " . BankBalances::transferSql('in', 'b', ' AND t.transferred_on < :g1', false) . " AS before_tin,
+                " . BankBalances::transferSql('out', 'b', ' AND t.transferred_on < :g2', false) . " AS before_tout,
+                " . BankBalances::transferSql('in', 'b', ' AND t.transferred_on BETWEEN :g3 AND :h1', false) . " AS period_tin,
+                " . BankBalances::transferSql('out', 'b', ' AND t.transferred_on BETWEEN :g4 AND :h2', false) . " AS period_tout
             FROM erp_bank_accounts b
             JOIN condominiums c ON c.id = b.condominium_id
             LEFT JOIN erp_entries e ON e.bank_account_id = b.id AND e.deleted_at IS NULL AND e.status = 'active' AND e.paid_on IS NOT NULL
             WHERE b.condominium_id IN ({$in}) AND b.deleted_at IS NULL
             GROUP BY b.id, b.condominium_id, c.name, b.name, b.opening_balance_cents, b.opened_on
             ORDER BY c.name, b.name");
-        $stmt->execute(['f1' => $from, 'f2' => $from, 'f3' => $from, 't1' => $to, 'f4' => $from, 't2' => $to]);
+        $stmt->execute(['f1' => $from, 'f2' => $from, 'f3' => $from, 't1' => $to, 'f4' => $from, 't2' => $to,
+            'g1' => $from, 'g2' => $from, 'g3' => $from, 'h1' => $to, 'g4' => $from, 'h2' => $to]);
         $banks = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-            // Saldo anterior = saldo inicial da conta + tudo o que foi pago antes do período.
+            // Saldo anterior = saldo inicial da conta + tudo o que foi pago antes do período. Transferências entre
+            // contas (ADR 0057) entram como entrada numa conta e saída na outra: somam zero no condomínio.
             $banks[] = ['id' => (int)$r['id'], 'condominium_id' => (int)$r['condominium_id'], 'condominium_name' => (string)$r['condominium_name'], 'name' => (string)$r['name']]
-                + self::bankMovement((int)$r['opening_balance_cents'] + (int)$r['before_in'] - (int)$r['before_out'], (int)$r['period_in'], (int)$r['period_out']);
+                + self::bankMovement((int)$r['opening_balance_cents'] + (int)$r['before_in'] - (int)$r['before_out'] + (int)$r['before_tin'] - (int)$r['before_tout'],
+                    (int)$r['period_in'] + (int)$r['period_tin'], (int)$r['period_out'] + (int)$r['period_tout'])
+                + ['transfers_in_cents' => (int)$r['period_tin'], 'transfers_out_cents' => (int)$r['period_tout']];
         }
 
         $received = array_sum(array_map(static fn (array $a): int => $a['nature'] === 'receita' ? $a['total_cents'] : 0, $accounts));

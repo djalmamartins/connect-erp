@@ -1158,7 +1158,7 @@ paths:
       parameters:
         - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
         - { name: unit_id, in: query, schema: { type: integer } }
-        - { name: kind, in: query, schema: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter] } }
+        - { name: kind, in: query, schema: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter, receipt] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
       responses:
         '200': { description: 'Lista paginada (25 por página), sem o conteúdo' }
@@ -1166,16 +1166,17 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
     post:
       operationId: issueUnitDocument
-      summary: Emite certidão de débitos, declaração de inadimplência, quitação ou carta de anuência (erp.unit_documents.manage)
+      summary: Emite certidão de débitos, declaração de inadimplência, quitação, carta de anuência ou recibo (erp.unit_documents.manage)
       description: >-
         debt_certificate sempre emite (result clear = nada consta). delinquency_declaration exige conta
         vencida em aberto. quittance exige until_competence e todas as contas até ela pagas.
-        consent_letter exige não haver conta vencida e uma finalidade (purpose). O conteúdo fica
+        consent_letter exige não haver conta vencida e uma finalidade (purpose). receipt (AP-040, ADR 0057)
+        exige entry_ids de contas a receber pagas da unidade, sem recibo válido. O conteúdo fica
         gravado com código de verificação.
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [kind, unit_id], properties: { kind: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter] }, unit_id: { type: integer }, as_of: { type: string, format: date, description: 'Padrão hoje; não pode ser futura' }, until_competence: { type: string, example: '2026-10' }, purpose: { type: string, minLength: 5, maxLength: 40 } } } } }
+        content: { application/json: { schema: { type: object, required: [kind, unit_id], properties: { kind: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter, receipt] }, unit_id: { type: integer }, as_of: { type: string, format: date, description: 'Padrão hoje; não pode ser futura' }, until_competence: { type: string, example: '2026-10' }, purpose: { type: string, minLength: 5, maxLength: 40 }, entry_ids: { type: array, maxItems: 60, items: { type: integer }, description: 'Recibo: contas pagas cobertas' } } } } }
       responses:
         '201': { description: 'Documento com content, verification_code e verification_display' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1480,6 +1481,155 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: Aviso não está com falha nem cancelado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
+
+  /entries/{id}/discount:
+    post:
+      operationId: discountEntry
+      summary: Desconto numa conta a receber em aberto (AP-026, erp.entries.manage)
+      description: >-
+        Reduz o valor com trilha (antes, depois, motivo). O desconto é menor que o valor (para perdoar,
+        cancele o lançamento). Recusa conta paga, cancelada, parcela ou original de acordo, boleto ativo e
+        competência fechada (ADR 0031).
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [amount_cents, reason], properties: { amount_cents: { type: string, example: '50,00' }, reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: '{ data: { entry_id, adjustment_id, before_cents, discount_cents, after_cents, adjustments[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Conta paga, de acordo, com boleto ativo ou competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /entries/{id}/adjustments:
+    get:
+      operationId: listEntryAdjustments
+      summary: Trilha dos descontos de uma conta (erp.entries.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: [{ id, kind, amount_cents, before_cents, after_cents, reason, created_by, created_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /extra-charges:
+    get:
+      operationId: listExtraCharges
+      summary: Multas avulsas e cobranças extras (AP-027/028, erp.invoices.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: kind, in: query, schema: { type: string, enum: [extra, fine] } }
+        - { name: status, in: query, schema: { type: string, enum: [active, cancelled] } }
+      responses:
+        '200': { description: '{ data[], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createExtraCharge
+      summary: Gera multa avulsa (uma unidade, com motivo) ou cobrança extra (uma ou mais unidades) (erp.invoices.manage)
+      description: >-
+        Uma conta a receber por unidade, travada no cadastro (altere ou cancele pela origem). method fixed =
+        valor por unidade; equal = total dividido igual; fraction = total pela fração ideal. Multa é sempre
+        fixed. Vencimento não pode ser no passado; competência fechada recusa.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, kind, description, chart_account_id, competence, due_on, amount_cents, unit_ids], properties: { condominium_id: { type: integer }, kind: { type: string, enum: [extra, fine] }, description: { type: string, minLength: 3, maxLength: 120 }, chart_account_id: { type: integer, description: 'Conta analítica de receita' }, competence: { type: string, example: '2026-11' }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction] }, amount_cents: { type: string, example: '120,00' }, unit_ids: { type: array, items: { type: integer } }, related_entry_id: { type: integer, description: 'Multa: conta a que se refere' }, reason: { type: string, description: 'Multa: obrigatório' } } } } }
+      responses:
+        '201': { description: Cobrança com as contas geradas }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /extra-charges/{id}:
+    get:
+      operationId: getExtraCharge
+      summary: Multa ou cobrança extra com as contas geradas (erp.invoices.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: { ..., entries[{ entry_id, unit_label, amount_cents, status, paid_on }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /extra-charges/{id}/cancel:
+    post:
+      operationId: cancelExtraCharge
+      summary: Cancela a multa ou cobrança extra e as contas geradas (erp.invoices.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Conta paga, em acordo, com boleto ativo ou competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /bank-transfers:
+    get:
+      operationId: listBankTransfers
+      summary: Transferências entre contas bancárias (AP-029, erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: status, in: query, schema: { type: string, enum: [active, cancelled] } }
+      responses:
+        '200': { description: '{ data[], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createBankTransfer
+      summary: Transfere saldo entre duas contas bancárias ativas do mesmo condomínio (erp.entries.manage)
+      description: Não é receita nem despesa. Entra nos saldos das contas e na conciliação da prestação de contas. Data até hoje, competência aberta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, from_bank_account_id, to_bank_account_id, amount_cents, transferred_on, description], properties: { condominium_id: { type: integer }, from_bank_account_id: { type: integer }, to_bank_account_id: { type: integer }, amount_cents: { type: string, example: '1.000,00' }, transferred_on: { type: string, format: date }, description: { type: string, minLength: 3, maxLength: 160 } } } } }
+      responses:
+        '201': { description: Transferência registrada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /bank-transfers/{id}:
+    get:
+      operationId: getBankTransfer
+      summary: Transferência entre contas (erp.entries.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Transferência }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /bank-transfers/{id}/cancel:
+    post:
+      operationId: cancelBankTransfer
+      summary: Cancela a transferência; sai dos saldos (erp.entries.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Já cancelada ou competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /inspection-templates:
     get:
