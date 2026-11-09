@@ -1049,6 +1049,107 @@ paths:
         '409': { description: 'Já cancelado, parcela paga, boleto ativo em parcela ou competência fechada' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /agreements/suggestion:
+    get:
+      operationId: suggestAgreementCharges
+      summary: Encargos sugeridos (correção, multa e juros) das contas escolhidas de uma unidade (erp.agreements.view)
+      description: >-
+        Pela regra do condomínio (ADR 0040). Mês sem índice entra como zero e aparece em
+        missing_index. A sugestão vai como fees_cents no POST /agreements e pode ser mudada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: unit_id, in: query, required: true, schema: { type: integer } }
+        - { name: entry_ids, in: query, required: true, schema: { type: string, example: '12,13' } }
+        - { name: as_of, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { rule, entries[{entry_id, days_late, correction_cents, fine_cents, interest_cents, charges_cents}], original_cents, correction_cents, fine_cents, interest_cents, fees_cents, total_cents, missing_index[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Conta paga, em acordo, com boleto ativo ou de competência fechada' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /agreements/{id}/breach:
+    post:
+      operationId: breachAgreement
+      summary: Grava a quebra do acordo, com motivo, quando a regra do condomínio indica (erp.agreements.manage)
+      description: As parcelas não mudam. A situação calculada aparece em breach no GET do acordo.
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: 'Acordo com status breached' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Acordo não ativo ou fora da regra de quebra' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /billing-rules:
+    get:
+      operationId: showBillingRule
+      summary: Regra de cobrança que vale para o condomínio (própria ou o padrão da Connect) (erp.billing_rules.view)
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = padrão da Connect' }]
+      responses:
+        '200': { description: '{ data: { fine_bp, monthly_interest_bp, price_index, breach_days_late, breach_open_installments, source: condominium|default|builtin } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: saveBillingRule
+      summary: Grava a regra do condomínio, ou o padrão sem condominium_id (só com acesso a todos) (erp.billing_rules.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { condominium_id: { type: [integer, "null"] }, fine_bp: { type: integer, minimum: 0, maximum: 1000, example: 200 }, monthly_interest_bp: { type: integer, minimum: 0, maximum: 1000, example: 100 }, price_index: { type: string, enum: [IPCA, NONE] }, breach_days_late: { type: integer, minimum: 1, maximum: 365 }, breach_open_installments: { type: integer, minimum: 0, maximum: 60 } } } } }
+      responses:
+        '200': { description: Regra gravada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /price-indexes:
+    get:
+      operationId: listPriceIndexes
+      summary: Variação mensal do índice (últimos 240 meses) (erp.billing_rules.view)
+      security: [{ session: [] }]
+      parameters: [{ name: code, in: query, schema: { type: string, enum: [IPCA], default: IPCA } }]
+      responses:
+        '200': { description: '{ data: [{ competence, rate_percent }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: setPriceIndex
+      summary: Lança (ou corrige) a variação de um mês; exige acesso a todos os condomínios (erp.billing_rules.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [competence, rate_percent], properties: { code: { type: string, enum: [IPCA] }, competence: { type: string, example: '2026-10' }, rate_percent: { oneOf: [{ type: number }, { type: string, example: '0,44' }] } } } } }
+      responses:
+        '200': { description: '{ data: { code, saved } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /price-indexes/import:
+    post:
+      operationId: importPriceIndexes
+      summary: Importa um arquivo de índices (uma linha AAAA-MM;variação por mês), sem rede (erp.billing_rules.manage)
+      description: O arquivo inteiro é validado antes de gravar; mês já lançado é substituído.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [content], properties: { code: { type: string, enum: [IPCA] }, content: { type: string, example: "2026-09;0,48\n2026-10;0,44" } } } } }
+      responses:
+        '200': { description: '{ data: { code, saved } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /inspection-templates:
     get:

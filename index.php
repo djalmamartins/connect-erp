@@ -81,8 +81,17 @@ $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Su
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/agreements", "Agreements:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encargos sugeridos e quebra de acordo (ADR 0040). /suggestion antes de /{id}.
+$route->get("/agreements/suggestion", "Agreements:suggestion", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements/{id}", "Agreements:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/agreements/{id}/cancel", "Agreements:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/agreements/{id}/breach", "Agreements:breach", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Regras de cobrança (multa, juros, índice, quebra) e índices mensais de correção (ADR 0040).
+$route->get("/billing-rules", "BillingRules:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->put("/billing-rules", "BillingRules:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/price-indexes", "BillingRules:rates", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/price-indexes", "BillingRules:setRate", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/price-indexes/import", "BillingRules:import", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

@@ -15,7 +15,7 @@ use Source\Services\Erp\Registry\RegistryService;
 use Source\Support\Audit;
 
 /**
- * Inadimplência e acordos (AP-033/034, ADR 0039).
+ * Inadimplência e acordos (AP-033/034, ADR 0039; encargos e quebra, ADR 0040).
  *
  * - delinquency(): contas a receber vencidas e em aberto, agrupadas por unidade, com faixas de atraso.
  * - create(): acordo das contas vencidas escolhidas de uma unidade. Na mesma transação, as contas
@@ -120,24 +120,125 @@ final class Agreements
               AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d
             ORDER BY c.name, u.label, e.due_on, e.id");
         $stmt->execute(['d' => $asOf]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Encargos sugeridos (ADR 0040): regra de cada condomínio e índice dos meses de atraso.
+        $rules = new BillingRules($this->pdo, $this->scope);
+        $ruleBy = [];
+        $oldest = $rows === [] ? $asOf : min(array_column($rows, 'due_on'));
+        $rates = $rules->rates('IPCA', substr((string)$oldest, 0, 7), substr($asOf, 0, 7));
+        $result['totals'] += ['charges_cents' => 0, 'total_cents' => 0, 'missing_index' => []];
         $units = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach ($rows as $row) {
             $key = $row['condominium_id'] . ':' . ($row['unit_id'] ?? '0');
             $days = self::daysLate((string)$row['due_on'], $asOf);
+            $rule = $ruleBy[(int)$row['condominium_id']] ??= $rules->rule((int)$row['condominium_id']);
+            $charges = LateCharges::compute((int)$row['amount_cents'], (string)$row['due_on'], $asOf, $rule, $rates);
             $units[$key] ??= ['condominium_id' => (int)$row['condominium_id'], 'condominium_name' => (string)$row['condominium_name'],
                 'unit_id' => $row['unit_id'] !== null ? (int)$row['unit_id'] : null, 'unit_label' => $row['unit_label'] ?? 'Sem unidade',
-                'entries' => [], 'amount_cents' => 0, 'oldest_due_on' => (string)$row['due_on'], 'max_days_late' => 0];
+                'entries' => [], 'amount_cents' => 0, 'charges_cents' => 0, 'total_cents' => 0, 'oldest_due_on' => (string)$row['due_on'], 'max_days_late' => 0];
             $units[$key]['entries'][] = ['id' => (int)$row['id'], 'description' => (string)$row['description'], 'competence' => (string)$row['competence'],
-                'due_on' => (string)$row['due_on'], 'amount_cents' => (int)$row['amount_cents'], 'days_late' => $days, 'bucket' => self::bucket($days)];
+                'due_on' => (string)$row['due_on'], 'amount_cents' => (int)$row['amount_cents'], 'days_late' => $days, 'bucket' => self::bucket($days),
+                'charges' => $charges];
             $units[$key]['amount_cents'] += (int)$row['amount_cents'];
+            $units[$key]['charges_cents'] += $charges['charges_cents'];
+            $units[$key]['total_cents'] += $charges['total_cents'];
             $units[$key]['max_days_late'] = max($units[$key]['max_days_late'], $days);
             $result['totals']['entries']++;
             $result['totals']['amount_cents'] += (int)$row['amount_cents'];
+            $result['totals']['charges_cents'] += $charges['charges_cents'];
+            $result['totals']['total_cents'] += $charges['total_cents'];
+            $result['totals']['missing_index'] = array_values(array_unique(array_merge($result['totals']['missing_index'], $charges['missing_index'])));
             $result['totals']['buckets'][self::bucket($days)] += (int)$row['amount_cents'];
         }
+        sort($result['totals']['missing_index']);
         $result['units'] = array_values($units);
         $result['totals']['units'] = count($units);
         return $result;
+    }
+
+    /**
+     * Encargos sugeridos para um acordo (ADR 0040): soma de correção, multa e juros das contas
+     * escolhidas da unidade em $asOf. Quem faz o acordo pode mudar o valor (fees_cents).
+     *
+     * @param list<int> $entryIds
+     */
+    public function suggestion(User $user, int $unitId, array $entryIds, ?string $asOf = null): array
+    {
+        $asOf ??= date('Y-m-d');
+        $unit = $this->unit($user, $unitId);
+        $ids = array_values(array_unique(array_filter(array_map('intval', $entryIds))));
+        if ($ids === []) {
+            throw new InvalidArgumentException('Escolha as contas vencidas.');
+        }
+        $stmt = $this->pdo->query('SELECT * FROM erp_entries WHERE id IN (' . implode(',', $ids) . ')');
+        $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($entries) !== count($ids)) {
+            throw new InvalidArgumentException('Alguma conta escolhida não existe.');
+        }
+        $rules = new BillingRules($this->pdo, $this->scope);
+        $rule = $rules->rule((int)$unit['condominium_id']);
+        $rates = $rules->rates('IPCA', substr((string)min(array_column($entries, 'due_on')), 0, 7), substr($asOf, 0, 7));
+        $sum = ['original_cents' => 0, 'correction_cents' => 0, 'fine_cents' => 0, 'interest_cents' => 0, 'fees_cents' => 0];
+        $missing = [];
+        $lines = [];
+        foreach ($entries as $entry) {
+            $this->assertRenegotiable($entry, $unit);
+            $charges = LateCharges::compute((int)$entry['amount_cents'], (string)$entry['due_on'], $asOf, $rule, $rates);
+            $lines[] = ['entry_id' => (int)$entry['id'], 'amount_cents' => (int)$entry['amount_cents'], 'due_on' => (string)$entry['due_on']] + $charges;
+            $sum['original_cents'] += (int)$entry['amount_cents'];
+            $sum['correction_cents'] += $charges['correction_cents'];
+            $sum['fine_cents'] += $charges['fine_cents'];
+            $sum['interest_cents'] += $charges['interest_cents'];
+            $sum['fees_cents'] += $charges['charges_cents'];
+            $missing = array_merge($missing, $charges['missing_index']);
+        }
+        $missing = array_values(array_unique($missing));
+        sort($missing);
+        return ['as_of' => $asOf, 'unit_id' => (int)$unit['id'], 'rule' => $rule, 'entries' => $lines,
+            'missing_index' => $missing, 'total_cents' => $sum['original_cents'] + $sum['fees_cents']] + $sum;
+    }
+
+    /**
+     * Situação de quebra calculada pela regra do condomínio (nada muda sozinho).
+     *
+     * @return array{due:bool, overdue_installments:int, max_days_late:int, reasons:list<string>}
+     */
+    public function breachStatus(User $user, int $agreementId, ?string $asOf = null): array
+    {
+        $agreement = $this->row($user, $agreementId);
+        return $this->computeBreach($agreement, $asOf ?? date('Y-m-d'));
+    }
+
+    /** Grava a quebra do acordo (ação explícita, com motivo, auditada). As parcelas ficam como estão. */
+    public function breach(User $user, int $agreementId, string $reason, ?string $asOf = null): array
+    {
+        $agreement = $this->row($user, $agreementId);
+        $reason = trim((string)preg_replace('/\s+/u', ' ', $reason));
+        if (mb_strlen($reason) < 5 || mb_strlen($reason) > 255) {
+            throw new InvalidArgumentException('Informe o motivo da quebra (5 a 255 caracteres).');
+        }
+        if ($agreement['status'] !== 'active') {
+            throw new DomainException('Só acordo ativo pode ser marcado como quebrado.');
+        }
+        $status = $this->computeBreach($agreement, $asOf ?? date('Y-m-d'));
+        if (!$status['due']) {
+            throw new DomainException('O acordo não atende à regra de quebra do condomínio.');
+        }
+        $this->pdo->prepare("UPDATE erp_agreements SET status = 'breached', breached_by = :u, breached_at = NOW(), breach_reason = :r
+            WHERE id = :id AND status = 'active'")->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $agreementId]);
+        Audit::record('update', 'erp_agreements', $agreementId, ['status' => 'active'], ['status' => 'breached', 'breach_reason' => $reason, 'rule' => $status['reasons']]);
+        return $this->find($user, $agreementId);
+    }
+
+    private function computeBreach(array $agreement, string $asOf): array
+    {
+        $stmt = $this->pdo->prepare("SELECT agreement_installment AS number, due_on, paid_on, status FROM erp_entries
+            WHERE agreement_id = :a AND agreement_role = 'installment' AND deleted_at IS NULL ORDER BY agreement_installment");
+        $stmt->execute(['a' => $agreement['id']]);
+        $parcels = array_map(static fn (array $r): array => ['number' => (int)$r['number'], 'due_on' => (string)$r['due_on'],
+            'paid_on' => $r['paid_on'], 'status' => (string)$r['status']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        $rule = (new BillingRules($this->pdo, $this->scope))->rule((int)$agreement['condominium_id']);
+        return LateCharges::breach($parcels, $rule, $asOf);
     }
 
     /**
@@ -222,7 +323,7 @@ final class Agreements
             throw new InvalidArgumentException('Informe o motivo do cancelamento (5 a 255 caracteres).');
         }
         if ($agreement['status'] !== 'active') {
-            throw new DomainException('O acordo já está cancelado.');
+            throw new DomainException($agreement['status'] === 'breached' ? 'Acordo quebrado não pode ser cancelado.' : 'O acordo já está cancelado.');
         }
         $this->pdo->beginTransaction();
         try {
@@ -270,7 +371,7 @@ final class Agreements
         }
         $where = 'a.condominium_id IN (' . implode(',', $ids) . ')';
         $params = [];
-        if (in_array($filters['status'] ?? null, ['active', 'cancelled'], true)) {
+        if (in_array($filters['status'] ?? null, ['active', 'cancelled', 'breached'], true)) {
             $where .= ' AND a.status = :s';
             $params['s'] = $filters['status'];
         }
@@ -411,6 +512,9 @@ final class Agreements
             'fees_cents' => (int)$row['fees_cents'], 'discount_cents' => (int)$row['discount_cents'], 'total_cents' => (int)$row['total_cents'],
             'installments' => (int)$row['installments'], 'first_due_on' => (string)$row['first_due_on'], 'notes' => $row['notes'],
             'cancelled_at' => $row['cancelled_at'], 'cancel_reason' => $row['cancel_reason'], 'created_at' => $row['created_at'],
+            'breached_at' => $row['breached_at'] ?? null, 'breach_reason' => $row['breach_reason'] ?? null,
+            // Quebra calculada pela regra (ADR 0040); só vira 'breached' pela ação explícita.
+            'breach' => $row['status'] === 'active' ? $this->computeBreach($row, date('Y-m-d')) : null,
         ];
     }
 }

@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0040.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0042.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -64,3 +64,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0037](../Organic%20Code/decisions/0037-financial-reports.md) | Relatórios financeiros: balancete de verificação e prestação de contas com conciliação bancária |
 | [0038](../Organic%20Code/decisions/0038-banking-screens.md) | Telas da cobrança bancária: boletos, importar retorno e fila de divergências (sandbox) |
 | [0039](../Organic%20Code/decisions/0039-delinquency-and-agreements.md) | Inadimplência por unidade e acordos (AP-033/034): contas vencidas viram parcelas, sem dívida duplicada |
+| [0040](../Organic%20Code/decisions/0040-late-charges-and-agreement-breach.md) | Multa, juros, correção pelo IPCA e quebra de acordo, com padrões ajustáveis por condomínio (issue #46) |

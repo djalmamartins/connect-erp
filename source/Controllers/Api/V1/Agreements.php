@@ -21,6 +21,8 @@ use Source\Support\Access;
  *  GET  /api/v1/agreements/{id}                                acordo com contas originais e parcelas
  *  POST /api/v1/agreements {unit_id, entry_ids[], installments, first_due_on, chart_account_id, fees_cents, discount_cents, notes}
  *  POST /api/v1/agreements/{id}/cancel {reason}
+ *  GET  /api/v1/agreements/suggestion?unit_id=&entry_ids=1,2&as_of=   encargos sugeridos (ADR 0040)
+ *  POST /api/v1/agreements/{id}/breach {reason}               grava a quebra (só se a regra indicar)
  * Gravar exige erp.agreements.manage. CSRF e sessão no middleware ApiAuthenticated. Fora do escopo = 404.
  */
 final class Agreements
@@ -63,6 +65,33 @@ final class Agreements
         if ($user !== null) {
             $this->run(200, fn () => (new Service())->cancel($user, (int)$this->int($data['id'] ?? null), is_string($body['reason'] ?? null) ? $body['reason'] : ''));
         }
+    }
+
+    public function suggestion(): void
+    {
+        $user = $this->authorize('view');
+        if ($user !== null) {
+            $ids = is_string($_GET['entry_ids'] ?? null) ? explode(',', $_GET['entry_ids']) : (is_array($_GET['entry_ids'] ?? null) ? $_GET['entry_ids'] : []);
+            $this->run(200, fn () => (new Service())->suggestion($user, (int)$this->int($_GET['unit_id'] ?? null), $ids,
+                is_string($_GET['as_of'] ?? null) ? $this->date($_GET['as_of']) : null));
+        }
+    }
+
+    public function breach(array $data): void
+    {
+        [$user, $body] = $this->write();
+        if ($user !== null) {
+            $this->run(200, fn () => (new Service())->breach($user, (int)$this->int($data['id'] ?? null), is_string($body['reason'] ?? null) ? $body['reason'] : ''));
+        }
+    }
+
+    private function date(string $value): string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        if ($date === false || $date->format('Y-m-d') !== $value) {
+            throw new InvalidArgumentException('Data de referência inválida (AAAA-MM-DD).');
+        }
+        return $value;
     }
 
     private function run(int $status, callable $action, bool $wrap = true): void
