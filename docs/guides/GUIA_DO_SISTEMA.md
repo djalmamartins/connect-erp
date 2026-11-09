@@ -114,7 +114,10 @@ topo (Ctrl + K) acha qualquer página pelo nome.
    **Balancete Verificação** e **Demonstrativo** (há também Demonstrativo Contas, Analítico e
    Situação).
 9. **Operacional:** Operacional → seção **Rotina** → Ocorrências, Reservas Áreas Comuns, Manutenções,
-   Vistorias e Chamados (o chamado aparece no Help Desk).
+   Vistorias e Chamados. Chamados também ficam no menu **Suporte** (ícone de ajuda na barra superior),
+   com "Abrir chamado" e "Meus chamados". O chamado aparece no Help Desk; a resposta dada lá volta para
+   a tela do chamado no ERP e para o sino de notificações. Se um chamado não abrir, o motivo fica em
+   Studio → Logs (evento `ticket_create_failed`).
 10. **Comunicação:** Comunicação → Comunicado geral. No lab **nenhum e-mail sai**: a tela mostra o modo
     de entrega ("só registro" ou "caixa de teste") e o que teria sido enviado fica em Configurações →
     Fila de avisos. Para receber de verdade numa caixa de teste, ponha no `.env`
@@ -132,7 +135,7 @@ Se uma tela mostrar o aviso de dados de exemplo, confira na tabela da seção 5 
 | 4, 5, 8, 9. Páginas "sumidas" | Existiam, mas o menu escondia as páginas dos grupos grandes e o guia usava outros nomes. O menu agora mostra todas as páginas por seção e este roteiro usa os nomes do menu |
 | 6. Sem inadimplência | Comando `tools/lab-dados-exemplo.php` cria dados de exemplo com lançamentos vencidos (e `--remover` apaga) |
 | 7. Impressão e verificação | Assinaturas do síndico e da administradora, endereço fixo `/verificar-certidao-debitos` e a página não fica mais carregando |
-| 9. Chamados não abriram | Em correção junto com a integração ERP / Help Desk |
+| 9. Chamados não abriram | Corrigido (ADR 0142): abertura pelo ERP, conversa e resposta na tela do chamado, avisos do Help Desk, sino com notificações reais e menu Suporte |
 | 10. Comunicado "não enviou" | A tela agora explica que no lab nada sai e mostra o modo de entrega |
 
 ## 4. Ambientes e endereços

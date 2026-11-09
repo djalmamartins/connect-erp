@@ -107,10 +107,11 @@ final class DocumentVerificationIntegrationTest extends TestCase
             $footer = DocumentVerification::footer($issued['verification_code'], 'https://www.exemplo.test');
             self::assertNotNull($footer);
             self::assertSame($issued['verification_display'], $footer['code'], 'O rodapé imprime o mesmo código da tela.');
-            $fragment = (string)parse_url($footer['link'], PHP_URL_FRAGMENT);
-            self::assertSame($footer['code'], $fragment, 'O link leva o código só no fragmento.');
+            // ADR 0115: o link e o QR impressos levam só o endereço fixo; o código é digitado na página.
+            self::assertSame(DocumentVerification::PATH, parse_url($footer['link'], PHP_URL_PATH), 'O link aponta para o endereço fixo.');
+            self::assertNull(parse_url($footer['link'], PHP_URL_FRAGMENT), 'O link não leva o código.');
             self::assertNull(parse_url($footer['link'], PHP_URL_QUERY));
-            foreach ([$footer['code'], $fragment, strtolower(str_replace('-', ' ', $footer['code']))] as $typed) {
+            foreach ([$footer['code'], str_replace('-', '', $footer['code']), strtolower(str_replace('-', ' ', $footer['code']))] as $typed) {
                 $result = $service->check($typed, self::IP);
                 self::assertTrue($result['ok'], $kind . ': ' . $typed);
                 self::assertSame(UnitDocuments::ALL_KINDS[$kind], $result['document']['kind']);
