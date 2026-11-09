@@ -89,15 +89,23 @@ topo (Ctrl + K) acha qualquer página pelo nome.
    endereço é preenchido sozinho; telefone, CEP, CPF/CNPJ e e-mail ganham máscara enquanto você
    digita. Ao salvar, o sistema abre o **Checklist de chegada** do condomínio (clique em "Iniciar
    checklist de chegada"). Depois: Condomínios → Unidades (ou o cadastro rápido de unidades) e
-   Cadastros → Proprietários e inquilinos.
+   Cadastros → Proprietários e inquilinos → Novo. No card **"Pessoa já cadastrada?"**, ao lado do
+   formulário, busque pelo nome ou CPF/CNPJ, escolha a pessoa, marque várias unidades (de um ou mais
+   condomínios), escolha proprietário ou inquilino e clique em "Vincular às unidades marcadas". Pessoas
+   de condomínios que você não administra só aparecem pelo CPF/CNPJ completo. Num cadastro já aberto o
+   mesmo card aparece como "Vincular a mais unidades".
 4. **Financeiro:** Configurações → seção "Financeiro e parâmetros" → **Plano de Contas** e Tipos de
    faturas; Financeiro → seção "Cadastros financeiros" → Contas bancárias; Financeiro → seção
    "Contas e pagamentos" → Faturas (preparar, emitir); Cobrança → Boletos (registrar no sandbox).
 5. **Retorno e conciliação:** Cobrança → **Arquivo de Retorno** (importar o arquivo do banco) e
    Cobrança → **Retornos** (lista dos retornos importados e das divergências de cada um).
 6. **Acordo:** Cobrança → Acordos (simular encargos e criar). Para ter inadimplência para testar,
-   use os dados de exemplo do lab (comando `tools/lab-dados-exemplo.php`, descrito na seção 2
-   quando estiver na main).
+   crie os dados de exemplo do lab: ponha no `.env` as linhas `ERP_DEMO_DATA=true` e
+   `ERP_DEMO_DB=connect_legacy` e rode
+   `docker compose exec -T app php tools/lab-dados-exemplo.php`. Ele cria 2 condomínios, 8 unidades,
+   10 pessoas e lançamentos vencidos, todos com nome começando por "EXEMPLO". Rodar de novo não duplica.
+   Para apagar tudo depois: `docker compose exec -T app php tools/lab-dados-exemplo.php --remover`.
+   O comando recusa rodar fora do lab e em banco que não seja o de `ERP_DEMO_DB`.
 7. **Documentos:** Documentos → Certidão de débitos. Imprima: o documento tem as linhas de assinatura
    do síndico e da administradora. Confira o código em
    `https://erp.connect.lab/verificar-certidao-debitos` (sem login): digite o código e a página diz se
@@ -120,9 +128,9 @@ Se uma tela mostrar o aviso de dados de exemplo, confira na tabela da seção 5 
 |---|---|
 | 1. Entrou sem 2FA | As chaves do 2FA agora são lidas do `.env` e o `testar-main.sh` cria e liga o 2FA (passo 6b) |
 | 3. Cadastro de condomínio | CNPJ opcional, CEP preenche o endereço, máscaras de telefone/CEP/CPF/CNPJ/e-mail, checklist de chegada redesenhado no padrão do ERP |
-| 3. Pessoa com várias unidades | Busca de pessoa existente e vínculo com várias unidades: em andamento (API e tela) |
+| 3. Pessoa com várias unidades | Card "Pessoa já cadastrada?" em Proprietários e inquilinos: busca por nome ou CPF/CNPJ e vínculo com várias unidades de uma vez (ADR 0162) |
 | 4, 5, 8, 9. Páginas "sumidas" | Existiam, mas o menu escondia as páginas dos grupos grandes e o guia usava outros nomes. O menu agora mostra todas as páginas por seção e este roteiro usa os nomes do menu |
-| 6. Sem inadimplência | Dados de exemplo para o lab: em andamento |
+| 6. Sem inadimplência | Comando `tools/lab-dados-exemplo.php` cria dados de exemplo com lançamentos vencidos (e `--remover` apaga) |
 | 7. Impressão e verificação | Assinaturas do síndico e da administradora, endereço fixo `/verificar-certidao-debitos` e a página não fica mais carregando |
 | 9. Chamados não abriram | Em correção junto com a integração ERP / Help Desk |
 | 10. Comunicado "não enviou" | A tela agora explica que no lab nada sai e mostra o modo de entrega |

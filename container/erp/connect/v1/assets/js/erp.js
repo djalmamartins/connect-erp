@@ -1445,6 +1445,7 @@
     var roleLabels = { owner: 'Proprietário', tenant: 'Inquilino' };
     var person = root.hasAttribute('data-person-id') ? { id: parseInt(root.getAttribute('data-person-id'), 10), name: root.getAttribute('data-person-name') || '', links: [] } : null;
     var found = [];
+    var searched = '';
     var timer = null;
     var seq = 0;
     var linkChips = function (links) {
@@ -1473,7 +1474,7 @@
     var render = function (list) {
       found = list;
       if (!results) return;
-      if (!list.length) { results.innerHTML = ''; status.textContent = 'Ninguém encontrado. Preencha o formulário ao lado para cadastrar uma pessoa nova.'; return; }
+      if (!list.length) { results.innerHTML = ''; status.textContent = 'Ninguém encontrado. Pessoas de outros condomínios só aparecem pelo CPF/CNPJ completo. Se for alguém novo, preencha o formulário ao lado.'; return; }
       status.textContent = list.length + ' pessoa(s) encontrada(s). Escolha uma para vincular a unidades.';
       results.innerHTML = list.map(function (p, i) {
         var where = (p.links || []).map(function (l) { return l.condominium_name + ' ' + l.unit_label; });
@@ -1489,6 +1490,7 @@
         if (text.length < 3) { if (results) results.innerHTML = ''; status.textContent = 'Digite pelo menos 3 caracteres.'; return; }
         timer = window.setTimeout(function () {
           var mine = ++seq;
+          searched = text;
           status.textContent = 'Buscando…';
           call('GET', root.getAttribute('data-search') + '?q=' + encodeURIComponent(text) + '&role=any&limit=20').then(function (json) {
             if (mine === seq) render(json.data || []);
@@ -1531,6 +1533,9 @@
       var body = { unit_ids: ids, role: $('[name="role"]', form).value };
       var start = $('[name="starts_at"]', form).value;
       if (start) body.starts_at = start;
+      // Pessoa de fora do seu escopo (links vazio) só é vinculada com o CPF/CNPJ digitado na busca (ADR 0162).
+      var typed = searched.replace(/\D+/g, '');
+      if (!(person.links || []).length && (typed.length === 11 || typed.length === 14)) body.document = typed;
       var button = $('[data-person-submit]', form);
       busy(button, true);
       call('POST', root.getAttribute('data-links').replace('{id}', encodeURIComponent(String(person.id))), body).then(function (json) {
