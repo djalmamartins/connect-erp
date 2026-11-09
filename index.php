@@ -266,6 +266,8 @@ $route->post("/inspections/{id}/complete", "Inspections:complete", null, \Source
 $route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets/{id}", "Tickets:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/tickets/{id}/messages", "Tickets:messages", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/tickets/{id}/messages", "Tickets:reply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->namespace(null);
 
 /**

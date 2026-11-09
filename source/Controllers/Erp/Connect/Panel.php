@@ -1008,7 +1008,10 @@ final class Panel extends Controller
             'currentGroup' => $group,
             'breadcrumbs' => $this->breadcrumbs($page, $group, $title),
             'demo' => DemoData::enabled(),
-            'notifications' => $dashboard['notifications'] ?? [],
+            // Sino (ADR 0142): as notificações reais da pessoa, as mesmas do Studio e do Help Desk.
+            // Sem banco (smoke de renderização) cai nas de demonstração, quando ligadas.
+            ...$this->bell($user, $dashboard['notifications'] ?? []),
+            'supportMenu' => $this->supportMenu($user),
             'withNavigation' => true,
             'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
             'condoCurrent' => CondominiumContext::current(),
@@ -1020,6 +1023,48 @@ final class Panel extends Controller
                 return '<svg class="erp-icon ' . htmlspecialchars($class, ENT_QUOTES) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths . '</svg>';
             },
         ], $extra);
+    }
+
+    /**
+     * @param list<array{title:string,text:string,href:string}> $demo
+     * @return array{notifications:list<array>,notificationCount:int,notificationsReal:bool}
+     */
+    private function bell(User $user, array $demo): array
+    {
+        try {
+            $feed = new \Source\Services\Support\NotificationFeed();
+            $items = array_map(static fn (array $item): array => [
+                'title' => $item['title'],
+                'text' => $item['body'],
+                'href' => '/notificacoes/' . $item['id'],
+                'unread' => $item['unread'],
+                'when' => date('d/m H:i', strtotime($item['created_at']) ?: time()),
+            ], $feed->latest($user, 8));
+            return ['notifications' => $items, 'notificationCount' => $feed->unreadCount($user), 'notificationsReal' => true];
+        } catch (\Throwable) {
+            return ['notifications' => DemoData::enabled() ? $demo : [], 'notificationCount' => 0, 'notificationsReal' => false];
+        }
+    }
+
+    /**
+     * Atalhos de suporte da barra superior (ADR 0142): abrir chamado e acompanhar daqui, e o Help
+     * Desk para quem atende.
+     *
+     * @return list<array{label:string,text:string,href:string,icon:string}>
+     */
+    private function supportMenu(User $user): array
+    {
+        $items = [
+            ['label' => 'Abrir chamado', 'text' => 'Vai para a fila do Help Desk', 'href' => erp_url('/operacional/chamados#abrir'), 'icon' => 'plus'],
+            ['label' => 'Meus chamados', 'text' => 'Respostas da equipe e andamento', 'href' => erp_url('/operacional/chamados'), 'icon' => 'clipboard'],
+        ];
+        try {
+            if (\Source\Support\Access::can('support.manage', $user)) {
+                $items[] = ['label' => 'Help Desk', 'text' => 'Atender a fila de chamados', 'href' => \Source\Services\Environments::href('helpdesk'), 'icon' => 'help'];
+            }
+        } catch (\Throwable) {
+        }
+        return $items;
     }
 
     /** @return list<array{label: string, href: ?string}> */

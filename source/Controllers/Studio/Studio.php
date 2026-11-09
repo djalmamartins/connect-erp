@@ -1382,6 +1382,8 @@ class Studio extends Controller
                 $stmt = $pdo->prepare("UPDATE studio_support_tickets SET status=:status,priority=:priority,assigned_to=:assigned,team=:team,category=:category,tags=:tags,resolved_at=:resolved WHERE id=:id");
                 $stmt->execute(["status" => $status,"priority"=>$priority,"assigned" => ($id = (int)($data["assigned_to"] ?? $before->assigned_to)) ?: null,"team"=>mb_substr(trim(strip_tags((string)($data['team']??$before->team))),0,100),"category"=>mb_substr(trim(strip_tags((string)($data['category']??$before->category))),0,100),"tags"=>mb_substr(trim(strip_tags((string)($data['tags']??$before->tags))),0,500), "resolved" => in_array($status, ["resolved", "closed"], true) ? date("Y-m-d H:i:s") : null, "id" => $ticketId]);
                 foreach(['status','priority','assigned_to','team','category','tags'] as $field){$new=$field==='assigned_to'?(($id=(int)($data['assigned_to']??$before->$field))?:null):($field==='status'?$status:($field==='priority'?$priority:mb_substr(trim(strip_tags((string)($data[$field]??$before->$field))),0,$field==='tags'?500:100)));if((string)$before->$field!==(string)$new){$event=$pdo->prepare("INSERT INTO studio_support_ticket_events(ticket_id,user_id,event_type,old_value,new_value) VALUES(?,?,?,?,?)");$event->execute([$ticketId,$user->id,$field,(string)$before->$field,(string)$new]);}}
+                // Quem pediu fica sabendo quando a equipe precisa dele ou encerra o chamado (ADR 0142).
+                if ((string)$before->status !== $status && in_array($status, ['waiting_customer', 'resolved', 'closed'], true)) { $this->notifyTicketRequester($ticketId, 'status', (int)$user->id); }
                 echo json_encode(["redirect" => url("/helpdesk/tickets?ticket=".$ticketId)]); return;
             }
             if ($data["action"] === "reply" && $ticketId) {
@@ -1395,6 +1397,8 @@ class Studio extends Controller
                 $timeSpent=max(0,min(86400,(int)($data['time_spent']??0)));$nextStatus=!empty($data['resolve_after'])?'resolved':null;
                 $pdo->prepare("UPDATE studio_support_tickets SET status=".($nextStatus?"'resolved'":"IF(status='open','in_progress',status)").",first_response_at=COALESCE(first_response_at,NOW()),work_seconds=work_seconds+:seconds,resolved_at=".($nextStatus?'NOW()':'resolved_at')." WHERE id=:id")->execute(["seconds"=>$timeSpent,"id" => $ticketId]);
                 $files=$_FILES['attachments']??null;if($files&&!empty($files['tmp_name'])&&is_array($files['tmp_name'])){foreach($files['tmp_name'] as $index=>$temporary){if(!$temporary)continue;$file=['name'=>$files['name'][$index]??'arquivo','type'=>$files['type'][$index]??'','tmp_name'=>$temporary,'error'=>$files['error'][$index]??UPLOAD_ERR_NO_FILE,'size'=>$files['size'][$index]??0];$upload=new Upload();$path=$upload->file($file,'ticket-'.$ticketId.'-'.bin2hex(random_bytes(4)));if(!$path){$this->jsonMessage('Um dos anexos não é válido.','warning');return;}$attachment=$pdo->prepare("INSERT INTO studio_support_ticket_attachments(ticket_id,message_id,user_id,file_path,original_name,mime_type,file_size) VALUES(?,?,?,?,?,?,?)");$attachment->execute([$ticketId,$messageId,$user->id,$path,mb_substr(basename((string)$file['name']),0,255),$file['type']?:null,(int)$file['size']]);}}
+                // Resposta ao cliente (não a nota interna) avisa quem pediu, no sino do ERP e por e-mail (ADR 0142).
+                if (empty($data["is_internal"])) { $this->notifyTicketRequester($ticketId, 'reply', (int)$user->id, $reply); }
                 echo json_encode(["redirect" => url("/helpdesk/tickets?ticket=" . $ticketId)]); return;
             }
             // Abertura pelo serviço único (ADR 0034): mesma regra do ERP, do site e da API.
@@ -2017,11 +2021,23 @@ class Studio extends Controller
     private function safeNotificationLink(string $link): ?string
     {
         if ($link === "") { return url("/studio/dash"); }
-        if (str_starts_with($link, "/") && !str_starts_with($link, "//")) { return $link; }
+        // Links do próprio host ou de um host irmão (ERP, Studio, site); o irmão passa pela troca de ambiente (ADR 0142).
+        $resolved = \Source\Services\Environments::resolveLink($link);
+        if ($resolved !== null) { return $resolved; }
         $scheme = strtolower((string)parse_url($link, PHP_URL_SCHEME));
         $host = strtolower((string)parse_url($link, PHP_URL_HOST));
         $systemHost = strtolower((string)parse_url(url(), PHP_URL_HOST));
         return in_array($scheme, ["http", "https"], true) && $host !== "" && hash_equals($systemHost, $host) ? $link : null;
+    }
+
+    /** Aviso ao solicitante do chamado; falha no aviso não desfaz a resposta. */
+    private function notifyTicketRequester(int $ticketId, string $kind, int $authorId, ?string $text = null): void
+    {
+        try {
+            (new \Source\Services\Support\TicketService())->notifyRequester($ticketId, $kind, $authorId, $text);
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, "tickets", ["event_type" => "ticket_requester_notification_failed", "ticket_id" => $ticketId]);
+        }
     }
 
     private function templateDirectories(string $base): array

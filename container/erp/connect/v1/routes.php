@@ -117,9 +117,15 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/operacional/vistorias/{id}/relatorio/pdf", "Inspections:reportPdf");
     $route->post("/operacional/vistorias/{id}/enviar", "Inspections:send");
 
+    // Sino (ADR 0142): as notificações são as mesmas do Studio e do Help Desk.
+    $route->get("/notificacoes/{id}", "Inbox:open");
+    $route->post("/notificacoes/lidas", "Inbox:readAll");
+
     // Chamados (CN-004, ADR 0034): abertura para o Help Desk, mesmo serviço da API /api/v1/tickets.
     $route->get("/operacional/chamados", "Tickets:index");
     $route->post("/operacional/chamados", "Tickets:store");
+    $route->get("/operacional/chamados/{id}", "Tickets:show");
+    $route->post("/operacional/chamados/{id}/responder", "Tickets:reply");
 
     // Fechamento mensal (AP-030): a tela é a página do catálogo (dados reais em Panel); fechar e
     // reabrir valem para o condomínio da barra superior (ADR 0032), com CSRF.
