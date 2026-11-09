@@ -1211,7 +1211,7 @@ paths:
       parameters:
         - { name: condominium_id, in: query, required: true, schema: { type: integer } }
         - { name: unit_id, in: query, schema: { type: integer } }
-        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Padrão hoje' }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Padrão hoje; no máximo 60 dias à frente (ADR 0113)' }
         - { name: format, in: query, schema: { type: string, enum: [csv] } }
       responses:
         '200': { description: '{ as_of, rule{fine_bp, monthly_interest_bp, price_index, source, formula}, rows[{ unit_label, description, competence, due_on, principal_cents, index_steps[{competence, rate_percent, factor}], days_late, correction_cents, fine_cents, interest_cents, total_cents, missing_index }], totals }, ou CSV' }
