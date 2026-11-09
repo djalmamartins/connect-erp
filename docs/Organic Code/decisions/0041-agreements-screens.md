@@ -1,4 +1,4 @@
-# 0040 — Telas de inadimplência e acordos (AP-033 e AP-034)
+# 0041 — Telas de inadimplência e acordos (AP-033 e AP-034)
 
 Data: 2026-11-09 · Status: aceito (rodada autônoma, por delegação do Djalma)
 
@@ -21,7 +21,7 @@ O backend de inadimplência e acordos (ADR 0039) expõe `GET /api/v1/delinquency
 - **Fazer acordo** (modal): escolhe as contas vencidas da unidade, a conta de receita analítica do
   plano (padrão ou do condomínio, buscada em todas as páginas da API de cadastros), as parcelas, o
   primeiro vencimento, os encargos e o desconto. O resumo mostra a conta antes de enviar.
-  Encargos são informados à mão: a regra de multa e juros ainda depende do Djalma.
+  Por ora os encargos são informados à mão; o cálculo de multa, juros e correção (regra decidida, backend em andamento) vai substituir o campo.
 - **AP-034 Parcelas** (`pages/finance/agreement-parcels.php`): parcelas dos acordos ativos da página,
   das vencidas para as pagas (`Panel::flattenParcels`, regra pura).
 - **AP-038 Retornos** passa a listar também os arquivos importados (`BankReturns::files`), acima da
@@ -31,4 +31,4 @@ O backend de inadimplência e acordos (ADR 0039) expõe `GET /api/v1/delinquency
 
 - AP-034 usa o detalhe de cada acordo da página (até 25 consultas). Uma listagem própria de parcelas
   na API evitaria isso, se o volume crescer.
-- Quebra de acordo por atraso e cálculo de multa e juros continuam pendentes (ADR 0039).
+- Quebra de acordo por atraso continua pendente (ADR 0039).

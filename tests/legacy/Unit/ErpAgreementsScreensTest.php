@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 use Source\Controllers\Erp\Connect\Panel;
 
 /**
- * Telas de inadimplência e acordos (AP-033/034, ADR 0039 e 0040): dados de Panel::agreementData,
+ * Telas de inadimplência e acordos (AP-033/034, ADR 0039 e 0041): dados de Panel::agreementData,
  * ações pela API /api/v1/agreements com o CSRF no cabeçalho.
  */
 final class ErpAgreementsScreensTest extends TestCase

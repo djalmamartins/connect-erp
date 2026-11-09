@@ -362,7 +362,7 @@ $assert(!str_contains($html, 'data-divergence-resolve=') && !str_contains($html,
 $html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [], 'bankReturnFiles' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'bankReady' => true, 'canManageCharges' => true], 'empty');
 $assert(str_contains($html, 'Nenhuma divergência pendente') && str_contains($html, 'Nenhum arquivo de retorno importado'), 'AP-038: fila e arquivos vazios');
 
-// Inadimplência e acordos (AP-033, AP-034; ADR 0039 e 0040) com dados reais.
+// Inadimplência e acordos (AP-033, AP-034; ADR 0039 e 0041) com dados reais.
 $agreementRow = static fn (array $over = []): array => $over + ['id' => 4, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => 12, 'unit_label' => 'Apto <101>', 'status' => 'active',
     'chart_account_id' => 5, 'original_cents' => 180000, 'fees_cents' => 3600, 'discount_cents' => 0, 'total_cents' => 183600, 'installments' => 3, 'first_due_on' => '2026-11-20', 'notes' => null,
     'cancelled_at' => null, 'cancel_reason' => null, 'created_at' => '2026-11-09 09:00:00', 'paid_installments' => 0, 'paid_cents' => 0, 'open_cents' => 183600, 'settled' => false];

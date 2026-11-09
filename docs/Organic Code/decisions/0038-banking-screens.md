@@ -27,6 +27,6 @@ O backend bancário (ADR 0035) expõe `/api/v1/bank-charges`, `/api/v1/bank-retu
 
 ## Consequências e lacunas
 
-- AP-038 passou a listar também os arquivos importados quando a API ganhou `GET /bank-returns` (ADR 0040).
+- AP-038 passou a listar também os arquivos importados quando a API ganhou `GET /bank-returns` (ADR 0041).
 - AP-037 (Remessas) segue na demonstração: remessa CNAB fica para o primeiro banco homologado.
 - A lista de boletos mostra o número do lançamento, não a descrição nem a unidade (a API não traz).

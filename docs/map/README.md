@@ -956,7 +956,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0037 — Relatórios financeiros: balancete e prestação de contas com conciliação](../../docs/Organic%20Code/decisions/0037-financial-reports.md)
 - [0038 — Telas da cobrança bancária (boletos, importar retorno, divergências)](../../docs/Organic%20Code/decisions/0038-banking-screens.md)
 - [0039 — Inadimplência e acordos (AP-033/034)](../../docs/Organic%20Code/decisions/0039-delinquency-and-agreements.md)
-- [0040 — Telas de inadimplência e acordos (AP-033 e AP-034)](../../docs/Organic%20Code/decisions/0040-agreements-screens.md)
+- [0041 — Telas de inadimplência e acordos (AP-033 e AP-034)](../../docs/Organic%20Code/decisions/0041-agreements-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
