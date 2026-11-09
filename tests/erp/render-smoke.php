@@ -1015,6 +1015,29 @@ $assert(str_contains($html, 'Unidade não encontrada') && !str_contains($html, '
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem unidades');
 
+// Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
+$html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));
+$save('unit-batch', $html);
+$common($html, 'cadastro rápido', 'Cadastro rápido de unidades');
+$assert(str_contains($html, 'data-erp-unit-batch data-api="https://' . $smokeHost . '/api/v1/unit-batches"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, '<option value="7" selected>Residencial &lt;Exemplo&gt;</option>')
+    && str_contains($html, 'name="units_per_floor"') && str_contains($html, 'data-unit-batch-preview hidden'), 'cadastro rápido: formulário, API e CSRF');
+$html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [], 'batchSelected' => null, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));
+$assert(str_contains($html, 'Nenhum condomínio no seu acesso') && !str_contains($html, 'data-unit-batch-form'), 'cadastro rápido: sem condomínio');
+$measureUnit = static fn (int $id, string $label, ?float $f, ?float $a): array => ['id' => $id, 'label' => $label, 'block' => null, 'number' => $label, 'floor' => '1', 'type' => 'apartamento', 'ideal_fraction' => $f, 'private_area' => $a];
+$measures = ['condominium_id' => 7, 'units' => [$measureUnit(1, '101', 0.25, 50.0), $measureUnit(2, '<102>', null, 72.5), $measureUnit(3, '103', null, null)], 'fraction_sum' => 0.25, 'area_sum' => 122.5, 'missing_fraction' => 2, 'missing_area' => 1, 'complete' => false];
+$measuresData = static fn (array $over = []): array => $over + ['measuresReady' => true, 'measures' => $measures, 'measuresError' => null, 'canManageMeasures' => true];
+Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'Residencial Exemplo']], 7);
+$html = $agreementPage('AP-167', 'pages/condominiums/unit-measures', $measuresData(), 'real');
+$assert(str_contains($html, 'data-erp-unit-measures data-api="https://' . $smokeHost . '/api/v1/unit-measures" data-condominium="7"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, '&lt;102&gt;') && !str_contains($html, '<102>')
+    && substr_count($html, 'name="ideal_fraction"') === 3 && str_contains($html, 'value="0,250000"') && str_contains($html, 'value="72,50"') && str_contains($html, 'data-unit-measures-distribute="area"') && str_contains($html, '25,0000%'), 'AP-167: grade editável, escapada, com API e CSRF');
+$html = $agreementPage('AP-167', 'pages/condominiums/unit-measures', $measuresData(['canManageMeasures' => false]));
+$assert(!str_contains($html, 'name="ideal_fraction"') && !str_contains($html, 'data-unit-measures-distribute') && str_contains($html, '0,250000'), 'AP-167: só leitura sem permissão de alterar');
+$html = $agreementPage('AP-167', 'pages/condominiums/unit-measures', $measuresData(['measures' => ['units' => []] + $measures]));
+$assert(str_contains($html, 'Nenhuma unidade ativa') && str_contains($html, 'cadastro rápido'), 'AP-167: sem unidades sugere o cadastro rápido');
+Source\Support\Erp\CondominiumContext::reset();
+$html = $agreementPage('AP-167', 'pages/condominiums/unit-measures', $measuresData(['measures' => null]));
+$assert(str_contains($html, 'Escolha um condomínio'), 'AP-167: sem condomínio na barra superior');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
@@ -1067,6 +1090,9 @@ if (!erp_host()) $assert(!in_array('GET /dashboard', $route->paths, true), 'fora
 $idShow = array_search((erp_host() ? '' : '/erp') . '/condominios/{id}', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
 $idUnits = array_search((erp_host() ? '' : '/erp') . '/condominios/unidades', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
 $assert($idShow !== false && $idUnits !== false && $idUnits < $idShow, '/condominios/{id} registrada depois de /condominios/unidades');
+$idBatch = array_search((erp_host() ? '' : '/erp') . '/condominios/unidades/cadastro-rapido', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
+$idUnitShow = array_search((erp_host() ? '' : '/erp') . '/condominios/unidades/{id}', array_map(static fn (string $p): string => substr($p, 4), $route->paths), true);
+$assert($idBatch !== false && $idUnitShow !== false && $idBatch < $idUnitShow, 'cadastro rápido registrado antes de /condominios/unidades/{id}');
 echo 'Rotas registradas: ' . count($route->paths) . "\n";
 
 ksort($kinds);
