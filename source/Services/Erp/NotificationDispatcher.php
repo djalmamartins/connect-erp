@@ -51,6 +51,8 @@ final class NotificationDispatcher
         // (notices_opt_out). O assunto e o texto do comunicado vêm de erp_announcements.
         'announcement.published' => ['template' => 'announcement', 'subject' => 'Comunicado do condomínio', 'audience' => 'notices'],
         'collection.reminder' => ['template' => 'collection-reminder', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'billing'],
+        // Convite de morador (ADR 0090): só o morador convidado; o link leva o token emitido na hora do envio.
+        'resident.invitation' => ['template' => 'resident-invitation', 'subject' => 'Convite para o portal do condomínio', 'audience' => 'resident'],
     ];
 
     private PDO $pdo;
@@ -197,6 +199,7 @@ final class NotificationDispatcher
                 return $this->finish($id, 'cancelled', 0, match ($notice['audience']) {
                     'billing' => 'Ninguém da unidade autorizou receber cobrança por e-mail.',
                     'notices' => 'Ninguém da unidade com e-mail aceita comunicados.',
+                    'resident' => 'O morador convidado não está ativo ou não tem e-mail.',
                     default => 'Nenhum destinatário com e-mail cadastrado.',
                 });
             }
@@ -209,7 +212,16 @@ final class NotificationDispatcher
                     $count++;   // já entregue numa tentativa anterior: não repete
                     continue;
                 }
-                $body = $mail->render($template, $context + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
+                $vars = $context;
+                if ($event['event_type'] === ResidentInvitations::EVENT) {
+                    // Token novo só para quem ainda não recebeu: o link enviado antes continua valendo (ADR 0090).
+                    $token = (new ResidentInvitations($this->pdo))->issueToken((int)($payload['invitation_id'] ?? 0));
+                    if ($token === null) {
+                        return $this->finish($id, 'cancelled', $count, 'Convite vencido, revogado ou já aceito.');
+                    }
+                    $vars['invitation_link'] = url("/convite/{$token}");
+                }
+                $body = $mail->render($template, $vars + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
                 // Assunto numa linha só, mesmo para dado antigo (ADR 0065).
                 $subject = trim((string)preg_replace('/[\r\n\x{2028}\x{2029}]+/u', ' ', (string)($context['subject'] ?? $notice['subject'])));
                 $sentTo = null;
@@ -253,6 +265,16 @@ final class NotificationDispatcher
     /** @return list<array{email:string, name:string}> */
     private function recipients(array $event, array $payload, string $audience): array
     {
+        if ($audience === 'resident') {
+            if (empty($payload['resident_id'])) {
+                return [];
+            }
+            $stmt = $this->pdo->prepare("SELECT name, email FROM erp_residents WHERE id = :r AND condominium_id = :c AND deleted_at IS NULL
+                AND status = 'active' AND email IS NOT NULL AND email <> ''");
+            $stmt->execute(['r' => (int)$payload['resident_id'], 'c' => (int)$event['condominium_id']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return is_array($row) && filter_var($row['email'], FILTER_VALIDATE_EMAIL) ? [['email' => (string)$row['email'], 'name' => (string)$row['name']]] : [];
+        }
         if (empty($payload['unit_id'])) {
             return [];
         }

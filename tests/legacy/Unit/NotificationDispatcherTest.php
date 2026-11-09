@@ -42,7 +42,7 @@ final class NotificationDispatcherTest extends TestCase
         $mail = new MailTemplate();
         foreach (NotificationDispatcher::NOTICES as $event => $notice) {
             self::assertTrue($mail->exists($notice['template']), "Modelo de {$event} existe em container/send.");
-            self::assertContains($notice['audience'], ['unit', 'billing', 'notices']);
+            self::assertContains($notice['audience'], ['unit', 'billing', 'notices', 'resident']);
         }
         foreach (['invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached'] as $billing) {
             self::assertSame('billing', NotificationDispatcher::NOTICES[$billing]['audience'], "{$billing} respeita o opt-in de cobrança por e-mail.");
@@ -68,13 +68,14 @@ final class NotificationDispatcherTest extends TestCase
             'agreement-created' => ['number' => '12', 'installments' => '3', 'installment' => 'R$ 343,34', 'total' => 'R$ 1.030,00', 'first_due_on' => '10/12/2026', 'last_due_on' => '10/02/2027'],
             'agreement-breached' => ['number' => '12', 'total' => 'R$ 1.030,00', 'overdue_installments' => '2'],
             'reservation-approved' => ['area' => 'Salão', 'date' => '20/11/2026', 'starts' => '18:00', 'ends' => '22:00', 'fee' => 'R$ 80,00'],
+            'resident-invitation' => ['invitation_link' => 'https://connect.test/convite/abc', 'expires_days' => '7'],
         ];
         $mail = new MailTemplate();
         foreach ($cases as $template => $vars) {
             $html = $mail->render($template, $vars + $base);
             self::assertStringNotContainsString($xss, $html, "{$template} escapa as variáveis.");
             self::assertStringContainsString('&lt;script&gt;', $html);
-            foreach (['amount', 'total', 'date', 'digitable_line'] as $key) {
+            foreach (['amount', 'total', 'date', 'digitable_line', 'invitation_link'] as $key) {
                 if (isset($vars[$key])) {
                     self::assertStringContainsString($vars[$key], $html, "{$template} mostra {$key}.");
                 }
