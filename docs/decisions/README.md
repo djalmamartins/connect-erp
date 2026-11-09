@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0075.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0076.**
   Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079, Avançar 0080–0099 (0055–0059 já usados pelo Avançar).
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
@@ -96,3 +96,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
 | [0073](../Organic%20Code/decisions/0073-entry-shortcut-screens.md) | Telas dos lançamentos avulsos (AP-024 a AP-029) e do recibo (AP-040): desconto, multa, cobrança extra, transferência e recibo de contas pagas |
 | [0074](../Organic%20Code/decisions/0074-import-screens.md) | Telas de importação (AP-140, AP-142 a AP-146 e AP-044): envio, prévia por linha, aplicar e fila de linhas pendentes do extrato |
+| [0075](../Organic%20Code/decisions/0075-communication-screens.md) | Telas de comunicação (AP-111, AP-137, AP-138 e AP-139): comunicado, aviso de cobrança, agendados e endereços |

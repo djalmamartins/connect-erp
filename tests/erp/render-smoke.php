@@ -565,6 +565,75 @@ $html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData([
 $assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
 $assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
     && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+// Comunicação (AP-111, AP-137, AP-138 e AP-139; ADR 0059 e 0075).
+$Comm = Source\Controllers\Erp\Connect\CommunicationScreens::class;
+$future = date('Y-m-d H:i:s', strtotime('+3 days'));
+$annRow = static fn (array $over = []): array => $over + ['id' => 31, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'kind' => 'general', 'subject' => 'Obra na <garagem>', 'audience' => 'all',
+    'send_at' => '2026-11-08 10:00:00', 'scheduled' => false, 'units_count' => 12, 'status' => 'active', 'created_at' => '2026-11-08 09:58:00', 'cancelled_at' => null, 'cancel_reason' => null,
+    'delivery' => ['pending' => 0, 'processing' => 0, 'sent' => 12, 'failed' => 0, 'cancelled' => 0, 'recipients' => 19]];
+$commData = static fn (array $over = []): array => $over + ['commReady' => true, 'commContext' => 1, 'commError' => null, 'commCanManage' => true, 'commKind' => 'general', 'announcementDetail' => null,
+    'commUnits' => [['id' => 5, 'condominium_id' => 1, 'label' => 'Apto <101>'], ['id' => 6, 'condominium_id' => 1, 'label' => 'Apto 102']],
+    'announcements' => ['data' => [$annRow(), $annRow(['id' => 32, 'subject' => 'Assembleia', 'send_at' => $future, 'scheduled' => true, 'delivery' => ['pending' => 12, 'processing' => 0, 'sent' => 0, 'failed' => 0, 'cancelled' => 0, 'recipients' => 0]]),
+        $annRow(['id' => 33, 'status' => 'cancelled', 'delivery' => ['pending' => 0, 'processing' => 0, 'sent' => 2, 'failed' => 0, 'cancelled' => 10, 'recipients' => 3]])], 'total' => 3]];
+$html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(), 'list');
+$common($html, 'AP-111', 'Comunicados Gerais');
+$assert(str_contains($html, 'data-erp-communication') && str_contains($html, 'data-announce-form data-api="https://' . $smokeHost . '/api/v1/announcements" data-condominium="1"') && str_contains($html, 'maxlength="5000"')
+    && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, 'Todas as unidades ativas (2)') && str_contains($html, 'type="datetime-local"') && str_contains($html, 'Obra na &lt;garagem&gt;')
+    && str_contains($html, '>Enviado</span>') && str_contains($html, '>Agendado</span>') && str_contains($html, '>Cancelado</span>') && substr_count($html, 'data-cancel-open') === 1
+    && str_contains($html, '/api/v1/announcements/32/cancel') && str_contains($html, 'id="shortcut-cancel"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-111: enviar, lista com situação e cancelar só o que não saiu');
+$html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(['commContext' => null, 'commUnits' => []]));
+$assert(!str_contains($html, 'data-announce-form') && str_contains($html, 'Escolha um condomínio na barra superior para enviar') && str_contains($html, '<th scope="col">Condomínio</th>'), 'AP-111: em todos os condomínios pede a escolha');
+$html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(['commCanManage' => false]));
+$assert(!str_contains($html, 'data-announce-form') && !str_contains($html, 'data-cancel-open') && !str_contains($html, 'id="shortcut-cancel"'), 'AP-111: sem permissão de gravar só consulta');
+$html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(['announcementDetail' => $annRow(['id' => 32, 'send_at' => $future, 'scheduled' => true, 'body' => "Linha 1\n<script>x</script>",
+    'delivery' => ['pending' => 12, 'processing' => 0, 'sent' => 0, 'failed' => 0, 'cancelled' => 0, 'recipients' => 0]])]), 'detail');
+$assert(str_contains($html, 'Comunicado nº 32') && str_contains($html, 'Linha 1<br />') && str_contains($html, '&lt;script&gt;') && !str_contains($html, '<script>x') && str_contains($html, 'Cancelar o que não saiu')
+    && str_contains($html, 'Sai em') && !str_contains($html, 'data-announce-form'), 'AP-111: detalhe com texto escapado e cancelar');
+$html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(['announcementDetail' => $annRow(['status' => 'cancelled', 'cancelled_at' => '2026-11-08 11:00:00', 'cancel_reason' => 'Data <errada>', 'body' => 'Texto'])]));
+$assert(str_contains($html, 'Cancelado em 08/11/2026 11:00') && str_contains($html, 'Data &lt;errada&gt;') && !str_contains($html, 'Cancelar o que não saiu'), 'AP-111: cancelado mostra o motivo');
+
+$late = static fn (array $over = []): array => $over + ['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto <101>', 'entries' => [['id' => 1], ['id' => 2]],
+    'amount_cents' => 185000, 'charges_cents' => 0, 'total_cents' => 185000, 'oldest_due_on' => '2026-07-10', 'max_days_late' => 122];
+$collData = $commData(['commKind' => 'collection', 'collectionAsOf' => '2026-11-09', 'collectionUnits' => [$late(), $late(['unit_id' => 6, 'unit_label' => 'Apto 102', 'max_days_late' => 3]), $late(['unit_id' => 7, 'unit_label' => 'Apto 103'])],
+    'collectionReminded' => [7 => true], 'collectionBilling' => [5 => 2, 6 => 0, 7 => 1],
+    'announcements' => ['data' => [$annRow(['kind' => 'collection', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'units'])], 'total' => 1]]);
+$html = $agreementPage('AP-137', 'pages/communication/announcements', $collData, 'collection');
+$common($html, 'AP-137', 'Cobrança');
+$assert(str_contains($html, 'data-collection-form data-api="https://' . $smokeHost . '/api/v1/announcements/collection" data-condominium="1" data-as-of="2026-11-09"') && str_contains($html, 'R$ 1.850,00')
+    && str_contains($html, 'data-days="122"') && str_contains($html, 'Avisada nos últimos 7 dias') && str_contains($html, 'value="7" disabled') && str_contains($html, 'value="5" checked')
+    && str_contains($html, 'Ninguém recebe cobrança por e-mail') && str_contains($html, '2 pessoa(s)') && str_contains($html, 'name="min_days_late"') && str_contains($html, '?sem=cobranca')
+    && str_contains($html, 'name="referencia" value="2026-11-09"') && !str_contains($html, 'data-announce-form') && str_contains($html, 'Avisos enviados'), 'AP-137: unidades em atraso, avisadas de fora e enviar');
+$html = $agreementPage('AP-137', 'pages/communication/announcements', ['collectionReminded' => [5 => true, 6 => true, 7 => true]] + $collData);
+$assert(!str_contains($html, 'Enviar aviso de cobrança') && str_contains($html, 'Todas as unidades em atraso já foram avisadas'), 'AP-137: todas avisadas não envia');
+$html = $agreementPage('AP-137', 'pages/communication/announcements', ['collectionUnits' => [], 'commError' => 'Data de referência inválida ou futura. Mostrando a de hoje.'] + $collData);
+$assert(str_contains($html, 'Nenhuma unidade em atraso') && str_contains($html, 'Data de referência inválida'), 'AP-137: sem atraso e data inválida');
+
+$html = $agreementPage('AP-138', 'pages/communication/announcements', $commData(['commKind' => null, 'announcements' => ['data' => [$annRow(['id' => 32, 'kind' => 'collection', 'subject' => 'Aviso de débitos em aberto', 'send_at' => $future, 'scheduled' => true,
+    'delivery' => ['pending' => 4, 'processing' => 0, 'sent' => 0, 'failed' => 0, 'cancelled' => 0, 'recipients' => 0]])], 'total' => 1]]), 'list');
+$common($html, 'AP-138', 'Agendada');
+$assert(str_contains($html, 'Ainda vão sair') && str_contains($html, 'Aviso de cobrança') && !str_contains($html, 'data-announce-form') && !str_contains($html, 'data-collection-form') && substr_count($html, 'data-cancel-open') === 1, 'AP-138: agendados com cancelar');
+$html = $agreementPage('AP-138', 'pages/communication/announcements', $commData(['commKind' => null, 'announcements' => ['data' => [], 'total' => 0]]));
+$assert(str_contains($html, 'Nenhum envio agendado'), 'AP-138: vazio');
+
+$person = static fn (array $over = []): array => $over + ['resident_id' => 21, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'email' => 'a***@e***.com', 'valid_email' => true, 'notices' => true, 'billing' => true];
+$addrData = ['commReady' => true, 'commContext' => 1, 'commError' => null, 'commCanManage' => true, 'addressFilter' => null, 'addresses' => ['data' => [
+    ['unit_id' => 5, 'unit_label' => 'Apto <101>', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [$person(), $person(['resident_id' => 22, 'name' => 'Bruno', 'relationship' => 'tenant', 'notices' => false, 'billing' => false])], 'notices' => 1, 'billing' => 1],
+    ['unit_id' => 6, 'unit_label' => 'Apto 102', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [$person(['resident_id' => 23, 'name' => 'Carla', 'email' => null, 'valid_email' => false, 'notices' => false, 'billing' => false])], 'notices' => 0, 'billing' => 0],
+    ['unit_id' => 7, 'unit_label' => 'Apto 103', 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'people' => [], 'notices' => 0, 'billing' => 0]],
+    'totals' => ['units' => 3, 'without_notices' => 2, 'without_billing' => 2]]];
+$html = $agreementPage('AP-139', 'pages/communication/addresses', $addrData, 'list');
+$common($html, 'AP-139', 'Endereços');
+$assert(str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'a***@e***.com') && str_contains($html, 'Proprietário') && str_contains($html, 'Inquilino') && str_contains($html, '>Recusou</span>') && str_contains($html, '>Não autorizou</span>')
+    && str_contains($html, 'Sem e-mail válido') && str_contains($html, 'Nenhuma pessoa ativa nesta unidade') && str_contains($html, '/cadastros/proprietarios-e-inquilinos/21') && str_contains($html, 'rowspan="2"')
+    && str_contains($html, '<th scope="row"') && str_contains($html, '3 unidade(s).'), 'AP-139: pessoas por unidade, e-mail mascarado e o que recebem');
+$html = $agreementPage('AP-139', 'pages/communication/addresses', ['addressFilter' => 'comunicado'] + $addrData);
+$assert(str_contains($html, '2 unidade(s) no filtro') && !str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, '?sem=comunicado" aria-current="page"'), 'AP-139: filtro sem comunicado');
+$assert($Comm::statusOf(['status' => 'active', 'scheduled' => false, 'delivery' => ['failed' => 1]]) === ['Com falha', 'danger'] && $Comm::cancellable(['status' => 'active', 'delivery' => ['pending' => 1]])
+    && !$Comm::cancellable(['status' => 'cancelled', 'delivery' => ['pending' => 1]]) && $Comm::referenceDate('2999-01-01') === null, 'comunicação: regras puras');
+foreach (array_keys($Comm::PAGES) as $commPage) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($commPage, ['commReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($commPage, ['commReady' => true]) === $Comm::PAGES[$commPage], "{$commPage}: tela própria só com dados");
+}
+
 // Importações (AP-140, AP-142 a AP-146 e AP-044; ADR 0058 e 0074).
 $Imp = Source\Controllers\Erp\Connect\ImportScreens::class;
 $importRow = static fn (array $over = []): array => $over + ['id' => 41, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'kind' => 'entries', 'kind_label' => 'Lançamentos (planilha)', 'page' => 'AP-144',

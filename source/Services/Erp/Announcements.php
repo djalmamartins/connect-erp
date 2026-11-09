@@ -313,6 +313,17 @@ final class Announcements
     }
 
     /**
+     * Unidades avisadas de cobrança nos últimos COLLECTION_COOLDOWN_DAYS dias, que o próximo aviso deixa
+     * de fora. A tela AP-137 marca essas unidades antes do envio (ADR 0075).
+     *
+     * @return array<int, true>
+     */
+    public function remindedUnits(User $user, int $condominiumId): array
+    {
+        return $this->recentlyReminded($this->condominium($user, $condominiumId));
+    }
+
+    /**
      * Trava o condomínio até o fim da transação e aplica o teto de MAX_PER_DAY comunicados e avisos
      * criados em 24 horas (ADR 0065): um clique repetido ou um script não enchem a fila.
      */

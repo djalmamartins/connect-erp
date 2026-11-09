@@ -1599,6 +1599,144 @@
     }
   });
 
+  /* Comunicação (AP-111, AP-137 e AP-138; ADR 0059 e 0075): comunicado geral, aviso de cobrança,
+     agendar e cancelar o que ainda não saiu. Tudo pela API, que coloca um aviso por unidade na fila. */
+  $$('[data-erp-communication]').forEach(function (root) {
+    var call = apiClient(root);
+    var route = root.getAttribute('data-route');
+    var value = function (form, name) { var el = $('[name="' + name + '"]', form); return el ? el.value.trim() : ''; };
+    var sendAt = function (form) {
+      var later = $('[name="when"][value="later"]', form);
+      return later && later.checked ? value(form, 'send_at') : '';
+    };
+    var whenSetup = function (form) {
+      var box = $('[data-comm-send-at]', form);
+      var input = box && $('[name="send_at"]', box);
+      if (!box) return;
+      $$('[name="when"]', form).forEach(function (radio) {
+        radio.addEventListener('change', function () {
+          var later = $('[name="when"][value="later"]', form).checked;
+          box.hidden = !later;
+          if (later) { input.setAttribute('required', ''); input.focus(); } else { input.removeAttribute('required'); input.removeAttribute('aria-invalid'); }
+        });
+      });
+    };
+    var post = function (form, url, body, done) {
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', url, body).then(function (json) { done(json.data || {}); }).catch(function (error) { busy(button, false); formError(form, error.message); });
+    };
+    var stamp = function (text) { var p = String(text || '').replace('T', ' ').slice(0, 16).split(' '); return (p[0] || '').split('-').reverse().join('/') + (p[1] ? ' ' + p[1] : ''); };
+    var sentMessage = function (data, what) {
+      return data.scheduled ? what + ' agendado para ' + stamp(data.send_at) + '.' : what + ' na fila para ' + (data.units_count || 0) + ' unidade(s).';
+    };
+
+    $$('[data-comm-count]', root).forEach(function (field) {
+      var out = document.getElementById(field.getAttribute('data-comm-count'));
+      var max = parseInt(field.getAttribute('maxlength'), 10);
+      var update = function () { out.textContent = field.value.length.toLocaleString('pt-BR') + ' de ' + max.toLocaleString('pt-BR'); };
+      field.addEventListener('input', update);
+      update();
+    });
+
+    var announceForm = $('[data-announce-form]', root);
+    if (announceForm) {
+      whenSetup(announceForm);
+      var unitsBox = $('[data-comm-units]', announceForm);
+      var boxes = $$('[name="unit_ids"]', announceForm);
+      var unitsCount = $('[data-comm-units-count]', announceForm);
+      var recount = function () { unitsCount.textContent = '(' + boxes.filter(function (b) { return b.checked; }).length + ' de ' + boxes.length + ')'; };
+      boxes.forEach(function (b) { b.addEventListener('change', recount); });
+      $$('[name="audience"]', announceForm).forEach(function (radio) {
+        radio.addEventListener('change', function () { unitsBox.hidden = $('[name="audience"]:checked', announceForm).value !== 'units'; });
+      });
+      announceForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(announceForm)) return;
+        var audience = $('[name="audience"]:checked', announceForm).value;
+        var units = boxes.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
+        if (audience === 'units' && units.length === 0) { formError(announceForm, 'Escolha ao menos uma unidade.', boxes[0]); return; }
+        var body = { condominium_id: parseInt(announceForm.getAttribute('data-condominium'), 10), subject: value(announceForm, 'subject'), body: value(announceForm, 'body'),
+          audience: audience, unit_ids: audience === 'units' ? units : null, send_at: sendAt(announceForm) };
+        var when = body.send_at ? 'agendado para ' + stamp(body.send_at) : 'enviado agora';
+        if (!window.confirm('Enviar o comunicado "' + body.subject + '" para ' + (audience === 'units' ? units.length : boxes.length) + ' unidade(s), ' + when + '?')) return;
+        post(announceForm, announceForm.getAttribute('data-api'), body, function (data) {
+          toast(sentMessage(data, 'Comunicado'), 'success');
+          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 600);
+        });
+      });
+    }
+
+    var collectionForm = $('[data-collection-form]', root);
+    if (collectionForm && $('[type="submit"]', collectionForm)) {
+      whenSetup(collectionForm);
+      var unitBoxes = $$('[name="unit_ids"]', collectionForm);
+      var all = $('[data-collection-all]', collectionForm);
+      var minDays = $('[name="min_days_late"]', collectionForm);
+      var counter = $('[data-collection-count]', collectionForm);
+      unitBoxes.forEach(function (b) { if (b.disabled) b.setAttribute('data-reminded', ''); });
+      var eligible = function () {
+        var min = parseInt(minDays.value, 10) || 1;
+        return unitBoxes.filter(function (b) { return !b.hasAttribute('data-reminded') && parseInt(b.closest('tr').getAttribute('data-days'), 10) >= min; });
+      };
+      var refresh = function () {
+        var ok = eligible();
+        unitBoxes.forEach(function (b) {
+          if (b.hasAttribute('data-reminded')) return;
+          var inside = ok.indexOf(b) >= 0;
+          if (!inside) b.checked = false;
+          b.disabled = !inside;
+          b.closest('tr').classList.toggle('erp-muted', !inside);
+        });
+        var marked = ok.filter(function (b) { return b.checked; }).length;
+        if (all) { all.checked = ok.length > 0 && marked === ok.length; all.indeterminate = marked > 0 && marked < ok.length; }
+        counter.textContent = marked + ' de ' + ok.length + ' unidade(s) no aviso.';
+      };
+      unitBoxes.forEach(function (b) { b.addEventListener('change', refresh); });
+      if (all) all.addEventListener('change', function () { var on = all.checked; eligible().forEach(function (b) { b.checked = on; }); refresh(); });
+      minDays.addEventListener('input', function () { eligible().forEach(function (b) { if (b.disabled) b.checked = true; }); refresh(); });
+      refresh();
+      collectionForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(collectionForm)) return;
+        var ok = eligible();
+        var marked = ok.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
+        if (marked.length === 0) { formError(collectionForm, 'Nenhuma unidade marcada para o aviso.', ok[0] || minDays); return; }
+        var body = { condominium_id: parseInt(collectionForm.getAttribute('data-condominium'), 10), as_of: collectionForm.getAttribute('data-as-of'),
+          min_days_late: parseInt(minDays.value, 10), unit_ids: marked.length === ok.length ? null : marked, send_at: sendAt(collectionForm) };
+        if (!window.confirm('Enviar o aviso de débitos para ' + marked.length + ' unidade(s)? Só recebe quem autorizou a cobrança por e-mail.')) return;
+        post(collectionForm, collectionForm.getAttribute('data-api'), body, function (data) {
+          toast(sentMessage(data, 'Aviso de cobrança') + (data.skipped_recent ? ' ' + data.skipped_recent + ' unidade(s) já avisada(s) ficaram de fora.' : ''), 'success');
+          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 900);
+        });
+      });
+    }
+
+    var cancelDialog = $('#shortcut-cancel', root);
+    var cancelForm = cancelDialog && $('[data-cancel-form]', cancelDialog);
+    if (cancelForm) {
+      $$('[data-cancel-open]', root).forEach(function (button) {
+        button.addEventListener('click', function () {
+          cancelForm.reset();
+          formError(cancelForm, '');
+          busy($('[type="submit"]', cancelForm), false);
+          cancelForm.setAttribute('data-api', button.getAttribute('data-api'));
+          $('[data-cancel-label]', cancelForm).textContent = button.getAttribute('data-label');
+          openDialog(cancelDialog);
+        });
+      });
+      cancelForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(cancelForm)) return;
+        post(cancelForm, cancelForm.getAttribute('data-api'), { reason: value(cancelForm, 'reason').replace(/\s+/g, ' ') }, function (data) {
+          cancelDialog.close();
+          toast('Envio cancelado: ' + (data.stopped || 0) + ' aviso(s) parado(s) na fila.', 'success');
+          reload();
+        });
+      });
+    }
+  });
+
   /* Filtros GET que se aplicam ao escolher (ex.: unidade do painel AP-003). -- */
   /* Pelo teclado as setas trocam a opção sem abrir a lista: aí não envia, e o botão do formulário aplica (WCAG 3.2.2). */
   $$('select[data-erp-autosubmit]').forEach(function (select) {

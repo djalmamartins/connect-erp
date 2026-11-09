@@ -253,6 +253,10 @@
    "title": "0064 — Índices por data de pagamento e EXPLAIN das consultas quentes"
   },
   {
+   "file": "docs/Organic Code/decisions/0065-communications-hardening.md",
+   "title": "0065 — Comunicação: assunto em uma linha, unidades com teto, trava e limite diário"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -271,6 +275,10 @@
   {
    "file": "docs/Organic Code/decisions/0074-import-screens.md",
    "title": "0074 — Telas de importação: envio, prévia por linha, aplicar e fila do extrato"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0075-communication-screens.md",
+   "title": "0075 — Telas de comunicação: comunicado, aviso de cobrança, agendados e endereços"
   },
   {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
@@ -769,6 +777,27 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\CommunicationScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Agreements",
+    "Source\\Services\\Erp\\Announcements",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/CommunicationScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCommunicationScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\Condo": {
    "deps": [
     "Source\\Core\\View",
@@ -1074,6 +1103,7 @@
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
+    "tests/legacy/Unit/ErpCommunicationScreensTest.php",
     "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpImportScreensTest.php",
@@ -3715,8 +3745,8 @@
   }
  },
  "counts": {
-  "adrs": 71,
-  "classes": 198,
+  "adrs": 73,
+  "classes": 199,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -3724,7 +3754,7 @@
   "erp_pages": 172,
   "routes": 296,
   "tables": 106,
-  "tests": 134
+  "tests": 135
  },
  "erp_pages": [
   {
@@ -8584,6 +8614,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
    "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
    "Source\\Controllers\\Erp\\Connect\\ImportScreens",
    "Source\\Controllers\\Erp\\Connect\\NotificationQueue",
@@ -9058,6 +9089,10 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpBillingScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpCommunicationScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpCondominiumContextTest.php": [
