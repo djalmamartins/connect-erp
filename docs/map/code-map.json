@@ -217,6 +217,10 @@
    "title": "0055 — Fila de envio dos avisos do ERP pelo container send"
   },
   {
+   "file": "docs/Organic Code/decisions/0070-operational-screens.md",
+   "title": "0070 — Telas do Operacional e dashboard com dados reais"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -876,6 +880,7 @@
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
@@ -902,10 +907,29 @@
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
+    "tests/legacy/Unit/ErpOperationalScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/ErpVirtualDiskScreenTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+   ]
+  },
+  "Source\\Controllers\\Erp\\Connect\\PendingReservations": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Message"
+   ],
+   "file": "source/Controllers/Erp/Connect/PendingReservations.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ErpOperationalScreensTest.php"
    ]
   },
   "Source\\Controllers\\Erp\\Connect\\Register": {
@@ -929,6 +953,7 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
+    "Source\\Services\\Environments",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
     "Source\\Services\\Erp\\Registry\\RegistryInUse",
     "Source\\Services\\Erp\\Registry\\RegistryLocked",
@@ -947,7 +972,10 @@
    "tables": [
     "condominiums"
    ],
-   "tests": []
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpOperationalScreensTest.php"
+   ]
   },
   "Source\\Controllers\\Erp\\Connect\\Security": {
    "deps": [
@@ -2416,6 +2444,7 @@
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/DocumentRegistriesTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
+    "tests/legacy/Unit/ErpOperationalScreensTest.php",
     "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/InvoicesTest.php",
@@ -2571,6 +2600,7 @@
     "tests/legacy/Unit/ChartOfAccountsDefinitionTest.php",
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
+    "tests/legacy/Unit/ErpOperationalScreensTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
     "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
@@ -3254,16 +3284,16 @@
   }
  },
  "counts": {
-  "adrs": 57,
-  "classes": 182,
+  "adrs": 58,
+  "classes": 183,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 270,
+  "routes": 272,
   "tables": 99,
-  "tests": 116
+  "tests": 117
  },
  "erp_pages": [
   {
@@ -6895,10 +6925,28 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Erp\\Connect\\PendingReservations",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 128,
+   "method": "confirm",
+   "path": "/erp/operacional/agendamentos-pendentes/{id}/confirmar",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\PendingReservations",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 129,
+   "method": "refuse",
+   "path": "/erp/operacional/agendamentos-pendentes/{id}/recusar",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "env": "erp",
    "file": "container/erp/connect/v1/routes.php",
-   "line": 137,
+   "line": 142,
    "method": "show",
    "path": "/erp/condominios/{id}",
    "verb": "GET"
@@ -7799,6 +7847,7 @@
  "tests": {
   "tests/erp/render-smoke.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Controllers\\Erp\\Connect\\Registry",
    "Source\\Core\\View",
    "Source\\Models\\User",
    "Source\\Services\\Erp\\DemoData",
@@ -8192,6 +8241,13 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
+  "tests/legacy/Unit/ErpOperationalScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Controllers\\Erp\\Connect\\PendingReservations",
+   "Source\\Controllers\\Erp\\Connect\\Registry",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
   "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php": [
    "Source\\Core\\View",
    "Source\\Services\\Erp\\Registry\\Definitions"
