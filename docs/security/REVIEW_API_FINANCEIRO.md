@@ -76,3 +76,56 @@ Escopo: rotas `/documents` (agora no `index.php`); anexos dos cadastros
 - A OpenAPI ainda não descreve o 403 novo de `/panels/*` e de `/notifications/dispatch`.
 - `GET /dashboard` continua mostrando contagens operacionais (manutenções, ocorrências, entregas)
   a quem só tem `erp.access`. São contagens sem dado pessoal, mas seguem sem permissão de módulo.
+
+## Terceira rodada: lançamentos avulsos, recibo e importações (ciclo 24)
+
+Escopo: as rotas `/entries/{id}/discount`, `/entries/{id}/adjustments`, `/extra-charges` e
+`/bank-transfers` (`Controllers/Api/V1/EntryShortcuts`, `Services/Erp/EntryShortcuts`), o recibo
+(`UnitDocuments::receipt`) e a soma das transferências nos saldos e na prestação de contas. As
+importações de OFX e de planilha ainda não estão no código; para elas fica a lista de requisitos
+abaixo.
+
+| Ponto | Situação |
+|---|---|
+| Rotas no `ApiAuthenticated`. Desconto e transferência pedem `erp.entries.*`, multa e cobrança extra pedem `erp.invoices.*`, e toda escrita pede `.manage` | CONFIRMADO |
+| Escopo em toda busca por id e na criação (condomínio, unidades, contas bancárias, conta de referência da multa e conta do plano do padrão ou do próprio condomínio) | CONFIRMADO |
+| Desconto: só conta a receber em aberto, nunca zera a conta, recusado em acordo, com boleto ativo ou com competência fechada. Trilha com antes, depois e motivo | CONFIRMADO |
+| Cobrança e transferência canceláveis só pela origem, com motivo, respeitando o fechamento | CONFIRMADO |
+| Transferência só entre duas contas ativas do mesmo condomínio, com data até hoje. Soma zero na conciliação | CONFIRMADO |
+| Verificação do recibo pelo código: exige sessão, permissão e escopo. Não é pública | CONFIRMADO (verificação pública segue pendente, issue #46) |
+
+### Achados corrigidos (ADR 0062)
+
+1. **Recibo com oráculo de id de outro condomínio**, o mesmo padrão já corrigido nos acordos. A busca agora filtra o condomínio da unidade.
+2. **`Invoices::cents` sem teto.** Um texto longo virava erro 500 e um inteiro enorme passava pela validação. Agora vale o teto do motor de cadastros.
+3. **Cobrança extra sem limite de unidades.** Agora são no máximo 1000 unidades.
+
+### Lacunas
+
+- **Fechamento contra transferência simultânea.** Transferência e cancelamento de transferência conferem o fechamento fora de transação. Um fechamento no mesmo instante pode deixar passar uma transferência na competência recém-fechada. A janela é pequena e o caso fica na auditoria.
+- **Desconto sem limite próprio.** Quem tem `erp.entries.manage` pode dar desconto de qualquer valor menor que a conta. Isso segue a regra aprovada na ADR 0057, e a trilha registra cada desconto. Se a Connect quiser alçada (teto por perfil), será uma decisão nova.
+
+### Requisitos para as importações de OFX e planilha (ainda não implementadas)
+
+Para revisar quando o código chegar:
+
+- **Upload:**
+  - `is_uploaded_file`;
+  - tipo pelo conteúdo (finfo) numa lista fechada;
+  - limite de tamanho (o retorno bancário usa o do PHP; definir um próprio);
+  - arquivo guardado fora da pasta pública, ou só processado em memória.
+- **Repetição:** o mesmo arquivo enviado de novo é reconhecido pelo hash, como no retorno do banco, e uma linha já importada é ignorada.
+- **OFX 2 (XML):**
+  - parser sem entidades externas e sem rede (XXE);
+  - limite de profundidade e de número de transações.
+- **OFX 1 (SGML):** parser próprio com limite de linhas, nunca `eval` nem regex com retrocesso exponencial.
+- **Planilhas:**
+  - XLSX é um ZIP, então limitar o tamanho descompactado e o número de entradas (zip bomb);
+  - ler só os valores, nunca avaliar fórmulas;
+  - limitar o número de linhas.
+- **Fórmulas na exportação:** células que começam com `=`, `+`, `-`, `@`, tabulação ou retorno de carro saem com `'` na frente em CSV e XLSX gerados pelo sistema. Vale também para o texto vindo de importação.
+- **Escopo:**
+  - a importação vale para uma conta bancária ou um condomínio no escopo do usuário;
+  - toda linha cai nesse condomínio, sem aceitar `condominium_id` vindo do arquivo;
+  - o resultado é auditado com arquivo, hash, quem importou e quantas linhas.
+- **Frequência:** continua não havendo limite de requisições na API (lacuna da primeira rodada). Importação é o caso mais caro e o primeiro a precisar dele.

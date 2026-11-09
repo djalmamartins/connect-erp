@@ -198,8 +198,9 @@ final class UnitDocuments
         try {
             $stmt = $this->pdo->prepare('SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.unit_id, e.nature, e.status, e.deleted_at,
                     b.name AS bank_account FROM erp_entries e LEFT JOIN erp_bank_accounts b ON b.id = e.bank_account_id
-                WHERE e.id IN (' . implode(',', $ids) . ') ORDER BY e.paid_on, e.id FOR UPDATE');
-            $stmt->execute();
+                WHERE e.id IN (' . implode(',', $ids) . ') AND e.condominium_id = :c ORDER BY e.paid_on, e.id FOR UPDATE');
+            // Só contas do condomínio da unidade: id de outro condomínio responde como inexistente e não é travado (ADR 0062).
+            $stmt->execute(['c' => (int)$unit['condominium_id']]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($rows) !== count($ids)) {
                 throw new InvalidArgumentException('Alguma conta escolhida não existe.');

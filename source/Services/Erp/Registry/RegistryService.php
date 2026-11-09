@@ -207,6 +207,14 @@ final class RegistryService
                 }
             }
         }
+        // Conta com recibo válido (ADR 0057): estornar ou mudar a baixa exige cancelar o recibo antes.
+        if ($errors === [] && $before !== null && isset($definition['receipt_lock']) && $this->hasValidReceipt($id)) {
+            foreach ($definition['receipt_lock']['columns'] as $column) {
+                if (array_key_exists($column, $values) && (string)($values[$column] ?? '') !== (string)($before[$column] ?? '')) {
+                    $errors[isset($definition['fields'][$column]) ? $column : '_form'] = $definition['receipt_lock']['message'];
+                }
+            }
+        }
         if ($errors !== []) {
             throw new RegistryValidationException($errors);
         }
@@ -255,6 +263,18 @@ final class RegistryService
         return $this->present($definition, $after ?? []);
     }
 
+    /** A conta está coberta por um recibo emitido e não cancelado (AP-040)? */
+    private function hasValidReceipt(?int $entryId): bool
+    {
+        if ($entryId === null) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_unit_document_entries de JOIN erp_unit_documents d ON d.id = de.document_id
+            WHERE de.entry_id = :e AND d.status = 'issued' LIMIT 1");
+        $stmt->execute(['e' => $entryId]);
+        return $stmt->fetchColumn() !== false;
+    }
+
     /** Exclusão lógica (deleted_at), preservando o histórico de auditoria. */
     public function delete(User $user, string $slug, int $id): void
     {
@@ -269,6 +289,10 @@ final class RegistryService
         }
         // Gerado por outro módulo (fatura ou acordo, ADR 0033/0039): exclui-se pela origem.
         if (isset($definition['origin_lock']) && Definitions::lockedByOrigin($definition, $row)) {
+            throw new RegistryInUse();
+        }
+        // Conta com recibo válido (ADR 0057) não sai: cancele o recibo antes.
+        if (isset($definition['receipt_lock']) && $this->hasValidReceipt($id)) {
             throw new RegistryInUse();
         }
         // Unidade com cadastros ativos vinculados não sai (eles perderiam a unidade escolhida).

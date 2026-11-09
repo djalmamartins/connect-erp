@@ -48,6 +48,15 @@ final class Definitions
         'message' => 'Lançamento gerado por fatura, acordo, cobrança extra ou multa: altere ou cancele pela origem.',
     ];
 
+    /**
+     * 'receipt_lock' (ADR 0057): conta coberta por recibo válido (AP-040) não muda a baixa, o valor, a
+     * unidade nem a situação, e não é excluída. Cancela-se o recibo antes.
+     */
+    public const RECEIPT_LOCK = [
+        'columns' => ['paid_on', 'amount_cents', 'bank_account_id', 'unit_id', 'status'],
+        'message' => 'Esta conta tem recibo válido. Cancele o recibo antes de estornar ou alterar a baixa.',
+    ];
+
     /** O registro foi gerado por outro módulo (algum campo de origem preenchido)? */
     public static function lockedByOrigin(array $definition, array $row): bool
     {
@@ -528,6 +537,7 @@ final class Definitions
                 // Competência fechada no fechamento mensal trava criação, alteração e exclusão (ADR 0031).
                 'closing_lock' => 'competence',
                 'origin_lock' => self::INVOICE_LOCK,
+                'receipt_lock' => self::RECEIPT_LOCK,
                 'title' => 'description',
                 'order' => 'due_on',
             ],
@@ -578,6 +588,7 @@ final class Definitions
                 'requires' => $definitions['entries']['requires'],
                 'closing_lock' => 'competence',
                 'origin_lock' => self::INVOICE_LOCK,
+                'receipt_lock' => self::RECEIPT_LOCK,
                 'title' => 'description',
                 'order' => 'due_on',
             ];

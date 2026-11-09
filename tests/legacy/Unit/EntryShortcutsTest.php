@@ -56,10 +56,33 @@ final class EntryShortcutsTest extends TestCase
         self::assertStringContainsString("t.status = 'active'", BankBalances::transferSql('in'), 'Transferência cancelada sai do saldo.');
     }
 
+    public function testReceiptLocksPaymentOnEntryRegistries(): void
+    {
+        foreach (['entries', 'receivables', 'payables'] as $slug) {
+            self::assertSame(Definitions::RECEIPT_LOCK, Definitions::get($slug)['receipt_lock'] ?? null, "{$slug} trava a baixa de conta com recibo.");
+        }
+        self::assertContains('paid_on', Definitions::RECEIPT_LOCK['columns'], 'Estornar a baixa exige cancelar o recibo.');
+        self::assertStringContainsString('Cancele o recibo', Definitions::RECEIPT_LOCK['message']);
+    }
+
     public function testReceiptKindKeepsCatalogDocumentsApart(): void
     {
         self::assertArrayNotHasKey('receipt', UnitDocuments::KINDS, 'As páginas AP-123 a 130 continuam com os 4 documentos.');
         self::assertSame('Recibo', UnitDocuments::ALL_KINDS['receipt']);
         self::assertSame(array_keys(UnitDocuments::KINDS), array_slice(array_keys(UnitDocuments::ALL_KINDS), 0, 4));
+    }
+
+    public function testUnitIdsAreNormalizedAndCapped(): void
+    {
+        self::assertSame([3, 1], EntryShortcuts::unitIds(['3', 1, 3, 0, -2, 'x']));
+        self::assertCount(EntryShortcuts::MAX_UNITS, EntryShortcuts::unitIds(range(1, EntryShortcuts::MAX_UNITS)));
+        foreach ([null, [], [0, -1], range(1, EntryShortcuts::MAX_UNITS + 1)] as $invalid) {
+            try {
+                EntryShortcuts::unitIds($invalid);
+                self::fail('Aceitou lista de unidades inválida.');
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
     }
 }
