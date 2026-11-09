@@ -336,14 +336,14 @@
     });
   });
 
-  /* AP-032: faturas da cobrança pela API /api/v1/invoices (ADR 0033) ------------------ */
-  $$('[data-erp-invoices]').forEach(function (root) {
-    var api = root.getAttribute('data-api');
-    var canManage = root.getAttribute('data-can-manage') === '1';
+  /* Telas que falam com a API REST (faturas, boletos, retornos): JSON com o CSRF no cabeçalho. */
+  var esc = function (text) { var d = document.createElement('div'); d.textContent = text == null ? '' : String(text); return d.innerHTML; };
+  var brl = function (cents) { return 'R$ ' + (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var busy = function (button, on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
+  var reload = function () { window.setTimeout(function () { window.location.reload(); }, 700); };
+  var apiClient = function (root) {
     var csrf = function () { return (($('[name="csrf"]', root) || {}).value || ''); };
-    var esc = function (text) { var d = document.createElement('div'); d.textContent = text == null ? '' : String(text); return d.innerHTML; };
-    var brl = function (cents) { return 'R$ ' + (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-    var call = function (method, url, body) {
+    return function (method, url, body) {
       var options = { method: method, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrf() } };
       if (body !== undefined) { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(body); }
       return fetch(url, options).then(function (response) {
@@ -353,8 +353,28 @@
         });
       }, function () { throw new Error('Não foi possível falar com o servidor. Tente de novo.'); });
     };
-    var busy = function (button, on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
-    var reload = function () { window.setTimeout(function () { window.location.reload(); }, 700); };
+  };
+  var openDialog = function (dialog) { if (dialog && typeof dialog.showModal === 'function') dialog.showModal(); };
+  /* Contas bancárias ativas do condomínio escolhido num <select>. */
+  var loadBankAccounts = function (call, url, condoId, select) {
+    select.innerHTML = '<option value="">' + (condoId ? 'Carregando…' : 'Escolha o condomínio') + '</option>';
+    if (!condoId) return;
+    call('GET', url + '?status=active&condominium_id=' + condoId)
+      .then(function (json) {
+        var list = json.data || [];
+        select.innerHTML = '<option value="">' + (list.length ? 'Escolha' : 'Nenhuma conta bancária ativa') + '</option>' + list.map(function (account) {
+          return '<option value="' + account.id + '"' + (account.is_main && list.length > 1 ? ' selected' : '') + '>' + esc(account.name + ' · ' + account.bank_code + ' · ' + account.account_number) + '</option>';
+        }).join('');
+        if (list.length === 1) select.value = String(list[0].id);
+      })
+      .catch(function (error) { select.innerHTML = '<option value="">Contas indisponíveis</option>'; toast(error.message, 'danger'); });
+  };
+
+  /* AP-032: faturas da cobrança pela API /api/v1/invoices (ADR 0033) ------------------ */
+  $$('[data-erp-invoices]').forEach(function (root) {
+    var api = root.getAttribute('data-api');
+    var canManage = root.getAttribute('data-can-manage') === '1';
+    var call = apiClient(root);
 
     /* Itens da fatura: valor por unidade e situação da conta a receber; em preparação, ajuste do valor. */
     var itemsDialog = $('#invoice-items', root);
@@ -469,6 +489,166 @@
           .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
       });
     }
+  });
+
+  /* AP-035: boletos pela API /api/v1/bank-charges (ADR 0035 e 0036, só sandbox) ------- */
+  $$('[data-erp-bank-charges]').forEach(function (root) {
+    var api = root.getAttribute('data-api');
+    var call = apiClient(root);
+
+    $$('[data-charge-copy]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var line = button.getAttribute('data-charge-copy');
+        var done = function () { toast('Linha digitável copiada.', 'success'); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie a linha digitável:', line); });
+        else window.prompt('Copie a linha digitável:', line);
+      });
+    });
+
+    /* Consultar no banco: o título pendente pode ter sido registrado (ou recusado). */
+    $$('[data-charge-refresh]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        busy(button, true);
+        call('POST', api + '/' + button.getAttribute('data-charge-refresh') + '/refresh', {})
+          .then(function (json) { toast('Situação no banco: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
+
+    $$('[data-charge-cancel]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!window.confirm('Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco? A conta a receber continua em aberto.')) return;
+        busy(button, true);
+        call('POST', api + '/' + button.getAttribute('data-charge-cancel') + '/cancel', {})
+          .then(function () { toast('Boleto cancelado.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
+
+    /* Emitir: conta a receber válida e em aberto do condomínio, mais a conta bancária. */
+    var form = $('[data-charge-issue-form]', root);
+    if (!form) return;
+    var condo = $('[name="condominium_id"]', form);
+    var accounts = $('[data-charge-accounts]', form);
+    var entries = $('[data-charge-entries]', form);
+    var search = $('[data-charge-search]', form);
+    var timer = null;
+    var loadEntries = function () {
+      var id = parseInt(condo.value || '0', 10);
+      entries.innerHTML = '<option value="">' + (id ? 'Carregando…' : 'Escolha o condomínio') + '</option>';
+      if (!id) return;
+      var q = search.value.trim();
+      call('GET', root.getAttribute('data-entries-api') + '?type=receita&status=active&condominium_id=' + id + (q ? '&q=' + encodeURIComponent(q) : ''))
+        .then(function (json) {
+          var list = (json.data || []).filter(function (entry) { return !entry.paid_on; });
+          entries.innerHTML = '<option value="">' + (list.length ? 'Escolha' : 'Nenhuma conta a receber em aberto') + '</option>' + list.map(function (entry) {
+            var due = entry.due_on ? entry.due_on.slice(8, 10) + '/' + entry.due_on.slice(5, 7) + '/' + entry.due_on.slice(0, 4) : '';
+            return '<option value="' + entry.id + '">' + esc(entry.description + ' · vence ' + due + ' · ' + brl(entry.amount_cents || 0)) + '</option>';
+          }).join('');
+        })
+        .catch(function (error) { entries.innerHTML = '<option value="">Contas a receber indisponíveis</option>'; toast(error.message, 'danger'); });
+    };
+    var loadAll = function () { loadBankAccounts(call, root.getAttribute('data-accounts-api'), parseInt(condo.value || '0', 10), accounts); loadEntries(); };
+    condo.addEventListener('change', loadAll);
+    search.addEventListener('input', function () { window.clearTimeout(timer); timer = window.setTimeout(loadEntries, 350); });
+    search.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); window.clearTimeout(timer); loadEntries(); } });
+    $$('[data-erp-modal-open="charge-issue"]').forEach(function (b) { b.addEventListener('click', function () { if (accounts.options.length <= 1) loadAll(); }); });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', api, { entry_id: parseInt(entries.value, 10), bank_account_id: parseInt(accounts.value, 10) })
+        .then(function (json) {
+          var charge = json.data || {};
+          toast(charge.status === 'registered' ? 'Boleto ' + charge.our_number + ' registrado no banco.' : 'Boleto ' + (charge.our_number || '') + ': ' + (charge.status_label || 'aguardando banco') + '.', charge.status === 'rejected' ? 'warning' : 'success');
+          reload();
+        })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+  });
+
+  /* AP-036: importar o arquivo de retorno pela API /api/v1/bank-returns (texto até 2 MB). */
+  $$('[data-erp-bank-return]').forEach(function (root) {
+    var call = apiClient(root);
+    var form = $('[data-bank-return-form]', root);
+    var result = $('[data-bank-return-result]', root);
+    if (!form) return;
+    var condo = $('[name="condominium_id"]', form);
+    var accounts = $('[data-return-accounts]', form);
+    var fileInput = $('[name="file"]', form);
+    var kinds = { paid: 'Pagamento', registered: 'Registro', rejected: 'Recusa', cancelled: 'Baixa pelo banco' };
+    var tones = { applied: 'success', duplicate: 'plain', divergence: 'warning', unknown_charge: 'danger' };
+    var load = function () { loadBankAccounts(call, root.getAttribute('data-accounts-api'), parseInt(condo.value || '0', 10), accounts); };
+    condo.addEventListener('change', load);
+    load();
+    var render = function (data) {
+      var file = data.file || {};
+      var events = data.events || [];
+      $('[data-bank-return-summary]', result).innerHTML = (data.duplicate_file ? '<strong>Este arquivo já tinha sido importado</strong>; nada foi processado de novo. ' : '') +
+        esc(file.filename) + ' · ' + (file.events_count || 0) + ' ocorrência(s) · ' + (file.applied_count || 0) + ' aplicada(s) · ' + (file.divergence_count || 0) + ' divergência(s) · total ' + brl(file.total_cents || 0);
+      $('[data-bank-return-events]', result).innerHTML = events.length
+        ? '<div class="erp-table-wrap"><table class="erp-table"><thead><tr><th>Nosso número</th><th>Ocorrência</th><th>Data</th><th class="is-num">Valor</th><th>Resultado</th></tr></thead><tbody>' +
+          events.map(function (e) {
+            var day = e.occurred_on ? e.occurred_on.slice(8, 10) + '/' + e.occurred_on.slice(5, 7) + '/' + e.occurred_on.slice(0, 4) : '—';
+            return '<tr><td><strong>' + esc(e.our_number) + '</strong></td><td>' + esc(kinds[e.kind] || e.kind) + '</td><td>' + esc(day) + '</td><td class="is-num">' + (e.amount_cents == null ? '—' : brl(e.amount_cents)) + '</td>' +
+              '<td><span class="erp-badge erp-badge--' + (tones[e.outcome] || 'plain') + '">' + esc(e.outcome_label) + '</span>' + (e.note ? '<small class="erp-muted">' + esc(e.note) + '</small>' : '') + '</td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '<p class="erp-muted">Nenhuma ocorrência nova no arquivo (as repetidas de outros arquivos são ignoradas).</p>';
+      result.hidden = false;
+      result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      if (file.size > 2000000) { toast('O arquivo passa de 2 MB.', 'warning'); return; }
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      var reader = new FileReader();
+      reader.onerror = function () { busy(button, false); toast('Não foi possível ler o arquivo.', 'danger'); };
+      reader.onload = function () {
+        call('POST', root.getAttribute('data-api'), { bank_account_id: parseInt(accounts.value, 10), filename: file.name, content: String(reader.result || '') })
+          .then(function (json) {
+            busy(button, false);
+            var data = json.data || json;
+            render(data);
+            var divergences = (data.file && data.file.divergence_count) || 0;
+            toast(data.duplicate_file ? 'Arquivo já importado antes.' : (divergences ? 'Retorno importado com ' + divergences + ' divergência(s) para revisar.' : 'Retorno importado.'), divergences || data.duplicate_file ? 'warning' : 'success');
+            form.reset();
+            load();
+          })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      };
+      reader.readAsText(file);
+    });
+  });
+
+  /* AP-038: fila de divergências do retorno; "revisada" grava uma nota (5 a 255 caracteres). */
+  $$('[data-erp-bank-divergences]').forEach(function (root) {
+    var call = apiClient(root);
+    var dialog = $('#divergence-resolve', root);
+    var form = dialog && $('[data-divergence-resolve-form]', dialog);
+    $$('[data-divergence-resolve]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!form) return;
+        form.reset();
+        form.setAttribute('data-id', button.getAttribute('data-divergence-resolve'));
+        $('[data-divergence-label]', dialog).textContent = 'Nosso número ' + button.getAttribute('data-label') + '.';
+        openDialog(dialog);
+      });
+    });
+    if (form) form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var note = $('[name="note"]', form).value.replace(/\s+/g, ' ').trim();
+      if (note.length < 5) { toast('Descreva o que foi feito (pelo menos 5 caracteres).', 'warning'); return; }
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', root.getAttribute('data-api') + '/' + form.getAttribute('data-id') + '/resolve', { note: note })
+        .then(function () { dialog.close(); toast('Divergência marcada como revisada.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
   });
 
   /* AP-021: gerar os lançamentos do mês a partir dos fixos (API REST, ADR 0027) -- */

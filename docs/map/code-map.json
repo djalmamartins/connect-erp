@@ -137,6 +137,10 @@
    "title": "0035 — Boletos, retorno e conciliação pelo adaptador bancário (só sandbox)"
   },
   {
+   "file": "docs/Organic Code/decisions/0036-banking-screens.md",
+   "title": "0036 — Telas da cobrança bancária (boletos, importar retorno, divergências)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -643,6 +647,8 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
+    "Source\\Services\\Erp\\Banking\\BankCharges",
+    "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
@@ -663,6 +669,7 @@
    "tests": [
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
@@ -2630,7 +2637,7 @@
   }
  },
  "counts": {
-  "adrs": 37,
+  "adrs": 38,
   "classes": 158,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2639,7 +2646,7 @@
   "erp_pages": 172,
   "routes": 232,
   "tables": 70,
-  "tests": 80
+  "tests": 81
  },
  "erp_pages": [
   {
@@ -6832,6 +6839,9 @@
    "Source\\Services\\Environments",
    "Source\\Services\\Support\\TicketError",
    "Source\\Services\\Support\\TicketService"
+  ],
+  "tests/legacy/Unit/ErpBankingScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpCondominiumContextTest.php": [
    "Source\\Core\\Router",

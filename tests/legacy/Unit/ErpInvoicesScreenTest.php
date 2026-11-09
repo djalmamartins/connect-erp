@@ -20,7 +20,8 @@ final class ErpInvoicesScreenTest extends TestCase
     public function testRealDataUsesTheOwnTemplateAndDemoStaysAsFallback(): void
     {
         $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
-        self::assertStringContainsString("\$id === 'AP-032' && (\$data['invoices'] ?? null) !== null ? 'pages/finance/invoices'", $panel);
+        self::assertStringContainsString("\$id === 'AP-032' && (\$data['invoices'] ?? null) !== null => 'pages/finance/invoices'", $panel);
+        self::assertStringContainsString("self::ownTemplate(\$id, \$data) ?? 'pages/modules/' . \$kind", $panel);
     }
 
     public function testViewOnlyOffersWritesToManagers(): void
