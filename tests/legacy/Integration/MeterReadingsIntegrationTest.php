@@ -90,6 +90,21 @@ final class MeterReadingsIntegrationTest extends TestCase
         $this->readings->record($outsider, ['meter_id' => $this->meter, 'competence' => '2026-12', 'reading' => '130']);
     }
 
+    public function testClosedCompetenceRefusesReading(): void
+    {
+        // ADR 0104: o lançamento manual segue a regra da importação.
+        $this->pdo->prepare("INSERT INTO erp_month_closings (condominium_id, competence, status) VALUES (?, '2026-10', 'closed')")->execute([$this->alpha]);
+        try {
+            $this->readings->record($this->admin, ['meter_id' => $this->meter, 'competence' => '2026-10', 'reading' => '110', 'read_on' => '2026-10-31']);
+            self::fail('Leitura aceita em competência fechada.');
+        } catch (DomainException $error) {
+            self::assertStringContainsString('está fechada', $error->getMessage());
+        }
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_meter_readings')->fetchColumn());
+        $this->pdo->prepare("UPDATE erp_month_closings SET status = 'reopened' WHERE condominium_id = ?")->execute([$this->alpha]);
+        self::assertSame(10.0, $this->readings->record($this->admin, ['meter_id' => $this->meter, 'competence' => '2026-10', 'reading' => '110', 'read_on' => '2026-10-31'])['consumption'], 'Reaberto, aceita.');
+    }
+
     private function condominium(string $name): int
     {
         $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute([$name, 'active']);
