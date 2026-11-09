@@ -1272,6 +1272,73 @@ paths:
         '409': { description: Cobrada em paralelo }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Dados inválidos ou um lançamento fora das regras (fields), ex.: competência fechada' }
+  /documents:
+    get:
+      operationId: listVirtualDisk
+      summary: Arquivos do Disco Virtual (erp.documents.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: folder, in: query, schema: { type: string, enum: [atas, contratos, plantas, notas_fiscais, outros] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Título ou nome do arquivo }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (50 por página): id, folder, title, original_name, mime, size_bytes, sha256, uploaded_at' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: uploadVirtualDisk
+      summary: Envia um arquivo (erp.documents.manage)
+      description: >-
+        Tipo conferido pelo conteúdo, com extensão correspondente: PDF, JPG, PNG, WebP, DOCX, XLSX,
+        ODT, ODS, CSV ou TXT; no máximo 20 MB. Guardado fora da pasta pública com nome gerado. O mesmo
+        arquivo na mesma pasta do condomínio é recusado (409).
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [condominium_id, folder, file], properties: { condominium_id: { type: integer }, folder: { type: string, enum: [atas, contratos, plantas, notas_fiscais, outros] }, title: { type: string, maxLength: 160 }, file: { type: string, format: binary } } } } }
+      responses:
+        '201': { description: Arquivo enviado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Arquivo já está na pasta }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Tipo, extensão, tamanho ou pasta inválidos' }
+  /documents/{id}:
+    get:
+      operationId: showVirtualDiskFile
+      summary: Dados do arquivo
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Arquivo }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: deleteVirtualDiskFile
+      summary: Exclusão lógica; o arquivo continua guardado (erp.documents.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '204': { description: Excluído }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /documents/{id}/download:
+    get:
+      operationId: downloadVirtualDiskFile
+      summary: Baixa o arquivo como anexo (erp.documents.view, no escopo)
+      description: 'Content-Disposition attachment, X-Content-Type-Options nosniff, CSP sandbox, Cache-Control no-store.'
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Conteúdo do arquivo, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /inspection-templates:
     get:

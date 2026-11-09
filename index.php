@@ -102,6 +102,12 @@ $route->post("/unit-documents/{id}/cancel", "UnitDocuments:cancel", null, \Sourc
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Disco Virtual (ADR 0047): arquivos fora da pasta pública, download só com permissão e escopo.
+$route->get("/documents", "VirtualDisk:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/documents", "VirtualDisk:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/documents/{id}", "VirtualDisk:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/documents/{id}/download", "VirtualDisk:download", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0049.** O 0047 está reservado para o Disco Virtual (thread Avançar).
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0049.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -71,4 +71,5 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0044](../Organic%20Code/decisions/0044-unit-documents.md) | Documentos da unidade: certidão de débitos, declaração de inadimplência, quitação e anuência, com código de verificação |
 | [0045](../Organic%20Code/decisions/0045-meter-readings.md) | Leituras e consumo (AP-041 a AP-043): relógios, tarifas em faixas progressivas, leituras e cobrança individual |
 | [0046](../Organic%20Code/decisions/0046-unit-documents-screens.md) | Telas dos documentos da unidade (AP-123/124/125/130): emitir, conferir pelo código, imprimir e cancelar |
+| [0047](../Organic%20Code/decisions/0047-virtual-disk.md) | Disco Virtual (AP-122): arquivos fora da pasta pública, tipo conferido pelo conteúdo, download só com permissão e escopo |
 | [0048](../Organic%20Code/decisions/0048-meter-readings-screen.md) | Tela de leituras do mês (AP-042): lançamento em lote, consumo e valor por unidade e faturar |

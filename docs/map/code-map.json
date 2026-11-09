@@ -181,6 +181,10 @@
    "title": "0046 — Telas dos documentos da unidade (AP-123, AP-124, AP-125 e AP-130)"
   },
   {
+   "file": "docs/Organic Code/decisions/0047-virtual-disk.md",
+   "title": "0047 — Disco Virtual (AP-122): arquivos do condomínio fora da pasta pública"
+  },
+  {
    "file": "docs/Organic Code/decisions/0048-meter-readings-screen.md",
    "title": "0048 — Tela de leituras do mês (AP-042)"
   },
@@ -490,6 +494,21 @@
    "tables": [
     "user_two_factor"
    ],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\VirtualDisk": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\VirtualDisk",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Controllers/Api/V1/VirtualDisk.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
    "tests": []
   },
   "Source\\Controllers\\App\\Connect\\App": {
@@ -1723,6 +1742,7 @@
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Integration/UserTest.php",
+    "tests/legacy/Integration/VirtualDiskIntegrationTest.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/EnvironmentsTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
@@ -1805,7 +1825,8 @@
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
-    "tests/legacy/Integration/UnitRegistryTest.php"
+    "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Integration/VirtualDiskIntegrationTest.php"
    ]
   },
   "Source\\Services\\CondominiumValidator": {
@@ -2234,7 +2255,8 @@
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
-    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php"
+    "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
+    "tests/legacy/Integration/VirtualDiskIntegrationTest.php"
    ]
   },
   "Source\\Services\\Erp\\Registry\\RegistryService": {
@@ -2336,6 +2358,27 @@
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/UnitDocumentsTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\VirtualDisk": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/VirtualDisk.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_documents",
+    "condominiums",
+    "pages"
+   ],
+   "tests": [
+    "tests/legacy/Integration/VirtualDiskIntegrationTest.php",
+    "tests/legacy/Unit/VirtualDiskTest.php"
    ]
   },
   "Source\\Services\\Inspections\\ChecklistText": {
@@ -2968,16 +3011,16 @@
   }
  },
  "counts": {
-  "adrs": 49,
-  "classes": 171,
+  "adrs": 50,
+  "classes": 173,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 255,
-  "tables": 84,
-  "tests": 101
+  "routes": 260,
+  "tables": 85,
+  "tests": 103
  },
  "erp_pages": [
   {
@@ -4674,10 +4717,55 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
+   "env": "index",
+   "file": "index.php",
+   "line": 106,
+   "method": "index",
+   "path": "/api/v1/documents",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
+   "env": "index",
+   "file": "index.php",
+   "line": 107,
+   "method": "store",
+   "path": "/api/v1/documents",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
+   "env": "index",
+   "file": "index.php",
+   "line": 108,
+   "method": "show",
+   "path": "/api/v1/documents/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
+   "env": "index",
+   "file": "index.php",
+   "line": 109,
+   "method": "download",
+   "path": "/api/v1/documents/{id}/download",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\VirtualDisk",
+   "env": "index",
+   "file": "index.php",
+   "line": 110,
+   "method": "destroy",
+   "path": "/api/v1/documents/{id}",
+   "verb": "DELETE"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 120,
+   "line": 126,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -4686,7 +4774,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 121,
+   "line": 127,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -4695,7 +4783,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 122,
+   "line": 128,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -4704,7 +4792,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 123,
+   "line": 129,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -4713,7 +4801,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 124,
+   "line": 130,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -4722,7 +4810,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 125,
+   "line": 131,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -4731,7 +4819,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 126,
+   "line": 132,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -4740,7 +4828,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 127,
+   "line": 133,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -4749,7 +4837,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 129,
+   "line": 135,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -4758,7 +4846,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 130,
+   "line": 136,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -4767,7 +4855,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 131,
+   "line": 137,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -4776,7 +4864,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 140,
+   "line": 146,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -4785,7 +4873,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 141,
+   "line": 147,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -4794,79 +4882,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 155,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 156,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 157,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 158,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 161,
-   "method": "forget",
-   "path": "/forget",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 162,
-   "method": "forget",
-   "path": "/forget",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "POST"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 163,
-   "method": "reset",
-   "path": "/forget/{code}",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 164,
-   "method": "reset",
-   "path": "/reset",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 177,
+   "line": 167,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -4875,7 +4927,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 178,
+   "line": 168,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -4884,7 +4936,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 179,
+   "line": 169,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -4893,7 +4945,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 180,
+   "line": 170,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -4902,7 +4954,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 196,
+   "line": 183,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 184,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 185,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 186,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 202,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -4911,7 +4999,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 198,
+   "line": 204,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -6613,6 +6701,7 @@
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments",
+    "Source\\Services\\Erp\\VirtualDisk",
     "Source\\Services\\Inspections\\InspectionService",
     "Source\\Services\\OnboardingAlerts",
     "Source\\Services\\Support\\TicketService"
@@ -6727,6 +6816,13 @@
    "created_in": "database/migrations/20261108_0525_gatehouse.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_documents": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0528_virtual_disk.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\VirtualDisk"
    ]
   },
   "erp_employees": {
@@ -7080,7 +7176,8 @@
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\Registry\\RegistryService",
-    "Source\\Services\\Erp\\UnitDocuments"
+    "Source\\Services\\Erp\\UnitDocuments",
+    "Source\\Services\\Erp\\VirtualDisk"
    ]
   },
   "posts": {
@@ -7501,6 +7598,12 @@
   "tests/legacy/Integration/UserTest.php": [
    "Source\\Models\\User"
   ],
+  "tests/legacy/Integration/VirtualDiskIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\VirtualDisk"
+  ],
   "tests/legacy/TestCase.php": [
    "Source\\Core\\Connect",
    "Source\\Services\\SessionRevocation",
@@ -7714,6 +7817,9 @@
   ],
   "tests/legacy/Unit/UploadSecurityTest.php": [
    "Source\\Support\\Upload"
+  ],
+  "tests/legacy/Unit/VirtualDiskTest.php": [
+   "Source\\Services\\Erp\\VirtualDisk"
   ],
   "tests/legacy/bootstrap.php": [],
   "tests/legacy/prepare-environment.php": [],
