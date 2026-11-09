@@ -133,9 +133,14 @@ final class CollectionsCycleIntegrationTest extends TestCase
             }
         }
         self::assertSame(0, $collections->pendingFines($outsider, $this->alpha)['totals']['fines']);
-        self::assertSame([], $collections->desk($outsider, $this->alpha)['data']);
+        try {
+            $collections->desk($outsider, $this->alpha);
+            self::fail('A fila de outro condomínio respondeu.');
+        } catch (RegistryNotFound) {
+            self::addToAssertionCount(1);   // fora do escopo responde como inexistente (404)
+        }
         self::assertSame(0, $collections->listCases($outsider, null, ['include_closed' => 1])['total']);
-        self::assertSame([$units['201']], array_column($collections->desk($outsider)['data'], 'unit_id'), 'Sem condomínio informado, só o escopo dele.');
+        self::assertSame([$units['201']], array_column($collections->desk($outsider, null)['data'], 'unit_id'), 'Sem condomínio informado, só o escopo dele.');
     }
 
     private function condominium(string $name): int

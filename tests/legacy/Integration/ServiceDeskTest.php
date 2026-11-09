@@ -10,6 +10,7 @@ use Source\Controllers\Studio\Studio;
 use Source\Controllers\Web\Support\Support;
 use Source\Models\Notification\NotificationMessage;
 use Source\Models\User;
+use Source\Services\Support\TicketService;
 use Source\Support\Communication;
 
 final class ServiceDeskTest extends TestCase
@@ -168,10 +169,10 @@ final class ServiceDeskTest extends TestCase
             ->execute(['CH240101ABC2', 'Teste de entrega', 'Teste real de notificação e fila de e-mail.', 'technical', 'urgent', 'open', $requesterId, $requesterId, $dueAt]);
         $ticketId = (int)$this->pdo->lastInsertId();
 
-        $reflection = new ReflectionClass(Studio::class);
-        $studio = $reflection->newInstanceWithoutConstructor();
-        $notify = $reflection->getMethod('notifyTicketOpened');
-        $notify->invoke($studio, $ticketId, 'CH240101ABC2', 'Teste de entrega', 'urgent', $dueAt, null, $requesterId);
+        // Desde o ADR 0034 todo chamado é aberto pelo TicketService, que avisa a equipe (nível 5+) e o solicitante.
+        $notify = (new ReflectionClass(TicketService::class))->getMethod('notifyOpened');
+        $notify->invoke(new TicketService($this->pdo), $ticketId, 'CH240101ABC2', ['requester_id' => $requesterId, 'assigned_to' => null, 'priority' => 'urgent',
+            'subject' => 'Teste de entrega', 'origin' => 'helpdesk', 'condominium_id' => null, 'unit_id' => null], $dueAt);
 
         $recipients = $this->pdo->query('SELECT users_id FROM mail_queue ORDER BY users_id')->fetchAll(\PDO::FETCH_COLUMN);
         self::assertSame([$requesterId, $adminId, $developerId], array_map('intval', $recipients));

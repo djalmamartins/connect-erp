@@ -158,7 +158,7 @@ final class AgreementsIntegrationTest extends TestCase
         }
 
         $outsider = $this->user([$this->beta]);
-        self::assertSame(0, $this->agreements->delinquency($outsider, null, '2026-11-09')['totals']['entries']);
+        self::assertSame([(int)$betaUnit], array_map('intval', array_column($this->agreements->delinquency($outsider, null, '2026-11-09')['units'], 'unit_id')), 'Só a dívida do Beta, nada do Alpha.');
         $this->expectException(RegistryNotFound::class);
         $this->agreements->create($outsider, $this->input('102', ['entry_ids' => [$this->debts['102'][0]]]));
     }
