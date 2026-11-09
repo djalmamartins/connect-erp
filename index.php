@@ -73,6 +73,9 @@ $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Suppor
 $route->post("/bank-returns", "Banking:importReturn", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatórios financeiros (ADR 0036): balancete de verificação e prestação de contas com conciliação.
+$route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
