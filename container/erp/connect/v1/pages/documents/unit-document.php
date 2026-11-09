@@ -115,9 +115,16 @@ $this->insert('components/layout/page-head', [
                     <tbody><?php foreach ($upcoming as $u): ?><tr><td><?= $this->e((string)$u['description']) ?></td><td><?= $this->e($month((string)$u['competence'])) ?></td><td><?= $this->e($date((string)$u['due_on'])) ?></td><td class="is-num"><?= $this->e($brl((int)$u['amount_cents'])) ?></td></tr><?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>
-            <footer class="erp-unit-doc__foot">
+            <?php // ADR 0099: código e link da verificação pública impressos no rodapé; o código vai no fragmento do link (não chega ao servidor).
+            $verification = \Source\Services\Erp\DocumentVerification::footer((string)($doc['verification_code'] ?? $doc['verification_display'] ?? ''), url());
+            $verificationQr = $verification !== null ? \Source\Support\QrCode::svg($verification['link'], 96, 'QR code para conferir este documento') : null; ?>
+            <footer class="erp-unit-doc__foot" data-unit-document-verification>
                 <div><span class="erp-muted">Código de verificação</span><strong class="erp-unit-doc__code"><?= $this->e((string)$doc['verification_display']) ?></strong></div>
-                <p class="erp-muted">A autenticidade pode ser conferida no ERP da Connect com este código. Documento emitido a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p>
+                <?php if ($verification !== null): ?>
+                    <p class="erp-unit-doc__verify">Código de verificação: <strong><?= $this->e($verification['code']) ?></strong><br>Confira em <a href="<?= $this->e($verification['link']) ?>" rel="noreferrer"><?= $this->e($verification['address']) ?></a></p>
+                    <?php if ($verificationQr !== null): ?><span class="erp-unit-doc__qr"><?= $verificationQr ?></span><?php endif; ?>
+                <?php endif; ?>
+                <p class="erp-muted">Qualquer pessoa pode conferir a autenticidade com este código, sem login. Documento emitido a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p>
             </footer>
         </article>
         <?php if ($canManageDocuments && !$cancelled): ?>

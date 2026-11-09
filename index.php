@@ -281,6 +281,17 @@ $route->namespace(null);
  * cada ambiente fica isolado pelo hostname. No host do ERP só entram o 2FA do login
  * compartilhado e a recuperação de senha do núcleo.
  */
+/**
+ * VERIFICAÇÃO PÚBLICA DE DOCUMENTOS (ADRs 0098 e 0099): em qualquer host, sem login. O link impresso
+ * nos documentos usa url(), que pode ser o host do ERP, e a página precisa responder mesmo com o site
+ * desligado (CONF_ACCESS_SITE). O POST exige CSRF e tem limite por IP.
+ */
+$route->group(null);
+$route->namespace("Source\\Controllers\\Web\\Connect");
+$route->get("/verificar", "DocumentVerify:form");
+$route->post("/verificar", "DocumentVerify:verify");
+$route->namespace(null);
+
 $moduleRole = Access::role(Auth::user());
 $developerBypass = ($moduleRole->slug ?? null) === "developer";
 if (erp_host()) {

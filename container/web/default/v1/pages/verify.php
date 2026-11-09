@@ -27,7 +27,7 @@
                         <?= csrf_input(); ?>
                         <label>
                             <div><span class="icon-check-square-o">Código de verificação do documento:</span></div>
-                            <input type="text" name="code" maxlength="24" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" required/>
+                            <input type="text" name="code" id="verify-code" maxlength="40" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" required/>
                         </label>
                         <button class="btn btn-full gradient gradient-web gradient-hover transition icon-check-square-o">Verificar</button>
                     </form>
@@ -36,3 +36,22 @@
         </div>
     </div>
 </article>
+<script>
+/* ADR 0099: o link impresso traz o código no fragmento (/verificar#ABCD-EFGH-JKMN-PQRS), que o navegador não
+   manda ao servidor. Aqui só preenche o campo e limpa o endereço; quem envia é a pessoa, pelo botão. */
+(function () {
+    var field = document.getElementById('verify-code');
+    var hash = window.location.hash ? window.location.hash.slice(1) : '';
+    if (!field || hash === '') { return; }
+    var code;
+    try { code = decodeURIComponent(hash); } catch (e) { code = ''; }
+    code = code.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
+    if (/^[A-HJ-NP-Z2-9]{4}(-?[A-HJ-NP-Z2-9]{4}){3}$/.test(code) && field.value === '') {
+        field.value = code;
+        field.focus();
+    }
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+})();
+</script>

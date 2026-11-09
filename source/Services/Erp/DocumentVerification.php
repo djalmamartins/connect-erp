@@ -46,7 +46,7 @@ final class DocumentVerification
         if ($state !== DocumentVerificationThrottle::OK) {
             return self::refusal($state === DocumentVerificationThrottle::BLOCKED ? self::THROTTLED : self::UNAVAILABLE);
         }
-        $normalized = UnitDocuments::normalizeCode((string)$code);
+        $normalized = self::normalize($code);
         $row = null;
         if ($normalized !== null) {
             try {
@@ -63,6 +63,58 @@ final class DocumentVerification
             return self::refusal($this->throttle->fail($subject, $now) ? self::GENERIC : self::UNAVAILABLE);
         }
         return ['ok' => true, 'message' => self::AUTHENTIC, 'document' => $document];
+    }
+
+    /**
+     * Código digitado ou colado → 16 caracteres, ou null (regra pura, ADR 0099). Aceita maiúsculas ou
+     * minúsculas, hífens, espaços e os traços e espaços que editores de texto e PDF costumam trocar
+     * (travessão, meia-risca, hífen sem quebra, espaço sem quebra). O formato final é o de
+     * UnitDocuments::normalizeCode.
+     */
+    public static function normalize(?string $code): ?string
+    {
+        if ($code === null || strlen($code) > 64) {
+            return null;
+        }
+        $code = (string)preg_replace('/[\x{2010}-\x{2015}\x{2212}\x{00A0}\x{2007}\x{202F}\x{200B}]/u', '-', $code);
+        return UnitDocuments::normalizeCode($code);
+    }
+
+    /** Código para imprimir: "ABCD-EFGH-JKMN-PQRS", ou null se o código não for válido (regra pura). */
+    public static function formatCode(?string $code): ?string
+    {
+        $normalized = self::normalize($code);
+        return $normalized === null ? null : implode('-', str_split($normalized, 4));
+    }
+
+    /**
+     * Link impresso no documento (regra pura): a página pública com o código no fragmento
+     * ("…/verificar#ABCD-EFGH-JKMN-PQRS"). O navegador não manda o fragmento ao servidor, então o código
+     * não vai para o log de acesso; a página só preenche o campo, sem enviar sozinha.
+     */
+    public static function link(?string $code, string $base): ?string
+    {
+        $formatted = self::formatCode($code);
+        $base = rtrim(trim($base), '/');
+        if ($formatted === null || preg_match('~^https?://[^\s/?#]+(?:/[^\s?#]*)?$~i', $base) !== 1) {
+            return null;
+        }
+        return $base . '/verificar#' . $formatted;
+    }
+
+    /**
+     * Rodapé de verificação dos documentos da unidade (regra pura, ADR 0099): o código formatado, o
+     * endereço para conferir (sem o código) e o link com o código no fragmento.
+     *
+     * @return array{code:string, address:string, link:string}|null
+     */
+    public static function footer(?string $code, string $base): ?array
+    {
+        $link = self::link($code, $base);
+        if ($link === null) {
+            return null;
+        }
+        return ['code' => (string)self::formatCode($code), 'address' => rtrim(trim($base), '/') . '/verificar', 'link' => $link];
     }
 
     /**
