@@ -158,6 +158,9 @@ final class RegistryService
             $errors = $this->refRules($definition, $values);
         }
         if ($errors === []) {
+            $errors = $this->attachmentRules($definition, $values);
+        }
+        if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
         }
         // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
@@ -512,6 +515,28 @@ final class RegistryService
      *
      * @return array<string, string>
      */
+    /**
+     * 'attachment' (ADR 0050): o campo aponta para um arquivo do Disco Virtual (erp_documents) que
+     * existe, não foi excluído e é do mesmo condomínio do registro. O download continua pela API do
+     * Disco Virtual, com a permissão e o escopo dela.
+     *
+     * @return array<string, string>
+     */
+    private function attachmentRules(array $definition, array $values): array
+    {
+        $field = $definition['attachment'] ?? null;
+        if ($field === null || ($values[$field] ?? null) === null) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT condominium_id FROM erp_documents WHERE id = :id AND deleted_at IS NULL');
+        $stmt->execute(['id' => (int)$values[$field]]);
+        $owner = $stmt->fetchColumn();
+        if ($owner === false || (int)$owner !== (int)($values['condominium_id'] ?? 0)) {
+            return [$field => 'Arquivo não encontrado no Disco Virtual deste condomínio.'];
+        }
+        return [];
+    }
+
     private function refRules(array $definition, array $values): array
     {
         $errors = [];
