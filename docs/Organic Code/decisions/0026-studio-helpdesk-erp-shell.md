@@ -58,3 +58,11 @@ e dezenas de components que dependem das classes `studio-*`.
   `POST /api/v1/recurring-entries/generate` (ADR 0027) com o token CSRF e mostra o resultado
   (gerados, já existentes e com erro). O botão só aparece com `erp.recurring_entries.manage` e
   `erp.entries.manage`, e a API valida as duas de novo.
+- **Logotipo Moves** no Studio e no Help Desk, enviado pelo Djalma e salvo em
+  `container/cms/studio/v1/assets/images/moves-logo.svg`. Na sidebar escura entram a versão branca
+  (`moves-logo-white.svg`) e o símbolo recortado (`moves-mark-white.svg`, para o menu recolhido),
+  porque o fim roxo do degradê some no fundo roxo.
+- **Telas no padrão do ERP**: cabeçalhos, cards, botões, campos (brancos com contorno), tabelas e
+  selos de status seguem o `erp.css` pela camada `connect-shell.css`, sem reescrever os components.
+  O dashboard foi refeito com indicadores, gráfico de acessos dos últimos dias, ações rápidas e
+  artigos recentes (componentes `cx-*`).

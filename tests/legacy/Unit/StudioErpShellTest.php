@@ -50,9 +50,10 @@ final class StudioErpShellTest extends TestCase
         $layout = (string)file_get_contents($root . '/layouts/studio.php');
         self::assertStringContainsString('studio-erp', $layout);
         self::assertStringContainsString('/assets/css/connect-shell.css', $layout);
-        self::assertStringContainsString('site_logo_url()', $layout);
+        self::assertStringContainsString('moves-logo-white.svg', $layout);
+        self::assertFileExists($root . '/assets/images/moves-logo-white.svg');
         self::assertStringNotContainsString('studio-theme-toggle', $layout);
-        self::assertStringNotContainsString('MOVES<small>', $layout);
+        self::assertStringNotContainsString('studio-logo.svg', $layout);
         self::assertFileExists($root . '/assets/css/connect-shell.css');
     }
 
