@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**239** rotas fixas · **164** classes em `source/` · **73** tabelas nas migrations · **88** arquivos de teste · **41** ADRs · **172** páginas no catálogo do ERP.
+**240** rotas fixas · **164** classes em `source/` · **73** tabelas nas migrations · **90** arquivos de teste · **41** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -234,6 +234,7 @@ flowchart LR
   Source_Services_Erp_Banking_BankCharges --> t_erp_entries
   Source_Services_Erp_Banking_BankCharges --> t_erp_units
   Source_Services_Erp_Banking_BankCharges --> t_pages
+  Source_Services_Erp_Banking_BankReturns --> t_condominiums
   Source_Services_Erp_Banking_BankReturns --> t_erp_bank_accounts
   Source_Services_Erp_Banking_BankReturns --> t_erp_bank_charges
   t_erp_bank_events[("erp_bank_events")]
@@ -241,6 +242,7 @@ flowchart LR
   t_erp_bank_return_files[("erp_bank_return_files")]
   Source_Services_Erp_Banking_BankReturns --> t_erp_bank_return_files
   Source_Services_Erp_Banking_BankReturns --> t_erp_entries
+  Source_Services_Erp_Banking_BankReturns --> t_pages
   Source_Services_Erp_FinancialReports --> t_condominiums
   Source_Services_Erp_FinancialReports --> t_erp_bank_accounts
   t_erp_chart_accounts[("erp_chart_accounts")]
@@ -431,7 +433,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>index</b> (65 rotas)</summary>
+<details><summary><b>index</b> (66 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -463,43 +465,44 @@ flowchart LR
 | GET | `/api/v1/bank-charges/{id}` | `Controllers/Api/V1/Banking::show` | [index.php:70](../../index.php#L70) |
 | POST | `/api/v1/bank-charges/{id}/refresh` | `Controllers/Api/V1/Banking::refresh` | [index.php:71](../../index.php#L71) |
 | POST | `/api/v1/bank-charges/{id}/cancel` | `Controllers/Api/V1/Banking::cancel` | [index.php:72](../../index.php#L72) |
-| POST | `/api/v1/bank-returns` | `Controllers/Api/V1/Banking::importReturn` | [index.php:73](../../index.php#L73) |
-| GET | `/api/v1/bank-events/divergences` | `Controllers/Api/V1/Banking::divergences` | [index.php:74](../../index.php#L74) |
-| POST | `/api/v1/bank-events/{id}/resolve` | `Controllers/Api/V1/Banking::resolve` | [index.php:75](../../index.php#L75) |
-| GET | `/api/v1/reports/trial-balance` | `Controllers/Api/V1/FinancialReports::trialBalance` | [index.php:77](../../index.php#L77) |
-| GET | `/api/v1/reports/statement` | `Controllers/Api/V1/FinancialReports::statement` | [index.php:78](../../index.php#L78) |
-| GET | `/api/v1/delinquency` | `Controllers/Api/V1/Agreements::delinquency` | [index.php:80](../../index.php#L80) |
-| GET | `/api/v1/agreements` | `Controllers/Api/V1/Agreements::index` | [index.php:81](../../index.php#L81) |
-| POST | `/api/v1/agreements` | `Controllers/Api/V1/Agreements::store` | [index.php:82](../../index.php#L82) |
-| GET | `/api/v1/agreements/{id}` | `Controllers/Api/V1/Agreements::show` | [index.php:83](../../index.php#L83) |
-| POST | `/api/v1/agreements/{id}/cancel` | `Controllers/Api/V1/Agreements::cancel` | [index.php:84](../../index.php#L84) |
-| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:100](../../index.php#L100) |
-| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:101](../../index.php#L101) |
-| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:102](../../index.php#L102) |
-| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:103](../../index.php#L103) |
-| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:104](../../index.php#L104) |
-| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:105](../../index.php#L105) |
-| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:106](../../index.php#L106) |
-| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:107](../../index.php#L107) |
-| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:109](../../index.php#L109) |
-| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:110](../../index.php#L110) |
-| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:111](../../index.php#L111) |
-| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:120](../../index.php#L120) |
-| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:121](../../index.php#L121) |
-| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:135](../../index.php#L135) |
-| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:136](../../index.php#L136) |
-| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:137](../../index.php#L137) |
-| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:138](../../index.php#L138) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:141](../../index.php#L141) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:142](../../index.php#L142) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:143](../../index.php#L143) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:144](../../index.php#L144) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:157](../../index.php#L157) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:158](../../index.php#L158) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:159](../../index.php#L159) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:160](../../index.php#L160) |
-| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:176](../../index.php#L176) |
-| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:178](../../index.php#L178) |
+| GET | `/api/v1/bank-returns` | `Controllers/Api/V1/Banking::returns` | [index.php:73](../../index.php#L73) |
+| POST | `/api/v1/bank-returns` | `Controllers/Api/V1/Banking::importReturn` | [index.php:74](../../index.php#L74) |
+| GET | `/api/v1/bank-events/divergences` | `Controllers/Api/V1/Banking::divergences` | [index.php:75](../../index.php#L75) |
+| POST | `/api/v1/bank-events/{id}/resolve` | `Controllers/Api/V1/Banking::resolve` | [index.php:76](../../index.php#L76) |
+| GET | `/api/v1/reports/trial-balance` | `Controllers/Api/V1/FinancialReports::trialBalance` | [index.php:78](../../index.php#L78) |
+| GET | `/api/v1/reports/statement` | `Controllers/Api/V1/FinancialReports::statement` | [index.php:79](../../index.php#L79) |
+| GET | `/api/v1/delinquency` | `Controllers/Api/V1/Agreements::delinquency` | [index.php:81](../../index.php#L81) |
+| GET | `/api/v1/agreements` | `Controllers/Api/V1/Agreements::index` | [index.php:82](../../index.php#L82) |
+| POST | `/api/v1/agreements` | `Controllers/Api/V1/Agreements::store` | [index.php:83](../../index.php#L83) |
+| GET | `/api/v1/agreements/{id}` | `Controllers/Api/V1/Agreements::show` | [index.php:84](../../index.php#L84) |
+| POST | `/api/v1/agreements/{id}/cancel` | `Controllers/Api/V1/Agreements::cancel` | [index.php:85](../../index.php#L85) |
+| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:101](../../index.php#L101) |
+| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:102](../../index.php#L102) |
+| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:103](../../index.php#L103) |
+| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:104](../../index.php#L104) |
+| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:105](../../index.php#L105) |
+| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:106](../../index.php#L106) |
+| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:107](../../index.php#L107) |
+| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:108](../../index.php#L108) |
+| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:110](../../index.php#L110) |
+| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:111](../../index.php#L111) |
+| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:112](../../index.php#L112) |
+| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:121](../../index.php#L121) |
+| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:122](../../index.php#L122) |
+| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:136](../../index.php#L136) |
+| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:137](../../index.php#L137) |
+| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:138](../../index.php#L138) |
+| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:139](../../index.php#L139) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:142](../../index.php#L142) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:143](../../index.php#L143) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:144](../../index.php#L144) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:145](../../index.php#L145) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:158](../../index.php#L158) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:159](../../index.php#L159) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:160](../../index.php#L160) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:161](../../index.php#L161) |
+| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:177](../../index.php#L177) |
+| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:179](../../index.php#L179) |
 
 </details>
 
@@ -637,7 +640,7 @@ flowchart LR
 | `brief` | `20260815_brief_testimonials.sql` | `20260816_branding_testimonial_rating.sql` | `Models/Brief/AppBrief` |
 | `condominium_geolocations` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `condominium_onboarding_items` | `20261108_0010_condominium_onboarding.sql` | `20261108_0011_onboarding_alerts.sql` | `Services/OnboardingAlerts`, `Services/OnboardingCatalog`, `Services/OnboardingChecklist` |
-| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/FinancialReports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
+| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankReturns`, `Services/Erp/FinancialReports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
 | `erp_agreement_originals` | `20261108_0519_agreements.sql` | — | `Services/Erp/Agreements` |
 | `erp_agreements` | `20261108_0519_agreements.sql` | — | `Services/Erp/Agreements` |
 | `erp_assets` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -680,7 +683,7 @@ flowchart LR
 | `notification_messages` | (legado) | `20260815_mail_queue_scheduler.sql` | `Controllers/Studio/Studio`, `Models/Notification/NotificationMessage`, `Support/Audit` |
 | `notifications` | (legado) | `20260815_log_alerts.sql`, `20260815_notifications_audit.sql` | `Controllers/Erp/Connect/Panel`, `Controllers/Erp/V1/Condominium`, `Controllers/Erp/V1/Corporations`, `Controllers/Erp/V1/Dash`, `Controllers/Erp/V1/Manager`, `Controllers/Erp/V1/Users`, `Controllers/Studio/Studio`, `Models/Notification/Notification`, `Services/OnboardingAlerts`, `Support/Audit` |
 | `onboarding_item_templates` | `20261108_0010_condominium_onboarding.sql` | — | `Services/OnboardingCatalog`, `Services/OnboardingChecklist` |
-| `pages` | `pages_posts.sql` | `pages_posts.sql` | `Controllers/Api/V1/Registry`, `Controllers/Erp/Connect/Panel`, `Controllers/Studio/Studio`, `Models/Post/Page`, `Models/Report/Access`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Invoices`, `Services/Erp/Registry/RegistryService` |
+| `pages` | `pages_posts.sql` | `pages_posts.sql` | `Controllers/Api/V1/Registry`, `Controllers/Erp/Connect/Panel`, `Controllers/Studio/Studio`, `Models/Post/Page`, `Models/Report/Access`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Banking/BankReturns`, `Services/Erp/Invoices`, `Services/Erp/Registry/RegistryService` |
 | `posts` | `pages_posts.sql` | `pages_posts.sql` | `Controllers/Studio/Studio`, `Models/Post/Post` |
 | `settings` | (legado) | `20260815_movesos_version_settings.sql`, `20260816_branding_testimonial_rating.sql`, `20260816_site_support_module_access.sql`, `20260816_support_theme_version.sql` | `Controllers/Studio/Studio`, `Models/Settings/Settings`, `Support/Access` |
 | `studio_calendar_events` | `20260816_service_desk.sql` | — | `Controllers/Studio/Studio` |
@@ -819,7 +822,7 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 28 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 29 |
 
 </details>
 
@@ -829,16 +832,16 @@ flowchart LR
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 5 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 20 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 21 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 2 |
 | [`Services/Erp/Agreements`](../../source/Services/Erp/Agreements.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_agreement_originals, erp_agreements, erp_bank_charges, erp_entries, erp_units, pages | 2 |
 | [`Services/Erp/BankBalances`](../../source/Services/Erp/BankBalances.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_entries | 2 |
 | [`Services/Erp/Banking/BankAdapter`](../../source/Services/Erp/Banking/BankAdapter.php) | — | — | 1 |
 | [`Services/Erp/Banking/BankAdapters`](../../source/Services/Erp/Banking/BankAdapters.php) | — | — | 2 |
-| [`Services/Erp/Banking/BankCharges`](../../source/Services/Erp/Banking/BankCharges.php) | Connect, User, CondominiumScope, RegistryNotFound, AppLogger, Audit | erp_bank_accounts, erp_bank_charges, erp_entries, erp_units, pages | 3 |
-| [`Services/Erp/Banking/BankReturns`](../../source/Services/Erp/Banking/BankReturns.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_bank_accounts, erp_bank_charges, erp_bank_events, erp_bank_return_files, erp_entries | 2 |
-| [`Services/Erp/Banking/SandboxBankAdapter`](../../source/Services/Erp/Banking/SandboxBankAdapter.php) | — | — | 2 |
+| [`Services/Erp/Banking/BankCharges`](../../source/Services/Erp/Banking/BankCharges.php) | Connect, User, CondominiumScope, RegistryNotFound, AppLogger, Audit | erp_bank_accounts, erp_bank_charges, erp_entries, erp_units, pages | 4 |
+| [`Services/Erp/Banking/BankReturns`](../../source/Services/Erp/Banking/BankReturns.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_events, erp_bank_return_files, erp_entries, pages | 4 |
+| [`Services/Erp/Banking/SandboxBankAdapter`](../../source/Services/Erp/Banking/SandboxBankAdapter.php) | — | — | 3 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
 | [`Services/Erp/FinancialReports`](../../source/Services/Erp/FinancialReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries | 3 |
 | [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 4 |
@@ -849,7 +852,7 @@ flowchart LR
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 7 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 5 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 15 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 16 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 9 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 8 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |

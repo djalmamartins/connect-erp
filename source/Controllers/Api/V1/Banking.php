@@ -21,6 +21,7 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges {entry_id, bank_account_id}          emite (idempotente por lançamento)
  *  POST /api/v1/bank-charges/{id}/refresh                         consulta no banco
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
+ *  GET  /api/v1/bank-returns?condominium_id=&bank_account_id=&page=  arquivos importados (paginado)
  *  POST /api/v1/bank-returns {bank_account_id, filename, content} importa retorno (texto)
  *  GET  /api/v1/bank-events/divergences?condominium_id=           fila de revisão
  *  POST /api/v1/bank-events/{id}/resolve {note}                   marca como revisada
@@ -74,6 +75,16 @@ final class Banking
         if ($user !== null) {
             $this->run(201, fn () => (new BankReturns())->process($user, (int)$this->int($body['bank_account_id'] ?? null),
                 is_string($body['filename'] ?? null) ? $body['filename'] : 'retorno.txt', is_string($body['content'] ?? null) ? $body['content'] : ''));
+        }
+    }
+
+    public function returns(): void
+    {
+        $user = $this->authorize('view');
+        if ($user !== null) {
+            $this->run(200, fn () => (new BankReturns())->files($user, $this->int($_GET['condominium_id'] ?? null), [
+                'bank_account_id' => $_GET['bank_account_id'] ?? null, 'page' => $_GET['page'] ?? 1,
+            ]), false);
         }
     }
 
