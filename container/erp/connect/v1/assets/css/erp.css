@@ -535,8 +535,32 @@ p { margin: 0; }
   .erp-btn, .erp-input, .erp-select, .erp-card, .erp-badge { border: 1px solid CanvasText; }
   .erp-nav__link[aria-current="page"] { outline: 2px solid Highlight; }
 }
+/* Documentos da unidade (ADR 0046): folha para imprimir com o código de verificação. */
+.erp-unit-doc { display: grid; gap: 18px; padding: 28px; }
+.erp-unit-doc__head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid var(--erp-border); padding-bottom: 14px; }
+.erp-unit-doc__head h2 { margin: 4px 0 0; font-size: 1.35rem; }
+.erp-unit-doc__issuer { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--erp-muted); }
+.erp-unit-doc__number { text-align: right; font-weight: 600; }
+.erp-unit-doc__text p { margin: 0 0 8px; line-height: 1.6; }
+.erp-unit-doc__clear { font-size: 1.15rem; font-weight: 700; color: var(--erp-success); }
+.erp-unit-doc__caption { caption-side: top; text-align: left; font-weight: 600; padding: 0 0 6px; }
+.erp-unit-doc__foot { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; border-top: 1px dashed var(--erp-border); padding-top: 14px; }
+.erp-unit-doc__foot > div { display: grid; gap: 2px; }
+.erp-unit-doc__foot p { margin: 0; font-size: .82rem; }
+.erp-unit-doc__code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.1rem; letter-spacing: .08em; }
+.erp-unit-doc__code-sm { font-size: .8rem; letter-spacing: .04em; white-space: nowrap; }
+.erp-unit-doc__code-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .06em; }
+.erp-unit-doc__panel { align-content: start; }
+.erp-unit-doc__verify-field { max-width: 360px; }
+.erp-nowrap { white-space: nowrap; }
+.erp-unit-doc.is-cancelled { position: relative; }
+.erp-unit-doc.is-cancelled::after { content: "CANCELADO"; position: absolute; inset: 40% 0 auto; text-align: center; font-size: 4rem; font-weight: 800; color: var(--erp-danger); opacity: .14; transform: rotate(-14deg); pointer-events: none; }
+@media (max-width: 640px) { .erp-unit-doc { padding: 18px; } .erp-unit-doc__foot { grid-template-columns: 1fr; } }
+
 @media print {
   .erp-sidebar, .erp-navbar, .erp-page-head__actions, .erp-filters, .erp-pagination, .erp-toasts { display: none !important; }
+  .erp-unit-doc__actions, .erp-trace { display: none !important; }
+  .erp-unit-doc { border: 0; padding: 0; }
   .erp-shell { display: block; }
   .erp-card { box-shadow: none; border: 1px solid #ccc; }
 }
