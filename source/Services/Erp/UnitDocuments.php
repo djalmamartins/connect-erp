@@ -23,6 +23,8 @@ use Source\Support\Audit;
  * - quittance (Comprovante de Quitação): todas as contas até a competência informada pagas (ou
  *   canceladas); com alguma em aberto, recusa.
  * - consent_letter (Carta de Anuência): só sem conta vencida em aberto; registra a finalidade.
+ * - receipt (Recibo, AP-040, ADR 0057): de contas a receber já pagas da unidade, escolhidas uma a uma;
+ *   cada conta só tem um recibo válido (cancelar o recibo libera a conta para outro).
  *
  * O conteúdo fica gravado (foto) com código de verificação único; emitido não muda. Cancelar exige
  * motivo. Escopo por condomínio (ADR-002): fora do escopo = RegistryNotFound (404). Tudo auditado.
@@ -35,6 +37,8 @@ final class UnitDocuments
         'quittance' => 'Comprovante de Quitação',
         'consent_letter' => 'Carta de Anuência',
     ];
+    /** Todos os tipos emitidos aqui: os documentos de AP-123 a AP-130 (KINDS) e o recibo (AP-040, ADR 0057), que tem página própria. */
+    public const ALL_KINDS = self::KINDS + ['receipt' => 'Recibo'];
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -85,7 +89,7 @@ final class UnitDocuments
      */
     public function issue(User $user, array $input): array
     {
-        $kind = is_string($input['kind'] ?? null) && isset(self::KINDS[$input['kind']]) ? $input['kind'] : null;
+        $kind = is_string($input['kind'] ?? null) && isset(self::ALL_KINDS[$input['kind']]) ? $input['kind'] : null;
         if ($kind === null) {
             throw new InvalidArgumentException('Tipo de documento inválido.');
         }
@@ -96,6 +100,10 @@ final class UnitDocuments
         }
         $unit = $this->unit($user, (int)filter_var($input['unit_id'] ?? 0, FILTER_VALIDATE_INT));
         $reference = null;
+
+        if ($kind === 'receipt') {
+            return $this->receipt($user, $unit, $asOf, $input['entry_ids'] ?? null);
+        }
 
         if ($kind === 'quittance') {
             $until = is_string($input['until_competence'] ?? null) ? $input['until_competence'] : '';
@@ -176,6 +184,59 @@ final class UnitDocuments
         return $this->find($user, (int)$id);
     }
 
+    /**
+     * Recibo (AP-040): contas a receber pagas da unidade. Recusa conta em aberto, cancelada, de outra
+     * unidade ou que já tem recibo válido. Grava o recibo e as contas cobertas na mesma transação.
+     */
+    private function receipt(User $user, array $unit, string $asOf, mixed $rawIds): array
+    {
+        $ids = is_array($rawIds) ? array_values(array_unique(array_filter(array_map('intval', $rawIds), static fn (int $i): bool => $i > 0))) : [];
+        if ($ids === [] || count($ids) > 60) {
+            throw new InvalidArgumentException('Escolha de 1 a 60 contas pagas para o recibo.');
+        }
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.unit_id, e.nature, e.status, e.deleted_at,
+                    b.name AS bank_account FROM erp_entries e LEFT JOIN erp_bank_accounts b ON b.id = e.bank_account_id
+                WHERE e.id IN (' . implode(',', $ids) . ') ORDER BY e.paid_on, e.id FOR UPDATE');
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (count($rows) !== count($ids)) {
+                throw new InvalidArgumentException('Alguma conta escolhida não existe.');
+            }
+            foreach ($rows as $row) {
+                if ((int)$row['unit_id'] !== (int)$unit['id'] || $row['nature'] !== 'receita' || $row['deleted_at'] !== null || $row['status'] !== 'active') {
+                    throw new InvalidArgumentException('O recibo só cobre contas a receber válidas desta unidade.');
+                }
+                if ($row['paid_on'] === null || $row['paid_on'] > $asOf) {
+                    throw new DomainException("A conta \"{$row['description']}\" não está paga nesta data. Recibo só de conta paga.");
+                }
+            }
+            $taken = $this->pdo->query("SELECT de.entry_id FROM erp_unit_document_entries de JOIN erp_unit_documents d ON d.id = de.document_id
+                WHERE d.status = 'issued' AND de.entry_id IN (" . implode(',', $ids) . ') LIMIT 1')->fetchColumn();
+            if ($taken !== false) {
+                throw new DomainException('Uma das contas já tem recibo válido. Cancele o recibo anterior para emitir outro.');
+            }
+            $entries = array_map(static fn (array $r): array => ['entry_id' => (int)$r['id'], 'description' => (string)$r['description'],
+                'competence' => (string)$r['competence'], 'due_on' => (string)$r['due_on'], 'paid_on' => (string)$r['paid_on'],
+                'amount_cents' => (int)$r['amount_cents'], 'bank_account' => $r['bank_account']], $rows);
+            $total = array_sum(array_column($entries, 'amount_cents'));
+            $document = $this->store($user, $unit, 'receipt', $asOf, sprintf('%d conta(s)', count($entries)), 'clear', $total,
+                ['entries' => $entries, 'paid_cents' => $total]);
+            $link = $this->pdo->prepare('INSERT INTO erp_unit_document_entries (document_id, entry_id) VALUES (:d, :e)');
+            foreach ($ids as $id) {
+                $link->execute(['d' => $document['id'], 'e' => $id]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
+        return $document;
+    }
+
     public function cancel(User $user, int $documentId, string $reason): array
     {
         $document = $this->row($user, $documentId);
@@ -206,7 +267,7 @@ final class UnitDocuments
         }
         $where = 'd.condominium_id IN (' . implode(',', $ids) . ')';
         $params = [];
-        if (is_string($filters['kind'] ?? null) && isset(self::KINDS[$filters['kind']])) {
+        if (is_string($filters['kind'] ?? null) && isset(self::ALL_KINDS[$filters['kind']])) {
             $where .= ' AND d.kind = :k';
             $params['k'] = $filters['kind'];
         }
@@ -287,7 +348,7 @@ final class UnitDocuments
         $out = [
             'id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'condominium_name' => $row['condominium_name'] ?? null,
             'unit_id' => (int)$row['unit_id'], 'unit_label' => $row['unit_label'] ?? null,
-            'kind' => (string)$row['kind'], 'kind_label' => self::KINDS[$row['kind']] ?? (string)$row['kind'],
+            'kind' => (string)$row['kind'], 'kind_label' => self::ALL_KINDS[$row['kind']] ?? (string)$row['kind'],
             'as_of' => (string)$row['as_of'], 'reference' => $row['reference'], 'result' => (string)$row['result'],
             'total_cents' => (int)$row['total_cents'], 'verification_code' => (string)$row['verification_code'],
             'verification_display' => implode('-', str_split((string)$row['verification_code'], 4)),

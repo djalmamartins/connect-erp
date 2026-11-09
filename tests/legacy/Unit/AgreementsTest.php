@@ -53,7 +53,7 @@ final class AgreementsTest extends TestCase
 
     public function testAgreementEntriesAreLockedLikeInvoiceEntries(): void
     {
-        self::assertSame(['invoice_item_id', 'agreement_id'], Definitions::INVOICE_LOCK['fields']);
+        self::assertSame(['invoice_item_id', 'agreement_id', 'extra_charge_id'], Definitions::INVOICE_LOCK['fields'], 'Cobrança extra e multa avulsa também travam (ADR 0057).');
         $definition = Definitions::get('receivables');
         self::assertTrue(Definitions::lockedByOrigin($definition, ['agreement_id' => 7, 'invoice_item_id' => null]));
         self::assertTrue(Definitions::lockedByOrigin($definition, ['agreement_id' => null, 'invoice_item_id' => 3]));

@@ -82,6 +82,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0054](../Organic%20Code/decisions/0054-condominium-unit-panels.md) | Painéis do condomínio (AP-002) e da unidade (AP-003) e outbox de notificações (sem envio ainda) |
 | [0055](../Organic%20Code/decisions/0055-notification-dispatch.md) | Fila de envio dos avisos do ERP: modelo do send, log ou caixa de teste fora de produção, retentativas e trilha |
 | [0056](../Organic%20Code/decisions/0056-notification-events.md) | Avisos de fatura, boleto, acordo, quebra e reserva aprovada pela outbox, com opt-in de cobrança por e-mail |
+| [0057](../Organic%20Code/decisions/0057-entry-shortcuts-and-receipts.md) | Lançamentos avulsos (AP-024 a AP-029): desconto com trilha, multa avulsa e cobrança extra travadas pela origem, transferência entre contas, e recibo com código (AP-040) |
 | [0060](../Organic%20Code/decisions/0060-smtp-credentials-from-environment.md) | Credenciais SMTP pelo ambiente (`MOVESOS_SMTP_*`), valendo sobre a tabela settings |
 | [0061](../Organic%20Code/decisions/0061-panels-require-module-permissions.md) | Painéis e dashboard exigem a permissão de cada módulo que mostram; disparo da fila de avisos só com acesso a todos os condomínios |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
