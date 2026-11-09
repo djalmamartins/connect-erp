@@ -161,6 +161,10 @@
    "title": "0041 — Telas de inadimplência e acordos (AP-033 e AP-034)"
   },
   {
+   "file": "docs/Organic Code/decisions/0043-late-charges-screens.md",
+   "title": "0043 — Telas de encargos: regra de cobrança, IPCA, sugestão e quebra de acordo"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -715,6 +719,7 @@
     "Source\\Services\\Erp\\Agreements",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
+    "Source\\Services\\Erp\\BillingRules",
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
@@ -738,6 +743,7 @@
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
+    "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
@@ -1987,6 +1993,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/erp/render-smoke.php",
     "tests/legacy/Unit/LateChargesTest.php"
    ]
   },
@@ -2838,7 +2845,7 @@
   }
  },
  "counts": {
-  "adrs": 43,
+  "adrs": 44,
   "classes": 167,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2847,7 +2854,7 @@
   "erp_pages": 172,
   "routes": 247,
   "tables": 75,
-  "tests": 93
+  "tests": 94
  },
  "erp_pages": [
   {
@@ -6974,6 +6981,7 @@
    "Source\\Models\\User",
    "Source\\Services\\Erp\\DemoData",
    "Source\\Services\\Erp\\FinancialReports",
+   "Source\\Services\\Erp\\LateCharges",
    "Source\\Services\\Erp\\MonthClosing",
    "Source\\Support\\Erp\\CondominiumContext",
    "Source\\Support\\QrCode"
@@ -7272,6 +7280,9 @@
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpBankingScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpBillingScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpCondominiumContextTest.php": [
