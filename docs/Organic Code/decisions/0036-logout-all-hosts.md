@@ -1,4 +1,4 @@
-# 0035 — Sair em um host encerra as sessões do usuário nos outros
+# 0036 — Sair em um host encerra as sessões do usuário nos outros
 
 Data: 2026-11-09 · Status: aceito (rodada autônoma, por delegação do Djalma; aguarda migration no container)
 

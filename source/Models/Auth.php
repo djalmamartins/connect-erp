@@ -50,7 +50,7 @@ class Auth extends Model
         if (!$session->has("authUser")) {
             return null;
         }
-        // Logout feito em outro host (ADR 0035): a sessão deste host também deixa de valer.
+        // Logout feito em outro host (ADR 0036): a sessão deste host também deixa de valer.
         // Sessão sem o instante do login (anterior a esta regra ou criada por outro fluxo, como a
         // troca de ambiente) é marcada agora e passa a ser revogável a partir daqui.
         if (!$session->has(self::AUTH_AT)) {
@@ -63,7 +63,7 @@ class Auth extends Model
         return (new User())->findById($session->authUser);
     }
 
-    /** Instante do login (ms) guardado na sessão, comparado com o logout global (ADR 0035). */
+    /** Instante do login (ms) guardado na sessão, comparado com o logout global (ADR 0036). */
     public const AUTH_AT = "authAt";
 
     public static function session(): ?AppCondominium
@@ -80,7 +80,7 @@ class Auth extends Model
      */
     /**
      * Encerra a sessão deste host. Com $everywhere (o botão "Sair"), encerra também as sessões
-     * do usuário nos outros hosts (ADR 0035). Logouts forçados por falta de permissão não usam
+     * do usuário nos outros hosts (ADR 0036). Logouts forçados por falta de permissão não usam
      * $everywhere, para não derrubar o usuário de um ambiente em que ele tem acesso.
      */
     public static function logout(bool $everywhere = false): void

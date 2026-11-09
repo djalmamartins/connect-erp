@@ -1,4 +1,4 @@
--- ADR 0035: sair em um host (erp/studio/helpdesk) encerra as sessões do usuário nos outros.
+-- ADR 0036: sair em um host (erp/studio/helpdesk) encerra as sessões do usuário nos outros.
 -- Cada host tem o seu cookie de sessão; o logout grava aqui o instante (ms) e toda sessão
 -- iniciada antes dele deixa de valer no próximo pedido.
 CREATE TABLE IF NOT EXISTS user_session_revocations (

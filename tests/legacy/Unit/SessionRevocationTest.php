@@ -8,7 +8,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Source\Services\SessionRevocation;
 
-/** ADR 0035: sair em um host encerra as sessões do usuário nos outros hosts. */
+/** ADR 0036: sair em um host encerra as sessões do usuário nos outros hosts. */
 final class SessionRevocationTest extends TestCase
 {
     private PDO $pdo;

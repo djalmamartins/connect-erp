@@ -9,7 +9,7 @@ use Source\Core\Connect;
 use Source\Support\AppLogger;
 
 /**
- * Logout em todos os hosts (ADR 0035). erp.<domínio>, studio.<domínio> e o Help Desk têm cookies
+ * Logout em todos os hosts (ADR 0036). erp.<domínio>, studio.<domínio> e o Help Desk têm cookies
  * de sessão separados; ao sair em um deles, revokeAll() grava o instante e isRevoked() faz as
  * sessões iniciadas antes dele deixarem de valer nos outros.
  *
