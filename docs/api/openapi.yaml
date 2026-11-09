@@ -974,6 +974,75 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /reports/agreements:
+    get:
+      operationId: reportAgreements
+      summary: Relatório de acordos (AP-047) criados no período, com parcelas pagas, em aberto e vencidas (erp.agreements.view)
+      description: format=csv baixa a mesma consulta em CSV (BOM UTF-8, separador ;, células iniciadas por = + - @ com apóstrofo).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+        - { name: status, in: query, schema: { type: string, enum: [active, breached, cancelled] } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { from, to, as_of, agreements[], totals{agreements, total_cents, paid_cents, open_cents, overdue_cents, by_status} } } ou text/csv' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/agreement-fees:
+    get:
+      operationId: reportAgreementFees
+      summary: Taxas de acordos (AP-048) por condomínio, encargos, descontos e encargos líquidos; cancelados só na contagem (erp.agreements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { condominiums[], totals } } ou text/csv' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/delinquents:
+    get:
+      operationId: reportDelinquents
+      summary: Inadimplentes (AP-057 geral, AP-058 unidade, AP-059 detalhado, AP-060 taxa, AP-061 morador), com encargos sugeridos (erp.agreements.view; morador também erp.residents.view)
+      description: A visão resident mostra o responsável (responsável financeiro, depois proprietário) com o documento mascarado; a exportação fica na auditoria.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: as_of, in: query, schema: { type: string, format: date } }
+        - { name: view, in: query, schema: { type: string, enum: [general, unit, detailed, fee, resident], default: unit } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { as_of, view, rows[], totals } } ou text/csv' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/receipts:
+    get:
+      operationId: reportReceipts
+      summary: Recebimentos (AP-071) por data de pagamento e por conta (AP-072, group bank_account ou chart_account) (erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: group, in: query, schema: { type: string, enum: [entry, bank_account, chart_account], default: entry } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv] } }
+      responses:
+        '200': { description: '{ data: { from, to, group, rows[], totals{entries, amount_cents, late} } } ou text/csv' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /delinquency:
     get:
       operationId: listDelinquency

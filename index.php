@@ -77,6 +77,11 @@ $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Suppo
 // Relatórios financeiros (ADR 0037): balancete de verificação e prestação de contas com conciliação.
 $route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
+$route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/agreements", "Agreements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
