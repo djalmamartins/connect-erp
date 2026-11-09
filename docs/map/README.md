@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**205** rotas fixas · **134** classes em `source/` · **62** tabelas nas migrations · **63** arquivos de teste · **28** ADRs · **172** páginas no catálogo do ERP.
+**206** rotas fixas · **136** classes em `source/` · **63** tabelas nas migrations · **65** arquivos de teste · **29** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -28,7 +28,7 @@ flowchart LR
   env_web --> pkg_Controllers_Web_Connect["Controllers/Web/Connect"]
   pkg_svc["Services"]:::svc
   pkg_mdl["Models"]:::svc
-  db[("MariaDB: 62 tabelas")]
+  db[("MariaDB: 63 tabelas")]
   pkg_Controllers_Api_V1 -.-> pkg_svc
   pkg_Controllers_Erp_Connect -.-> pkg_svc
   pkg_Controllers_Studio -.-> pkg_svc
@@ -74,6 +74,9 @@ flowchart LR
   Source_Controllers_Api_V1_OnboardingTemplates --> Source_Services_OnboardingCatalog
   Source_Controllers_Api_V1_OnboardingTemplates --> Source_Services_OnboardingItemNotFound
   Source_Controllers_Api_V1_OnboardingTemplates --> Source_Services_OnboardingValidationError
+  Source_Controllers_Api_V1_RecurringEntriesGenerate["Controllers/Api/V1/RecurringEntriesGenerate"]
+  Source_Services_Erp_RecurringEntries["Services/Erp/RecurringEntries"]
+  Source_Controllers_Api_V1_RecurringEntriesGenerate --> Source_Services_Erp_RecurringEntries
   Source_Controllers_Api_V1_Registry["Controllers/Api/V1/Registry"]
   Source_Services_Erp_Registry_RegistryForbidden["Services/Erp/Registry/RegistryForbidden"]
   Source_Controllers_Api_V1_Registry --> Source_Services_Erp_Registry_RegistryForbidden
@@ -159,6 +162,9 @@ flowchart LR
   Source_Services_Erp_BankBalances --> t_erp_bank_accounts
   t_erp_entries[("erp_entries")]
   Source_Services_Erp_BankBalances --> t_erp_entries
+  Source_Services_Erp_RecurringEntries --> t_erp_entries
+  t_erp_recurring_entries[("erp_recurring_entries")]
+  Source_Services_Erp_RecurringEntries --> t_erp_recurring_entries
   t_erp_assets[("erp_assets")]
   Source_Services_Erp_Registry_Definitions --> t_erp_assets
   Source_Services_Erp_Registry_Definitions --> t_erp_bank_accounts
@@ -181,6 +187,7 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_linkable_areas
   t_erp_pets[("erp_pets")]
   Source_Services_Erp_Registry_Definitions --> t_erp_pets
+  Source_Services_Erp_Registry_Definitions --> t_erp_recurring_entries
   t_erp_residents[("erp_residents")]
   Source_Services_Erp_Registry_Definitions --> t_erp_residents
   t_erp_suppliers[("erp_suppliers")]
@@ -316,7 +323,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>index</b> (35 rotas)</summary>
+<details><summary><b>index</b> (36 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -333,28 +340,29 @@ flowchart LR
 | PATCH | `/api/v1/onboarding/templates/{id}` | `Controllers/Api/V1/OnboardingTemplates::update` | [index.php:47](../../index.php#L47) |
 | DELETE | `/api/v1/users/{id}/2fa` | `Controllers/Api/V1/UserTwoFactor::reset` | [index.php:49](../../index.php#L49) |
 | GET | `/api/v1/bank-accounts/balances` | `Controllers/Api/V1/BankBalances::index` | [index.php:53](../../index.php#L53) |
-| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:69](../../index.php#L69) |
-| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:70](../../index.php#L70) |
-| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:71](../../index.php#L71) |
-| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:72](../../index.php#L72) |
-| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:73](../../index.php#L73) |
-| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:74](../../index.php#L74) |
-| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:75](../../index.php#L75) |
-| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:76](../../index.php#L76) |
-| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:90](../../index.php#L90) |
-| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:91](../../index.php#L91) |
-| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:92](../../index.php#L92) |
-| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:93](../../index.php#L93) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:96](../../index.php#L96) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:97](../../index.php#L97) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:98](../../index.php#L98) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:99](../../index.php#L99) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:112](../../index.php#L112) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:113](../../index.php#L113) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:114](../../index.php#L114) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:115](../../index.php#L115) |
-| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:131](../../index.php#L131) |
-| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:133](../../index.php#L133) |
+| POST | `/api/v1/recurring-entries/generate` | `Controllers/Api/V1/RecurringEntriesGenerate::store` | [index.php:55](../../index.php#L55) |
+| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:71](../../index.php#L71) |
+| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:72](../../index.php#L72) |
+| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:73](../../index.php#L73) |
+| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:74](../../index.php#L74) |
+| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:75](../../index.php#L75) |
+| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:76](../../index.php#L76) |
+| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:77](../../index.php#L77) |
+| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:78](../../index.php#L78) |
+| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:92](../../index.php#L92) |
+| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:93](../../index.php#L93) |
+| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:94](../../index.php#L94) |
+| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:95](../../index.php#L95) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:98](../../index.php#L98) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:99](../../index.php#L99) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:100](../../index.php#L100) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:101](../../index.php#L101) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:114](../../index.php#L114) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:115](../../index.php#L115) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:116](../../index.php#L116) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:117](../../index.php#L117) |
+| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:133](../../index.php#L133) |
+| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:135](../../index.php#L135) |
 
 </details>
 
@@ -499,11 +507,12 @@ flowchart LR
 | `erp_common_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_cost_centers` | `20261108_0503_cost_centers.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_employees` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_entries` | `20261108_0506_entries.sql` | — | `Services/Erp/BankBalances`, `Services/Erp/Registry/Definitions` |
+| `erp_entries` | `20261108_0506_entries.sql` | `20261108_0509_entry_recurring_link.sql` | `Services/Erp/BankBalances`, `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_invoice_types` | `20261108_0501_invoice_types.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_lawyers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_linkable_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | `20261108_0404_linkable_area_units.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_pets` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
+| `erp_recurring_entries` | `20261108_0508_recurring_entries.sql` | — | `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_units` | `20261108_0401_units.sql` | — | `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService` |
@@ -546,7 +555,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (40)</summary>
+<details><summary><b>Controllers</b> (41)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -556,6 +565,7 @@ flowchart LR
 | [`Controllers/Api/V1/Inspections`](../../source/Controllers/Api/V1/Inspections.php) | Auth, User, InspectionError, InspectionService | — | — |
 | [`Controllers/Api/V1/Me`](../../source/Controllers/Api/V1/Me.php) | Auth, CondominiumScope, TwoFactorService, Access | condominiums | — |
 | [`Controllers/Api/V1/OnboardingTemplates`](../../source/Controllers/Api/V1/OnboardingTemplates.php) | Auth, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
+| [`Controllers/Api/V1/RecurringEntriesGenerate`](../../source/Controllers/Api/V1/RecurringEntriesGenerate.php) | Auth, RecurringEntries, Access | — | — |
 | [`Controllers/Api/V1/Registry`](../../source/Controllers/Api/V1/Registry.php) | Auth, User, RegistryForbidden, RegistryInUse, RegistryNotFound, RegistryService, RegistryValidationException, Access | pages | 1 |
 | [`Controllers/Api/V1/TwoFactor`](../../source/Controllers/Api/V1/TwoFactor.php) | Auth, ApiAuthenticated | — | — |
 | [`Controllers/Api/V1/UserTwoFactor`](../../source/Controllers/Api/V1/UserTwoFactor.php) | Auth, AppLog, User, TwoFactorAdminReset, TwoFactorService, Access, AppLogger, Audit | user_two_factor | — |
@@ -653,27 +663,28 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 19 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 20 |
 
 </details>
 
-<details><summary><b>Services</b> (29)</summary>
+<details><summary><b>Services</b> (30)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 2 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 12 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 13 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Erp/BankBalances`](../../source/Services/Erp/BankBalances.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_entries | 2 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 9 |
+| [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 2 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_employees, erp_entries, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visitors | 10 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 5 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 2 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_units, pages, system_audit_logs | 8 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_units, pages, system_audit_logs | 9 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 7 |
-| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 7 |
+| [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 8 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |
 | [`Services/Inspections/Geo`](../../source/Services/Inspections/Geo.php) | — | — | 1 |
 | [`Services/Inspections/InspectionError`](../../source/Services/Inspections/InspectionError.php) | — | — | 3 |
@@ -753,6 +764,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0024 — Contas a pagar e a receber (AP-022/023) como visões dos lançamentos e saldo por conta bancária](../../docs/Organic%20Code/decisions/0024-payables-receivables-bank-balances.md)
 - [0025 — Reset do 2FA de outro usuário por administrador](../../docs/Organic%20Code/decisions/0025-admin-two-factor-reset.md)
 - [0026 — Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio](../../docs/Organic%20Code/decisions/0026-studio-helpdesk-erp-shell.md)
+- [0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar](../../docs/Organic%20Code/decisions/0027-recurring-entries.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
