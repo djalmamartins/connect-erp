@@ -360,6 +360,33 @@ $assert(str_contains($html, 'Nenhuma divergência pendente'), 'AP-038: fila vazi
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-035', ['bankCharges' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-036', ['bankReady' => false]) === null
     && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-038', ['bankDivergences' => []]) === 'pages/finance/bank-divergences', 'cobrança: sem dados segue a demonstração; com dados, tela própria');
 
+// Relatórios financeiros (AP-079 balancete, AP-051 demonstrativo; ADR 0037) com dados reais.
+$reportPage = static function (string $id, string $template, array $data, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
+    $html = $render($template, $layoutData->invoke($panel, $user, $id, $data + ['reportError' => null]));
+    if ($name !== '') $save('page-' . strtolower($id) . '-' . $name, $html);
+    return $html;
+};
+$tbRows = Source\Services\Erp\FinancialReports::rollup([
+    ['code' => '1.1.1', 'name' => 'Taxa <condominial>', 'nature' => 'receita', 'planned_cents' => 4320000, 'realized_cents' => 4000000, 'open_cents' => 320000],
+    ['code' => '2.1.1', 'name' => 'Energia', 'nature' => 'despesa', 'planned_cents' => 500000, 'realized_cents' => 500000, 'open_cents' => 0],
+], ['1' => 'Receitas', '1.1' => 'Ordinárias', '2' => 'Despesas', '2.1' => 'Consumo']);
+$tbTotals = Source\Services\Erp\FinancialReports::totals([['nature' => 'receita', 'planned_cents' => 4320000, 'realized_cents' => 4000000, 'open_cents' => 320000], ['nature' => 'despesa', 'planned_cents' => 500000, 'realized_cents' => 500000, 'open_cents' => 0]]);
+$html = $reportPage('AP-079', 'pages/reports/trial-balance', ['trialBalance' => ['from' => '2026-10', 'to' => '2026-11', 'rows' => $tbRows, 'totals' => $tbTotals], 'reportPeriod' => ['from' => '2026-10', 'to' => '2026-11']], 'real');
+$common($html, 'AP-079', 'Balancete');
+$assert(str_contains($html, 'Taxa &lt;condominial&gt;') && str_contains($html, 'Ordinárias') && str_contains($html, 'R$ 43.200,00') && str_contains($html, 'R$ 35.000,00') && str_contains($html, 'name="de" value="2026-10"') && !str_contains($html, 'Interface proposta'), 'AP-079: balancete real escapado, sintéticas, resultado e período, sem demonstração');
+$html = $reportPage('AP-079', 'pages/reports/trial-balance', ['trialBalance' => null, 'reportError' => 'Intervalo máximo de 24 competências.', 'reportPeriod' => ['from' => '2020-01', 'to' => '2026-11']]);
+$assert(str_contains($html, 'Intervalo máximo de 24 competências.') && str_contains($html, 'erp-alert--danger'), 'AP-079: período inválido mostra o erro');
+$stTotals = Source\Services\Erp\FinancialReports::reconcile(4000000, 500000, 3400000);
+$html = $reportPage('AP-051', 'pages/reports/statement', ['statement' => ['from' => '2026-11-01', 'to' => '2026-11-30',
+    'accounts' => [['code' => '1.1.1', 'name' => 'Taxa <condominial>', 'nature' => 'receita', 'total_cents' => 4000000], ['code' => '2.1.1', 'name' => 'Energia', 'nature' => 'despesa', 'total_cents' => 500000]],
+    'banks' => [['id' => 3, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'name' => 'Conta movimento'] + Source\Services\Erp\FinancialReports::bankMovement(1000000, 3900000, 500000)],
+    'totals' => $stTotals], 'reportPeriod' => ['from' => '2026-11-01', 'to' => '2026-11-30']], 'real');
+$common($html, 'AP-051', 'Demonstrativo');
+$assert(str_contains($html, 'Diferença de R$ 1.000,00') && str_contains($html, 'R$ 44.000,00') && str_contains($html, 'Residencial &lt;Exemplo&gt;') && str_contains($html, 'name="de" value="2026-11-01"') && !str_contains($html, 'Interface proposta'), 'AP-051: demonstrativo real com diferença exposta, saldo final e período');
+$html = $reportPage('AP-051', 'pages/reports/statement', ['statement' => ['accounts' => [], 'banks' => [], 'totals' => Source\Services\Erp\FinancialReports::reconcile(0, 0, 0)], 'reportPeriod' => ['from' => '2026-11-01', 'to' => '2026-11-09']], 'empty');
+$assert(str_contains($html, 'Conciliado') && str_contains($html, 'Nada recebido nem pago'), 'AP-051: período vazio conciliado');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-079', ['trialBalance' => null, 'reportError' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-051', ['statement' => null, 'reportError' => 'x']) === 'pages/reports/statement', 'relatórios: sem permissão segue a demonstração; erro de período usa a tela real');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);

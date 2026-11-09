@@ -328,6 +328,17 @@ p { margin: 0; }
 .erp-stack > :not(input):not(dialog) ~ :not(input):not(dialog) { margin-top: var(--erp-space-5); }
 .erp-charge-line code { font-size: 12px; word-break: break-all; }
 .erp-charge-line { max-width: 280px; }
+.erp-report-table .erp-report-group th { padding-top: 14px; background: none; color: var(--erp-brand-ink); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.erp-report-account { display: inline-block; padding-left: calc(var(--erp-level, 0) * 18px); }
+.erp-report-code { color: var(--erp-muted); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.erp-report-synthetic td { font-weight: 650; }
+.erp-report-total td { font-weight: 700; border-top: 1px solid var(--erp-border-strong); }
+.erp-report-reconcile { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: var(--erp-space-4); }
+.erp-report-reconcile > div { padding: 12px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface-muted); }
+.erp-report-reconcile dt { color: var(--erp-muted); font-size: 12px; }
+.erp-report-reconcile dd { margin: 4px 0 0; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.erp-report-reconcile .is-off { border-color: var(--erp-warning); background: var(--erp-warning-soft); }
+@media (max-width: 760px) { .erp-report-reconcile { grid-template-columns: minmax(0, 1fr); } }
 .erp-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; padding: 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: #fff; }
 .erp-qr svg { display: block; width: 196px; max-width: 100%; height: auto; }
 .erp-qr figcaption { font-size: 13px; color: var(--erp-muted); }
