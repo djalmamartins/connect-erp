@@ -606,3 +606,31 @@ e os usuários que só têm `erp.access`.
 - O parceiro pode abrir chamado no Help Desk (só `erp.access`). Isso foi mantido.
 - As corridas não têm teste automático. O `AccessAdminIntegrationTest` roda só no Mac.
 
+
+## 20ª rodada — Aceite do convite do morador (ciclo 41)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 41 (sha256 9ba65924) sobre `claude-dev` em e278ca8 · Correções: ADR 0112
+
+Escopo: `ResidentInvitationAcceptance`, `Web/Connect/ResidentInvite`, `pages/login/invite.php`, migration 0545
+e a entrega do convite no `NotificationDispatcher`.
+
+| Ponto | Situação |
+|---|---|
+| Assinaturas de `newToken()`/`hashOf()` e colunas `token_hash`, `status`, `expires_at` iguais às do 691fa3b | CONFIRMADO |
+| Aceite numa transação: convite travado (`FOR UPDATE`), `UPDATE` condicionado, vínculo só se `user_id IS NULL` | CONFIRMADO |
+| Mensagem genérica para token inexistente, vencido, usado ou revogado | CONFIRMADO |
+| Conta comum (nível 1, papel `user` só com `app.access`), sem login automático nem mexer no 2FA | CONFIRMADO |
+| CSRF no POST, limite por IP e por token só com hashes, token fora do log da aplicação e da auditoria | CONFIRMADO |
+| Token no log de acesso do servidor web | Corrigido (ADR 0112) |
+
+### Achado corrigido (ADR 0112)
+
+1. **Token no caminho.** O link do e-mail agora leva o token depois do "#", e a página o envia por
+   `POST /convite/abrir` com CSRF. O caminho antigo `/convite/{token}` fica fora do log de acesso do Docker.
+
+### Lacunas
+
+- Morador sem CPF/CNPJ no cadastro: só o token protege a criação da conta.
+- O limite falha aberto se o banco estiver indisponível.
+- Log do servidor de produção fora do Docker não conferido.
+- As corridas só têm teste de integração (Mac).
