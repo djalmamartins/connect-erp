@@ -4,15 +4,14 @@
  * ativas com o e-mail mascarado e se recebem comunicado e cobrança por e-mail. ?sem=comunicado|cobranca
  * mostra só as unidades sem ninguém para aquele envio. A correção é no cadastro de pessoas.
  * @var array $currentPage @var ?int $commContext @var array $addresses @var ?string $addressFilter
+ * @var list<array> $addressUnits unidades já filtradas pelo controlador @var array<string, string> $addressRelationships
  */
-use Source\Controllers\Erp\Connect\CommunicationScreens;
-use Source\Services\Erp\Registry\Definitions;
 
 $this->layout('default');
 $route = erp_url($currentPage['route']);
 $totals = $addresses['totals'];
-$units = CommunicationScreens::filterAddresses($addresses['data'], $addressFilter);
-$relationships = Definitions::get('residents')['fields']['relationship']['options'] ?? [];
+$units = $addressUnits;
+$relationships = $addressRelationships;
 $peopleRoute = '/cadastros/proprietarios-e-inquilinos';
 $filters = [null => 'Todas as unidades', 'comunicado' => 'Sem ninguém para comunicado', 'cobranca' => 'Sem ninguém para cobrança'];
 

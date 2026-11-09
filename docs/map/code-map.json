@@ -281,6 +281,10 @@
    "title": "0075 — Telas de comunicação: comunicado, aviso de cobrança, agendados e endereços"
   },
   {
+   "file": "docs/Organic Code/decisions/0076-collection-screens.md",
+   "title": "0076 — Telas de cobrança: multas pendentes, atendimento e cobrança judicial"
+  },
+  {
    "file": "docs/Organic Code/decisions/0080-collections-and-fines.md",
    "title": "0080 — Cobrança e multas: multas pendentes, atendimento e acompanhamento judicial"
   },
@@ -815,6 +819,27 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\CollectionScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Agreements",
+    "Source\\Services\\Erp\\CollectionScreenOptions",
+    "Source\\Services\\Erp\\Collections",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/CollectionScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCollectionScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\CommunicationScreens": {
    "deps": [
     "Source\\Core\\Connect",
@@ -833,6 +858,7 @@
    "tables": [],
    "tests": [
     "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCollectionScreensTest.php",
     "tests/legacy/Unit/ErpCommunicationScreensTest.php"
    ]
   },
@@ -934,6 +960,7 @@
    "deps": [
     "Source\\Core\\Connect",
     "Source\\Models\\User",
+    "Source\\Services\\Erp\\CollectionScreenOptions",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -1141,6 +1168,7 @@
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
+    "tests/legacy/Unit/ErpCollectionScreensTest.php",
     "tests/legacy/Unit/ErpCommunicationScreensTest.php",
     "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
@@ -2242,6 +2270,7 @@
     "auth_environment_handoffs"
    ],
    "tests": [
+    "tests/erp/render-smoke.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Unit/EnvironmentsTest.php"
    ]
@@ -2463,6 +2492,23 @@
     "tests/legacy/Unit/CollectionReportsTest.php"
    ]
   },
+  "Source\\Services\\Erp\\CollectionScreenOptions": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope"
+   ],
+   "file": "source/Services/Erp/CollectionScreenOptions.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_common_areas",
+    "erp_reservations",
+    "erp_occurrences",
+    "erp_lawyers"
+   ],
+   "tests": []
+  },
   "Source\\Services\\Erp\\Collections": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2487,7 +2533,8 @@
    ],
    "tests": [
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
-    "tests/legacy/Unit/CollectionsTest.php"
+    "tests/legacy/Unit/CollectionsTest.php",
+    "tests/legacy/Unit/ErpCollectionScreensTest.php"
    ]
   },
   "Source\\Services\\Erp\\DemoData": {
@@ -2964,6 +3011,7 @@
     "tests/legacy/Unit/DocumentRegistriesTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php",
+    "tests/legacy/Unit/ErpCollectionScreensTest.php",
     "tests/legacy/Unit/ErpOperationalScreensTest.php",
     "tests/legacy/Unit/ErpRegistryAttachmentFieldTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
@@ -3850,8 +3898,8 @@
   }
  },
  "counts": {
-  "adrs": 75,
-  "classes": 203,
+  "adrs": 76,
+  "classes": 205,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -3859,7 +3907,7 @@
   "erp_pages": 172,
   "routes": 308,
   "tables": 110,
-  "tests": 140
+  "tests": 141
  },
  "erp_pages": [
   {
@@ -8135,6 +8183,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
+    "Source\\Services\\Erp\\CollectionScreenOptions",
     "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryService"
@@ -8283,6 +8332,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\CollectionScreenOptions",
     "Source\\Services\\Erp\\Collections",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -8395,6 +8445,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\CollectionScreenOptions",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\Occurrences",
     "Source\\Services\\Erp\\OperationalDashboard",
@@ -8438,6 +8489,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\CollectionScreenOptions",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\PanelSummaries",
@@ -8870,6 +8922,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\CollectionScreens",
    "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
    "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
    "Source\\Controllers\\Erp\\Connect\\ImportScreens",
@@ -8878,6 +8931,7 @@
    "Source\\Controllers\\Erp\\Connect\\Registry",
    "Source\\Core\\View",
    "Source\\Models\\User",
+   "Source\\Services\\Environments",
    "Source\\Services\\Erp\\DemoData",
    "Source\\Services\\Erp\\FinancialReports",
    "Source\\Services\\Erp\\LateCharges",
@@ -9376,6 +9430,13 @@
   ],
   "tests/legacy/Unit/ErpBillingScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpCollectionScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\CollectionScreens",
+   "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\Collections",
+   "Source\\Services\\Erp\\Registry\\Definitions"
   ],
   "tests/legacy/Unit/ErpCommunicationScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",

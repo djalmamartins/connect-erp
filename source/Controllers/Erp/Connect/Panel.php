@@ -49,7 +49,9 @@ final class Panel extends Controller
         'AP-140' => 'erp.imports.view', 'AP-142' => 'erp.imports.view', 'AP-143' => 'erp.imports.view', 'AP-144' => 'erp.imports.view',
         'AP-145' => 'erp.imports.view', 'AP-146' => 'erp.imports.view', 'AP-044' => 'erp.imports.view',
         // Comunicação (ADR 0059 e 0075).
-        'AP-111' => 'erp.announcements.view', 'AP-137' => 'erp.announcements.view', 'AP-138' => 'erp.announcements.view', 'AP-139' => 'erp.announcements.view'];
+        'AP-111' => 'erp.announcements.view', 'AP-137' => 'erp.announcements.view', 'AP-138' => 'erp.announcements.view', 'AP-139' => 'erp.announcements.view',
+        // Cobrança e multas (ADR 0080 e 0076).
+        'AP-116' => 'erp.collections.view', 'AP-117' => 'erp.collections.view', 'AP-039' => 'erp.collections.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -762,6 +764,9 @@ final class Panel extends Controller
         if (isset(CommunicationScreens::PAGES[$id])) {
             $data += (new CommunicationScreens())->data($user, $id);
         }
+        if (isset(CollectionScreens::PAGES[$id])) {
+            $data += (new CollectionScreens())->data($user, $id);
+        }
         if (isset(EntryShortcutScreens::PAGES[$id])) {
             $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
@@ -787,6 +792,7 @@ final class Panel extends Controller
             isset(EntryShortcutScreens::PAGES[$id]) && ($data['shortcutReady'] ?? false) => EntryShortcutScreens::PAGES[$id],
             isset(ImportScreens::pages()[$id]) && ($data['importReady'] ?? false) => 'pages/imports/import',
             isset(CommunicationScreens::PAGES[$id]) && ($data['commReady'] ?? false) => CommunicationScreens::PAGES[$id],
+            isset(CollectionScreens::PAGES[$id]) && ($data['collReady'] ?? false) => CollectionScreens::PAGES[$id],
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
