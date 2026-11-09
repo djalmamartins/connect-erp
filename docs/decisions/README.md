@@ -56,3 +56,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0029](../Organic%20Code/decisions/0029-two-factor-qr-code.md) | QR code na configuração do 2FA, gerado no servidor |
 | [0030](../Organic%20Code/decisions/0030-condominium-context-in-url.md) | Condomínio da barra superior como contexto global do ERP, com slug na URL |
 | [0031](../Organic%20Code/decisions/0031-month-closing.md) | Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos |
+| [0034](../Organic%20Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md) | Todo chamado na fila do Help Desk (condomínio, unidade, solicitante) e alternador ERP / Studio / Help Desk |

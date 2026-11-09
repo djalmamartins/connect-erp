@@ -114,9 +114,13 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/operacional/vistorias/{id}/relatorio/pdf", "Inspections:reportPdf");
     $route->post("/operacional/vistorias/{id}/enviar", "Inspections:send");
 
+    // Chamados (CN-004, ADR 0034): abertura para o Help Desk, mesmo serviço da API /api/v1/tickets.
+    $route->get("/operacional/chamados", "Tickets:index");
+    $route->post("/operacional/chamados", "Tickets:store");
+
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias'], true) || in_array($pageId, $erpRegistryPages, true)) {
+        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados'], true) || in_array($pageId, $erpRegistryPages, true)) {
             continue;
         }
         $route->get($page['route'], static function () use ($pageId): void {

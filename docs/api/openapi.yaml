@@ -25,6 +25,26 @@ components:
       in: header
       name: X-CSRF-Token
   schemas:
+    Ticket:
+      type: object
+      description: Chamado do Help Desk (ADR 0034)
+      properties:
+        id: { type: integer }
+        protocol: { type: string, example: CH261109A1B2 }
+        subject: { type: string }
+        message: { type: string }
+        area: { type: string, enum: [general, technical, financial] }
+        origin: { type: string, enum: [helpdesk, erp, site, residents, api] }
+        category: { type: string, nullable: true }
+        priority: { type: string, enum: [low, medium, high, urgent] }
+        status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
+        condominium: { type: object, nullable: true, properties: { id: { type: integer }, name: { type: string } } }
+        unit: { type: object, nullable: true, properties: { id: { type: integer }, label: { type: string } } }
+        requester: { type: object, properties: { user_id: { type: integer, nullable: true }, name: { type: string, nullable: true }, email: { type: string, nullable: true }, phone: { type: string, nullable: true } } }
+        assigned_to: { type: object, nullable: true, properties: { id: { type: integer }, name: { type: string } } }
+        due_at: { type: string }
+        resolved_at: { type: string, nullable: true }
+        created_at: { type: string }
     Error:
       type: object
       required: [error]
@@ -773,3 +793,61 @@ paths:
         '404': { description: Não encontrada }
         '409': { description: Já concluída ou cancelada }
         '422': { description: Itens pendentes, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /tickets:
+    get:
+      operationId: listTickets
+      tags: [Tickets]
+      summary: Chamados dos condomínios do usuário e os que ele abriu (ADR 0034)
+      description: Requer erp.access. Mesma regra da tela /operacional/chamados.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 80 }, description: Protocolo ou assunto }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
+      responses:
+        '200': { description: Lista, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Ticket' } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: openTicket
+      tags: [Tickets]
+      summary: Abre um chamado na fila do Help Desk (origem api)
+      description: Requer erp.access e, quando informado, o condomínio no escopo. A unidade precisa ser do condomínio. Sem requester_name o solicitante é o próprio usuário.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                subject: { type: string, minLength: 4, maxLength: 180 }
+                message: { type: string, minLength: 10 }
+                area: { type: string, enum: [general, technical, financial], default: general }
+                priority: { type: string, enum: [low, medium, high, urgent], default: medium }
+                category: { type: string, maxLength: 100 }
+                condominium_id: { type: integer }
+                unit_id: { type: integer }
+                requester_name: { type: string, maxLength: 160 }
+                requester_email: { type: string, format: email, maxLength: 190 }
+                requester_phone: { type: string, maxLength: 30 }
+      responses:
+        '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Ticket' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { description: CSRF inválido }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /tickets/{id}:
+    get:
+      operationId: showTicket
+      tags: [Tickets]
+      summary: Um chamado visível para o usuário
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Chamado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Ticket' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { description: Não encontrado ou fora do escopo }

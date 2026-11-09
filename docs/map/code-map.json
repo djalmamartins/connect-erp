@@ -121,6 +121,10 @@
    "title": "0031 — Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos"
   },
   {
+   "file": "docs/Organic Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md",
+   "title": "0034 — Todo chamado na fila do Help Desk, e alternador ERP / Studio / Help Desk"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -278,6 +282,21 @@
     "tests/legacy/Integration/RegistryServiceTest.php"
    ]
   },
+  "Source\\Controllers\\Api\\V1\\Tickets": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Support\\TicketError",
+    "Source\\Services\\Support\\TicketService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Controllers/Api/V1/Tickets.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
   "Source\\Controllers\\Api\\V1\\TwoFactor": {
    "deps": [
     "Source\\Models\\Auth",
@@ -356,6 +375,22 @@
     "Source\\Models\\Auth"
    ],
    "file": "source/Controllers/App/V1/Dash.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Environments\\Handoff": {
+   "deps": [
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Models\\User",
+    "Source\\Services\\Environments",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Controllers/Environments/Handoff.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -623,6 +658,27 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\Tickets": {
+   "deps": [
+    "Source\\Core\\Controller",
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Environments",
+    "Source\\Services\\Support\\TicketError",
+    "Source\\Services\\Support\\TicketService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Controllers/Erp/Connect/Tickets.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": []
+  },
   "Source\\Controllers\\Erp\\Connect\\Users": {
    "deps": [
     "Source\\Core\\View",
@@ -794,6 +850,9 @@
     "Source\\Models\\Support\\SupportArticle",
     "Source\\Models\\Support\\SupportCategory",
     "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Support\\TicketError",
+    "Source\\Services\\Support\\TicketService",
     "Source\\Services\\TwoFactorAdminReset",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
@@ -814,8 +873,8 @@
     "studio_support_ticket_messages",
     "studio_support_ticket_events",
     "studio_support_templates",
-    "studio_calendar_events",
     "studio_support_tickets",
+    "studio_calendar_events",
     "notification_messages",
     "access_user_overrides",
     "access_permissions",
@@ -824,8 +883,10 @@
     "movesos_versions",
     "support_articles",
     "notifications",
+    "condominiums",
     "access_roles",
     "mail_queue",
+    "erp_units",
     "settings",
     "app_log",
     "pages",
@@ -888,6 +949,8 @@
     "Source\\Core\\Controller",
     "Source\\Models\\Support\\SupportArticle",
     "Source\\Models\\Support\\SupportCategory",
+    "Source\\Services\\Support\\TicketError",
+    "Source\\Services\\Support\\TicketService",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Upload"
    ],
@@ -1015,6 +1078,7 @@
     "Source\\Services\\TwoFactorNotice",
     "Source\\Services\\TwoFactorService",
     "Source\\Support\\AppLogger",
+    "Source\\Support\\ClientIp",
     "Source\\Support\\Email",
     "Source\\Support\\MailTemplate"
    ],
@@ -1444,9 +1508,11 @@
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
+    "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Integration/UserTest.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/EnvironmentsTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php",
     "tests/studio/render-smoke.php"
@@ -1514,6 +1580,7 @@
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
@@ -1526,6 +1593,22 @@
    "tests": [
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/DocumentValidationTest.php"
+   ]
+  },
+  "Source\\Services\\Environments": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User"
+   ],
+   "file": "source/Services/Environments.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "auth_environment_handoffs"
+   ],
+   "tests": [
+    "tests/legacy/Integration/TicketIntakeTest.php",
+    "tests/legacy/Unit/EnvironmentsTest.php"
    ]
   },
   "Source\\Services\\Erp\\BankBalances": {
@@ -1963,6 +2046,43 @@
     "tests/legacy/Integration/PasswordResetServiceTest.php"
    ]
   },
+  "Source\\Services\\Support\\TicketError": {
+   "deps": [],
+   "file": "source/Services/Support/TicketError.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/TicketIntakeTest.php",
+    "tests/legacy/Unit/EnvironmentsTest.php"
+   ]
+  },
+  "Source\\Services\\Support\\TicketService": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\Notification\\Notification",
+    "Source\\Models\\Notification\\NotificationCategory",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Environments",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit",
+    "Source\\Support\\Email"
+   ],
+   "file": "source/Services/Support/TicketService.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "studio_support_ticket_events",
+    "studio_support_tickets",
+    "condominiums",
+    "erp_units"
+   ],
+   "tests": [
+    "tests/legacy/Integration/TicketIntakeTest.php",
+    "tests/legacy/Unit/EnvironmentsTest.php"
+   ]
+  },
   "Source\\Services\\TwoFactorAdminReset": {
    "deps": [],
    "file": "source/Services/TwoFactorAdminReset.php",
@@ -2062,6 +2182,16 @@
     "app_log"
    ],
    "tests": []
+  },
+  "Source\\Support\\ClientIp": {
+   "deps": [],
+   "file": "source/Support/ClientIp.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ClientIpTest.php"
+   ]
   },
   "Source\\Support\\Communication": {
    "deps": [
@@ -2310,16 +2440,16 @@
   }
  },
  "counts": {
-  "adrs": 33,
-  "classes": 142,
+  "adrs": 34,
+  "classes": 149,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 209,
-  "tables": 64,
-  "tests": 70
+  "routes": 216,
+  "tables": 65,
+  "tests": 73
  },
  "erp_pages": [
   {
@@ -3755,10 +3885,55 @@
    "verb": "POST"
   },
   {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "controller": "Source\\Controllers\\Api\\V1\\Tickets",
+   "env": "index",
+   "file": "index.php",
+   "line": 84,
+   "method": "index",
+   "path": "/api/v1/tickets",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Tickets",
+   "env": "index",
+   "file": "index.php",
+   "line": 85,
+   "method": "store",
+   "path": "/api/v1/tickets",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Tickets",
+   "env": "index",
+   "file": "index.php",
+   "line": 86,
+   "method": "show",
+   "path": "/api/v1/tickets/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Environments\\Handoff",
+   "env": "index",
+   "file": "index.php",
+   "line": 95,
+   "method": "go",
+   "path": "/ambiente/{environment}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
    "line": 96,
+   "method": "enter",
+   "path": "/ambiente/entrar/{environment}/{token}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 110,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "GET"
@@ -3767,7 +3942,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 97,
+   "line": 111,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "POST"
@@ -3776,7 +3951,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 98,
+   "line": 112,
    "method": "manage",
    "path": "/studio/seguranca/2fa",
    "verb": "GET"
@@ -3785,7 +3960,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 99,
+   "line": 113,
    "method": "manage",
    "path": "/studio/seguranca/2fa",
    "verb": "POST"
@@ -3794,7 +3969,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 102,
+   "line": 116,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -3803,27 +3978,9 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 103,
+   "line": 117,
    "method": "forget",
    "path": "/forget",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 104,
-   "method": "reset",
-   "path": "/forget/{code}",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 105,
-   "method": "reset",
-   "path": "/reset",
    "verb": "POST"
   },
   {
@@ -3831,24 +3988,6 @@
    "env": "index",
    "file": "index.php",
    "line": 118,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 119,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 120,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3857,7 +3996,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 121,
+   "line": 119,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3866,7 +4005,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 137,
+   "line": 132,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 133,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 134,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 135,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 151,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -3875,7 +4050,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 139,
+   "line": 153,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -5402,10 +5577,28 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Tickets",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 118,
+   "method": "index",
+   "path": "/erp/operacional/chamados",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Erp\\Connect\\Tickets",
+   "env": "erp",
+   "file": "container/erp/connect/v1/routes.php",
+   "line": 119,
+   "method": "store",
+   "path": "/erp/operacional/chamados",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Erp\\Connect\\Condominiums",
    "env": "erp",
    "file": "container/erp/connect/v1/routes.php",
-   "line": 128,
+   "line": 132,
    "method": "show",
    "path": "/erp/condominios/{id}",
    "verb": "GET"
@@ -5477,6 +5670,13 @@
     "Source\\Support\\Audit"
    ]
   },
+  "auth_environment_handoffs": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261109_0602_environment_handoffs.sql",
+   "used_by": [
+    "Source\\Services\\Environments"
+   ]
+  },
   "auth_throttle_events": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0901_auth_throttle_events.sql",
@@ -5522,12 +5722,15 @@
     "Source\\Controllers\\Erp\\Connect\\Condominiums",
     "Source\\Controllers\\Erp\\Connect\\Inspections",
     "Source\\Controllers\\Erp\\Connect\\Registry",
+    "Source\\Controllers\\Erp\\Connect\\Tickets",
+    "Source\\Controllers\\Studio\\Studio",
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
     "Source\\Services\\Erp\\BankBalances",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Inspections\\InspectionService",
-    "Source\\Services\\OnboardingAlerts"
+    "Source\\Services\\OnboardingAlerts",
+    "Source\\Services\\Support\\TicketService"
    ]
   },
   "erp_assets": {
@@ -5664,8 +5867,10 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0401_units.sql",
    "used_by": [
+    "Source\\Controllers\\Studio\\Studio",
     "Source\\Services\\Erp\\Registry\\Definitions",
-    "Source\\Services\\Erp\\Registry\\RegistryService"
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Support\\TicketService"
    ]
   },
   "erp_useful_contacts": {
@@ -5891,7 +6096,8 @@
    "altered_in": [],
    "created_in": "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
    "used_by": [
-    "Source\\Controllers\\Studio\\Studio"
+    "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\Support\\TicketService"
    ]
   },
   "studio_support_ticket_messages": {
@@ -5904,14 +6110,16 @@
   },
   "studio_support_tickets": {
    "altered_in": [
+    "database/migrations/20261109_0601_support_ticket_context.sql",
     "database/legacy-migrations/migrations/20260816_service_desk.sql",
     "database/legacy-migrations/migrations/20260830_help_desk_operations.sql",
     "database/legacy-migrations/migrations/20260830_public_helpdesk_widget.sql"
    ],
-   "created_in": "database/legacy-migrations/migrations/20260816_service_desk.sql",
+   "created_in": null,
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
-    "Source\\Controllers\\Web\\Support\\Support"
+    "Source\\Controllers\\Web\\Support\\Support",
+    "Source\\Services\\Support\\TicketService"
    ]
   },
   "support_article_votes": {
@@ -6138,6 +6346,13 @@
   "tests/legacy/Integration/SettingsAndVersionsTest.php": [
    "Source\\Models\\Settings\\Settings"
   ],
+  "tests/legacy/Integration/TicketIntakeTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Environments",
+   "Source\\Services\\Support\\TicketError",
+   "Source\\Services\\Support\\TicketService"
+  ],
   "tests/legacy/Integration/TwoFactorServiceTest.php": [
    "Source\\Services\\TwoFactorService",
    "Source\\Support\\Totp"
@@ -6169,6 +6384,9 @@
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],
+  "tests/legacy/Unit/ClientIpTest.php": [
+   "Source\\Support\\ClientIp"
+  ],
   "tests/legacy/Unit/CondominiumValidatorTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Core\\View",
@@ -6189,6 +6407,12 @@
   "tests/legacy/Unit/EntriesDefinitionTest.php": [
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/EnvironmentsTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\Environments",
+   "Source\\Services\\Support\\TicketError",
+   "Source\\Services\\Support\\TicketService"
   ],
   "tests/legacy/Unit/ErpCondominiumContextTest.php": [
    "Source\\Core\\Router",
