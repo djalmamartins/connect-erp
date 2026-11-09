@@ -200,6 +200,18 @@ final class VirtualDisk
         return $this->present($row + ['condominium_name' => (string)$stmt->fetchColumn()]);
     }
 
+    public const BLOCKED_MESSAGE = 'Este arquivo foi bloqueado pelo antivírus e não pode ser baixado.';
+
+    /**
+     * Pode baixar? (regra pura, ADR 0160). Arquivo marcado como infectado ou com erro de verificação fica
+     * bloqueado. Hoje o modo enforce nem grava esses arquivos, mas uma verificação posterior ou uma marcação
+     * manual pode chegar a esses status. clean e unscanned (modo off) seguem liberados.
+     */
+    public static function downloadable(string $scanStatus): bool
+    {
+        return !in_array($scanStatus, [ScanStatus::INFECTED, ScanStatus::ERROR], true);
+    }
+
     /**
      * Arquivo para download, conferindo permissão do chamador, escopo e que o caminho não sai da pasta.
      *
@@ -208,6 +220,9 @@ final class VirtualDisk
     public function file(User $user, int $documentId): array
     {
         $row = $this->row($user, $documentId);
+        if (!self::downloadable((string)($row['scan_status'] ?? ScanStatus::UNSCANNED))) {
+            throw new DomainException(self::BLOCKED_MESSAGE);   // ADR 0160: o controller responde 403
+        }
         $path = $this->absolute((string)$row['path']);
         if ($path === null) {
             throw new RegistryNotFound();

@@ -20,6 +20,13 @@ final class ClamdScanner implements UploadScanner
     public const CONNECT_TIMEOUT = 2;
     public const IO_TIMEOUT = 10;
     public const CHUNK = 65536;
+    /** ADR 0160: prazo total da verificação (conectar, enviar e ler), além do timeout de cada operação. */
+    public const TOTAL_TIMEOUT = 30;
+    /**
+     * ADR 0160: o maior arquivo que vai para o INSTREAM. É o StreamMaxLength padrão do clamd (25 MB), acima
+     * do limite do Disco Virtual (20 MB). Maior que isso = error sem conectar (no modo enforce, recusa).
+     */
+    public const MAX_STREAM_BYTES = 26214400;
     private const MAX_REPLY = 1024;
 
     private ?string $endpoint;
@@ -51,10 +58,20 @@ final class ClamdScanner implements UploadScanner
         return null;
     }
 
-    /** Lê a resposta do clamd (regra pura). */
+    /**
+     * Lê a resposta do clamd (regra pura). ADR 0160: só vale a resposta completa, terminada em \0 (o comando
+     * "z"); cortada, vazia, com mais de uma linha ou fora do formato = error, que no modo enforce recusa.
+     */
     public static function interpret(string $reply): string
     {
-        $reply = trim(str_replace("\0", '', $reply));
+        $end = strpos($reply, "\0");
+        if ($end === false) {
+            return ScanStatus::ERROR;
+        }
+        $reply = substr($reply, 0, $end);
+        if (preg_match('/[\r\n]/', $reply) === 1) {
+            return ScanStatus::ERROR;
+        }
         if (preg_match('/^(?:stream|\d+): OK$/', $reply) === 1) {
             return ScanStatus::CLEAN;
         }
@@ -69,6 +86,11 @@ final class ClamdScanner implements UploadScanner
         if (!$this->available() || !is_file($path) || !is_readable($path)) {
             return ScanStatus::ERROR;
         }
+        $size = @filesize($path);
+        if ($size === false || $size > self::MAX_STREAM_BYTES) {
+            return ScanStatus::ERROR;   // ADR 0160: o clamd cortaria o stream; nem conecta
+        }
+        $deadline = microtime(true) + self::TOTAL_TIMEOUT;
         $socket = $this->open();
         if ($socket === null) {
             return ScanStatus::ERROR;
@@ -80,22 +102,27 @@ final class ClamdScanner implements UploadScanner
         }
         try {
             @stream_set_timeout($socket, self::IO_TIMEOUT);
-            if (!self::write($socket, "zINSTREAM\0")) {
+            if (!self::write($socket, "zINSTREAM\0", $deadline)) {
                 return ScanStatus::ERROR;
             }
+            $sent = 0;
             while (!feof($file)) {
                 $chunk = fread($file, self::CHUNK);
                 if ($chunk === false) {
                     return ScanStatus::ERROR;
                 }
-                if ($chunk !== '' && !self::write($socket, pack('N', strlen($chunk)) . $chunk)) {
+                $sent += strlen($chunk);
+                if ($sent > self::MAX_STREAM_BYTES) {
+                    return ScanStatus::ERROR;   // o arquivo cresceu depois do filesize()
+                }
+                if ($chunk !== '' && !self::write($socket, pack('N', strlen($chunk)) . $chunk, $deadline)) {
                     return ScanStatus::ERROR;
                 }
             }
-            if (!self::write($socket, pack('N', 0))) {
+            if (!self::write($socket, pack('N', 0), $deadline)) {
                 return ScanStatus::ERROR;
             }
-            return self::interpret(self::reply($socket));
+            return self::interpret(self::reply($socket, $deadline));
         } catch (\Throwable) {
             return ScanStatus::ERROR;
         } finally {
@@ -120,10 +147,13 @@ final class ClamdScanner implements UploadScanner
     }
 
     /** Lê até o \0 final, o fim da conexão ou o timeout (o que vier antes). @param resource $socket */
-    private static function reply($socket): string
+    private static function reply($socket, float $deadline): string
     {
         $reply = '';
         while (strlen($reply) < self::MAX_REPLY && !str_contains($reply, "\0")) {
+            if (microtime(true) > $deadline) {
+                break;   // ADR 0160: prazo total; resposta incompleta vira error em interpret()
+            }
             $part = @fread($socket, 256);
             if ($part === false || $part === '') {
                 break;   // timeout, conexão fechada ou erro: o que chegou até aqui é interpretado
@@ -134,11 +164,14 @@ final class ClamdScanner implements UploadScanner
     }
 
     /** @param resource $socket */
-    private static function write($socket, string $data): bool
+    private static function write($socket, string $data, float $deadline): bool
     {
         $total = strlen($data);
         $sent = 0;
         while ($sent < $total) {
+            if (microtime(true) > $deadline) {
+                return false;   // ADR 0160: prazo total
+            }
             $written = @fwrite($socket, substr($data, $sent));
             if ($written === false || $written === 0) {
                 return false;   // erro ou timeout na escrita

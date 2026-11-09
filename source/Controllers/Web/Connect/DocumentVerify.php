@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Source\Controllers\Web\Connect;
 
 use Source\Core\Controller;
+use Source\Core\Session;
 use Source\Services\Erp\DocumentVerification;
 use Source\Support\ClientIp;
 
@@ -34,7 +35,7 @@ final class DocumentVerify extends Controller
     public function verify(array $data): void
     {
         $this->headers();
-        if (!csrf_verify($data)) {
+        if (!self::csrfMatches((new Session())->csrf_token ?? null, $data['csrf'] ?? null)) {
             $this->page(['ok' => false, 'message' => 'Sessão expirada. Atualize a página e tente de novo.', 'document' => null]);
             return;
         }
@@ -51,12 +52,32 @@ final class DocumentVerify extends Controller
         ]);
     }
 
+    /** Cabeçalhos da página pública (ADRs 0098 e 0160): sem cache, sem referrer, fora dos buscadores e sem moldura. */
+    public const HEADERS = [
+        'Referrer-Policy' => 'no-referrer',
+        'Cache-Control' => 'no-store, private',
+        'Pragma' => 'no-cache',
+        'X-Robots-Tag' => 'noindex, nofollow',
+        'X-Frame-Options' => 'DENY',
+        'Content-Security-Policy' => "frame-ancestors 'none'",
+        'X-Content-Type-Options' => 'nosniff',
+    ];
+
+    /**
+     * CSRF da página pública (ADR 0160), em tempo constante. O csrf_verify() do núcleo compara com "!=";
+     * aqui vale o mesmo token de sessão, com hash_equals e só para texto.
+     */
+    public static function csrfMatches(mixed $sessionToken, mixed $sent): bool
+    {
+        return is_string($sessionToken) && $sessionToken !== '' && is_string($sent) && $sent !== '' && hash_equals($sessionToken, $sent);
+    }
+
     private function headers(): void
     {
         if (!headers_sent()) {
-            header('Referrer-Policy: no-referrer');
-            header('Cache-Control: no-store, private');
-            header('X-Robots-Tag: noindex, nofollow');
+            foreach (self::HEADERS as $name => $value) {
+                header($name . ': ' . $value);
+            }
         }
     }
 }
