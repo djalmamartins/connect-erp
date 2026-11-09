@@ -11,6 +11,7 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Agreements;
 use Source\Services\Erp\Banking\BankCharges;
+use Source\Services\Erp\BillingRules;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
 use Source\Services\Erp\FinancialReports;
@@ -275,6 +276,30 @@ final class Panel extends Controller
         return $rows;
     }
 
+    /**
+     * Regra de cobrança e índices (AP-165, ADR 0040): regra que vale para o condomínio da barra
+     * superior ("Todos" = padrão da Connect) e os meses do IPCA. null = sem permissão ou sem banco.
+     *
+     * @return array{billingRule: ?array, priceIndexes: ?array, canManageBilling: bool}
+     */
+    private function billingData(User $user): array
+    {
+        $data = ['billingRule' => null, 'priceIndexes' => null, 'canManageBilling' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.billing_rules.view', $user)) {
+            return $data;
+        }
+        try {
+            $service = new BillingRules();
+            $data['billingRule'] = $service->ruleFor($user, CondominiumContext::id());
+            $data['priceIndexes'] = $service->listRates('IPCA');
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'billing_rules_screen_failed']);
+            return ['billingRule' => null, 'priceIndexes' => null, 'canManageBilling' => false];
+        }
+        $data['canManageBilling'] = Access::can('erp.billing_rules.manage', $user);
+        return $data;
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -369,6 +394,9 @@ final class Panel extends Controller
         if (in_array($id, self::REPORT_PAGES, true)) {
             $data += $this->reportData($user, $id);
         }
+        if ($id === 'AP-165') {
+            $data += $this->billingData($user);
+        }
         if (in_array($id, ['AP-033', 'AP-034'], true)) {
             $data += $this->agreementData($user, $id);
         }
@@ -388,6 +416,7 @@ final class Panel extends Controller
         return match (true) {
             $id === 'AP-032' && ($data['invoices'] ?? null) !== null => 'pages/finance/invoices',
             $id === 'AP-033' && ($data['delinquency'] ?? null) !== null => 'pages/finance/agreements',
+            $id === 'AP-165' && ($data['billingRule'] ?? null) !== null => 'pages/finance/billing-rules',
             $id === 'AP-034' && ($data['agreementParcels'] ?? null) !== null => 'pages/finance/agreement-parcels',
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
