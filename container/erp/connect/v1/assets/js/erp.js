@@ -1865,6 +1865,41 @@
     select.addEventListener('change', function () { if (byKey || select.value === '' || !select.form) return; select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit(); });
   });
 
+  /* Campos da mesma linha alinhados (pedido do Djalma, 09/11) -------------------
+     O CSS alinha os campos pelo topo e dá a mesma altura a inputs e selects. Quando um rótulo
+     quebra em duas linhas, os controles da mesma linha ficariam em alturas diferentes: aqui os
+     rótulos de cada linha ganham a altura do maior. Recalcula quando o formulário muda de tamanho
+     (abrir um modal, mostrar um campo, redimensionar a janela). */
+  var alignFieldLabels = function (grid) {
+    var labels = [];
+    var rows = {};
+    Array.prototype.forEach.call(grid.children, function (field) {
+      if (!field.classList || !field.classList.contains('erp-field')) return;
+      var label = field.querySelector(':scope > label, :scope > .erp-field__label');
+      if (!label) return;
+      label.style.minHeight = '';
+      labels.push(label);
+    });
+    labels.forEach(function (label) {
+      if (!label.offsetParent) return;
+      var top = Math.round(label.parentNode.getBoundingClientRect().top);
+      (rows[top] = rows[top] || []).push(label);
+    });
+    Object.keys(rows).forEach(function (top) {
+      var row = rows[top];
+      if (row.length < 2) return;
+      var max = Math.max.apply(null, row.map(function (l) { return l.getBoundingClientRect().height; }));
+      row.forEach(function (l) { if (l.getBoundingClientRect().height < max - 0.5) l.style.minHeight = max + 'px'; });
+    });
+  };
+  var formGrids = $$('.erp-form__grid');
+  if (formGrids.length && 'ResizeObserver' in window) {
+    var gridObserver = new ResizeObserver(function (entries) { entries.forEach(function (entry) { alignFieldLabels(entry.target); }); });
+    formGrids.forEach(function (grid) { gridObserver.observe(grid); });
+  } else {
+    formGrids.forEach(alignFieldLabels);
+  }
+
   /* Botões de envio mostram carregamento (formulários reais) --------------- */
   $$('form[data-erp-loading]').forEach(function (form) {
     form.addEventListener('submit', function () { var b = $('[type="submit"]', form); if (b) { b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true'); } });
