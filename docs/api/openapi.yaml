@@ -1185,6 +1185,116 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/general:
+    get:
+      operationId: chartGeneral
+      summary: Gráficos gerais (AP-102) por competência, com receitas, despesas, resultado e vencido em aberto (erp.entries.view)
+      description: >-
+        Todos os /charts (ADR 0083) devolvem { labels: [AAAA-MM...], unit, series: [{ key, label, data[] }] }, um valor
+        por mês (zero sem dado), na faixa from a to (AAAA-MM, até 24 meses). condominium_id vazio = todos do escopo.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, example: '2026-01' } }
+        - { name: to, in: query, required: true, schema: { type: string, example: '2026-12' } }
+      responses:
+        '200': { description: '{ data: { labels[], unit, series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/accounts:
+    get:
+      operationId: chartAccounts
+      summary: Gráfico de contas (AP-103) por conta do plano de uma natureza; as 8 maiores e o resto em "Outras" (erp.entries.view e erp.chart.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: nature, in: query, schema: { type: string, enum: [receita, despesa], default: despesa } }
+      responses:
+        '200': { description: '{ data: { labels[], nature, series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/consumption:
+    get:
+      operationId: chartConsumption
+      summary: Gráfico de consumo geral (AP-105) ou da unidade (AP-104, unit_id) por tipo (erp.meter_readings.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: unit_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ data: { labels[], unit: consumption, series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/cash:
+    get:
+      operationId: chartCash
+      summary: Gráfico financeiro (AP-106) pelo mês do pagamento, com recebido, pago e saldo do mês (erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ data: { labels[], series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/delinquency:
+    get:
+      operationId: chartDelinquency
+      summary: Gráfico de inadimplência (AP-107) por competência, com o cobrado das unidades, o vencido em aberto hoje e a taxa em % (erp.agreements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ data: { labels[], series[billed, overdue, rate] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/bank-accounts:
+    get:
+      operationId: chartBankAccounts
+      summary: Gráfico financeiro por conta (AP-108), com o saldo do mês por conta bancária, transferências incluídas (erp.entries.view e erp.bank_accounts.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ data: { labels[], series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /charts/common-areas:
+    get:
+      operationId: chartCommonAreas
+      summary: Gráfico de áreas comuns (AP-109), com as reservas não canceladas por área e mês (erp.reservations.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ data: { labels[], unit: count, series[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /delinquency:
     get:
