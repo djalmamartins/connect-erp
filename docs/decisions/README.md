@@ -66,3 +66,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0039](../Organic%20Code/decisions/0039-delinquency-and-agreements.md) | Inadimplência por unidade e acordos (AP-033/034): contas vencidas viram parcelas, sem dívida duplicada |
 | [0040](../Organic%20Code/decisions/0040-late-charges-and-agreement-breach.md) | Multa, juros, correção pelo IPCA e quebra de acordo, com padrões ajustáveis por condomínio (issue #46) |
 | [0041](../Organic%20Code/decisions/0041-agreements-screens.md) | Telas de inadimplência e acordos (AP-033/034) e lista de arquivos de retorno em AP-038 |
+| [0042](../Organic%20Code/decisions/0042-gatehouse.md) | Portaria (AP-131 a AP-136): portarias, previsão de visita, registro de acessos, achados e perdidos e entregas |

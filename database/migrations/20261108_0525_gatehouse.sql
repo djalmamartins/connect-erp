@@ -1,0 +1,153 @@
+-- Portaria (AP-131 a AP-136, ADR 0042), pelo motor de cadastros: portarias do condomínio,
+-- previsão de visita, registro de acessos, achados e perdidos e entregas. Tudo por condomínio
+-- (ADR-002), com exclusão lógica e auditoria do motor. Idempotente (a suíte reaplica as migrations).
+CREATE TABLE IF NOT EXISTS `erp_gatehouses` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `name` varchar(80) NOT NULL,
+  `kind` enum('presencial','remota','hibrida') NOT NULL,
+  `shifts` tinyint unsigned DEFAULT NULL,
+  `manager_name` varchar(160) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_gatehouses_condominium` (`condominium_id`, `deleted_at`),
+  CONSTRAINT `fk_erp_gatehouses_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_gatehouses_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_gatehouses_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_visit_forecasts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `unit_id` int unsigned NOT NULL,
+  `visitor_name` varchar(160) NOT NULL,
+  `visitor_document` varchar(30) DEFAULT NULL,
+  `expected_on` date NOT NULL,
+  `expected_until` date DEFAULT NULL,
+  `authorized_by` varchar(160) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','done','inactive') NOT NULL DEFAULT 'active' COMMENT 'active = prevista, done = realizada, inactive = cancelada',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_visit_forecasts_day` (`condominium_id`, `expected_on`, `deleted_at`),
+  KEY `idx_erp_visit_forecasts_unit` (`unit_id`),
+  CONSTRAINT `fk_erp_visit_forecasts_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_visit_forecasts_unit` FOREIGN KEY (`unit_id`) REFERENCES `erp_units` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_visit_forecasts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_visit_forecasts_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_access_logs` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `unit_id` int unsigned DEFAULT NULL,
+  `person_name` varchar(160) NOT NULL,
+  `person_document` varchar(30) DEFAULT NULL,
+  `kind` enum('visitante','prestador','entregador','morador') NOT NULL,
+  `plate` varchar(10) DEFAULT NULL,
+  `entered_on` date NOT NULL,
+  `entered_time` time NOT NULL,
+  `left_time` time DEFAULT NULL,
+  `gatehouse_id` int unsigned DEFAULT NULL,
+  `visit_forecast_id` int unsigned DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active' COMMENT 'inactive = lançamento cancelado',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_access_logs_day` (`condominium_id`, `entered_on`, `deleted_at`),
+  KEY `idx_erp_access_logs_unit` (`unit_id`),
+  KEY `idx_erp_access_logs_gatehouse` (`gatehouse_id`),
+  KEY `idx_erp_access_logs_forecast` (`visit_forecast_id`),
+  CONSTRAINT `fk_erp_access_logs_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_access_logs_unit` FOREIGN KEY (`unit_id`) REFERENCES `erp_units` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_access_logs_gatehouse` FOREIGN KEY (`gatehouse_id`) REFERENCES `erp_gatehouses` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_access_logs_forecast` FOREIGN KEY (`visit_forecast_id`) REFERENCES `erp_visit_forecasts` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_access_logs_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_access_logs_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_lost_found` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `item` varchar(160) NOT NULL,
+  `location` varchar(120) DEFAULT NULL,
+  `found_on` date NOT NULL,
+  `found_by` varchar(160) DEFAULT NULL,
+  `returned_on` date DEFAULT NULL,
+  `returned_to` varchar(160) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','returned','discarded') NOT NULL DEFAULT 'active' COMMENT 'active = guardado',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_lost_found_condominium` (`condominium_id`, `status`, `deleted_at`),
+  CONSTRAINT `fk_erp_lost_found_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_lost_found_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_lost_found_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `erp_deliveries` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `unit_id` int unsigned NOT NULL,
+  `recipient` varchar(160) NOT NULL,
+  `carrier` enum('correios','mercado_livre','amazon','outra') NOT NULL,
+  `tracking_code` varchar(60) DEFAULT NULL,
+  `received_on` date NOT NULL,
+  `received_time` time DEFAULT NULL,
+  `picked_up_on` date DEFAULT NULL,
+  `picked_up_by` varchar(160) DEFAULT NULL,
+  `gatehouse_id` int unsigned DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('active','picked_up','inactive') NOT NULL DEFAULT 'active' COMMENT 'active = aguardando retirada, inactive = cancelada',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_deliveries_condominium` (`condominium_id`, `status`, `received_on`, `deleted_at`),
+  KEY `idx_erp_deliveries_unit` (`unit_id`),
+  KEY `idx_erp_deliveries_gatehouse` (`gatehouse_id`),
+  CONSTRAINT `fk_erp_deliveries_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_deliveries_unit` FOREIGN KEY (`unit_id`) REFERENCES `erp_units` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_deliveries_gatehouse` FOREIGN KEY (`gatehouse_id`) REFERENCES `erp_gatehouses` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_deliveries_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_deliveries_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Permissões (prefixo erp. nega sem registro, ADR 0006): ver e gerenciar cada cadastro da portaria.
+INSERT IGNORE INTO `access_permissions` (`name`,`slug`,`group_name`,`description`) VALUES
+('Visualizar portarias','erp.gatehouses.view','ERP Portaria','Consultar as portarias dos condomínios do seu escopo'),
+('Gerenciar portarias','erp.gatehouses.manage','ERP Portaria','Cadastrar, alterar e excluir portarias'),
+('Visualizar previsões de visita','erp.visit_forecasts.view','ERP Portaria','Consultar visitas previstas por unidade'),
+('Gerenciar previsões de visita','erp.visit_forecasts.manage','ERP Portaria','Cadastrar, alterar e cancelar visitas previstas'),
+('Visualizar registro de acessos','erp.access_logs.view','ERP Portaria','Consultar entradas e saídas registradas na portaria'),
+('Gerenciar registro de acessos','erp.access_logs.manage','ERP Portaria','Registrar entradas e saídas e corrigir lançamentos'),
+('Visualizar achados e perdidos','erp.lost_found.view','ERP Portaria','Consultar itens achados e devolvidos'),
+('Gerenciar achados e perdidos','erp.lost_found.manage','ERP Portaria','Registrar itens achados e a devolução'),
+('Visualizar entregas','erp.deliveries.view','ERP Portaria','Consultar encomendas recebidas e retiradas'),
+('Gerenciar entregas','erp.deliveries.manage','ERP Portaria','Registrar encomendas e a retirada');
+
+INSERT IGNORE INTO `access_role_permissions` (`role_id`,`permission_id`)
+SELECT r.id, p.id FROM `access_roles` r JOIN `access_permissions` p
+WHERE r.slug IN ('developer','super_admin') AND p.slug IN ('erp.gatehouses.view','erp.gatehouses.manage','erp.visit_forecasts.view','erp.visit_forecasts.manage',
+  'erp.access_logs.view','erp.access_logs.manage','erp.lost_found.view','erp.lost_found.manage','erp.deliveries.view','erp.deliveries.manage');

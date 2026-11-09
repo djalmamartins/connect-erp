@@ -128,7 +128,7 @@ final class Definitions
                 'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
                 'computed' => ['label'],
                 // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
-                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries'],
+                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries'],
                 'title' => 'number',
                 'order' => 'label',
             ],
@@ -581,6 +581,117 @@ final class Definitions
                 'order' => 'due_on',
             ];
         }
+
+        // Portaria (AP-131 a AP-135, ADR 0042), grupo Operacional. Tudo por condomínio (ADR-002).
+        $condo = ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true];
+        $notesField = ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12];
+        $gatehouseRef = ['label' => 'Portaria', 'type' => 'ref', 'span' => 6, 'ref' => 'gatehouses', 'ref_label' => ['name'],
+            'ref_message' => 'Escolha uma portaria ativa deste condomínio.'];
+        $definitions['gatehouses'] = [
+            'page' => 'AP-131', 'table' => 'erp_gatehouses', 'route' => '/operacional/gerenciamento',
+            'api' => 'gatehouses', 'permission' => 'erp.gatehouses', 'label' => 'Portarias',
+            'entity' => 'portaria', 'gender' => 'a', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Portarias de cada condomínio: presencial, remota ou híbrida, turnos e responsável.',
+            'fields' => [
+                'condominium_id' => $condo,
+                'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Portaria principal'],
+                'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true,
+                    'options' => ['presencial' => 'Presencial', 'remota' => 'Remota', 'hibrida' => 'Híbrida']],
+                'shifts' => ['label' => 'Turnos', 'type' => 'int', 'min' => 1, 'max_value' => 6, 'span' => 2, 'list' => true],
+                'manager_name' => ['label' => 'Responsável', 'type' => 'text', 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6],
+                'notes' => $notesField,
+            ],
+            'order' => 'name',
+        ];
+        $definitions['visit_forecasts'] = [
+            'page' => 'AP-132', 'table' => 'erp_visit_forecasts', 'route' => '/operacional/previsao-de-visita',
+            'api' => 'visit-forecasts', 'permission' => 'erp.visit_forecasts', 'label' => 'Previsão de visita',
+            'entity' => 'visita prevista', 'gender' => 'a', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Visitas avisadas pela unidade, para a portaria liberar na data.',
+            'status' => ['active' => 'Prevista', 'done' => 'Realizada', 'inactive' => 'Cancelada'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'unit_id' => ['label' => 'Unidade', 'required' => true, 'list' => true] + $unit(6),
+                'visitor_name' => ['label' => 'Visitante', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                'visitor_document' => ['label' => 'Documento (CPF ou RG)', 'type' => 'id_document', 'span' => 4, 'search' => true],
+                'expected_on' => ['label' => 'Data', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'expected_until' => ['label' => 'Até', 'type' => 'date', 'span' => 3, 'after' => 'expected_on', 'hint' => 'Vazio = só no dia'],
+                'authorized_by' => ['label' => 'Autorizado por', 'type' => 'text', 'max' => 160, 'span' => 6, 'list' => true],
+                'notes' => $notesField,
+            ],
+            'title' => 'visitor_name',
+            'order' => 'expected_on',
+        ];
+        $definitions['access_logs'] = [
+            'page' => 'AP-133', 'table' => 'erp_access_logs', 'route' => '/operacional/registro-de-acessos',
+            'api' => 'access-logs', 'permission' => 'erp.access_logs', 'label' => 'Registro de acessos',
+            'entity' => 'acesso', 'gender' => 'o', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Entradas e saídas registradas na portaria: visitantes, prestadores, entregadores e moradores.',
+            'status' => ['active' => 'Registrado', 'inactive' => 'Cancelado'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'unit_id' => ['label' => 'Unidade', 'list' => true] + $unit(6),
+                'person_name' => ['label' => 'Pessoa', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                'person_document' => ['label' => 'Documento (CPF ou RG)', 'type' => 'id_document', 'span' => 4, 'search' => true],
+                'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true,
+                    'options' => ['visitante' => 'Visitante', 'prestador' => 'Prestador', 'entregador' => 'Entregador', 'morador' => 'Morador']],
+                'plate' => ['label' => 'Placa', 'type' => 'plate', 'span' => 2, 'search' => true],
+                'entered_on' => ['label' => 'Entrada', 'type' => 'date', 'required' => true, 'span' => 2, 'list' => true],
+                'entered_time' => ['label' => 'Hora', 'type' => 'time', 'required' => true, 'span' => 2, 'list' => true],
+                'left_time' => ['label' => 'Saída', 'type' => 'time', 'span' => 2, 'hint' => 'No mesmo dia'],
+                'gatehouse_id' => $gatehouseRef,
+                'visit_forecast_id' => ['label' => 'Visita prevista', 'type' => 'ref', 'span' => 6, 'ref' => 'visit_forecasts', 'ref_label' => ['visitor_name', 'expected_on'],
+                    'ref_message' => 'Escolha uma visita prevista (não cancelada nem realizada) deste condomínio.'],
+                'notes' => $notesField,
+            ],
+            'title' => 'person_name',
+            'order' => 'entered_on',
+        ];
+        $definitions['lost_found'] = [
+            'page' => 'AP-134', 'table' => 'erp_lost_found', 'route' => '/operacional/achados-e-perdidos',
+            'api' => 'lost-found', 'permission' => 'erp.lost_found', 'label' => 'Achados e perdidos',
+            'entity' => 'item', 'gender' => 'o', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Itens encontrados no condomínio e a quem foram devolvidos.',
+            'status' => ['active' => 'Guardado', 'returned' => 'Devolvido', 'discarded' => 'Descartado'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'item' => ['label' => 'Item', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'location' => ['label' => 'Local', 'type' => 'text', 'max' => 120, 'span' => 6, 'list' => true],
+                'found_on' => ['label' => 'Encontrado em', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'found_by' => ['label' => 'Encontrado por', 'type' => 'text', 'max' => 160, 'span' => 3],
+                'returned_on' => ['label' => 'Devolvido em', 'type' => 'date', 'span' => 3, 'after' => 'found_on'],
+                'returned_to' => ['label' => 'Devolvido a', 'type' => 'text', 'max' => 160, 'span' => 3, 'search' => true],
+                'notes' => $notesField,
+            ],
+            'requires' => [['field' => 'returned_to', 'when' => 'returned_on', 'message' => 'Informe a quem o item foi devolvido.']],
+            'title' => 'item',
+            'order' => 'found_on',
+        ];
+        $definitions['deliveries'] = [
+            'page' => 'AP-135', 'table' => 'erp_deliveries', 'route' => '/operacional/entregas',
+            'api' => 'deliveries', 'permission' => 'erp.deliveries', 'label' => 'Entregas',
+            'entity' => 'entrega', 'gender' => 'a', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Encomendas recebidas pela portaria. Informe a retirada para dar baixa.',
+            'status' => ['active' => 'Aguardando retirada', 'picked_up' => 'Retirada', 'inactive' => 'Cancelada'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'unit_id' => ['label' => 'Unidade', 'required' => true, 'list' => true] + $unit(6),
+                'recipient' => ['label' => 'Destinatário', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'carrier' => ['label' => 'Transportadora', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true,
+                    'options' => ['correios' => 'Correios', 'mercado_livre' => 'Mercado Livre', 'amazon' => 'Amazon', 'outra' => 'Outra']],
+                'tracking_code' => ['label' => 'Código de rastreio', 'type' => 'text', 'max' => 60, 'span' => 3, 'search' => true],
+                'received_on' => ['label' => 'Recebida em', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'received_time' => ['label' => 'Hora', 'type' => 'time', 'span' => 3],
+                'picked_up_on' => ['label' => 'Retirada em', 'type' => 'date', 'span' => 3, 'list' => true, 'after' => 'received_on'],
+                'picked_up_by' => ['label' => 'Retirada por', 'type' => 'text', 'max' => 160, 'span' => 3],
+                'gatehouse_id' => $gatehouseRef,
+                'notes' => $notesField,
+            ],
+            'requires' => [['field' => 'picked_up_by', 'when' => 'picked_up_on', 'message' => 'Informe quem retirou a entrega.']],
+            'title' => 'recipient',
+            'order' => 'received_on',
+        ];
 
         foreach ($definitions as $slug => &$definition) {
             $definition['slug'] = $slug;

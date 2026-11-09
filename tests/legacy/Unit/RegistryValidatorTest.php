@@ -136,7 +136,7 @@ final class RegistryValidatorTest extends TestCase
             $page = $catalog['pages'][$definition['page']] ?? null;
             self::assertNotNull($page, "{$slug}: página do catálogo inexistente");
             self::assertSame($definition['group'], $page['group'], "{$slug}: grupo igual ao do catálogo");
-            self::assertContains($definition['group'], ['cadastros', 'condominios', 'configuracoes', 'financeiro']);
+            self::assertContains($definition['group'], ['cadastros', 'condominios', 'configuracoes', 'financeiro', 'operacional']);
             self::assertSame($page['route'], $definition['route'], "{$slug}: rota igual à do catálogo");
             self::assertMatchesRegularExpression('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '`/', $schema);
             preg_match('/CREATE TABLE IF NOT EXISTS `' . $definition['table'] . '` \((.*?)\) ENGINE/s', $schema, $table);
@@ -151,7 +151,8 @@ final class RegistryValidatorTest extends TestCase
             }
             self::assertSame($definition['scope'] !== 'none', str_contains($table[1], '`condominium_id`'));
             foreach ($definition['referenced_by'] ?? [] as $referencing) {
-                self::assertMatchesRegularExpression('/ALTER TABLE `' . $referencing . '`[^;]*ADD COLUMN IF NOT EXISTS `unit_id`/s', $schema, "{$referencing}.unit_id existe");
+                // unit_id acrescentado depois (ALTER, 0402) ou já na criação da tabela (portaria, ADR 0042).
+                self::assertMatchesRegularExpression('/(ALTER TABLE `' . $referencing . '`[^;]*ADD COLUMN IF NOT EXISTS `unit_id`|CREATE TABLE IF NOT EXISTS `' . $referencing . '` \([^;]*`unit_id` int)/s', $schema, "{$referencing}.unit_id existe");
             }
             foreach (['view', 'manage'] as $action) {
                 self::assertStringContainsString("'{$definition['permission']}.{$action}'", $permissions);
@@ -162,7 +163,7 @@ final class RegistryValidatorTest extends TestCase
         foreach ($apis as $api) {
             self::assertStringContainsString("  /{$api}/{id}:", $openapi, "OpenAPI dos cadastros desatualizado: rode tools/registry-openapi.php ({$api})");
         }
-        self::assertCount(21, Definitions::all());
+        self::assertCount(26, Definitions::all());
         self::assertSame($apis, array_unique($apis));
     }
 }
