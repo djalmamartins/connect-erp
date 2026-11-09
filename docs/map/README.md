@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**260** rotas fixas · **173** classes em `source/` · **85** tabelas nas migrations · **103** arquivos de teste · **50** ADRs · **172** páginas no catálogo do ERP.
+**260** rotas fixas · **173** classes em `source/` · **89** tabelas nas migrations · **105** arquivos de teste · **51** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -29,7 +29,7 @@ flowchart LR
   env_web --> pkg_Controllers_Web_Connect["Controllers/Web/Connect"]
   pkg_svc["Services"]:::svc
   pkg_mdl["Models"]:::svc
-  db[("MariaDB: 85 tabelas")]
+  db[("MariaDB: 89 tabelas")]
   pkg_Controllers_Api_V1 -.-> pkg_svc
   pkg_Controllers_Environments -.-> pkg_svc
   pkg_Controllers_Erp_Connect -.-> pkg_svc
@@ -310,12 +310,18 @@ flowchart LR
   t_erp_board_members[("erp_board_members")]
   Source_Services_Erp_Registry_Definitions --> t_erp_board_members
   Source_Services_Erp_Registry_Definitions --> t_erp_chart_accounts
+  t_erp_check_copies[("erp_check_copies")]
+  Source_Services_Erp_Registry_Definitions --> t_erp_check_copies
+  t_erp_commitments[("erp_commitments")]
+  Source_Services_Erp_Registry_Definitions --> t_erp_commitments
   t_erp_common_areas[("erp_common_areas")]
   Source_Services_Erp_Registry_Definitions --> t_erp_common_areas
   t_erp_cost_centers[("erp_cost_centers")]
   Source_Services_Erp_Registry_Definitions --> t_erp_cost_centers
   t_erp_deliveries[("erp_deliveries")]
   Source_Services_Erp_Registry_Definitions --> t_erp_deliveries
+  t_erp_delivery_notices[("erp_delivery_notices")]
+  Source_Services_Erp_Registry_Definitions --> t_erp_delivery_notices
   t_erp_employees[("erp_employees")]
   Source_Services_Erp_Registry_Definitions --> t_erp_employees
   Source_Services_Erp_Registry_Definitions --> t_erp_entries
@@ -331,6 +337,8 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_meters
   t_erp_pets[("erp_pets")]
   Source_Services_Erp_Registry_Definitions --> t_erp_pets
+  t_erp_pouches[("erp_pouches")]
+  Source_Services_Erp_Registry_Definitions --> t_erp_pouches
   Source_Services_Erp_Registry_Definitions --> t_erp_recurring_entries
   t_erp_residents[("erp_residents")]
   Source_Services_Erp_Registry_Definitions --> t_erp_residents
@@ -347,6 +355,8 @@ flowchart LR
   t_erp_visitors[("erp_visitors")]
   Source_Services_Erp_Registry_Definitions --> t_erp_visitors
   Source_Services_Erp_Registry_RegistryService --> t_condominiums
+  t_erp_documents[("erp_documents")]
+  Source_Services_Erp_Registry_RegistryService --> t_erp_documents
   Source_Services_Erp_Registry_RegistryService --> t_erp_month_closings
   Source_Services_Erp_Registry_RegistryService --> t_erp_units
   Source_Services_Erp_Registry_RegistryService --> t_pages
@@ -358,7 +368,6 @@ flowchart LR
   Source_Services_Erp_UnitDocuments --> t_erp_units
   Source_Services_Erp_UnitDocuments --> t_pages
   Source_Services_Erp_VirtualDisk --> t_condominiums
-  t_erp_documents[("erp_documents")]
   Source_Services_Erp_VirtualDisk --> t_erp_documents
   Source_Services_Erp_VirtualDisk --> t_pages
   t_condominium_geolocations[("condominium_geolocations")]
@@ -729,10 +738,13 @@ flowchart LR
 | `erp_billing_rules` | `20261108_0522_billing_rules_price_indexes.sql` | — | `Services/Erp/BillingRules` |
 | `erp_board_members` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_chart_accounts` | `20261108_0405_chart_of_accounts.sql` | — | `Services/Erp/FinancialReports`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/Definitions` |
+| `erp_check_copies` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_commitments` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_common_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_cost_centers` | `20261108_0503_cost_centers.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_deliveries` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_documents` | `20261108_0528_virtual_disk.sql` | — | `Services/Erp/VirtualDisk` |
+| `erp_delivery_notices` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_documents` | `20261108_0528_virtual_disk.sql` | — | `Services/Erp/Registry/RegistryService`, `Services/Erp/VirtualDisk` |
 | `erp_employees` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_entries` | `20261108_0506_entries.sql` | `20261108_0509_entry_recurring_link.sql`, `20261108_0514_entry_unit_invoice_link.sql`, `20261108_0520_entry_agreement_link.sql` | `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Banking/BankReturns`, `Services/Erp/FinancialReports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_gatehouses` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -746,6 +758,7 @@ flowchart LR
 | `erp_meters` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
 | `erp_month_closings` | `20261108_0511_month_closings.sql` | — | `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService` |
 | `erp_pets` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
+| `erp_pouches` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_price_indexes` | `20261108_0522_billing_rules_price_indexes.sql` | — | `Services/Erp/BillingRules` |
 | `erp_recurring_entries` | `20261108_0508_recurring_entries.sql` | — | `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
@@ -915,7 +928,7 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 34 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 35 |
 
 </details>
 
@@ -925,7 +938,7 @@ flowchart LR
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 5 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 26 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 27 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 2 |
 | [`Services/Erp/Agreements`](../../source/Services/Erp/Agreements.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_agreement_originals, erp_agreements, erp_bank_charges, erp_entries, erp_units, pages | 3 |
@@ -943,13 +956,13 @@ flowchart LR
 | [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 7 |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_deliveries, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_meters, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 14 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_check_copies, erp_commitments, erp_common_areas, erp_cost_centers, erp_deliveries, erp_delivery_notices, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_meters, erp_pets, erp_pouches, erp_recurring_entries, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 15 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 3 |
-| [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 8 |
+| [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 9 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 9 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 20 |
-| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 10 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_documents, erp_month_closings, erp_units, pages, system_audit_logs | 21 |
+| [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 11 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 8 |
 | [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_unit_documents, erp_units, pages | 3 |
 | [`Services/Erp/VirtualDisk`](../../source/Services/Erp/VirtualDisk.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_documents, pages | 2 |
@@ -1062,6 +1075,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0046 — Telas dos documentos da unidade (AP-123, AP-124, AP-125 e AP-130)](../../docs/Organic%20Code/decisions/0046-unit-documents-screens.md)
 - [0047 — Disco Virtual (AP-122): arquivos do condomínio fora da pasta pública](../../docs/Organic%20Code/decisions/0047-virtual-disk.md)
 - [0048 — Tela de leituras do mês (AP-042)](../../docs/Organic%20Code/decisions/0048-meter-readings-screen.md)
+- [0050 — Avisos de recebimento, cópias de cheques, empenhos e malotes](../../docs/Organic%20Code/decisions/0050-document-registries.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
