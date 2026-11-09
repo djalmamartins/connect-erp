@@ -153,6 +153,10 @@
    "title": "0039 — Inadimplência e acordos (AP-033/034)"
   },
   {
+   "file": "docs/Organic Code/decisions/0040-agreements-screens.md",
+   "title": "0040 — Telas de inadimplência e acordos (AP-033 e AP-034)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -688,6 +692,7 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
+    "Source\\Services\\Erp\\Agreements",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\DemoData",
@@ -711,6 +716,7 @@
    "tests": [
     "tests/erp/render-smoke.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
+    "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
@@ -2776,7 +2782,7 @@
   }
  },
  "counts": {
-  "adrs": 41,
+  "adrs": 42,
   "classes": 164,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2785,7 +2791,7 @@
   "erp_pages": 172,
   "routes": 240,
   "tables": 73,
-  "tests": 90
+  "tests": 91
  },
  "erp_pages": [
   {
@@ -7118,6 +7124,9 @@
    "Source\\Services\\Environments",
    "Source\\Services\\Support\\TicketError",
    "Source\\Services\\Support\\TicketService"
+  ],
+  "tests/legacy/Unit/ErpAgreementsScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
   "tests/legacy/Unit/ErpBankingScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"

@@ -339,6 +339,11 @@ p { margin: 0; }
 .erp-report-reconcile dd { margin: 4px 0 0; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .erp-report-reconcile .is-off { border-color: var(--erp-warning); background: var(--erp-warning-soft); }
 @media (max-width: 760px) { .erp-report-reconcile { grid-template-columns: minmax(0, 1fr); } }
+.erp-agreement-entries { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); max-height: 220px; overflow-y: auto; }
+.erp-agreement-entries legend { padding: 0 4px; font-size: 13px; font-weight: 650; }
+.erp-agreement-entries .erp-check { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.erp-agreement-summary { margin-top: 12px; padding: 12px 14px; border-radius: var(--erp-radius-md); background: var(--erp-info-soft); color: #18406f; font-size: 14px; }
+.erp-agreement-subtitle { margin: 16px 0 8px; font-size: 14px; }
 .erp-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; padding: 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: #fff; }
 .erp-qr svg { display: block; width: 196px; max-width: 100%; height: auto; }
 .erp-qr figcaption { font-size: 13px; color: var(--erp-muted); }

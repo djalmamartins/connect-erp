@@ -9,6 +9,7 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Erp\Agreements;
 use Source\Services\Erp\Banking\BankCharges;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
@@ -166,7 +167,7 @@ final class Panel extends Controller
      */
     private function bankingData(User $user, string $id): array
     {
-        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null] : []);
+        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : []);
         if (Connect::databaseDisabled() || !Access::can('erp.bank_charges.view', $user)) {
             return $data;
         }
@@ -174,7 +175,9 @@ final class Panel extends Controller
             if ($id === 'AP-035') {
                 $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
             } elseif ($id === 'AP-038') {
-                $data['bankDivergences'] = (new BankReturns())->divergences($user, CondominiumContext::id());
+                $returns = new BankReturns();
+                $data['bankDivergences'] = $returns->divergences($user, CondominiumContext::id());
+                $data['bankReturnFiles'] = $returns->files($user, CondominiumContext::id(), ['page' => $_GET['pagina'] ?? 1]);
             }
         } catch (\Throwable $error) {
             \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'banking_screen_failed', 'page' => $id]);
@@ -217,6 +220,59 @@ final class Panel extends Controller
             $data['reportError'] = 'Não foi possível gerar o relatório agora.';
         }
         return $data;
+    }
+
+    /**
+     * Inadimplência e acordos (AP-033/034, ADR 0039) no contexto da barra superior. AP-033: contas
+     * vencidas por unidade ($delinquency) e a lista de acordos ($agreements, ?situacao=&pagina=).
+     * AP-034: parcelas dos acordos ativos da página ($agreementParcels). null = sem permissão ou
+     * sem banco (a tela segue com a demonstração). As ações usam a API /api/v1/agreements.
+     *
+     * @return array<string, mixed>
+     */
+    private function agreementData(User $user, string $id): array
+    {
+        $data = ['canManageAgreements' => false] + ($id === 'AP-033' ? ['delinquency' => null, 'agreements' => null] : ['agreements' => null, 'agreementParcels' => null]);
+        if (Connect::databaseDisabled() || !Access::can('erp.agreements.view', $user)) {
+            return $data;
+        }
+        $context = CondominiumContext::id();
+        $service = new Agreements();
+        try {
+            if ($id === 'AP-033') {
+                $data['delinquency'] = $service->delinquency($user, $context);
+                $data['agreements'] = $service->list($user, $context, ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
+            } else {
+                $data['agreements'] = $service->list($user, $context, ['status' => 'active', 'page' => $_GET['pagina'] ?? 1]);
+                $data['agreementParcels'] = self::flattenParcels(array_map(static fn (array $a): array => $service->find($user, (int)$a['id']), $data['agreements']['data']), date('Y-m-d'));
+            }
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'agreements_screen_failed', 'page' => $id]);
+            return ['canManageAgreements' => false] + array_map(static fn (): mixed => null, array_diff_key($data, ['canManageAgreements' => 1]));
+        }
+        $data['canManageAgreements'] = Access::can('erp.agreements.manage', $user);
+        return $data;
+    }
+
+    /**
+     * Parcelas de vários acordos numa lista só (regra pura), com a situação de cada uma na data:
+     * paga, vencida (em aberto e vencimento antes da data) ou a vencer.
+     *
+     * @param list<array> $agreements acordos de Agreements::find (com 'parcels')
+     * @return list<array>
+     */
+    public static function flattenParcels(array $agreements, string $today): array
+    {
+        $rows = [];
+        foreach ($agreements as $agreement) {
+            foreach ($agreement['parcels'] ?? [] as $parcel) {
+                $state = $parcel['paid_on'] !== null ? 'paid' : ((string)$parcel['due_on'] < $today ? 'late' : 'open');
+                $rows[] = $parcel + ['agreement_id' => (int)$agreement['id'], 'installments' => (int)$agreement['installments'],
+                    'unit_label' => $agreement['unit_label'] ?? null, 'condominium_name' => $agreement['condominium_name'] ?? null, 'state' => $state];
+            }
+        }
+        usort($rows, static fn (array $a, array $b): int => [$a['state'] === 'paid', $a['due_on'], $a['agreement_id'], $a['number']] <=> [$b['state'] === 'paid', $b['due_on'], $b['agreement_id'], $b['number']]);
+        return $rows;
     }
 
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
@@ -313,6 +369,9 @@ final class Panel extends Controller
         if (in_array($id, self::REPORT_PAGES, true)) {
             $data += $this->reportData($user, $id);
         }
+        if (in_array($id, ['AP-033', 'AP-034'], true)) {
+            $data += $this->agreementData($user, $id);
+        }
         if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
@@ -328,6 +387,8 @@ final class Panel extends Controller
     {
         return match (true) {
             $id === 'AP-032' && ($data['invoices'] ?? null) !== null => 'pages/finance/invoices',
+            $id === 'AP-033' && ($data['delinquency'] ?? null) !== null => 'pages/finance/agreements',
+            $id === 'AP-034' && ($data['agreementParcels'] ?? null) !== null => 'pages/finance/agreement-parcels',
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
