@@ -10,6 +10,7 @@ use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\DemoData;
+use Source\Services\Erp\Invoices;
 use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryService;
@@ -128,6 +129,31 @@ final class Panel extends Controller
         return $data;
     }
 
+    /**
+     * Faturas reais (AP-032, ADR 0033) no contexto da barra superior ("Todos" = escopo do
+     * usuário), filtradas por ?competencia= e ?situacao=. $invoices null = sem permissão ou sem
+     * banco (a tela segue com a demonstração). As ações usam a API /api/v1/invoices.
+     *
+     * @return array{invoices: ?array, canManageInvoices: bool}
+     */
+    private function invoiceData(User $user): array
+    {
+        $data = ['invoices' => null, 'canManageInvoices' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.invoices.view', $user)) {
+            return $data;
+        }
+        try {
+            $data['invoices'] = (new Invoices())->list($user, CondominiumContext::id(), [
+                'competence' => $_GET['competencia'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
+            ]);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'invoice_list_failed']);
+            return $data;
+        }
+        $data['canManageInvoices'] = Access::can('erp.invoices.manage', $user);
+        return $data;
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -215,6 +241,9 @@ final class Panel extends Controller
         }
         if ($kind === 'closing') {
             $data += $this->closingData($user);
+        }
+        if ($id === 'AP-032') {
+            $data += $this->invoiceData($user);
         }
         $template = 'pages/modules/' . $kind;
         return [$template, $this->layoutData($user, $id, $data)];

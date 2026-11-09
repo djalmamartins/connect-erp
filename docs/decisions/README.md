@@ -57,5 +57,6 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0030](../Organic%20Code/decisions/0030-condominium-context-in-url.md) | Condomínio da barra superior como contexto global do ERP, com slug na URL |
 | [0031](../Organic%20Code/decisions/0031-month-closing.md) | Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos |
 | [0032](../Organic%20Code/decisions/0032-finance-condominium-context.md) | Financeiro no contexto do condomínio da barra superior (padrão da Connect nas listas e tela do fechamento) |
+| [0033](../Organic%20Code/decisions/0033-invoices.md) | Faturas (AP-032): cobrança por unidade, emitida como contas a receber, sem duplicar |
 | [0034](../Organic%20Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md) | Todo chamado na fila do Help Desk (condomínio, unidade, solicitante) e alternador ERP / Studio / Help Desk |
 | [0035](../Organic%20Code/decisions/0035-logout-all-hosts.md) | Sair em um host encerra as sessões do usuário nos outros |

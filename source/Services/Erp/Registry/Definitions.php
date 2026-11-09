@@ -29,11 +29,20 @@ namespace Source\Services\Erp\Registry;
  * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
  * 'base_where' + 'fixed' (ADR 0024): visão filtrada de outra tabela, que grava sempre os valores fixos.
  * 'closing_lock' => campo da competência (ADR 0031): competência fechada trava gravação e exclusão.
+ * 'origin_lock' => ['field', 'columns', 'message'] (ADR 0033): registro gerado por outro módulo
+ *   (field preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  */
 final class Definitions
 {
     private const STATUS = ['active' => 'Ativo', 'inactive' => 'Inativo'];
+
+    /** Lançamento gerado por fatura (ADR 0033): só a baixa (pago em, conta bancária) e as notas mudam aqui. */
+    public const INVOICE_LOCK = [
+        'field' => 'invoice_item_id',
+        'columns' => ['condominium_id', 'nature', 'chart_account_id', 'amount_cents', 'competence', 'due_on', 'unit_id', 'status', 'description'],
+        'message' => 'Lançamento gerado por fatura: altere ou cancele pela fatura.',
+    ];
 
     /** @var array<string, array<string, mixed>>|null */
     private static ?array $cache = null;
@@ -105,7 +114,7 @@ final class Definitions
                 'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
                 'computed' => ['label'],
                 // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
-                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas'],
+                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries'],
                 'title' => 'number',
                 'order' => 'label',
             ],
@@ -496,12 +505,14 @@ final class Definitions
                         'ref_message' => 'Escolha uma conta bancária ativa deste condomínio.', 'hint' => 'Obrigatória quando o lançamento está pago'],
                     'supplier_id' => ['label' => 'Fornecedor', 'type' => 'ref', 'span' => 6, 'ref' => 'suppliers', 'ref_label' => ['legal_name'],
                         'ref_message' => 'Escolha um fornecedor ativo.'],
+                    'unit_id' => ['hint' => 'Unidade que deve a receita (faturas preenchem sozinhas)'] + $unit(6),
                     'document_number' => ['label' => 'Nº do documento', 'type' => 'text', 'max' => 40, 'span' => 6, 'search' => true, 'hint' => 'Nota fiscal, recibo ou boleto'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'requires' => [['field' => 'bank_account_id', 'when' => 'paid_on', 'message' => 'Informe a conta bancária do pagamento.']],
                 // Competência fechada no fechamento mensal trava criação, alteração e exclusão (ADR 0031).
                 'closing_lock' => 'competence',
+                'origin_lock' => self::INVOICE_LOCK,
                 'title' => 'description',
                 'order' => 'due_on',
             ],
@@ -510,7 +521,7 @@ final class Definitions
         // Lançamentos fixos (AP-021, ADR 0027): modelos que geram o lançamento de cada competência
         // (RecurringEntries::generate). Mesmas regras de conta e natureza dos lançamentos.
         $recurring = $definitions['entries']['fields'];
-        unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number']);
+        unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number'], $recurring['unit_id']);
         $recurring['bank_account_id']['hint'] = 'Conta sugerida; o lançamento gerado nasce em aberto';
         $recurring['day_of_month'] = ['label' => 'Dia do vencimento', 'type' => 'int', 'required' => true, 'min' => 1, 'max_value' => 28, 'span' => 3, 'list' => true, 'hint' => '1 a 28'];
         $recurring['starts_competence'] = ['label' => 'Primeira competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true,
@@ -551,6 +562,7 @@ final class Definitions
                 'fixed' => ['nature' => $nature],
                 'requires' => $definitions['entries']['requires'],
                 'closing_lock' => 'competence',
+                'origin_lock' => self::INVOICE_LOCK,
                 'title' => 'description',
                 'order' => 'due_on',
             ];
