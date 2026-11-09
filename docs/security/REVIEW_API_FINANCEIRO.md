@@ -526,3 +526,27 @@ Escopo: `source/Services/Erp/NotificationOutbox.php` e `source/Services/Erp/Noti
   da pessoa, mas a trilha poderia guardar só o id da `mail_queue`. Fica para decisão com a LGPD (#46).
 - Um e-mail enfileirado cuja trilha não foi gravada pode sair duas vezes na retomada.
 
+## 17ª rodada — Comunicados e avisos de cobrança
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em e36759a · Correções: ADR 0109
+
+Escopo: `source/Services/Erp/Announcements.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo pelo condomínio; unidades escolhidas conferidas como ativas do condomínio | CONFIRMADO |
+| Teto de 20 por condomínio em 24 horas e sem aviso de cobrança repetido em 7 dias, com o condomínio travado | CONFIRMADO |
+| Assunto e motivo numa linha só; texto sem caracteres de controle | CONFIRMADO |
+| Endereços com e-mail mascarado | CONFIRMADO |
+| Cancelamento único | CONFIRMADO, com o achado 1 |
+
+### Achado corrigido (ADR 0109)
+
+1. **Cancelamento duplo.** A conferência ficava fora da transação. Agora o comunicado é travado e
+   conferido de novo antes de cancelar.
+
+### Lacunas
+
+- A inadimplência do aviso de cobrança é apurada antes de travar o condomínio. Um pagamento registrado
+  nesse intervalo ainda pode gerar o aviso.
+

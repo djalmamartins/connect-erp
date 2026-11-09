@@ -69,6 +69,13 @@ final class AnnouncementsIntegrationTest extends TestCase
         $this->pdo->exec('UPDATE erp_notification_outbox SET available_at = NOW()');
         self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Cancelado não sai.');
         self::assertSame([], $this->queued);
+
+        try {
+            $this->announcements->cancel($this->admin, $created['id'], 'Segundo cancelamento');
+            self::fail('Cancelar duas vezes deve ser recusado (ADR 0109).');
+        } catch (\DomainException) {
+            self::assertFalse($this->pdo->inTransaction(), 'Recusa sem transação aberta.');
+        }
     }
 
     public function testCollectionReminderTargetsOverdueOnceAWeek(): void
