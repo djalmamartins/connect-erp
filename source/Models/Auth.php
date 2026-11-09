@@ -14,6 +14,7 @@ use Source\Support\MailTemplate;
 use Source\Services\PasswordResetService;
 use Source\Services\TwoFactorService;
 use Source\Services\LoginThrottle;
+use Source\Services\TwoFactorNotice;
 
 /**
  * ERP | Class Auth
@@ -174,6 +175,7 @@ class Auth extends Model
         }
         $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
         $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
+        (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED_AT_LOGIN);
         return $codes;
     }
 

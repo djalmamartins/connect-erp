@@ -24,7 +24,7 @@ final class MailTemplateTest extends TestCase
         $root = moves_container_path('send', 'default');
         $php = array_map('basename', glob($root . '/*.php') ?: []);
         self::assertSame(['default.php'], $php, 'A raiz do tema só tem a moldura; send não tem rotas.');
-        foreach (['forget', 'confirm'] as $template) {
+        foreach (['forget', 'confirm', 'two-factor-changed'] as $template) {
             self::assertTrue((new MailTemplate('default'))->exists($template), "Template {$template} ausente.");
         }
     }
