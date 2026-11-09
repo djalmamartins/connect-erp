@@ -1,0 +1,32 @@
+-- Lançamentos fixos (AP-021, ADR 0027): modelos recorrentes que geram o lançamento de cada mês
+-- em erp_entries (0506). Escopo por condomínio (ADR-002). Exclusão lógica.
+CREATE TABLE IF NOT EXISTS `erp_recurring_entries` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `condominium_id` int unsigned NOT NULL,
+  `nature` enum('receita','despesa') NOT NULL,
+  `chart_account_id` int unsigned NOT NULL,
+  `cost_center_id` int unsigned DEFAULT NULL,
+  `bank_account_id` int unsigned DEFAULT NULL COMMENT 'Conta sugerida; o lançamento nasce em aberto',
+  `supplier_id` int unsigned DEFAULT NULL,
+  `description` varchar(160) NOT NULL,
+  `amount_cents` bigint unsigned NOT NULL,
+  `day_of_month` tinyint unsigned NOT NULL COMMENT 'Dia de vencimento (1 a 28)',
+  `starts_competence` char(7) NOT NULL COMMENT 'Primeira competência AAAA-MM',
+  `ends_competence` char(7) DEFAULT NULL COMMENT 'Última competência AAAA-MM; vazio = sem fim',
+  `notes` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_by` int unsigned DEFAULT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_erp_recurring_entries_condominium` (`condominium_id`, `deleted_at`, `status`),
+  CONSTRAINT `fk_erp_recurring_entries_condominium` FOREIGN KEY (`condominium_id`) REFERENCES `condominiums` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_recurring_entries_account` FOREIGN KEY (`chart_account_id`) REFERENCES `erp_chart_accounts` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_recurring_entries_cost_center` FOREIGN KEY (`cost_center_id`) REFERENCES `erp_cost_centers` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_recurring_entries_bank_account` FOREIGN KEY (`bank_account_id`) REFERENCES `erp_bank_accounts` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_recurring_entries_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `erp_suppliers` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_erp_recurring_entries_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_erp_recurring_entries_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

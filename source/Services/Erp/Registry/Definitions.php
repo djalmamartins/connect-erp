@@ -504,6 +504,29 @@ final class Definitions
             ],
         ];
 
+        // Lançamentos fixos (AP-021, ADR 0027): modelos que geram o lançamento de cada competência
+        // (RecurringEntries::generate). Mesmas regras de conta e natureza dos lançamentos.
+        $recurring = $definitions['entries']['fields'];
+        unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number']);
+        $recurring['bank_account_id']['hint'] = 'Conta sugerida; o lançamento gerado nasce em aberto';
+        $recurring['day_of_month'] = ['label' => 'Dia do vencimento', 'type' => 'int', 'required' => true, 'min' => 1, 'max_value' => 28, 'span' => 3, 'list' => true, 'hint' => '1 a 28'];
+        $recurring['starts_competence'] = ['label' => 'Primeira competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true,
+            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-11.', 'hint' => 'AAAA-MM'];
+        $recurring['ends_competence'] = ['label' => 'Última competência', 'type' => 'text', 'max' => 7, 'span' => 3, 'list' => true, 'after' => 'starts_competence',
+            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-12.', 'hint' => 'Vazio = sem fim'];
+        $notes = $recurring['notes'];
+        unset($recurring['notes']);
+        $recurring['notes'] = $notes;
+        $definitions['recurring_entries'] = [
+            'page' => 'AP-021', 'table' => 'erp_recurring_entries', 'route' => '/financeiro/lancamentos-fixos',
+            'api' => 'recurring-entries', 'permission' => 'erp.recurring_entries', 'label' => 'Lançamentos fixos',
+            'entity' => 'lançamento fixo', 'gender' => 'o', 'scope' => 'required', 'group' => 'financeiro',
+            'lead' => 'Receitas e despesas que se repetem todo mês. Gere os lançamentos de uma competência sem duplicar os já gerados.',
+            'fields' => $recurring,
+            'title' => 'description',
+            'order' => 'description',
+        ];
+
         // Contas a pagar (AP-022) e a receber (AP-023), ADR 0024: visões dos lançamentos em aberto
         // (sem segunda tabela). Gravam sempre a natureza da visão; preencher "Pago em" dá baixa e o
         // lançamento sai da visão (continua em Lançamentos). Mesmas permissões de erp.entries.
