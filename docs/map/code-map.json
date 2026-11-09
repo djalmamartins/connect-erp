@@ -269,6 +269,10 @@
    "title": "0068 — Relatórios gerenciais: extrato sem oráculo de id, rateio com teto e SQL só por parâmetro"
   },
   {
+   "file": "docs/Organic Code/decisions/0069-chart-data-hardening.md",
+   "title": "0069 — Dados dos gráficos: saldo por conta bancária filtrado por condomínio e com teto de séries"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -4077,7 +4081,7 @@
   }
  },
  "counts": {
-  "adrs": 83,
+  "adrs": 84,
   "classes": 211,
   "dynamic_route_lines": {
    "erp": 9,
