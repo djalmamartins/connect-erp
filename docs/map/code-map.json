@@ -213,6 +213,10 @@
    "title": "0054 — Painéis do condomínio e da unidade, e outbox de notificações"
   },
   {
+   "file": "docs/Organic Code/decisions/0055-notification-dispatch.md",
+   "title": "0055 — Fila de envio dos avisos do ERP pelo container send"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -409,6 +413,20 @@
     "Source\\Support\\Access"
    ],
    "file": "source/Controllers/Api/V1/MonthClosings.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\Notifications": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\NotificationDispatcher",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/Notifications.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -1833,6 +1851,7 @@
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
@@ -1923,6 +1942,7 @@
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
@@ -2237,6 +2257,33 @@
     "tests/legacy/Unit/MonthClosingTest.php"
    ]
   },
+  "Source\\Services\\Erp\\NotificationDispatcher": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit",
+    "Source\\Support\\Email",
+    "Source\\Support\\MailTemplate"
+   ],
+   "file": "source/Services/Erp/NotificationDispatcher.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_notification_deliveries",
+    "erp_notification_outbox",
+    "erp_common_areas",
+    "erp_residents",
+    "condominiums",
+    "mail_queue"
+   ],
+   "tests": [
+    "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\NotificationOutbox": {
    "deps": [],
    "file": "source/Services/Erp/NotificationOutbox.php",
@@ -2246,6 +2293,7 @@
     "erp_notification_outbox"
    ],
    "tests": [
+    "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
   },
@@ -2507,6 +2555,7 @@
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
@@ -3061,6 +3110,7 @@
    "tables": [],
    "tests": [
     "tests/legacy/Unit/MailTemplateTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php",
     "tests/legacy/Unit/TwoFactorNoticeTest.php"
    ]
@@ -3234,16 +3284,16 @@
   }
  },
  "counts": {
-  "adrs": 57,
-  "classes": 181,
+  "adrs": 58,
+  "classes": 183,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 268,
-  "tables": 98,
-  "tests": 115
+  "routes": 272,
+  "tables": 99,
+  "tests": 117
  },
  "erp_pages": [
   {
@@ -5039,10 +5089,46 @@
    "verb": "GET"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\Notifications",
+   "env": "index",
+   "file": "index.php",
+   "line": 121,
+   "method": "index",
+   "path": "/api/v1/notifications",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Notifications",
+   "env": "index",
+   "file": "index.php",
+   "line": 122,
+   "method": "dispatch",
+   "path": "/api/v1/notifications/dispatch",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Notifications",
+   "env": "index",
+   "file": "index.php",
+   "line": 123,
+   "method": "show",
+   "path": "/api/v1/notifications/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Notifications",
+   "env": "index",
+   "file": "index.php",
+   "line": 124,
+   "method": "retry",
+   "path": "/api/v1/notifications/{id}/retry",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 135,
+   "line": 140,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -5051,7 +5137,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 136,
+   "line": 141,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -5060,7 +5146,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 137,
+   "line": 142,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -5069,7 +5155,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 138,
+   "line": 143,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -5078,7 +5164,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 139,
+   "line": 144,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -5087,7 +5173,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 140,
+   "line": 145,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -5096,7 +5182,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 141,
+   "line": 146,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -5105,7 +5191,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 142,
+   "line": 147,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -5114,7 +5200,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 144,
+   "line": 149,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -5123,7 +5209,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 145,
+   "line": 150,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -5132,7 +5218,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 146,
+   "line": 151,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -5141,7 +5227,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 155,
+   "line": 160,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -5150,7 +5236,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 156,
+   "line": 161,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -5159,79 +5245,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 170,
+   "line": 175,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "GET"
   },
   {
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 171,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 172,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 173,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
    "line": 176,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 177,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 178,
-   "method": "reset",
-   "path": "/forget/{code}",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 179,
-   "method": "reset",
-   "path": "/reset",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 192,
+   "line": 181,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -5240,7 +5290,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 193,
+   "line": 182,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -5249,7 +5299,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 194,
+   "line": 183,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -5258,7 +5308,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 195,
+   "line": 184,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -5267,7 +5317,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 211,
+   "line": 197,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 198,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 199,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 200,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 216,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -5276,7 +5362,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 213,
+   "line": 218,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -6994,6 +7080,7 @@
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\UnitDocuments",
@@ -7111,6 +7198,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
+    "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryService"
    ]
@@ -7288,10 +7376,20 @@
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
-  "erp_notification_outbox": {
+  "erp_notification_deliveries": {
    "altered_in": [],
+   "created_in": "database/migrations/20261108_0533_notification_dispatch.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\NotificationDispatcher"
+   ]
+  },
+  "erp_notification_outbox": {
+   "altered_in": [
+    "database/migrations/20261108_0533_notification_dispatch.sql"
+   ],
    "created_in": "database/migrations/20261108_0532_notification_outbox.sql",
    "used_by": [
+    "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\NotificationOutbox"
    ]
   },
@@ -7352,6 +7450,7 @@
    ],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -7502,6 +7601,7 @@
    "created_in": null,
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
+    "Source\\Services\\Erp\\NotificationDispatcher",
     "Source\\Services\\OnboardingAlerts",
     "Source\\Services\\TwoFactorNotice",
     "Source\\Support\\Communication",
@@ -7927,6 +8027,13 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\NotificationDispatcher",
+   "Source\\Services\\Erp\\NotificationOutbox",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/NotificationQueueTest.php": [
    "Source\\Models\\Notification\\NotificationMessage"
   ],
@@ -8204,6 +8311,10 @@
    "Source\\Services\\Erp\\MonthClosing",
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryLocked"
+  ],
+  "tests/legacy/Unit/NotificationDispatcherTest.php": [
+   "Source\\Services\\Erp\\NotificationDispatcher",
+   "Source\\Support\\MailTemplate"
   ],
   "tests/legacy/Unit/OnboardingChecklistViewTest.php": [
    "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",

@@ -1431,6 +1431,55 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: Avisos da fila do ERP (erp.notifications.view)
+      description: >-
+        Modo de entrega (delivery_mode): log (nada enviado), sandbox (só para a caixa de teste
+        ERP_MAIL_SANDBOX_TO) ou production (só com APP_ENV=production e ERP_MAIL_DELIVERY=production).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [pending, processing, sent, failed, cancelled] } }
+      responses:
+        '200': { description: '{ data: [{ id, event_type, status, delivery_mode, recipients_count, attempts, available_at, processed_at, last_error }], total } (até 200)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /notifications/dispatch:
+    post:
+      operationId: dispatchNotifications
+      summary: Processa a fila agora, até 50 avisos (erp.notifications.manage)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '200': { description: '{ data: { mode, processed, sent, failed, retry, cancelled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /notifications/{id}:
+    get:
+      operationId: showNotification
+      summary: Aviso com a trilha de entrega (e-mail mascarado; endereço efetivo no sandbox)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Aviso com deliveries[] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /notifications/{id}/retry:
+    post:
+      operationId: retryNotification
+      summary: Reenvia aviso com falha ou cancelado (erp.notifications.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Aviso de volta à fila }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Aviso não está com falha nem cancelado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
 
   /inspection-templates:
     get:

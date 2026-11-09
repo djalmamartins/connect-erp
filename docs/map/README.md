@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**268** rotas fixas · **181** classes em `source/` · **98** tabelas nas migrations · **115** arquivos de teste · **57** ADRs · **172** páginas no catálogo do ERP.
+**272** rotas fixas · **183** classes em `source/` · **99** tabelas nas migrations · **117** arquivos de teste · **58** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -29,7 +29,7 @@ flowchart LR
   env_web --> pkg_Controllers_Web_Connect["Controllers/Web/Connect"]
   pkg_svc["Services"]:::svc
   pkg_mdl["Models"]:::svc
-  db[("MariaDB: 98 tabelas")]
+  db[("MariaDB: 99 tabelas")]
   pkg_Controllers_Api_V1 -.-> pkg_svc
   pkg_Controllers_Environments -.-> pkg_svc
   pkg_Controllers_Erp_Connect -.-> pkg_svc
@@ -112,6 +112,10 @@ flowchart LR
   Source_Controllers_Api_V1_MonthClosings --> Source_Services_CondominiumAccessDenied
   Source_Services_Erp_MonthClosing["Services/Erp/MonthClosing"]
   Source_Controllers_Api_V1_MonthClosings --> Source_Services_Erp_MonthClosing
+  Source_Controllers_Api_V1_Notifications["Controllers/Api/V1/Notifications"]
+  Source_Services_Erp_NotificationDispatcher["Services/Erp/NotificationDispatcher"]
+  Source_Controllers_Api_V1_Notifications --> Source_Services_Erp_NotificationDispatcher
+  Source_Controllers_Api_V1_Notifications --> Source_Services_Erp_Registry_RegistryNotFound
   Source_Controllers_Api_V1_Occurrences["Controllers/Api/V1/Occurrences"]
   Source_Services_Erp_Occurrences["Services/Erp/Occurrences"]
   Source_Controllers_Api_V1_Occurrences --> Source_Services_Erp_Occurrences
@@ -320,6 +324,17 @@ flowchart LR
   Source_Services_Erp_MonthClosing --> t_erp_entries
   t_erp_month_closings[("erp_month_closings")]
   Source_Services_Erp_MonthClosing --> t_erp_month_closings
+  Source_Services_Erp_NotificationDispatcher --> t_condominiums
+  t_erp_common_areas[("erp_common_areas")]
+  Source_Services_Erp_NotificationDispatcher --> t_erp_common_areas
+  t_erp_notification_deliveries[("erp_notification_deliveries")]
+  Source_Services_Erp_NotificationDispatcher --> t_erp_notification_deliveries
+  t_erp_notification_outbox[("erp_notification_outbox")]
+  Source_Services_Erp_NotificationDispatcher --> t_erp_notification_outbox
+  t_erp_residents[("erp_residents")]
+  Source_Services_Erp_NotificationDispatcher --> t_erp_residents
+  t_mail_queue[("mail_queue")]
+  Source_Services_Erp_NotificationDispatcher --> t_mail_queue
   t_erp_occurrences[("erp_occurrences")]
   Source_Services_Erp_Occurrences --> t_erp_occurrences
   t_erp_contracts[("erp_contracts")]
@@ -342,7 +357,6 @@ flowchart LR
   t_erp_pets[("erp_pets")]
   Source_Services_Erp_PanelSummaries --> t_erp_pets
   Source_Services_Erp_PanelSummaries --> t_erp_reservations
-  t_erp_residents[("erp_residents")]
   Source_Services_Erp_PanelSummaries --> t_erp_residents
   Source_Services_Erp_PanelSummaries --> t_erp_units
   t_erp_vehicles[("erp_vehicles")]
@@ -362,7 +376,6 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_check_copies
   t_erp_commitments[("erp_commitments")]
   Source_Services_Erp_Registry_Definitions --> t_erp_commitments
-  t_erp_common_areas[("erp_common_areas")]
   Source_Services_Erp_Registry_Definitions --> t_erp_common_areas
   Source_Services_Erp_Registry_Definitions --> t_erp_contracts
   t_erp_cost_centers[("erp_cost_centers")]
@@ -454,7 +467,6 @@ flowchart LR
   Source_Services_Support_TicketService --> t_studio_support_ticket_events
   t_studio_support_tickets[("studio_support_tickets")]
   Source_Services_Support_TicketService --> t_studio_support_tickets
-  t_mail_queue[("mail_queue")]
   Source_Services_TwoFactorNotice --> t_mail_queue
   t_user_recovery_codes[("user_recovery_codes")]
   Source_Services_TwoFactorService --> t_user_recovery_codes
@@ -556,7 +568,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>index</b> (92 rotas)</summary>
+<details><summary><b>index</b> (96 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -625,33 +637,37 @@ flowchart LR
 | POST | `/api/v1/maintenances/{id}/next` | `Controllers/Api/V1/OperationalDashboard::nextMaintenance` | [index.php:116](../../index.php#L116) |
 | GET | `/api/v1/panels/condominium/{id}` | `Controllers/Api/V1/Panels::condominium` | [index.php:118](../../index.php#L118) |
 | GET | `/api/v1/panels/unit/{id}` | `Controllers/Api/V1/Panels::unit` | [index.php:119](../../index.php#L119) |
-| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:135](../../index.php#L135) |
-| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:136](../../index.php#L136) |
-| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:137](../../index.php#L137) |
-| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:138](../../index.php#L138) |
-| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:139](../../index.php#L139) |
-| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:140](../../index.php#L140) |
-| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:141](../../index.php#L141) |
-| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:142](../../index.php#L142) |
-| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:144](../../index.php#L144) |
-| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:145](../../index.php#L145) |
-| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:146](../../index.php#L146) |
-| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:155](../../index.php#L155) |
-| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:156](../../index.php#L156) |
-| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:170](../../index.php#L170) |
-| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:171](../../index.php#L171) |
-| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:172](../../index.php#L172) |
-| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:173](../../index.php#L173) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:176](../../index.php#L176) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:177](../../index.php#L177) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:178](../../index.php#L178) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:179](../../index.php#L179) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:192](../../index.php#L192) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:193](../../index.php#L193) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:194](../../index.php#L194) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:195](../../index.php#L195) |
-| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:211](../../index.php#L211) |
-| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:213](../../index.php#L213) |
+| GET | `/api/v1/notifications` | `Controllers/Api/V1/Notifications::index` | [index.php:121](../../index.php#L121) |
+| POST | `/api/v1/notifications/dispatch` | `Controllers/Api/V1/Notifications::dispatch` | [index.php:122](../../index.php#L122) |
+| GET | `/api/v1/notifications/{id}` | `Controllers/Api/V1/Notifications::show` | [index.php:123](../../index.php#L123) |
+| POST | `/api/v1/notifications/{id}/retry` | `Controllers/Api/V1/Notifications::retry` | [index.php:124](../../index.php#L124) |
+| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:140](../../index.php#L140) |
+| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:141](../../index.php#L141) |
+| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:142](../../index.php#L142) |
+| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:143](../../index.php#L143) |
+| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:144](../../index.php#L144) |
+| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:145](../../index.php#L145) |
+| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:146](../../index.php#L146) |
+| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:147](../../index.php#L147) |
+| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:149](../../index.php#L149) |
+| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:150](../../index.php#L150) |
+| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:151](../../index.php#L151) |
+| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:160](../../index.php#L160) |
+| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:161](../../index.php#L161) |
+| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:175](../../index.php#L175) |
+| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:176](../../index.php#L176) |
+| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:177](../../index.php#L177) |
+| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:178](../../index.php#L178) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:181](../../index.php#L181) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:182](../../index.php#L182) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:183](../../index.php#L183) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:184](../../index.php#L184) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:197](../../index.php#L197) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:198](../../index.php#L198) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:199](../../index.php#L199) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:200](../../index.php#L200) |
+| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:216](../../index.php#L216) |
+| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:218](../../index.php#L218) |
 
 </details>
 
@@ -789,7 +805,7 @@ flowchart LR
 | `brief` | `20260815_brief_testimonials.sql` | `20260816_branding_testimonial_rating.sql` | `Models/Brief/AppBrief` |
 | `condominium_geolocations` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `condominium_onboarding_items` | `20261108_0010_condominium_onboarding.sql` | `20261108_0011_onboarding_alerts.sql` | `Services/OnboardingAlerts`, `Services/OnboardingCatalog`, `Services/OnboardingChecklist` |
-| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankReturns`, `Services/Erp/FinancialReports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Erp/VirtualDisk`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
+| `condominiums` | `20261107_0002_condominiums.sql` | `20261108_0005_condominiums_registry.sql`, `20261108_0006_drop_condominium_manager.sql` | `Controllers/Api/V1/Me`, `Controllers/Erp/Connect/Condominiums`, `Controllers/Erp/Connect/Inspections`, `Controllers/Erp/Connect/Registry`, `Controllers/Erp/Connect/Tickets`, `Controllers/Studio/Studio`, `Services/CondominiumRegistry`, `Services/CondominiumScope`, `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankReturns`, `Services/Erp/FinancialReports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/NotificationDispatcher`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Erp/VirtualDisk`, `Services/Inspections/InspectionService`, `Services/OnboardingAlerts`, `Services/Support/TicketService` |
 | `erp_access_logs` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_agreement_originals` | `20261108_0519_agreements.sql` | — | `Services/Erp/Agreements` |
 | `erp_agreements` | `20261108_0519_agreements.sql` | `20261108_0523_agreement_breach.sql` | `Services/Erp/Agreements` |
@@ -803,7 +819,7 @@ flowchart LR
 | `erp_chart_accounts` | `20261108_0405_chart_of_accounts.sql` | — | `Services/Erp/FinancialReports`, `Services/Erp/MonthClosing`, `Services/Erp/Registry/Definitions` |
 | `erp_check_copies` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_commitments` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_common_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService` |
+| `erp_common_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | — | `Services/Erp/NotificationDispatcher`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService` |
 | `erp_contracts` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/OperationalDashboard`, `Services/Erp/Registry/Definitions` |
 | `erp_cost_centers` | `20261108_0503_cost_centers.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_deliveries` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/OperationalDashboard`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
@@ -825,14 +841,15 @@ flowchart LR
 | `erp_month_closings` | `20261108_0511_month_closings.sql` | — | `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService` |
 | `erp_move_settings` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_moves` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_notification_outbox` | `20261108_0532_notification_outbox.sql` | — | `Services/Erp/NotificationOutbox` |
+| `erp_notification_deliveries` | `20261108_0533_notification_dispatch.sql` | — | `Services/Erp/NotificationDispatcher` |
+| `erp_notification_outbox` | `20261108_0532_notification_outbox.sql` | `20261108_0533_notification_dispatch.sql` | `Services/Erp/NotificationDispatcher`, `Services/Erp/NotificationOutbox` |
 | `erp_occurrences` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/Occurrences`, `Services/Erp/OperationalDashboard`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_pets` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_pouches` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_price_indexes` | `20261108_0522_billing_rules_price_indexes.sql` | — | `Services/Erp/BillingRules` |
 | `erp_recurring_entries` | `20261108_0508_recurring_entries.sql` | — | `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_reservations` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/OperationalDashboard`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
-| `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
+| `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/NotificationDispatcher`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_tariffs` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
 | `erp_unit_documents` | `20261108_0526_unit_documents.sql` | — | `Services/Erp/UnitDocuments` |
@@ -850,7 +867,7 @@ flowchart LR
 | `inspection_template_items` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `inspection_templates` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
 | `inspections` | `20261108_0101_inspections.sql` | — | `Services/Inspections/InspectionService` |
-| `mail_queue` | (legado) | `20260815_log_alerts.sql`, `20260815_mail_queue_scheduler.sql` | `Controllers/Studio/Studio`, `Services/OnboardingAlerts`, `Services/TwoFactorNotice`, `Support/Communication`, `Support/Email` |
+| `mail_queue` | (legado) | `20260815_log_alerts.sql`, `20260815_mail_queue_scheduler.sql` | `Controllers/Studio/Studio`, `Services/Erp/NotificationDispatcher`, `Services/OnboardingAlerts`, `Services/TwoFactorNotice`, `Support/Communication`, `Support/Email` |
 | `module_migrations` | `001_modules.sql` | — | `Support/StudioModules` |
 | `modules` | `001_modules.sql` | — | `Support/StudioModules` |
 | `movesos_versions` | `20260815_movesos_version_settings.sql` | `20260816_support_theme_version.sql` | `Controllers/Studio/Studio` |
@@ -879,7 +896,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (58)</summary>
+<details><summary><b>Controllers</b> (59)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -895,6 +912,7 @@ flowchart LR
 | [`Controllers/Api/V1/Me`](../../source/Controllers/Api/V1/Me.php) | Auth, CondominiumScope, TwoFactorService, Access | condominiums | — |
 | [`Controllers/Api/V1/MeterReadings`](../../source/Controllers/Api/V1/MeterReadings.php) | Auth, User, MeterReadings, RegistryNotFound, RegistryValidationException, Access | — | — |
 | [`Controllers/Api/V1/MonthClosings`](../../source/Controllers/Api/V1/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, Access | — | — |
+| [`Controllers/Api/V1/Notifications`](../../source/Controllers/Api/V1/Notifications.php) | Auth, User, NotificationDispatcher, RegistryNotFound, Access | — | — |
 | [`Controllers/Api/V1/Occurrences`](../../source/Controllers/Api/V1/Occurrences.php) | Auth, Occurrences, RegistryNotFound, TicketError, Access | — | — |
 | [`Controllers/Api/V1/OnboardingTemplates`](../../source/Controllers/Api/V1/OnboardingTemplates.php) | Auth, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
 | [`Controllers/Api/V1/OperationalDashboard`](../../source/Controllers/Api/V1/OperationalDashboard.php) | Auth, User, OperationalDashboard, RegistryNotFound, Access | — | — |
@@ -1004,17 +1022,17 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 38 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 39 |
 
 </details>
 
-<details><summary><b>Services</b> (54)</summary>
+<details><summary><b>Services</b> (55)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 5 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 30 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 31 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 2 |
 | [`Services/Erp/Agreements`](../../source/Services/Erp/Agreements.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_agreement_originals, erp_agreements, erp_bank_charges, erp_entries, erp_units, pages | 3 |
@@ -1031,7 +1049,8 @@ flowchart LR
 | [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 2 |
 | [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 7 |
-| [`Services/Erp/NotificationOutbox`](../../source/Services/Erp/NotificationOutbox.php) | — | erp_notification_outbox | 1 |
+| [`Services/Erp/NotificationDispatcher`](../../source/Services/Erp/NotificationDispatcher.php) | Connect, User, CondominiumScope, RegistryNotFound, AppLogger, Audit, Email, MailTemplate | condominiums, erp_common_areas, erp_notification_deliveries, erp_notification_outbox, erp_residents, mail_queue | 2 |
+| [`Services/Erp/NotificationOutbox`](../../source/Services/Erp/NotificationOutbox.php) | — | erp_notification_outbox | 2 |
 | [`Services/Erp/Occurrences`](../../source/Services/Erp/Occurrences.php) | Connect, User, CondominiumScope, RegistryNotFound, TicketService, Audit | erp_occurrences | 2 |
 | [`Services/Erp/OperationalDashboard`](../../source/Services/Erp/OperationalDashboard.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | erp_contracts, erp_deliveries, erp_entries, erp_insurances, erp_maintenances, erp_occurrences, erp_reservations, erp_waitlist | 3 |
 | [`Services/Erp/PanelSummaries`](../../source/Services/Erp/PanelSummaries.php) | Connect, User, CondominiumScope, RegistryNotFound | condominiums, erp_deliveries, erp_occurrences, erp_pets, erp_reservations, erp_residents, erp_units, erp_vehicles | 2 |
@@ -1041,7 +1060,7 @@ flowchart LR
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 10 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
 | [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 11 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_units, pages, system_audit_logs | 24 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_units, pages, system_audit_logs | 25 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 12 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 9 |
 | [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_unit_documents, erp_units, pages | 3 |
@@ -1083,7 +1102,7 @@ flowchart LR
 | [`Support/Erp/CondominiumContext`](../../source/Support/Erp/CondominiumContext.php) | Session, Auth, User, CondominiumScope, Access, AppLogger | — | 2 |
 | [`Support/Erp/FieldSpec`](../../source/Support/Erp/FieldSpec.php) | — | — | — |
 | [`Support/Erp/RegistryFormat`](../../source/Support/Erp/RegistryFormat.php) | — | — | — |
-| [`Support/MailTemplate`](../../source/Support/MailTemplate.php) | View | — | 3 |
+| [`Support/MailTemplate`](../../source/Support/MailTemplate.php) | View | — | 4 |
 | [`Support/Message`](../../source/Support/Message.php) | Session | — | — |
 | [`Support/Middleware/ApiAuthenticated`](../../source/Support/Middleware/ApiAuthenticated.php) | Session, Auth | — | — |
 | [`Support/Pager`](../../source/Support/Pager.php) | — | — | — |
@@ -1161,6 +1180,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0052 — Seletor do Disco Virtual no anexo dos cadastros (AP-126 a AP-129)](../../docs/Organic%20Code/decisions/0052-registry-attachment-picker.md)
 - [0053 — Dashboard com alertas reais, chamada da lista de espera e próxima manutenção](../../docs/Organic%20Code/decisions/0053-operational-dashboard.md)
 - [0054 — Painéis do condomínio e da unidade, e outbox de notificações](../../docs/Organic%20Code/decisions/0054-condominium-unit-panels.md)
+- [0055 — Fila de envio dos avisos do ERP pelo container send](../../docs/Organic%20Code/decisions/0055-notification-dispatch.md)
 - [0070 — Telas do Operacional e dashboard com dados reais](../../docs/Organic%20Code/decisions/0070-operational-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
