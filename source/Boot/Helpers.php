@@ -330,14 +330,16 @@ function url_back(): string
  */
 function redirect(string $url): void
 {
-    header("HTTP/1.1 302 Redirect");
-    if (filter_var($url, FILTER_VALIDATE_URL)) {
-        header("Location: {$url}");
-        exit;
-    }
-
-    if (filter_input(INPUT_GET, "route", FILTER_DEFAULT) != $url) {
+    $location = filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+    if ($location === null && filter_input(INPUT_GET, "route", FILTER_DEFAULT) != $url) {
         $location = url($url);
+    }
+    // Nos testes, exit encerraria o PHPUnit no meio da suíte sem relatório.
+    if (getenv('MOVESOS_ENV') === 'testing') {
+        throw new \Source\Support\RedirectIntercepted($location ?? $url);
+    }
+    header("HTTP/1.1 302 Redirect");
+    if ($location !== null) {
         header("Location: {$location}");
         exit;
     }

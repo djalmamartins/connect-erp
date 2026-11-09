@@ -83,7 +83,7 @@ final class Login extends Controller
             redirect(erp_url('/dashboard'));
             return;
         }
-        Auth::logout();
+        Auth::logout(true);
         redirect(erp_url('/login'));
     }
 

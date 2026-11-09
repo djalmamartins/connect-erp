@@ -9,6 +9,7 @@ use Source\Models\Auth;
 use Source\Models\Session\AppLog;
 use Source\Models\User;
 use Source\Services\Environments;
+use Source\Services\SessionRevocation;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
 
@@ -92,7 +93,7 @@ final class Handoff
         $current = Auth::user();
         if ($current === null || (int)$current->id !== (int)$user->id) {
             Auth::cancelTwoFactor();
-            (new Session())->regenerate()->set('authUser', (int)$user->id);
+            (new Session())->regenerate()->set('authUser', (int)$user->id)->set(Auth::AUTH_AT, SessionRevocation::nowMs() + 1);
             (new AppLog())->register((int)$user->id, 'Entrou pelo alternador de ambientes: ' . $key);
             Audit::record('environment_handoff', 'users', (int)$user->id, [], ['environment' => $key]);
         }

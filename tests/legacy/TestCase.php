@@ -7,6 +7,7 @@ namespace MovesOSTests;
 use PDO;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Source\Core\Connect;
+use Source\Services\SessionRevocation;
 use Source\Support\Access;
 
 abstract class TestCase extends PHPUnitTestCase
@@ -26,6 +27,7 @@ abstract class TestCase extends PHPUnitTestCase
             $this->resetDatabase();
         }
         Access::clear();
+        SessionRevocation::clearCache();
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
@@ -95,6 +97,43 @@ abstract class TestCase extends PHPUnitTestCase
             $this->pdo->exec("TRUNCATE TABLE {$table}");
         }
         $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        // Tabelas de autenticação sem FK (ADR 0023 e 0036): falhas de login e logouts de um teste
+        // não podem bloquear ou derrubar o login do próximo.
+        foreach (['auth_throttle_events', 'user_session_revocations'] as $table) {
+            $this->pdo->exec("TRUNCATE TABLE {$table}");
+        }
         $this->pdo->exec('UPDATE settings SET access_studio=1,access_erp=1,access_app=1,access_site=1,access_support=1 WHERE id=1');
+    }
+
+    /**
+     * Cadastra em access_permissions todos os slugs das migrations, sem papel, como no banco
+     * real. Sem isso o TRUNCATE deixa studio.access sem cadastro, Access::can nega (issue #8) e
+     * os controllers do Studio caem em redirect() para o login.
+     */
+    protected function registerMigrationPermissions(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $files = array_merge(
+            glob($root . '/database/legacy-migrations/migrations/*.sql') ?: [],
+            glob($root . '/database/migrations/*.sql') ?: [],
+            glob($root . '/container/cms/studio/v1/components/*/database/*.sql') ?: []
+        );
+        $insert = $this->pdo->prepare("INSERT IGNORE INTO access_permissions (name, slug, group_name) VALUES (?, ?, 'Teste')");
+        foreach ($files as $file) {
+            if (str_ends_with($file, '.down.sql')) {
+                continue;
+            }
+            $sql = (string)file_get_contents($file);
+            if (!preg_match_all('/INSERT[^;]*?INTO\s+`?access_permissions`?[^;]*?VALUES(.*?);/is', $sql, $blocks)) {
+                continue;
+            }
+            foreach ($blocks[1] as $values) {
+                preg_match_all("/\\(\\s*'([^']*)'\\s*,\\s*'([a-z0-9_]+(?:\\.[a-z0-9_]+)+)'/", $values, $tuples, PREG_SET_ORDER);
+                foreach ($tuples as [, $name, $slug]) {
+                    $insert->execute([$name, $slug]);
+                }
+            }
+        }
+        Access::clear();
     }
 }

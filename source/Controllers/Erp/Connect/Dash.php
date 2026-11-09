@@ -117,7 +117,7 @@ class Dash extends Erp
     {
         (new AppLog())->register($this->user->id, "Deslogou");
         $this->message->success("Você saiu com sucesso {$this->user->first_name}.")->flash();
-        Auth::logout();
+        Auth::logout(true);
         redirect(erp_url('/login'));
     }
 
