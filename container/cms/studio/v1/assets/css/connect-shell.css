@@ -2,17 +2,17 @@
  * Connect — moldura do ERP no Studio (CMS) e no Help Desk (ADR 0026).
  *
  * Carregada depois de studio.min.css só por layouts/studio.php. Faz duas coisas:
- *   1. troca os tokens --studio-* / --org-* pelos valores do design system do ERP
- *      (container/erp/connect/v1/assets/css/erp.css: verde Connect, Inter, canvas claro),
- *      para que cards, botões, tabelas e campos dos componentes sigam o ERP sem reescrevê-los;
- *   2. redesenha a moldura (sidebar verde profunda, logotipo Connect, navbar) igual à do ERP.
- * Os valores abaixo espelham os tokens do ERP; ao mudar a identidade do ERP, mude aqui também.
- * Seletores começam por body.studio-erp para vencer os temas Studio (roxo) e Help Desk (azul).
+ *   1. troca os tokens --studio-* / --org-* pelos tokens --cx-* (Inter, mesmas medidas e
+ *      superfícies do ERP), para que cards, botões, tabelas e campos sigam o ERP sem reescrevê-los;
+ *   2. redesenha a moldura (sidebar escura, logotipo Connect, navbar) igual à do ERP.
+ * Cores: a estrutura é a do ERP, mas cada ambiente tem a sua paleta (pedido do Djalma, 09/11):
+ * Studio em tons de roxo e Help Desk em azul. As paletas ficam no fim do bloco de tokens.
+ * Seletores começam por body.studio-erp para vencer os temas antigos do Studio e do Help Desk.
  */
 
 body.studio-v2.studio-erp,
 body.studio-v2.studio-erp[data-environment] {
-    /* Tokens do ERP (espelho de erp.css) */
+    /* Medidas e tipografia do ERP (espelho de erp.css); cores do verde do ERP como base */
     --cx-font: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     --cx-brand: #07884c;
     --cx-brand-strong: #066f3e;
@@ -37,6 +37,15 @@ body.studio-v2.studio-erp[data-environment] {
     --cx-faint: #8a9a92;
     --cx-ring: rgba(7, 136, 76, .18);
     --cx-shadow-card: 0 5px 20px rgba(35, 58, 48, .06);
+    --cx-shadow-pop: 0 14px 34px rgba(20, 44, 33, .12);
+    --cx-shadow-drawer: 0 30px 80px rgba(4, 30, 22, .32);
+    --cx-backdrop: rgba(4, 30, 22, .45);
+    --cx-brand-active: #055a33;
+    --cx-surface-hover: #f1f8f4;
+    --cx-divider: #e9f0ec;
+    --cx-field: #f3f7f5;
+    --cx-field-hover: #ebf2ee;
+    --cx-body-text: #3d4a44;
     --cx-sidebar-width: 250px;
     --cx-sidebar-collapsed: 76px;
     --cx-navbar-height: 68px;
@@ -44,7 +53,7 @@ body.studio-v2.studio-erp[data-environment] {
     /* Tokens do Studio apontados para o ERP */
     --studio-primary: var(--cx-brand);
     --studio-primary-hover: var(--cx-brand-strong);
-    --studio-primary-active: #055a33;
+    --studio-primary-active: var(--cx-brand-active);
     --studio-primary-soft: var(--cx-brand-soft);
     --studio-primary-line: var(--cx-brand-line);
     --studio-primary-ring: var(--cx-ring);
@@ -54,16 +63,16 @@ body.studio-v2.studio-erp[data-environment] {
     --studio-canvas: var(--cx-canvas);
     --studio-surface: var(--cx-surface);
     --studio-surface-soft: var(--cx-surface-muted);
-    --studio-surface-hover: #f1f8f4;
+    --studio-surface-hover: var(--cx-surface-hover);
     --studio-ink: var(--cx-text);
-    --studio-text: #3d4a44;
+    --studio-text: var(--cx-body-text);
     --studio-muted: var(--cx-muted);
     --studio-placeholder: var(--cx-faint);
     --studio-border: var(--cx-border);
     --studio-border-strong: var(--cx-border-strong);
-    --studio-divider: #e9f0ec;
-    --studio-field-bg: #f3f7f5;
-    --studio-field-bg-hover: #ebf2ee;
+    --studio-divider: var(--cx-divider);
+    --studio-field-bg: var(--cx-field);
+    --studio-field-bg-hover: var(--cx-field-hover);
     --studio-field-bg-focus: #ffffff;
     --studio-success: #12805c;
     --studio-success-soft: #e3f4ec;
@@ -88,6 +97,64 @@ body.studio-v2.studio-erp[data-environment] {
     font-family: var(--cx-font);
     -webkit-font-smoothing: antialiased;
 }
+/* Paletas por ambiente (mesma estrutura do ERP, cores próprias) ------------- */
+/* Studio (CMS): tons de roxo, a partir do roxo histórico do Studio (#68109f). */
+body.studio-v2.studio-erp[data-environment="studio"] {
+    --cx-brand: #6b1fa8;
+    --cx-brand-strong: #561886;
+    --cx-brand-active: #45136b;
+    --cx-brand-soft: #f4ecfa;
+    --cx-brand-line: #e3d2f0;
+    --cx-ring: rgba(107, 31, 168, .18);
+    --cx-sidebar: #2a0f40;
+    --cx-sidebar-ink: #e4d8ee;
+    --cx-sidebar-muted: #a98fc0;
+    --cx-sidebar-accent: #d7a8ff;
+    --cx-canvas: #f6f2fa;
+    --cx-surface-muted: #faf7fc;
+    --cx-surface-hover: #f7f1fb;
+    --cx-border: #e6deee;
+    --cx-border-strong: #d4c8e0;
+    --cx-divider: #eee8f3;
+    --cx-field: #f5f1f9;
+    --cx-field-hover: #eee7f4;
+    --cx-muted: #6f6680;
+    --cx-faint: #9a90a8;
+    --cx-body-text: #463f52;
+    --cx-shadow-card: 0 5px 20px rgba(48, 22, 70, .06);
+    --cx-shadow-pop: 0 14px 34px rgba(42, 15, 64, .14);
+    --cx-shadow-drawer: 0 30px 80px rgba(26, 8, 40, .36);
+    --cx-backdrop: rgba(26, 8, 40, .45);
+}
+/* Help Desk: azul, a partir do azul histórico do Help Desk (#2563eb). */
+body.studio-v2.studio-erp[data-environment="helpdesk"] {
+    --cx-brand: #2563eb;
+    --cx-brand-strong: #1d4ed8;
+    --cx-brand-active: #1e40af;
+    --cx-brand-soft: #eef4ff;
+    --cx-brand-line: #c9dafc;
+    --cx-ring: rgba(37, 99, 235, .18);
+    --cx-sidebar: #0f1f45;
+    --cx-sidebar-ink: #d6e0f5;
+    --cx-sidebar-muted: #8ea2c9;
+    --cx-sidebar-accent: #93c5fd;
+    --cx-canvas: #f1f5fc;
+    --cx-surface-muted: #f7f9fd;
+    --cx-surface-hover: #f2f6fe;
+    --cx-border: #dde5f1;
+    --cx-border-strong: #c8d3e5;
+    --cx-divider: #e8eef7;
+    --cx-field: #f2f5fa;
+    --cx-field-hover: #eaeff7;
+    --cx-muted: #64718a;
+    --cx-faint: #8c97ab;
+    --cx-body-text: #3e4a60;
+    --cx-shadow-card: 0 5px 20px rgba(20, 36, 72, .06);
+    --cx-shadow-pop: 0 14px 34px rgba(15, 31, 69, .14);
+    --cx-shadow-drawer: 0 30px 80px rgba(8, 18, 44, .36);
+    --cx-backdrop: rgba(8, 18, 44, .45);
+}
+
 body.studio-erp,
 body.studio-erp button,
 body.studio-erp input,
@@ -129,19 +196,30 @@ body.studio-erp .studio-erp-context small { margin: 0; color: var(--cx-sidebar-m
 body.studio-erp .studio-erp-context strong { overflow: hidden; color: var(--cx-sidebar-strong); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap }
 body.studio-erp .studio-erp-context ion-icon { flex: none; color: var(--cx-sidebar-muted) }
 
-/* Menu */
-body.studio-erp .studio-nav-v2 { gap: 2px; padding: 0 4px 12px; scrollbar-color: rgba(255, 255, 255, .2) transparent }
-body.studio-erp .studio-nav-v2 > small { padding: 14px 12px 4px; color: var(--cx-sidebar-muted); font-size: 10.5px; letter-spacing: .07em }
-body.studio-erp .studio-nav-v2 > a,
+/* Menu: mesmo desenho do ERP (links diretos e grupos em <details> com submenu) */
+body.studio-erp .studio-erp-nav { display: grid; flex: 1; min-height: 0; margin: 0; align-content: start; gap: 2px; padding: 0 4px 12px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent }
+body.studio-erp .studio-erp-nav-link,
+body.studio-erp .studio-erp-nav-group > summary,
 body.studio-erp .studio-sidebar-footer > a {
-    height: auto !important; min-height: 40px !important; margin: 0 !important; gap: 12px !important; padding: 8px 12px !important; border-radius: 11px !important;
-    color: var(--cx-sidebar-ink) !important; font-size: 14px !important; font-weight: 550 !important;
+    display: flex !important; height: auto !important; min-height: 40px !important; margin: 0 !important; align-items: center; gap: 12px !important;
+    padding: 8px 12px !important; border: 0 !important; border-radius: 11px !important; background: transparent !important; box-shadow: none !important;
+    color: var(--cx-sidebar-ink) !important; font-size: 14px !important; font-weight: 550 !important; line-height: 1.3 !important;
+    list-style: none; cursor: pointer; transition: background .18s, color .18s;
 }
-body.studio-erp .studio-nav-v2 > a:hover,
+body.studio-erp .studio-erp-nav-group > summary::-webkit-details-marker { display: none }
+body.studio-erp .studio-erp-nav ion-icon { width: 20px; height: 20px; flex: 0 0 20px; font-size: 20px }
+body.studio-erp .studio-erp-nav-link:hover,
+body.studio-erp .studio-erp-nav-group > summary:hover,
 body.studio-erp .studio-sidebar-footer > a:hover { background: var(--cx-sidebar-hover) !important; color: var(--cx-sidebar-strong) !important; text-decoration: none }
-body.studio-erp .studio-nav-v2 > a.active { background: var(--cx-sidebar-active) !important; color: var(--cx-sidebar-strong) !important; font-weight: 600 !important }
-body.studio-erp .studio-nav-v2 > a.active .studio-nav-icon { color: var(--cx-sidebar-accent) !important }
-body.studio-erp .studio-nav-v2 > a > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+body.studio-erp .studio-erp-nav-link[aria-current="page"] { background: var(--cx-sidebar-active) !important; color: var(--cx-sidebar-strong) !important; font-weight: 600 !important }
+body.studio-erp .studio-erp-nav-group > summary.is-active { color: var(--cx-sidebar-accent) !important; font-weight: 600 !important }
+body.studio-erp .studio-erp-nav-group > summary::after { content: ""; width: 7px; height: 7px; margin-left: auto; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; opacity: .7; transform: rotate(-45deg); transition: transform .2s }
+body.studio-erp .studio-erp-nav-group[open] > summary::after { transform: rotate(45deg) }
+body.studio-erp .studio-erp-nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+body.studio-erp .studio-erp-nav-sub { display: grid; gap: 1px; margin: 2px 0 6px 22px; padding-left: 10px; border-left: 1px solid var(--cx-sidebar-line) }
+body.studio-erp .studio-erp-nav-sub a { display: block !important; height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 6px 10px !important; border: 0 !important; border-radius: 8px !important; background: transparent !important; color: var(--cx-sidebar-ink) !important; font-size: 13px !important; font-weight: 500 !important }
+body.studio-erp .studio-erp-nav-sub a:hover { background: var(--cx-sidebar-hover) !important; color: var(--cx-sidebar-strong) !important; text-decoration: none }
+body.studio-erp .studio-erp-nav-sub a[aria-current="page"] { background: var(--cx-sidebar-active) !important; color: var(--cx-sidebar-strong) !important; font-weight: 600 !important }
 
 /* Rodapé da sidebar: perfil, como no ERP */
 body.studio-erp .studio-erp-sidebar-foot { padding: 12px 4px 0 !important; border-top: 1px solid var(--cx-sidebar-line) !important }
@@ -159,12 +237,13 @@ body.studio-erp .studio-erp-avatar { display: grid; width: 36px; height: 36px; f
     body.studio-erp.menu-collapsed .studio-erp-brand-logo { display: none }
     body.studio-erp.menu-collapsed .studio-erp-brand-mark { display: block }
     body.studio-erp.menu-collapsed .studio-erp-collapse ion-icon { transform: rotate(180deg) }
-    body.studio-erp.menu-collapsed .studio-erp-context { justify-content: center; padding: 8px }
-    body.studio-erp.menu-collapsed .studio-erp-context > span,
-    body.studio-erp.menu-collapsed .studio-nav-v2 > small,
-    body.studio-erp.menu-collapsed .studio-nav-v2 > a > span,
-    body.studio-erp.menu-collapsed .studio-erp-profile > span:last-child { display: none }
-    body.studio-erp.menu-collapsed .studio-nav-v2 > a,
+    body.studio-erp.menu-collapsed .studio-erp-context,
+    body.studio-erp.menu-collapsed .studio-erp-nav-label,
+    body.studio-erp.menu-collapsed .studio-erp-nav-sub,
+    body.studio-erp.menu-collapsed .studio-erp-nav-group > summary::after,
+    body.studio-erp.menu-collapsed .studio-erp-profile > span:last-child { display: none !important }
+    body.studio-erp.menu-collapsed .studio-erp-nav-link,
+    body.studio-erp.menu-collapsed .studio-erp-nav-group > summary,
     body.studio-erp.menu-collapsed .studio-sidebar-footer > a { justify-content: center; padding-inline: 0 !important }
 }
 
@@ -197,9 +276,9 @@ body.studio-erp .studio-header-profile > span strong { font-size: 13px }
 
 /* Painéis suspensos e troca de ambiente */
 body.studio-erp .studio-profile-menu,
-body.studio-erp .studio-notification-panel { border-color: var(--cx-border); border-radius: 15px; box-shadow: 0 14px 34px rgba(20, 44, 33, .12) }
+body.studio-erp .studio-notification-panel { border-color: var(--cx-border); border-radius: 15px; box-shadow: var(--cx-shadow-pop) }
 body.studio-erp .studio-profile-menu a:hover { background: var(--cx-brand-soft); color: var(--cx-brand-strong) }
-body.studio-erp .studio-system-panel { border-color: var(--cx-border); border-radius: 15px; background: var(--cx-surface); box-shadow: 0 14px 34px rgba(20, 44, 33, .12) }
+body.studio-erp .studio-system-panel { border-color: var(--cx-border); border-radius: 15px; background: var(--cx-surface); box-shadow: var(--cx-shadow-pop) }
 body.studio-erp .studio-system-panel > a:hover,
 body.studio-erp .studio-system-panel > a.current { background: var(--cx-brand-soft); color: var(--cx-brand-strong) }
 
@@ -218,10 +297,10 @@ body.studio-erp .studio-preloader-card small { color: var(--cx-brand) }
     body.studio-erp .studio-main { width: 100%; margin-left: 0 }
     body.studio-erp .studio-menu { display: grid }
     body.studio-erp .studio-sidebar { transform: translateX(-105%); box-shadow: none !important }
-    body.studio-erp.menu-open .studio-sidebar { transform: none; box-shadow: 0 30px 80px rgba(4, 30, 22, .32) !important }
+    body.studio-erp.menu-open .studio-sidebar { transform: none; box-shadow: var(--cx-shadow-drawer) !important }
     body.studio-erp .studio-sidebar-backdrop { position: fixed; inset: 0; z-index: 90; display: none; border: 0 }
     body.studio-erp.menu-open .studio-sidebar-backdrop { display: block }
-    body.studio-erp .studio-sidebar-backdrop { background: rgba(4, 30, 22, .45) }
+    body.studio-erp .studio-sidebar-backdrop { background: var(--cx-backdrop) }
     body.studio-erp .studio-topbar { padding: 0 16px }
     body.studio-erp .studio-content { padding: 20px 16px 32px }
 }
@@ -239,16 +318,12 @@ body.studio-erp .studio-preloader-card small { color: var(--cx-brand) }
 body.studio-erp .studio-user-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px }
 body.studio-erp .studio-user-hero-actions .status { display: inline-flex; align-items: center; gap: 6px }
 
-/* Help Desk: neutraliza o destaque azul do tema antigo; mesma identidade do ERP */
+/* Help Desk: as regras do tema antigo passam a usar a paleta azul dos tokens */
 body.studio-erp[data-environment="helpdesk"] .studio-btn.primary { border-color: var(--cx-brand); background: var(--cx-brand) }
 body.studio-erp[data-environment="helpdesk"] .studio-btn.primary:hover { border-color: var(--cx-brand-strong); background: var(--cx-brand-strong) }
 body.studio-erp[data-environment="helpdesk"] .studio-brand-v2 small { color: var(--cx-sidebar-muted) }
-body.studio-erp[data-environment="helpdesk"] .studio-nav-v2 > a.active { border-color: transparent; background: var(--cx-sidebar-active) !important; color: var(--cx-sidebar-strong) !important; box-shadow: none !important }
-body.studio-erp[data-environment="helpdesk"] .studio-nav-v2 > a.active .studio-nav-icon { color: var(--cx-sidebar-accent) !important }
 body.studio-erp[data-environment="helpdesk"] .studio-system-panel > a:hover,
 body.studio-erp[data-environment="helpdesk"] .studio-system-panel > a.current { background: var(--cx-brand-soft); color: var(--cx-brand-strong) }
-body.studio-erp .studio-nav-v2 { justify-content: flex-start }
-body.studio-erp .studio-nav-v2 > a { flex: 0 0 auto }
 body.studio-erp .studio-btn.primary { border-color: var(--cx-brand); background: var(--cx-brand); color: #fff }
 body.studio-erp .studio-btn.primary:hover { border-color: var(--cx-brand-strong); background: var(--cx-brand-strong) }
 

@@ -39,39 +39,66 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
             <small>AMBIENTES CONNECT</small>
             <?php $systems=[['Studio','Gestão de conteúdo e operação','/studio/dash','grid-outline','studio.access',!$isHelpDeskEnvironment],['ERP','Gestão administrativa','/erp','business-outline','erp.access',false],['Help Desk','Atendimento e chamados','/helpdesk','headset-outline','support.manage',$isHelpDeskEnvironment],['Moradores','Portal de moradores','/app','home-outline','app.access',false],['Site','Site institucional','/','globe-outline','site.access',false]]; foreach($systems as [$systemName,$systemDescription,$systemUrl,$systemIcon,$systemPermission,$current]): if(!$user->can($systemPermission))continue; $systemHref=$systemUrl==='/'?$siteHome:url($systemUrl); ?><a href="<?= $systemHref ?>" class="<?= $current?'current':'' ?>"><ion-icon name="<?= $systemIcon ?>"></ion-icon><span><strong><?= $systemName ?></strong><small><?= $systemDescription ?></small></span><?= $current?'<em>Atual</em>':'' ?></a><?php endforeach; ?>
         </div>
-        <?php $nav = function(string $key,string $href,string $label,string $icon,string $permission) use($app,$user){if(!$user->can($permission))return '';$active=$app===$key?'active':''; return '<a class="'.$active.'" href="'.url($href).'" title="'.htmlspecialchars($label).'"><ion-icon name="'.$icon.'" class="studio-nav-icon"></ion-icon><span>'.$label.'</span></a>';}; ?>
-        <nav class="studio-nav-v2">
-            <?php if($isHelpDeskEnvironment): ?>
-            <small>HELP DESK</small>
-            <?= $nav('tickets','/helpdesk/tickets','Fila de chamados','headset-outline','support.manage') ?>
-            <?= $nav('support','/helpdesk/support','Base de conhecimento','library-outline','support.manage') ?>
-            <?= $nav('agenda','/helpdesk/agenda','Agenda da equipe','calendar-outline','support.manage') ?>
-            <small>GESTÃO</small>
-            <?= $nav('users','/helpdesk/users','Usuários','people-outline','users.manage') ?>
-            <?= $nav('settings','/helpdesk/settings','Configurações','settings-outline','settings.manage') ?>
-            <?= $nav('versions','/helpdesk/versions','Versões','pricetags-outline','settings.manage') ?>
-            <?= $nav('system-logs','/helpdesk/system-logs','Log','bug-outline','logs.view') ?>
-            <small>AMBIENTE</small>
-            <?= $nav('dash','/studio/dash','Voltar ao Studio','arrow-back-outline','dashboard.view') ?>
-            <?php else: ?>
-            <small>VISÃO GERAL</small>
-            <?= $nav('dash','/studio/dash','Dashboard','grid-outline','dashboard.view') ?>
-            <?= $nav('reports','/studio/reports','Relatórios','stats-chart-outline','reports.view') ?>
-            <?= $nav('notifications','/studio/notifications','Notificações','notifications-outline','notifications.manage') ?>
-            <?= $nav('proposals','/studio/proposals','Propostas','document-text-outline','proposals.manage') ?>
-            <small>CONTEÚDO</small>
-            <?= $nav('pages','/studio/pages','Páginas','documents-outline','pages.manage') ?>
-            <?= $nav('blog','/studio/blog/home','Artigos','newspaper-outline','articles.manage') ?>
-            <?= $nav('media','/studio/media','Mídia','images-outline','media.manage') ?>
-            <?= $nav('slides','/studio/slides','Destaques','albums-outline','slides.manage') ?>
-            <?= $nav('testimonials','/studio/testimonials','Depoimentos','chatbox-ellipses-outline','testimonials.manage') ?>
-            <?= $nav('faqs','/studio/faqs','FAQ','help-circle-outline','faqs.manage') ?>
-            <small>GESTÃO</small>
-            <?= $nav('users','/studio/users','Usuários','people-outline','users.manage') ?>
-            <?= $nav('settings','/studio/settings','Configurações','settings-outline','settings.manage') ?>
-            <?= $nav('versions','/studio/versions','Versões','pricetags-outline','settings.manage') ?>
-            <?= $nav('system-logs','/studio/system-logs','Log','bug-outline','logs.view') ?>
-            <?php endif; ?>
+        <?php
+        // Menu no desenho do ERP: links diretos e grupos em <details> (abertos quando contêm a página atual).
+        // Cada item: [chave do app, rota, rótulo, ícone, permissão]. A rota valida a permissão de novo.
+        $menu = $isHelpDeskEnvironment ? [
+            ['link', ['tickets','/helpdesk/tickets','Fila de chamados','headset-outline','support.manage']],
+            ['group', 'Atendimento', 'library-outline', [
+                ['support','/helpdesk/support','Base de conhecimento','library-outline','support.manage'],
+                ['agenda','/helpdesk/agenda','Agenda da equipe','calendar-outline','support.manage'],
+            ]],
+            ['group', 'Gestão', 'settings-outline', [
+                ['users','/helpdesk/users','Usuários','people-outline','users.manage'],
+                ['settings','/helpdesk/settings','Configurações','settings-outline','settings.manage'],
+                ['versions','/helpdesk/versions','Versões','pricetags-outline','settings.manage'],
+                ['system-logs','/helpdesk/system-logs','Log','bug-outline','logs.view'],
+            ]],
+            ['link', ['dash','/studio/dash','Voltar ao Studio','arrow-back-outline','dashboard.view']],
+        ] : [
+            ['link', ['dash','/studio/dash','Dashboard','grid-outline','dashboard.view']],
+            ['group', 'Visão geral', 'stats-chart-outline', [
+                ['reports','/studio/reports','Relatórios','stats-chart-outline','reports.view'],
+                ['notifications','/studio/notifications','Notificações','notifications-outline','notifications.manage'],
+                ['proposals','/studio/proposals','Propostas','document-text-outline','proposals.manage'],
+            ]],
+            ['group', 'Conteúdo', 'documents-outline', [
+                ['pages','/studio/pages','Páginas','documents-outline','pages.manage'],
+                ['blog','/studio/blog/home','Artigos','newspaper-outline','articles.manage'],
+                ['media','/studio/media','Mídia','images-outline','media.manage'],
+                ['slides','/studio/slides','Destaques','albums-outline','slides.manage'],
+                ['testimonials','/studio/testimonials','Depoimentos','chatbox-ellipses-outline','testimonials.manage'],
+                ['faqs','/studio/faqs','FAQ','help-circle-outline','faqs.manage'],
+            ]],
+            ['group', 'Gestão', 'settings-outline', [
+                ['users','/studio/users','Usuários','people-outline','users.manage'],
+                ['settings','/studio/settings','Configurações','settings-outline','settings.manage'],
+                ['versions','/studio/versions','Versões','pricetags-outline','settings.manage'],
+                ['system-logs','/studio/system-logs','Log','bug-outline','logs.view'],
+            ]],
+        ];
+        $menuCurrent = static fn(string $key): string => $app === $key ? ' aria-current="page"' : '';
+        ?>
+        <nav class="studio-erp-nav" aria-label="Menu principal">
+            <?php foreach ($menu as $entry):
+                if ($entry[0] === 'link'):
+                    [$key, $href, $label, $icon, $permission] = $entry[1];
+                    if (!$user->can($permission)) continue; ?>
+                    <a class="studio-erp-nav-link" href="<?= url($href) ?>"<?= $menuCurrent($key) ?> title="<?= htmlspecialchars($label) ?>"><ion-icon name="<?= $icon ?>" aria-hidden="true"></ion-icon><span class="studio-erp-nav-label"><?= htmlspecialchars($label) ?></span></a>
+                <?php continue; endif;
+                [, $groupLabel, $groupIcon, $items] = $entry;
+                $items = array_values(array_filter($items, static fn(array $item): bool => $user->can($item[4])));
+                if (!$items) continue;
+                $groupActive = in_array($app, array_column($items, 0), true); ?>
+                <details class="studio-erp-nav-group"<?= $groupActive ? ' open' : '' ?>>
+                    <summary<?= $groupActive ? ' class="is-active"' : '' ?> title="<?= htmlspecialchars($groupLabel) ?>"><ion-icon name="<?= $groupIcon ?>" aria-hidden="true"></ion-icon><span class="studio-erp-nav-label"><?= htmlspecialchars($groupLabel) ?></span></summary>
+                    <div class="studio-erp-nav-sub">
+                        <?php foreach ($items as [$key, $href, $label]): ?>
+                            <a href="<?= url($href) ?>"<?= $menuCurrent($key) ?>><?= htmlspecialchars($label) ?></a>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+            <?php endforeach; ?>
         </nav>
         <div class="studio-sidebar-footer studio-erp-sidebar-foot">
             <a class="studio-erp-profile" href="<?= url(($isHelpDeskEnvironment?'/helpdesk':'/studio').'/user/'.$user->id) ?>" title="Minha conta"><span class="studio-erp-avatar" aria-hidden="true"><?= htmlspecialchars($userInitial) ?></span><span><strong><?= htmlspecialchars($user->fullName()) ?></strong><small>Connect · administradora</small></span></a>
@@ -137,6 +164,7 @@ if(!studioIsMobile()&&localStorage.getItem('studio-menu-collapsed')==='1')docume
 const studioCollapseButton=document.querySelector('[data-studio-collapse]');
 const studioToggleMenu=()=>{if(studioIsMobile()){document.body.classList.toggle('menu-open')}else{document.body.classList.toggle('menu-collapsed');localStorage.setItem('studio-menu-collapsed',document.body.classList.contains('menu-collapsed')?'1':'0')}studioSetMenuState()};
 studioMenuButton?.addEventListener('click',studioToggleMenu);
+document.querySelectorAll('.studio-erp-nav-group > summary').forEach(summary=>summary.addEventListener('click',()=>{if(!studioIsMobile()&&document.body.classList.contains('menu-collapsed'))studioToggleMenu()}));
 studioCollapseButton?.addEventListener('click',()=>{if(studioIsMobile()){document.body.classList.remove('menu-open');studioSetMenuState()}else studioToggleMenu()});
 document.querySelector('.studio-sidebar-backdrop')?.addEventListener('click',()=>{document.body.classList.remove('menu-open');studioSetMenuState()});
 window.addEventListener('resize',()=>{if(!studioIsMobile())document.body.classList.remove('menu-open');studioSetMenuState()});

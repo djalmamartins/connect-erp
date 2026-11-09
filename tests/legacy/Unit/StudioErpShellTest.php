@@ -56,15 +56,31 @@ final class StudioErpShellTest extends TestCase
         self::assertFileExists($root . '/assets/css/connect-shell.css');
     }
 
-    public function testVisualLayerMirrorsErpTokens(): void
+    public function testVisualLayerMirrorsErpStructure(): void
     {
         $erp = (string)file_get_contents(moves_container_path('erp', CONF_VIEW_ERP) . '/assets/css/erp.css');
         $shell = (string)file_get_contents(moves_container_path('studio', 'default') . '/assets/css/connect-shell.css');
-        foreach (['brand', 'brand-strong', 'brand-soft', 'sidebar', 'sidebar-ink', 'sidebar-accent', 'canvas', 'border', 'text', 'muted'] as $token) {
-            self::assertMatchesRegularExpression('/--erp-' . preg_quote($token, '/') . ':\s*([^;]+);/', $erp, $token);
+        foreach (['font', 'sidebar-width', 'sidebar-collapsed', 'navbar-height'] as $token) {
             preg_match('/--erp-' . preg_quote($token, '/') . ':\s*([^;]+);/', $erp, $erpValue);
             preg_match('/--cx-' . preg_quote($token, '/') . ':\s*([^;]+);/', $shell, $shellValue);
-            self::assertSame(trim($erpValue[1]), trim($shellValue[1] ?? ''), "token $token igual ao do ERP");
+            self::assertNotEmpty($erpValue[1] ?? '', $token);
+            self::assertSame(trim($erpValue[1]), trim($shellValue[1] ?? ''), "medida $token igual à do ERP");
+        }
+    }
+
+    public function testEachEnvironmentHasItsOwnPalette(): void
+    {
+        $shell = (string)file_get_contents(moves_container_path('studio', 'default') . '/assets/css/connect-shell.css');
+        $palette = static function (string $environment) use ($shell): string {
+            preg_match('/body\.studio-v2\.studio-erp\[data-environment="' . $environment . '"\]\s*\{([^}]*)\}/', $shell, $block);
+            return $block[1] ?? '';
+        };
+        self::assertStringContainsString('--cx-brand: #6b1fa8', $palette('studio'), 'Studio em roxo');
+        self::assertStringContainsString('--cx-brand: #2563eb', $palette('helpdesk'), 'Help Desk em azul');
+        foreach (['studio', 'helpdesk'] as $environment) {
+            foreach (['--cx-sidebar:', '--cx-canvas:', '--cx-brand-soft:', '--cx-sidebar-accent:'] as $token) {
+                self::assertStringContainsString($token, $palette($environment), "$environment define $token");
+            }
         }
     }
 

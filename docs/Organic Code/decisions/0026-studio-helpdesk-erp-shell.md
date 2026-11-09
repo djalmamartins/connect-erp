@@ -41,3 +41,14 @@ e dezenas de components que dependem das classes `studio-*`.
 - No lab, o host `studio.connect.lab` precisa de entrada no `hosts`, `ServerAlias` no vhost do
   Apache e certificado (mkcert), como foi feito para `erp.connect.lab`.
 - Reverter = remover o `<link>` da camada e restaurar o markup anterior do layout.
+
+## Atualização (09/11/2026, pedido do Djalma)
+
+- **Cores por ambiente**: a estrutura continua a do ERP, mas o verde saiu. O Studio usa tons de
+  roxo (`--cx-brand: #6b1fa8`, sidebar `#2a0f40`) e o Help Desk usa azul (`--cx-brand: #2563eb`,
+  sidebar `#0f1f45`). As paletas ficam em `connect-shell.css`, nos blocos
+  `body.studio-erp[data-environment="studio|helpdesk"]`. Só as medidas e a tipografia continuam
+  espelhando `erp.css`.
+- **Menu igual ao do ERP**: links diretos (Dashboard / Fila de chamados) e grupos em `<details>`
+  com submenu. O grupo da página atual abre sozinho; com o menu recolhido, clicar num grupo expande
+  o menu.
