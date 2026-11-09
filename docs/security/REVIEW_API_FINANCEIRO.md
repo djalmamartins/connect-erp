@@ -695,3 +695,19 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 44 (sha256 af186e99), porta
 | Check-in devolve `overdue_cents` só com `erp.agreements.view`; sem a permissão, null | CONFIRMADO |
 | Direito a voto e motivo ("inadimplente") sempre visíveis; valor continua gravado e auditado sem o montante | CONFIRMADO |
 | Matriz de permissões cobre o `checkIn` | CONFIRMADO |
+
+## 25ª rodada — Configurações, relatórios cadastrais, atalhos e acordos (ciclo 45)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 45 (sha256 45536963), portado sobre `claude-dev` ec7108c · ADR 0096
+
+| Ponto | Situação |
+|---|---|
+| Banners só com texto simples (`PlainText`): sem HTML, entidade, esquema de link nem domínio solto; a view continua escapando | CONFIRMADO |
+| Lote de frações lido com `FOR UPDATE` dentro da transação; `UPDATE` também filtra o condomínio | CONFIRMADO |
+| IP mascarado no relatório de logs; valor da configuração passa pelo `AuditMask` conforme o tipo | CONFIRMADO |
+| `adjustments` com `LIMIT 500`; lista de acordos fora do escopo responde 404 | CONFIRMADO |
+
+### Lacunas
+
+- O filtro de domínio solto do `PlainText` pode recusar um texto legítimo que pareça endereço (por exemplo, "site.com.br"). Isso foi aceito: o banner é curto e a mensagem explica o motivo.
+- `auditValue` só mascara os tipos que o `AuditMask` conhece (e-mail e telefone). Os demais tipos vão como estão, e nenhum deles é dado pessoal.

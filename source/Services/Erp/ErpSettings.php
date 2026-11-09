@@ -14,6 +14,7 @@ use Source\Services\Erp\Imports\ImportRules;
 use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
+use Source\Support\AuditMask;
 
 /**
  * Configurações do ERP (ADR 0085). Três partes:
@@ -152,8 +153,15 @@ final class ErpSettings
         $this->pdo->prepare('INSERT INTO erp_settings (condominium_id, setting_key, value_json, updated_by) VALUES (:c, :k, :v, :u)
             ON DUPLICATE KEY UPDATE value_json = VALUES(value_json), updated_by = VALUES(updated_by)')
             ->execute(['c' => $condominiumId, 'k' => $key, 'v' => json_encode($normalized, JSON_UNESCAPED_UNICODE), 'u' => (int)$user->id]);
-        Audit::record('update', 'erp_settings', $condominiumId ?? 0, ['key' => $key, 'value' => $before], ['key' => $key, 'value' => $normalized, 'condominium_id' => $condominiumId]);
+        Audit::record('update', 'erp_settings', $condominiumId ?? 0, ['key' => $key, 'value' => self::auditValue($spec, $before)],
+            ['key' => $key, 'value' => self::auditValue($spec, $normalized), 'condominium_id' => $condominiumId]);
         return $this->list($user, $condominiumId);
+    }
+
+    /** ADR 0096: na auditoria, o valor passa pelo AuditMask conforme o tipo (e-mail e telefone mascarados). */
+    public static function auditValue(array $spec, mixed $value): mixed
+    {
+        return AuditMask::fields(['value' => $value], ['value' => ['type' => (string)($spec['type'] ?? 'text')]])['value'];
     }
 
     /** Volta a chave ao padrão de cima (do condomínio → Connect; da Connect → código), com auditoria. */
@@ -165,7 +173,7 @@ final class ErpSettings
         $stmt = $this->pdo->prepare('DELETE FROM erp_settings WHERE setting_key = :k AND condominium_id ' . ($condominiumId === null ? 'IS NULL' : '= :c'));
         $stmt->execute(['k' => $key] + ($condominiumId === null ? [] : ['c' => $condominiumId]));
         if ($stmt->rowCount() > 0) {
-            Audit::record('update', 'erp_settings', $condominiumId ?? 0, ['key' => $key, 'value' => $before], ['key' => $key, 'reset' => true, 'condominium_id' => $condominiumId]);
+            Audit::record('update', 'erp_settings', $condominiumId ?? 0, ['key' => $key, 'value' => self::auditValue($spec, $before)], ['key' => $key, 'reset' => true, 'condominium_id' => $condominiumId]);
         }
         return $this->list($user, $condominiumId);
     }
@@ -299,7 +307,25 @@ final class ErpSettings
     public function setFractions(User $user, int $condominiumId, array $fractions): array
     {
         $this->scope->assertAccess($user, $condominiumId);
-        $stmt = $this->pdo->prepare("SELECT id, label, ideal_fraction FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active'");
+        // ADR 0096: as unidades são lidas e travadas dentro da transação; ninguém cria nem inativa unidade
+        // entre a conferência da soma e a gravação.
+        $this->pdo->beginTransaction();
+        try {
+            $result = $this->applyFractions($user, $condominiumId, $fractions);
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
+        }
+        return $result;
+    }
+
+    /** Dentro da transação de setFractions: confere todas as unidades ativas e a soma, e grava auditando cada uma. */
+    private function applyFractions(User $user, int $condominiumId, array $fractions): array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, label, ideal_fraction FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' FOR UPDATE");
         $stmt->execute(['c' => $condominiumId]);
         $units = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $u) {
@@ -326,19 +352,10 @@ final class ErpSettings
         if (abs($sum - 1) > $tolerance) {
             throw new InvalidArgumentException(sprintf('A soma das frações é %s; precisa ser 1 (100%%).', number_format($sum, 6, ',', '')));
         }
-        $this->pdo->beginTransaction();
-        try {
-            $update = $this->pdo->prepare('UPDATE erp_units SET ideal_fraction = :f, updated_by = :u WHERE id = :id');
-            foreach ($clean as $id => $value) {
-                $update->execute(['f' => $value, 'u' => (int)$user->id, 'id' => $id]);
-                Audit::record('update', 'erp_units', $id, ['ideal_fraction' => $units[$id]['ideal_fraction']], ['ideal_fraction' => $value]);
-            }
-            $this->pdo->commit();
-        } catch (\Throwable $error) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $error;
+        $update = $this->pdo->prepare('UPDATE erp_units SET ideal_fraction = :f, updated_by = :u WHERE id = :id AND condominium_id = :c');
+        foreach ($clean as $id => $value) {
+            $update->execute(['f' => $value, 'u' => (int)$user->id, 'id' => $id, 'c' => $condominiumId]);
+            Audit::record('update', 'erp_units', $id, ['ideal_fraction' => $units[$id]['ideal_fraction']], ['ideal_fraction' => $value]);
         }
         return ['condominium_id' => $condominiumId, 'units' => count($clean), 'fraction_sum' => round($sum, 6)];
     }

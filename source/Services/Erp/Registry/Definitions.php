@@ -716,8 +716,8 @@ final class Definitions
             'lead' => 'Avisos curtos no topo do aplicativo, por período. Sem condomínio, o banner aparece para todos.',
             'fields' => [
                 'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: todos os condomínios'],
-                'title' => ['label' => 'Título', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true],
-                'message' => ['label' => 'Texto', 'type' => 'longtext', 'required' => true, 'max' => 500, 'span' => 12],
+                'title' => ['label' => 'Título', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'plain' => true],
+                'message' => ['label' => 'Texto', 'type' => 'longtext', 'required' => true, 'max' => 500, 'span' => 12, 'plain' => true],
                 'starts_on' => ['label' => 'Início', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
                 'ends_on' => ['label' => 'Fim', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true, 'after' => 'starts_on'],
                 'position' => ['label' => 'Ordem', 'type' => 'int', 'span' => 3, 'hint' => 'Menor aparece primeiro'],

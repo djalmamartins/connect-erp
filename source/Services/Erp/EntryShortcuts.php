@@ -167,7 +167,7 @@ final class EntryShortcuts
     public function adjustments(User $user, int $entryId): array
     {
         $this->entry($user, $entryId);
-        $stmt = $this->pdo->prepare('SELECT id, kind, amount_cents, before_cents, after_cents, reason, created_by, created_at FROM erp_entry_adjustments WHERE entry_id = :e ORDER BY id');
+        $stmt = $this->pdo->prepare('SELECT id, kind, amount_cents, before_cents, after_cents, reason, created_by, created_at FROM erp_entry_adjustments WHERE entry_id = :e ORDER BY id LIMIT 500');   // ADR 0096: teto
         $stmt->execute(['e' => $entryId]);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'kind' => (string)$r['kind'], 'amount_cents' => (int)$r['amount_cents'],
             'before_cents' => (int)$r['before_cents'], 'after_cents' => (int)$r['after_cents'], 'reason' => (string)$r['reason'],

@@ -197,6 +197,9 @@ final class RegistryValidator
                 if (mb_strlen($text) > $max) {
                     return [null, "Máximo de {$max} caracteres."];
                 }
+                if (!empty($field['plain']) && ($problem = PlainText::problem($text)) !== null) {
+                    return [null, $problem];   // ADR 0096: texto simples, sem HTML nem link
+                }
                 if ($type === 'text') {
                     $text = (string)preg_replace('/\s+/u', ' ', $text);
                 }
