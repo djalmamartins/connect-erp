@@ -101,6 +101,10 @@
    "title": "0026 — Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio"
   },
   {
+   "file": "docs/Organic Code/decisions/0027-recurring-entries.md",
+   "title": "0027 — Lançamentos fixos (AP-021) e geração do mês sem duplicar"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -209,6 +213,18 @@
    "tests": [
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
+  },
+  "Source\\Controllers\\Api\\V1\\RecurringEntriesGenerate": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Services\\Erp\\RecurringEntries",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/RecurringEntriesGenerate.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
   },
   "Source\\Controllers\\Api\\V1\\Registry": {
    "deps": [
@@ -1381,6 +1397,7 @@
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
+    "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
@@ -1449,6 +1466,7 @@
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
+    "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
@@ -1493,12 +1511,33 @@
     "tests/erp/render-smoke.php"
    ]
   },
+  "Source\\Services\\Erp\\RecurringEntries": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+   ],
+   "file": "source/Services/Erp/RecurringEntries.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_recurring_entries",
+    "erp_entries"
+   ],
+   "tests": [
+    "tests/legacy/Integration/RecurringEntriesTest.php",
+    "tests/legacy/Unit/RecurringEntriesDefinitionTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\Registry\\Definitions": {
    "deps": [],
    "file": "source/Services/Erp/Registry/Definitions.php",
    "kind": "class",
    "layer": "Services",
    "tables": [
+    "erp_recurring_entries",
     "erp_useful_contacts",
     "erp_linkable_areas",
     "erp_chart_accounts",
@@ -1526,6 +1565,7 @@
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
+    "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -1588,6 +1628,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
+    "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
@@ -1623,6 +1664,7 @@
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
+    "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
@@ -2137,16 +2179,16 @@
   }
  },
  "counts": {
-  "adrs": 28,
-  "classes": 134,
+  "adrs": 29,
+  "classes": 136,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 205,
-  "tables": 62,
-  "tests": 63
+  "routes": 206,
+  "tables": 63,
+  "tests": 65
  },
  "erp_pages": [
   {
@@ -3474,10 +3516,19 @@
    "verb": "GET"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\RecurringEntriesGenerate",
+   "env": "index",
+   "file": "index.php",
+   "line": 55,
+   "method": "store",
+   "path": "/api/v1/recurring-entries/generate",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 69,
+   "line": 71,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -3486,7 +3537,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 70,
+   "line": 72,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -3495,7 +3546,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 71,
+   "line": 73,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -3504,7 +3555,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 72,
+   "line": 74,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -3513,7 +3564,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 73,
+   "line": 75,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -3522,7 +3573,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 74,
+   "line": 76,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -3531,7 +3582,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 75,
+   "line": 77,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -3540,7 +3591,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 76,
+   "line": 78,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -3549,27 +3600,9 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 90,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 91,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
    "line": 92,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "GET"
   },
   {
@@ -3577,6 +3610,24 @@
    "env": "index",
    "file": "index.php",
    "line": 93,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 94,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 95,
    "method": "manage",
    "path": "/studio/seguranca/2fa",
    "verb": "POST"
@@ -3585,27 +3636,9 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 96,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 97,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 98,
-   "method": "reset",
-   "path": "/forget/{code}",
+   "method": "forget",
+   "path": "/forget",
    "verb": "GET"
   },
   {
@@ -3613,24 +3646,6 @@
    "env": "index",
    "file": "index.php",
    "line": 99,
-   "method": "reset",
-   "path": "/reset",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 112,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 113,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -3639,7 +3654,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 114,
+   "line": 100,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3648,7 +3663,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 115,
+   "line": 101,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3657,7 +3672,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 131,
+   "line": 114,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 115,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 116,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 117,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 133,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -3666,7 +3717,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 133,
+   "line": 135,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -5374,10 +5425,13 @@
    ]
   },
   "erp_entries": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0509_entry_recurring_link.sql"
+   ],
    "created_in": "database/migrations/20261108_0506_entries.sql",
    "used_by": [
     "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5410,6 +5464,14 @@
    ],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_recurring_entries": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0508_recurring_entries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5867,6 +5929,12 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/RecurringEntriesTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\RecurringEntries",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/RegistryServiceTest.php": [
    "Source\\Controllers\\Api\\V1\\Registry",
    "Source\\Models\\User",
@@ -5992,6 +6060,11 @@
   ],
   "tests/legacy/Unit/PayablesBalancesDefinitionTest.php": [
    "Source\\Services\\Erp\\BankBalances",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/RecurringEntriesDefinitionTest.php": [
+   "Source\\Services\\Erp\\RecurringEntries",
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
   ],

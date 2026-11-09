@@ -498,6 +498,45 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /recurring-entries/generate:
+    post:
+      operationId: generateRecurringEntries
+      summary: Gera os lançamentos de uma competência a partir dos lançamentos fixos (ADR 0027)
+      description: |
+        Idempotente: repetir a chamada para a mesma competência não duplica (modelos já gerados
+        voltam em skipped). Exige erp.recurring_entries.manage e erp.entries.manage.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [competence]
+              properties:
+                competence: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', examples: ['2026-11'] }
+                condominium_id: { type: [integer, "null"], minimum: 1 }
+      responses:
+        '200':
+          description: Resultado da geração
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      competence: { type: string }
+                      created: { type: array, items: { type: integer }, description: IDs dos lançamentos criados }
+                      skipped: { type: array, items: { type: integer }, description: IDs dos modelos já gerados nesta competência }
+                      failed: { type: object, additionalProperties: { type: object, additionalProperties: { type: string } }, description: Erros por modelo }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates
