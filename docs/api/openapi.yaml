@@ -1631,6 +1631,93 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /imports:
+    get:
+      operationId: listImports
+      summary: Importações do escopo (ADR 0058, erp.imports.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: kind, in: query, schema: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents] } }
+      responses:
+        '200': { description: '{ data[], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /imports/preview:
+    post:
+      operationId: previewImport
+      summary: Envia o arquivo e devolve a prévia, linha a linha (erp.imports.manage e a permissão do destino)
+      description: >-
+        ofx (AP-140, extrato da conta bancária escolhida), entries (AP-144), unit_entries (AP-145),
+        payables (AP-146), fractions (AP-143) e delinquents (AP-142); planilhas em CSV ou XLSX com
+        cabeçalho. O arquivo inteiro é validado; nada é lançado. O arquivo fica em storage privado. O mesmo
+        arquivo já aplicado no condomínio é recusado (409).
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [kind, condominium_id, file], properties: { kind: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents] }, condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Obrigatório no OFX' }, file: { type: string, format: binary, description: 'Até 2 MB' } } } } }
+      responses:
+        '201': { description: '{ data: { id, status: previewed, rows_count, error_count, summary, preview[{ line, status ok|error|already, errors[], data }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Arquivo já aplicado neste condomínio }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /imports/{id}:
+    get:
+      operationId: getImport
+      summary: Importação; no OFX, com as linhas e a conciliação (erp.imports.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Importação }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /imports/{id}/apply:
+    post:
+      operationId: applyImport
+      summary: Aplica a prévia, relendo e revalidando o arquivo guardado; tudo numa transação (erp.imports.manage e a permissão do destino)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: 'Aplicada: summary.applied com as contagens' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Já aplicada ou o arquivo tem linhas com erro (nada gravado) }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /bank-statement-lines:
+    get:
+      operationId: listPendingStatementLines
+      summary: Linhas do extrato pendentes de conciliação (erp.imports.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+      responses:
+        '200': { description: '{ data[{ id, fitid, kind, posted_on, amount_cents, memo, status, bank_account }], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /bank-statement-lines/{id}/resolve:
+    post:
+      operationId: resolveStatementLine
+      summary: Concilia à mão com um lançamento pago da mesma conta e valor, ou ignora, com nota (erp.imports.manage e erp.entries.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [action, note], properties: { action: { type: string, enum: [match, ignore] }, entry_id: { type: integer }, note: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Linha resolvida }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Linha já resolvida }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates
