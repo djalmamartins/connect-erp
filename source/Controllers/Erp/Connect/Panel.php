@@ -321,8 +321,8 @@ final class Panel extends Controller
 
     /**
      * Páginas com tela própria quando há dados reais: AP-032 faturas (lista, itens por unidade,
-     * emitir e cancelar), AP-035 boletos, AP-036 importar retorno e AP-038 retornos com
-     * divergência. Sem dados (sem permissão ou sem banco), null = segue a demonstração.
+     * emitir e cancelar), AP-035 boletos, AP-036 importar retorno, AP-038 retornos com
+     * divergência, AP-079 balancete e AP-051 demonstrativo. Sem dados (sem permissão ou sem banco), null = segue a demonstração.
      */
     public static function ownTemplate(string $id, array $data): ?string
     {
@@ -331,6 +331,9 @@ final class Panel extends Controller
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
+            // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
+            $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
+            $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',
             default => null,
         };
     }
