@@ -168,6 +168,13 @@ final class OperationalDashboard
             }
             $this->pdo->prepare('UPDATE erp_waitlist SET called_at = NOW(), called_by = :u, called_for_reservation_id = :r, updated_by = :u2 WHERE id = :id AND called_at IS NULL')
                 ->execute(['u' => (int)$user->id, 'u2' => (int)$user->id, 'r' => $reservationId, 'id' => $entry['id']]);
+            // Aviso ao morador fica pendente na outbox (ADR 0054); a fila do send envia depois.
+            (new NotificationOutbox($this->pdo))->record('waitlist.called', 'waitlist.called:' . $entry['id'] . ':' . $reservationId,
+                (int)$reservation['condominium_id'], 'erp_waitlist', (int)$entry['id'], [
+                    'resident_name' => (string)$entry['resident_name'], 'unit_id' => (int)$entry['unit_id'],
+                    'common_area_id' => (int)$reservation['common_area_id'], 'date' => (string)$reservation['reserved_on'],
+                    'reservation_id' => $reservationId,
+                ], (int)$user->id);
             $this->pdo->commit();
         } catch (\Throwable $error) {
             if ($this->pdo->inTransaction()) {
