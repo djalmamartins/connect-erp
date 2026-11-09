@@ -223,6 +223,13 @@ final class Announcements
         }
         $this->pdo->beginTransaction();
         try {
+            // Trava o comunicado e confere de novo (ADR 0109): dois cancelamentos ao mesmo tempo não
+            // gravam duas vezes nem deixam duas trilhas de auditoria.
+            $lock = $this->pdo->prepare('SELECT status FROM erp_announcements WHERE id = :id FOR UPDATE');
+            $lock->execute(['id' => $id]);
+            if ($lock->fetchColumn() !== 'active') {
+                throw new DomainException('O comunicado já está cancelado.');
+            }
             $stmt = $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'cancelled', last_error = 'Comunicado cancelado.', processed_at = NOW()
                 WHERE subject_table = 'erp_announcements' AND subject_id = :id AND status = 'pending'");
             $stmt->execute(['id' => $id]);
