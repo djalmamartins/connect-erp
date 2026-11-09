@@ -108,6 +108,41 @@ final class ImportsIntegrationTest extends TestCase
         $this->imports->preview($this->admin, 'ofx', ['condominium_id' => $this->alpha, 'bank_account_id' => $other], $this->upload($ofx . ' ', 'extrato.ofx'));
     }
 
+    public function testReadingsImportUsesMeterRulesAllOrNothing(): void
+    {
+        $units = $this->pdo->query("SELECT id FROM erp_units WHERE condominium_id = {$this->alpha} ORDER BY label")->fetchAll(\PDO::FETCH_COLUMN);
+        foreach ([['A-1', $units[0]], ['A-2', $units[1]]] as [$number, $unit]) {
+            $this->service->save($this->admin, 'meters', ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'kind' => 'agua', 'number' => $number, 'initial_reading' => '100']);
+        }
+        $competence = date('m/Y');
+        $bad = "relogio;tipo;competencia;leitura\nA-1;água;{$competence};110\nA-2;água;{$competence};90\n";
+        $preview = $this->imports->preview($this->admin, 'readings', ['condominium_id' => $this->alpha], $this->upload($bad, 'leituras.csv'));
+        self::assertSame(1, $preview['error_count'], 'Leitura menor que a inicial.');
+        try {
+            $this->imports->apply($this->admin, $preview['id']);
+            self::fail('Aplicou leituras com erro.');
+        } catch (DomainException) {
+            self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_meter_readings')->fetchColumn(), 'Nada gravado.');
+        }
+        $good = "relogio;tipo;competencia;leitura\nA-1;água;{$competence};110,5\nA-2;Água;{$competence};120\n";
+        $preview = $this->imports->preview($this->admin, 'readings', ['condominium_id' => $this->alpha], $this->upload($good, 'leituras.csv'));
+        self::assertSame([0, 30.5], [$preview['error_count'], $preview['summary']['consumption']]);
+        $applied = $this->imports->apply($this->admin, $preview['id']);
+        self::assertSame(2, $applied['summary']['applied']['readings']);
+        self::assertSame(['10.500', '20.000'], $this->pdo->query('SELECT consumption FROM erp_meter_readings ORDER BY meter_id')->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    public function testOfxBalanceCheckOnlyShowsDifference(): void
+    {
+        $ofx = "<OFX><BANKACCTFROM><BANKID>001<ACCTID>56789</BANKACCTFROM><BANKTRANLIST>"
+            . "<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20261105<TRNAMT>500.00<FITID>B1</STMTTRN></BANKTRANLIST>"
+            . "<LEDGERBAL><BALAMT>480.00<DTASOF>20261105</LEDGERBAL></OFX>";
+        $preview = $this->imports->preview($this->admin, 'ofx', ['condominium_id' => $this->alpha, 'bank_account_id' => $this->bank], $this->upload($ofx, 'saldo.ofx'));
+        self::assertSame(['bank_cents' => 48000, 'system_cents' => 50000, 'difference_cents' => -2000, 'matches' => false], $preview['summary']['balance_check']);
+        $this->imports->apply($this->admin, $preview['id']);
+        self::assertSame(1, $this->countEntries(), 'A diferença não gera lançamento de ajuste.');
+    }
+
     public function testScope(): void
     {
         $outsider = $this->user([$this->beta]);

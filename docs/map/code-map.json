@@ -241,6 +241,10 @@
    "title": "0062 — Recibo sem oráculo de id, teto nos valores e limite de unidades por cobrança"
   },
   {
+   "file": "docs/Organic Code/decisions/0063-imports-hardening.md",
+   "title": "0063 — Importações: valores sem estouro e XLSX sem explosão de memória"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -2345,12 +2349,15 @@
    ]
   },
   "Source\\Services\\Erp\\Imports\\ImportRules": {
-   "deps": [],
+   "deps": [
+    "Source\\Services\\Erp\\Invoices"
+   ],
    "file": "source/Services/Erp/Imports/ImportRules.php",
    "kind": "class",
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2359,6 +2366,8 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -2371,12 +2380,14 @@
    "tables": [
     "erp_bank_statement_lines",
     "erp_chart_accounts",
+    "erp_meter_readings",
     "erp_bank_transfers",
     "erp_bank_accounts",
     "erp_suppliers",
     "condominiums",
     "erp_entries",
     "erp_imports",
+    "erp_meters",
     "erp_units"
    ],
    "tests": [
@@ -2391,6 +2402,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2401,6 +2413,7 @@
    "layer": "Services",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/ImportsTest.php"
    ]
   },
@@ -2431,6 +2444,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
+    "tests/legacy/Unit/ImportsHardeningTest.php",
     "tests/legacy/Unit/InvoicesTest.php"
    ]
   },
@@ -3590,7 +3604,7 @@
   }
  },
  "counts": {
-  "adrs": 67,
+  "adrs": 68,
   "classes": 194,
   "dynamic_route_lines": {
    "erp": 9,
@@ -3599,7 +3613,7 @@
   "erp_pages": 172,
   "routes": 290,
   "tables": 105,
-  "tests": 128
+  "tests": 129
  },
  "erp_pages": [
   {
@@ -7789,7 +7803,9 @@
    ]
   },
   "erp_imports": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0536_import_readings.sql"
+   ],
    "created_in": "database/migrations/20261108_0535_imports.sql",
    "used_by": [
     "Source\\Services\\Erp\\Imports\\Imports"
@@ -7862,6 +7878,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings"
    ]
   },
@@ -7869,6 +7886,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0527_meter_readings.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -8888,6 +8906,12 @@
   ],
   "tests/legacy/Unit/HelpDeskSupportThemesTest.php": [
    "Source\\Controllers\\Studio\\Studio"
+  ],
+  "tests/legacy/Unit/ImportsHardeningTest.php": [
+   "Source\\Services\\Erp\\Imports\\ImportRules",
+   "Source\\Services\\Erp\\Imports\\OfxParser",
+   "Source\\Services\\Erp\\Imports\\SpreadsheetReader",
+   "Source\\Services\\Erp\\Invoices"
   ],
   "tests/legacy/Unit/ImportsTest.php": [
    "Source\\Services\\Erp\\Imports\\ImportRules",

@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**290** rotas fixas · **194** classes em `source/` · **105** tabelas nas migrations · **128** arquivos de teste · **67** ADRs · **172** páginas no catálogo do ERP.
+**290** rotas fixas · **194** classes em `source/` · **105** tabelas nas migrations · **129** arquivos de teste · **68** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 9, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -350,6 +350,10 @@ flowchart LR
   Source_Services_Erp_Imports_Imports --> t_erp_entries
   t_erp_imports[("erp_imports")]
   Source_Services_Erp_Imports_Imports --> t_erp_imports
+  t_erp_meter_readings[("erp_meter_readings")]
+  Source_Services_Erp_Imports_Imports --> t_erp_meter_readings
+  t_erp_meters[("erp_meters")]
+  Source_Services_Erp_Imports_Imports --> t_erp_meters
   t_erp_suppliers[("erp_suppliers")]
   Source_Services_Erp_Imports_Imports --> t_erp_suppliers
   Source_Services_Erp_Imports_Imports --> t_erp_units
@@ -362,9 +366,7 @@ flowchart LR
   t_erp_invoices[("erp_invoices")]
   Source_Services_Erp_Invoices --> t_erp_invoices
   Source_Services_Erp_Invoices --> t_pages
-  t_erp_meter_readings[("erp_meter_readings")]
   Source_Services_Erp_MeterReadings --> t_erp_meter_readings
-  t_erp_meters[("erp_meters")]
   Source_Services_Erp_MeterReadings --> t_erp_meters
   t_erp_tariffs[("erp_tariffs")]
   Source_Services_Erp_MeterReadings --> t_erp_tariffs
@@ -910,7 +912,7 @@ flowchart LR
 | `erp_entry_adjustments` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/EntryShortcuts` |
 | `erp_extra_charges` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/EntryShortcuts` |
 | `erp_gatehouses` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_imports` | `20261108_0535_imports.sql` | — | `Services/Erp/Imports/Imports` |
+| `erp_imports` | `20261108_0535_imports.sql` | `20261108_0536_import_readings.sql` | `Services/Erp/Imports/Imports` |
 | `erp_insurances` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/OperationalDashboard`, `Services/Erp/Registry/Definitions` |
 | `erp_invoice_items` | `20261108_0513_invoices.sql` | — | `Services/Erp/Invoices` |
 | `erp_invoice_types` | `20261108_0501_invoice_types.sql` | — | `Services/Erp/Invoices`, `Services/Erp/Registry/Definitions` |
@@ -919,8 +921,8 @@ flowchart LR
 | `erp_linkable_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | `20261108_0404_linkable_area_units.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_lost_found` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_maintenances` | `20261108_0530_operational_registries.sql` | `20261108_0531_operational_followups.sql` | `Services/Erp/OperationalDashboard`, `Services/Erp/Registry/Definitions` |
-| `erp_meter_readings` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings` |
-| `erp_meters` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
+| `erp_meter_readings` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/Imports/Imports`, `Services/Erp/MeterReadings` |
+| `erp_meters` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/Imports/Imports`, `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
 | `erp_month_closings` | `20261108_0511_month_closings.sql` | — | `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService` |
 | `erp_move_settings` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_moves` | `20261108_0530_operational_registries.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -1134,11 +1136,11 @@ flowchart LR
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
 | [`Services/Erp/EntryShortcuts`](../../source/Services/Erp/EntryShortcuts.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_entry_adjustments, erp_extra_charges, erp_units | 4 |
 | [`Services/Erp/FinancialReports`](../../source/Services/Erp/FinancialReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries | 6 |
-| [`Services/Erp/Imports/ImportRules`](../../source/Services/Erp/Imports/ImportRules.php) | — | — | 1 |
-| [`Services/Erp/Imports/Imports`](../../source/Services/Erp/Imports/Imports.php) | Connect, User, CondominiumScope, Definitions, RegistryNotFound, RegistryService, RegistryValidator, Audit | condominiums, erp_bank_accounts, erp_bank_statement_lines, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_imports, erp_suppliers, erp_units | 2 |
-| [`Services/Erp/Imports/OfxParser`](../../source/Services/Erp/Imports/OfxParser.php) | — | — | 1 |
-| [`Services/Erp/Imports/SpreadsheetReader`](../../source/Services/Erp/Imports/SpreadsheetReader.php) | — | — | 1 |
-| [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 7 |
+| [`Services/Erp/Imports/ImportRules`](../../source/Services/Erp/Imports/ImportRules.php) | Invoices | — | 2 |
+| [`Services/Erp/Imports/Imports`](../../source/Services/Erp/Imports/Imports.php) | Connect, User, CondominiumScope, BankBalances, MeterReadings, Definitions, RegistryNotFound, RegistryService … | condominiums, erp_bank_accounts, erp_bank_statement_lines, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_imports, erp_meter_readings, erp_meters, erp_suppliers, erp_units | 2 |
+| [`Services/Erp/Imports/OfxParser`](../../source/Services/Erp/Imports/OfxParser.php) | — | — | 2 |
+| [`Services/Erp/Imports/SpreadsheetReader`](../../source/Services/Erp/Imports/SpreadsheetReader.php) | — | — | 2 |
+| [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 8 |
 | [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 2 |
 | [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 9 |
@@ -1284,6 +1286,7 @@ Services sem teste que os cite (1): `Services/Erp/ReceiptCandidates`
 - [0060 — Credenciais SMTP pelo ambiente, valendo sobre a tabela settings](../../docs/Organic%20Code/decisions/0060-smtp-credentials-from-environment.md)
 - [0061 — Painéis e dashboard exigem a permissão de cada módulo que mostram](../../docs/Organic%20Code/decisions/0061-panels-require-module-permissions.md)
 - [0062 — Recibo sem oráculo de id, teto nos valores e limite de unidades por cobrança](../../docs/Organic%20Code/decisions/0062-shortcuts-and-receipts-hardening.md)
+- [0063 — Importações: valores sem estouro e XLSX sem explosão de memória](../../docs/Organic%20Code/decisions/0063-imports-hardening.md)
 - [0070 — Telas do Operacional e dashboard com dados reais](../../docs/Organic%20Code/decisions/0070-operational-screens.md)
 - [0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)](../../docs/Organic%20Code/decisions/0071-condominium-unit-panel-screens.md)
 - [0072 — Tela da fila de avisos, com trilha mascarada e reenvio manual](../../docs/Organic%20Code/decisions/0072-notification-queue-screen.md)

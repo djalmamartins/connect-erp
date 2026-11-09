@@ -1638,7 +1638,7 @@ paths:
       security: [{ session: [] }]
       parameters:
         - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
-        - { name: kind, in: query, schema: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents] } }
+        - { name: kind, in: query, schema: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings] } }
       responses:
         '200': { description: '{ data[], total }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1649,13 +1649,15 @@ paths:
       summary: Envia o arquivo e devolve a prévia, linha a linha (erp.imports.manage e a permissão do destino)
       description: >-
         ofx (AP-140, extrato da conta bancária escolhida), entries (AP-144), unit_entries (AP-145),
-        payables (AP-146), fractions (AP-143) e delinquents (AP-142); planilhas em CSV ou XLSX com
-        cabeçalho. O arquivo inteiro é validado; nada é lançado. O arquivo fica em storage privado. O mesmo
+        payables (AP-146), fractions (AP-143), delinquents (AP-142) e readings (AP-044: relogio, tipo,
+        competencia, leitura, data_leitura); planilhas em CSV ou XLSX com cabeçalho. No OFX,
+        summary.balance_check mostra o saldo do banco, o calculado e a diferença (só informa). O arquivo
+        inteiro é validado; nada é lançado. O arquivo fica em storage privado. O mesmo
         arquivo já aplicado no condomínio é recusado (409).
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { multipart/form-data: { schema: { type: object, required: [kind, condominium_id, file], properties: { kind: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents] }, condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Obrigatório no OFX' }, file: { type: string, format: binary, description: 'Até 2 MB' } } } } }
+        content: { multipart/form-data: { schema: { type: object, required: [kind, condominium_id, file], properties: { kind: { type: string, enum: [ofx, entries, unit_entries, payables, fractions, delinquents, readings] }, condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Obrigatório no OFX' }, file: { type: string, format: binary, description: 'Até 2 MB' } } } } }
       responses:
         '201': { description: '{ data: { id, status: previewed, rows_count, error_count, summary, preview[{ line, status ok|error|already, errors[], data }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }

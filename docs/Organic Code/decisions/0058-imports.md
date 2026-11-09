@@ -63,13 +63,29 @@ e SimpleXML.
   também a permissão do destino: `erp.entries.manage`, ou `erp.units.manage` nas frações. Tudo
   auditado; escopo por condomínio.
 
+## Extensão (2026-11-09): leituras e conferência do saldo
+
+- **AP-044 Importação de leituras** (tipo `readings`, migration 20261108_0536):
+  - colunas relogio (número do medidor), tipo (água, gás ou energia), competencia e leitura;
+    data_leitura é opcional, e vazia vale hoje;
+  - uma linha por relógio ativo do condomínio, com as regras do lançamento manual (ADR 0045):
+    leitura não menor que a anterior (ou a inicial), competência não cobrada, sem leitura posterior,
+    data até hoje e competência aberta;
+  - corrigir a leitura ainda não cobrada da mesma competência é aceito e aparece como "replace" na
+    prévia;
+  - a gravação é pelo `MeterReadings::record` (faixas e tarifa), dentro da transação da importação:
+    tudo ou nada. O `record` passou a usar a transação de quem chama, quando há uma;
+  - permissão do destino: `erp.meter_readings.manage`. A cobrança das leituras continua no AP-042.
+- **Conferência do saldo do OFX:**
+  - `summary.balance_check` mostra o saldo do extrato (LEDGERBAL), o saldo calculado da conta na
+    mesma data e a diferença (banco − calculado), na prévia e na aplicação;
+  - o saldo calculado segue a regra do `BankBalances`: saldo inicial + receitas pagas − despesas
+    pagas + transferências que entram − que saem, a partir da data do saldo inicial;
+  - **só informa: nenhum lançamento de ajuste é criado.**
+
 ## Fora deste ADR
 
-- **AP-044 Leituras:** fica para o próximo ciclo, sobre o `MeterReadings` (ADR 0045), com o mesmo
-  fluxo de prévia.
 - **AP-141 NF-e (XML):** fora, por enquanto.
-- O saldo do OFX (LEDGERBAL) aparece na prévia, mas ainda não é comparado com o saldo calculado da
-  conta.
 
 ## Consequências
 

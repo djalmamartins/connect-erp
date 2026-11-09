@@ -86,6 +86,15 @@ final class ImportsTest extends TestCase
         self::assertSame(['receita', 'despesa', null], array_map([ImportRules::class, 'nature'], ['Receita', 'D', 'outro']));
     }
 
+    public function testMeterKindAndBalanceCheckOnlyReports(): void
+    {
+        self::assertSame(['agua', 'gas', 'energia', 'energia', null], array_map([ImportRules::class, 'meterKind'], ['Água', 'GÁS', 'energia', 'Luz', 'vapor']));
+        self::assertSame(['bank_cents' => 48710, 'system_cents' => 50000, 'difference_cents' => -1290, 'matches' => false], ImportRules::balanceCheck(48710, 50000),
+            'Diferença = banco − calculado; nada é ajustado.');
+        self::assertTrue(ImportRules::balanceCheck(100, 100)['matches']);
+        self::assertSame(['bank_cents' => null, 'system_cents' => null, 'difference_cents' => null, 'matches' => null], ImportRules::balanceCheck(null, null), 'Sem saldo no extrato, sem conferência.');
+    }
+
     public function testMatchNeverGuessesBetweenCandidates(): void
     {
         $lines = [['fitid' => 'A', 'posted_on' => '2026-11-05', 'amount_cents' => 5000], ['fitid' => 'B', 'posted_on' => '2026-11-05', 'amount_cents' => -1290],
@@ -100,10 +109,11 @@ final class ImportsTest extends TestCase
 
     public function testKindsDeclarePageFormatsAndTargetPermission(): void
     {
-        self::assertSame(['AP-140', 'AP-144', 'AP-145', 'AP-146', 'AP-143', 'AP-142'], array_column(Imports::KINDS, 'page'));
+        self::assertSame(['AP-140', 'AP-144', 'AP-145', 'AP-146', 'AP-143', 'AP-142', 'AP-044'], array_column(Imports::KINDS, 'page'));
         foreach (Imports::KINDS as $kind => $definition) {
-            self::assertContains($definition['permission'], ['erp.entries.manage', 'erp.units.manage'], $kind);
+            self::assertContains($definition['permission'], ['erp.entries.manage', 'erp.units.manage', 'erp.meter_readings.manage'], $kind);
         }
+        self::assertSame('erp.meter_readings.manage', Imports::KINDS['readings']['permission']);
         self::assertSame(['ofx'], Imports::KINDS['ofx']['formats']);
     }
 }

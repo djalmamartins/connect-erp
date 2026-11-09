@@ -19,6 +19,9 @@ final class SpreadsheetReader
 {
     public const MAX_ROWS = 5000;
     public const MAX_UNCOMPRESSED = 30_000_000;
+    /** Colunas por linha e posição da última linha no XLSX: "XFD1048576" numa célula só não vira milhões de células vazias (ADR 0063). */
+    public const MAX_COLUMNS = 200;
+    public const MAX_ROW_INDEX = 20_000;
 
     /** Nome de coluna normalizado (regra pura): "Competência" → "competencia", "Pago em" → "pago_em". */
     public static function normalizeHeader(string $name): string
@@ -121,7 +124,8 @@ final class SpreadsheetReader
                 }
             }
             $shared = [];
-            $strings = $zip->getFromName('xl/sharedStrings.xml');
+            // O tamanho do diretório do ZIP é declarado pelo arquivo; a leitura também para no limite (ADR 0063).
+            $strings = $zip->getFromName('xl/sharedStrings.xml', self::MAX_UNCOMPRESSED);
             if ($strings !== false) {
                 $xml = self::xml($strings);
                 foreach ($xml->si as $si) {
@@ -132,7 +136,7 @@ final class SpreadsheetReader
                     $shared[] = $text;
                 }
             }
-            $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+            $sheet = $zip->getFromName('xl/worksheets/sheet1.xml', self::MAX_UNCOMPRESSED);
             if ($sheet === false) {
                 throw new InvalidArgumentException('O XLSX não tem a primeira aba (sheet1).');
             }
@@ -142,6 +146,9 @@ final class SpreadsheetReader
                 $cells = [];
                 foreach ($row->c as $cell) {
                     $column = self::columnIndex((string)$cell['r']);
+                    if ($column >= self::MAX_COLUMNS) {
+                        throw new InvalidArgumentException(sprintf('A planilha passa de %d colunas.', self::MAX_COLUMNS));
+                    }
                     $type = (string)$cell['t'];
                     $value = match ($type) {
                         's' => $shared[(int)$cell->v] ?? '',
@@ -152,6 +159,9 @@ final class SpreadsheetReader
                     $cells[$column] = $value;
                 }
                 $rowIndex = max(1, (int)$row['r']) - 1;
+                if ($rowIndex >= self::MAX_ROW_INDEX) {
+                    throw new InvalidArgumentException(sprintf('A planilha tem dados depois da linha %d. Divida o arquivo.', self::MAX_ROW_INDEX));
+                }
                 $line = [];
                 $max = $cells === [] ? -1 : max(array_keys($cells));
                 for ($i = 0; $i <= $max; $i++) {
@@ -180,6 +190,9 @@ final class SpreadsheetReader
     public static function columnIndex(string $reference): int
     {
         $letters = (string)preg_replace('/[^A-Z]/', '', strtoupper($reference));
+        if (strlen($letters) > 3) {
+            return PHP_INT_MAX;   // além de XFD (a última coluna do Excel); sem estourar o inteiro
+        }
         $index = 0;
         foreach (str_split($letters) as $letter) {
             $index = $index * 26 + (ord($letter) - 64);

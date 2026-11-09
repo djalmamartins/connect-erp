@@ -28,8 +28,11 @@ final class ImportRules
         } elseif (!preg_match('/^\d+(\.\d+)?$/', $value)) {
             return null;
         }
+        if (strlen(ltrim(explode('.', $value)[0], '0')) > 10) {
+            return null;   // acima do teto de Invoices::MAX_CENTS; barra antes da conversão (ADR 0063)
+        }
         $cents = (int)round(((float)$value) * 100);
-        return $cents > 0 ? $cents : null;
+        return $cents > 0 && $cents <= \Source\Services\Erp\Invoices::MAX_CENTS ? $cents : null;
     }
 
     /** Data: DD/MM/AAAA, AAAA-MM-DD ou número de série do Excel (dias desde 1899-12-30). */
@@ -88,6 +91,31 @@ final class ImportRules
             in_array($value, ['despesa', 'd', 'debito', 'débito', 'saida', 'saída'], true) => 'despesa',
             default => null,
         };
+    }
+
+    /** Tipo do relógio: água, gás ou energia (com ou sem acento, maiúsculas). */
+    public static function meterKind(string $value): ?string
+    {
+        $value = SpreadsheetReader::normalizeHeader($value);
+        return match ($value) {
+            'agua' => 'agua', 'gas' => 'gas', 'energia', 'luz' => 'energia',
+            default => null,
+        };
+    }
+
+    /**
+     * Conferência do saldo do extrato (regra pura): diferença = saldo do banco − saldo calculado.
+     * Só informa; nada é ajustado. Sem saldo no extrato, não há conferência.
+     *
+     * @return array{bank_cents:?int, system_cents:?int, difference_cents:?int, matches:?bool}
+     */
+    public static function balanceCheck(?int $bankCents, ?int $systemCents): array
+    {
+        if ($bankCents === null || $systemCents === null) {
+            return ['bank_cents' => $bankCents, 'system_cents' => $systemCents, 'difference_cents' => null, 'matches' => null];
+        }
+        $difference = $bankCents - $systemCents;
+        return ['bank_cents' => $bankCents, 'system_cents' => $systemCents, 'difference_cents' => $difference, 'matches' => $difference === 0];
     }
 
     /**
