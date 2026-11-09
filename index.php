@@ -117,6 +117,11 @@ $route->post("/maintenances/{id}/next", "OperationalDashboard:nextMaintenance", 
 // Painéis do condomínio (AP-002) e da unidade (AP-003), ADR 0054.
 $route->get("/panels/condominium/{id}", "Panels:condominium", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/panels/unit/{id}", "Panels:unit", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Fila de avisos do ERP (ADR 0055). /dispatch antes de /{id}.
+$route->get("/notifications", "Notifications:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/notifications/dispatch", "Notifications:dispatch", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/notifications/{id}", "Notifications:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/notifications/{id}/retry", "Notifications:retry", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

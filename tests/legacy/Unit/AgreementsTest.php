@@ -12,6 +12,15 @@ use Source\Services\Erp\Registry\Definitions;
 /** Inadimplência e acordos: regras puras do atraso e do parcelamento, e a trava (ADR 0039). */
 final class AgreementsTest extends TestCase
 {
+    public function testEntryIdsAreNormalizedAndCapped(): void
+    {
+        self::assertSame([3, 7], Agreements::entryIds(['3', 7, ' 3 ', 0, -2, 'x', null, '7']));
+        self::assertSame([], Agreements::entryIds([]));
+        self::assertCount(Agreements::MAX_ENTRIES, Agreements::entryIds(range(1, Agreements::MAX_ENTRIES)));
+        $this->expectException(\InvalidArgumentException::class);
+        Agreements::entryIds(range(1, Agreements::MAX_ENTRIES + 1));
+    }
+
     public function testDaysLateAndBuckets(): void
     {
         self::assertSame(0, Agreements::daysLate('2026-11-10', '2026-11-10'));
