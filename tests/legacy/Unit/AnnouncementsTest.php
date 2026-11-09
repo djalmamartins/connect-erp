@@ -35,6 +35,23 @@ final class AnnouncementsTest extends TestCase
         Announcements::text('curto', 10, 100, 'o texto');
     }
 
+    /** ADR 0065: assunto e motivo em uma linha; unidades escolhidas normalizadas e com teto. */
+    public function testSubjectIsSingleLineAndUnitIdsAreCapped(): void
+    {
+        self::assertSame('Obra Bcc: x@y.test', Announcements::line("Obra\r\nBcc: x@y.test", 5, 120, 'o assunto'));
+        self::assertSame('A B', Announcements::line("A\u{2028}B", 1, 120, 'o assunto'));
+        self::assertNull(Announcements::unitIds(null));
+        self::assertSame([3, 7], Announcements::unitIds([3, '7', '3']));
+        foreach ([[], 'x', ['1a'], [0], [-2], array_fill(0, Announcements::MAX_UNITS + 1, 1)] as $bad) {
+            try {
+                Announcements::unitIds($bad);
+                self::fail('Aceitou ' . json_encode($bad));
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testNoticesAudiencesAndCollectionUsesBillingOptIn(): void
     {
         self::assertSame('notices', NotificationDispatcher::NOTICES['announcement.published']['audience'], 'Comunicado respeita a recusa (notices_opt_out).');

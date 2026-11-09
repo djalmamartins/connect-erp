@@ -33,6 +33,10 @@ final class Announcements
     public const MAX_SCHEDULE_DAYS = 60;
     public const COLLECTION_COOLDOWN_DAYS = 7;
     public const MAX_BODY = 5000;
+    /** Teto de unidades escolhidas num lote (comunicado e aviso de cobrança). */
+    public const MAX_UNITS = 2000;
+    /** Teto de comunicados e avisos criados por condomínio em 24 horas (ADR 0065). */
+    public const MAX_PER_DAY = 20;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -78,22 +82,57 @@ final class Announcements
         return $text;
     }
 
+    /** Linha única (regra pura): como text(), mas quebras de linha viram espaço. Para assunto e motivo (ADR 0065). */
+    public static function line(mixed $value, int $min, int $max, string $what): string
+    {
+        return self::text(is_string($value) ? (string)preg_replace('/[\r\n\x{2028}\x{2029}]+/u', ' ', $value) : $value, $min, $max, $what);
+    }
+
+    /**
+     * Unidades escolhidas (regra pura): null quando não informadas; senão ids positivos, sem repetição,
+     * de 1 a MAX_UNITS (ADR 0065).
+     *
+     * @return ?list<int>
+     */
+    public static function unitIds(mixed $raw): ?array
+    {
+        if ($raw === null) {
+            return null;
+        }
+        if (!is_array($raw) || count($raw) > self::MAX_UNITS) {
+            throw new InvalidArgumentException(sprintf('Escolha de 1 a %d unidades.', self::MAX_UNITS));
+        }
+        $ids = [];
+        foreach ($raw as $value) {
+            $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) {
+                throw new InvalidArgumentException('Unidade escolhida inválida.');
+            }
+            $ids[(int)$id] = (int)$id;
+        }
+        if ($ids === []) {
+            throw new InvalidArgumentException(sprintf('Escolha de 1 a %d unidades.', self::MAX_UNITS));
+        }
+        return array_values($ids);
+    }
+
     /**
      * @param array{condominium_id?:mixed, subject?:mixed, body?:mixed, audience?:mixed, unit_ids?:mixed, send_at?:mixed} $input
      */
     public function announce(User $user, array $input): array
     {
         $condominium = $this->condominium($user, $input['condominium_id'] ?? null);
-        $subject = self::text($input['subject'] ?? null, 5, 120, 'o assunto');
+        $subject = self::line($input['subject'] ?? null, 5, 120, 'o assunto');
         $body = self::text($input['body'] ?? null, 10, self::MAX_BODY, 'o texto do comunicado');
         $sendAt = self::sendAt($input['send_at'] ?? null);
         $audience = ($input['audience'] ?? 'all') === 'units' ? 'units' : 'all';
-        $units = $this->units($condominium, $audience === 'units' ? ($input['unit_ids'] ?? null) : null);
+        $units = $this->units($condominium, $audience === 'units' ? (self::unitIds($input['unit_ids'] ?? []) ?? []) : null);
         if ($units === []) {
             throw new InvalidArgumentException('Não há unidades ativas para o comunicado.');
         }
         $this->pdo->beginTransaction();
         try {
+            $this->lock($condominium);
             $id = $this->insert($user, $condominium, 'general', $subject, $body, $audience, $sendAt, count($units));
             $outbox = new NotificationOutbox($this->pdo);
             foreach ($units as $unit) {
@@ -129,28 +168,32 @@ final class Announcements
             throw new InvalidArgumentException('Dias mínimos de atraso inválidos (1 a 3650).');
         }
         $sendAt = self::sendAt($input['send_at'] ?? null);
-        $only = is_array($input['unit_ids'] ?? null) ? array_map('intval', $input['unit_ids']) : null;
+        $only = self::unitIds($input['unit_ids'] ?? null);
+        $only = $only === null ? null : array_fill_keys($only, true);
         $delinquency = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominium, $asOf);
-        $recent = $this->recentlyReminded($condominium);
-        $targets = [];
-        $skipped = 0;
-        foreach ($delinquency['units'] as $unit) {
-            if ($unit['unit_id'] === null || (int)$unit['max_days_late'] < $minDays || ($only !== null && !in_array((int)$unit['unit_id'], $only, true))) {
-                continue;
-            }
-            if (isset($recent[(int)$unit['unit_id']])) {
-                $skipped++;
-                continue;
-            }
-            $targets[] = $unit;
-        }
-        if ($targets === []) {
-            throw new DomainException($skipped > 0
-                ? sprintf('As %d unidade(s) em atraso já foram avisadas nos últimos %d dias.', $skipped, self::COLLECTION_COOLDOWN_DAYS)
-                : 'Nenhuma unidade com conta vencida nesse critério.');
-        }
         $this->pdo->beginTransaction();
         try {
+            // Trava o condomínio antes de ler os avisos recentes: dois pedidos ao mesmo tempo não avisam
+            // a mesma unidade duas vezes (ADR 0065).
+            $this->lock($condominium);
+            $recent = $this->recentlyReminded($condominium);
+            $targets = [];
+            $skipped = 0;
+            foreach ($delinquency['units'] as $unit) {
+                if ($unit['unit_id'] === null || (int)$unit['max_days_late'] < $minDays || ($only !== null && !isset($only[(int)$unit['unit_id']]))) {
+                    continue;
+                }
+                if (isset($recent[(int)$unit['unit_id']])) {
+                    $skipped++;
+                    continue;
+                }
+                $targets[] = $unit;
+            }
+            if ($targets === []) {
+                throw new DomainException($skipped > 0
+                    ? sprintf('As %d unidade(s) em atraso já foram avisadas nos últimos %d dias.', $skipped, self::COLLECTION_COOLDOWN_DAYS)
+                    : 'Nenhuma unidade com conta vencida nesse critério.');
+            }
             $id = $this->insert($user, $condominium, 'collection', 'Aviso de débitos em aberto', null, $only === null ? 'all' : 'units', $sendAt, count($targets));
             $outbox = new NotificationOutbox($this->pdo);
             foreach ($targets as $unit) {
@@ -173,7 +216,7 @@ final class Announcements
     /** Cancela o comunicado e os avisos que ainda não saíram; os já enviados ficam como estão. */
     public function cancel(User $user, int $id, mixed $reason): array
     {
-        $reason = self::text($reason, 5, 255, 'o motivo do cancelamento');
+        $reason = self::line($reason, 5, 255, 'o motivo do cancelamento');
         $row = $this->row($user, $id);
         if ($row['status'] !== 'active') {
             throw new DomainException('O comunicado já está cancelado.');
@@ -269,6 +312,20 @@ final class Announcements
             'without_billing' => count(array_filter($data, static fn (array $u): bool => $u['billing'] === 0))]];
     }
 
+    /**
+     * Trava o condomínio até o fim da transação e aplica o teto de MAX_PER_DAY comunicados e avisos
+     * criados em 24 horas (ADR 0065): um clique repetido ou um script não enchem a fila.
+     */
+    private function lock(int $condominium): void
+    {
+        $this->pdo->prepare('SELECT id FROM condominiums WHERE id = :c FOR UPDATE')->execute(['c' => $condominium]);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM erp_announcements WHERE condominium_id = :c AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)');
+        $stmt->execute(['c' => $condominium]);
+        if ((int)$stmt->fetchColumn() >= self::MAX_PER_DAY) {
+            throw new DomainException(sprintf('Limite de %d comunicados e avisos por condomínio em 24 horas. Tente mais tarde.', self::MAX_PER_DAY));
+        }
+    }
+
     private function insert(User $user, int $condominium, string $kind, string $subject, ?string $body, string $audience, string $sendAt, int $units): int
     {
         $this->pdo->prepare('INSERT INTO erp_announcements (condominium_id, kind, subject, body, audience, send_at, units_count, created_by)
@@ -282,16 +339,16 @@ final class Announcements
     {
         $sql = "SELECT id, label FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active'";
         if ($only !== null) {
-            $ids = is_array($only) ? array_values(array_unique(array_filter(array_map('intval', $only), static fn (int $i): bool => $i > 0))) : [];
-            if ($ids === [] || count($ids) > 2000) {
-                throw new InvalidArgumentException('Escolha de 1 a 2000 unidades.');
+            $ids = array_map('intval', (array)$only);
+            if ($ids === []) {
+                throw new InvalidArgumentException(sprintf('Escolha de 1 a %d unidades.', self::MAX_UNITS));
             }
             $sql .= ' AND id IN (' . implode(',', $ids) . ')';
         }
         $stmt = $this->pdo->prepare($sql . ' ORDER BY label, id');
         $stmt->execute(['c' => $condominium]);
         $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if ($only !== null && count($units) !== count(array_unique(array_filter(array_map('intval', (array)$only))))) {
+        if ($only !== null && count($units) !== count((array)$only)) {
             throw new InvalidArgumentException('Alguma unidade escolhida não existe ativa neste condomínio.');
         }
         return $units;

@@ -104,6 +104,37 @@ final class AnnouncementsIntegrationTest extends TestCase
         $this->announcements->announce($outsider, ['condominium_id' => $this->alpha, 'subject' => 'Fora do escopo', 'body' => 'Não deveria sair.']);
     }
 
+    /** ADR 0065: assunto em uma linha até o e-mail, unidades escolhidas validadas e teto diário por condomínio. */
+    public function testHardeningSubjectLineUnitsAndDailyCap(): void
+    {
+        $created = $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => "Obra\r\nBcc: x@y.test",
+            'body' => 'Texto do comunicado.', 'audience' => 'units', 'unit_ids' => [$this->units[0], (string)$this->units[0]]]);
+        self::assertSame(['Obra Bcc: x@y.test', 1], [$created['subject'], $created['units_count']], 'Quebra vira espaço; unidade repetida conta uma vez.');
+        $this->dispatcher()->dispatch();
+        self::assertStringNotContainsString("\n", $this->queued[0][0]);
+
+        foreach ([['abc'], [0], [], array_fill(0, Announcements::MAX_UNITS + 1, $this->units[0])] as $bad) {
+            try {
+                $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Assunto ok', 'body' => 'Texto do comunicado.',
+                    'audience' => 'units', 'unit_ids' => $bad]);
+                self::fail('Unidades indevidas aceitas.');
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+
+        for ($i = 1; $i < Announcements::MAX_PER_DAY; $i++) {
+            $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => "Comunicado {$i}", 'body' => 'Texto do comunicado.']);
+        }
+        try {
+            $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Um a mais', 'body' => 'Texto do comunicado.']);
+            self::fail('Passou do teto diário.');
+        } catch (DomainException $error) {
+            self::assertStringContainsString('24 horas', $error->getMessage());
+        }
+        self::assertSame(Announcements::MAX_PER_DAY, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_announcements WHERE condominium_id = {$this->alpha}")->fetchColumn());
+    }
+
     private function dispatcher(): NotificationDispatcher
     {
         return new NotificationDispatcher($this->pdo, 'development', 'production', 'caixa@mailpit.local', function (string $subject, string $body, string $email, string $name): int {
