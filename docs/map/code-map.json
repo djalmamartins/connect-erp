@@ -93,6 +93,14 @@
    "title": "0024 — Contas a pagar e a receber (AP-022/023) como visões dos lançamentos e saldo por conta bancária"
   },
   {
+   "file": "docs/Organic Code/decisions/0025-admin-two-factor-reset.md",
+   "title": "0025 — Reset do 2FA de outro usuário por administrador"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0026-studio-helpdesk-erp-shell.md",
+   "title": "0026 — Studio (CMS) e Help Desk com a moldura do ERP, e Studio em host próprio"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -232,6 +240,25 @@
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\UserTwoFactor": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\Session\\AppLog",
+    "Source\\Models\\User",
+    "Source\\Services\\TwoFactorAdminReset",
+    "Source\\Services\\TwoFactorService",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Controllers/Api/V1/UserTwoFactor.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "user_two_factor"
+   ],
    "tests": []
   },
   "Source\\Controllers\\App\\Connect\\App": {
@@ -712,6 +739,8 @@
     "Source\\Models\\Support\\SupportArticle",
     "Source\\Models\\Support\\SupportCategory",
     "Source\\Models\\User",
+    "Source\\Services\\TwoFactorAdminReset",
+    "Source\\Services\\TwoFactorService",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Audit",
@@ -901,7 +930,8 @@
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php",
-    "tests/legacy/Unit/UnitDefinitionTest.php"
+    "tests/legacy/Unit/UnitDefinitionTest.php",
+    "tests/studio/render-smoke.php"
    ]
   },
   "Source\\Models\\Address": {
@@ -1357,7 +1387,8 @@
     "tests/legacy/Integration/UserTest.php",
     "tests/legacy/Unit/CondominiumValidatorTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
-    "tests/legacy/Unit/OnboardingChecklistViewTest.php"
+    "tests/legacy/Unit/OnboardingChecklistViewTest.php",
+    "tests/studio/render-smoke.php"
    ]
   },
   "Source\\Services\\CondominiumAccessDenied": {
@@ -1806,6 +1837,16 @@
     "tests/legacy/Integration/PasswordResetServiceTest.php"
    ]
   },
+  "Source\\Services\\TwoFactorAdminReset": {
+   "deps": [],
+   "file": "source/Services/TwoFactorAdminReset.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/TwoFactorAdminResetTest.php"
+   ]
+  },
   "Source\\Services\\TwoFactorService": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2096,16 +2137,16 @@
   }
  },
  "counts": {
-  "adrs": 26,
-  "classes": 132,
+  "adrs": 28,
+  "classes": 134,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 200,
+  "routes": 205,
   "tables": 62,
-  "tests": 60
+  "tests": 63
  },
  "erp_pages": [
   {
@@ -3415,10 +3456,19 @@
    "verb": "PATCH"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\UserTwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 49,
+   "method": "reset",
+   "path": "/api/v1/users/{id}/2fa",
+   "verb": "DELETE"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\BankBalances",
    "env": "index",
    "file": "index.php",
-   "line": 51,
+   "line": 53,
    "method": "index",
    "path": "/api/v1/bank-accounts/balances",
    "verb": "GET"
@@ -3427,7 +3477,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 67,
+   "line": 69,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -3436,7 +3486,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 68,
+   "line": 70,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -3445,7 +3495,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 69,
+   "line": 71,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -3454,7 +3504,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 70,
+   "line": 72,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -3463,7 +3513,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 71,
+   "line": 73,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -3472,7 +3522,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 72,
+   "line": 74,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -3481,7 +3531,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 73,
+   "line": 75,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -3490,7 +3540,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 74,
+   "line": 76,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -3499,27 +3549,9 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 88,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 89,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
    "line": 90,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
+   "method": "challenge",
+   "path": "/studio/login/2fa",
    "verb": "GET"
   },
   {
@@ -3527,6 +3559,24 @@
    "env": "index",
    "file": "index.php",
    "line": 91,
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 92,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 93,
    "method": "manage",
    "path": "/studio/seguranca/2fa",
    "verb": "POST"
@@ -3535,7 +3585,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 94,
+   "line": 96,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -3544,7 +3594,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 95,
+   "line": 97,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -3553,7 +3603,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 96,
+   "line": 98,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3562,7 +3612,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 97,
+   "line": 99,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3571,7 +3621,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 109,
+   "line": 112,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 113,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 114,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 115,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 131,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -3580,7 +3666,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 111,
+   "line": 133,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -5662,6 +5748,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261107_0001_two_factor.sql",
    "used_by": [
+    "Source\\Controllers\\Api\\V1\\UserTwoFactor",
     "Source\\Services\\TwoFactorService"
    ]
   }
@@ -5918,11 +6005,15 @@
    "Source\\Services\\TwoFactorService",
    "Source\\Support\\SecretBox"
   ],
+  "tests/legacy/Unit/StudioErpShellTest.php": [],
   "tests/legacy/Unit/ThumbFallbackTest.php": [
    "Source\\Support\\Thumb"
   ],
   "tests/legacy/Unit/TotpTest.php": [
    "Source\\Support\\Totp"
+  ],
+  "tests/legacy/Unit/TwoFactorAdminResetTest.php": [
+   "Source\\Services\\TwoFactorAdminReset"
   ],
   "tests/legacy/Unit/TwoFactorSchemaMissingTest.php": [
    "Source\\Models\\Auth"
@@ -5942,6 +6033,10 @@
   "tests/smoke.php": [
    "Source\\Core\\Router",
    "Source\\Support\\Access"
+  ],
+  "tests/studio/render-smoke.php": [
+   "Source\\Core\\View",
+   "Source\\Models\\User"
   ]
  }
 }

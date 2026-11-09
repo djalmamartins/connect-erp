@@ -24,8 +24,8 @@ final class LoginThrottle
 
     /** [escopo => [tipo => [máximo de falhas, janela em segundos]]] */
     public const LIMITS = [
-        self::LOGIN => ['account' => [10, 900], 'ip' => [30, 900]],
-        self::TWO_FACTOR => ['account' => [10, 900], 'ip' => [30, 900]],
+        self::LOGIN => ['account' => [6, 900], 'ip' => [30, 900]],
+        self::TWO_FACTOR => ['account' => [6, 900], 'ip' => [30, 900]],
     ];
 
     /** Linhas mais antigas que isto são apagadas a cada falha registrada. */

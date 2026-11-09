@@ -45,6 +45,8 @@ $route->patch("/condominiums/{id}/onboarding/items/{item}", "CondominiumOnboardi
 $route->get("/onboarding/templates", "OnboardingTemplates:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/onboarding/templates", "OnboardingTemplates:create", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->patch("/onboarding/templates/{id}", "OnboardingTemplates:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reset do 2FA de outro usuário por quem tem security.2fa.manage (ADR 0025).
+$route->delete("/users/{id}/2fa", "UserTwoFactor:reset", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Saldo calculado das contas bancárias (ADR 0024). Antes do laço dos cadastros: /bank-accounts/{id}
 // capturaria "balances".
@@ -98,6 +100,26 @@ if (erp_host()) {
     $route->get("/forget/{code}", "Web:reset");
     $route->post("/reset", "Web:reset");
     $route->namespace(null);
+} elseif (studio_host()) {
+    /**
+     * Host próprio do Studio (studio.connect.lab, ADR 0026): só Studio, Help Desk e a
+     * recuperação de senha do núcleo. A raiz leva ao painel; o site não responde aqui.
+     */
+    $route->namespace(null);
+    $route->group(null);
+    $route->get("/", static function (): void {
+        header("Location: " . url("/studio"), true, 302);
+    });
+    $route->namespace("Source\\Controllers\\Web\\Connect");
+    $route->get("/forget", "Web:forget");
+    $route->post("/forget", "Web:forget");
+    $route->get("/forget/{code}", "Web:reset");
+    $route->post("/reset", "Web:reset");
+    require moves_container_path('studio', 'default') . "/routes.php";
+    $helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/routes.php";
+    if (is_file($helpDeskRoutes)) {
+        require $helpDeskRoutes;
+    }
 } else {
 
 /**
@@ -166,7 +188,8 @@ if ($route->error() && erp_host()) {
     $isHelpDesk = (bool)preg_match("~/helpdesk(?:/|$)~", $requestPath);
     $isSystemArea = (bool)preg_match("~/(?:studio|helpdesk|app|erp|suporte)(?:/|$)~", $requestPath);
     $publicError = !CONF_ACCESS_SITE && !$developerBypass && !$isSystemArea ? "indisponivel" : $route->error();
-    $route->redirect(($isHelpDesk ? "/helpdesk/ops/" : ($isStudio ? "/studio/ops/" : "/ops/")) . $publicError);
+    // No host do Studio não existe /ops do site: todo erro vai para a página de erro do painel.
+    $route->redirect(($isHelpDesk ? "/helpdesk/ops/" : ($isStudio || studio_host() ? "/studio/ops/" : "/ops/")) . $publicError);
 }
 
 ob_end_flush();

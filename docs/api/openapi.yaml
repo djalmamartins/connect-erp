@@ -234,6 +234,39 @@ paths:
         '429':
           description: Muitas tentativas
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /users/{id}/2fa:
+    delete:
+      operationId: resetUserTwoFactor
+      summary: Redefine (remove) o 2FA de outro usuário
+      description: >-
+        Exige security.2fa.manage. Não vale para o próprio usuário (use a tela de segurança) nem para
+        alvo com nível maior que o de quem pede. Remove segredo e códigos de recuperação e grava
+        auditoria (ADR 0025). No próximo login o usuário cadastra o autenticador de novo.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: 2FA removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { user_id: { type: integer }, two_factor_enabled: { const: false } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: O usuário não tem 2FA ativo
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422':
+          description: Pedido para o próprio usuário (self_reset)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '429':
+          description: Muitas tentativas
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
   /me:
     get:
       operationId: getMe
