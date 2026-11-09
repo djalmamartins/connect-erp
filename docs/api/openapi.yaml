@@ -1223,6 +1223,55 @@ paths:
         '409': { description: Já cancelado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /meter-readings:
+    get:
+      operationId: listMeterReadings
+      summary: Leituras com consumo e valor (erp.meter_readings.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: competence, in: query, schema: { type: string, example: '2026-11' } }
+        - { name: kind, in: query, schema: { type: string, enum: [agua, gas, energia] } }
+      responses:
+        '200': { description: '{ data: [{ meter_id, unit_label, kind, competence, previous_reading, reading, consumption, amount_cents, tariff_valid_from, billed }], total, totals: { consumption, amount_cents } } (até 500)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: recordMeterReading
+      summary: Lança ou corrige a leitura do relógio na competência (erp.meter_readings.manage)
+      description: >-
+        Consumo = leitura − anterior (competência anterior ou leitura inicial do relógio); leitura menor
+        é recusada. Valor pelas faixas progressivas vigentes na data da leitura (do condomínio ou o
+        padrão da Connect). Corrigir só vale sem cobrança e sem leitura posterior.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [meter_id, competence, reading], properties: { meter_id: { type: integer }, competence: { type: string }, reading: { oneOf: [{ type: number, minimum: 0 }, { type: string, example: '123,456' }] }, read_on: { type: string, format: date, description: 'Padrão hoje; não pode ser futura' } } } } }
+      responses:
+        '201': { description: Leitura com consumo e valor }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Leitura já cobrada ou há leitura posterior' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /meter-readings/bill:
+    post:
+      operationId: billMeterReadings
+      summary: Gera uma conta a receber por unidade com o consumo da competência (erp.meter_readings.manage)
+      description: Só leituras com valor e ainda não cobradas; tudo ou nada; cobrar de novo não duplica.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, competence, kind, chart_account_id, due_on], properties: { condominium_id: { type: integer }, competence: { type: string }, kind: { type: string, enum: [agua, gas, energia] }, chart_account_id: { type: integer, description: 'Conta analítica de receita' }, due_on: { type: string, format: date } } } } }
+      responses:
+        '200': { description: '{ data: { competence, kind, created: [entry_id], skipped } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Cobrada em paralelo }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Dados inválidos ou um lançamento fora das regras (fields), ex.: competência fechada' }
 
   /inspection-templates:
     get:

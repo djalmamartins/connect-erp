@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**252** rotas fixas · **169** classes em `source/` · **81** tabelas nas migrations · **98** arquivos de teste · **47** ADRs · **172** páginas no catálogo do ERP.
+**255** rotas fixas · **171** classes em `source/` · **84** tabelas nas migrations · **100** arquivos de teste · **48** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -29,7 +29,7 @@ flowchart LR
   env_web --> pkg_Controllers_Web_Connect["Controllers/Web/Connect"]
   pkg_svc["Services"]:::svc
   pkg_mdl["Models"]:::svc
-  db[("MariaDB: 81 tabelas")]
+  db[("MariaDB: 84 tabelas")]
   pkg_Controllers_Api_V1 -.-> pkg_svc
   pkg_Controllers_Environments -.-> pkg_svc
   pkg_Controllers_Erp_Connect -.-> pkg_svc
@@ -103,6 +103,11 @@ flowchart LR
   Source_Controllers_Api_V1_Me --> Source_Services_CondominiumScope
   Source_Services_TwoFactorService["Services/TwoFactorService"]
   Source_Controllers_Api_V1_Me --> Source_Services_TwoFactorService
+  Source_Controllers_Api_V1_MeterReadings["Controllers/Api/V1/MeterReadings"]
+  Source_Services_Erp_MeterReadings["Services/Erp/MeterReadings"]
+  Source_Controllers_Api_V1_MeterReadings --> Source_Services_Erp_MeterReadings
+  Source_Controllers_Api_V1_MeterReadings --> Source_Services_Erp_Registry_RegistryNotFound
+  Source_Controllers_Api_V1_MeterReadings --> Source_Services_Erp_Registry_RegistryValidationException
   Source_Controllers_Api_V1_MonthClosings["Controllers/Api/V1/MonthClosings"]
   Source_Controllers_Api_V1_MonthClosings --> Source_Services_CondominiumAccessDenied
   Source_Services_Erp_MonthClosing["Services/Erp/MonthClosing"]
@@ -275,6 +280,13 @@ flowchart LR
   t_erp_invoices[("erp_invoices")]
   Source_Services_Erp_Invoices --> t_erp_invoices
   Source_Services_Erp_Invoices --> t_pages
+  t_erp_meter_readings[("erp_meter_readings")]
+  Source_Services_Erp_MeterReadings --> t_erp_meter_readings
+  t_erp_meters[("erp_meters")]
+  Source_Services_Erp_MeterReadings --> t_erp_meters
+  t_erp_tariffs[("erp_tariffs")]
+  Source_Services_Erp_MeterReadings --> t_erp_tariffs
+  Source_Services_Erp_MeterReadings --> t_erp_units
   Source_Services_Erp_MonthClosing --> t_condominiums
   Source_Services_Erp_MonthClosing --> t_erp_bank_accounts
   Source_Services_Erp_MonthClosing --> t_erp_chart_accounts
@@ -310,6 +322,7 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_linkable_areas
   t_erp_lost_found[("erp_lost_found")]
   Source_Services_Erp_Registry_Definitions --> t_erp_lost_found
+  Source_Services_Erp_Registry_Definitions --> t_erp_meters
   t_erp_pets[("erp_pets")]
   Source_Services_Erp_Registry_Definitions --> t_erp_pets
   Source_Services_Erp_Registry_Definitions --> t_erp_recurring_entries
@@ -317,6 +330,7 @@ flowchart LR
   Source_Services_Erp_Registry_Definitions --> t_erp_residents
   t_erp_suppliers[("erp_suppliers")]
   Source_Services_Erp_Registry_Definitions --> t_erp_suppliers
+  Source_Services_Erp_Registry_Definitions --> t_erp_tariffs
   Source_Services_Erp_Registry_Definitions --> t_erp_units
   t_erp_useful_contacts[("erp_useful_contacts")]
   Source_Services_Erp_Registry_Definitions --> t_erp_useful_contacts
@@ -466,7 +480,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>index</b> (78 rotas)</summary>
+<details><summary><b>index</b> (81 rotas)</summary>
 
 | Verbo | Caminho | Controller | Onde |
 |---|---|---|---|
@@ -521,33 +535,36 @@ flowchart LR
 | GET | `/api/v1/unit-documents/verify/{code}` | `Controllers/Api/V1/UnitDocuments::verify` | [index.php:98](../../index.php#L98) |
 | GET | `/api/v1/unit-documents/{id}` | `Controllers/Api/V1/UnitDocuments::show` | [index.php:99](../../index.php#L99) |
 | POST | `/api/v1/unit-documents/{id}/cancel` | `Controllers/Api/V1/UnitDocuments::cancel` | [index.php:100](../../index.php#L100) |
-| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:116](../../index.php#L116) |
-| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:117](../../index.php#L117) |
-| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:118](../../index.php#L118) |
-| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:119](../../index.php#L119) |
-| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:120](../../index.php#L120) |
-| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:121](../../index.php#L121) |
-| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:122](../../index.php#L122) |
-| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:123](../../index.php#L123) |
-| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:125](../../index.php#L125) |
-| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:126](../../index.php#L126) |
-| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:127](../../index.php#L127) |
-| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:136](../../index.php#L136) |
-| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:137](../../index.php#L137) |
-| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:151](../../index.php#L151) |
-| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:152](../../index.php#L152) |
-| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:153](../../index.php#L153) |
-| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:154](../../index.php#L154) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:157](../../index.php#L157) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:158](../../index.php#L158) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:159](../../index.php#L159) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:160](../../index.php#L160) |
-| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:173](../../index.php#L173) |
-| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:174](../../index.php#L174) |
-| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:175](../../index.php#L175) |
-| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:176](../../index.php#L176) |
-| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:192](../../index.php#L192) |
-| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:194](../../index.php#L194) |
+| GET | `/api/v1/meter-readings` | `Controllers/Api/V1/MeterReadings::index` | [index.php:102](../../index.php#L102) |
+| POST | `/api/v1/meter-readings` | `Controllers/Api/V1/MeterReadings::store` | [index.php:103](../../index.php#L103) |
+| POST | `/api/v1/meter-readings/bill` | `Controllers/Api/V1/MeterReadings::bill` | [index.php:104](../../index.php#L104) |
+| GET | `/api/v1/inspection-templates` | `Controllers/Api/V1/Inspections::templates` | [index.php:120](../../index.php#L120) |
+| GET | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::index` | [index.php:121](../../index.php#L121) |
+| GET | `/api/v1/inspections/schedule` | `Controllers/Api/V1/Inspections::schedule` | [index.php:122](../../index.php#L122) |
+| POST | `/api/v1/inspections` | `Controllers/Api/V1/Inspections::store` | [index.php:123](../../index.php#L123) |
+| GET | `/api/v1/inspections/{id}` | `Controllers/Api/V1/Inspections::show` | [index.php:124](../../index.php#L124) |
+| PUT | `/api/v1/inspections/{id}/items/{item}` | `Controllers/Api/V1/Inspections::answer` | [index.php:125](../../index.php#L125) |
+| POST | `/api/v1/inspections/{id}/items/{item}/photos` | `Controllers/Api/V1/Inspections::photo` | [index.php:126](../../index.php#L126) |
+| POST | `/api/v1/inspections/{id}/complete` | `Controllers/Api/V1/Inspections::complete` | [index.php:127](../../index.php#L127) |
+| GET | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::index` | [index.php:129](../../index.php#L129) |
+| POST | `/api/v1/tickets` | `Controllers/Api/V1/Tickets::store` | [index.php:130](../../index.php#L130) |
+| GET | `/api/v1/tickets/{id}` | `Controllers/Api/V1/Tickets::show` | [index.php:131](../../index.php#L131) |
+| GET | `/ambiente/{environment}` | `Controllers/Environments/Handoff::go` | [index.php:140](../../index.php#L140) |
+| GET | `/ambiente/entrar/{environment}/{token}` | `Controllers/Environments/Handoff::enter` | [index.php:141](../../index.php#L141) |
+| GET | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:155](../../index.php#L155) |
+| POST | `/studio/login/2fa` | `Controllers/Studio/TwoFactor::challenge` | [index.php:156](../../index.php#L156) |
+| GET | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:157](../../index.php#L157) |
+| POST | `/studio/seguranca/2fa` | `Controllers/Studio/TwoFactor::manage` | [index.php:158](../../index.php#L158) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:161](../../index.php#L161) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:162](../../index.php#L162) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:163](../../index.php#L163) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:164](../../index.php#L164) |
+| GET | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:177](../../index.php#L177) |
+| POST | `/forget` | `Controllers/Web/Connect/Web::forget` | [index.php:178](../../index.php#L178) |
+| GET | `/forget/{code}` | `Controllers/Web/Connect/Web::reset` | [index.php:179](../../index.php#L179) |
+| POST | `/reset` | `Controllers/Web/Connect/Web::reset` | [index.php:180](../../index.php#L180) |
+| GET | `/` | `Controllers/Web/Connect/Web::unavailable` | [index.php:196](../../index.php#L196) |
+| GET | `/ops/{errcode}` | `Controllers/Web/Connect/Web::error` | [index.php:198](../../index.php#L198) |
 
 </details>
 
@@ -709,14 +726,17 @@ flowchart LR
 | `erp_lawyers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_linkable_areas` | `20261108_0301_erp_condominium_areas_assets.sql` | `20261108_0404_linkable_area_units.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_lost_found` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_meter_readings` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings` |
+| `erp_meters` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
 | `erp_month_closings` | `20261108_0511_month_closings.sql` | — | `Services/Erp/MonthClosing`, `Services/Erp/Registry/RegistryService` |
 | `erp_pets` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_price_indexes` | `20261108_0522_billing_rules_price_indexes.sql` | — | `Services/Erp/BillingRules` |
 | `erp_recurring_entries` | `20261108_0508_recurring_entries.sql` | — | `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions` |
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
+| `erp_tariffs` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
 | `erp_unit_documents` | `20261108_0526_unit_documents.sql` | — | `Services/Erp/UnitDocuments` |
-| `erp_units` | `20261108_0401_units.sql` | — | `Controllers/Studio/Studio`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Support/TicketService` |
+| `erp_units` | `20261108_0401_units.sql` | — | `Controllers/Studio/Studio`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Support/TicketService` |
 | `erp_useful_contacts` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_vehicles` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/Registry/Definitions` |
 | `erp_visit_forecasts` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -758,7 +778,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (52)</summary>
+<details><summary><b>Controllers</b> (53)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -772,6 +792,7 @@ flowchart LR
 | [`Controllers/Api/V1/Inspections`](../../source/Controllers/Api/V1/Inspections.php) | Auth, User, InspectionError, InspectionService | — | — |
 | [`Controllers/Api/V1/Invoices`](../../source/Controllers/Api/V1/Invoices.php) | Auth, User, Invoices, RegistryLocked, RegistryNotFound, RegistryValidationException, Access | — | — |
 | [`Controllers/Api/V1/Me`](../../source/Controllers/Api/V1/Me.php) | Auth, CondominiumScope, TwoFactorService, Access | condominiums | — |
+| [`Controllers/Api/V1/MeterReadings`](../../source/Controllers/Api/V1/MeterReadings.php) | Auth, User, MeterReadings, RegistryNotFound, RegistryValidationException, Access | — | — |
 | [`Controllers/Api/V1/MonthClosings`](../../source/Controllers/Api/V1/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, Access | — | — |
 | [`Controllers/Api/V1/OnboardingTemplates`](../../source/Controllers/Api/V1/OnboardingTemplates.php) | Auth, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
 | [`Controllers/Api/V1/RecurringEntriesGenerate`](../../source/Controllers/Api/V1/RecurringEntriesGenerate.php) | Auth, RecurringEntries, Access | — | — |
@@ -877,17 +898,17 @@ flowchart LR
 | [`Models/Support/SupportArticle`](../../source/Models/Support/SupportArticle.php) | Model | support_articles | 1 |
 | [`Models/Support/SupportCategory`](../../source/Models/Support/SupportCategory.php) | Model | support_categories | 1 |
 | [`Models/Talk/Talk`](../../source/Models/Talk/Talk.php) | Model | — | — |
-| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 32 |
+| [`Models/User`](../../source/Models/User.php) | Model, AppOwner, Access | — | 33 |
 
 </details>
 
-<details><summary><b>Services</b> (48)</summary>
+<details><summary><b>Services</b> (49)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
 | [`Services/CondominiumAccessDenied`](../../source/Services/CondominiumAccessDenied.php) | — | — | 5 |
 | [`Services/CondominiumRegistry`](../../source/Services/CondominiumRegistry.php) | Connect, User, Access, Audit | condominiums, user_condominium_access | 1 |
-| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 24 |
+| [`Services/CondominiumScope`](../../source/Services/CondominiumScope.php) | Connect, User, AppLogger | access_permissions, access_role_permissions, access_roles, access_user_overrides, access_user_roles, condominiums, user_condominium_access | 25 |
 | [`Services/CondominiumValidator`](../../source/Services/CondominiumValidator.php) | — | — | 2 |
 | [`Services/Environments`](../../source/Services/Environments.php) | Connect, User | auth_environment_handoffs | 2 |
 | [`Services/Erp/Agreements`](../../source/Services/Erp/Agreements.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_agreement_originals, erp_agreements, erp_bank_charges, erp_entries, erp_units, pages | 3 |
@@ -902,14 +923,15 @@ flowchart LR
 | [`Services/Erp/FinancialReports`](../../source/Services/Erp/FinancialReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries | 3 |
 | [`Services/Erp/Invoices`](../../source/Services/Erp/Invoices.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_entries, erp_invoice_items, erp_invoice_types, erp_invoices, pages | 4 |
 | [`Services/Erp/LateCharges`](../../source/Services/Erp/LateCharges.php) | — | — | 2 |
+| [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 7 |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_deliveries, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 13 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_common_areas, erp_cost_centers, erp_deliveries, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_meters, erp_pets, erp_recurring_entries, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 14 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 3 |
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 8 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
-| [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 7 |
-| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 19 |
+| [`Services/Erp/Registry/RegistryNotFound`](../../source/Services/Erp/Registry/RegistryNotFound.php) | — | — | 8 |
+| [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, Audit | condominiums, erp_month_closings, erp_units, pages, system_audit_logs | 20 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 10 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 8 |
 | [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_unit_documents, erp_units, pages | 3 |
@@ -1018,6 +1040,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0042 — Portaria (AP-131 a AP-136) pelo motor de cadastros](../../docs/Organic%20Code/decisions/0042-gatehouse.md)
 - [0043 — Telas de encargos: regra de cobrança, IPCA, sugestão e quebra de acordo](../../docs/Organic%20Code/decisions/0043-late-charges-screens.md)
 - [0044 — Documentos da unidade: certidão, declaração, quitação e anuência](../../docs/Organic%20Code/decisions/0044-unit-documents.md)
+- [0045 — Leituras e consumo: relógios, tarifas por faixa e cobrança individual](../../docs/Organic%20Code/decisions/0045-meter-readings.md)
 - [0046 — Telas dos documentos da unidade (AP-123, AP-124, AP-125 e AP-130)](../../docs/Organic%20Code/decisions/0046-unit-documents-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
