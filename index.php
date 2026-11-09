@@ -114,6 +114,9 @@ $route->post("/occurrences/{id}/ticket", "Occurrences:ticket", null, \Source\Sup
 $route->get("/dashboard", "OperationalDashboard:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/reservations/{id}/call-waitlist", "OperationalDashboard:callWaitlist", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/maintenances/{id}/next", "OperationalDashboard:nextMaintenance", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Painéis do condomínio (AP-002) e da unidade (AP-003), ADR 0054.
+$route->get("/panels/condominium/{id}", "Panels:condominium", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/panels/unit/{id}", "Panels:unit", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

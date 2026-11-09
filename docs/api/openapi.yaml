@@ -1401,6 +1401,36 @@ paths:
         '409': { description: 'Não concluída ou a próxima já foi gerada' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: Manutenção única (sem periodicidade) }
+  /panels/condominium/{id}:
+    get:
+      operationId: condominiumPanel
+      summary: Painel do condomínio (AP-002) (erp.access e erp.units.view)
+      description: >-
+        occupancy (unidades, ocupadas por morador ativo, vagas, taxa); finance (saldo das contas
+        bancárias, inadimplência com encargos e faixas, fechamento e resultado da competência atual);
+        operations (os cards e alertas do /dashboard para o condomínio).
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: { condominium, as_of, occupancy, finance, operations } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /panels/unit/{id}:
+    get:
+      operationId: unitPanel
+      summary: Painel da unidade (AP-003) (erp.access e erp.units.view)
+      description: >-
+        unit; people (moradores e proprietários ativos); finance (vencidas com encargos, a vencer, acordos
+        ativos ou quebrados); documents (últimos 10 emitidos); operations (entregas aguardando, reservas
+        futuras, ocorrências abertas, veículos e animais).
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: { unit, as_of, people, finance, documents, operations } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /inspection-templates:
     get:
