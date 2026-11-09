@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0088.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0088; Preparar: 0107, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0089.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0089; Preparar: 0108, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -113,6 +113,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0085](../Organic%20Code/decisions/0085-erp-settings.md) | Configurações do ERP (AP-147 a AP-167): parâmetros por condomínio sobre o padrão, sem credenciais e auditados, saldo inicial por centro de custo, previsão orçamentária, frações em lote, banners e impostos |
 | [0086](../Organic%20Code/decisions/0086-nfe-import.md) | Importação de NF-e XML (AP-141): leitura segura sem DOCTYPE nem entidades, contas a pagar por duplicata depois da prévia, chave de acesso única por condomínio, sem SEFAZ |
 | [0087](../Organic%20Code/decisions/0087-erp-hardening.md) | Endurecimento do ERP: dados pessoais mascarados na auditoria e nos logs, tetos nos relatórios, índices de período, sem consulta por linha nas importações e limite de 30 CSV por hora |
+| [0088](../Organic%20Code/decisions/0088-assemblies-voting.md) | Assembleia e votação: edital pela outbox, presença com procuração, inadimplente sem voto, apuração por fração ou unidade e ata imutável com sha256 |
 | [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
 | [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
 | [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |
@@ -120,3 +121,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0104](../Organic%20Code/decisions/0104-meter-reading-closed-competence.md) | Leitura manual e gravação da importação recusam competência fechada; consumo de energia em kWh |
 | [0105](../Organic%20Code/decisions/0105-unit-documents-reference-date.md) | Documentos da unidade apurados na data de referência, só com contas do condomínio da unidade; cancelamento sem auditoria dupla |
 | [0106](../Organic%20Code/decisions/0106-recurring-generation-errors.md) | Geração dos lançamentos fixos desfaz a transação do modelo em qualquer erro; dado inválido vai para failed |
+| [0107](../Organic%20Code/decisions/0107-assembly-vote-tally-lock.md) | Assembleia: voto com o item travado em modo compartilhado e apuração com o item travado antes de somar, sem voto fora do resultado |
