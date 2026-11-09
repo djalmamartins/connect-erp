@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**323** rotas fixas · **211** classes em `source/` · **110** tabelas nas migrations · **150** arquivos de teste · **88** ADRs · **172** páginas no catálogo do ERP.
+**323** rotas fixas · **211** classes em `source/` · **110** tabelas nas migrations · **151** arquivos de teste · **92** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 9, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -1468,6 +1468,10 @@ Services sem teste que os cite (3): `Services/Erp/CollectionScreenOptions`, `Ser
 - [0100 — Fechamento mensal sem corrida com a gravação de lançamentos](../../docs/Organic%20Code/decisions/0100-month-closing-concurrency.md)
 - [0101 — Chamado da ocorrência sem órfão e saldo bancário só com o próprio condomínio](../../docs/Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md)
 - [0102 — Prestação de contas: conciliação bancária só com o próprio condomínio e até o fim do período](../../docs/Organic%20Code/decisions/0102-statement-bank-filter.md)
+- [0103 — Painel da unidade só com as contas dela e chamada da lista de espera travada](../../docs/Organic%20Code/decisions/0103-unit-panel-and-waitlist-call.md)
+- [0104 — Leitura manual recusa competência fechada e unidade do consumo de energia](../../docs/Organic%20Code/decisions/0104-meter-reading-closed-competence.md)
+- [0105 — Documentos da unidade na data de referência e só com contas do condomínio da unidade](../../docs/Organic%20Code/decisions/0105-unit-documents-reference-date.md)
+- [0106 — Geração dos lançamentos fixos não deixa transação aberta](../../docs/Organic%20Code/decisions/0106-recurring-generation-errors.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)

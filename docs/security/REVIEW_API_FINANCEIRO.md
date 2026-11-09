@@ -476,3 +476,27 @@ Escopo: `source/Services/Erp/UnitDocuments.php` e `VirtualDisk.php`.
 - Disco Virtual: dois envios simultâneos do mesmo arquivo na mesma pasta podem passar pela checagem de
   duplicidade (não há índice único). O risco é baixo: só gera uma cópia a mais.
 
+## 15ª rodada — Lançamentos fixos
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 0d0d74b · Correções: ADR 0106
+
+Escopo: `source/Services/Erp/RecurringEntries.php` e `POST /api/v1/recurring-entries/generate`.
+
+| Ponto | Situação |
+|---|---|
+| Permissão: `erp.recurring_entries.manage` e `erp.entries.manage`; escopo pelos condomínios do usuário | CONFIRMADO |
+| Sem duplicar: modelo travado (`FOR UPDATE`), vínculo conferido e chave única (modelo, competência) | CONFIRMADO |
+| Cada lançamento pelo `RegistryService` (validações, fechamento e auditoria) | CONFIRMADO |
+| Erro num modelo não deixa transação aberta | CONFIRMADO, com o achado 1 |
+
+### Achado corrigido (ADR 0106)
+
+1. **Transação aberta.** Um erro fora de validação e de banco (ex.: dia 31 gravado direto no banco)
+   subia sem desfazer a transação do modelo. Agora o modelo vai para `failed`, e qualquer outro erro
+   desfaz a transação antes de subir.
+
+### Lacunas
+
+- A geração percorre todos os modelos ativos do escopo sem limite. É aceitável para uma administradora,
+  mas uma geração de todos os condomínios de uma vez faz uma transação por modelo na mesma requisição.
+
