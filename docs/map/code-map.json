@@ -261,6 +261,10 @@
    "title": "0066 — Cobrança e multas: contas do caso no escopo da unidade, trava no andamento e nome do contato limpo"
   },
   {
+   "file": "docs/Organic Code/decisions/0067-collection-reports-hardening.md",
+   "title": "0067 — Relatórios de cobrança: CSV mais estrito e teto de recebimentos"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -2122,6 +2126,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/ChartReportsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
@@ -2176,6 +2181,7 @@
    "tests": [
     "tests/legacy/Integration/ChartReportsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/CondominiumRegistryTest.php",
     "tests/legacy/Integration/CondominiumScopeTest.php",
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
@@ -2230,6 +2236,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/ChartReportsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
@@ -2320,6 +2327,7 @@
    "tests": [
     "tests/legacy/Integration/AgreementsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/ImportsCycleIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
@@ -2535,6 +2543,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Unit/CollectionReportsTest.php"
    ]
   },
@@ -3187,6 +3196,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/ChartReportsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
+    "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
     "tests/legacy/Integration/CollectionsCycleIntegrationTest.php",
     "tests/legacy/Integration/CollectionsIntegrationTest.php",
     "tests/legacy/Integration/CommunicationsCycleIntegrationTest.php",
@@ -3959,7 +3969,7 @@
   }
  },
  "counts": {
-  "adrs": 78,
+  "adrs": 79,
   "classes": 207,
   "dynamic_route_lines": {
    "erp": 9,
@@ -3968,7 +3978,7 @@
   "erp_pages": 172,
   "routes": 323,
   "tables": 110,
-  "tests": 145
+  "tests": 146
  },
  "erp_pages": [
   {
@@ -9213,6 +9223,14 @@
    "Source\\Services\\Erp\\Registry\\RegistryService"
   ],
   "tests/legacy/Integration/CollectionReportsIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Agreements",
+   "Source\\Services\\Erp\\CollectionReports",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
+  "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumAccessDenied",
    "Source\\Services\\CondominiumScope",
