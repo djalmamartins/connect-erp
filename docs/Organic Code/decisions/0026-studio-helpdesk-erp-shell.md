@@ -52,3 +52,9 @@ e dezenas de components que dependem das classes `studio-*`.
 - **Menu igual ao do ERP**: links diretos (Dashboard / Fila de chamados) e grupos em `<details>`
   com submenu. O grupo da página atual abre sozinho; com o menu recolhido, clicar num grupo expande
   o menu.
+- **Cabeçalho da sidebar**: o tipo do módulo fica em cima e o nome embaixo. São "CMS / Moves Studio",
+  "Atendimento / Moves Help Desk" e, no ERP, "ERP / Connect ERP".
+- **AP-021**: a lista de lançamentos fixos ganhou o botão "Gerar lançamentos do mês", que chama
+  `POST /api/v1/recurring-entries/generate` (ADR 0027) com o token CSRF e mostra o resultado
+  (gerados, já existentes e com erro). O botão só aparece com `erp.recurring_entries.manage` e
+  `erp.entries.manage`, e a API valida as duas de novo.

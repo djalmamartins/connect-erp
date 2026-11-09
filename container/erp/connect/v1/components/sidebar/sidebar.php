@@ -30,8 +30,8 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <button type="button" class="erp-sidebar__close" data-erp-nav-close aria-label="Fechar menu"><?= $icon('close') ?></button>
     </div>
     <div class="erp-sidebar__context">
-        <small>Administradora</small>
-        <strong>Connect · ERP</strong>
+        <small>ERP</small>
+        <strong>Connect ERP</strong>
     </div>
     <nav class="erp-nav" aria-label="Menu principal">
         <?php foreach ($catalog['groups'] as $groupKey => $group):

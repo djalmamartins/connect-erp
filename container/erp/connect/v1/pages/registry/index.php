@@ -24,6 +24,15 @@ $query = static function (array $changes) use ($filters): string {
 $filtered = array_filter([$filters['condominium_id'] ?? null, $filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
+    <?php // AP-021: gera os lançamentos da competência a partir dos fixos (ADR 0027). A API valida tudo de novo.
+    if (($definition['page'] ?? '') === 'AP-021' && $canManage && \Source\Support\Access::can('erp.entries.manage')): ?>
+        <form class="erp-generate-month" data-erp-generate-recurring="<?= $this->e(url('/api/v1/recurring-entries/generate')) ?>" data-condominium="<?= (int)($filters['condominium_id'] ?? 0) ?>">
+            <?= csrf_input() ?>
+            <label class="erp-sr-only" for="erp-generate-competence">Competência</label>
+            <input class="erp-input" type="month" id="erp-generate-competence" name="competence" value="<?= date('Y-m') ?>" required>
+            <button type="submit" class="erp-btn"><?= $icon('calendar', 'erp-icon--sm') ?>Gerar lançamentos do mês</button>
+        </form>
+    <?php endif; ?>
 <?php $actions = trim((string)ob_get_clean());
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => ($definition['group'] ?? 'cadastros') === 'condominios' ? 'Condomínios' : 'Cadastros',

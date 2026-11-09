@@ -93,4 +93,17 @@ final class StudioErpShellTest extends TestCase
         self::assertStringContainsString("moves_container_path('studio', 'default')", $branch[1] ?? '');
         self::assertStringContainsString("moves_container_path('helpdesk', 'default')", $branch[1] ?? '');
     }
+
+    public function testRecurringEntriesPageOffersMonthlyGeneration(): void
+    {
+        $root = moves_container_path('erp', CONF_VIEW_ERP);
+        $page = (string)file_get_contents($root . '/pages/registry/index.php');
+        self::assertStringContainsString("'AP-021'", $page);
+        self::assertStringContainsString("url('/api/v1/recurring-entries/generate')", $page);
+        self::assertStringContainsString("Access::can('erp.entries.manage')", $page);
+        self::assertStringContainsString('csrf_input()', $page);
+        $js = (string)file_get_contents($root . '/assets/js/erp.js');
+        self::assertStringContainsString('form[data-erp-generate-recurring]', $js);
+        self::assertStringContainsString("'X-CSRF-Token'", $js);
+    }
 }

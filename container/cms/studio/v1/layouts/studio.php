@@ -32,7 +32,7 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
             <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
         </div>
         <button class="studio-brand-v2 studio-system-toggle studio-erp-context" type="button" aria-expanded="false" aria-controls="studio-system-panel" title="Trocar de ambiente">
-            <span><small>Administradora</small><strong>Connect · <?= $environmentName ?></strong></span>
+            <span><small><?= $isHelpDeskEnvironment ? 'Atendimento' : 'CMS' ?></small><strong>Moves <?= $environmentName ?></strong></span>
             <ion-icon name="chevron-down-outline"></ion-icon>
         </button>
         <div class="studio-system-panel" id="studio-system-panel" hidden>
