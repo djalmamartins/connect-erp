@@ -290,6 +290,10 @@ if (erp_host()) {
     $route->post("/forget", "Web:forget");
     $route->get("/forget/{code}", "Web:reset");
     $route->post("/reset", "Web:reset");
+    $route->get("/convite/{token}", "ResidentInvite:open");
+    $route->post("/convite/abrir", "ResidentInvite:claim");
+    $route->get("/convite", "ResidentInvite:form");
+    $route->post("/convite", "ResidentInvite:accept");
     $route->namespace(null);
 } elseif (studio_host()) {
     /**
@@ -306,6 +310,10 @@ if (erp_host()) {
     $route->post("/forget", "Web:forget");
     $route->get("/forget/{code}", "Web:reset");
     $route->post("/reset", "Web:reset");
+    $route->get("/convite/{token}", "ResidentInvite:open");
+    $route->post("/convite/abrir", "ResidentInvite:claim");
+    $route->get("/convite", "ResidentInvite:form");
+    $route->post("/convite", "ResidentInvite:accept");
     require moves_container_path('studio', 'default') . "/routes.php";
     $helpDeskRoutes = moves_container_path('helpdesk', 'default') . "/routes.php";
     if (is_file($helpDeskRoutes)) {
