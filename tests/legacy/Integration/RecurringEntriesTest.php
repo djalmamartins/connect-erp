@@ -85,6 +85,20 @@ final class RecurringEntriesTest extends TestCase
         self::assertCount(1, $result['created']);
     }
 
+    public function testTemplateWithInvalidDayFailsWithoutLeavingTransactionOpen(): void
+    {
+        // ADR 0106: dia 31 gravado direto no banco (o cadastro só aceita 1 a 28).
+        $broken = $this->template($this->alpha, '2026-11', null, 10);
+        $ok = $this->template($this->beta, '2026-11', null, 10);
+        $this->pdo->prepare('UPDATE erp_recurring_entries SET day_of_month = 31 WHERE id = ?')->execute([$broken]);
+
+        $result = (new RecurringEntries($this->pdo))->generate($this->admin, '2026-11');
+        self::assertSame(['_form' => 'Competência ou dia inválido.'], $result['failed'][$broken] ?? null);
+        self::assertCount(1, $result['created'], 'O modelo de Beta continua sendo gerado.');
+        self::assertNotContains($ok, array_keys($result['failed']));
+        self::assertFalse($this->pdo->inTransaction(), 'Nenhuma transação fica aberta.');
+    }
+
     private function template(int $condominium, string $starts, ?string $ends, int $day): int
     {
         return $this->service->save($this->admin, 'recurring_entries', [
