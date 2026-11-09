@@ -128,7 +128,7 @@ final class Definitions
                 'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
                 'computed' => ['label'],
                 // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
-                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries'],
+                'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries', 'erp_meters'],
                 'title' => 'number',
                 'order' => 'label',
             ],
@@ -691,6 +691,46 @@ final class Definitions
             'requires' => [['field' => 'picked_up_by', 'when' => 'picked_up_on', 'message' => 'Informe quem retirou a entrega.']],
             'title' => 'recipient',
             'order' => 'received_on',
+        ];
+
+        // Leituras e consumo (AP-041 e AP-043, ADR 0045). As leituras (AP-042) têm serviço próprio
+        // (MeterReadings): o consumo e o valor dependem da leitura anterior e das faixas vigentes.
+        $meterKinds = ['agua' => 'Água', 'gas' => 'Gás', 'energia' => 'Energia'];
+        $definitions['meters'] = [
+            'page' => 'AP-041', 'table' => 'erp_meters', 'route' => '/operacional/relogios',
+            'api' => 'meters', 'permission' => 'erp.meters', 'label' => 'Relógios',
+            'entity' => 'relógio', 'gender' => 'o', 'scope' => 'required', 'group' => 'operacional',
+            'lead' => 'Medidores de água, gás e energia de cada unidade. A leitura inicial é a base da primeira leitura.',
+            'fields' => [
+                'condominium_id' => $condo,
+                'unit_id' => ['label' => 'Unidade', 'required' => true, 'list' => true] + $unit(6),
+                'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'filter' => true, 'options' => $meterKinds],
+                'number' => ['label' => 'Número do medidor', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 4, 'list' => true, 'search' => true],
+                'installed_on' => ['label' => 'Instalado em', 'type' => 'date', 'span' => 4, 'list' => true],
+                'initial_reading' => ['label' => 'Leitura inicial', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'span' => 4, 'hint' => 'Vazio = 0'],
+                'notes' => $notesField,
+            ],
+            'unique' => [['fields' => ['condominium_id', 'kind', 'number'], 'message' => 'Já existe um relógio deste tipo com este número no condomínio.']],
+            'title' => 'number',
+            'order' => 'number',
+        ];
+        $definitions['tariffs'] = [
+            'page' => 'AP-043', 'table' => 'erp_tariffs', 'route' => '/operacional/tarifas',
+            'api' => 'tariffs', 'permission' => 'erp.tariffs', 'label' => 'Tarifas',
+            'entity' => 'faixa de tarifa', 'gender' => 'a', 'scope' => 'optional', 'group' => 'operacional',
+            'lead' => 'Faixas progressivas por tipo e vigência. Sem condomínio, vale o padrão da Connect; a tarifa do condomínio substitui o padrão.',
+            'fields' => [
+                'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: tarifa padrão da Connect'],
+                'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => $meterKinds],
+                'name' => ['label' => 'Faixa', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: Faixa 1'],
+                'from_amount' => ['label' => 'De (m³ ou kWh)', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'required' => true, 'span' => 3, 'list' => true],
+                'to_amount' => ['label' => 'Até', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'span' => 3, 'list' => true, 'not_below' => 'from_amount', 'hint' => 'Vazio = sem limite'],
+                'price_cents' => ['label' => 'Valor por m³ (ou kWh)', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 3, 'list' => true],
+                'valid_from' => ['label' => 'Vigência a partir de', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'notes' => $notesField,
+            ],
+            'title' => 'name',
+            'order' => 'kind',
         ];
 
         foreach ($definitions as $slug => &$definition) {
