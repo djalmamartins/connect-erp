@@ -6,6 +6,9 @@
  * data-erp-unit-documents). Com ?documento=ID, mostra o documento gravado para imprimir.
  * @var array $currentPage @var string $documentKind @var array $unitDocuments @var ?array $unitDocument
  * @var list<array> $documentUnits @var ?string $documentError @var bool $canManageDocuments
+ * Recibo (AP-040, ADR 0057 e 0073): ?unidade= escolhe a unidade e $receiptEntries traz as contas pagas
+ * sem recibo válido para marcar; a emissão manda entry_ids e o servidor confere tudo de novo.
+ * @var ?int $receiptUnit @var list<array> $receiptEntries
  */
 $this->layout('default');
 $route = erp_url($currentPage['route']);
@@ -20,11 +23,16 @@ $kindRoutes = [];
 foreach (\Source\Controllers\Erp\Connect\Panel::UNIT_DOCUMENT_PAGES as $pageId => $kindKey) {
     $kindRoutes[$kindKey] = erp_url($catalog['pages'][$pageId]['route'] ?? '');
 }
+$kindRoutes['receipt'] = erp_url($catalog['pages'][\Source\Controllers\Erp\Connect\Panel::RECEIPT_PAGE]['route'] ?? '');
+$receipt = $documentKind === 'receipt';
+$receiptUnit ??= null;
+$receiptEntries ??= [];
 $intro = [
     'debt_certificate' => 'Emite a certidão de débitos da unidade na data de referência. Sem conta vencida, a certidão sai como "nada consta"; com conta vencida, lista as contas com os encargos.',
     'delinquency_declaration' => 'Declara as contas vencidas em aberto da unidade, com os encargos na data de referência. Só é emitida se houver conta vencida.',
     'quittance' => 'Comprova que todas as contas da unidade até a competência escolhida estão pagas. Com alguma conta em aberto, não é emitido.',
     'consent_letter' => 'Carta em que a administradora declara não haver débito vencido da unidade, para a finalidade informada (por exemplo, venda ou locação).',
+    'receipt' => 'Recibo de contas já pagas da unidade, escolhidas uma a uma. Cada conta entra em um recibo válido só; cancelar o recibo libera a conta para outro.',
 ][$documentKind] ?? '';
 
 ob_start();
@@ -68,7 +76,9 @@ $this->insert('components/layout/page-head', [
                 <?php if ($doc['kind'] === 'consent_letter'): ?><div><dt>Finalidade</dt><dd><?= $this->e((string)$doc['reference']) ?></dd></div><?php endif; ?>
             </dl>
             <div class="erp-unit-doc__text">
-                <?php if ($doc['kind'] === 'quittance'): ?>
+                <?php if ($doc['kind'] === 'receipt'): ?>
+                    <p>Recebemos da unidade <strong><?= $this->e((string)$doc['unit_label']) ?></strong> do <?= $this->e((string)$doc['condominium_name']) ?> a quantia de <strong><?= $this->e($brl((int)$doc['total_cents'])) ?></strong>, referente <?= count($content['entries'] ?? []) === 1 ? 'à conta abaixo' : 'às ' . count($content['entries'] ?? []) . ' contas abaixo' ?>, pagas conforme os registros da administradora. Damos quitação dos valores listados.</p>
+                <?php elseif ($doc['kind'] === 'quittance'): ?>
                     <p>Declaramos que todas as contas da unidade <strong><?= $this->e((string)$doc['unit_label']) ?></strong> do <?= $this->e((string)$doc['condominium_name']) ?> com competência até <strong><?= $this->e($month((string)$doc['reference'])) ?></strong> estão pagas: <?= (int)($content['paid_entries'] ?? 0) ?> conta(s), no total de <?= $this->e($brl((int)($content['paid_cents'] ?? 0))) ?>, conforme os registros da administradora em <?= $this->e($date($doc['as_of'])) ?>.</p>
                 <?php elseif ($doc['kind'] === 'consent_letter'): ?>
                     <p>Declaramos, para fins de <strong><?= $this->e((string)$doc['reference']) ?></strong>, que a unidade <strong><?= $this->e((string)$doc['unit_label']) ?></strong> do <?= $this->e((string)$doc['condominium_name']) ?> não tem contas vencidas em aberto em <?= $this->e($date($doc['as_of'])) ?>, conforme os registros da administradora. Nada temos a opor.</p>
@@ -90,6 +100,14 @@ $this->insert('components/layout/page-head', [
                 </table></div>
                 <?php if (($content['missing_index'] ?? []) !== []): ?><p class="erp-muted">Sem IPCA lançado de <?= $this->e(implode(', ', array_map($month, $content['missing_index']))) ?>: a correção desses meses entrou como zero.</p><?php endif; ?>
             <?php endif; ?>
+            <?php if ($doc['kind'] === 'receipt' && ($content['entries'] ?? []) !== []): ?>
+                <div class="erp-table-wrap" role="region" aria-label="Contas do recibo" tabindex="0"><table class="erp-table">
+                    <caption class="erp-unit-doc__caption">Contas pagas</caption>
+                    <thead><tr><th scope="col">Conta</th><th scope="col">Competência</th><th scope="col">Vencimento</th><th scope="col">Pago em</th><th scope="col" class="is-num">Valor</th></tr></thead>
+                    <tbody><?php foreach ($content['entries'] as $p): ?><tr><td><?= $this->e((string)$p['description']) ?></td><td><?= $this->e($month((string)$p['competence'])) ?></td><td><?= $this->e($date((string)$p['due_on'])) ?></td><td><?= $this->e($date((string)$p['paid_on'])) ?><?= ($p['bank_account'] ?? null) ? '<br><span class="erp-muted">' . $this->e((string)$p['bank_account']) . '</span>' : '' ?></td><td class="is-num"><?= $this->e($brl((int)$p['amount_cents'])) ?></td></tr><?php endforeach; ?></tbody>
+                    <tfoot><tr><th scope="row" colspan="4">Total</th><td class="is-num"><strong><?= $this->e($brl((int)$doc['total_cents'])) ?></strong></td></tr></tfoot>
+                </table></div>
+            <?php endif; ?>
             <?php if ($upcoming !== [] && $doc['kind'] !== 'consent_letter'): ?>
                 <div class="erp-table-wrap" role="region" aria-label="Contas a vencer" tabindex="0"><table class="erp-table">
                     <caption class="erp-unit-doc__caption">Contas a vencer em aberto (<?= $this->e($brl((int)($content['upcoming_cents'] ?? 0))) ?>)</caption>
@@ -108,10 +126,12 @@ $this->insert('components/layout/page-head', [
     <?php else: ?>
         <div class="erp-grid erp-grid--2">
             <?php if ($canManageDocuments): ?>
-                <form class="erp-card erp-form erp-unit-doc__panel" data-unit-document-form aria-labelledby="unit-doc-issue">
+                <<?= $receipt ? 'section' : 'form' ?> class="erp-card erp-form erp-unit-doc__panel"<?= $receipt ? '' : ' data-unit-document-form' ?> aria-labelledby="unit-doc-issue">
                     <div class="erp-card__head"><div><h2 id="unit-doc-issue">Emitir</h2></div></div>
                     <?php if ($documentUnits === []): ?>
                         <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhuma unidade ativa</strong><p>Cadastre as unidades em Condomínios › Unidades ou escolha outro condomínio na barra superior.</p></div>
+                    <?php elseif ($receipt): ?>
+                        <?php $this->insert('components/cards/receipt-entries', ['documentUnits' => $documentUnits, 'receiptUnit' => $receiptUnit, 'receiptEntries' => $receiptEntries, 'route' => $route, 'brl' => $brl, 'date' => $date, 'month' => $month]); ?>
                     <?php else: ?>
                         <div class="erp-form__grid">
                             <div class="erp-field erp-col-12"><label for="unit-doc-unit">Unidade</label><select class="erp-select" id="unit-doc-unit" name="unit_id" required><option value="">Selecione</option><?php $group = null; foreach ($documentUnits as $u): if ($group !== $u['condominium_name']): if ($group !== null): ?></optgroup><?php endif; $group = $u['condominium_name']; ?><optgroup label="<?= $this->e($group) ?>"><?php endif; ?><option value="<?= (int)$u['id'] ?>"><?= $this->e($u['label']) ?></option><?php endforeach; ?></optgroup></select></div>
@@ -125,7 +145,7 @@ $this->insert('components/layout/page-head', [
                         <p class="erp-muted">O documento é gerado das contas a receber da unidade e fica gravado com um código de verificação. Depois de emitido, não muda; para corrigir, cancele e emita outro.</p>
                         <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('file', 'erp-icon--sm') ?>Emitir documento</button></div>
                     <?php endif; ?>
-                </form>
+                </<?= $receipt ? 'section' : 'form' ?>>
             <?php endif; ?>
             <form class="erp-card erp-form erp-unit-doc__panel" data-unit-document-verify aria-labelledby="unit-doc-verify">
                 <div class="erp-card__head"><div><h2 id="unit-doc-verify">Conferir autenticidade</h2><p>Digite o código impresso no documento para abrir o original.</p></div></div>
@@ -140,11 +160,11 @@ $this->insert('components/layout/page-head', [
                 <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhum documento emitido</strong><p><?= $canManageDocuments ? 'Escolha a unidade acima e emita o primeiro.' : 'Os documentos emitidos aparecem aqui.' ?></p></div>
             <?php else: ?>
                 <div class="erp-table-wrap" role="region" aria-labelledby="unit-doc-list" tabindex="0"><table class="erp-table">
-                    <thead><tr><th>Unidade</th><th>Referência</th><th>Resultado</th><th class="is-num">Total</th><th>Código</th><th>Situação</th><th class="is-num">Ações</th></tr></thead>
+                    <thead><tr><th scope="col">Unidade</th><th scope="col">Referência</th><th scope="col">Resultado</th><th scope="col" class="is-num">Total</th><th scope="col">Código</th><th scope="col">Situação</th><th scope="col" class="is-num">Ações</th></tr></thead>
                     <tbody><?php foreach ($rows as $r): $active = $r['status'] === 'issued'; ?><tr>
                         <td><strong class="erp-nowrap"><?= $this->e((string)$r['unit_label']) ?></strong><br><span class="erp-muted"><?= $this->e((string)$r['condominium_name']) ?></span></td>
                         <td><?= $this->e($date($r['as_of'])) ?><?php if ($r['reference'] !== null && $r['reference'] !== ''): ?><br><span class="erp-muted"><?= $this->e($r['kind'] === 'quittance' ? 'até ' . $month((string)$r['reference']) : (string)$r['reference']) ?></span><?php endif; ?></td>
-                        <td><?= $r['result'] === 'clear' ? '<span class="erp-badge erp-badge--success">' . ($r['kind'] === 'quittance' ? 'Quitado' : 'Nada consta') . '</span>' : '<span class="erp-badge erp-badge--warning">Com débitos</span>' ?></td>
+                        <td><?= $r['result'] === 'clear' ? '<span class="erp-badge erp-badge--success">' . ($r['kind'] === 'receipt' ? 'Pago' : ($r['kind'] === 'quittance' ? 'Quitado' : 'Nada consta')) . '</span>' : '<span class="erp-badge erp-badge--warning">Com débitos</span>' ?></td>
                         <td class="is-num"><?= $this->e($brl((int)$r['total_cents'])) ?></td>
                         <td><code class="erp-unit-doc__code-sm"><?= $this->e((string)$r['verification_display']) ?></code><br><span class="erp-muted">Nº <?= (int)$r['id'] ?></span></td>
                         <td><?= $active ? '<span class="erp-badge erp-badge--info">Emitido</span>' : '<span class="erp-badge erp-badge--danger">Cancelado</span>' ?></td>

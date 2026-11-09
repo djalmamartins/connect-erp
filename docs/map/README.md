@@ -3,8 +3,8 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**290** rotas fixas · **192** classes em `source/` · **105** tabelas nas migrations · **128** arquivos de teste · **67** ADRs · **172** páginas no catálogo do ERP.
-Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
+**290** rotas fixas · **194** classes em `source/` · **105** tabelas nas migrations · **129** arquivos de teste · **68** ADRs · **172** páginas no catálogo do ERP.
+Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 9, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
 
@@ -196,6 +196,10 @@ flowchart LR
   Source_Services_CondominiumValidator["Services/CondominiumValidator"]
   Source_Controllers_Erp_Connect_Condominiums --> Source_Services_CondominiumValidator
   Source_Controllers_Erp_Connect_Dash["Controllers/Erp/Connect/Dash"]
+  Source_Controllers_Erp_Connect_EntryShortcutScreens["Controllers/Erp/Connect/EntryShortcutScreens"]
+  Source_Controllers_Erp_Connect_EntryShortcutScreens --> Source_Services_Erp_EntryShortcuts
+  Source_Controllers_Erp_Connect_EntryShortcutScreens --> Source_Services_Erp_Registry_RegistryNotFound
+  Source_Controllers_Erp_Connect_EntryShortcutScreens --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_Erp["Controllers/Erp/Connect/Erp"]
   Source_Controllers_Erp_Connect_Erp --> Source_Services_CondominiumScope
   Source_Controllers_Erp_Connect_Finance["Controllers/Erp/Connect/Finance"]
@@ -232,6 +236,8 @@ flowchart LR
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_MonthClosing
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_OperationalDashboard
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_PanelSummaries
+  Source_Services_Erp_ReceiptCandidates["Services/Erp/ReceiptCandidates"]
+  Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_ReceiptCandidates
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_RecurringEntries
   Source_Services_Erp_Registry_Definitions["Services/Erp/Registry/Definitions"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_Definitions
@@ -408,6 +414,12 @@ flowchart LR
   Source_Services_Erp_PanelSummaries --> t_erp_units
   t_erp_vehicles[("erp_vehicles")]
   Source_Services_Erp_PanelSummaries --> t_erp_vehicles
+  Source_Services_Erp_ReceiptCandidates --> t_erp_entries
+  t_erp_unit_document_entries[("erp_unit_document_entries")]
+  Source_Services_Erp_ReceiptCandidates --> t_erp_unit_document_entries
+  t_erp_unit_documents[("erp_unit_documents")]
+  Source_Services_Erp_ReceiptCandidates --> t_erp_unit_documents
+  Source_Services_Erp_ReceiptCandidates --> t_erp_units
   Source_Services_Erp_RecurringEntries --> t_erp_entries
   t_erp_recurring_entries[("erp_recurring_entries")]
   Source_Services_Erp_RecurringEntries --> t_erp_recurring_entries
@@ -472,9 +484,7 @@ flowchart LR
   t_erp_documents[("erp_documents")]
   Source_Services_Erp_Registry_RegistryService --> t_erp_documents
   Source_Services_Erp_Registry_RegistryService --> t_erp_month_closings
-  t_erp_unit_document_entries[("erp_unit_document_entries")]
   Source_Services_Erp_Registry_RegistryService --> t_erp_unit_document_entries
-  t_erp_unit_documents[("erp_unit_documents")]
   Source_Services_Erp_Registry_RegistryService --> t_erp_unit_documents
   Source_Services_Erp_Registry_RegistryService --> t_erp_units
   Source_Services_Erp_Registry_RegistryService --> t_pages
@@ -579,7 +589,7 @@ flowchart LR
 | POST | `/erp/operacional/agendamentos-pendentes/{id}/recusar` | `Controllers/Erp/Connect/PendingReservations::refuse` | [container/erp/connect/v1/routes.php:129](../../container/erp/connect/v1/routes.php#L129) |
 | GET | `/erp/configuracoes/fila-de-avisos` | `Controllers/Erp/Connect/NotificationQueue::index` | [container/erp/connect/v1/routes.php:132](../../container/erp/connect/v1/routes.php#L132) |
 | POST | `/erp/configuracoes/fila-de-avisos/{id}/reenviar` | `Controllers/Erp/Connect/NotificationQueue::retry` | [container/erp/connect/v1/routes.php:133](../../container/erp/connect/v1/routes.php#L133) |
-| GET | `/erp/condominios/{id}` | `Controllers/Erp/Connect/Condominiums::show` | [container/erp/connect/v1/routes.php:146](../../container/erp/connect/v1/routes.php#L146) |
+| GET | `/erp/condominios/{id}` | `Controllers/Erp/Connect/Condominiums::show` | [container/erp/connect/v1/routes.php:155](../../container/erp/connect/v1/routes.php#L155) |
 
 </details>
 
@@ -898,7 +908,7 @@ flowchart LR
 | `erp_delivery_notices` | `20261108_0529_document_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_documents` | `20261108_0528_virtual_disk.sql` | — | `Services/Erp/Registry/RegistryService`, `Services/Erp/VirtualDisk` |
 | `erp_employees` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
-| `erp_entries` | `20261108_0506_entries.sql` | `20261108_0509_entry_recurring_link.sql`, `20261108_0514_entry_unit_invoice_link.sql`, `20261108_0520_entry_agreement_link.sql`, `20261108_0534_entry_shortcuts.sql`, `20261108_0535_imports.sql` | `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Banking/BankReturns`, `Services/Erp/EntryShortcuts`, `Services/Erp/FinancialReports`, `Services/Erp/Imports/Imports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/OperationalDashboard`, `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions`, `Services/Erp/UnitDocuments` |
+| `erp_entries` | `20261108_0506_entries.sql` | `20261108_0509_entry_recurring_link.sql`, `20261108_0514_entry_unit_invoice_link.sql`, `20261108_0520_entry_agreement_link.sql`, `20261108_0534_entry_shortcuts.sql`, `20261108_0535_imports.sql` | `Services/Erp/Agreements`, `Services/Erp/BankBalances`, `Services/Erp/Banking/BankCharges`, `Services/Erp/Banking/BankReturns`, `Services/Erp/EntryShortcuts`, `Services/Erp/FinancialReports`, `Services/Erp/Imports/Imports`, `Services/Erp/Invoices`, `Services/Erp/MonthClosing`, `Services/Erp/OperationalDashboard`, `Services/Erp/ReceiptCandidates`, `Services/Erp/RecurringEntries`, `Services/Erp/Registry/Definitions`, `Services/Erp/UnitDocuments` |
 | `erp_entry_adjustments` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/EntryShortcuts` |
 | `erp_extra_charges` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/EntryShortcuts` |
 | `erp_gatehouses` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -927,9 +937,9 @@ flowchart LR
 | `erp_residents` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/NotificationDispatcher`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_suppliers` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Imports/Imports`, `Services/Erp/Registry/Definitions` |
 | `erp_tariffs` | `20261108_0527_meter_readings.sql` | — | `Services/Erp/MeterReadings`, `Services/Erp/Registry/Definitions` |
-| `erp_unit_document_entries` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
-| `erp_unit_documents` | `20261108_0526_unit_documents.sql` | `20261108_0534_entry_shortcuts.sql` | `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
-| `erp_units` | `20261108_0401_units.sql` | — | `Controllers/Studio/Studio`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/EntryShortcuts`, `Services/Erp/Imports/Imports`, `Services/Erp/MeterReadings`, `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Support/TicketService` |
+| `erp_unit_document_entries` | `20261108_0534_entry_shortcuts.sql` | — | `Services/Erp/ReceiptCandidates`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
+| `erp_unit_documents` | `20261108_0526_unit_documents.sql` | `20261108_0534_entry_shortcuts.sql` | `Services/Erp/ReceiptCandidates`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments` |
+| `erp_units` | `20261108_0401_units.sql` | — | `Controllers/Studio/Studio`, `Services/Erp/Agreements`, `Services/Erp/Banking/BankCharges`, `Services/Erp/EntryShortcuts`, `Services/Erp/Imports/Imports`, `Services/Erp/MeterReadings`, `Services/Erp/PanelSummaries`, `Services/Erp/ReceiptCandidates`, `Services/Erp/Registry/Definitions`, `Services/Erp/Registry/RegistryService`, `Services/Erp/UnitDocuments`, `Services/Support/TicketService` |
 | `erp_useful_contacts` | `20261108_0201_erp_registries.sql` | — | `Services/Erp/Registry/Definitions` |
 | `erp_vehicles` | `20261108_0201_erp_registries.sql` | `20261108_0402_unit_links.sql` | `Services/Erp/PanelSummaries`, `Services/Erp/Registry/Definitions` |
 | `erp_visit_forecasts` | `20261108_0525_gatehouse.sql` | — | `Services/Erp/Registry/Definitions` |
@@ -972,7 +982,7 @@ flowchart LR
 
 ## Classes
 
-<details><summary><b>Controllers</b> (62)</summary>
+<details><summary><b>Controllers</b> (63)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -1012,6 +1022,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/CondominiumChecklist`](../../source/Controllers/Erp/Connect/CondominiumChecklist.php) | Controller, Auth, User, CondominiumAccessDenied, CondominiumScope, OnboardingChecklist, OnboardingItemNotFound, OnboardingValidationError … | — | 2 |
 | [`Controllers/Erp/Connect/Condominiums`](../../source/Controllers/Erp/Connect/Condominiums.php) | Controller, Auth, User, CondominiumAccessDenied, CondominiumRegistry, CondominiumScope, CondominiumValidator, Access … | condominiums | 1 |
 | [`Controllers/Erp/Connect/Dash`](../../source/Controllers/Erp/Connect/Dash.php) | Session, Auth, AppCondominium, AppLog, AppSession, User | — | — |
+| [`Controllers/Erp/Connect/EntryShortcutScreens`](../../source/Controllers/Erp/Connect/EntryShortcutScreens.php) | Connect, User, EntryShortcuts, RegistryNotFound, RegistryService, Access, AppLogger, CondominiumContext | — | 2 |
 | [`Controllers/Erp/Connect/Erp`](../../source/Controllers/Erp/Connect/Erp.php) | Controller, Session, Auth, AppWallet, Access, Online, AppSession, User … | — | 1 |
 | [`Controllers/Erp/Connect/Finance`](../../source/Controllers/Erp/Connect/Finance.php) | App, AppCondominium, AppInvoice | — | — |
 | [`Controllers/Erp/Connect/Inspections`](../../source/Controllers/Erp/Connect/Inspections.php) | Controller, Session, Auth, User, CondominiumScope, ChecklistText, InspectionError, InspectionReport … | condominiums | — |
@@ -1019,7 +1030,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/MonthClosings`](../../source/Controllers/Erp/Connect/MonthClosings.php) | Auth, User, CondominiumAccessDenied, MonthClosing, RecurringEntries, Access, AppLogger, CondominiumContext … | — | — |
 | [`Controllers/Erp/Connect/NotificationQueue`](../../source/Controllers/Erp/Connect/NotificationQueue.php) | Connect, Controller, Session, Auth, User, NotificationDispatcher, RegistryNotFound, Access … | — | 2 |
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
-| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 13 |
+| [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 14 |
 | [`Controllers/Erp/Connect/PendingReservations`](../../source/Controllers/Erp/Connect/PendingReservations.php) | Auth, RegistryNotFound, RegistryService, RegistryValidationException, Access, AppLogger, Message | — | 1 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
 | [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Connect, Controller, Session, Auth, User, Environments, RegistryForbidden, RegistryInUse … | condominiums | 2 |
@@ -1105,7 +1116,7 @@ flowchart LR
 
 </details>
 
-<details><summary><b>Services</b> (60)</summary>
+<details><summary><b>Services</b> (61)</summary>
 
 | Classe | Usa | Tabelas | Testes |
 |---|---|---|---|
@@ -1123,7 +1134,7 @@ flowchart LR
 | [`Services/Erp/Banking/SandboxBankAdapter`](../../source/Services/Erp/Banking/SandboxBankAdapter.php) | — | — | 5 |
 | [`Services/Erp/BillingRules`](../../source/Services/Erp/BillingRules.php) | Connect, User, CondominiumScope, RegistryForbidden, RegistryNotFound, Audit | erp_billing_rules, erp_price_indexes | 2 |
 | [`Services/Erp/DemoData`](../../source/Services/Erp/DemoData.php) | — | — | 1 |
-| [`Services/Erp/EntryShortcuts`](../../source/Services/Erp/EntryShortcuts.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_entry_adjustments, erp_extra_charges, erp_units | 3 |
+| [`Services/Erp/EntryShortcuts`](../../source/Services/Erp/EntryShortcuts.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | condominiums, erp_bank_accounts, erp_bank_charges, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_entry_adjustments, erp_extra_charges, erp_units | 4 |
 | [`Services/Erp/FinancialReports`](../../source/Services/Erp/FinancialReports.php) | Connect, User, CondominiumScope | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries | 6 |
 | [`Services/Erp/Imports/ImportRules`](../../source/Services/Erp/Imports/ImportRules.php) | Invoices | — | 2 |
 | [`Services/Erp/Imports/Imports`](../../source/Services/Erp/Imports/Imports.php) | Connect, User, CondominiumScope, BankBalances, MeterReadings, Definitions, RegistryNotFound, RegistryService … | condominiums, erp_bank_accounts, erp_bank_statement_lines, erp_bank_transfers, erp_chart_accounts, erp_entries, erp_imports, erp_meter_readings, erp_meters, erp_suppliers, erp_units | 2 |
@@ -1138,6 +1149,7 @@ flowchart LR
 | [`Services/Erp/Occurrences`](../../source/Services/Erp/Occurrences.php) | Connect, User, CondominiumScope, RegistryNotFound, TicketService, Audit | erp_occurrences | 3 |
 | [`Services/Erp/OperationalDashboard`](../../source/Services/Erp/OperationalDashboard.php) | Connect, User, CondominiumScope, RegistryNotFound, Access, Audit | erp_contracts, erp_deliveries, erp_entries, erp_insurances, erp_maintenances, erp_occurrences, erp_reservations, erp_waitlist | 5 |
 | [`Services/Erp/PanelSummaries`](../../source/Services/Erp/PanelSummaries.php) | Connect, User, CondominiumScope, RegistryForbidden, RegistryNotFound, Access | condominiums, erp_deliveries, erp_occurrences, erp_pets, erp_reservations, erp_residents, erp_units, erp_vehicles | 3 |
+| [`Services/Erp/ReceiptCandidates`](../../source/Services/Erp/ReceiptCandidates.php) | Connect, User, CondominiumScope, RegistryNotFound | erp_entries, erp_unit_document_entries, erp_unit_documents, erp_units | — |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
 | [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_check_copies, erp_commitments, erp_common_areas, erp_contracts, erp_cost_centers, erp_deliveries, erp_delivery_notices, erp_employees, erp_entries, erp_gatehouses, erp_insurances, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_maintenances, erp_meters, erp_move_settings, erp_moves, erp_occurrences, erp_pets, erp_pouches, erp_recurring_entries, erp_reservations, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors, erp_waitlist | 22 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 4 |
@@ -1147,7 +1159,7 @@ flowchart LR
 | [`Services/Erp/Registry/RegistryService`](../../source/Services/Erp/Registry/RegistryService.php) | Connect, User, CondominiumScope, NotificationOutbox, Audit | condominiums, erp_common_areas, erp_documents, erp_month_closings, erp_unit_document_entries, erp_unit_documents, erp_units, pages, system_audit_logs | 31 |
 | [`Services/Erp/Registry/RegistryValidationException`](../../source/Services/Erp/Registry/RegistryValidationException.php) | — | — | 13 |
 | [`Services/Erp/Registry/RegistryValidator`](../../source/Services/Erp/Registry/RegistryValidator.php) | BrDocument | — | 9 |
-| [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_bank_accounts, erp_entries, erp_unit_document_entries, erp_unit_documents, erp_units, pages | 6 |
+| [`Services/Erp/UnitDocuments`](../../source/Services/Erp/UnitDocuments.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_bank_accounts, erp_entries, erp_unit_document_entries, erp_unit_documents, erp_units, pages | 7 |
 | [`Services/Erp/VirtualDisk`](../../source/Services/Erp/VirtualDisk.php) | Connect, User, CondominiumScope, RegistryNotFound, Audit | condominiums, erp_documents, pages | 3 |
 | [`Services/Inspections/ChecklistText`](../../source/Services/Inspections/ChecklistText.php) | — | — | 1 |
 | [`Services/Inspections/Geo`](../../source/Services/Inspections/Geo.php) | — | — | 1 |
@@ -1209,6 +1221,8 @@ flowchart LR
 ## Testes
 
 Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer test:integration` (nunca `vendor/bin/phpunit` direto).
+
+Services sem teste que os cite (1): `Services/Erp/ReceiptCandidates`
 
 ## Decisões
 
@@ -1276,6 +1290,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0070 — Telas do Operacional e dashboard com dados reais](../../docs/Organic%20Code/decisions/0070-operational-screens.md)
 - [0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)](../../docs/Organic%20Code/decisions/0071-condominium-unit-panel-screens.md)
 - [0072 — Tela da fila de avisos, com trilha mascarada e reenvio manual](../../docs/Organic%20Code/decisions/0072-notification-queue-screen.md)
+- [0073 — Telas dos lançamentos avulsos e do recibo (AP-024 a AP-029 e AP-040)](../../docs/Organic%20Code/decisions/0073-entry-shortcut-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)
