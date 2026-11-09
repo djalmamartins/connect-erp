@@ -498,6 +498,77 @@ $html = $agreementPage('AP-124', 'pages/documents/unit-document', $docData('deli
 $assert(str_contains($html, 'Documento não encontrado no seu escopo.') && str_contains($html, 'data-unit-document-form'), 'AP-124: documento fora do escopo avisa e mantém a lista');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-130', ['unitDocuments' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-124', ['unitDocuments' => ['data' => []]]) === 'pages/documents/unit-document', 'documentos: sem permissão segue a demonstração');
 
+// Recibo (AP-040, ADR 0057 e 0073): mesma tela dos documentos, com as contas pagas para marcar.
+$receiptPaid = [['id' => 71, 'description' => 'Taxa <out>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'paid_on' => '2026-10-09', 'amount_cents' => 50000],
+    ['id' => 72, 'description' => 'Taxa nov', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'paid_on' => '2026-11-08', 'amount_cents' => 52000]];
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['receiptUnit' => 9, 'receiptEntries' => $receiptPaid, 'unitDocuments' => ['data' => [$docRow(['kind' => 'receipt', 'kind_label' => 'Recibo', 'result' => 'clear', 'total_cents' => 102000])], 'total' => 1, 'page' => 1, 'pages' => 1]]), 'issue');
+$common($html, 'AP-040', 'Recibos');
+$assert(str_contains($html, 'data-kind="receipt"') && str_contains($html, 'data-receipt-form') && substr_count($html, 'name="entry_ids"') === 2 && str_contains($html, 'Taxa &lt;out&gt;') && str_contains($html, 'data-cents="52000"')
+    && str_contains($html, '<input type="hidden" name="unit_id" value="9">') && str_contains($html, 'name="unidade" data-erp-autosubmit') && str_contains($html, '>Pago</span>') && !str_contains($html, 'name="until_competence"'), 'AP-040: unidade, contas pagas para marcar e lista com Pago');
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['receiptUnit' => null, 'receiptEntries' => []]));
+$assert(!str_contains($html, 'data-receipt-form') && str_contains($html, 'Escolha a unidade para ver as contas pagas'), 'AP-040: sem unidade escolhida, só o seletor');
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['receiptUnit' => 9, 'receiptEntries' => []]));
+$assert(str_contains($html, 'Nenhuma conta paga sem recibo') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-040: unidade sem conta paga livre');
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['unitDocument' => $docRow(['kind' => 'receipt', 'kind_label' => 'Recibo', 'result' => 'clear', 'total_cents' => 102000,
+    'content' => ['entries' => [['entry_id' => 71, 'description' => 'Taxa <out>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'paid_on' => '2026-10-09', 'amount_cents' => 50000, 'bank_account' => 'Conta <Itaú>'],
+        ['entry_id' => 72, 'description' => 'Taxa nov', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'paid_on' => '2026-11-08', 'amount_cents' => 52000, 'bank_account' => null]], 'paid_cents' => 102000]])]), 'doc');
+$assert(str_contains($html, 'Recibo nº 31') && str_contains($html, 'a quantia de <strong>R$ 1.020,00</strong>') && str_contains($html, 'às 2 contas abaixo') && str_contains($html, 'Conta &lt;Itaú&gt;') && str_contains($html, 'ABCD-EFGH-JKMN-PQRS'), 'AP-040: recibo com as contas e o código');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-040', ['unitDocuments' => ['data' => []]]) === 'pages/documents/unit-document' && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-040', ['unitDocuments' => null]) === null, 'AP-040: sem permissão segue a demonstração');
+
+// Lançamentos avulsos (AP-026 a AP-029, ADR 0057 e 0073).
+$Shortcut = Source\Controllers\Erp\Connect\EntryShortcutScreens::class;
+$receivable = static fn (array $over = []): array => $over + ['id' => 81, 'condominium_id' => 1, 'description' => 'Taxa <nov>', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 50000, 'unit_id' => 9, 'document_number' => 'FAT-3', 'status' => 'active'];
+$shortcutBase = ['shortcutReady' => true, 'shortcutError' => null, 'shortcutCanManage' => true, 'shortcutContext' => 1];
+$html = $agreementPage('AP-026', 'pages/finance/discount', $shortcutBase + ['discountQuery' => '', 'discountUnits' => [9 => 'Apto <101>'],
+    'discountEntries' => ['data' => [$receivable(), $receivable(['id' => 82, 'unit_id' => null, 'due_on' => '2020-01-10', 'document_number' => null])], 'total' => 2, 'page' => 1, 'pages' => 1]], 'list');
+$common($html, 'AP-026', 'Lançar Desconto');
+$assert(str_contains($html, 'data-erp-shortcuts data-kind="discount"') && substr_count($html, 'data-discount-open="') === 2 && str_contains($html, 'data-amount="50000"') && str_contains($html, 'Taxa &lt;nov&gt; · Apto &lt;101&gt;')
+    && str_contains($html, '/api/v1/entries/__ID__/discount') && str_contains($html, '>Vencida</span>') && str_contains($html, 'data-form-error') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-026: contas em aberto com Desconto e diálogo');
+$html = $agreementPage('AP-026', 'pages/finance/discount', ['shortcutCanManage' => false, 'discountQuery' => 'x<y', 'discountUnits' => [], 'discountEntries' => ['data' => [], 'total' => 0, 'page' => 1, 'pages' => 1]] + $shortcutBase);
+$assert(!str_contains($html, 'discount-dialog') && str_contains($html, 'Nenhuma conta encontrada') && str_contains($html, 'value="x&lt;y"'), 'AP-026: sem manage e busca vazia');
+
+$chargeRow = static fn (array $over = []): array => $over + ['id' => 5, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'kind' => 'extra', 'kind_label' => 'Cobrança extra', 'description' => 'Fundo <obras>',
+    'chart_account_id' => 3, 'method' => 'fraction', 'total_cents' => 300000, 'units_count' => 3, 'competence' => '2026-11', 'due_on' => '2026-11-30', 'related_entry_id' => null, 'reason' => null,
+    'status' => 'active', 'created_at' => '2026-11-09 10:00:00', 'cancelled_at' => null, 'cancel_reason' => null];
+$chargeData = static fn (string $kind, array $over = []): array => $over + $shortcutBase + ['chargeKind' => $kind, 'chargeStatus' => null, 'chargeDetail' => null,
+    'charges' => ['data' => [$chargeRow(['kind' => $kind]), $chargeRow(['id' => 6, 'kind' => $kind, 'status' => 'cancelled', 'cancel_reason' => 'Duplicada'])], 'total' => 2],
+    'chargeUnits' => [['id' => 9, 'condominium_id' => 1, 'label' => 'Apto <101>', 'condominium_name' => 'Residencial Aurora'], ['id' => 10, 'condominium_id' => 1, 'label' => 'Apto 102', 'condominium_name' => 'Residencial Aurora']],
+    'chargeAccounts' => [['id' => 3, 'condominium_id' => null, 'label' => '3.1.2 — Receitas <extras>']]];
+$html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra'), 'list');
+$common($html, 'AP-028', 'Cobranças Extras');
+$assert(str_contains($html, 'data-charge-form') && str_contains($html, 'data-charge-kind="extra"') && str_contains($html, 'data-condominium="1"') && substr_count($html, 'name="unit_ids"') === 2 && str_contains($html, 'data-charge-method')
+    && str_contains($html, 'Receitas &lt;extras&gt;') && str_contains($html, 'Fundo &lt;obras&gt;') && substr_count($html, 'data-cancel-open') === 1 && str_contains($html, '/api/v1/extra-charges/5/cancel') && str_contains($html, 'id="shortcut-cancel"')
+    && str_contains($html, '?cobranca=5') && !str_contains($html, 'name="reason" minlength="5" maxlength="255" required placeholder="Ex.: art.'), 'AP-028: lançar para várias unidades, lista e cancelar só a ativa');
+$html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['charges' => ['data' => [$chargeRow(['kind' => 'fine', 'kind_label' => 'Multa avulsa', 'method' => 'fixed', 'reason' => 'Barulho <22h>', 'units_count' => 1])], 'total' => 1]]), 'list');
+$common($html, 'AP-027', 'Lançar Multa');
+$assert(str_contains($html, 'data-charge-kind="fine"') && str_contains($html, 'name="unit_id" required') && !str_contains($html, 'name="unit_ids"') && !str_contains($html, 'data-charge-method') && str_contains($html, 'id="charge-reason"') && str_contains($html, 'Barulho &lt;22h&gt;'), 'AP-027: multa de uma unidade com motivo');
+$html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['shortcutContext' => null, 'chargeUnits' => [], 'chargeAccounts' => []]));
+$assert(!str_contains($html, 'data-charge-form') && str_contains($html, 'Escolha um condomínio na barra superior para lançar'), 'AP-027: em todos os condomínios pede a escolha');
+$html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra', ['chargeAccounts' => []]));
+$assert(!str_contains($html, 'data-charge-form') && str_contains($html, 'Falta uma conta de receita'), 'AP-028: sem conta de receita não lança');
+$html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra', ['chargeDetail' => $chargeRow() + ['entries' => [
+    ['entry_id' => 91, 'unit_id' => 9, 'unit_label' => 'Apto <101>', 'amount_cents' => 100000, 'status' => 'active', 'paid_on' => '2026-11-20'],
+    ['entry_id' => 92, 'unit_id' => 10, 'unit_label' => 'Apto 102', 'amount_cents' => 200000, 'status' => 'active', 'paid_on' => null]]]]), 'detail');
+$assert(str_contains($html, 'Cobrança extra nº 5') && str_contains($html, '>Paga</span>') && str_contains($html, '>Em aberto</span>') && str_contains($html, '/financeiro/lancamentos/91') && str_contains($html, 'Total rateado pela fração ideal') && !str_contains($html, 'data-charge-form'), 'AP-028: detalhe com as contas por unidade');
+$html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra', ['shortcutCanManage' => false, 'charges' => ['data' => [], 'total' => 0], 'chargeStatus' => 'cancelled']));
+$assert(!str_contains($html, 'data-charge-form') && !str_contains($html, 'shortcut-cancel') && str_contains($html, 'Nenhuma cobrança extra nesta situação') && str_contains($html, 'aria-current="page">Canceladas'), 'AP-028: sem manage, filtro vazio');
+
+$transferRow = static fn (array $over = []): array => $over + ['id' => 4, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'from_bank_account_id' => 1, 'from_name' => 'Corrente <Itaú>', 'to_bank_account_id' => 2, 'to_name' => 'Poupança',
+    'amount_cents' => 1000000, 'transferred_on' => '2026-11-05', 'description' => 'Aplicação <reserva>', 'status' => 'active', 'created_at' => '2026-11-05 10:00:00', 'cancelled_at' => null, 'cancel_reason' => null];
+$transferData = static fn (array $over = []): array => $over + $shortcutBase + ['transferStatus' => null, 'transfers' => ['data' => [$transferRow(), $transferRow(['id' => 3, 'status' => 'cancelled', 'cancel_reason' => 'Valor <errado>'])], 'total' => 2],
+    'transferAccounts' => [['id' => 1, 'condominium_id' => 1, 'label' => 'Corrente <Itaú>'], ['id' => 2, 'condominium_id' => 1, 'label' => 'Poupança']]];
+$html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData(), 'list');
+$common($html, 'AP-029', 'Outros Lançamentos');
+$assert(str_contains($html, 'data-transfer-form') && str_contains($html, 'name="from_bank_account_id"') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'R$ 10.000,00') && substr_count($html, 'data-cancel-open') === 1
+    && str_contains($html, '/api/v1/bank-transfers/4/cancel') && str_contains($html, 'Cancelada: Valor &lt;errado&gt;') && str_contains($html, 'max="' . date('Y-m-d') . '"'), 'AP-029: registrar, lista e cancelar só a ativa');
+$html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData(['transferAccounts' => [['id' => 1, 'condominium_id' => 1, 'label' => 'Corrente']]]));
+$assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
+$assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
+    && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+foreach (['AP-026', 'AP-027', 'AP-028', 'AP-029'] as $shortcutPage) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($shortcutPage, ['shortcutReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($shortcutPage, ['shortcutReady' => true]) === $Shortcut::PAGES[$shortcutPage], "{$shortcutPage}: tela própria só com dados");
+}
+
 // Leituras do mês (AP-042, ADR 0045 e 0047) com dados reais.
 $mrReading = static fn (array $over = []): array => $over + ['id' => 1, 'condominium_id' => 1, 'meter_id' => 1, 'kind' => 'agua', 'meter_number' => 'A-1', 'unit_id' => 9, 'unit_label' => 'Apto 101',
     'competence' => '2026-11', 'read_on' => '2026-11-05', 'previous_reading' => 100.0, 'reading' => 112.5, 'consumption' => 12.5, 'amount_cents' => 8750, 'tariff_valid_from' => '2026-01-01', 'entry_id' => null, 'billed' => false];

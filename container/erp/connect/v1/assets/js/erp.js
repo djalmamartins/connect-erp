@@ -355,6 +355,24 @@
     };
   };
   var openDialog = function (dialog) { if (dialog && typeof dialog.showModal === 'function') dialog.showModal(); };
+  /* Erro do formulário na tela ([data-form-error], anunciado): mensagem vazia limpa. Devolve false se o formulário não tem a área. */
+  var formError = function (form, message, focus) {
+    var box = form && $('[data-form-error]', form);
+    if (!box) return false;
+    box.innerHTML = message ? '<div class="erp-alert erp-alert--danger" role="alert"><div>' + esc(message) + '</div></div>' : '';
+    if (message && focus && typeof focus.focus === 'function') focus.focus();
+    return true;
+  };
+  /* Primeiro campo inválido do formulário (validação do navegador), com a mensagem na área de erro. */
+  var formValid = function (form) {
+    var bad = $$('input, select, textarea', form).filter(function (el) { return !el.disabled && el.willValidate && !el.checkValidity(); })[0];
+    if (!bad) { formError(form, ''); return true; }
+    var label = bad.id ? $('label[for="' + bad.id + '"]', form) : null;
+    formError(form, (label ? label.textContent.replace(/\s+/g, ' ').trim() + ': ' : '') + bad.validationMessage, bad);
+    bad.setAttribute('aria-invalid', 'true');
+    bad.addEventListener('input', function clear() { bad.removeAttribute('aria-invalid'); bad.removeEventListener('input', clear); });
+    return false;
+  };
   /* Envio multipart com progresso (Disco Virtual, ADR 0049 e 0052): CSRF no cabeçalho; resolve com o JSON. */
   var sendMultipart = function (url, csrfToken, body, onProgress) {
     return new Promise(function (resolve, reject) {
@@ -923,12 +941,32 @@
       var purpose = $('[name="purpose"]', form);
       if (until) body.until_competence = until.value;
       if (purpose) body.purpose = purpose.value.replace(/\s+/g, ' ').trim();
+      var receiptBoxes = $$('[name="entry_ids"]', form);
+      if (form.hasAttribute('data-receipt-form')) {
+        body.entry_ids = receiptBoxes.filter(function (box) { return box.checked; }).map(function (box) { return parseInt(box.value, 10); });
+        if (body.entry_ids.length < 1 || body.entry_ids.length > 60) { formError(form, 'Marque de 1 a 60 contas pagas para o recibo.', receiptBoxes[0]); return; }
+      }
+      formError(form, '');
       var button = $('[type="submit"]', form);
       busy(button, true);
       call('POST', api, body)
-        .then(function (json) { toast('Documento emitido.', 'success'); open(json.data.kind, json.data.id); })
-        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        .then(function (json) { toast(body.entry_ids ? 'Recibo emitido.' : 'Documento emitido.', 'success'); open(json.data.kind, json.data.id); })
+        .catch(function (error) { busy(button, false); if (!formError(form, error.message)) toast(error.message, 'danger'); });
     });
+    if (form && form.hasAttribute('data-receipt-form')) {
+      var boxes = $$('[name="entry_ids"]', form);
+      var all = $('[data-receipt-all]', form);
+      var total = $('[data-receipt-total]', form);
+      var sum = function () {
+        var marked = boxes.filter(function (box) { return box.checked; });
+        var cents = marked.reduce(function (acc, box) { return acc + (parseInt(box.getAttribute('data-cents'), 10) || 0); }, 0);
+        if (total) total.textContent = marked.length === 0 ? 'Nenhuma conta marcada.' : marked.length + ' conta(s) marcada(s), total ' + brl(cents) + (marked.length > 60 ? '. O recibo cobre até 60.' : '.');
+        if (all) { all.checked = marked.length === boxes.length; all.indeterminate = marked.length > 0 && marked.length < boxes.length; }
+      };
+      boxes.forEach(function (box) { box.addEventListener('change', sum); });
+      if (all) all.addEventListener('change', function () { boxes.forEach(function (box) { box.checked = all.checked; }); sum(); });
+      sum();
+    }
     var verify = $('[data-unit-document-verify]', root);
     if (verify) verify.addEventListener('submit', function (event) {
       event.preventDefault();
@@ -1301,6 +1339,132 @@
         toast(message, 'success');
       }).catch(function (error) { busy(button, false); result.innerHTML = '<div class="erp-alert erp-alert--warning" role="alert"><div>' + esc(error.message) + '</div></div>'; });
     });
+  });
+
+  /* Lançamentos avulsos (AP-026 a AP-029, ADR 0057 e 0073): desconto, multa e cobrança extra,
+     transferência e cancelamento com motivo, pela API REST. O erro fica no formulário. */
+  $$('[data-erp-shortcuts]').forEach(function (root) {
+    var call = apiClient(root);
+    var cents = function (text) { var v = String(text || '').trim(); if (!/^\d{1,3}(\.?\d{3})*(,\d{1,2})?$/.test(v)) return null; var p = v.replace(/\./g, '').split(','); return parseInt(p[0], 10) * 100 + parseInt(((p[1] || '') + '00').slice(0, 2), 10); };
+    var send = function (form, url, body, done) {
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', url, body).then(function (json) { done(json.data || {}); }).catch(function (error) { busy(button, false); formError(form, error.message); });
+    };
+    var value = function (form, name) { var el = $('[name="' + name + '"]', form); return el ? el.value.replace(/\s+/g, ' ').trim() : ''; };
+
+    var discountDialog = $('#discount-dialog', root);
+    var discountForm = discountDialog && $('[data-discount-form]', discountDialog);
+    if (discountForm) {
+      var amountInput = $('[name="amount_cents"]', discountForm);
+      var after = $('[data-discount-after]', discountForm);
+      var current = 0;
+      var preview = function () {
+        var c = cents(amountInput.value);
+        after.textContent = c === null ? 'Menor que o valor da conta.' : (c >= current ? 'O desconto precisa ser menor que o valor da conta.' : 'A conta fica em ' + brl(current - c) + '.');
+      };
+      amountInput.addEventListener('input', preview);
+      $$('[data-discount-open]', root).forEach(function (button) {
+        button.addEventListener('click', function () {
+          discountForm.reset();
+          formError(discountForm, '');
+          current = parseInt(button.getAttribute('data-amount'), 10) || 0;
+          discountForm.setAttribute('data-id', button.getAttribute('data-discount-open'));
+          $('[data-discount-label]', discountForm).textContent = button.getAttribute('data-label');
+          $('[data-discount-current]', discountForm).textContent = brl(current);
+          preview();
+          busy($('[type="submit"]', discountForm), false);
+          openDialog(discountDialog);
+        });
+      });
+      discountForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(discountForm)) return;
+        var c = cents(amountInput.value);
+        if (c === null || c >= current) { formError(discountForm, 'O desconto precisa ser maior que zero e menor que ' + brl(current) + '. Para perdoar a conta inteira, cancele o lançamento.', amountInput); return; }
+        var id = discountForm.getAttribute('data-id');
+        send(discountForm, discountForm.getAttribute('data-api').replace('__ID__', encodeURIComponent(id)), { amount_cents: amountInput.value.trim(), reason: value(discountForm, 'reason') }, function (data) {
+          discountDialog.close();
+          var row = $('[data-discount-row="' + id + '"]', root);
+          var cell = row && $('[data-discount-amount]', row);
+          if (cell) cell.innerHTML = '<strong>' + esc(brl(data.after_cents)) + '</strong><br><span class="erp-muted">era ' + esc(brl(data.before_cents)) + '</span>';
+          var open = row && $('[data-discount-open]', row);
+          if (open) open.setAttribute('data-amount', String(data.after_cents));
+          toast('Desconto de ' + brl(data.discount_cents) + ' lançado. A conta ficou em ' + brl(data.after_cents) + '.', 'success');
+          if (open) open.focus();
+        });
+      });
+    }
+
+    var chargeForm = $('[data-charge-form]', root);
+    if (chargeForm) {
+      var method = $('[data-charge-method]', chargeForm);
+      var amountLabel = $('[data-charge-amount-label]', chargeForm);
+      if (method && amountLabel) method.addEventListener('change', function () { amountLabel.textContent = method.value === 'fixed' ? 'Valor por unidade (R$)' : 'Valor total a ratear (R$)'; });
+      var unitBoxes = $$('[name="unit_ids"]', chargeForm);
+      var allUnits = $('[data-charge-units-all]', chargeForm);
+      var count = $('[data-charge-units-count]', chargeForm);
+      var recount = function () {
+        var marked = unitBoxes.filter(function (b) { return b.checked; }).length;
+        if (count) count.textContent = '(' + marked + ' de ' + unitBoxes.length + ')';
+        if (allUnits) { allUnits.checked = marked === unitBoxes.length; allUnits.indeterminate = marked > 0 && marked < unitBoxes.length; }
+      };
+      unitBoxes.forEach(function (b) { b.addEventListener('change', recount); });
+      if (allUnits) allUnits.addEventListener('change', function () { unitBoxes.forEach(function (b) { b.checked = allUnits.checked; }); recount(); });
+      chargeForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(chargeForm)) return;
+        var kind = chargeForm.getAttribute('data-charge-kind');
+        var units = kind === 'fine' ? [parseInt(value(chargeForm, 'unit_id'), 10)] : unitBoxes.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
+        if (units.length === 0 || isNaN(units[0])) { formError(chargeForm, 'Escolha ao menos uma unidade.', unitBoxes[0] || $('[name="unit_id"]', chargeForm)); return; }
+        var body = { condominium_id: parseInt(chargeForm.getAttribute('data-condominium'), 10), kind: kind, description: value(chargeForm, 'description'),
+          chart_account_id: parseInt(value(chargeForm, 'chart_account_id'), 10), competence: value(chargeForm, 'competence'), due_on: value(chargeForm, 'due_on'),
+          method: method ? method.value : 'fixed', amount_cents: value(chargeForm, 'amount_cents'), unit_ids: units };
+        if (kind === 'fine') body.reason = value(chargeForm, 'reason');
+        send(chargeForm, chargeForm.getAttribute('data-api'), body, function (data) {
+          toast((kind === 'fine' ? 'Multa' : 'Cobrança') + ' lançada: ' + (data.units_count || units.length) + ' conta(s), total ' + brl(data.total_cents || 0) + '.', 'success');
+          window.setTimeout(function () { window.location.href = root.getAttribute('data-route') + '?cobranca=' + encodeURIComponent(data.id); }, 600);
+        });
+      });
+    }
+
+    var transferForm = $('[data-transfer-form]', root);
+    if (transferForm) transferForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!formValid(transferForm)) return;
+      var from = value(transferForm, 'from_bank_account_id');
+      if (from === value(transferForm, 'to_bank_account_id')) { formError(transferForm, 'Escolha duas contas bancárias diferentes.', $('[name="to_bank_account_id"]', transferForm)); return; }
+      send(transferForm, transferForm.getAttribute('data-api'), { condominium_id: parseInt(transferForm.getAttribute('data-condominium'), 10),
+        from_bank_account_id: parseInt(from, 10), to_bank_account_id: parseInt(value(transferForm, 'to_bank_account_id'), 10),
+        amount_cents: value(transferForm, 'amount_cents'), transferred_on: value(transferForm, 'transferred_on'), description: value(transferForm, 'description') }, function (data) {
+        toast('Transferência de ' + brl(data.amount_cents || 0) + ' registrada.', 'success');
+        reload();
+      });
+    });
+
+    var cancelDialog = $('#shortcut-cancel', root);
+    var cancelForm = cancelDialog && $('[data-cancel-form]', cancelDialog);
+    if (cancelForm) {
+      $$('[data-cancel-open]', root).forEach(function (button) {
+        button.addEventListener('click', function () {
+          cancelForm.reset();
+          formError(cancelForm, '');
+          busy($('[type="submit"]', cancelForm), false);
+          cancelForm.setAttribute('data-api', button.getAttribute('data-api'));
+          $('[data-cancel-label]', cancelForm).textContent = button.getAttribute('data-label');
+          openDialog(cancelDialog);
+        });
+      });
+      cancelForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(cancelForm)) return;
+        send(cancelForm, cancelForm.getAttribute('data-api'), { reason: value(cancelForm, 'reason') }, function () {
+          cancelDialog.close();
+          toast('Cancelado. O registro continua na lista, com o motivo.', 'success');
+          reload();
+        });
+      });
+    }
   });
 
   /* Filtros GET que se aplicam ao escolher (ex.: unidade do painel AP-003). -- */
