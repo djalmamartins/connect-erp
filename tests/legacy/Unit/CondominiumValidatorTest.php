@@ -48,10 +48,11 @@ final class CondominiumValidatorTest extends TestCase
     public function testRequiredFieldsAreReported(): void
     {
         $errors = (new CondominiumValidator())->validate([])['errors'];
-        foreach (['name', 'legal_name', 'document', 'zip_code', 'street', 'number', 'district', 'city', 'state'] as $field) {
+        foreach (['name', 'legal_name', 'zip_code', 'street', 'number', 'district', 'city', 'state'] as $field) {
             self::assertArrayHasKey($field, $errors, "Campo obrigatório sem erro: {$field}");
         }
-        foreach (['complement', 'phone', 'email', 'blocks_count', 'units_count', 'fee_due_day', 'bank_code', 'contract_start_date'] as $optional) {
+        // ADR 0162: o CNPJ passou a ser opcional.
+        foreach (['document', 'complement', 'phone', 'email', 'blocks_count', 'units_count', 'fee_due_day', 'bank_code', 'contract_start_date'] as $optional) {
             self::assertArrayNotHasKey($optional, $errors, "Campo opcional com erro: {$optional}");
         }
     }

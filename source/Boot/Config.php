@@ -19,7 +19,7 @@ if (is_file($environmentFile)) {
         // Sem estas chaves aqui, o Apache do lab (xampp) nunca as recebia e o login entrava sem 2FA.
         "CONNECT_2FA_KEY", "CONNECT_2FA_ENFORCE_FROM", "CONNECT_TRUSTED_PROXIES",
         // ERP: dados de exemplo, entrega de avisos (log/sandbox/production) e antivírus do Disco Virtual.
-        "ERP_DEMO_DATA", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
+        "ERP_DEMO_DATA", "ERP_DEMO_DB", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {
