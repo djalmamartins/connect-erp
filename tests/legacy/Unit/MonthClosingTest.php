@@ -9,7 +9,7 @@ use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryLocked;
 
-/** Fechamento mensal: regra pura do resumo e trava declarada nas definições (ADR 0029). */
+/** Fechamento mensal: regra pura do resumo e trava declarada nas definições (ADR 0031). */
 final class MonthClosingTest extends TestCase
 {
     public function testSummarizeTotalsOpenPartsAccountsAndBanks(): void

@@ -16,7 +16,7 @@ use Source\Services\Erp\Registry\RegistryLocked;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
 
-/** Fechamento mensal: foto, trava dos lançamentos, reabertura e escopo (ADR 0029). */
+/** Fechamento mensal: foto, trava dos lançamentos, reabertura e escopo (ADR 0031). */
 final class MonthClosingIntegrationTest extends TestCase
 {
     private int $alpha;
