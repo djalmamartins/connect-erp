@@ -25,6 +25,8 @@ final class NewRoutesPermissionMatrixTest extends TestCase
         'RegistryReports' => ["'erp.access'", "'erp.residents.view'", "'erp.audit.view'", "'erp.units.view'", "'erp.entries.view'"],
         'EntryShortcuts' => ["'erp.access'", "'erp.entries.view'", "'erp.entries.manage'", "'erp.invoices.view'", "'erp.invoices.manage'"],
         'Agreements' => ["'erp.access'", "'erp.agreements.view'", "'erp.agreements.manage'"],
+        // ADR 0162: busca e vínculo de pessoas.
+        'People' => ["'erp.access'", "'erp.units.view'", "'erp.residents.manage'"],
     ];
 
     public function testEveryPublicActionGoesThroughAuthorization(): void

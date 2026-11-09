@@ -284,6 +284,96 @@
     draw();
   });
 
+  /* Máscaras de digitação (telefone, CEP, CPF/CNPJ, e-mail) e CEP automático --------------
+   * Vale para qualquer formulário do ERP: o tipo vem de data-mask ou é deduzido do campo
+   * (type="tel", nome *zip_code/cep, placeholders de CPF/CNPJ). O servidor valida de novo. */
+  var onlyDigits = function (value) { return String(value || '').replace(/\D+/g, ''); };
+  var fit = function (digits, pattern) {
+    var out = '', i = 0;
+    for (var p = 0; p < pattern.length && i < digits.length; p++) {
+      out += pattern[p] === '9' ? digits[i++] : pattern[p];
+    }
+    return out;
+  };
+  var masks = {
+    phone: function (v) { var d = onlyDigits(v).slice(0, 11); return d.length > 10 ? fit(d, '(99) 99999-9999') : fit(d, '(99) 9999-9999'); },
+    cep: function (v) { return fit(onlyDigits(v).slice(0, 8), '99999-999'); },
+    cpf: function (v) { return fit(onlyDigits(v).slice(0, 11), '999.999.999-99'); },
+    cnpj: function (v) { return fit(onlyDigits(v).slice(0, 14), '99.999.999/9999-99'); },
+    document: function (v) { var d = onlyDigits(v).slice(0, 14); return d.length > 11 ? fit(d, '99.999.999/9999-99') : fit(d, '999.999.999-99'); }
+  };
+  var maskOf = function (field) {
+    var explicit = field.getAttribute('data-mask');
+    if (explicit) return explicit;
+    var name = field.name || '', ph = field.getAttribute('placeholder') || '';
+    if (field.type === 'tel') return 'phone';
+    if (/(^|_)(zip_code|cep)$/.test(name)) return 'cep';
+    if (ph === '000.000.000-00') return 'cpf';
+    if (ph === '00.000.000/0000-00') return 'cnpj';
+    if (ph === 'CPF ou CNPJ') return 'document';
+    return null;
+  };
+  var applyMask = function (field) {
+    var kind = maskOf(field);
+    if (!kind || !masks[kind] || field.value === '') return;
+    var next = masks[kind](field.value);
+    if (next !== field.value) field.value = next;
+  };
+
+  /* CEP automático: consulta o ViaCEP (só o CEP sai do navegador) e preenche o endereço do mesmo formulário. */
+  var cepCache = {};
+  var lookupCep = function (field) {
+    var cep = onlyDigits(field.value), form = field.form;
+    if (!form || field.getAttribute('data-cep-last') === cep || !window.fetch) return;
+    field.setAttribute('data-cep-last', cep);
+    var holder = field.closest('.erp-field');
+    var status = holder && $('.erp-field__error', holder);
+    var say = function (text) { if (status) status.textContent = text; };
+    var pick = function (names) {
+      for (var i = 0; i < names.length; i++) {
+        var el = form.querySelector('[name="' + names[i] + '"]');
+        if (el) return el;
+      }
+      return null;
+    };
+    var put = function (names, value) {
+      var el = pick(names);
+      if (!el || !value) return;
+      el.value = value;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    var fill = function (data) {
+      if (!data || data.erro) { say('CEP não encontrado. Preencha o endereço manualmente.'); return; }
+      say('');
+      put(['street', 'address', 'logradouro'], data.logradouro);
+      put(['district', 'neighborhood', 'bairro'], data.bairro);
+      put(['city', 'cidade'], data.localidade);
+      put(['state', 'uf'], data.uf);
+      var number = pick(['number', 'numero']);
+      if (number && !number.value) number.focus();
+    };
+    if (cepCache[cep]) { fill(cepCache[cep]); return; }
+    say('Buscando o endereço…');
+    field.setAttribute('aria-busy', 'true');
+    fetch('https://viacep.com.br/ws/' + cep + '/json/', { credentials: 'omit', referrerPolicy: 'no-referrer' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { cepCache[cep] = data; fill(data); })
+      .catch(function () { say('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.'); })
+      .then(function () { field.removeAttribute('aria-busy'); });
+  };
+
+  $$('form input').forEach(function (field) { applyMask(field); });
+  document.addEventListener('input', function (event) {
+    var field = event.target;
+    if (field.tagName !== 'INPUT') return;
+    applyMask(field);
+    if (maskOf(field) === 'cep' && onlyDigits(field.value).length === 8) lookupCep(field);
+  });
+  document.addEventListener('change', function (event) {
+    var field = event.target;
+    if (field.tagName === 'INPUT' && field.type === 'email') field.value = field.value.trim().toLowerCase();
+  });
+
   /* Validação de formulários no cliente (o servidor valida de novo) -------- */
   $$('form[data-erp-validate]').forEach(function (form) {
     form.setAttribute('novalidate', '');
