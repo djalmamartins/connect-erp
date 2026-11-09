@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0082.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0083.**
   Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0075; Avançar: 0082; Preparar: o próximo após o último 006x).
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
@@ -98,3 +98,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0074](../Organic%20Code/decisions/0074-import-screens.md) | Telas de importação (AP-140, AP-142 a AP-146 e AP-044): envio, prévia por linha, aplicar e fila de linhas pendentes do extrato |
 | [0080](../Organic%20Code/decisions/0080-collections-and-fines.md) | Cobrança e multas: multas pendentes com a origem (AP-116), atendimento de cobrança com promessa quebrada (AP-117) e cobrança judicial só como acompanhamento (AP-039) |
 | [0081](../Organic%20Code/decisions/0081-collection-reports.md) | Relatórios de cobrança: acordos e taxas (AP-047/048), inadimplentes em 5 visões (AP-057 a AP-061) e recebimentos (AP-071/072), com CSV protegido contra injeção de fórmula |
+| [0082](../Organic%20Code/decisions/0082-management-reports.md) | Relatórios gerenciais: consumo (AP-045/046), centros de custo e comparativo (AP-049/050), demonstrativos e extrato (AP-052 a AP-056), rateio pela fração ideal (AP-062 a AP-067), lançamentos e boletos (AP-068 a AP-070) |
