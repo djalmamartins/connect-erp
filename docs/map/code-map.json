@@ -2206,6 +2206,7 @@
     "tests/legacy/Unit/InvoicesTest.php",
     "tests/legacy/Unit/MeterReadingsTest.php",
     "tests/legacy/Unit/MonthClosingTest.php",
+    "tests/legacy/Unit/OpenApiRoutesTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
     "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
@@ -3035,7 +3036,7 @@
   "erp_pages": 172,
   "routes": 260,
   "tables": 89,
-  "tests": 105
+  "tests": 106
  },
  "erp_pages": [
   {
@@ -7809,6 +7810,9 @@
    "Source\\Models\\User",
    "Source\\Services\\OnboardingAlerts",
    "Source\\Support\\MailTemplate"
+  ],
+  "tests/legacy/Unit/OpenApiRoutesTest.php": [
+   "Source\\Services\\Erp\\Registry\\Definitions"
   ],
   "tests/legacy/Unit/PasswordPolicyTest.php": [],
   "tests/legacy/Unit/PasswordResetTokenTest.php": [
