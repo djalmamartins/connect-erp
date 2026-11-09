@@ -8,10 +8,15 @@
  * @var array $dashboard
  * @var list<array{label:string,count:int,href:string,icon:string}> $summary
  * @var int $condoTotal
+ * @var ?array{as_of:string, cards:array<string,int>, alerts:list<array>} $operational cards e alertas reais
+ *      (ADR 0053 e 0070, mesmo serviço de GET /api/v1/dashboard); null = sem banco, segue a demonstração.
  * @var ?array{id:int,name:string,slug:string} $condoCurrent
  */
 $summary ??= [];
 $condoTotal ??= 0;
+$operational ??= null;
+$realKpis = $operational !== null && $operational['cards'] !== [] ? \Source\Controllers\Erp\Connect\Panel::dashboardKpis($operational['cards']) : null;
+$alertTone = ['danger' => 'danger', 'warning' => 'warning', 'info' => ''];
 $this->layout('default');
 $hasData = $dashboard !== [];
 $firstName = trim((string)($user->first_name ?? ''));
@@ -50,18 +55,44 @@ $this->insert('components/layout/page-head', [
     <?php endif; ?>
 </section>
 
+<?php if ($operational !== null): ?>
+    <?php if ($realKpis !== null): ?>
+        <section class="erp-grid erp-grid--kpi" aria-label="Indicadores principais" data-erp-dashboard-real>
+            <?php foreach ($realKpis as $i => $kpi): ?><a class="erp-kpi-link" href="<?= erp_url($kpi['href']) ?>"><?php $this->insert('components/cards/kpi', ['kpi' => $kpi, 'delay' => $i * 60]); ?></a><?php endforeach; ?>
+        </section>
+    <?php endif; ?>
+    <section class="erp-card" aria-labelledby="dash-real-alerts-title">
+        <div class="erp-card__head"><div><h2 id="dash-real-alerts-title">Alertas</h2><p>O que precisa de atenção hoje · dados reais</p></div></div>
+        <?php if ($operational['alerts'] === []): ?>
+            <p class="erp-field__hint">Nada pendente: manutenções, seguros, contratos, reservas, ocorrências e entregas em dia.</p>
+        <?php else: ?>
+            <ul class="erp-list erp-dash-alerts">
+                <?php foreach ($operational['alerts'] as $alert): $tone = $alertTone[$alert['severity']] ?? ''; ?>
+                    <li>
+                        <span class="erp-list__icon<?= $tone !== '' ? ' erp-list__icon--' . $tone : '' ?>"><?= $icon($tone === '' ? 'info' : 'alert', 'erp-icon--sm') ?></span>
+                        <div class="erp-list__body"><a href="<?= erp_url((string)$alert['route']) ?>"><strong><?= $this->e((string)$alert['message']) ?></strong></a></div>
+                        <span class="erp-badge erp-badge--<?= $tone !== '' ? $tone : 'info' ?>"><?= (int)$alert['count'] ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
+
 <?php if ($demo): ?>
     <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><strong>Dados de demonstração</strong>Os valores desta tela são fictícios e servem para avaliar o layout. Nenhum dado é gravado. Para desligar, defina <code>ERP_DEMO_DATA=false</code>.</div></div>
 <?php endif; ?>
 
-<?php if (!$hasData): ?>
+<?php if (!$hasData && $operational === null): ?>
     <section class="erp-card">
         <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'chart', 'emptyTitle' => 'Indicadores ainda indisponíveis', 'emptyText' => 'O dashboard mostrará arrecadação, inadimplência e contas a pagar assim que os módulos financeiros forem integrados ao banco.']); ?>
     </section>
-<?php else: ?>
+<?php elseif ($hasData): ?>
+    <?php if ($realKpis === null): ?>
     <section class="erp-grid erp-grid--kpi" aria-label="Indicadores principais">
         <?php foreach ($dashboard['kpis'] as $i => $kpi) { $this->insert('components/cards/kpi', ['kpi' => $kpi, 'delay' => $i * 60]); } ?>
     </section>
+    <?php endif; ?>
 
     <div class="erp-grid erp-grid--main">
         <section class="erp-card" aria-labelledby="dash-cash-title">
@@ -80,7 +111,7 @@ $this->insert('components/layout/page-head', [
         </section>
     </div>
 
-    <div class="erp-grid<?= $condoCurrent === null ? ' erp-grid--main' : '' ?>">
+    <div class="erp-grid<?= $condoCurrent === null && $operational === null ? ' erp-grid--main' : '' ?>">
         <?php if ($condoCurrent === null): ?>
         <section class="erp-card erp-card--flush" aria-labelledby="dash-condos-title">
             <div class="erp-card__head">
@@ -123,6 +154,7 @@ $this->insert('components/layout/page-head', [
         </section>
         <?php endif; ?>
 
+        <?php if ($operational === null): ?>
         <section class="erp-card" aria-labelledby="dash-alerts-title">
             <div class="erp-card__head"><div><h2 id="dash-alerts-title">Alertas</h2><p>O que precisa de atenção</p></div></div>
             <ul class="erp-list">
@@ -134,6 +166,7 @@ $this->insert('components/layout/page-head', [
                 <?php endforeach; ?>
             </ul>
         </section>
+        <?php endif; ?>
     </div>
 
     <div class="erp-grid erp-grid--2">

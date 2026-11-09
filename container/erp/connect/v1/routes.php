@@ -123,6 +123,11 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/financeiro/fechamento-mensal/fechar", "MonthClosings:close");
     $route->post("/financeiro/fechamento-mensal/reabrir", "MonthClosings:reopen");
 
+    // Agendamentos Pendentes (AP-114, ADR 0070): a tela é a página do catálogo; confirmar e recusar
+    // mudam a situação da reserva (AP-113) pelo motor, com CSRF.
+    $route->post("/operacional/agendamentos-pendentes/{id}/confirmar", "PendingReservations:confirm");
+    $route->post("/operacional/agendamentos-pendentes/{id}/recusar", "PendingReservations:refuse");
+
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
         if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados'], true) || in_array($pageId, $erpRegistryPages, true)) {

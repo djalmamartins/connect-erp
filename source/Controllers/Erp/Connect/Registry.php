@@ -198,7 +198,54 @@ final class Registry extends Controller
             'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
             'registryAttachment' => self::attachmentData($user, $definition, $values),
+            'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
+            'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
         ]));
+    }
+
+    /**
+     * Continuação do registro pela API do ADR 0053 (ADR 0070), só com a permissão manage:
+     *  - reserva cancelada: "Chamar lista de espera" (POST /api/v1/reservations/{id}/call-waitlist);
+     *  - manutenção concluída e recorrente: "Gerar próxima" (POST /api/v1/maintenances/{id}/next).
+     * O servidor confere de novo a situação, a data livre e se a próxima já foi gerada.
+     *
+     * @return array{kind:string, title:string, text:string, label:string, api:string, route:string}|null
+     */
+    public static function recordAction(string $slug, int $id, array $values): ?array
+    {
+        $status = (string)($values['status'] ?? '');
+        if ($slug === 'reservations' && $status === 'inactive') {
+            return ['kind' => 'waitlist', 'title' => 'Lista de espera', 'label' => 'Chamar lista de espera',
+                'text' => 'A reserva foi cancelada. Chame o primeiro da lista de espera desta área e data; quem for chamado faz a reserva pelas regras da área.',
+                'api' => url('/api/v1/reservations/' . $id . '/call-waitlist'), 'route' => erp_url('/operacional/lista-de-espera')];
+        }
+        if ($slug === 'maintenances' && $status === 'done' && !in_array((string)($values['frequency'] ?? 'unica'), ['', 'unica'], true)) {
+            return ['kind' => 'next', 'title' => 'Próxima manutenção', 'label' => 'Gerar próxima',
+                'text' => 'Cria a próxima manutenção pela periodicidade, agendada, com o mesmo serviço e fornecedor. Gera uma vez só.',
+                'api' => url('/api/v1/maintenances/' . $id . '/next'), 'route' => erp_url('/operacional/manutencoes')];
+        }
+        return null;
+    }
+
+    /**
+     * Chamado do Help Desk da ocorrência (ADR 0051 e 0070): o número gravado e o link para a fila do
+     * Help Desk (no host do Studio quando há hosts próprios), ou o botão "Abrir chamado", que usa
+     * POST /api/v1/occurrences/{id}/ticket. Sem erp.occurrences.manage, só mostra o vínculo.
+     *
+     * @return array{ticketId:?int, href:?string, hrefPattern:string, api:string, canOpen:bool}
+     */
+    public static function ticketData(int $id, array $values, bool $canManage): array
+    {
+        $ticket = filter_var($values['ticket_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $ticket = $ticket === false || $ticket === null ? null : (int)$ticket;
+        $pattern = \Source\Services\Environments::url('helpdesk', '/helpdesk/tickets?ticket=__ID__');
+        return [
+            'ticketId' => $ticket,
+            'href' => $ticket !== null ? str_replace('__ID__', (string)$ticket, $pattern) : null,
+            'hrefPattern' => $pattern,
+            'api' => url('/api/v1/occurrences/' . $id . '/ticket'),
+            'canOpen' => $canManage && $ticket === null,
+        ];
     }
 
     /**
