@@ -205,6 +205,10 @@
    "title": "0052 — Seletor do Disco Virtual no anexo dos cadastros (AP-126 a AP-129)"
   },
   {
+   "file": "docs/Organic Code/decisions/0053-operational-dashboard.md",
+   "title": "0053 — Dashboard com alertas reais, chamada da lista de espera e próxima manutenção"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -431,6 +435,20 @@
    "tests": [
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
    ]
+  },
+  "Source\\Controllers\\Api\\V1\\OperationalDashboard": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\OperationalDashboard",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/OperationalDashboard.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
   },
   "Source\\Controllers\\Api\\V1\\RecurringEntriesGenerate": {
    "deps": [
@@ -1770,6 +1788,7 @@
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
@@ -1859,6 +1878,7 @@
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
+    "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
@@ -2190,6 +2210,32 @@
     "tests/legacy/Unit/OperationalRegistriesTest.php"
    ]
   },
+  "Source\\Services\\Erp\\OperationalDashboard": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/OperationalDashboard.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_maintenances",
+    "erp_reservations",
+    "erp_occurrences",
+    "erp_deliveries",
+    "erp_insurances",
+    "erp_contracts",
+    "erp_waitlist",
+    "erp_entries"
+   ],
+   "tests": [
+    "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
+    "tests/legacy/Unit/OperationalDashboardTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\RecurringEntries": {
    "deps": [
     "Source\\Core\\Connect",
@@ -2332,6 +2378,7 @@
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
+    "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
@@ -2373,6 +2420,7 @@
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
@@ -3097,16 +3145,16 @@
   }
  },
  "counts": {
-  "adrs": 54,
-  "classes": 175,
+  "adrs": 55,
+  "classes": 177,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 261,
+  "routes": 264,
   "tables": 97,
-  "tests": 110
+  "tests": 112
  },
  "erp_pages": [
   {
@@ -4857,10 +4905,37 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
+   "env": "index",
+   "file": "index.php",
+   "line": 114,
+   "method": "show",
+   "path": "/api/v1/dashboard",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
+   "env": "index",
+   "file": "index.php",
+   "line": 115,
+   "method": "callWaitlist",
+   "path": "/api/v1/reservations/{id}/call-waitlist",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\OperationalDashboard",
+   "env": "index",
+   "file": "index.php",
+   "line": 116,
+   "method": "nextMaintenance",
+   "path": "/api/v1/maintenances/{id}/next",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 128,
+   "line": 132,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -4869,7 +4944,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 129,
+   "line": 133,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -4878,7 +4953,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 130,
+   "line": 134,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -4887,7 +4962,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 131,
+   "line": 135,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -4896,7 +4971,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 132,
+   "line": 136,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -4905,7 +4980,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 133,
+   "line": 137,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -4914,7 +4989,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 134,
+   "line": 138,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -4923,7 +4998,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 135,
+   "line": 139,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -4932,7 +5007,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 137,
+   "line": 141,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -4941,7 +5016,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 138,
+   "line": 142,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -4950,7 +5025,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 139,
+   "line": 143,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -4959,7 +5034,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 148,
+   "line": 152,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -4968,7 +5043,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 149,
+   "line": 153,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -4977,7 +5052,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 163,
+   "line": 167,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "GET"
@@ -4986,43 +5061,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 164,
+   "line": 168,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 165,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 166,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
    "line": 169,
-   "method": "forget",
-   "path": "/forget",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 170,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 173,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 174,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -5031,7 +5106,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 171,
+   "line": 175,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -5040,7 +5115,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 172,
+   "line": 176,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -5049,7 +5124,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 185,
+   "line": 189,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -5058,7 +5133,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 186,
+   "line": 190,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -5067,7 +5142,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 187,
+   "line": 191,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -5076,7 +5151,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 188,
+   "line": 192,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -5085,7 +5160,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 204,
+   "line": 208,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -5094,7 +5169,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 206,
+   "line": 210,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -6918,6 +6993,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -6932,6 +7008,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0525_gatehouse.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -6972,6 +7049,7 @@
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -6987,6 +7065,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7036,9 +7115,12 @@
    ]
   },
   "erp_maintenances": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0531_operational_followups.sql"
+   ],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7084,6 +7166,7 @@
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
     "Source\\Services\\Erp\\Occurrences",
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7122,6 +7205,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7203,9 +7287,12 @@
    ]
   },
   "erp_waitlist": {
-   "altered_in": [],
+   "altered_in": [
+    "database/migrations/20261108_0531_operational_followups.sql"
+   ],
    "created_in": "database/migrations/20261108_0530_operational_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\OperationalDashboard",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7719,6 +7806,13 @@
    "Source\\Services\\OnboardingItemNotFound",
    "Source\\Services\\OnboardingValidationError"
   ],
+  "tests/legacy/Integration/OperationalDashboardIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\OperationalDashboard",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -7967,6 +8061,9 @@
   ],
   "tests/legacy/Unit/OpenApiRoutesTest.php": [
    "Source\\Services\\Erp\\Registry\\Definitions"
+  ],
+  "tests/legacy/Unit/OperationalDashboardTest.php": [
+   "Source\\Services\\Erp\\OperationalDashboard"
   ],
   "tests/legacy/Unit/OperationalRegistriesTest.php": [
    "Source\\Services\\Erp\\Occurrences",
