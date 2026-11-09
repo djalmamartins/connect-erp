@@ -41,7 +41,7 @@ final class Panel extends Controller
     private const THEME = __DIR__ . '/../../../../container/erp/connect/v1/';
 
     /** Páginas com permissão própria já cadastrada (migration 20261107_0003). As demais exigem erp.access. */
-    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view'];
+    public const PAGE_PERMISSIONS = ['AP-004' => 'erp.condominiums.view', 'CN-001' => 'erp.inspections.view', 'AP-114' => 'erp.reservations.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -81,7 +81,49 @@ final class Panel extends Controller
             'dashboard' => DemoData::get('dashboard'),
             'summary' => $this->summary($user, CondominiumContext::id()),
             'condoTotal' => count($this->condominiumOptions($user)),
+            'operational' => $this->operationalSummary($user),
         ]));
+    }
+
+    /**
+     * Cards e alertas reais do dashboard (ADR 0053 e 0070), pelo mesmo serviço de GET /api/v1/dashboard,
+     * no condomínio da barra superior. null (sem banco ou falha) = a tela segue com a demonstração.
+     */
+    private function operationalSummary(User $user): ?array
+    {
+        if (Connect::databaseDisabled()) {
+            return null;
+        }
+        try {
+            return (new \Source\Services\Erp\OperationalDashboard())->summary($user, CondominiumContext::id());
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'dashboard_operational_failed']);
+            return null;
+        }
+    }
+
+    /**
+     * Indicadores do dashboard a partir dos cards do serviço (regra pura): a receber vencido, a pagar
+     * em 7 dias, manutenções atrasadas e ocorrências abertas, no formato do componente cards/kpi.
+     *
+     * @param array<string, int> $cards
+     * @return list<array{key:string,label:string,value:string,meta:string,icon:string,tone:string,trend:null,href:string}>
+     */
+    public static function dashboardKpis(array $cards): array
+    {
+        $brl = static fn (int $cents): string => 'R$ ' . number_format($cents / 100, 2, ',', '.');
+        $plural = static fn (int $n, string $one, string $many): string => $n . ' ' . ($n === 1 ? $one : $many);
+        $c = static fn (string $key): int => (int)($cards[$key] ?? 0);
+        return [
+            ['key' => 'receivables_overdue', 'label' => 'A receber vencido', 'value' => $brl($c('receivables_overdue_cents')), 'meta' => 'Vence em 7 dias: ' . $brl($c('receivables_week_cents')),
+                'icon' => 'wallet', 'tone' => 'hero', 'trend' => null, 'href' => '/financeiro/contas-a-receber'],
+            ['key' => 'payables_week', 'label' => 'A pagar em 7 dias', 'value' => $brl($c('payables_week_cents')), 'meta' => 'Contas a pagar em aberto',
+                'icon' => 'receipt', 'tone' => $c('payables_week_cents') > 0 ? 'warning' : '', 'trend' => null, 'href' => '/financeiro/contas-a-pagar'],
+            ['key' => 'maintenances_late', 'label' => 'Manutenções atrasadas', 'value' => (string)$c('maintenances_late'), 'meta' => $plural($c('maintenances_week'), 'prevista', 'previstas') . ' para os próximos 7 dias',
+                'icon' => 'calendar', 'tone' => $c('maintenances_late') > 0 ? 'danger' : '', 'trend' => null, 'href' => '/operacional/manutencoes'],
+            ['key' => 'occurrences_open', 'label' => 'Ocorrências abertas', 'value' => (string)$c('occurrences_open'), 'meta' => $plural($c('reservations_pending'), 'reserva aguardando', 'reservas aguardando') . ' aprovação',
+                'icon' => 'clipboard', 'tone' => '', 'trend' => null, 'href' => '/operacional/ocorrencias'],
+        ];
     }
 
     /**
@@ -470,6 +512,35 @@ final class Panel extends Controller
         return $data;
     }
 
+    /**
+     * Agendamentos Pendentes (AP-114, ADR 0051 e 0070): as reservas de áreas comuns aguardando
+     * aprovação no condomínio da barra superior, pela listagem do motor (escopo e paginação dele).
+     * Sem banco ou sem erp.reservations.view, null = a demonstração.
+     */
+    private function pendingReservationData(User $user): array
+    {
+        $data = ['pendingReservations' => null, 'pendingAreas' => [], 'pendingUnits' => [], 'canDecideReservations' => false, 'flash' => null];
+        if (Connect::databaseDisabled() || !Access::can('erp.reservations.view', $user)) {
+            return $data;
+        }
+        try {
+            $service = new RegistryService();
+            $data['pendingReservations'] = $service->list($user, 'reservations', [
+                'condominium_id' => CondominiumContext::id(), 'status' => 'active', 'page' => $_GET['pagina'] ?? 1,
+            ]);
+            // Nomes da área e da unidade para a lista (a reserva guarda só os números).
+            $areas = $service->references($user, RegistryService::definition('reservations'))['common_area_id'] ?? [];
+            $data['pendingAreas'] = array_column($areas, 'label', 'id');
+            $data['pendingUnits'] = array_column($service->units($user), 'label', 'id');
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'pending_reservations_screen_failed']);
+            return $data;
+        }
+        $data['canDecideReservations'] = Access::can('erp.reservations.manage', $user);
+        $data['flash'] = (new \Source\Core\Session())->flash();
+        return $data;
+    }
+
     /** Tamanho legível em pt-BR (regra pura): 512 B, 12,5 KB, 3,2 MB. */
     public static function fileSize(int $bytes): string
     {
@@ -589,6 +660,9 @@ final class Panel extends Controller
         if ($id === 'AP-042') {
             $data += $this->meterReadingData($user);
         }
+        if ($id === 'AP-114') {
+            $data += $this->pendingReservationData($user);
+        }
         if (isset(self::UNIT_DOCUMENT_PAGES[$id])) {
             $data += $this->unitDocumentData($user, $id);
         }
@@ -613,6 +687,7 @@ final class Panel extends Controller
             isset(self::UNIT_DOCUMENT_PAGES[$id]) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
+            $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',

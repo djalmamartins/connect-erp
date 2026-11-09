@@ -531,6 +531,69 @@ $assert(str_contains($html, 'data-erp-attachment data-api="https://' . $smokeHos
 $html = $attachForm(['canBrowse' => false, 'canUpload' => false]);
 $assert(!str_contains($html, 'data-attachment-open') && str_contains($html, 'Nenhum arquivo anexado'), 'AP-127: sem acesso ao Disco Virtual não oferece escolher');
 
+// Agendamentos Pendentes (AP-114, ADR 0051 e 0070): reservas aguardando aprovação.
+$pendingRow = static fn (array $over = []): array => $over + ['id' => 31, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'common_area_id' => 4, 'unit_id' => 9,
+    'resident_name' => 'Ana <Souza>', 'reserved_on' => '2026-11-14', 'starts_time' => '14:00', 'ends_time' => '18:00', 'fee_cents' => 15000, 'notes' => null, 'status' => 'active'];
+$pendingData = static fn (array $over = []): array => $over + ['pendingReservations' => ['data' => [$pendingRow(), $pendingRow(['id' => 32, 'starts_time' => null, 'ends_time' => null, 'fee_cents' => null, 'common_area_id' => 99])], 'total' => 2, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+    'pendingAreas' => [4 => 'Salão de festas'], 'pendingUnits' => [9 => 'Bloco A 101'], 'canDecideReservations' => true, 'flash' => null];
+$html = $agreementPage('AP-114', 'pages/operational/pending-reservations', $pendingData(), 'manage');
+$common($html, 'AP-114', 'Agendamentos Pendentes');
+$assert(str_contains($html, 'Salão de festas') && str_contains($html, 'Área nº 99') && str_contains($html, 'Bloco A 101') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, '14:00 às 18:00')
+    && str_contains($html, 'Dia inteiro') && str_contains($html, 'R$ 150,00') && str_contains($html, '/operacional/agendamentos-pendentes/31/confirmar') && str_contains($html, '/operacional/agendamentos-pendentes/32/recusar')
+    && substr_count($html, 'data-erp-confirm=') === 2 && str_contains($html, '/operacional/reservas-areas-comuns/31') && str_contains($html, 'sábado'), 'AP-114: pendentes com confirmar e recusar');
+$html = $agreementPage('AP-114', 'pages/operational/pending-reservations', $pendingData(['canDecideReservations' => false]));
+$assert(!str_contains($html, '/confirmar') && !str_contains($html, '/recusar') && str_contains($html, '/operacional/reservas-areas-comuns/31'), 'AP-114: sem manage só consulta');
+$html = $agreementPage('AP-114', 'pages/operational/pending-reservations', $pendingData(['pendingReservations' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 50, 'pages' => 0]]));
+$assert(str_contains($html, 'Nenhuma reserva pendente'), 'AP-114: sem pendentes');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-114', ['pendingReservations' => null]) === null, 'AP-114: sem dados segue a demonstração');
+
+// Ocorrência (AP-112): chamado no Help Desk no formulário.
+$occurrenceForm = static fn (array $values, bool $canManage = true): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-112', [
+    'title' => 'Vazamento', 'definition' => Source\Services\Erp\Registry\Definitions::get('occurrences'), 'recordId' => 5,
+    'values' => $values + ['id' => 5, 'condominium_id' => 1, 'subject' => 'Vazamento', 'priority' => 'alta', 'occurred_on' => '2026-11-08', 'description' => 'Vazamento na garagem', 'status' => 'active'],
+    'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => $canManage,
+    'registryAttachment' => null, 'occurrenceTicket' => Source\Controllers\Erp\Connect\Registry::ticketData(5, $values, $canManage),
+], 'Vazamento'));
+$html = $occurrenceForm(['ticket_id' => null]);
+$save('page-ap-112-ticket', $html);
+$assert(str_contains($html, 'data-erp-occurrence-ticket data-api="https://' . $smokeHost . '/api/v1/occurrences/5/ticket"') && str_contains($html, 'data-ticket-open') && str_contains($html, 'Operacional · Ocorrências'), 'AP-112: abrir chamado no Help Desk');
+$html = $occurrenceForm(['ticket_id' => '77']);
+$assert(!str_contains($html, 'data-ticket-open') && str_contains($html, 'nº 77') && str_contains($html, '/helpdesk/tickets?ticket=77'), 'AP-112: chamado aberto com link');
+$html = $occurrenceForm(['ticket_id' => null], false);
+$assert(!str_contains($html, 'data-ticket-open') && str_contains($html, 'Nenhum chamado aberto'), 'AP-112: sem manage não abre chamado');
+
+// Dashboard com cards e alertas reais (ADR 0053 e 0070).
+$operationalCards = ['maintenances_late' => 2, 'maintenances_week' => 1, 'insurances_renewal' => 0, 'insurances_expired' => 1, 'contracts_renewal' => 0, 'contracts_expired' => 0,
+    'reservations_pending' => 3, 'occurrences_open' => 4, 'deliveries_waiting' => 0, 'receivables_overdue_cents' => 1234567, 'receivables_week_cents' => 50000, 'payables_week_cents' => 0, 'waitlist_to_call' => 1];
+$operationalAlerts = [['kind' => 'maintenances_late', 'severity' => 'danger', 'count' => 2, 'message' => 'Manutenções atrasadas', 'route' => '/operacional/manutencoes'],
+    ['kind' => 'reservations_pending', 'severity' => 'info', 'count' => 3, 'message' => 'Reservas <aguardando> aprovação', 'route' => '/operacional/agendamentos-pendentes']];
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]]);
+$html = $render('pages/dashboard/index', $data);
+$save('dashboard-real', $html);
+$assert(str_contains($html, 'data-erp-dashboard-real') && str_contains($html, 'R$ 12.345,67') && str_contains($html, 'Vence em 7 dias: R$ 500,00') && str_contains($html, '1 prevista para os próximos 7 dias')
+    && str_contains($html, '3 reservas aguardando aprovação') && !str_contains($html, 'R$ 1.284.530') && str_contains($html, 'Reservas &lt;aguardando&gt; aprovação')
+    && str_contains($html, '/operacional/agendamentos-pendentes') && substr_count($html, 'Alertas</h2>') === 1, 'dashboard: cards e alertas reais no lugar da demonstração');
+putenv('ERP_DEMO_DATA=false');
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => []]]);
+$html = $render('pages/dashboard/index', $data);
+$assert(str_contains($html, 'data-erp-dashboard-real') && str_contains($html, 'Nada pendente') && !str_contains($html, 'Indicadores ainda indisponíveis'), 'dashboard: sem demonstração mostra os dados reais');
+putenv('ERP_DEMO_DATA=true');
+
+// Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
+$actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
+    'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],
+    'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
+    'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => Source\Controllers\Erp\Connect\Registry::recordAction($slug, 8, $values),
+], 'Registro'));
+$html = $actionForm('reservations', 'AP-113', ['status' => 'inactive']);
+$save('page-ap-113-waitlist', $html);
+$assert(str_contains($html, 'data-erp-record-action data-kind="waitlist" data-api="https://' . $smokeHost . '/api/v1/reservations/8/call-waitlist"') && str_contains($html, 'Chamar lista de espera'), 'AP-113: reserva cancelada chama a lista de espera');
+$assert(!str_contains($actionForm('reservations', 'AP-113', ['status' => 'confirmed']), 'data-erp-record-action'), 'AP-113: reserva válida não chama a lista');
+$html = $actionForm('maintenances', 'AP-110', ['status' => 'done', 'frequency' => 'mensal']);
+$save('page-ap-110-next', $html);
+$assert(str_contains($html, 'data-kind="next" data-api="https://' . $smokeHost . '/api/v1/maintenances/8/next"') && str_contains($html, 'Gerar próxima'), 'AP-110: manutenção concluída recorrente gera a próxima');
+$assert(!str_contains($actionForm('maintenances', 'AP-110', ['status' => 'done', 'frequency' => 'unica']), 'data-erp-record-action') && !str_contains($actionForm('maintenances', 'AP-110', ['status' => 'active', 'frequency' => 'mensal']), 'data-erp-record-action'), 'AP-110: única ou não concluída não gera próxima');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);

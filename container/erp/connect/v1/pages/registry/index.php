@@ -35,7 +35,7 @@ ob_start(); ?>
     <?php endif; ?>
 <?php $actions = trim((string)ob_get_clean());
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => ($definition['group'] ?? 'cadastros') === 'condominios' ? 'Condomínios' : 'Cadastros',
+    'pageEyebrow' => $catalog['groups'][$definition['group'] ?? 'cadastros']['label'] ?? 'Cadastros',
     'pageTitle' => $definition['label'],
     'pageLead' => $definition['lead'],
     'pageActions' => $actions,
