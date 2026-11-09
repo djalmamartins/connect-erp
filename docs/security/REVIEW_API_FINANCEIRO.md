@@ -550,3 +550,27 @@ Escopo: `source/Services/Erp/Announcements.php`.
 - A inadimplência do aviso de cobrança é apurada antes de travar o condomínio. Um pagamento registrado
   nesse intervalo ainda pode gerar o aviso.
 
+## 18ª rodada — Regras de cobrança e índices
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em c1e6c67 · Correções: ADR 0110
+
+Escopo: `source/Services/Erp/BillingRules.php` e `source/Controllers/Api/V1/BillingRules.php`.
+
+| Ponto | Situação |
+|---|---|
+| Ler exige `erp.billing_rules.view`; gravar, `erp.billing_rules.manage` | CONFIRMADO |
+| Regra do condomínio pelo escopo (404); padrão da Connect e índices só com acesso a todos (403) | CONFIRMADO |
+| Regra validada por faixa (multa e juros até 10%, quebra de 1 a 365 dias) | CONFIRMADO |
+| Índices gravados numa transação, tudo ou nada; auditado | CONFIRMADO |
+| Índice só para mês já publicado | CONFIRMADO, com o achado 1 |
+
+### Achados corrigidos (ADR 0110)
+
+1. **Mês futuro.** Era aceito e passaria a corrigir as contas quando chegasse. Agora é recusado.
+2. **Arquivo sem limite.** Agora são no máximo 600 meses por arquivo.
+
+### Lacunas
+
+- Um índice corrigido de um mês passado muda a correção das contas em aberto daquele período. É o
+  esperado, mas a resposta da gravação não informa quantas contas são afetadas.
+
