@@ -435,6 +435,7 @@ components:
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         supplier_id: { type: [integer, "null"], minimum: 1, description: 'ID de /suppliers ativo.' }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         document_number: { type: [string, "null"], maxLength: 40 }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
@@ -487,6 +488,7 @@ components:
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         supplier_id: { type: [integer, "null"], minimum: 1, description: 'ID de /suppliers ativo.' }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         document_number: { type: [string, "null"], maxLength: 40 }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
@@ -513,6 +515,7 @@ components:
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         supplier_id: { type: [integer, "null"], minimum: 1, description: 'ID de /suppliers ativo.' }
+        unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         document_number: { type: [string, "null"], maxLength: 40 }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }

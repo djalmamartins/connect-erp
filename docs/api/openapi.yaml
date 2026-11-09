@@ -53,6 +53,37 @@ components:
         reopened_by: { type: [integer, "null"] }
         reopened_at: { type: [string, "null"] }
         reopen_reason: { type: [string, "null"] }
+    Invoice:
+      type: object
+      description: Fatura (ADR 0033). items só vem no detalhe e nas respostas de gravação.
+      properties:
+        id: { type: integer }
+        condominium_id: { type: integer }
+        condominium_name: { type: [string, "null"] }
+        invoice_type_id: { type: integer }
+        type_name: { type: [string, "null"] }
+        competence: { type: string, example: '2026-11' }
+        due_on: { type: string, format: date }
+        status: { type: string, enum: [draft, issued, cancelled] }
+        status_label: { type: string }
+        units_count: { type: integer }
+        amount_cents: { type: integer }
+        notes: { type: [string, "null"] }
+        issued_at: { type: [string, "null"] }
+        cancelled_at: { type: [string, "null"] }
+        cancel_reason: { type: [string, "null"] }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              unit_id: { type: integer }
+              unit_label: { type: string }
+              amount_cents: { type: integer }
+              entry_id: { type: [integer, "null"], description: 'Conta a receber gerada na emissão' }
+              paid_on: { type: [string, "null"] }
+              entry_status: { type: [string, "null"], enum: [active, inactive, null] }
     MonthClosingStatus:
       type: object
       properties:
@@ -620,6 +651,101 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: Competência não está fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      summary: Faturas dos condomínios do escopo (erp.invoices.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: competence, in: query, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+        - { name: status, in: query, schema: { type: string, enum: [draft, issued, cancelled] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Invoice' } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: prepareInvoice
+      summary: Prepara a fatura (rascunho) com um item por unidade ativa (erp.invoices.manage)
+      description: >-
+        method fixed = amount_cents por unidade; fraction = amount_cents total rateado pela fração
+        ideal (sobra de centavos para as maiores frações). Sem amount_cents, usa o valor padrão do
+        tipo. Uma fatura ativa por condomínio, tipo e competência.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, invoice_type_id, competence, due_on], properties: { condominium_id: { type: integer }, invoice_type_id: { type: integer }, competence: { type: string }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, fraction], default: fixed }, amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string, example: '1.250,00' }] }, notes: { type: string, maxLength: 255 } } } } }
+      responses:
+        '201': { description: Rascunho criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já existe fatura ativa do tipo na competência, ou competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /invoices/{id}:
+    get:
+      operationId: showInvoice
+      summary: Fatura com os itens por unidade e a situação de cada conta a receber
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Fatura, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /invoices/{id}/items/{item}:
+    patch:
+      operationId: updateInvoiceItem
+      summary: Ajusta o valor de uma unidade na fatura em preparação (erp.invoices.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: item, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [amount_cents], properties: { amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string }] } } } } }
+      responses:
+        '200': { description: Fatura atualizada, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Fatura não está em preparação }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /invoices/{id}/issue:
+    post:
+      operationId: issueInvoice
+      summary: Emite a fatura; cada item vira uma conta a receber da unidade (erp.invoices.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Emitida, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Não está em preparação, já emitida ou competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Um lançamento não passou nas regras (fields)' }
+  /invoices/{id}/cancel:
+    post:
+      operationId: cancelInvoice
+      summary: Cancela a fatura com motivo; emitida cancela as contas a receber geradas (erp.invoices.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelada, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já cancelada, conta a receber paga ou competência fechada' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
