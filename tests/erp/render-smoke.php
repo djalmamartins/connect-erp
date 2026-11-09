@@ -567,6 +567,54 @@ $html = $agreementPage('AP-029', 'pages/finance/bank-transfers', $transferData([
 $assert(!str_contains($html, 'data-transfer-form') && str_contains($html, 'duas contas bancárias ativas'), 'AP-029: com uma conta só não registra');
 $assert($Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b'], ['id' => 3, 'condominium_id' => 2, 'label' => 'c']], 1) === [['id' => 1, 'condominium_id' => null, 'label' => 'a'], ['id' => 2, 'condominium_id' => 1, 'label' => 'b']]
     && $Shortcut::forContext([['id' => 1, 'condominium_id' => null, 'label' => 'a']], null) === [], 'atalhos: opções do padrão e do condomínio em contexto');
+// Relatórios de cobrança (AP-047, AP-048, AP-057 a AP-061, AP-071 e AP-072; ADR 0081 e 0077).
+$CR = Source\Controllers\Erp\Connect\CollectionReportScreens::class;
+$crData = static function (string $id, array $rows, array $over = []) use ($CR): array {
+    [$kind, $variant] = $CR::PAGES[$id];
+    $variant = $over['cReportVariant'] ?? $variant;
+    $filters = ['de' => '2026-01-01', 'ate' => '2026-11-09', 'referencia' => '2026-11-09', 'situacao' => null, 'agrupar' => $id === 'AP-072' ? $variant : null];
+    return $over + ['cReportReady' => true, 'cReportKind' => $kind, 'cReportVariant' => $variant, 'cReportFilters' => $filters, 'cReportError' => null, 'cReport' => [],
+        'cReportColumns' => $CR::columns($kind, $variant), 'cReportRows' => $rows, 'cReportCsv' => $CR::csvUrl($kind, $variant, $filters, 1)];
+};
+$agr = static fn (array $over = []): array => $over + ['id' => 5, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto <101>', 'status' => 'active',
+    'created_on' => '2026-10-01', 'installments' => 6, 'paid_installments' => 2, 'original_cents' => 180000, 'fees_cents' => 20000, 'discount_cents' => 5000, 'total_cents' => 195000,
+    'paid_cents' => 65000, 'open_cents' => 130000, 'overdue_installments' => 1, 'overdue_cents' => 32500, 'next_due_on' => '2026-11-10'];
+$html = $agreementPage('AP-047', 'pages/reports/collection-report', $crData('AP-047', [$agr(), $agr(['id' => 6, 'status' => 'cancelled', 'total_cents' => 100000])]), 'list');
+$common($html, 'AP-047', 'Relatório de acordos');
+$assert(str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '>Ativo</span>') && str_contains($html, '>Cancelado</span>') && str_contains($html, '2 de 6') && str_contains($html, '<tfoot>')
+    && str_contains($html, 'Total (sem cancelados)') && str_contains($html, 'R$ 1.950,00</td>') && str_contains($html, '/api/v1/reports/agreements?format=csv&amp;condominium_id=1&amp;from=2026-01-01&amp;to=2026-11-09')
+    && str_contains($html, 'name="situacao"') && str_contains($html, 'name="de" value="2026-01-01"'), 'AP-047: acordos com situação, rodapé sem cancelados e CSV');
+$html = $agreementPage('AP-048', 'pages/reports/collection-report', $crData('AP-048', [['condominium_id' => 1, 'condominium_name' => 'Residencial <Aurora>', 'agreements' => 3, 'cancelled' => 1,
+    'original_cents' => 500000, 'fees_cents' => 40000, 'discount_cents' => 10000, 'net_fees_cents' => 30000, 'total_cents' => 530000]]));
+$assert(str_contains($html, 'Residencial &lt;Aurora&gt;') && str_contains($html, 'Encargos líquidos') && str_contains($html, 'R$ 300,00') && !str_contains($html, 'name="situacao"'), 'AP-048: taxas por condomínio');
+$unitRow = ['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 5, 'unit_label' => 'Apto 101', 'entries' => 2, 'amount_cents' => 185000, 'charges_cents' => 4200,
+    'total_cents' => 189200, 'oldest_due_on' => '2026-07-10', 'max_days_late' => 122];
+foreach (['AP-057' => [['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'units' => 2, 'entries' => 4, 'amount_cents' => 370000, 'charges_cents' => 8400, 'total_cents' => 378400, 'max_days_late' => 122]],
+    'AP-058' => [$unitRow], 'AP-059' => [$unitRow + ['entry_id' => 70, 'description' => 'Taxa <julho>', 'competence' => '2026-07', 'due_on' => '2026-07-10', 'days_late' => 122, 'bucket' => '90+']],
+    'AP-060' => [['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'account' => '1.1 Taxa condominial', 'units' => 2, 'entries' => 4, 'amount_cents' => 370000, 'charges_cents' => 8400, 'total_cents' => 378400]],
+    'AP-061' => [$unitRow + ['responsible' => ['name' => 'Ana <Souza>', 'document' => '*********01', 'email' => 'ana@x.com', 'phone' => '11 9999', 'relationship' => 'owner']], $unitRow + ['unit_label' => 'Apto 102', 'responsible' => null]]] as $crPage => $crRows) {
+    $html = $agreementPage($crPage, 'pages/reports/collection-report', $crData($crPage, $crRows), 'list');
+    $common($html, $crPage, $catalog['pages'][$crPage]['name']);
+    $assert(str_contains($html, 'name="referencia" value="2026-11-09"') && !str_contains($html, 'name="de"') && str_contains($html, 'view=' . $CR::PAGES[$crPage][1]) && str_contains($html, '<tfoot>')
+        && str_contains($html, '122 dia(s)') === ($crPage !== 'AP-060'), "{$crPage}: inadimplentes na data de referência");
+}
+$assert(str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, '*********01') && str_contains($html, 'o documento aparece mascarado') && str_contains($html, '<span class="erp-muted">—</span>'), 'AP-061: responsável mascarado e aviso de dados pessoais');
+$html = $agreementPage('AP-071', 'pages/reports/collection-report', $crData('AP-071', [['entry_id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_label' => 'Apto 101', 'description' => '=CMD()',
+    'competence' => '2026-10', 'due_on' => '2026-10-10', 'paid_on' => '2026-10-15', 'amount_cents' => 92500, 'days_late' => 5, 'bank_account_id' => 3, 'bank_account' => 'Corrente', 'chart_account' => '1.1 Taxa']]), 'list');
+$common($html, 'AP-071', 'Recebimentos');
+$assert(str_contains($html, '15/10/2026') && str_contains($html, '5 dia(s)') && str_contains($html, 'group=entry') && !str_contains($html, 'name="agrupar"'), 'AP-071: recebimentos em linhas');
+$html = $agreementPage('AP-072', 'pages/reports/collection-report', $crData('AP-072', [['condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'account' => 'Corrente <Itaú>', 'entries' => 3, 'amount_cents' => 277500, 'late' => 1]],
+    ['cReportVariant' => 'chart_account']), 'list');
+$assert(str_contains($html, 'name="agrupar"') && str_contains($html, '<option value="chart_account" selected>') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'group=chart_account'), 'AP-072: agrupado pela conta escolhida');
+$html = $agreementPage('AP-071', 'pages/reports/collection-report', $crData('AP-071', [], ['cReportError' => 'O período passa de 366 dias.']));
+$assert(str_contains($html, 'O período passa de 366 dias.') && !str_contains($html, 'Exportar CSV'), 'AP-071: erro de período sem exportar');
+$html = $agreementPage('AP-071', 'pages/reports/collection-report', $crData('AP-071', []));
+$assert(str_contains($html, 'Nada neste filtro') && !str_contains($html, 'Exportar CSV'), 'AP-071: vazio sem exportar');
+$assert($CR::date('2026-02-30') === null && $CR::date('2026-02-28') === '2026-02-28' && $CR::permissions('AP-061') === ['erp.agreements.view', 'erp.residents.view'] && $CR::permissions('AP-072') === ['erp.entries.view'], 'relatórios de cobrança: regras puras');
+foreach (array_keys($CR::PAGES) as $crPage) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($crPage, ['cReportReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($crPage, ['cReportReady' => true]) === 'pages/reports/collection-report', "{$crPage}: tela própria só com dados");
+}
+
 // Cobrança e multas (AP-116, AP-117 e AP-039; ADR 0080 e 0076).
 $Coll = Source\Controllers\Erp\Connect\CollectionScreens::class;
 $collBase = ['collReady' => true, 'collContext' => 1, 'collError' => null, 'collCanManage' => true];

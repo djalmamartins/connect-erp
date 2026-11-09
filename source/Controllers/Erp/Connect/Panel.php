@@ -51,7 +51,10 @@ final class Panel extends Controller
         // Comunicação (ADR 0059 e 0075).
         'AP-111' => 'erp.announcements.view', 'AP-137' => 'erp.announcements.view', 'AP-138' => 'erp.announcements.view', 'AP-139' => 'erp.announcements.view',
         // Cobrança e multas (ADR 0080 e 0076).
-        'AP-116' => 'erp.collections.view', 'AP-117' => 'erp.collections.view', 'AP-039' => 'erp.collections.view'];
+        'AP-116' => 'erp.collections.view', 'AP-117' => 'erp.collections.view', 'AP-039' => 'erp.collections.view',
+        // Relatórios de cobrança (ADR 0081 e 0077); a visão por morador exige também erp.residents.view (conferido nos dados).
+        'AP-047' => 'erp.agreements.view', 'AP-048' => 'erp.agreements.view', 'AP-057' => 'erp.agreements.view', 'AP-058' => 'erp.agreements.view',
+        'AP-059' => 'erp.agreements.view', 'AP-060' => 'erp.agreements.view', 'AP-061' => 'erp.agreements.view', 'AP-071' => 'erp.entries.view', 'AP-072' => 'erp.entries.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -767,6 +770,9 @@ final class Panel extends Controller
         if (isset(CollectionScreens::PAGES[$id])) {
             $data += (new CollectionScreens())->data($user, $id);
         }
+        if (isset(CollectionReportScreens::PAGES[$id])) {
+            $data += (new CollectionReportScreens())->data($user, $id);
+        }
         if (isset(EntryShortcutScreens::PAGES[$id])) {
             $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
@@ -793,6 +799,7 @@ final class Panel extends Controller
             isset(ImportScreens::pages()[$id]) && ($data['importReady'] ?? false) => 'pages/imports/import',
             isset(CommunicationScreens::PAGES[$id]) && ($data['commReady'] ?? false) => CommunicationScreens::PAGES[$id],
             isset(CollectionScreens::PAGES[$id]) && ($data['collReady'] ?? false) => CollectionScreens::PAGES[$id],
+            isset(CollectionReportScreens::PAGES[$id]) && ($data['cReportReady'] ?? false) => 'pages/reports/collection-report',
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
