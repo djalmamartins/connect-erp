@@ -566,6 +566,14 @@ p { margin: 0; }
 .erp-kpi-link:hover .erp-kpi { box-shadow: 0 0 0 2px var(--erp-brand) inset; }
 .erp-kpi-link:focus-visible { outline: 2px solid var(--erp-brand); outline-offset: 2px; }
 .erp-dash-alerts .erp-list__body a { color: inherit; }
+.erp-unit-pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; }
+.erp-unit-pick label { font-weight: 600; }
+.erp-unit-pick .erp-select { width: auto; min-width: 220px; }
+.erp-panel-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.erp-panel-bars li { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 12px; }
+.erp-panel-bars .erp-progress { margin: 0; }
+.erp-panel-negative { color: var(--erp-danger, #b42318); }
+.erp-panel-subtitle { font-size: 14px; margin: 20px 0 4px; }
 .erp-occurrence-ticket__status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
 .erp-disk-name .erp-muted { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .erp-disk-layout { grid-template-columns: 1fr; } .erp-disk-search { width: 100%; } .erp-disk-search .erp-input { min-width: 0; flex: 1; } }

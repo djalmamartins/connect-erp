@@ -28,8 +28,10 @@ services:
       retries: 12
     networks: [connect]
     restart: unless-stopped
-  # Rotinas diárias (ADR 0013): avisos de vencimento do checklist de chegada às 07:00 (Brasília).
-  # Só grava notificações e mail_queue; o envio de e-mail continua com o worker de e-mail.
+  # Rotinas (ADR 0013, ADR 0055): avisos do checklist às 07:00 (Brasília) e, a cada minuto, a fila
+  # de avisos do ERP em modo sandbox: só a caixa de teste ERP_MAIL_SANDBOX_TO recebe; sem ela, só log.
+  # Nunca usar ERP_MAIL_DELIVERY=production aqui. O envio SMTP da mail_queue só roda com
+  # LAB_MAIL_QUEUE_SEND=1 (usa o SMTP de settings).
   scheduler:
     build:
       context: .
@@ -39,6 +41,9 @@ services:
       TZ: America/Sao_Paulo
       APP_ENV: ${APP_ENV:-local}
       CONNECT_JOB_HOST: ${CONNECT_JOB_HOST:-erp.connect.lab}
+      ERP_MAIL_DELIVERY: sandbox
+      ERP_MAIL_SANDBOX_TO: ${ERP_MAIL_SANDBOX_TO:-}
+      LAB_MAIL_QUEUE_SEND: ${LAB_MAIL_QUEUE_SEND:-0}
       MOVESOS_DB_HOST: legacy-db
       MOVESOS_DB_PORT: 3306
       MOVESOS_DB_NAME: ${LEGACY_DB_DATABASE:-connect_legacy}
