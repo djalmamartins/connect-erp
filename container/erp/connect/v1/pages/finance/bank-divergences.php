@@ -1,6 +1,6 @@
 <?php
 /**
- * Retornos com divergência (AP-038, ADR 0035 e 0036): fila de revisão das ocorrências do retorno
+ * Retornos com divergência (AP-038, ADR 0035 e 0038): fila de revisão das ocorrências do retorno
  * que não deram baixa automática ($bankDivergences, de Panel::bankingData, no contexto da barra
  * superior). "Marcar como revisada" grava uma nota pela API POST /api/v1/bank-events/{id}/resolve
  * (erp.js, data-erp-bank-divergences); a correção em si é feita à mão no lançamento ou no boleto.

@@ -12,6 +12,7 @@ use Source\Models\User;
 use Source\Services\Erp\Banking\BankCharges;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
+use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Invoices;
 use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
@@ -158,7 +159,7 @@ final class Panel extends Controller
 
     /**
      * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 retornos com divergência;
-     * ADR 0035 e 0036), só no adaptador de sandbox. $bankCharges / $bankDivergences null = sem
+     * ADR 0035 e 0038), só no adaptador de sandbox. $bankCharges / $bankDivergences null = sem
      * permissão ou sem banco (a tela segue com a demonstração). As ações usam a API /api/v1.
      *
      * @return array{bankCharges?: ?array, bankDivergences?: ?array, bankReady: bool, canManageCharges: bool}
@@ -181,6 +182,40 @@ final class Panel extends Controller
         }
         $data['bankReady'] = true;
         $data['canManageCharges'] = Access::can('erp.bank_charges.manage', $user);
+        return $data;
+    }
+
+    /** Páginas da prestação de contas com dados reais (ADR 0037): balancete e demonstrativo. */
+    public const REPORT_PAGES = ['AP-079', 'AP-051'];
+
+    /**
+     * Relatórios financeiros reais (ADR 0037) no contexto da barra superior ("Todos" = escopo):
+     *  - AP-079 balancete de verificação: ?de=AAAA-MM&ate=AAAA-MM (padrão: mês atual) → $trialBalance;
+     *  - AP-051 demonstrativo (prestação de contas por caixa, com conciliação bancária):
+     *    ?de=AAAA-MM-DD&ate=AAAA-MM-DD (padrão: do dia 1 até hoje) → $statement.
+     * null = sem permissão, sem banco ou período inválido ($reportError diz qual).
+     *
+     * @return array{trialBalance?: ?array, statement?: ?array, reportError: ?string, reportPeriod: array{from:string, to:string}}
+     */
+    private function reportData(User $user, string $id): array
+    {
+        $trial = $id === 'AP-079';
+        $from = is_string($_GET['de'] ?? null) ? $_GET['de'] : ($trial ? date('Y-m') : date('Y-m-01'));
+        $to = is_string($_GET['ate'] ?? null) ? $_GET['ate'] : ($trial ? date('Y-m') : date('Y-m-d'));
+        $key = $trial ? 'trialBalance' : 'statement';
+        $data = [$key => null, 'reportError' => null, 'reportPeriod' => ['from' => mb_substr($from, 0, 10), 'to' => mb_substr($to, 0, 10)]];
+        if (Connect::databaseDisabled() || !Access::can('erp.entries.view', $user) || !Access::can('erp.chart.view', $user)) {
+            return $data;
+        }
+        try {
+            $reports = new FinancialReports();
+            $data[$key] = $trial ? $reports->trialBalance($user, CondominiumContext::id(), $from, $to) : $reports->statement($user, CondominiumContext::id(), $from, $to);
+        } catch (\InvalidArgumentException $error) {
+            $data['reportError'] = $error->getMessage();
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'financial_report_failed', 'page' => $id]);
+            $data['reportError'] = 'Não foi possível gerar o relatório agora.';
+        }
         return $data;
     }
 
@@ -274,6 +309,9 @@ final class Panel extends Controller
         }
         if ($id === 'AP-032') {
             $data += $this->invoiceData($user);
+        }
+        if (in_array($id, self::REPORT_PAGES, true)) {
+            $data += $this->reportData($user, $id);
         }
         if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);

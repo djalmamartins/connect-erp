@@ -316,7 +316,7 @@ $assert(str_contains($html, 'data-invoice-open=') && !str_contains($html, 'data-
 $html = $invoicePage([], true, 'empty');
 $assert(str_contains($html, 'Nenhuma fatura encontrada') && str_contains($html, 'Preparar fatura'), 'AP-032: lista vazia orienta a preparar');
 
-// Cobrança bancária (AP-035, AP-036, AP-038; ADR 0035 e 0036) com dados reais, só sandbox.
+// Cobrança bancária (AP-035, AP-036, AP-038; ADR 0035 e 0038) com dados reais, só sandbox.
 $chargeRow = static fn (array $over = []): array => $over + [
     'id' => 11, 'condominium_id' => 7, 'bank_account_id' => 3, 'entry_id' => 90, 'adapter' => 'sandbox', 'status' => 'registered', 'status_label' => 'Registrado',
     'our_number' => '0000000001', 'amount_cents' => 90000, 'due_on' => '2026-11-10', 'external_id' => 'SBX-1', 'digitable_line' => 'SANDBOX <0001>', 'barcode' => 'SANDBOX',

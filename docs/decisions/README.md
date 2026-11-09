@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0036.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0038.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -60,4 +60,6 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0033](../Organic%20Code/decisions/0033-invoices.md) | Faturas (AP-032): cobrança por unidade, emitida como contas a receber, sem duplicar |
 | [0034](../Organic%20Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md) | Todo chamado na fila do Help Desk (condomínio, unidade, solicitante) e alternador ERP / Studio / Help Desk |
 | [0035](../Organic%20Code/decisions/0035-bank-charges-sandbox.md) | Boletos, retorno e conciliação pelo adaptador bancário (só sandbox, sem credencial nem banco real) |
-| [0036](../Organic%20Code/decisions/0036-banking-screens.md) | Telas da cobrança bancária: boletos, importar retorno e fila de divergências (sandbox) |
+| [0036](../Organic%20Code/decisions/0036-logout-all-hosts.md) | Sair em um host encerra as sessões do usuário nos outros |
+| [0037](../Organic%20Code/decisions/0037-financial-reports.md) | Relatórios financeiros: balancete de verificação e prestação de contas com conciliação bancária |
+| [0038](../Organic%20Code/decisions/0038-banking-screens.md) | Telas da cobrança bancária: boletos, importar retorno e fila de divergências (sandbox) |

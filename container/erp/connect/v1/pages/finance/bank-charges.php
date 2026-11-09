@@ -1,6 +1,6 @@
 <?php
 /**
- * Boletos (AP-035, ADR 0035 e 0036) com dados reais: lista ($bankCharges, de Panel::bankingData, no
+ * Boletos (AP-035, ADR 0035 e 0038) com dados reais: lista ($bankCharges, de Panel::bankingData, no
  * contexto da barra superior), filtro por situação e as ações pela API /api/v1/bank-charges (erp.js,
  * data-erp-bank-charges): emitir de uma conta a receber em aberto, consultar no banco, cancelar e
  * copiar a linha digitável. Só o adaptador de sandbox existe: nada aqui é pagável.

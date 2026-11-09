@@ -1,6 +1,6 @@
 <?php
 /**
- * Importar arquivo de retorno (AP-036, ADR 0035 e 0036): o navegador lê o arquivo como texto e
+ * Importar arquivo de retorno (AP-036, ADR 0035 e 0038): o navegador lê o arquivo como texto e
  * envia para POST /api/v1/bank-returns (erp.js, data-erp-bank-return). O resultado mostra o resumo
  * do arquivo e cada ocorrência (aplicada, repetida, divergência). O mesmo arquivo não é processado
  * duas vezes. Só o formato do sandbox é aceito até o primeiro banco homologado.

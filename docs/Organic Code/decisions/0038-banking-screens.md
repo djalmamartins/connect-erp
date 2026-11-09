@@ -1,4 +1,4 @@
-# 0036 — Telas da cobrança bancária (boletos, importar retorno, divergências)
+# 0038 — Telas da cobrança bancária (boletos, importar retorno, divergências)
 
 Data: 2026-11-09 · Status: aceito (rodada autônoma, por delegação do Djalma)
 

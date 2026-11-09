@@ -491,7 +491,7 @@
     }
   });
 
-  /* AP-035: boletos pela API /api/v1/bank-charges (ADR 0035 e 0036, só sandbox) ------- */
+  /* AP-035: boletos pela API /api/v1/bank-charges (ADR 0035 e 0038, só sandbox) ------- */
   $$('[data-erp-bank-charges]').forEach(function (root) {
     var api = root.getAttribute('data-api');
     var call = apiClient(root);

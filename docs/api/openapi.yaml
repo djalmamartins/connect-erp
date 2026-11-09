@@ -906,6 +906,44 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /reports/trial-balance:
+    get:
+      operationId: trialBalance
+      summary: Balancete de verificação por competência (erp.entries.view e erp.chart.view)
+      description: >-
+        Por conta do plano de contas: previsto (lançamentos da competência), realizado (pagos) e em
+        aberto; as analíticas somam nas sintéticas pelo código. Lançamentos válidos apenas.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, example: '2026-01' } }
+        - { name: to, in: query, required: true, schema: { type: string, example: '2026-12' }, description: 'No máximo 24 competências' }
+      responses:
+        '200': { description: '{ data: { rows[{code, name, nature, level, analytic, planned_cents, realized_cents, open_cents}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/statement:
+    get:
+      operationId: financialStatement
+      summary: Prestação de contas por caixa, com conciliação por conta bancária (erp.entries.view e erp.chart.view)
+      description: >-
+        accounts = recebido e pago no período por conta do plano; banks = saldo anterior, entradas,
+        saídas e saldo final de cada conta bancária; totals.reconciled diz se o caixa pelo plano é
+        igual ao caixa pelos bancos (difference_cents mostra a diferença, nunca é escondida).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+      responses:
+        '200': { description: '{ data: { accounts[], banks[], totals{received_cents, paid_cents, result_cents, bank_net_cents, difference_cents, reconciled} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates

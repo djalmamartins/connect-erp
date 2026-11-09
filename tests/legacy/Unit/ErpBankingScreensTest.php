@@ -9,7 +9,7 @@ use Source\Controllers\Erp\Connect\Panel;
 
 /**
  * Telas da cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 divergências; ADR
- * 0035 e 0036): dados de Panel::bankingData, ações pela API /api/v1 com o CSRF no cabeçalho.
+ * 0035 e 0038): dados de Panel::bankingData, ações pela API /api/v1 com o CSRF no cabeçalho.
  */
 final class ErpBankingScreensTest extends TestCase
 {

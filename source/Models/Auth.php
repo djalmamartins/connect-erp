@@ -15,6 +15,7 @@ use Source\Support\MailTemplate;
 use Source\Services\PasswordResetService;
 use Source\Services\TwoFactorService;
 use Source\Services\LoginThrottle;
+use Source\Services\SessionRevocation;
 use Source\Services\TwoFactorNotice;
 
 /**
@@ -49,8 +50,21 @@ class Auth extends Model
         if (!$session->has("authUser")) {
             return null;
         }
+        // Logout feito em outro host (ADR 0036): a sessão deste host também deixa de valer.
+        // Sessão sem o instante do login (anterior a esta regra ou criada por outro fluxo, como a
+        // troca de ambiente) é marcada agora e passa a ser revogável a partir daqui.
+        if (!$session->has(self::AUTH_AT)) {
+            $session->set(self::AUTH_AT, SessionRevocation::nowMs());
+        }
+        if ((new SessionRevocation())->isRevoked((int)$session->authUser, (int)$session->{self::AUTH_AT})) {
+            self::logout();
+            return null;
+        }
         return (new User())->findById($session->authUser);
     }
+
+    /** Instante do login (ms) guardado na sessão, comparado com o logout global (ADR 0036). */
+    public const AUTH_AT = "authAt";
 
     public static function session(): ?AppCondominium
     {
@@ -64,9 +78,18 @@ class Auth extends Model
     /**
      * @return void
      */
-    public static function logout(): void
+    /**
+     * Encerra a sessão deste host. Com $everywhere (o botão "Sair"), encerra também as sessões
+     * do usuário nos outros hosts (ADR 0036). Logouts forçados por falta de permissão não usam
+     * $everywhere, para não derrubar o usuário de um ambiente em que ele tem acesso.
+     */
+    public static function logout(bool $everywhere = false): void
     {
         $session = new Session();
+        if ($everywhere && $session->has("authUser")) {
+            (new SessionRevocation())->revokeAll((int)$session->authUser);
+        }
+        $session->unset(self::AUTH_AT);
         $session->unset("authUser");
         $session->unset("authCondo");
         $session->unset(self::PENDING_2FA);
@@ -346,7 +369,7 @@ class Auth extends Model
 
         //LOGIN
         (new AppLog())->register($user->id, "Realizou login");
-        (new Session())->regenerate()->set("authUser", $user->id);
+        (new Session())->regenerate()->set("authUser", $user->id)->set(self::AUTH_AT, SessionRevocation::nowMs() + 1);
     }
 
     private function secureCookie(): bool
