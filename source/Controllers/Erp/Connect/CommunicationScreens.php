@@ -8,6 +8,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\Erp\Agreements;
 use Source\Services\Erp\Announcements;
+use Source\Services\Erp\NotificationDispatcher;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Support\Access;
@@ -52,6 +53,9 @@ final class CommunicationScreens
         try {
             $context = CondominiumContext::id();
             $data += ['commContext' => $context, 'commError' => null, 'commCanManage' => Access::can('erp.announcements.manage', $user)];
+            // Modo de entrega (teste do Djalma, 09/11, item 10): fora de produção nada sai para o morador, e a tela
+            // precisa dizer isso, senão "Enviado" parece e-mail entregue.
+            $data['commMode'] = self::deliveryMode();
             $service = new Announcements();
             if ($id === 'AP-139') {
                 // A tela recebe tudo pronto (unidades já filtradas e os rótulos do vínculo): não lê
@@ -135,6 +139,23 @@ final class CommunicationScreens
             return null;
         }
         return $value;
+    }
+
+    /** Modo de entrega efetivo (o mesmo do NotificationDispatcher), sem abrir conexão: log, sandbox ou production. */
+    public static function deliveryMode(): string
+    {
+        return NotificationDispatcher::deliveryMode(defined('CONF_APP_ENV') ? (string)CONF_APP_ENV : 'development',
+            getenv('ERP_MAIL_DELIVERY') ?: 'log', getenv('ERP_MAIL_SANDBOX_TO') ?: null);
+    }
+
+    /** Texto do aviso de modo de entrega (regra pura). Em produção, null (sem aviso). */
+    public static function deliveryNotice(string $mode): ?string
+    {
+        return match ($mode) {
+            'production' => null,
+            'sandbox' => 'Modo de teste: os e-mails vão só para a caixa de teste, com "[TESTE]" no assunto. Nenhum morador recebe.',
+            default => 'Modo só registro: os avisos entram na fila e ficam registrados, mas nenhum e-mail sai. "Enviado" aqui quer dizer processado, não entregue.',
+        };
     }
 
     /**
