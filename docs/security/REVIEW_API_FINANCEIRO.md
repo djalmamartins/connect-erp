@@ -724,3 +724,27 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 46 (sha256 acb3fd02), porta
 ### Lacunas
 
 - Um domínio com TLD fora da lista (por exemplo, ".shop") passa, mas a view escapa o texto e o banner não vira link.
+- A lacuna do ".shop" foi reduzida no ADR 0114: domínio seguido de caminho e código de país em minúsculas passam a ser recusados.
+
+## 27ª rodada — Antivírus no upload e verificação pública de documentos (ciclo 47)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 47 (sha256 9032eb15), portado sobre `claude-dev` daa2071 · ADR 0098
+
+| Ponto | Situação |
+|---|---|
+| `/verificar` fica nas rotas do site (`container/web/default/v1/routes.php`), sem middleware de login; o POST exige CSRF | CONFIRMADO |
+| A resposta traz só autêntico, tipo, data de emissão e nome do condomínio; cancelado, inexistente e malformado recebem a mesma mensagem | CONFIRMADO (teste unitário) |
+| Código com 16 caracteres de um alfabeto de 32 (cerca de 80 bits), comparado por consulta parametrizada | CONFIRMADO |
+| Limite de 20 falhas a cada 15 min por IP (HMAC), que falha fechado; sem IP válido também recusa | CONFIRMADO |
+| O IP do limite vinha de `REMOTE_ADDR`. Atrás de proxy, todos os visitantes dividiam um único limite, e 20 erros de uma pessoa bloqueavam a página para todos | CORRIGIDO nesta rodada: `ClientIp::resolve()` (ADR 0023), também no convite do morador (ADR 0093) |
+| Cabeçalhos `Referrer-Policy: no-referrer`, `Cache-Control: no-store` e `X-Robots-Tag: noindex`; o resultado não vai para a sessão nem para a URL | CONFIRMADO |
+| Antivírus em `enforce`: infectado gera 422 e antivírus fora do ar gera 503, antes de gravar; valor desconhecido em `ERP_AV_MODE` conta como enforce | CONFIRMADO |
+| `ClamdScanner` aceita só `unix://` ou host:porta lidos do ambiente, com timeouts curtos e resposta limitada a 1 KB | CONFIRMADO |
+| Log do antivírus e do limite sem nome de arquivo, IP, código nem hash | CONFIRMADO |
+
+### Lacunas
+
+- O limite confere e depois grava, sem trava. Pedidos simultâneos podem passar um pouco de 20 falhas. O mesmo acontece no convite (ADR 0093). O espaço de 80 bits torna isso irrelevante para adivinhar códigos.
+- Consultas com código válido não contam no limite. Quem já tem um código pode consultá-lo à vontade, mas a resposta não traz dado pessoal.
+- O modo padrão é `off`. Sem clamd no servidor, os envios ficam como `unscanned`.
+- A integração (`DocumentVerificationIntegrationTest`) não rodou aqui. Ela roda no container, no banco `*_test`.
