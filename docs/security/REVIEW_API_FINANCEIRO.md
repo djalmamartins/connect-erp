@@ -286,3 +286,33 @@ Escopo: `source/Services/Erp/ManagementReports.php` e `source/Controllers/Api/V1
 
 Teste com dois condomínios: `ManagementReportsScopeIntegrationTest`.
 
+## Oitava rodada — Dados dos gráficos (ADR 0083)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 2610241 · Correções: ADR 0069
+
+Escopo: `source/Services/Erp/ChartReports.php` e `source/Controllers/Api/V1/ChartReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: `erp.access` e a leitura dos dados de cada gráfico (`erp.entries.view`, mais `erp.chart.view` ou `erp.bank_accounts.view`; `erp.meter_readings.view`, `erp.agreements.view` e `erp.reservations.view`) | CONFIRMADO |
+| Escopo: condomínio informado por `assertAccess`; sem condomínio, só os do escopo. Unidade de fora no consumo responde igual à inexistente | CONFIRMADO, com o achado 1 |
+| CSV: os gráficos não exportam; só JSON | NÃO SE APLICA |
+| Custo: até 24 meses, agregado com `GROUP BY`; contas do plano e áreas comuns com 8 séries e "Outras" | CONFIRMADO, com os achados 1 e 2 nas contas bancárias |
+| SQL: período e natureza por parâmetro; listas de ids são inteiros já convertidos | CONFIRMADO |
+
+### Achados corrigidos (ADR 0069)
+
+1. **Subconsulta sem filtro de condomínio.** O saldo por conta bancária varria os lançamentos e as
+   transferências de todos os condomínios no período antes de filtrar pela conta. Agora cada parte
+   filtra o condomínio, e um lançamento de outro condomínio que aponte para a conta não entra no saldo.
+2. **Séries sem teto.** Uma série por conta bancária, sem limite. Agora são as 8 de maior movimento
+   e o resto em "Outras".
+
+### Lacunas
+
+- **Frequência.** Continua sem limite de requisições na API; cada gráfico faz uma consulta agregada.
+- **Inadimplência "hoje".** O vencido em aberto usa `CURDATE()` do banco; o mesmo período consultado
+  em dias diferentes dá números diferentes. É o comportamento esperado e está no rótulo da série.
+
+Teste com dois condomínios: `ChartReportsIntegrationTest::testBankAccountsCountOnlyMovementsOfTheSameCondominium`.
+

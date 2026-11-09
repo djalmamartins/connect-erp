@@ -30,6 +30,16 @@ final class ChartReportsTest extends TestCase
         self::assertSame(['b', 'c'], array_column(ChartReports::top($months, ['b' => $byKey['b'], 'c' => $byKey['c']], [], 2), 'key'), 'Sem resto, sem Outras.');
     }
 
+    public function testTopByMagnitudeKeepsLargeNegativeBalances(): void
+    {
+        $months = ['2026-11'];
+        $byKey = ['saidas' => ['2026-11' => -900], 'pequena' => ['2026-11' => 10], 'media' => ['2026-11' => 100]];
+        self::assertSame(['media', 'others'], array_column(ChartReports::top($months, $byKey, [], 1), 'key'), 'Pela soma, a conta negativa cairia em Outras.');
+        $series = ChartReports::top($months, $byKey, [], 2, true);
+        self::assertSame(['saidas', 'media', 'others'], array_column($series, 'key'), 'Pelo movimento (ADR 0069), a conta de maior saída fica.');
+        self::assertSame([-900], $series[0]['data']);
+    }
+
     public function testRate(): void
     {
         self::assertSame(12.5, ChartReports::rate(1250, 10000));
