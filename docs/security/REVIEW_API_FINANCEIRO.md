@@ -447,3 +447,32 @@ Escopo: `source/Services/Erp/MeterReadings.php` e a gravação de leituras da im
 
 - O teste de integração novo roda só no Mac; o CI roda apenas a suíte unitária.
 
+## 14ª rodada — Documentos da unidade e Disco Virtual
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em ebcedbc · Correções: ADR 0105
+
+Escopo: `source/Services/Erp/UnitDocuments.php` e `VirtualDisk.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: unidade, documento e verificação por `canAccess` (404 fora); listas paginadas | CONFIRMADO |
+| Recibo: contas travadas (`FOR UPDATE`), só do condomínio da unidade, um recibo válido por conta | CONFIRMADO |
+| Código de verificação: 16 caracteres de 31 símbolos, único, com nova tentativa na colisão | CONFIRMADO |
+| Situação na data de referência | CONFIRMADO, com o achado 1 |
+| Contas só do condomínio da unidade | CONFIRMADO, com o achado 2 |
+| Cancelamento em paralelo | CONFIRMADO, com o achado 3 |
+| Disco Virtual: arquivo fora da pasta pública, nome aleatório, tipo por `finfo` com extensão batendo, 20 MB, caminho validado no download | CONFIRMADO |
+
+### Achados corrigidos (ADR 0105)
+
+1. **Documento com data passada usava a situação de hoje.** Agora a conta paga depois da data conta como
+   em aberto naquela data.
+2. **Conta de outro condomínio apontando para a unidade entrava no documento.** Agora fica de fora.
+3. **Dois cancelamentos ao mesmo tempo gravavam dois registros de auditoria.** Agora o segundo é recusado.
+
+### Lacunas
+
+- Conta cancelada ou criada depois da data de referência ainda é lida pelo estado atual.
+- Disco Virtual: dois envios simultâneos do mesmo arquivo na mesma pasta podem passar pela checagem de
+  duplicidade (não há índice único). O risco é baixo: só gera uma cópia a mais.
+

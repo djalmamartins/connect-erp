@@ -26,6 +26,9 @@ use Source\Support\Audit;
  * - receipt (Recibo, AP-040, ADR 0057): de contas a receber já pagas da unidade, escolhidas uma a uma;
  *   cada conta só tem um recibo válido (cancelar o recibo libera a conta para outro).
  *
+ * A situação apurada é a da data de referência: conta paga depois dela conta como em aberto, e só entram
+ * as contas do condomínio da unidade (ADR 0105).
+ *
  * O conteúdo fica gravado (foto) com código de verificação único; emitido não muda. Cancelar exige
  * motivo. Escopo por condomínio (ADR-002): fora do escopo = RegistryNotFound (404). Tudo auditado.
  */
@@ -112,25 +115,30 @@ final class UnitDocuments
             }
             $reference = $until;
             $stmt = $this->pdo->prepare("SELECT id, description, competence, due_on, amount_cents FROM erp_entries
-                WHERE unit_id = :u AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL AND paid_on IS NULL AND competence <= :m
+                WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL
+                    AND (paid_on IS NULL OR paid_on > :d) AND competence <= :m
                 ORDER BY due_on, id");
-            $stmt->execute(['u' => $unit['id'], 'm' => $until]);
+            $stmt->execute(['u' => $unit['id'], 'c' => $unit['condominium_id'], 'd' => $asOf, 'm' => $until]);
             $pending = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if ($pending !== []) {
                 throw new DomainException(sprintf('Há %d conta(s) em aberto até %s. Não é possível emitir a quitação.', count($pending), $until));
             }
             $paid = $this->pdo->prepare("SELECT COUNT(*), COALESCE(SUM(amount_cents), 0) FROM erp_entries
-                WHERE unit_id = :u AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL AND paid_on IS NOT NULL AND competence <= :m");
-            $paid->execute(['u' => $unit['id'], 'm' => $until]);
+                WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL
+                    AND paid_on <= :d AND competence <= :m");
+            $paid->execute(['u' => $unit['id'], 'c' => $unit['condominium_id'], 'd' => $asOf, 'm' => $until]);
             [$count, $sum] = $paid->fetch(PDO::FETCH_NUM);
             $payload = ['until_competence' => $until, 'paid_entries' => (int)$count, 'paid_cents' => (int)$sum];
             return $this->store($user, $unit, $kind, $asOf, $reference, 'clear', (int)$sum, $payload);
         }
 
         $stmt = $this->pdo->prepare("SELECT id, description, competence, due_on, amount_cents FROM erp_entries
-            WHERE unit_id = :u AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL AND paid_on IS NULL
+            WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL
+                AND (paid_on IS NULL OR paid_on > :d)
             ORDER BY due_on, id");
-        $stmt->execute(['u' => $unit['id']]);
+        // ADR 0105: a situação é a da data de referência (paga depois dela conta como em aberto) e só com
+        // as contas do condomínio da unidade.
+        $stmt->execute(['u' => $unit['id'], 'c' => $unit['condominium_id'], 'd' => $asOf]);
         $parts = self::split($stmt->fetchAll(PDO::FETCH_ASSOC), $asOf);
 
         // Encargos das vencidas pela regra do condomínio (ADR 0040).
@@ -248,8 +256,11 @@ final class UnitDocuments
         if ($document['status'] !== 'issued') {
             throw new DomainException('O documento já está cancelado.');
         }
-        $this->pdo->prepare("UPDATE erp_unit_documents SET status = 'cancelled', cancelled_by = :u, cancelled_at = NOW(), cancel_reason = :r WHERE id = :id AND status = 'issued'")
-            ->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $documentId]);
+        $update = $this->pdo->prepare("UPDATE erp_unit_documents SET status = 'cancelled', cancelled_by = :u, cancelled_at = NOW(), cancel_reason = :r WHERE id = :id AND status = 'issued'");
+        $update->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $documentId]);
+        if ($update->rowCount() === 0) {
+            throw new DomainException('O documento já está cancelado.');   // cancelado em paralelo (ADR 0105)
+        }
         Audit::record('update', 'erp_unit_documents', $documentId, ['status' => 'issued'], ['status' => 'cancelled', 'cancel_reason' => $reason]);
         return $this->find($user, $documentId);
     }

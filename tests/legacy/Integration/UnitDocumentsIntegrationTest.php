@@ -108,6 +108,26 @@ final class UnitDocumentsIntegrationTest extends TestCase
         $this->documents->issue($outsider, ['kind' => 'debt_certificate', 'unit_id' => $this->unit]);
     }
 
+    public function testDocumentsFollowTheReferenceDateAndTheUnitCondominium(): void
+    {
+        // ADR 0105: paga em 15/10, a conta vencida em 10/09 estava em aberto em 01/10.
+        $this->debt('2026-09', '2026-09-10', '2026-10-15');
+        $before = $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-10-01']);
+        self::assertSame(['debts', 1], [$before['result'], count($before['content']['overdue'])], 'Certidão de 01/10 mostra a dívida da época.');
+        self::assertSame('clear', $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
+        try {
+            $this->documents->issue($this->admin, ['kind' => 'quittance', 'unit_id' => $this->unit, 'as_of' => '2026-10-01', 'until_competence' => '2026-09']);
+            self::fail('Quitação de 01/10 com a conta ainda em aberto naquela data.');
+        } catch (DomainException) {
+            self::addToAssertionCount(1);
+        }
+
+        // Dado inconsistente: conta de outro condomínio apontando para a unidade não entra.
+        $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, description, amount_cents, competence, due_on, unit_id)
+            VALUES (?, 'receita', ?, 'Outro condomínio', 70000, '2026-08', '2026-08-10', ?)")->execute([$this->beta, $this->fee, $this->unit]);
+        self::assertSame('clear', $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
+    }
+
     private function debt(string $competence, string $dueOn, ?string $paidOn = null): int
     {
         $input = ['condominium_id' => $this->alpha, 'nature' => 'receita', 'chart_account_id' => $this->fee, 'amount_cents' => '500,00',
