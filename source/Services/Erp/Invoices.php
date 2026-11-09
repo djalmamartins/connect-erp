@@ -204,6 +204,7 @@ final class Invoices
             $items = $this->pdo->prepare('SELECT * FROM erp_invoice_items WHERE invoice_id = :id ORDER BY unit_label, id');
             $items->execute(['id' => $invoiceId]);
             $link = $this->pdo->prepare('UPDATE erp_entries SET invoice_item_id = :item WHERE id = :id');
+            $outbox = new NotificationOutbox($this->pdo);
             foreach ($items->fetchAll(PDO::FETCH_ASSOC) as $item) {
                 $entry = $this->registry->save($user, 'entries', [
                     'condominium_id' => $invoice['condominium_id'], 'nature' => 'receita', 'chart_account_id' => $invoice['chart_account_id'],
@@ -213,6 +214,11 @@ final class Invoices
                     'document_number' => 'FAT-' . $invoiceId,
                 ]);
                 $link->execute(['item' => (int)$item['id'], 'id' => (int)$entry['id']]);
+                // Aviso da cobrança à unidade (ADR 0056), na mesma transação: só vai para quem autorizou (opt-in).
+                $outbox->record('invoice.issued', 'invoice.issued:' . $item['id'], (int)$invoice['condominium_id'], 'erp_invoice_items', (int)$item['id'], [
+                    'unit_id' => (int)$item['unit_id'], 'unit_label' => (string)$item['unit_label'], 'type_name' => (string)$invoice['type_name'],
+                    'competence' => (string)$invoice['competence'], 'due_on' => (string)$invoice['due_on'], 'amount_cents' => (int)$item['amount_cents'],
+                ], (int)$user->id);
             }
             $this->pdo->prepare("UPDATE erp_invoices SET status = 'issued', issued_by = :u, issued_at = NOW() WHERE id = :id")
                 ->execute(['u' => (int)$user->id, 'id' => $invoiceId]);

@@ -62,6 +62,8 @@ final class BankingIntegrationTest extends TestCase
     {
         $first = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
         self::assertSame(['registered', '0000000001', 50000], [$first['status'], $first['our_number'], $first['amount_cents']]);
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'bank_charge.issued' AND subject_id = {$first['id']}")->fetchColumn(),
+            'Boleto registrado deixa um aviso na outbox (ADR 0056).');
         self::assertSame($first['id'], $this->charges->issue($this->admin, $this->entries[0], $this->bank)['id'], 'Pedir de novo devolve o mesmo título.');
         $second = $this->charges->issue($this->admin, $this->entries[1], $this->bank);
         self::assertSame('0000000002', $second['our_number']);

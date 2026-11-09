@@ -77,6 +77,9 @@ final class AgreementsIntegrationTest extends TestCase
         self::assertSame(['inactive'], array_values(array_unique(array_column($agreement['originals'], 'status'))));
         self::assertSame([34334, 34333, 34333], array_column($agreement['parcels'], 'amount_cents'));
         self::assertSame(['2026-12-10', '2027-01-10', '2027-02-10'], array_column($agreement['parcels'], 'due_on'));
+        $notice = json_decode((string)$this->pdo->query("SELECT payload_json FROM erp_notification_outbox WHERE event_type = 'agreement.created'")->fetchColumn(), true);
+        self::assertSame([3, 103000, 34334, '2026-12-10', '2027-02-10'], [$notice['installments'], $notice['total_cents'], $notice['installment_cents'],
+            $notice['first_due_on'], $notice['last_due_on']], 'Aviso do acordo com as parcelas (ADR 0056).');
 
         $report = $this->agreements->delinquency($this->admin, $this->alpha, '2026-11-09');
         self::assertSame(['102'], array_column($report['units'], 'unit_label'), 'A 101 saiu da inadimplência.');

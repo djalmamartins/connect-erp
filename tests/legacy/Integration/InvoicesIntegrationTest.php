@@ -62,6 +62,8 @@ final class InvoicesIntegrationTest extends TestCase
 
         $issued = $this->invoices->issue($this->admin, $draft['id']);
         self::assertSame('issued', $issued['status']);
+        self::assertSame(3, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'invoice.issued'")->fetchColumn(),
+            'Um aviso por unidade na outbox (ADR 0056).');
         self::assertCount(3, array_filter(array_column($issued['items'], 'entry_id')));
         $receivables = $this->service->list($this->admin, 'receivables', ['condominium_id' => $this->alpha]);
         self::assertSame(3, $receivables['total']);

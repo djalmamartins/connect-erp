@@ -88,6 +88,37 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         self::assertSame(0, $this->dispatcher('development', 'log')->list($outsider)['total']);
     }
 
+    public function testBillingNoticesOnlyReachOptIn(): void
+    {
+        $outbox = new NotificationOutbox($this->pdo);
+        $payload = ['unit_id' => $this->unit, 'unit_label' => '101', 'type_name' => 'Taxa condominial', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 50000];
+        $outbox->record('invoice.issued', 'invoice.issued:t1', $this->alpha, 'erp_invoice_items', 1, $payload, null);
+        self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['cancelled'], 'Sem opt-in, ninguém recebe cobrança.');
+        self::assertSame([], $this->queued);
+
+        $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');
+        $outbox->record('invoice.issued', 'invoice.issued:t2', $this->alpha, 'erp_invoice_items', 2, $payload, null);
+        self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['sent']);
+        self::assertSame('caixa@mailpit.local', $this->queued[0][2], 'Fora de produção, só a caixa de teste.');
+        self::assertStringContainsString('R$ 500,00', $this->queued[0][1]);
+        self::assertStringContainsString('10/11/2026', $this->queued[0][1]);
+    }
+
+    public function testReservationApprovalRecordsNotice(): void
+    {
+        $service = new RegistryService($this->pdo);
+        $input = ['condominium_id' => $this->alpha, 'common_area_id' => $this->area, 'unit_id' => $this->unit,
+            'resident_name' => 'Bia Moradora', 'reserved_on' => date('Y-m-d', strtotime('+10 days')), 'starts_time' => '18:00', 'ends_time' => '22:00'];
+        $reservation = $service->save($this->admin, 'reservations', $input);
+        self::assertSame('active', $reservation['status'], 'Área com aprovação: nasce aguardando.');
+        self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'reservation.approved'")->fetchColumn());
+
+        $service->save($this->admin, 'reservations', ['status' => 'confirmed'] + $input, $reservation['id']);
+        self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['sent']);
+        self::assertStringContainsString('Salão', $this->queued[0][1]);
+        self::assertStringContainsString('18:00', $this->queued[0][1]);
+    }
+
     private function dispatcher(string $env, string $mode, ?string $sandbox = null): NotificationDispatcher
     {
         return new NotificationDispatcher($this->pdo, $env, $mode, $sandbox, function (string $subject, string $body, string $email, string $name): int {

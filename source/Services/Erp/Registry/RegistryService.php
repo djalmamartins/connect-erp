@@ -9,6 +9,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\NotificationOutbox;
 use Source\Support\Audit;
 
 /**
@@ -30,6 +31,28 @@ final class RegistryService
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
+    }
+
+    /**
+     * 'notify' (ADR 0056): aviso na outbox quando a situação passa de uma das 'from' para 'to'
+     * (ex.: reserva aguardando aprovação → confirmada). Regra pura: devolve o evento e o payload,
+     * com as colunas de 'payload' renomeadas (coluna => chave), ou null se não há aviso.
+     *
+     * @return array{event:string, payload:array<string, mixed>}|null
+     */
+    public static function notification(array $definition, ?array $before, array $values): ?array
+    {
+        $rule = $definition['notify'] ?? null;
+        if ($rule === null || $before === null || ($values['status'] ?? null) !== $rule['to']
+            || !in_array((string)($before['status'] ?? ''), $rule['from'], true)) {
+            return null;
+        }
+        $payload = [];
+        foreach ($rule['payload'] as $column => $key) {
+            $value = $values[$column] ?? $before[$column] ?? null;
+            $payload[$key] = is_string($value) && preg_match('/^\d{2}:\d{2}:\d{2}$/', $value) ? substr($value, 0, 5) : $value;
+        }
+        return ['event' => (string)$rule['event'], 'payload' => $payload];
     }
 
     /** @return array<string, mixed> */
@@ -189,23 +212,42 @@ final class RegistryService
         }
 
         $columns = array_keys($values);
-        if ($id === null) {
-            $values['created_by'] = (int)$user->id;
-            $values['updated_by'] = (int)$user->id;
-            $columns = array_keys($values);
-            $sql = sprintf(
-                'INSERT INTO `%s` (%s) VALUES (%s)',
-                $definition['table'],
-                implode(', ', array_map(static fn (string $c): string => "`{$c}`", $columns)),
-                implode(', ', array_map(static fn (string $c): string => ":{$c}", $columns))
-            );
-            $this->pdo->prepare($sql)->execute($values);
-            $id = (int)$this->pdo->lastInsertId();
-        } else {
-            $values['updated_by'] = (int)$user->id;
-            $sets = implode(', ', array_map(static fn (string $c): string => "`{$c}` = :{$c}", array_keys($values)));
-            $this->pdo->prepare("UPDATE `{$definition['table']}` SET {$sets} WHERE id = :id AND deleted_at IS NULL")
-                ->execute($values + ['id' => $id]);
+        $notify = self::notification($definition, $before, $values);
+        $own = $notify !== null && !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();   // gravação e aviso juntos: se um falhar, nenhum fica
+        }
+        try {
+            if ($id === null) {
+                $values['created_by'] = (int)$user->id;
+                $values['updated_by'] = (int)$user->id;
+                $columns = array_keys($values);
+                $sql = sprintf(
+                    'INSERT INTO `%s` (%s) VALUES (%s)',
+                    $definition['table'],
+                    implode(', ', array_map(static fn (string $c): string => "`{$c}`", $columns)),
+                    implode(', ', array_map(static fn (string $c): string => ":{$c}", $columns))
+                );
+                $this->pdo->prepare($sql)->execute($values);
+                $id = (int)$this->pdo->lastInsertId();
+            } else {
+                $values['updated_by'] = (int)$user->id;
+                $sets = implode(', ', array_map(static fn (string $c): string => "`{$c}` = :{$c}", array_keys($values)));
+                $this->pdo->prepare("UPDATE `{$definition['table']}` SET {$sets} WHERE id = :id AND deleted_at IS NULL")
+                    ->execute($values + ['id' => $id]);
+            }
+            if ($notify !== null) {
+                (new NotificationOutbox($this->pdo))->record($notify['event'], $notify['event'] . ':' . $id, (int)$values['condominium_id'],
+                    $definition['table'], $id, $notify['payload'], (int)$user->id);
+            }
+            if ($own) {
+                $this->pdo->commit();
+            }
+        } catch (\Throwable $error) {
+            if ($own && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $error;
         }
 
         $after = $this->rawRow($definition, $id);

@@ -898,6 +898,10 @@ final class Definitions
             'reservation' => ['area' => 'common_area_id', 'date' => 'reserved_on', 'start' => 'starts_time', 'end' => 'ends_time', 'fee' => 'fee_cents'],
             'no_overlap' => [['per' => ['common_area_id', 'reserved_on'], 'start' => 'starts_time', 'end' => 'ends_time', 'ignore_status' => ['inactive'],
                 'message' => 'A área já está reservada neste horário.']],
+            // Aprovação (aguardando → confirmada) avisa a unidade pela outbox (ADR 0056).
+            'notify' => ['event' => 'reservation.approved', 'from' => ['active'], 'to' => 'confirmed', 'payload' => [
+                'unit_id' => 'unit_id', 'common_area_id' => 'common_area_id', 'reserved_on' => 'date', 'starts_time' => 'starts', 'ends_time' => 'ends', 'fee_cents' => 'fee_cents',
+            ]],
             'title' => 'resident_name',
             'order' => 'reserved_on',
         ];

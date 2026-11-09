@@ -217,6 +217,10 @@
    "title": "0055 — Fila de envio dos avisos do ERP pelo container send"
   },
   {
+   "file": "docs/Organic Code/decisions/0056-notification-events.md",
+   "title": "0056 — Avisos de cobrança, acordo e reserva pela outbox"
+  },
+  {
    "file": "docs/Organic Code/decisions/0060-smtp-credentials-from-environment.md",
    "title": "0060 — Credenciais SMTP pelo ambiente, valendo sobre a tabela settings"
   },
@@ -2092,6 +2096,7 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\NotificationOutbox",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Audit"
@@ -2332,6 +2337,7 @@
    "tests": [
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Unit/ErpNotificationQueueScreenTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
   },
@@ -2488,6 +2494,7 @@
     "tests/legacy/Unit/InvoicesTest.php",
     "tests/legacy/Unit/MeterReadingsTest.php",
     "tests/legacy/Unit/MonthClosingTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/OpenApiRoutesTest.php",
     "tests/legacy/Unit/OperationalRegistriesTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
@@ -2563,6 +2570,7 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\NotificationOutbox",
     "Source\\Support\\Audit"
    ],
    "file": "source/Services/Erp/Registry/RegistryService.php",
@@ -2602,6 +2610,7 @@
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
@@ -3334,7 +3343,7 @@
   }
  },
  "counts": {
-  "adrs": 61,
+  "adrs": 62,
   "classes": 185,
   "dynamic_route_lines": {
    "erp": 8,
@@ -8392,6 +8401,9 @@
   ],
   "tests/legacy/Unit/NotificationDispatcherTest.php": [
    "Source\\Services\\Erp\\NotificationDispatcher",
+   "Source\\Services\\Erp\\NotificationOutbox",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Support\\MailTemplate"
   ],
   "tests/legacy/Unit/OnboardingChecklistViewTest.php": [

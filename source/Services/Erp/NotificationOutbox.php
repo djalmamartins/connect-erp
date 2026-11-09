@@ -10,11 +10,12 @@ use PDO;
 /**
  * Outbox de notificações do ERP (ADR 0054). record() grava o evento na conexão (e na transação) de
  * quem chama: se a ação desfizer, o evento some junto. Nada é enviado aqui; a fila do container send
- * (próximo ciclo) consome os pendentes. event_key único: registrar o mesmo evento de novo não duplica.
+ * (ADR 0055) consome os pendentes. event_key único: registrar o mesmo evento de novo não duplica.
  */
 final class NotificationOutbox
 {
-    public const EVENTS = ['waitlist.called'];
+    /** Tipos de aviso (ADR 0054 e 0056); cada um tem modelo e regra de destinatários no NotificationDispatcher. */
+    public const EVENTS = ['waitlist.called', 'invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached', 'reservation.approved'];
 
     public function __construct(private PDO $pdo)
     {
