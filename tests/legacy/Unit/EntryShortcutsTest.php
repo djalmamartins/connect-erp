@@ -56,6 +56,15 @@ final class EntryShortcutsTest extends TestCase
         self::assertStringContainsString("t.status = 'active'", BankBalances::transferSql('in'), 'Transferência cancelada sai do saldo.');
     }
 
+    public function testReceiptLocksPaymentOnEntryRegistries(): void
+    {
+        foreach (['entries', 'receivables', 'payables'] as $slug) {
+            self::assertSame(Definitions::RECEIPT_LOCK, Definitions::get($slug)['receipt_lock'] ?? null, "{$slug} trava a baixa de conta com recibo.");
+        }
+        self::assertContains('paid_on', Definitions::RECEIPT_LOCK['columns'], 'Estornar a baixa exige cancelar o recibo.');
+        self::assertStringContainsString('Cancele o recibo', Definitions::RECEIPT_LOCK['message']);
+    }
+
     public function testReceiptKindKeepsCatalogDocumentsApart(): void
     {
         self::assertArrayNotHasKey('receipt', UnitDocuments::KINDS, 'As páginas AP-123 a 130 continuam com os 4 documentos.');
