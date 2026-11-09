@@ -67,6 +67,47 @@ final class MonthClosingIntegrationTest extends TestCase
         $closings->close($this->admin, $this->alpha, '2026-11');
     }
 
+    /**
+     * ADR 0100: gravação que já conferiu a competência (leitura travada, na transação) segura o fechamento
+     * até terminar; o fechamento feito depois enxerga o lançamento gravado.
+     */
+    public function testCloseWaitsForAWriteThatAlreadyCheckedTheCompetence(): void
+    {
+        $other = new \PDO('mysql:host=' . CONF_DB_HOST . ';port=' . CONF_DB_PORT . ';dbname=' . CONF_DB_NAME . ';charset=utf8mb4',
+            CONF_DB_USER, CONF_DB_PASS, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+        $other->exec('SET SESSION innodb_lock_wait_timeout = 1');
+        $closing = new MonthClosing($other);
+
+        $this->pdo->beginTransaction();
+        try {
+            self::assertFalse($this->service->isClosed($this->alpha, '2026-10'));
+            $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, description, amount_cents, competence, due_on, status)
+                VALUES (?, 'receita', ?, 'Gravada junto', 5000, '2026-10', '2026-10-10', 'active')")->execute([$this->alpha, $this->fee]);
+            try {
+                $closing->close($this->admin, $this->alpha, '2026-10');
+                self::fail('O fechamento devia esperar a gravação em andamento.');
+            } catch (\PDOException $error) {
+                self::assertStringContainsString('1205', $error->getMessage(), 'Espera de trava (lock wait timeout).');
+            }
+            $this->pdo->commit();
+        } finally {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+        }
+
+        $closed = $closing->close($this->admin, $this->alpha, '2026-10');
+        self::assertSame('closed', $closed['status']);
+        self::assertSame(5000, $closed['revenue_cents'], 'O lançamento gravado antes entra na foto.');
+
+        $this->pdo->beginTransaction();
+        try {
+            self::assertTrue($this->service->isClosed($this->alpha, '2026-10'), 'Depois de fechado, a leitura travada vê o fechamento.');
+        } finally {
+            $this->pdo->rollBack();
+        }
+    }
+
     public function testReopenNeedsReasonAndUnlocks(): void
     {
         $entry = $this->entry('despesa', $this->water, '300,00', '2026-11');
