@@ -28,8 +28,11 @@ final class ImportRules
         } elseif (!preg_match('/^\d+(\.\d+)?$/', $value)) {
             return null;
         }
+        if (strlen(ltrim(explode('.', $value)[0], '0')) > 10) {
+            return null;   // acima do teto de Invoices::MAX_CENTS; barra antes da conversão (ADR 0063)
+        }
         $cents = (int)round(((float)$value) * 100);
-        return $cents > 0 ? $cents : null;
+        return $cents > 0 && $cents <= \Source\Services\Erp\Invoices::MAX_CENTS ? $cents : null;
     }
 
     /** Data: DD/MM/AAAA, AAAA-MM-DD ou número de série do Excel (dias desde 1899-12-30). */
