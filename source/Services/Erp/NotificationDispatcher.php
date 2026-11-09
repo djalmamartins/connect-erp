@@ -32,6 +32,8 @@ use Source\Support\MailTemplate;
 final class NotificationDispatcher
 {
     public const MAX_ATTEMPTS = 5;
+    /** Prazo da posse de um aviso em 'processing'; vencido, outro processo pode retomá-lo (ADR 0108). */
+    public const LEASE_MINUTES = 15;
 
     /**
      * Aviso por tipo de evento (ADR 0055 e 0056): modelo de container/send, assunto e público.
@@ -103,10 +105,15 @@ final class NotificationDispatcher
     public function dispatch(int $limit = 50): array
     {
         $summary = ['mode' => $this->mode, 'processed' => 0, 'sent' => 0, 'failed' => 0, 'retry' => 0, 'cancelled' => 0];
-        $ids = $this->pdo->query("SELECT id FROM erp_notification_outbox WHERE status = 'pending' AND available_at <= NOW()
+        // Pendentes vencidos e também os presos em 'processing' cujo prazo de posse venceu (ADR 0108):
+        // um processo que caiu no meio do envio não deixa o aviso parado para sempre.
+        $ids = $this->pdo->query("SELECT id FROM erp_notification_outbox WHERE status IN ('pending', 'processing') AND available_at <= NOW()
             ORDER BY available_at, id LIMIT " . max(1, min($limit, 500)))->fetchAll(PDO::FETCH_COLUMN);
         foreach ($ids as $id) {
-            $claim = $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'processing', attempts = attempts + 1 WHERE id = :id AND status = 'pending'");
+            // Posse com prazo: available_at passa a ser o fim da posse enquanto o aviso está em 'processing'.
+            $claim = $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'processing', attempts = attempts + 1,
+                available_at = DATE_ADD(NOW(), INTERVAL " . self::LEASE_MINUTES . " MINUTE)
+                WHERE id = :id AND status IN ('pending', 'processing') AND available_at <= NOW()");
             $claim->execute(['id' => $id]);
             if ($claim->rowCount() === 0) {
                 continue;   // outro processo pegou
@@ -124,8 +131,12 @@ final class NotificationDispatcher
         if (!in_array($row['status'], ['failed', 'cancelled'], true)) {
             throw new DomainException('Só aviso com falha ou cancelado pode ser reenviado.');
         }
-        $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'pending', attempts = 0, available_at = NOW(), last_error = NULL WHERE id = :id")
-            ->execute(['id' => $outboxId]);
+        $update = $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'pending', attempts = 0, available_at = NOW(), last_error = NULL
+            WHERE id = :id AND status IN ('failed', 'cancelled')");
+        $update->execute(['id' => $outboxId]);
+        if ($update->rowCount() === 0) {
+            throw new DomainException('O aviso mudou de situação enquanto o reenvio era pedido.');   // ADR 0108
+        }
         Audit::record('update', 'erp_notification_outbox', $outboxId, ['status' => $row['status']], ['status' => 'pending']);
         return $this->find($user, $outboxId);
     }
@@ -167,6 +178,10 @@ final class NotificationDispatcher
         $stmt->execute(['id' => $id]);
         $event = $stmt->fetch(PDO::FETCH_ASSOC);
         $payload = json_decode((string)$event['payload_json'], true) ?: [];
+        // Retomado depois de um processo cair: além do limite de tentativas, encerra como falha (ADR 0108).
+        if ((int)$event['attempts'] > self::MAX_ATTEMPTS) {
+            return $this->finish($id, 'failed', 0, 'Envio interrompido repetidas vezes; reenvie manualmente.');
+        }
         try {
             $notice = self::NOTICES[$event['event_type']] ?? null;
             if ($notice === null) {

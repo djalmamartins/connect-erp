@@ -76,6 +76,25 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         self::assertSame(1, $this->dispatcher('development', 'log')->dispatch()['sent']);
     }
 
+    /** ADR 0108: aviso preso em 'processing' é retomado depois do prazo da posse; dentro do prazo, não. */
+    public function testStuckProcessingIsReclaimedAfterLease(): void
+    {
+        $id = $this->event('e-lease');
+        $this->pdo->exec("UPDATE erp_notification_outbox SET status = 'processing', attempts = 1,
+            available_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = {$id}");
+        self::assertSame(0, $this->dispatcher('development', 'log')->dispatch()['processed'], 'Posse em vigor: ninguém toma o aviso.');
+
+        $this->pdo->exec("UPDATE erp_notification_outbox SET available_at = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE id = {$id}");
+        self::assertSame(1, $this->dispatcher('development', 'log')->dispatch()['sent'], 'Posse vencida: o aviso é retomado.');
+        self::assertSame(['sent', 2], [$this->row($id)['status'], (int)$this->row($id)['attempts']]);
+
+        $stuck = $this->event('e-lease-2');
+        $this->pdo->exec("UPDATE erp_notification_outbox SET status = 'processing', attempts = " . NotificationDispatcher::MAX_ATTEMPTS . ",
+            available_at = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE id = {$stuck}");
+        self::assertSame(1, $this->dispatcher('development', 'log')->dispatch()['failed'], 'Interrompido além do limite: falha, sem novo envio.');
+        self::assertSame('failed', $this->row($stuck)['status']);
+    }
+
     public function testNoEmailCancelsAndScopeHidesOthers(): void
     {
         $this->pdo->exec("UPDATE erp_residents SET email = NULL");
