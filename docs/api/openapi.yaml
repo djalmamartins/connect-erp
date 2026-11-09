@@ -1150,6 +1150,79 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-documents:
+    get:
+      operationId: listUnitDocuments
+      summary: Documentos da unidade emitidos (erp.unit_documents.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: unit_id, in: query, schema: { type: integer } }
+        - { name: kind, in: query, schema: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (25 por página), sem o conteúdo' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: issueUnitDocument
+      summary: Emite certidão de débitos, declaração de inadimplência, quitação ou carta de anuência (erp.unit_documents.manage)
+      description: >-
+        debt_certificate sempre emite (result clear = nada consta). delinquency_declaration exige conta
+        vencida em aberto. quittance exige until_competence e todas as contas até ela pagas.
+        consent_letter exige não haver conta vencida e uma finalidade (purpose). O conteúdo fica
+        gravado com código de verificação.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [kind, unit_id], properties: { kind: { type: string, enum: [debt_certificate, delinquency_declaration, quittance, consent_letter] }, unit_id: { type: integer }, as_of: { type: string, format: date, description: 'Padrão hoje; não pode ser futura' }, until_competence: { type: string, example: '2026-10' }, purpose: { type: string, minLength: 5, maxLength: 40 } } } } }
+      responses:
+        '201': { description: 'Documento com content, verification_code e verification_display' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Documento não cabe na situação da unidade (ex.: quitação com conta em aberto)' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-documents/verify/{code}:
+    get:
+      operationId: verifyUnitDocument
+      summary: Confere a autenticidade pelo código (com ou sem hífens)
+      security: [{ session: [] }]
+      parameters: [{ name: code, in: path, required: true, schema: { type: string, example: 'ABCD-EFGH-JKMN-PQRS' } }]
+      responses:
+        '200': { description: 'Documento (mostra se foi cancelado)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /unit-documents/{id}:
+    get:
+      operationId: showUnitDocument
+      summary: Documento com o conteúdo gravado na emissão
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Documento }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /unit-documents/{id}/cancel:
+    post:
+      operationId: cancelUnitDocument
+      summary: Cancela o documento, com motivo (erp.unit_documents.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Já cancelado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /inspection-templates:
     get:

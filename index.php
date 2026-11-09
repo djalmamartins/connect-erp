@@ -92,6 +92,12 @@ $route->put("/billing-rules", "BillingRules:update", null, \Source\Support\Middl
 $route->get("/price-indexes", "BillingRules:rates", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/price-indexes", "BillingRules:setRate", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/price-indexes/import", "BillingRules:import", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Documentos da unidade (ADR 0044): certidão, declaração, quitação e anuência. /verify antes de /{id}.
+$route->get("/unit-documents", "UnitDocuments:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/unit-documents", "UnitDocuments:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/unit-documents/verify/{code}", "UnitDocuments:verify", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/unit-documents/{id}", "UnitDocuments:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/unit-documents/{id}/cancel", "UnitDocuments:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

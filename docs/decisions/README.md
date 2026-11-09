@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0044.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0045.**
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -68,3 +68,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0041](../Organic%20Code/decisions/0041-agreements-screens.md) | Telas de inadimplência e acordos (AP-033/034) e lista de arquivos de retorno em AP-038 |
 | [0042](../Organic%20Code/decisions/0042-gatehouse.md) | Portaria (AP-131 a AP-136): portarias, previsão de visita, registro de acessos, achados e perdidos e entregas |
 | [0043](../Organic%20Code/decisions/0043-late-charges-screens.md) | Telas de encargos: regra de cobrança e IPCA (AP-165), encargos na inadimplência, sugestão no acordo e quebra explícita |
+| [0044](../Organic%20Code/decisions/0044-unit-documents.md) | Documentos da unidade: certidão de débitos, declaração de inadimplência, quitação e anuência, com código de verificação |
