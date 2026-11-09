@@ -398,3 +398,28 @@ Escopo: `source/Services/Erp/FinancialReports.php` e `LateCharges.php`.
 1. **Conciliação sem filtro de condomínio e sem fim.** A conta juntava os lançamentos pagos de qualquer
    condomínio e de qualquer data posterior. Agora junta só os do condomínio da conta e só até o fim do período.
 
+## 12ª rodada — Painéis e dashboard operacional
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 9c62bbe · Correções: ADR 0103
+
+Escopo: `source/Services/Erp/PanelSummaries.php` e `OperationalDashboard.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: cada painel exige as leituras que mostra (`missing()`); cartões financeiros só com permissão financeira | CONFIRMADO |
+| Escopo: condomínio e unidade por `canAccess`, 404 fora do escopo; contagens só dos condomínios do escopo | CONFIRMADO |
+| Custo: contagens agregadas; listas do painel da unidade com `LIMIT` | CONFIRMADO, com o achado 1 |
+| Lista de espera: uma chamada por vaga | CONFIRMADO, com o achado 2 |
+| Próxima manutenção: uma só por manutenção concluída (índice único em `previous_id`) | CONFIRMADO |
+
+### Achados corrigidos (ADR 0103)
+
+1. **Painel da unidade calculava o condomínio inteiro.** Agora lê só as contas da unidade.
+2. **Duas chamadas para a mesma vaga.** Agora a reserva fica travada, e só se chama o próximo depois da
+   desistência de quem já foi chamado.
+
+### Lacunas
+
+- **Dados pessoais.** O painel da unidade mostra telefone e e-mail dos moradores sem máscara, a quem
+  tem `erp.residents.view`. É a mesma lacuna das telas de moradores, registrada nas rodadas anteriores.
+
