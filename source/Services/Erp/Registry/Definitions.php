@@ -32,6 +32,7 @@ namespace Source\Services\Erp\Registry;
  * 'origin_lock' => ['fields', 'columns', 'message'] (ADR 0033/0039): registro gerado por outro módulo
  *   (algum dos fields preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
+ * 'attachment' => campo (ADR 0050): ID de um arquivo do Disco Virtual do mesmo condomínio.
  */
 final class Definitions
 {
@@ -731,6 +732,101 @@ final class Definitions
             ],
             'title' => 'name',
             'order' => 'kind',
+        ];
+
+        // Documentos operacionais (AP-126 a AP-129, ADR 0050). 'attachment' = campo com o ID de um
+        // arquivo do Disco Virtual (ADR 0047), conferido no RegistryService: existe e é do mesmo condomínio.
+        $attachment = static fn (string $label, bool $required = false): array => ['label' => $label, 'type' => 'int', 'min' => 1, 'required' => $required,
+            'span' => 4, 'hint' => 'Nº do arquivo no Disco Virtual (Documentos › Disco Virtual)'];
+        $entryRef = ['label' => 'Lançamento', 'type' => 'ref', 'span' => 6, 'ref' => 'entries', 'ref_label' => ['description', 'due_on'],
+            'ref_message' => 'Escolha um lançamento válido deste condomínio.'];
+        $definitions['delivery_notices'] = [
+            'page' => 'AP-126', 'table' => 'erp_delivery_notices', 'route' => '/documentos/avisos-de-recebimento',
+            'api' => 'delivery-notices', 'permission' => 'erp.delivery_notices', 'label' => 'Avisos de recebimento',
+            'entity' => 'aviso de recebimento', 'gender' => 'o', 'scope' => 'required', 'group' => 'documentos',
+            'lead' => 'Correspondências com aviso de recebimento (AR): envio, entrega ou devolução, com o comprovante.',
+            'status' => ['active' => 'Em trânsito', 'delivered' => 'Entregue', 'returned' => 'Devolvido'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'unit_id' => ['label' => 'Unidade', 'list' => true] + $unit(6),
+                'recipient' => ['label' => 'Destinatário', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'tracking_code' => ['label' => 'Código de rastreio', 'type' => 'text', 'required' => true, 'max' => 40, 'span' => 3, 'list' => true, 'search' => true],
+                'subject' => ['label' => 'Assunto', 'type' => 'text', 'max' => 160, 'span' => 9, 'search' => true, 'hint' => 'Ex.: notificação de multa'],
+                'sent_on' => ['label' => 'Enviado em', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'delivered_on' => ['label' => 'Entregue em', 'type' => 'date', 'span' => 3, 'after' => 'sent_on'],
+                'document_id' => $attachment('Comprovante (AR)'),
+                'notes' => $notesField,
+            ],
+            'attachment' => 'document_id',
+            'title' => 'recipient',
+            'order' => 'sent_on',
+        ];
+        $definitions['check_copies'] = [
+            'page' => 'AP-127', 'table' => 'erp_check_copies', 'route' => '/documentos/copias-de-cheques',
+            'api' => 'check-copies', 'permission' => 'erp.check_copies', 'label' => 'Cópias de cheques',
+            'entity' => 'cópia de cheque', 'gender' => 'a', 'scope' => 'required', 'group' => 'documentos',
+            'lead' => 'Cheques emitidos pelo condomínio, com a imagem guardada no Disco Virtual.',
+            'status' => ['active' => 'Emitido', 'inactive' => 'Cancelado'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'bank_account_id' => ['label' => 'Conta bancária', 'type' => 'ref', 'required' => true, 'span' => 6, 'list' => true, 'ref' => 'bank_accounts',
+                    'ref_label' => ['name', 'bank_code', 'account_number'], 'ref_message' => 'Escolha uma conta bancária ativa deste condomínio.'],
+                'check_number' => ['label' => 'Número do cheque', 'type' => 'int', 'required' => true, 'min' => 1, 'span' => 3, 'list' => true, 'search' => true],
+                'issued_on' => ['label' => 'Data', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'payee' => ['label' => 'Favorecido', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'amount_cents' => ['label' => 'Valor', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 3, 'list' => true],
+                'document_id' => $attachment('Imagem do cheque', true),
+                'entry_id' => $entryRef,
+                'notes' => $notesField,
+            ],
+            'unique' => [['fields' => ['condominium_id', 'bank_account_id', 'check_number'], 'message' => 'Este cheque já está registrado nesta conta.']],
+            'attachment' => 'document_id',
+            'title' => 'payee',
+            'order' => 'issued_on',
+        ];
+        $definitions['commitments'] = [
+            'page' => 'AP-128', 'table' => 'erp_commitments', 'route' => '/documentos/empenhos',
+            'api' => 'commitments', 'permission' => 'erp.commitments', 'label' => 'Empenhos',
+            'entity' => 'empenho', 'gender' => 'o', 'scope' => 'required', 'group' => 'documentos',
+            'lead' => 'Despesas reservadas antes do pagamento. Liquide informando a data e, se houver, o lançamento.',
+            'status' => ['active' => 'Empenhado', 'settled' => 'Liquidado', 'inactive' => 'Cancelado'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'supplier_id' => ['label' => 'Fornecedor', 'type' => 'ref', 'span' => 6, 'list' => true, 'ref' => 'suppliers', 'ref_label' => ['legal_name'],
+                    'ref_message' => 'Escolha um fornecedor ativo.'],
+                'description' => ['label' => 'Descrição', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                'amount_cents' => ['label' => 'Valor', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 4, 'list' => true],
+                'committed_on' => ['label' => 'Empenhado em', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'settled_on' => ['label' => 'Liquidado em', 'type' => 'date', 'span' => 3, 'after' => 'committed_on'],
+                'entry_id' => $entryRef,
+                'document_id' => $attachment('Documento (nota, contrato)'),
+                'notes' => $notesField,
+            ],
+            'attachment' => 'document_id',
+            'title' => 'description',
+            'order' => 'committed_on',
+        ];
+        $definitions['pouches'] = [
+            'page' => 'AP-129', 'table' => 'erp_pouches', 'route' => '/documentos/malotes',
+            'api' => 'pouches', 'permission' => 'erp.pouches', 'label' => 'Malotes',
+            'entity' => 'malote', 'gender' => 'o', 'scope' => 'required', 'group' => 'documentos',
+            'lead' => 'Malotes de documentos entre o condomínio e a administradora: envio, recebimento e conferência.',
+            'status' => ['active' => 'Enviado', 'received' => 'Recebido', 'checked' => 'Conferido'],
+            'fields' => [
+                'condominium_id' => $condo,
+                'sent_on' => ['label' => 'Enviado em', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
+                'courier' => ['label' => 'Portador', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 6, 'list' => true, 'search' => true],
+                'documents_count' => ['label' => 'Documentos', 'type' => 'int', 'required' => true, 'min' => 1, 'max_value' => 9999, 'span' => 3, 'list' => true],
+                'contents' => ['label' => 'Conteúdo', 'type' => 'longtext', 'required' => true, 'max' => 4000, 'span' => 12, 'search' => true, 'hint' => 'Um documento por linha'],
+                'received_on' => ['label' => 'Recebido em', 'type' => 'date', 'span' => 3, 'after' => 'sent_on'],
+                'checked_on' => ['label' => 'Conferido em', 'type' => 'date', 'span' => 3, 'after' => 'received_on'],
+                'document_id' => $attachment('Protocolo'),
+                'notes' => $notesField,
+            ],
+            'requires' => [['field' => 'received_on', 'when' => 'checked_on', 'message' => 'Informe quando o malote foi recebido antes de conferir.']],
+            'attachment' => 'document_id',
+            'title' => 'courier',
+            'order' => 'sent_on',
         ];
 
         foreach ($definitions as $slug => &$definition) {
