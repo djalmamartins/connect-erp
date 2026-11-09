@@ -71,5 +71,6 @@ final class ErpCollectionScreensTest extends TestCase
         $view = $this->file(self::THEME . 'pages/communication/addresses.php');
         self::assertStringNotContainsString('Definitions::', $view);
         self::assertStringNotContainsString('CommunicationScreens::', $view);
+        self::assertStringNotContainsString('[null =>', $view, 'null como chave de array é fatal no PHP mais novo');
     }
 }

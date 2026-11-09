@@ -13,7 +13,7 @@ $totals = $addresses['totals'];
 $units = $addressUnits;
 $relationships = $addressRelationships;
 $peopleRoute = '/cadastros/proprietarios-e-inquilinos';
-$filters = [null => 'Todas as unidades', 'comunicado' => 'Sem ninguém para comunicado', 'cobranca' => 'Sem ninguém para cobrança'];
+$filters = ['' => 'Todas as unidades', 'comunicado' => 'Sem ninguém para comunicado', 'cobranca' => 'Sem ninguém para cobrança'];
 
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
