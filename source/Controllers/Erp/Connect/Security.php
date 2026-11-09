@@ -44,6 +44,7 @@ final class Security extends Controller
         if (!$enabled && SecretBox::isConfigured()) {
             $secret = $twoFactor->pendingSecret((int)$user->id) ?? $twoFactor->beginSetup((int)$user->id);
             $setup = ['secret' => $secret, 'uri' => $twoFactor->provisioningUri((int)$user->id, $secret, (string)$user->email)];
+            $setup['qr'] = \Source\Support\QrCode::svg($setup['uri'], 196, 'QR code para o aplicativo autenticador');
         }
         $codes = [];
         if ($session->has(self::CODES_KEY)) {

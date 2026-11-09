@@ -13,7 +13,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 2);
 $vendor = getenv('VENDOR') ?: $root . '/vendor';
 // Só os namespaces necessários: o autoload do Composer carrega Boot/Settings.php, que exige o banco.
-$psr4 = ['Source\\' => $root . '/source/', 'MovesCode\\View\\' => $vendor . '/movescode/view/src/'];
+$psr4 = ['Source\\' => $root . '/source/', 'MovesCode\\View\\' => $vendor . '/movescode/view/src/', 'BaconQrCode\\' => $vendor . '/bacon/bacon-qr-code/src/', 'DASPRiD\\Enum\\' => $vendor . '/dasprid/enum/src/'];
 spl_autoload_register(static function (string $class) use ($psr4): void {
     foreach ($psr4 as $prefix => $dir) {
         if (str_starts_with($class, $prefix)) {
@@ -126,6 +126,26 @@ foreach ($screens as $label => [$template, $title, $app, $data]) {
         $assert(str_contains($html, 'studio-erp') && substr_count($html, '<main') === 1, "tela $label: moldura");
     } catch (\Throwable $error) {
         $assert(false, "tela $label: " . $error->getMessage());
+    }
+}
+
+// Configuração do 2FA (login e perfil): QR code em SVG gerado no servidor (ADR 0029), com a chave em texto ao lado.
+$uri = 'otpauth://totp/Connect:ana%40example.invalid?secret=JBSWY3DPEHPK3PXP&issuer=Connect';
+$setup = ['secret' => 'JBSWY3DPEHPK3PXP', 'uri' => $uri, 'qr' => Source\Support\QrCode::svg($uri, 196, 'QR code para o aplicativo autenticador')];
+$twoFactorScreens = [
+    'two-factor' => ['components/login/two-factor', ['mode' => 'setup', 'next' => '/studio']],
+    'two-factor-manage' => ['components/login/two-factor-manage', ['configured' => true, 'enabled' => false, 'enforced' => true, 'remaining' => 0, 'recoveryCodes' => []]],
+];
+foreach ($twoFactorScreens as $label => [$template, $data]) {
+    foreach (['com QR' => $setup, 'sem QR' => ['qr' => null] + $setup] as $variant => $variantSetup) {
+        try {
+            $html = (new Source\Core\View($theme, 'php'))->render($template, ['head' => '<title>2FA - Connect</title>', 'user' => $user, 'setup' => $variantSetup] + $data);
+            if ($out && $variant === 'com QR') file_put_contents("$out/screen-$label.html", $html);
+            $hasQr = str_contains($html, '<svg role="img" aria-label="QR code para o aplicativo autenticador"');
+            $assert($hasQr === ($variant === 'com QR') && str_contains($html, 'JBSW Y3DP EHPK 3PXP'), "tela $label ($variant): QR e chave");
+        } catch (\Throwable $error) {
+            $assert(false, "tela $label ($variant): " . $error->getMessage());
+        }
     }
 }
 
