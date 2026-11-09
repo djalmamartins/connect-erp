@@ -195,7 +195,8 @@ final class NotificationDispatcher
                     continue;
                 }
                 $body = $mail->render($template, $context + ['first_name' => strtok($recipient['name'], ' ') ?: $recipient['name']]);
-                $subject = (string)($context['subject'] ?? $notice['subject']);
+                // Assunto numa linha só, mesmo para dado antigo (ADR 0065).
+                $subject = trim((string)preg_replace('/[\r\n\x{2028}\x{2029}]+/u', ' ', (string)($context['subject'] ?? $notice['subject'])));
                 $sentTo = null;
                 $queueId = null;
                 if ($this->mode === 'log') {
