@@ -423,3 +423,27 @@ Escopo: `source/Services/Erp/PanelSummaries.php` e `OperationalDashboard.php`.
 - **Dados pessoais.** O painel da unidade mostra telefone e e-mail dos moradores sem máscara, a quem
   tem `erp.residents.view`. É a mesma lacuna das telas de moradores, registrada nas rodadas anteriores.
 
+## 13ª rodada — Leituras e consumo
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em dfb33cd · Correções: ADR 0104
+
+Escopo: `source/Services/Erp/MeterReadings.php` e a gravação de leituras da importação.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: relógio por `canAccess` (404 fora); lista só dos condomínios do escopo, com `LIMIT` | CONFIRMADO |
+| Concorrência: relógio travado (`FOR UPDATE`) ao gravar; cobrança trava as leituras e `entry_id` único barra duplicar | CONFIRMADO |
+| Leitura cobrada não muda; correção só sem leitura posterior | CONFIRMADO |
+| Competência fechada recusa a leitura | CONFIRMADO, com o achado 1 |
+| Descrição da conta cobrada | CONFIRMADO, com o achado 2 |
+
+### Achados corrigidos (ADR 0104)
+
+1. **Leitura em mês fechado.** O lançamento manual não conferia o fechamento, e a importação só conferia
+   na prévia. Agora `record` confere dentro da transação, com a leitura travada.
+2. **Energia descrita em m³.** Agora em kWh.
+
+### Lacunas
+
+- O teste de integração novo roda só no Mac; o CI roda apenas a suíte unitária.
+
