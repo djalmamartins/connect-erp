@@ -161,6 +161,10 @@
    "title": "0041 — Telas de inadimplência e acordos (AP-033 e AP-034)"
   },
   {
+   "file": "docs/Organic Code/decisions/0042-gatehouse.md",
+   "title": "0042 — Portaria (AP-131 a AP-136) pelo motor de cadastros"
+  },
+  {
    "file": "docs/Organic Code/decisions/0043-late-charges-screens.md",
    "title": "0043 — Telas de encargos: regra de cobrança, IPCA, sugestão e quebra de acordo"
   },
@@ -1652,6 +1656,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
@@ -1734,6 +1739,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
@@ -2054,6 +2060,7 @@
    "tables": [
     "erp_recurring_entries",
     "erp_useful_contacts",
+    "erp_visit_forecasts",
     "erp_linkable_areas",
     "erp_chart_accounts",
     "erp_board_members",
@@ -2061,6 +2068,10 @@
     "erp_bank_accounts",
     "erp_common_areas",
     "erp_cost_centers",
+    "erp_access_logs",
+    "erp_gatehouses",
+    "erp_lost_found",
+    "erp_deliveries",
     "erp_residents",
     "erp_employees",
     "erp_suppliers",
@@ -2111,6 +2122,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
@@ -2136,6 +2148,7 @@
    "tests": [
     "tests/legacy/Integration/AgreementsIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php"
@@ -2167,6 +2180,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
@@ -2188,6 +2202,7 @@
     "tests/legacy/Integration/ChartOfAccountsTest.php",
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
+    "tests/legacy/Integration/GatehouseIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/MonthClosingIntegrationTest.php",
@@ -2845,7 +2860,7 @@
   }
  },
  "counts": {
-  "adrs": 44,
+  "adrs": 45,
   "classes": 167,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2853,8 +2868,8 @@
   },
   "erp_pages": 172,
   "routes": 247,
-  "tables": 75,
-  "tests": 94
+  "tables": 80,
+  "tests": 95
  },
  "erp_pages": [
   {
@@ -6422,6 +6437,13 @@
     "Source\\Services\\Support\\TicketService"
    ]
   },
+  "erp_access_logs": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0525_gatehouse.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
   "erp_agreement_originals": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0519_agreements.sql",
@@ -6519,6 +6541,13 @@
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
+  "erp_deliveries": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0525_gatehouse.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
   "erp_employees": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
@@ -6542,6 +6571,13 @@
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\RecurringEntries",
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_gatehouses": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0525_gatehouse.sql",
+   "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -6579,6 +6615,13 @@
     "database/migrations/20261108_0404_linkable_area_units.sql"
    ],
    "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_lost_found": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0525_gatehouse.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -6655,6 +6698,13 @@
     "database/migrations/20261108_0402_unit_links.sql"
    ],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_visit_forecasts": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0525_gatehouse.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -7087,6 +7137,14 @@
    "Source\\Services\\CondominiumScope",
    "Source\\Services\\Erp\\FinancialReports",
    "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
+  "tests/legacy/Integration/GatehouseIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Registry\\RegistryInUse",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
   "tests/legacy/Integration/InspectionServiceTest.php": [
    "Source\\Models\\User",
