@@ -170,8 +170,8 @@ final class RegistryService
                 }
             }
         }
-        // Registro gerado por outro módulo (ADR 0033, lançamento de fatura): só a baixa muda aqui.
-        if ($errors === [] && $before !== null && isset($definition['origin_lock']) && ($before[$definition['origin_lock']['field']] ?? null) !== null) {
+        // Registro gerado por outro módulo (ADR 0033/0039, fatura ou acordo): só a baixa muda aqui.
+        if ($errors === [] && $before !== null && isset($definition['origin_lock']) && Definitions::lockedByOrigin($definition, $before)) {
             foreach ($definition['origin_lock']['columns'] as $column) {
                 if (array_key_exists($column, $values) && (string)($values[$column] ?? '') !== (string)($before[$column] ?? '')) {
                     $errors[isset($definition['fields'][$column]) ? $column : '_form'] = $definition['origin_lock']['message'];
@@ -219,8 +219,8 @@ final class RegistryService
         if (isset($definition['closing_lock']) && $this->isClosed($row['condominium_id'] ?? null, $row[$definition['closing_lock']] ?? null)) {
             throw new RegistryLocked((string)$row[$definition['closing_lock']]);
         }
-        // Gerado por outro módulo (fatura, ADR 0033): exclui-se pela origem.
-        if (isset($definition['origin_lock']) && ($row[$definition['origin_lock']['field']] ?? null) !== null) {
+        // Gerado por outro módulo (fatura ou acordo, ADR 0033/0039): exclui-se pela origem.
+        if (isset($definition['origin_lock']) && Definitions::lockedByOrigin($definition, $row)) {
             throw new RegistryInUse();
         }
         // Unidade com cadastros ativos vinculados não sai (eles perderiam a unidade escolhida).
