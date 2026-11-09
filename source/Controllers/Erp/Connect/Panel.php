@@ -107,7 +107,8 @@ final class Panel extends Controller
      */
     private function operationalSummary(User $user): ?array
     {
-        if (Connect::databaseDisabled()) {
+        // Mesma regra de GET /api/v1/dashboard (ADR 0111): sem erp.units.view, sem contagens operacionais.
+        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
             return null;
         }
         try {

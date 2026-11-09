@@ -119,6 +119,7 @@ $route->get("/reports/sent-boletos", "RegistryReports:sentBoletos", null, \Sourc
 $route->get("/settings", "ErpSettings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/settings", "ErpSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/settings/reset", "ErpSettings:reset", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/integrations", "IntegrationStatus:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/cost-center-openings", "ErpSettings:openings", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/cost-center-openings", "ErpSettings:storeOpening", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/budgets", "ErpSettings:budget", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -206,6 +207,19 @@ $route->post("/assemblies/{id}/close", "Assemblies:close", null, \Source\Support
 $route->post("/assemblies/{id}/cancel", "Assemblies:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/assemblies/{id}/attendance-report", "Assemblies:attendanceReport", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/assemblies/{id}/results", "Assemblies:results", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/partner-agencies", "AccessAdmin:agencies", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-agencies", "AccessAdmin:storeAgency", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-agencies/{id}/deactivate", "AccessAdmin:deactivateAgency", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-agencies/{id}/users", "AccessAdmin:linkUser", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-users/{user}/unlink", "AccessAdmin:unlinkUser", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-users/{user}/condominiums", "AccessAdmin:grant", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/partner-users/{user}/condominiums/revoke", "AccessAdmin:revoke", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/partner/view", "AccessAdmin:partnerView", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/resident-invitations", "AccessAdmin:invitations", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/resident-invitations", "AccessAdmin:invite", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/resident-invitations/{id}/revoke", "AccessAdmin:revokeInvitation", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/resident-portal-permissions", "AccessAdmin:portal", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/resident-portal-permissions", "AccessAdmin:setPortal", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/communication-addresses", "Announcements:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobrança e multas (ADR 0080): multas pendentes, atendimento de cobrança e casos judiciais (só acompanhamento).
 $route->get("/pending-fines", "Collections:fines", null, \Source\Support\Middleware\ApiAuthenticated::class);
