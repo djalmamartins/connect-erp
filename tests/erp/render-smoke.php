@@ -349,14 +349,55 @@ $assert(!str_contains($html, 'data-bank-return-form') && str_contains($html, 'Im
 
 $event = static fn (array $over = []): array => $over + ['id' => 31, 'condominium_id' => 7, 'bank_account_id' => 3, 'return_file_id' => 2, 'charge_id' => 11, 'event_key' => 'E1', 'kind' => 'paid',
     'our_number' => '0000000001', 'amount_cents' => 85000, 'occurred_on' => '2026-11-09', 'outcome' => 'divergence', 'outcome_label' => 'Divergência', 'note' => 'Valor pago (85000) diferente do título <90000>.', 'resolved_at' => null];
-$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [$event(), $event(['id' => 32, 'charge_id' => null, 'outcome' => 'unknown_charge', 'outcome_label' => 'Título não encontrado', 'our_number' => '0000000099'])], 'bankReady' => true, 'canManageCharges' => true], 'list');
+$returnFile = ['id' => 2, 'condominium_id' => 7, 'bank_account_id' => 3, 'adapter' => 'sandbox', 'filename' => 'retorno <nov>.txt', 'sha256' => 'x', 'events_count' => 3, 'applied_count' => 1,
+    'divergence_count' => 1, 'other_count' => 1, 'total_cents' => 175000, 'created_at' => '2026-11-09 10:30:00', 'bank_account_name' => 'Conta movimento', 'condominium_name' => 'Residencial Exemplo'];
+$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [$event(), $event(['id' => 32, 'charge_id' => null, 'outcome' => 'unknown_charge', 'outcome_label' => 'Título não encontrado', 'our_number' => '0000000099'])],
+    'bankReturnFiles' => ['data' => [$returnFile, ['divergence_count' => 0, 'other_count' => 0, 'id' => 3] + $returnFile], 'total' => 30, 'page' => 1, 'per_page' => 25, 'pages' => 2], 'bankReady' => true, 'canManageCharges' => true], 'list');
+$assert(str_contains($html, 'retorno &lt;nov&gt;.txt') && str_contains($html, '1 divergência(s)') && str_contains($html, '>Conciliado<') && str_contains($html, '1 repetida(s)') && str_contains($html, '09/11/2026 10:30') && str_contains($html, 'rel="next"'), 'AP-038: arquivos importados com conciliação e paginação');
 $common($html, 'AP-038', 'Retornos');
 $assert(str_contains($html, 'data-erp-bank-divergences data-api="https://' . $smokeHost . '/api/v1/bank-events"') && substr_count($html, 'data-divergence-resolve=') === 2 && str_contains($html, 'name="note" minlength="5" maxlength="255" required'), 'AP-038: fila de divergências com "revisada" e nota de 5 a 255');
 $assert(str_contains($html, 'título &lt;90000&gt;') && str_contains($html, 'Título não encontrado') && str_contains($html, 'R$ 850,00'), 'AP-038: motivo escapado e título desconhecido');
 $html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [$event()], 'bankReady' => true, 'canManageCharges' => false]);
 $assert(!str_contains($html, 'data-divergence-resolve=') && !str_contains($html, 'id="divergence-resolve"'), 'AP-038: sem erp.bank_charges.manage só consulta');
-$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [], 'bankReady' => true, 'canManageCharges' => true], 'empty');
-$assert(str_contains($html, 'Nenhuma divergência pendente'), 'AP-038: fila vazia');
+$html = $bankPage('AP-038', 'pages/finance/bank-divergences', ['bankDivergences' => [], 'bankReturnFiles' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'bankReady' => true, 'canManageCharges' => true], 'empty');
+$assert(str_contains($html, 'Nenhuma divergência pendente') && str_contains($html, 'Nenhum arquivo de retorno importado'), 'AP-038: fila e arquivos vazios');
+
+// Inadimplência e acordos (AP-033, AP-034; ADR 0039 e 0041) com dados reais.
+$agreementRow = static fn (array $over = []): array => $over + ['id' => 4, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => 12, 'unit_label' => 'Apto <101>', 'status' => 'active',
+    'chart_account_id' => 5, 'original_cents' => 180000, 'fees_cents' => 3600, 'discount_cents' => 0, 'total_cents' => 183600, 'installments' => 3, 'first_due_on' => '2026-11-20', 'notes' => null,
+    'cancelled_at' => null, 'cancel_reason' => null, 'created_at' => '2026-11-09 09:00:00', 'paid_installments' => 0, 'paid_cents' => 0, 'open_cents' => 183600, 'settled' => false];
+$delinquency = ['as_of' => '2026-11-09', 'units' => [
+    ['condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => 12, 'unit_label' => 'Apto <101>', 'amount_cents' => 180000, 'oldest_due_on' => '2026-07-10', 'max_days_late' => 122,
+        'entries' => [['id' => 90, 'description' => 'Taxa <julho>', 'competence' => '2026-07', 'due_on' => '2026-07-10', 'amount_cents' => 90000, 'days_late' => 122, 'bucket' => '90+'], ['id' => 91, 'description' => 'Taxa agosto', 'competence' => '2026-08', 'due_on' => '2026-08-10', 'amount_cents' => 90000, 'days_late' => 91, 'bucket' => '90+']]],
+    ['condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'unit_id' => null, 'unit_label' => 'Sem unidade', 'amount_cents' => 5000, 'oldest_due_on' => '2026-11-01', 'max_days_late' => 8, 'entries' => [['id' => 95, 'description' => 'Avulso', 'competence' => '2026-11', 'due_on' => '2026-11-01', 'amount_cents' => 5000, 'days_late' => 8, 'bucket' => '1-30']]],
+], 'totals' => ['units' => 2, 'entries' => 3, 'amount_cents' => 185000, 'buckets' => ['1-30' => 5000, '31-60' => 0, '61-90' => 0, '90+' => 180000]]];
+$agreementPage = static function (string $id, string $template, array $data, string $name = '') use ($panel, $user, $layoutData, $render, $save): string {
+    $html = $render($template, $layoutData->invoke($panel, $user, $id, $data));
+    if ($name !== '') $save('page-' . strtolower($id) . '-' . $name, $html);
+    return $html;
+};
+$agreementList = ['data' => [$agreementRow(), $agreementRow(['id' => 5, 'status' => 'cancelled', 'cancel_reason' => 'Desistiu <do acordo>']), $agreementRow(['id' => 6, 'paid_installments' => 3, 'settled' => true])], 'total' => 3, 'page' => 1, 'per_page' => 25, 'pages' => 1];
+$html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => $delinquency, 'agreements' => $agreementList, 'canManageAgreements' => true], 'list');
+$common($html, 'AP-033', 'Acordos');
+$assert(str_contains($html, 'data-erp-agreements data-api="https://' . $smokeHost . '/api/v1/agreements"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'R$ 1.850,00') && str_contains($html, '122 dias') && !str_contains($html, 'Interface proposta'), 'AP-033: inadimplência real com faixas, API e CSRF');
+$assert(substr_count($html, 'data-agreement-unit=') === 1 && str_contains($html, 'Sem unidade') && str_contains($html, 'Taxa &lt;julho&gt;') && !str_contains($html, 'Taxa <julho>'), 'AP-033: fazer acordo só em unidade identificada, dados escapados');
+$assert(substr_count($html, 'data-agreement-cancel=') === 1 && substr_count($html, 'data-agreement-open=') === 3 && str_contains($html, 'Desistiu &lt;do acordo&gt;') && str_contains($html, 'Quitado') && str_contains($html, 'id="agreement-create"') && str_contains($html, 'name="reason" minlength="5" maxlength="255" required'), 'AP-033: cancelar só ativo sem parcela paga, ver todos, quitado e cancelado');
+preg_match_all('~\sid="([^"]+)"~', $html, $ids);
+$assert(array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1)) === [], 'AP-033: sem ids duplicados');
+$html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => $delinquency, 'agreements' => $agreementList, 'canManageAgreements' => false]);
+$assert(!str_contains($html, 'data-agreement-unit=') && !str_contains($html, 'data-agreement-cancel=') && !str_contains($html, 'id="agreement-create"') && str_contains($html, 'data-agreement-open='), 'AP-033: sem erp.agreements.manage só consulta');
+$html = $agreementPage('AP-033', 'pages/finance/agreements', ['delinquency' => ['as_of' => '2026-11-09', 'units' => [], 'totals' => ['units' => 0, 'entries' => 0, 'amount_cents' => 0, 'buckets' => []]], 'agreements' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'canManageAgreements' => true], 'empty');
+$assert(str_contains($html, 'Nenhuma conta vencida') && str_contains($html, 'Nenhum acordo'), 'AP-033: sem inadimplência nem acordos');
+$parcels = Source\Controllers\Erp\Connect\Panel::flattenParcels([$agreementRow() + ['parcels' => [
+    ['number' => 1, 'entry_id' => 100, 'description' => 'p1', 'competence' => '2026-10', 'due_on' => '2026-10-20', 'amount_cents' => 61200, 'paid_on' => '2026-10-19', 'status' => 'active'],
+    ['number' => 2, 'entry_id' => 101, 'description' => 'p2', 'competence' => '2026-11', 'due_on' => '2026-11-05', 'amount_cents' => 61200, 'paid_on' => null, 'status' => 'active'],
+    ['number' => 3, 'entry_id' => 102, 'description' => 'p3', 'competence' => '2026-12', 'due_on' => '2026-12-05', 'amount_cents' => 61200, 'paid_on' => null, 'status' => 'active'],
+]]], '2026-11-09');
+$assert(array_column($parcels, 'state') === ['late', 'open', 'paid'], 'AP-034: parcelas vencidas, a vencer e pagas, nesta ordem');
+$html = $agreementPage('AP-034', 'pages/finance/agreement-parcels', ['agreements' => ['data' => [$agreementRow()], 'total' => 1, 'page' => 1, 'per_page' => 25, 'pages' => 1], 'agreementParcels' => $parcels, 'canManageAgreements' => true], 'list');
+$common($html, 'AP-034', 'Parcelas de Acordo');
+$assert(str_contains($html, 'Vencida') && str_contains($html, 'A vencer') && str_contains($html, 'paga 19/10/2026') && str_contains($html, '2/3') && str_contains($html, 'Apto &lt;101&gt;') && !str_contains($html, 'Interface proposta'), 'AP-034: parcelas reais com situação');
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-033', ['delinquency' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-034', ['agreementParcels' => []]) === 'pages/finance/agreement-parcels', 'acordos: sem dados segue a demonstração');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-035', ['bankCharges' => null]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-036', ['bankReady' => false]) === null
     && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-038', ['bankDivergences' => []]) === 'pages/finance/bank-divergences', 'cobrança: sem dados segue a demonstração; com dados, tela própria');
 

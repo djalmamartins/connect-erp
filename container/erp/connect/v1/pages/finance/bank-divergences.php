@@ -1,10 +1,10 @@
 <?php
 /**
- * Retornos com divergência (AP-038, ADR 0035 e 0038): fila de revisão das ocorrências do retorno
+ * Retornos (AP-038, ADR 0035 e 0038): arquivos importados ($bankReturnFiles, GET /api/v1/bank-returns no serviço) e a fila de revisão das ocorrências do retorno
  * que não deram baixa automática ($bankDivergences, de Panel::bankingData, no contexto da barra
  * superior). "Marcar como revisada" grava uma nota pela API POST /api/v1/bank-events/{id}/resolve
  * (erp.js, data-erp-bank-divergences); a correção em si é feita à mão no lançamento ou no boleto.
- * @var array $currentPage @var list<array> $bankDivergences @var bool $canManageCharges @var list<array> $condoOptions
+ * @var array $currentPage @var list<array> $bankDivergences @var array $bankReturnFiles @var bool $canManageCharges @var list<array> $condoOptions
  */
 $this->layout('default');
 $brl = static fn (?int $cents): string => $cents === null ? '—' : 'R$ ' . number_format($cents / 100, 2, ',', '.');
@@ -24,10 +24,41 @@ ob_start(); ?>
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
     'pageTitle' => $currentPage['name'],
-    'pageLead' => 'Ocorrências do arquivo de retorno que não deram baixa sozinhas: pagamento de valor diferente, repetido, de título cancelado ou nosso número desconhecido. Corrija à mão e marque como revisada.',
+    'pageLead' => 'Arquivos de retorno importados e a fila das ocorrências que não deram baixa sozinhas: pagamento de valor diferente, repetido, de título cancelado ou nosso número desconhecido. Corrija à mão e marque como revisada.',
     'pageActions' => $actions,
 ]);
 ?>
+<?php $files = $bankReturnFiles['data'] ?? []; $route = erp_url($currentPage['route']); $dateTime = static fn (?string $value): string => $value ? date('d/m/Y H:i', (int)strtotime($value)) : '—'; ?>
+<section class="erp-card" aria-labelledby="ret-files">
+    <div class="erp-card__head"><div><h2 id="ret-files">Arquivos importados</h2><p><?= (int)($bankReturnFiles['total'] ?? 0) ?> arquivo(s), do mais novo para o mais antigo</p></div></div>
+    <?php if ($files === []): ?>
+        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('upload') ?></span><strong>Nenhum arquivo de retorno importado</strong><p>Importe o retorno do banco em Arquivo de Retorno.</p></div>
+    <?php else: ?>
+        <div class="erp-table-wrap" role="region" aria-labelledby="ret-files" tabindex="0"><table class="erp-table">
+            <thead><tr><th>Importado em</th><th>Arquivo</th><th>Conta bancária</th><th class="is-num">Ocorrências</th><th class="is-num">Aplicadas</th><th>Conciliação</th><th class="is-num">Total</th></tr></thead>
+            <tbody><?php foreach ($files as $file): ?>
+                <tr>
+                    <td><?= $this->e($dateTime($file['created_at'] ?? null)) ?></td>
+                    <td><strong><?= $this->e((string)$file['filename']) ?></strong></td>
+                    <td><?= $this->e((string)($file['bank_account_name'] ?? '')) ?><?php if ($context === null): ?><small class="erp-muted"><?= $this->e((string)($file['condominium_name'] ?? '')) ?></small><?php endif; ?></td>
+                    <td class="is-num"><?= (int)$file['events_count'] ?></td>
+                    <td class="is-num"><?= (int)$file['applied_count'] ?></td>
+                    <td><?php if ((int)$file['divergence_count'] > 0): ?><span class="erp-badge erp-badge--warning"><?= (int)$file['divergence_count'] ?> divergência(s)</span><?php else: ?><span class="erp-badge erp-badge--success">Conciliado</span><?php endif; ?><?php if ((int)($file['other_count'] ?? 0) > 0): ?><small class="erp-muted"><?= (int)$file['other_count'] ?> repetida(s)</small><?php endif; ?></td>
+                    <td class="is-num"><?= $brl((int)$file['total_cents']) ?></td>
+                </tr>
+            <?php endforeach; ?></tbody>
+        </table></div>
+        <?php if (($bankReturnFiles['pages'] ?? 0) > 1): ?>
+            <nav class="erp-pagination" aria-label="Paginação dos arquivos">
+                <span>Página <?= (int)$bankReturnFiles['page'] ?> de <?= (int)$bankReturnFiles['pages'] ?></span>
+                <div class="erp-pagination__pages">
+                    <?php if ($bankReturnFiles['page'] > 1): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($route . '?pagina=' . ($bankReturnFiles['page'] - 1)) ?>" rel="prev">Anterior</a><?php endif; ?>
+                    <?php if ($bankReturnFiles['page'] < $bankReturnFiles['pages']): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($route . '?pagina=' . ($bankReturnFiles['page'] + 1)) ?>" rel="next">Próxima</a><?php endif; ?>
+                </div>
+            </nav>
+        <?php endif; ?>
+    <?php endif; ?>
+</section>
 <div class="erp-stack" data-erp-bank-divergences data-api="<?= $this->e(url('/api/v1/bank-events')) ?>">
     <?= csrf_input() ?>
     <section class="erp-card" aria-labelledby="div-list">
