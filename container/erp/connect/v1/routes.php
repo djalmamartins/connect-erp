@@ -59,6 +59,9 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/checklist/catalogo", "OnboardingCatalog:create");
     $route->post("/checklist/catalogo/{id}", "OnboardingCatalog:update");
 
+    // Cadastro rápido de unidades (ADR 0140): antes do motor, para /{id} não capturar a rota.
+    $route->get(\Source\Controllers\Erp\Connect\UnitBatchScreen::ROUTE, "UnitBatchScreen:show", $erpName('erp.units.batch'));
+
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.
     foreach ($erpRegistries as $registrySlug => $registry) {
