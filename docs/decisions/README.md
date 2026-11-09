@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0084.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0084; Preparar: 0102, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0084; Preparar: 0103, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -111,3 +111,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0083](../Organic%20Code/decisions/0083-chart-data.md) | Dados dos gráficos (AP-102 a AP-109): séries mensais de receitas e despesas, contas, consumo, caixa, inadimplência, contas bancárias e áreas comuns, só consulta |
 | [0100](../Organic%20Code/decisions/0100-month-closing-concurrency.md) | Fechamento mensal: competência conferida com leitura travada na transação da gravação e fechamento que grava a situação antes de somar |
 | [0101](../Organic%20Code/decisions/0101-occurrence-ticket-and-balances.md) | Ocorrência: vínculo do chamado gravado na transação do chamado, sem chamado órfão; saldo bancário só com lançamentos e transferências do condomínio da conta |
+| [0102](../Organic%20Code/decisions/0102-statement-bank-filter.md) | Prestação de contas: conciliação por conta bancária só com lançamentos do condomínio da conta e até o fim do período |
