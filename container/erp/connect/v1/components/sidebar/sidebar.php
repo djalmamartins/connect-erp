@@ -1,8 +1,8 @@
 <?php
 /**
  * Sidebar do ERP: grupos do catálogo em <details>, item ativo e modo recolhido.
- * Grupos longos (mais de 14 páginas) mostram a visão geral e as seções, para o menu
- * caber na tela; todas as páginas continuam a um clique na visão geral do módulo.
+ * Grupos longos (mais de 14 páginas) mostram cada seção como submenu recolhível com
+ * todas as suas páginas, para o menu caber na tela sem esconder nenhuma página.
  *
  * @var array $catalog
  * @var ?string $currentGroup
@@ -61,9 +61,20 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                         <a href="<?= erp_url($hubHref) ?>"<?= $isActive && $currentPageId === null ? ' aria-current="page"' : '' ?>>Visão geral</a>
                     <?php endif; ?>
                     <?php if ($long):
-                        $sections = array_values(array_unique(array_filter(array_column($pages, 'section'))));
-                        foreach ($sections as $section): ?>
-                            <a href="<?= erp_url($hubHref) ?>#<?= $anchor($section) ?>"<?= $isActive && $currentSection === $section ? ' aria-current="page"' : '' ?>><?= $this->e($section) ?></a>
+                        // Grupos longos: cada seção vira um submenu recolhível com todas as páginas dela,
+                        // para nenhuma página ficar escondida atrás da visão geral (teste do Djalma, 09/11).
+                        $bySection = [];
+                        foreach ($pages as $id => $page) {
+                            $bySection[$page['section'] !== '' ? $page['section'] : 'Outras'][$id] = $page;
+                        }
+                        foreach ($bySection as $section => $sectionPages):
+                            $sectionActive = $isActive && $currentSection === $section; ?>
+                            <details class="erp-nav__section"<?= $sectionActive ? ' open' : '' ?>>
+                                <summary><?= $this->e($section) ?></summary>
+                                <?php foreach ($sectionPages as $id => $page): ?>
+                                    <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?></a>
+                                <?php endforeach; ?>
+                            </details>
                         <?php endforeach;
                     else:
                         $lastSection = '';
