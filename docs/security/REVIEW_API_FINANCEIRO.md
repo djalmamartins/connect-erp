@@ -316,3 +316,40 @@ Escopo: `source/Services/Erp/ChartReports.php` e `source/Controllers/Api/V1/Char
 
 Teste com dois condomínios: `ChartReportsIntegrationTest::testBankAccountsCountOnlyMovementsOfTheSameCondominium`.
 
+## Nona rodada — Fechamento mensal e concorrência (ADR 0031)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em a3dfc80 · Correções: ADR 0100
+
+Escopo: `source/Services/Erp/MonthClosing.php`, a trava `closing_lock` de
+`source/Services/Erp/Registry/RegistryService.php` e os serviços que chamam `isClosed`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: fechar, reabrir e consultar exigem `assertAccess`; a visão "Todos" usa só os condomínios do escopo | CONFIRMADO |
+| Reabertura com motivo de 5 a 255 caracteres, espaços colapsados; fechar e reabrir auditados | CONFIRMADO |
+| Trava da competência em todos os caminhos que gravam lançamento: cadastro, faturas, acordos, atalhos, importações, retorno bancário, lançamentos fixos | CONFIRMADO, com o achado 1 |
+| Lançamentos fixos: um por modelo e competência, com `FOR UPDATE` no modelo e índice único | CONFIRMADO |
+| SQL: competência validada como AAAA-MM e por parâmetro; listas de ids são inteiros | CONFIRMADO |
+
+### Achados corrigidos (ADR 0100)
+
+1. **Corrida entre fechar e gravar.** A competência era conferida com leitura simples, antes da gravação
+   e, no cadastro, fora de transação. Um lançamento gravado no mesmo instante do fechamento ficava numa
+   competência fechada, fora da foto. Agora a conferência é travada e fica na transação da gravação, e o
+   fechamento grava a situação antes de somar.
+2. **Transferência e fatura conferidas fora da transação.** A transferência entre contas gravava sem
+   transação, e a preparação da fatura conferia antes de abri-la. As duas agora reconferem dentro da
+   transação da gravação.
+3. **Reabertura sem trava.** Duas reaberturas ao mesmo tempo gravavam e auditavam duas vezes. Agora a
+   reabertura roda em transação, com a linha travada.
+
+### Lacunas
+
+- **Conferências fora de transação.** Algumas telas conferem a competência antes de abrir a transação,
+  só para mostrar o erro mais cedo. Isso é aceitável, porque a conferência que vale é a de dentro da
+  transação.
+- **Espera de trava.** Duas operações na mesma competência esperam uma pela outra. Se a espera passar
+  do `innodb_lock_wait_timeout`, a operação falha e precisa ser repetida.
+
+Teste com duas conexões: `MonthClosingIntegrationTest::testCloseWaitsForAWriteThatAlreadyCheckedTheCompetence`.
+

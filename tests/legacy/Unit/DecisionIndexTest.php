@@ -23,10 +23,15 @@ final class DecisionIndexTest extends TestCase
         }
         self::assertSame(array_unique($numbers), $numbers, 'Dois ADRs com o mesmo número.');
         // O "Próximo número livre" do índice é o que as threads usam para numerar: precisa
-        // estar acima do maior ADR existente, senão o próximo ADR colide com um já mergeado.
+        // estar acima do maior ADR da sequência até 0099, senão o próximo ADR colide com um já mergeado.
+        // De 0100 em diante, as faixas são por frente (0100–0119 Preparar, 0120–0139 layout; ADR 0100)
+        // e cada frente segue a própria; o número indicado só não pode estar em uso.
         self::assertMatchesRegularExpression('/Próximo número livre: (\d{4})/u', $index);
         preg_match('/Próximo número livre: (\d{4})/u', $index, $next);
-        self::assertGreaterThan(max(array_map('intval', $numbers)), (int)$next[1], 'Próximo número livre do índice já está em uso.');
+        $numbers = array_map('intval', $numbers);
+        $sequence = array_filter($numbers, static fn (int $n): bool => $n < 100);
+        self::assertGreaterThan(max($sequence), (int)$next[1], 'Próximo número livre do índice já está em uso.');
+        self::assertNotContains((int)$next[1], $numbers, 'Próximo número livre do índice já está em uso.');
         foreach (glob(self::ROOT . '/docs/decisions/ADR-*.md') ?: [] as $file) {
             self::assertStringContainsString(basename($file), $index);
         }
