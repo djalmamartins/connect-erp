@@ -901,9 +901,24 @@ function erp_base(): string
     return erp_host() ? '' : '/erp';
 }
 
+/**
+ * Link do ERP. Com um condomínio em contexto (barra superior, ADR 0030), o caminho ganha o
+ * slug dele: erp_url('/cadastros') → /residencial-exemplo/cadastros. Login, sair e segurança
+ * não levam slug (CondominiumContext::CONTEXT_FREE).
+ */
 function erp_url(string $path = '/'): string
 {
-    $path = '/' . ltrim($path, '/');
+    return erp_context_url($path, \Source\Support\Erp\CondominiumContext::current());
+}
+
+/**
+ * Link do ERP para um condomínio específico (null = todos os condomínios).
+ *
+ * @param array{slug:string}|null $condominium
+ */
+function erp_context_url(string $path, ?array $condominium): string
+{
+    $path = \Source\Support\Erp\CondominiumContext::pathFor($path, $condominium);
     $full = erp_base() . ($path === '/' && erp_base() !== '' ? '' : $path);
     return url($full === '' ? '/' : $full);
 }

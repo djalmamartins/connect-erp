@@ -121,6 +121,19 @@ $assert(str_contains($html, '<dialog class="erp-modal"'), 'dashboard: modal');
 $assert(str_contains($html, 'Dados de demonstração'), 'dashboard: aviso de demonstração');
 $save('dashboard', $html);
 
+// ADR 0030: com um condomínio na barra superior, os links levam o slug e o dashboard mostra o resumo dele.
+Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'Residencial Exemplo'], ['id' => 9, 'name' => 'Edifício <Exemplo>']], 7);
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'summary' => [['label' => 'Síndico e conselho', 'count' => 4, 'href' => '/cadastros/sindico-e-conselho', 'icon' => 'user']], 'condoTotal' => 2]);
+$html = $render('pages/dashboard/index', $data);
+$assert(str_contains($html, '<option value="7" selected'), 'contexto: condomínio selecionado na navbar');
+$assert(str_contains($html, 'Resumo do Residencial Exemplo'), 'contexto: resumo do condomínio no dashboard');
+$assert((bool)preg_match('~href="[^"]*/residencial-exemplo/cadastros/sindico-e-conselho"~', $html), 'contexto: links com o slug do condomínio');
+$assert((bool)preg_match('~action="[^"]*/contexto/condominio"~', $html) && !str_contains($html, 'residencial-exemplo/contexto'), 'contexto: troca de condomínio sem slug');
+$assert(!str_contains($html, 'dash-condos-title'), 'contexto: tabela de todos os condomínios some com um condomínio escolhido');
+$assert(!str_contains($html, 'residencial-exemplo/sair') && !str_contains($html, 'residencial-exemplo/seguranca'), 'contexto: sair e segurança sem slug');
+$save('dashboard-condominio', $html);
+Source\Support\Erp\CondominiumContext::reset();
+
 // Visões gerais
 $pageRoutes = array_column($catalog['pages'], 'route');
 foreach ($catalog['groups'] as $key => $group) {

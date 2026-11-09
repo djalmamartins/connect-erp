@@ -8,7 +8,7 @@
  * @var bool $demo
  * @var callable $icon
  * @var list<array{id:int,name:string}> $condoOptions  condomínios do escopo do usuário (CondominiumScope)
- * @var ?array{id:int,name:string} $condoCurrent  condomínio em contexto na sessão (null = todos)
+ * @var ?array{id:int,name:string,slug:string} $condoCurrent  condomínio em contexto (slug na URL, ADR 0030; null = todos)
  */
 $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 1));
 ?>
@@ -20,7 +20,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
     </div>
     <form class="erp-condo-switch" method="post" action="<?= erp_url('/contexto/condominio') ?>" data-erp-condo-switch>
         <?= csrf_input() ?>
-        <input type="hidden" name="back" value="<?= $this->e(parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/') ?>">
+        <input type="hidden" name="back" value="<?= $this->e(\Source\Support\Erp\CondominiumContext::relativePath()) ?>">
         <span class="erp-condo-switch__icon" aria-hidden="true"><?= $icon('building', 'erp-icon--sm') ?></span>
         <label class="erp-condo-switch__label" for="erp-condo-select">Condomínio</label>
         <select id="erp-condo-select" name="condominium" class="erp-condo-switch__select"<?= $condoOptions === [] ? ' disabled' : '' ?>>

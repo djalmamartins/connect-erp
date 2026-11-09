@@ -2,7 +2,9 @@
 /**
  * Condomínios (AP-004) com dados reais (CondominiumScope); cadastro em /condominios/novo (ADR 0011).
  * @var list<array{id:int,name:string,document:?string,status:string}> $condominiums
+ * @var ?array{id:int,name:string,slug:string} $contextCondominium  condomínio da barra superior (ADR 0030)
  */
+$contextCondominium ??= null;
 $this->layout('default');
 ob_start(); ?>
     <?php if ($user->can('erp.condominiums.manage')): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a><?php endif; ?>
@@ -14,6 +16,10 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
+
+<?php if ($contextCondominium !== null): ?>
+    <div class="erp-alert" role="note"><?= $icon('filter') ?><div>Mostrando só <b><?= $this->e($contextCondominium['name']) ?></b>, o condomínio escolhido na barra superior. <a href="<?= erp_context_url('/condominios', null) ?>">Ver todos os condomínios</a></div></div>
+<?php endif; ?>
 
 <?php if ($condominiums === []): ?>
     <section class="erp-card">

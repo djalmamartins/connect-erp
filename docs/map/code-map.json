@@ -109,6 +109,10 @@
    "title": "0028 — Aviso por e-mail quando o 2FA da conta muda"
   },
   {
+   "file": "docs/Organic Code/decisions/0030-condominium-context-in-url.md",
+   "title": "0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -400,7 +404,8 @@
     "Source\\Services\\CondominiumRegistry",
     "Source\\Services\\CondominiumScope",
     "Source\\Services\\CondominiumValidator",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext"
    ],
    "file": "source/Controllers/Erp/Connect/Condominiums.php",
    "kind": "class",
@@ -471,7 +476,8 @@
     "Source\\Services\\Inspections\\InspectionError",
     "Source\\Services\\Inspections\\InspectionReport",
     "Source\\Services\\Inspections\\InspectionService",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext"
    ],
    "file": "source/Controllers/Erp/Connect/Inspections.php",
    "kind": "class",
@@ -517,11 +523,12 @@
     "Source\\Core\\Session",
     "Source\\Models\\Auth",
     "Source\\Models\\User",
-    "Source\\Services\\CondominiumScope",
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Support\\Access",
     "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext",
     "Source\\Support\\Erp\\FieldSpec"
    ],
    "file": "source/Controllers/Erp/Connect/Panel.php",
@@ -564,6 +571,7 @@
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
     "Source\\Support\\Access",
+    "Source\\Support\\Erp\\CondominiumContext",
     "Source\\Support\\Message"
    ],
    "file": "source/Controllers/Erp/Connect/Registry.php",
@@ -926,6 +934,7 @@
    "layer": "Core",
    "tables": [],
    "tests": [
+    "tests/legacy/Unit/ErpCondominiumContextTest.php",
     "tests/smoke.php"
    ]
   },
@@ -2027,6 +2036,24 @@
     "tests/legacy/Unit/RegistryValidatorTest.php"
    ]
   },
+  "Source\\Support\\Erp\\CondominiumContext": {
+   "deps": [
+    "Source\\Core\\Session",
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger"
+   ],
+   "file": "source/Support/Erp/CondominiumContext.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCondominiumContextTest.php"
+   ]
+  },
   "Source\\Support\\Erp\\FieldSpec": {
    "deps": [],
    "file": "source/Support/Erp/FieldSpec.php",
@@ -2204,8 +2231,8 @@
   }
  },
  "counts": {
-  "adrs": 30,
-  "classes": 137,
+  "adrs": 31,
+  "classes": 138,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -2213,7 +2240,7 @@
   "erp_pages": 172,
   "routes": 206,
   "tables": 63,
-  "tests": 66
+  "tests": 67
  },
  "erp_pages": [
   {
@@ -5846,7 +5873,8 @@
    "Source\\Controllers\\Erp\\Connect\\Panel",
    "Source\\Core\\View",
    "Source\\Models\\User",
-   "Source\\Services\\Erp\\DemoData"
+   "Source\\Services\\Erp\\DemoData",
+   "Source\\Support\\Erp\\CondominiumContext"
   ],
   "tests/legacy/Integration/AccessControlTest.php": [
    "Source\\Models\\User",
@@ -6033,6 +6061,10 @@
   "tests/legacy/Unit/EntriesDefinitionTest.php": [
    "Source\\Services\\Erp\\Registry\\Definitions",
    "Source\\Services\\Erp\\Registry\\RegistryValidator"
+  ],
+  "tests/legacy/Unit/ErpCondominiumContextTest.php": [
+   "Source\\Core\\Router",
+   "Source\\Support\\Erp\\CondominiumContext"
   ],
   "tests/legacy/Unit/ErpLegacyCondominiumScopeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Erp"

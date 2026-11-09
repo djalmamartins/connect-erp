@@ -270,6 +270,24 @@ final class RegistryService
     }
 
     /** @return list<array{id:int,name:string,document:?string,status:string}> condomínios para filtros e formulários */
+    /**
+     * Quantidade de registros do cadastro no escopo do usuário, opcionalmente só de um
+     * condomínio (dashboard, ADR 0030). Registros sem condomínio (escopo optional) só entram
+     * na visão de todos os condomínios.
+     */
+    public function count(User $user, string $slug, ?int $condominiumId = null): int
+    {
+        $definition = self::definition($slug);
+        [$where, $params] = $this->scopeWhere($user, $definition);
+        if ($condominiumId !== null && $definition['scope'] !== 'none') {
+            $where[] = 't.condominium_id = :f_condominium';
+            $params['f_condominium'] = $condominiumId;
+        }
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$definition['table']}` t WHERE " . implode(' AND ', $where));
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
     public function condominiums(User $user): array
     {
         return $this->scope->allowed($user);

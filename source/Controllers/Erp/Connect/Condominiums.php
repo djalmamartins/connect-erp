@@ -12,6 +12,7 @@ use Source\Services\CondominiumRegistry;
 use Source\Services\CondominiumScope;
 use Source\Services\CondominiumValidator;
 use Source\Support\Access;
+use Source\Support\Erp\CondominiumContext;
 
 /**
  * ERP v1 — módulo Condomínios: consulta e cadastro/edição (AP-004, ADR 0011).
@@ -38,8 +39,15 @@ final class Condominiums extends Controller
         if ($user === null) {
             return;
         }
+        // Com um condomínio na barra superior, a lista mostra só ele (ADR 0030).
+        $condominiums = (new CondominiumScope())->allowed($user);
+        $context = CondominiumContext::current();
+        if ($context !== null) {
+            $condominiums = array_values(array_filter($condominiums, static fn (array $c): bool => $c['id'] === $context['id']));
+        }
         echo $this->view->render('pages/condominiums/index', $this->layoutData($user, 'Condomínios', [
-            'condominiums' => (new CondominiumScope())->allowed($user),
+            'condominiums' => $condominiums,
+            'contextCondominium' => $context,
         ]));
     }
 
@@ -56,6 +64,12 @@ final class Condominiums extends Controller
         } catch (CondominiumAccessDenied) {
             // 404 para não revelar condomínios fora do escopo do usuário.
             $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+            return;
+        }
+        // Abrir a ficha de um condomínio passa a barra superior para ele (ADR 0030).
+        $follow = CondominiumContext::follow($id);
+        if ($follow !== null) {
+            redirect(url(erp_base() . $follow));
             return;
         }
         foreach ($scope->allowed($user) as $condominium) {

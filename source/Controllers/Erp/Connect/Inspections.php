@@ -14,6 +14,7 @@ use Source\Services\Inspections\InspectionReport;
 use Source\Services\Inspections\InspectionService;
 use Source\Services\Inspections\ChecklistText;
 use Source\Support\Access;
+use Source\Support\Erp\CondominiumContext;
 
 /**
  * ERP v1 — Vistoria presencial (Operacional › Vistorias, CN-001).
@@ -43,9 +44,15 @@ final class Inspections extends Controller
         if ($user === null) {
             return;
         }
-        $filters = ['condominium_id' => (int)($_GET['condominio'] ?? 0), 'status' => (string)($_GET['situacao'] ?? '')];
+        // Condomínio da barra superior (ADR 0030); o filtro ?condominio= troca o contexto no index.php.
+        $context = CondominiumContext::id();
+        $filters = ['condominium_id' => $context ?? 0, 'status' => (string)($_GET['situacao'] ?? '')];
+        $board = $this->service->board($user);
+        if ($context !== null) {
+            $board = array_values(array_filter($board, static fn (array $due): bool => $due['condominium_id'] === $context));
+        }
         $this->render($user, 'pages/inspections/index', [
-            'board' => $this->service->board($user),
+            'board' => $board,
             'recent' => $this->service->recent($user, $filters),
             'filters' => $filters,
             'condominiums' => (new CondominiumScope())->allowed($user),
@@ -65,7 +72,7 @@ final class Inspections extends Controller
             'condominiums' => (new CondominiumScope())->allowed($user),
             'templates' => $this->service->templates(),
             'geolocations' => $this->service->geolocations($user),
-            'selected' => ['condominium_id' => (int)($_GET['condominio'] ?? 0), 'template_id' => (int)($_GET['modelo'] ?? 0)],
+            'selected' => ['condominium_id' => CondominiumContext::id() ?? 0, 'template_id' => (int)($_GET['modelo'] ?? 0)],
             'old' => $this->old(),
             'errors' => $this->errors(),
         ], 'Nova vistoria');

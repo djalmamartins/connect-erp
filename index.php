@@ -171,6 +171,19 @@ if (is_file($erpRoutes)) {
 }
 
 /**
+ * CONDOMÍNIO EM CONTEXTO (ADR 0030): tira o slug do condomínio da URL do ERP antes do
+ * dispatch e leva URLs antigas, /todos e filtros ?condominio= para a URL canônica.
+ */
+if (erp_host() || preg_match("~/erp(?:/|$)~", (string)parse_url($_SERVER["REQUEST_URI"] ?? "", PHP_URL_PATH))) {
+    $erpContextRedirect = \Source\Support\Erp\CondominiumContext::bootRequest($route->firstSegments());
+    if ($erpContextRedirect !== null) {
+        header("Location: " . $erpContextRedirect, true, 302);
+        ob_end_flush();
+        return;
+    }
+}
+
+/**
  * ROUTE
  */
 $route->dispatch();

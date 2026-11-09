@@ -21,7 +21,7 @@ $query = static function (array $changes) use ($filters): string {
     $params = array_filter(array_merge($params, $changes), static fn ($v): bool => $v !== null && $v !== '');
     return $params === [] ? '' : '?' . http_build_query($params);
 };
-$filtered = array_filter([$filters['condominium_id'] ?? null, $filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null], static fn ($v): bool => $v !== null && $v !== '') !== [];
+$filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
     <?php // AP-021: gera os lançamentos da competência a partir dos fixos (ADR 0027). A API valida tudo de novo.
