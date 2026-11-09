@@ -8,6 +8,7 @@
 # *_test) -> status e apply das migrations no banco do lab -> rebuild do serviço scheduler.
 # Para no primeiro erro: se a integração falhar, nada é migrado.
 # Rode a partir do checkout principal (www/connect), que é o que o compose monta.
+# Para o ciclo completo (pull da main, unitários, smoke, HTTP e resumo), use tools/testar-main.sh.
 set -euo pipefail
 
 project=$(cd "$(dirname "$0")/.." && pwd)
