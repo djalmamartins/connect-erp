@@ -218,3 +218,39 @@ da multa em `EntryShortcuts::createCharge` e a migration 20261108_0538.
 
 Teste de ponta a ponta: `CollectionsCycleIntegrationTest`.
 
+## Sexta rodada — Relatórios de cobrança (ADR 0081)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em e653430 · Correções: ADR 0067
+
+Escopo: `source/Services/Erp/CollectionReports.php` e `source/Controllers/Api/V1/CollectionReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: `erp.access` mais `erp.agreements.view` (acordos e inadimplentes) ou `erp.entries.view` (recebimentos). A visão por morador exige também `erp.residents.view`, inclusive no CSV | CONFIRMADO |
+| Escopo: o condomínio informado passa por `assertAccess` (404 fora do escopo). Sem condomínio, entram só os do escopo do usuário. Inadimplentes de um condomínio de fora voltam vazios, pela mesma regra da inadimplência, sem vazar dados. As consultas por conta do plano e por morador usam só ids que vieram da inadimplência já filtrada | CONFIRMADO; o teste confere as 5 visões e os 3 agrupamentos |
+| Máscara: o CPF ou CNPJ do responsável sai com só os 2 últimos dígitos, no JSON e no CSV | CONFIRMADO |
+| CSV: BOM, `;`, CRLF, apóstrofo na célula perigosa, inclusive no cabeçalho; `nosniff`, `no-store` e anexo com nome fixo; a exportação fica na auditoria | CONFIRMADO, com o achado 1 |
+| SQL: período e filtros por parâmetro; as listas de ids interpoladas são inteiros já convertidos; período de no máximo 366 dias | CONFIRMADO |
+| Custo: acordos pelo índice `(condominium_id, status, created_at)`, recebimentos pelo `(condominium_id, paid_on)` do ADR 0064 | CONFIRMADO, com o achado 2 |
+
+### Achados corrigidos (ADR 0067)
+
+1. **Fórmula depois de espaço, em largura total ou depois de LF.** `" =1+1"`, `"\u{FEFF}=x"`,
+   `"＝HYPERLINK(...)"` e uma célula que começa com quebra de linha passavam sem apóstrofo. Agora
+   todos recebem o apóstrofo.
+2. **Recebimentos sem teto.** Um ano de todos os condomínios era lido inteiro na memória. Agora o
+   teto é de 20.000 linhas, e acima disso a resposta é 422.
+
+### Lacunas
+
+- **E-mail e telefone completos na visão por morador.** Só o documento é mascarado. Quem tem
+  `erp.residents.view` já vê esses dados no cadastro, e a exportação fica na auditoria. Mesmo
+  assim, um CSV com contatos de inadimplentes é dado pessoal sensível de cobrança (LGPD): vale
+  limitar a visão ao perfil de cobrança.
+- **Leitura em JSON não é auditada.** Só o CSV deixa trilha.
+- **Sem paginação.** Inadimplentes e acordos voltam inteiros; o volume esperado de uma administradora
+  cabe, e o teto ficou só nos recebimentos.
+- **Frequência.** Continua sem limite de requisições na API.
+
+Teste com dois condomínios: `CollectionReportsScopeIntegrationTest`.
+

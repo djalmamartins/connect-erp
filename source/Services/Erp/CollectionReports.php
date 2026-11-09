@@ -28,6 +28,8 @@ final class CollectionReports
     public const DELINQUENT_VIEWS = ['general', 'unit', 'detailed', 'fee', 'resident'];
     public const RECEIPT_GROUPS = ['entry', 'bank_account', 'chart_account'];
     public const MAX_DAYS = 366;
+    /** Teto de recebimentos lidos numa consulta (ADR 0067): acima disso, reduza o período ou escolha um condomínio. */
+    public const MAX_RECEIPT_ROWS = 20000;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -286,8 +288,12 @@ final class CollectionReports
             LEFT JOIN erp_bank_accounts b ON b.id = e.bank_account_id JOIN erp_chart_accounts a ON a.id = e.chart_account_id
             WHERE e.condominium_id IN (" . implode(',', $ids) . ") AND e.nature = 'receita' AND e.status = 'active' AND e.deleted_at IS NULL
               AND e.paid_on BETWEEN :f AND :t
-            ORDER BY c.name, e.paid_on, e.id");
+            ORDER BY c.name, e.paid_on, e.id LIMIT " . (self::MAX_RECEIPT_ROWS + 1));
         $stmt->execute(['f' => $from, 't' => $to]);
+        $raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($raw) > self::MAX_RECEIPT_ROWS) {
+            throw new InvalidArgumentException(sprintf('O período tem mais de %d recebimentos. Reduza o período ou escolha um condomínio.', self::MAX_RECEIPT_ROWS));
+        }
         $rows = array_map(static fn (array $r): array => [
             'entry_id' => (int)$r['id'], 'condominium_id' => (int)$r['condominium_id'], 'condominium_name' => (string)$r['condominium_name'],
             'unit_label' => $r['unit_label'] ?? 'Sem unidade', 'description' => (string)$r['description'], 'competence' => (string)$r['competence'],
@@ -295,7 +301,7 @@ final class CollectionReports
             'days_late' => max(0, Agreements::daysLate((string)$r['due_on'], (string)$r['paid_on'])),
             'bank_account_id' => $r['bank_account_id'] !== null ? (int)$r['bank_account_id'] : null, 'bank_account' => $r['bank_account_name'] ?? 'Sem conta bancária',
             'chart_account' => trim($r['account_code'] . ' ' . $r['account_name']),
-        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        ], $raw);
         $result['rows'] = self::groupReceipts($rows, $group);
         $result['totals'] = ['entries' => count($rows), 'amount_cents' => array_sum(array_column($rows, 'amount_cents')),
             'late' => count(array_filter($rows, static fn (array $r): bool => $r['days_late'] > 0))];
@@ -372,12 +378,14 @@ final class CollectionReports
     }
 
     /**
-     * Célula segura para planilha (regra pura, ADR 0081): todo texto que começa com = + - @ (ou tab e CR,
-     * que o Excel também interpreta) ganha um apóstrofo na frente, sem exceção.
+     * Célula segura para planilha (regra pura, ADR 0081 e 0067): todo texto que começa com = + - @ (ou
+     * tab, CR e LF, que as planilhas também interpretam) ganha um apóstrofo na frente, sem exceção.
+     * Vale também quando o sinal vem depois de espaços ou caracteres de controle, que algumas
+     * planilhas descartam ao importar, e para as formas de largura total (＝ ＋ － ＠).
      */
     public static function csvCell(string $value): string
     {
-        return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+        return preg_match('/^[\p{Z}\s\p{Cc}\x{FEFF}]*[=+\-@\x{FF1D}\x{FF0B}\x{FF0D}\x{FF20}]|^[\t\r\n]/u', $value) === 1 ? "'" . $value : $value;
     }
 
     /** Arquivo CSV (regra pura): BOM UTF-8, separador ";", linhas CRLF, cada célula já saneada pelo csvTable. */
