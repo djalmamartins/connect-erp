@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0051.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0053.** O 0051 está reservado (thread Avançar).
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -75,3 +75,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0048](../Organic%20Code/decisions/0048-meter-readings-screen.md) | Tela de leituras do mês (AP-042): lançamento em lote, consumo e valor por unidade e faturar |
 | [0049](../Organic%20Code/decisions/0049-virtual-disk-screen.md) | Tela do Disco Virtual (AP-122): pastas, envio multipart com progresso, baixar e excluir |
 | [0050](../Organic%20Code/decisions/0050-document-registries.md) | Avisos de recebimento, cópias de cheques, empenhos e malotes (AP-126 a AP-129), com anexo do Disco Virtual |
+| [0052](../Organic%20Code/decisions/0052-registry-attachment-picker.md) | Seletor do Disco Virtual no anexo dos cadastros AP-126 a 129: escolher, enviar e anexar no formulário |

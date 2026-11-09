@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**260** rotas fixas · **173** classes em `source/` · **89** tabelas nas migrations · **107** arquivos de teste · **52** ADRs · **172** páginas no catálogo do ERP.
+**260** rotas fixas · **173** classes em `source/` · **89** tabelas nas migrations · **108** arquivos de teste · **53** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -210,6 +210,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryNotFound
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryService
   Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_Registry_RegistryValidationException
+  Source_Controllers_Erp_Connect_Registry --> Source_Services_Erp_VirtualDisk
   Source_Controllers_Erp_Connect_Security["Controllers/Erp/Connect/Security"]
   Source_Controllers_Erp_Connect_Security --> Source_Services_TwoFactorNotice
   Source_Controllers_Erp_Connect_Security --> Source_Services_TwoFactorService
@@ -850,7 +851,7 @@ flowchart LR
 | [`Controllers/Erp/Connect/OnboardingCatalog`](../../source/Controllers/Erp/Connect/OnboardingCatalog.php) | Controller, Auth, User, OnboardingCatalog, OnboardingItemNotFound, OnboardingValidationError, Access | — | 1 |
 | [`Controllers/Erp/Connect/Panel`](../../source/Controllers/Erp/Connect/Panel.php) | Connect, Controller, Session, Auth, User, Agreements, BankCharges, BankReturns … | notifications, pages | 11 |
 | [`Controllers/Erp/Connect/Register`](../../source/Controllers/Erp/Connect/Register.php) | Address, AppCondominium, AppUnits, User, Upload | — | — |
-| [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryLocked, RegistryNotFound … | condominiums | — |
+| [`Controllers/Erp/Connect/Registry`](../../source/Controllers/Erp/Connect/Registry.php) | Connect, Controller, Session, Auth, User, RegistryForbidden, RegistryInUse, RegistryLocked … | condominiums | — |
 | [`Controllers/Erp/Connect/Security`](../../source/Controllers/Erp/Connect/Security.php) | Controller, Session, Auth, TwoFactorNotice, TwoFactorService, Access, QrCode, SecretBox | — | — |
 | [`Controllers/Erp/Connect/Tickets`](../../source/Controllers/Erp/Connect/Tickets.php) | Controller, Session, Auth, User, CondominiumScope, Environments, TicketError, TicketService … | condominiums | — |
 | [`Controllers/Erp/Connect/Users`](../../source/Controllers/Erp/Connect/Users.php) | View, Address, Auth, AppCondominium, User, Email, Pager, Upload | — | — |
@@ -878,7 +879,7 @@ flowchart LR
 | [`Core/Model`](../../source/Core/Model.php) | AppLogger, Audit, Message | — | — |
 | [`Core/Router`](../../source/Core/Router.php) | — | — | 2 |
 | [`Core/Session`](../../source/Core/Session.php) | Message | — | 1 |
-| [`Core/View`](../../source/Core/View.php) | — | — | 7 |
+| [`Core/View`](../../source/Core/View.php) | — | — | 8 |
 
 </details>
 
@@ -957,7 +958,7 @@ flowchart LR
 | [`Services/Erp/MeterReadings`](../../source/Services/Erp/MeterReadings.php) | Connect, User, CondominiumScope, RegistryNotFound, RegistryService, Audit | erp_meter_readings, erp_meters, erp_tariffs, erp_units | 2 |
 | [`Services/Erp/MonthClosing`](../../source/Services/Erp/MonthClosing.php) | Connect, User, CondominiumAccessDenied, CondominiumScope, Audit | condominiums, erp_bank_accounts, erp_chart_accounts, erp_entries, erp_month_closings | 7 |
 | [`Services/Erp/RecurringEntries`](../../source/Services/Erp/RecurringEntries.php) | Connect, User, CondominiumScope, RegistryService, RegistryValidationException | erp_entries, erp_recurring_entries | 3 |
-| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_check_copies, erp_commitments, erp_common_areas, erp_cost_centers, erp_deliveries, erp_delivery_notices, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_meters, erp_pets, erp_pouches, erp_recurring_entries, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 16 |
+| [`Services/Erp/Registry/Definitions`](../../source/Services/Erp/Registry/Definitions.php) | — | erp_access_logs, erp_assets, erp_bank_accounts, erp_board_members, erp_chart_accounts, erp_check_copies, erp_commitments, erp_common_areas, erp_cost_centers, erp_deliveries, erp_delivery_notices, erp_employees, erp_entries, erp_gatehouses, erp_invoice_types, erp_lawyers, erp_linkable_areas, erp_lost_found, erp_meters, erp_pets, erp_pouches, erp_recurring_entries, erp_residents, erp_suppliers, erp_tariffs, erp_units, erp_useful_contacts, erp_vehicles, erp_visit_forecasts, erp_visitors | 18 |
 | [`Services/Erp/Registry/RegistryForbidden`](../../source/Services/Erp/Registry/RegistryForbidden.php) | — | — | 3 |
 | [`Services/Erp/Registry/RegistryInUse`](../../source/Services/Erp/Registry/RegistryInUse.php) | — | — | 9 |
 | [`Services/Erp/Registry/RegistryLocked`](../../source/Services/Erp/Registry/RegistryLocked.php) | — | — | 2 |
@@ -1078,6 +1079,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0048 — Tela de leituras do mês (AP-042)](../../docs/Organic%20Code/decisions/0048-meter-readings-screen.md)
 - [0049 — Tela do Disco Virtual (AP-122)](../../docs/Organic%20Code/decisions/0049-virtual-disk-screen.md)
 - [0050 — Avisos de recebimento, cópias de cheques, empenhos e malotes](../../docs/Organic%20Code/decisions/0050-document-registries.md)
+- [0052 — Seletor do Disco Virtual no anexo dos cadastros (AP-126 a AP-129)](../../docs/Organic%20Code/decisions/0052-registry-attachment-picker.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)

@@ -33,11 +33,12 @@ $this->insert('components/layout/page-head', [
                 $this->insert('components/forms/registry-field', [
                     'field' => $field, 'value' => $values[$name] ?? null, 'error' => $errors[$name] ?? null,
                     'condominiums' => $condominiums, 'units' => $units ?? [], 'refOptions' => ($refs ?? [])[$name] ?? [], 'readonly' => $readonly,
+                    'attachment' => (($registryAttachment ?? null)['field'] ?? null) === $name ? $registryAttachment : null,
                 ]);
             } ?>
             <?php $this->insert('components/forms/registry-field', [
                 'field' => ['name' => 'status', 'label' => 'Situação', 'type' => 'select', 'required' => true, 'span' => 4, 'options' => $definition['status'], 'hint' => null],
-                'value' => $values['status'] ?? 'active', 'error' => $errors['status'] ?? null, 'condominiums' => [], 'readonly' => $readonly,
+                'value' => $values['status'] ?? 'active', 'error' => $errors['status'] ?? null, 'condominiums' => [], 'readonly' => $readonly, 'attachment' => null,
             ]); ?>
         </div>
         <div class="erp-form__actions">

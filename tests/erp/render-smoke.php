@@ -517,6 +517,20 @@ $html = $agreementPage('AP-122', 'pages/documents/virtual-disk', $diskData(['dis
 $assert(str_contains($html, 'Pasta vazia'), 'AP-122: pasta vazia');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-122', ['diskFiles' => null]) === null && Source\Controllers\Erp\Connect\Panel::fileSize(1023) === '1023 B' && Source\Controllers\Erp\Connect\Panel::fileSize(1536) === '1,5 KB', 'AP-122: sem permissão segue a demonstração; tamanhos legíveis');
 
+// Anexo do Disco Virtual nos cadastros AP-126 a 129 (ADR 0050 e 0052): formulário com o seletor.
+$attachForm = static fn (array $attachment, array $values = []): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-127', [
+    'title' => 'Nova cópia de cheque', 'definition' => Source\Services\Erp\Registry\Definitions::get('check_copies'), 'recordId' => null,
+    'values' => $values + ['condominium_id' => 1], 'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora'], ['id' => 2, 'name' => 'Vila Sol']],
+    'units' => [], 'refs' => [], 'canManage' => true,
+    'registryAttachment' => $attachment + ['field' => 'document_id', 'file' => null, 'canBrowse' => true, 'canUpload' => true],
+], 'Nova cópia de cheque'));
+$html = $attachForm(['file' => ['id' => 12, 'title' => 'Cheque <123>', 'original_name' => 'cheque.jpg']], ['document_id' => 12]);
+$save('page-ap-127-attach', $html);
+$assert(str_contains($html, 'data-erp-attachment data-api="https://' . $smokeHost . '/api/v1/documents"') && str_contains($html, 'Cheque &lt;123&gt;') && str_contains($html, '/api/v1/documents/12/download')
+    && str_contains($html, 'data-attachment-send') && str_contains($html, '<label for="f-document_id-pick">') && substr_count($html, 'data-erp-attachment ') === 1, 'AP-127: anexo com seletor e envio do Disco Virtual');
+$html = $attachForm(['canBrowse' => false, 'canUpload' => false]);
+$assert(!str_contains($html, 'data-attachment-open') && str_contains($html, 'Nenhum arquivo anexado'), 'AP-127: sem acesso ao Disco Virtual não oferece escolher');
+
 // Segurança da conta (2FA no próprio ERP): estados ativa com códigos novos, configuração e servidor sem chave.
 $security = static fn (array $state): string => $render('pages/auth/security', $layoutData->invoke($panel, $user, null, $state + ['twoFactorEnabled' => false, 'twoFactorConfigured' => true, 'twoFactorEnforced' => false, 'twoFactorSetup' => null, 'recoveryCodes' => [], 'recoveryRemaining' => 0], 'Segurança da conta'));
 $html = $security(['twoFactorEnabled' => true, 'recoveryCodes' => ['AAAA-BBBB', '<b>x</b>'], 'recoveryRemaining' => 8]);
