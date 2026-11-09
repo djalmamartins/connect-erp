@@ -81,8 +81,10 @@ final class DocumentVerificationIntegrationTest extends TestCase
             $service->check('TUVW-XYZ2-3456-789A', self::IP);
         }
         self::assertSame(DocumentVerification::THROTTLED, $service->check($certificate['verification_code'], self::IP)['message']);
-        $hashes = $this->pdo->query("SELECT DISTINCT subject_hash FROM auth_throttle_events WHERE scope = 'doc_verify'")->fetchAll(\PDO::FETCH_COLUMN);
-        self::assertSame([DocumentVerificationThrottle::subject(self::IP)], $hashes, 'Só o HMAC do IP fica gravado.');
+        $hashes = $this->pdo->query("SELECT DISTINCT subject_hash FROM auth_throttle_events WHERE scope = 'doc_verify' ORDER BY subject_hash")->fetchAll(\PDO::FETCH_COLUMN);
+        $expected = [DocumentVerificationThrottle::subject(self::IP), DocumentVerificationThrottle::globalSubject()];
+        sort($expected);
+        self::assertSame($expected, $hashes, 'Só o HMAC do IP e o contador global ficam gravados (ADR 0160).');
 
         $this->pdo->exec('RENAME TABLE auth_throttle_events TO auth_throttle_events_off');   // só no banco de teste
         try {

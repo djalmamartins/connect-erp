@@ -52,7 +52,7 @@ final class DocumentVerificationFooterTest extends TestCase
         // Todos os tipos (certidão, declaração, quitação, anuência e recibo) usam este mesmo modelo de impressão.
         self::assertSame(['debt_certificate', 'delinquency_declaration', 'quittance', 'consent_letter', 'receipt'], array_keys(UnitDocuments::ALL_KINDS));
         self::assertSame(1, substr_count($view, '<footer class="erp-unit-doc__foot"'), 'Um rodapé, comum a todos os tipos.');
-        foreach (['DocumentVerification::footer(', "url())", 'Código de verificação: <strong>', 'Confira em <a href="<?= $this->e($verification[\'link\']) ?>"',
+        foreach (['DocumentVerification::footer(', 'DocumentVerification::configuredBase())', 'Código de verificação: <strong>', 'Confira em <a href="<?= $this->e($verification[\'link\']) ?>"',
             '$this->e($verification[\'address\'])', '\Source\Support\QrCode::svg($verification[\'link\']'] as $needle) {
             self::assertStringContainsString($needle, $view, $needle);
         }

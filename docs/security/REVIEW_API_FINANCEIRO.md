@@ -764,3 +764,21 @@ Data: 2026-11-09. Código revisado: o patch do ciclo 48 (sha256 cfb009ea) e o gu
 
 - Não houve teste de fumaça HTTP de `/verificar` aqui, porque sem banco o `index.php` não sobe. Falta conferir no Mac.
 - A falha do `render-smoke` em `communication/addresses.php` (chave nula no PHP 8.5) já tinha sido corrigida no commit 43388bb, que está na main. O worktree do Avançar estava desatualizado.
+
+## 29ª rodada: revisão da verificação pública e do antivírus (ciclo 49)
+
+Data: 2026-11-09. Código revisado: o patch do ciclo 49 (sha256 867a76a1) e o guia, portados sobre o `claude-dev` 584ed87. ADR 0160.
+
+| Ponto | Situação |
+|---|---|
+| O limite de falhas era só por IP. Muitos IPs juntos não tinham teto | CORRIGIDO: limite global de 5.000 falhas por janela, além do limite por IP |
+| O CSRF da página pública comparava com `!=` (o `csrf_verify()` do núcleo) | CORRIGIDO: `DocumentVerify::csrfMatches` usa `hash_equals` e recusa token vazio |
+| A página podia ser posta num frame de outro site | CORRIGIDO: `X-Frame-Options: DENY`, `frame-ancestors 'none'` e `nosniff` |
+| O `ClamdScanner` não tinha prazo total nem teto de tamanho. Uma resposta cortada era lida como válida | CORRIGIDO: prazo total de 30 s, teto de 25 MB (o `StreamMaxLength` padrão do clamd) e só vale resposta terminada em `\0`, com uma linha só |
+| Arquivo marcado como infectado ou com erro de verificação podia ser baixado | CORRIGIDO: o download responde 403 `file_blocked` |
+| O IP continua vindo de `ClientIp::resolve()` (ADR 0023), conferido depois do patch | CONFIRMADO |
+
+### Lacunas
+
+- A integração (`DocumentVerificationIntegrationTest`, com o caso do limite global) não rodou aqui, porque não há banco. Ela roda no Mac, no banco `*_test`.
+- O limite global pode ser usado para travar a verificação de todos. É o mesmo compromisso do convite (ADR 0093), aceito porque a página não traz dado pessoal.

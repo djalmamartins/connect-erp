@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0160.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0160, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0115, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0161.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0161, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0115, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -141,3 +141,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0113](../Organic%20Code/decisions/0113-calculation-report-limits.md) | Memória de cálculo: data de referência até 60 dias à frente e no máximo 120 mil meses de índice por consulta |
 | [0114](../Organic%20Code/decisions/0114-plain-text-uncommon-tlds.md) | Texto simples: domínio com caminho ou código de país recusado mesmo com TLD fora da lista |
 | [0140](../Organic%20Code/decisions/0140-unit-batch-and-measures-grid.md) | Cadastro rápido de unidades (sequência por andares, pré-visualização, tudo ou nada) e fração ideal/área em grade no AP-167 |
+| [0160](../Organic%20Code/decisions/0160-review-verification-antivirus.md) | Revisão de segurança da verificação pública e do antivírus: limite global de falhas, CSRF em tempo constante, cabeçalhos anti-frame, prazo total e teto de 25 MB no clamd, download bloqueado para infectado/erro |

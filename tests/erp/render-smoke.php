@@ -490,8 +490,10 @@ $docContent = ['overdue' => [['entry_id' => 1, 'description' => 'Taxa <out>', 'c
 $html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['unitDocument' => $docRow(['content' => $docContent])]), 'doc');
 $assert(str_contains($html, 'Certidão de Débitos nº 31') && str_contains($html, 'Taxa &lt;out&gt;') && str_contains($html, 'R$ 523,45') && str_contains($html, 'R$ 10,04') && str_contains($html, 'Sem IPCA lançado de 10/2026')
     && str_contains($html, 'Contas a vencer em aberto') && str_contains($html, 'data-erp-print') && str_contains($html, 'erp-unit-doc__code">ABCD-EFGH-JKMN-PQRS') && str_contains($html, 'Cancelar documento') && !str_contains($html, 'data-unit-document-form'), 'AP-123: certidão com débitos, encargos, código e imprimir');
-$assert(str_contains($html, 'Código de verificação: <strong>ABCD-EFGH-JKMN-PQRS</strong>') && str_contains($html, 'href="https://' . $smokeHost . '/verificar#ABCD-EFGH-JKMN-PQRS"')
-    && str_contains($html, '>https://' . $smokeHost . '/verificar</a>') && !str_contains($html, '/verificar?'), 'AP-123: rodapé com o código e o link público, código só no fragmento (ADR 0099)');
+// ADR 0160: o link usa só CONF_URL_SSL. Aqui ela não é URL (true), então o rodapé mostra o código sem link,
+// e nunca um link montado com o Host da requisição ($smokeHost).
+$assert(str_contains($html, 'erp-unit-doc__code">ABCD-EFGH-JKMN-PQRS') && !str_contains($html, $smokeHost . '/verificar') && !str_contains($html, '/verificar?'),
+    'AP-123: rodapé com o código; link só com a URL configurada, nunca com o Host (ADR 0099 e 0160)');
 $html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['unitDocument' => $docRow(['result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data <errada>', 'content' => ['overdue' => [], 'upcoming' => []]])]));
 $assert(str_contains($html, 'Nada consta.') && str_contains($html, 'erp-unit-doc is-cancelled') && str_contains($html, 'Data &lt;errada&gt;') && !str_contains($html, 'data-unit-document-cancel="'), 'AP-123: nada consta cancelado, sem cancelar de novo');
 $html = $agreementPage('AP-125', 'pages/documents/unit-document', $docData('quittance', ['unitDocument' => $docRow(['kind' => 'quittance', 'kind_label' => 'Comprovante de Quitação', 'reference' => '2026-10', 'result' => 'clear', 'total_cents' => 600000, 'content' => ['until_competence' => '2026-10', 'paid_entries' => 12, 'paid_cents' => 600000]])]), 'doc');

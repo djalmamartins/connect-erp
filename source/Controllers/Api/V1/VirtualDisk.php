@@ -76,6 +76,9 @@ final class VirtualDisk
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Arquivo não encontrado no seu escopo.']]);
             return;
+        } catch (DomainException $exception) {   // ADR 0160: infectado ou com erro de verificação
+            JsonResponse::send(403, ['error' => ['code' => 'file_blocked', 'message' => $exception->getMessage()]]);
+            return;
         }
         $ascii = (string)preg_replace('/[^A-Za-z0-9._ -]+/', '_', $file['name']);
         header('Content-Type: ' . $file['mime']);
