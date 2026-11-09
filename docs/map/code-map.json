@@ -341,6 +341,22 @@
    "title": "0102 — Prestação de contas: conciliação bancária só com o próprio condomínio e até o fim do período"
   },
   {
+   "file": "docs/Organic Code/decisions/0103-unit-panel-and-waitlist-call.md",
+   "title": "0103 — Painel da unidade só com as contas dela e chamada da lista de espera travada"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0104-meter-reading-closed-competence.md",
+   "title": "0104 — Leitura manual recusa competência fechada e unidade do consumo de energia"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0105-unit-documents-reference-date.md",
+   "title": "0105 — Documentos da unidade na data de referência e só com contas do condomínio da unidade"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0106-recurring-generation-errors.md",
+   "title": "0106 — Geração dos lançamentos fixos não deixa transação aberta"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -4098,7 +4114,7 @@
   }
  },
  "counts": {
-  "adrs": 88,
+  "adrs": 92,
   "classes": 211,
   "dynamic_route_lines": {
    "erp": 9,
@@ -4107,7 +4123,7 @@
   "erp_pages": 172,
   "routes": 323,
   "tables": 110,
-  "tests": 150
+  "tests": 151
  },
  "erp_pages": [
   {
@@ -9864,6 +9880,7 @@
   "tests/legacy/Unit/ErpFinancialReportsScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
   ],
+  "tests/legacy/Unit/ErpFormLayoutTest.php": [],
   "tests/legacy/Unit/ErpImportScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\ImportScreens",
    "Source\\Controllers\\Erp\\Connect\\Panel",
