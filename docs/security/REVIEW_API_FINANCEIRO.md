@@ -668,3 +668,20 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 42 (sha256 6377f0fb), porta
 
 - Abrir só lê o limite e não registra falha. Isso não abre ataque: o token tem 256 bits e o aceite conta as falhas.
 - As lacunas 1 e 2 do ADR 0112 ficam fechadas. Continuam abertas a do log de produção fora do Docker e a das corridas, que só têm teste de integração no Mac.
+
+## 23ª rodada — Passada de qualidade dos ciclos 37 a 42 (ciclo 43)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 43 (sha256 320cb566), portado sobre `claude-dev` e18d3b3 · ADR 0094
+
+| Ponto | Situação |
+|---|---|
+| O ADR 0111 já conferia o escopo no `unlinkUser`? | Não: só travava o vínculo. O achado é novo |
+| `unlinkUser` e `deactivateAgency` exigem escopo sobre todas as concessões (404) | CONFIRMADO; no `deactivateAgency`, a conferência vem antes do primeiro desvínculo |
+| `listAgencies` só com concessões do escopo e com `LIMIT` | CONFIRMADO |
+| `overdue_cents` da presença só com `erp.agreements.view` (JSON e CSV) | CONFIRMADO |
+| `LIMIT` na lista de presença | CONFIRMADO |
+
+### Lacunas
+
+- Na entrada da assembleia, o check-in ainda devolve o `overdue_cents` da unidade para quem registra a presença. Isso foi mantido, porque explica por que a unidade não vota. Revisar se o Djalma quiser esconder.
+- `listAgencies` mostra todas as imobiliárias (até 500) para qualquer pessoa com `erp.access_admin.*`. Só os usuários e as concessões são filtrados pelo escopo.

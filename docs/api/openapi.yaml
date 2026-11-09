@@ -2633,7 +2633,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [csv] } }
       responses:
-        '200': { description: '{ assembly, rows[{ unit_label, attendee_name, is_proxy, proxy_document_id, eligible, overdue_cents, checked_in_at }], totals }, ou CSV' }
+        '200': { description: '{ assembly, rows[{ unit_label, attendee_name, is_proxy, proxy_document_id, eligible, overdue_cents, checked_in_at }], totals }, ou CSV. overdue_cents só com erp.agreements.view; senão null (ADR 0094)' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
