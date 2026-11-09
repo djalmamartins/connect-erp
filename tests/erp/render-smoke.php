@@ -740,6 +740,7 @@ $commData = static fn (array $over = []): array => $over + ['commReady' => true,
         $annRow(['id' => 33, 'status' => 'cancelled', 'delivery' => ['pending' => 0, 'processing' => 0, 'sent' => 2, 'failed' => 0, 'cancelled' => 10, 'recipients' => 3]])], 'total' => 3]];
 $html = $agreementPage('AP-111', 'pages/communication/announcements', $commData(), 'list');
 $common($html, 'AP-111', 'Comunicados Gerais');
+$assert(str_contains($html, 'data-comm-delivery-notice') && str_contains($html, 'nenhum e-mail sai') && str_contains($html, 'data-delivery-mode="log"'), 'AP-111: modo só registro avisado na tela (teste da main, item 10)');
 $assert(str_contains($html, 'data-erp-communication') && str_contains($html, 'data-announce-form data-api="https://' . $smokeHost . '/api/v1/announcements" data-condominium="1"') && str_contains($html, 'maxlength="5000"')
     && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, 'Todas as unidades ativas (2)') && str_contains($html, 'type="datetime-local"') && str_contains($html, 'Obra na &lt;garagem&gt;')
     && str_contains($html, '>Enviado</span>') && str_contains($html, '>Agendado</span>') && str_contains($html, '>Cancelado</span>') && substr_count($html, 'data-cancel-open') === 1
