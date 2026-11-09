@@ -21,7 +21,8 @@ use Source\Services\Erp\Registry\RegistryValidationException;
  *   de um lançamento digitado. Nasce em aberto, com vencimento no dia do modelo.
  * - Sem duplicar: o modelo é travado (SELECT … FOR UPDATE), o vínculo já existente é pulado e a
  *   chave única (recurring_entry_id, competence) barra uma geração concorrente.
- * - Um modelo com problema (conta inativa, por exemplo) não impede os outros: vai para 'failed'.
+ * - Um modelo com problema (conta inativa ou dia fora de 1 a 28, por exemplo) não impede os outros:
+ *   vai para 'failed'. Qualquer outro erro desfaz a transação do modelo antes de subir (ADR 0106).
  */
 final class RecurringEntries
 {
@@ -113,6 +114,16 @@ final class RecurringEntries
                 if (($exception->errorInfo[1] ?? null) === 1062) {
                     $result['skipped'][] = $templateId;   // gerado em paralelo por outra requisição
                     continue;
+                }
+                throw $exception;
+            } catch (\InvalidArgumentException | \DomainException $exception) {
+                // ADR 0106: modelo com dado que a geração não aceita (ex.: dia 31 gravado fora do cadastro)
+                // vai para 'failed' como os outros, sem derrubar a rodada nem deixar a transação aberta.
+                $this->pdo->rollBack();
+                $result['failed'][$templateId] = ['_form' => $exception->getMessage()];
+            } catch (\Throwable $exception) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
                 }
                 throw $exception;
             }
