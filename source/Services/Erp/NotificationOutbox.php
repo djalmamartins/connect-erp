@@ -14,8 +14,9 @@ use PDO;
  */
 final class NotificationOutbox
 {
-    /** Tipos de aviso (ADR 0054 e 0056); cada um tem modelo e regra de destinatários no NotificationDispatcher. */
-    public const EVENTS = ['waitlist.called', 'invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached', 'reservation.approved'];
+    /** Tipos de aviso (ADR 0054, 0056 e 0059); cada um tem modelo e regra de destinatários no NotificationDispatcher. */
+    public const EVENTS = ['waitlist.called', 'invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached', 'reservation.approved',
+        'announcement.published', 'collection.reminder'];
 
     public function __construct(private PDO $pdo)
     {
@@ -37,15 +38,16 @@ final class NotificationOutbox
     }
 
     /** @return bool true se gravou; false se o evento já existia (idempotente) */
-    public function record(string $eventType, string $eventKey, int $condominiumId, string $subjectTable, int $subjectId, array $payload, ?int $userId): bool
+    /** @param ?string $availableAt AAAA-MM-DD HH:MM:SS: envio agendado (ADR 0059); null = já */
+    public function record(string $eventType, string $eventKey, int $condominiumId, string $subjectTable, int $subjectId, array $payload, ?int $userId, ?string $availableAt = null): bool
     {
         if (!in_array($eventType, self::EVENTS, true)) {
             throw new InvalidArgumentException("Evento de notificação desconhecido: {$eventType}.");
         }
-        $stmt = $this->pdo->prepare('INSERT IGNORE INTO erp_notification_outbox (condominium_id, event_type, event_key, subject_table, subject_id, payload_json, created_by)
-            VALUES (:c, :t, :k, :st, :sid, :p, :u)');
+        $stmt = $this->pdo->prepare('INSERT IGNORE INTO erp_notification_outbox (condominium_id, event_type, event_key, subject_table, subject_id, payload_json, created_by, available_at)
+            VALUES (:c, :t, :k, :st, :sid, :p, :u, COALESCE(:a, NOW()))');
         $stmt->execute(['c' => $condominiumId, 't' => $eventType, 'k' => mb_substr($eventKey, 0, 120), 'st' => $subjectTable, 'sid' => $subjectId,
-            'p' => json_encode(self::cleanPayload($payload), JSON_UNESCAPED_UNICODE), 'u' => $userId]);
+            'p' => json_encode(self::cleanPayload($payload), JSON_UNESCAPED_UNICODE), 'u' => $userId, 'a' => $availableAt]);
         return $stmt->rowCount() > 0;
     }
 }

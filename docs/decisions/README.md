@@ -84,6 +84,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0056](../Organic%20Code/decisions/0056-notification-events.md) | Avisos de fatura, boleto, acordo, quebra e reserva aprovada pela outbox, com opt-in de cobrança por e-mail |
 | [0057](../Organic%20Code/decisions/0057-entry-shortcuts-and-receipts.md) | Lançamentos avulsos (AP-024 a AP-029): desconto com trilha, multa avulsa e cobrança extra travadas pela origem, transferência entre contas, e recibo com código (AP-040) |
 | [0058](../Organic%20Code/decisions/0058-imports.md) | Importações com prévia, validação do arquivo inteiro e idempotência por hash: extrato OFX conciliado sem baixa automática (AP-140) e planilhas CSV/XLSX (AP-142 a AP-146) |
+| [0059](../Organic%20Code/decisions/0059-communication-outbox.md) | Comunicação pela outbox: comunicados gerais (AP-111), aviso de cobrança (AP-137), agendados (AP-138) e endereços de comunicação (AP-139), só em log ou sandbox fora de produção |
 | [0060](../Organic%20Code/decisions/0060-smtp-credentials-from-environment.md) | Credenciais SMTP pelo ambiente (`MOVESOS_SMTP_*`), valendo sobre a tabela settings |
 | [0061](../Organic%20Code/decisions/0061-panels-require-module-permissions.md) | Painéis e dashboard exigem a permissão de cada módulo que mostram; disparo da fila de avisos só com acesso a todos os condomínios |
 | [0062](../Organic%20Code/decisions/0062-shortcuts-and-receipts-hardening.md) | Recibo sem oráculo de id de outro condomínio, teto de valor em `Invoices::cents` e no máximo 1000 unidades por cobrança extra |

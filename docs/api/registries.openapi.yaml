@@ -68,6 +68,7 @@ components:
         starts_on: { type: [string, "null"], format: date }
         ends_on: { type: [string, "null"], format: date }
         billing_by_email: { type: boolean }
+        notices_opt_out: { type: boolean }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
     Residents:

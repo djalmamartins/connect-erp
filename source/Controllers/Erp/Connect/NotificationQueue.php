@@ -32,7 +32,8 @@ final class NotificationQueue extends Controller
     public const ROUTE = '/configuracoes/fila-de-avisos';
     public const STATUSES = ['pending' => 'Pendente', 'processing' => 'Processando', 'sent' => 'Enviado', 'failed' => 'Falhou', 'cancelled' => 'Cancelado'];
     public const EVENTS = ['waitlist.called' => 'Lista de espera chamada', 'invoice.issued' => 'Fatura emitida', 'bank_charge.issued' => 'Boleto emitido',
-        'agreement.created' => 'Acordo criado', 'agreement.breached' => 'Acordo quebrado', 'reservation.approved' => 'Reserva aprovada'];
+        'agreement.created' => 'Acordo criado', 'agreement.breached' => 'Acordo quebrado', 'reservation.approved' => 'Reserva aprovada',
+        'announcement.published' => 'Comunicado', 'collection.reminder' => 'Aviso de cobrança'];
     public const MODES = ['log' => 'Só registro (nada é enviado)', 'sandbox' => 'Caixa de teste', 'production' => 'Envio real'];
 
     public function __construct()

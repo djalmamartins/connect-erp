@@ -140,6 +140,13 @@ $route->get("/imports/{id}", "Imports:show", null, \Source\Support\Middleware\Ap
 $route->post("/imports/{id}/apply", "Imports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-statement-lines", "Imports:pendingLines", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-statement-lines/{id}/resolve", "Imports:resolveLine", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Comunicação pela outbox (ADR 0059): comunicados, aviso de cobrança, agendados e endereços. /collection antes de /{id}.
+$route->get("/announcements", "Announcements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/announcements", "Announcements:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/announcements/collection", "Announcements:collection", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/announcements/{id}", "Announcements:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/announcements/{id}/cancel", "Announcements:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/communication-addresses", "Announcements:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {

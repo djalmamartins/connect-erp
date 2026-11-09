@@ -1720,6 +1720,97 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      summary: Comunicados (AP-111), avisos de cobrança (AP-137) e agendados (AP-138), com a situação da entrega (erp.announcements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: kind, in: query, schema: { type: string, enum: [general, collection] } }
+        - { name: scheduled, in: query, schema: { type: boolean }, description: 'Só os que ainda vão sair (AP-138)' }
+      responses:
+        '200': { description: '{ data[{ id, kind, subject, send_at, scheduled, units_count, status, delivery{pending, sent, failed, cancelled, recipients} }], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createAnnouncement
+      summary: Comunicado geral para todas as unidades ativas ou as escolhidas, agora ou agendado (erp.announcements.manage)
+      description: >-
+        Cada unidade vira um aviso na outbox (ADR 0054); a fila (ADR 0055) entrega só em log ou caixa de
+        teste fora de produção. Recebem as pessoas ativas com e-mail que não recusaram comunicado
+        (notices_opt_out). send_at vazio = agora; até 60 dias.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, subject, body], properties: { condominium_id: { type: integer }, subject: { type: string, minLength: 5, maxLength: 120 }, body: { type: string, minLength: 10, maxLength: 5000 }, audience: { type: string, enum: [all, units], default: all }, unit_ids: { type: array, items: { type: integer } }, send_at: { type: string, example: '2026-11-20 08:00' } } } } }
+      responses:
+        '201': { description: Comunicado criado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /announcements/collection:
+    post:
+      operationId: createCollectionReminder
+      summary: Aviso de cobrança para as unidades com conta vencida (erp.announcements.manage e erp.agreements.view)
+      description: >-
+        Usa a inadimplência na data as_of (padrão hoje), com atraso mínimo de min_days_late dias (padrão 1).
+        Só vai para quem autorizou cobrança por e-mail (billing_by_email). Unidade avisada nos últimos 7 dias
+        fica de fora (skipped_recent).
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer }, as_of: { type: string, format: date }, min_days_late: { type: integer, minimum: 1 }, unit_ids: { type: array, items: { type: integer } }, send_at: { type: string } } } } }
+      responses:
+        '201': { description: Aviso criado, com skipped_recent }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Nenhuma unidade no critério, ou todas avisadas há pouco }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /announcements/{id}:
+    get:
+      operationId: getAnnouncement
+      summary: Comunicado com o texto e a situação da entrega (erp.announcements.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Comunicado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /announcements/{id}/cancel:
+    post:
+      operationId: cancelAnnouncement
+      summary: Cancela o comunicado e os avisos que ainda não saíram (erp.announcements.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: 'Cancelado; stopped = avisos que não saíram' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Já cancelado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /communication-addresses:
+    get:
+      operationId: listCommunicationAddresses
+      summary: Endereços de comunicação por unidade (AP-139), com o e-mail mascarado e o que cada pessoa recebe (erp.announcements.view e erp.residents.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+      responses:
+        '200': { description: '{ data[{ unit_id, unit_label, people[{ name, relationship, email (mascarado), notices, billing }], notices, billing }], totals{units, without_notices, without_billing} }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates

@@ -42,7 +42,7 @@ final class NotificationDispatcherTest extends TestCase
         $mail = new MailTemplate();
         foreach (NotificationDispatcher::NOTICES as $event => $notice) {
             self::assertTrue($mail->exists($notice['template']), "Modelo de {$event} existe em container/send.");
-            self::assertContains($notice['audience'], ['unit', 'billing']);
+            self::assertContains($notice['audience'], ['unit', 'billing', 'notices']);
         }
         foreach (['invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached'] as $billing) {
             self::assertSame('billing', NotificationDispatcher::NOTICES[$billing]['audience'], "{$billing} respeita o opt-in de cobrança por e-mail.");
