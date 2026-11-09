@@ -293,6 +293,10 @@
    "title": "0076 — Telas de cobrança: multas pendentes, atendimento e cobrança judicial"
   },
   {
+   "file": "docs/Organic Code/decisions/0077-collection-report-screens.md",
+   "title": "0077 — Telas dos relatórios de cobrança: acordos, inadimplentes e recebimentos"
+  },
+  {
    "file": "docs/Organic Code/decisions/0080-collections-and-fines.md",
    "title": "0080 — Cobrança e multas: multas pendentes, atendimento e acompanhamento judicial"
   },
@@ -865,6 +869,26 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\CollectionReports",
+    "Source\\Support\\Access",
+    "Source\\Support\\AppLogger",
+    "Source\\Support\\Erp\\CondominiumContext"
+   ],
+   "file": "source/Controllers/Erp/Connect/CollectionReportScreens.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [
+    "condominiums"
+   ],
+   "tests": [
+    "tests/erp/render-smoke.php",
+    "tests/legacy/Unit/ErpCollectionReportScreensTest.php"
+   ]
+  },
   "Source\\Controllers\\Erp\\Connect\\CollectionScreens": {
    "deps": [
     "Source\\Core\\Connect",
@@ -1214,6 +1238,7 @@
     "tests/legacy/Unit/ErpAgreementsScreensTest.php",
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
+    "tests/legacy/Unit/ErpCollectionReportScreensTest.php",
     "tests/legacy/Unit/ErpCollectionScreensTest.php",
     "tests/legacy/Unit/ErpCommunicationScreensTest.php",
     "tests/legacy/Unit/ErpEntryShortcutScreensTest.php",
@@ -2573,7 +2598,8 @@
    "tests": [
     "tests/legacy/Integration/CollectionReportsIntegrationTest.php",
     "tests/legacy/Integration/CollectionReportsScopeIntegrationTest.php",
-    "tests/legacy/Unit/CollectionReportsTest.php"
+    "tests/legacy/Unit/CollectionReportsTest.php",
+    "tests/legacy/Unit/ErpCollectionReportScreensTest.php"
    ]
   },
   "Source\\Services\\Erp\\CollectionScreenOptions": {
@@ -4017,8 +4043,8 @@
   }
  },
  "counts": {
-  "adrs": 80,
-  "classes": 209,
+  "adrs": 81,
+  "classes": 210,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -4026,7 +4052,7 @@
   "erp_pages": 172,
   "routes": 323,
   "tables": 110,
-  "tests": 147
+  "tests": 148
  },
  "erp_pages": [
   {
@@ -8259,6 +8285,7 @@
    "created_in": "database/migrations/20261107_0002_condominiums.sql",
    "used_by": [
     "Source\\Controllers\\Api\\V1\\Me",
+    "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens",
     "Source\\Controllers\\Erp\\Connect\\Condominiums",
     "Source\\Controllers\\Erp\\Connect\\Inspections",
     "Source\\Controllers\\Erp\\Connect\\Registry",
@@ -9196,6 +9223,7 @@
  },
  "tests": {
   "tests/erp/render-smoke.php": [
+   "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens",
    "Source\\Controllers\\Erp\\Connect\\CollectionScreens",
    "Source\\Controllers\\Erp\\Connect\\CommunicationScreens",
    "Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens",
@@ -9738,6 +9766,11 @@
   ],
   "tests/legacy/Unit/ErpBillingScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
+  "tests/legacy/Unit/ErpCollectionReportScreensTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\CollectionReportScreens",
+   "Source\\Controllers\\Erp\\Connect\\Panel",
+   "Source\\Services\\Erp\\CollectionReports"
   ],
   "tests/legacy/Unit/ErpCollectionScreensTest.php": [
    "Source\\Controllers\\Erp\\Connect\\CollectionScreens",

@@ -31,3 +31,6 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Implementação no Connect ERP (ADR 0081 e 0077)
+Regras, API e CSV no ADR 0081 (e 0067); tela descrita no ADR 0077 (`docs/Organic Code/decisions/0077-collection-report-screens.md`).
