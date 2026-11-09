@@ -3,7 +3,7 @@
 > Gerado por `python3 tools/code-map.py` (ADR 0016). Não edite à mão: rode o script de novo.
 > Para procurar algo no terminal: `python3 tools/code-map.py --find condominiums`.
 
-**268** rotas fixas · **181** classes em `source/` · **98** tabelas nas migrations · **115** arquivos de teste · **57** ADRs · **172** páginas no catálogo do ERP.
+**268** rotas fixas · **181** classes em `source/` · **98** tabelas nas migrations · **115** arquivos de teste · **58** ADRs · **172** páginas no catálogo do ERP.
 Rotas geradas em laço (cadastros do ERP, catálogo) não entram na contagem; linhas dinâmicas por ambiente: erp: 8, index: 6.
 
 Sumário: [Visão geral](#visão-geral) · [ERP](#erp-controllers-services-e-tabelas) · [Rotas](#rotas) · [Tabelas](#tabelas) · [Classes](#classes) · [Testes](#testes) · [Decisões](#decisões) · [Tarefas](#tarefas)
@@ -209,6 +209,7 @@ flowchart LR
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_MeterReadings
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_MonthClosing
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_OperationalDashboard
+  Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_PanelSummaries
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_RecurringEntries
   Source_Services_Erp_Registry_Definitions["Services/Erp/Registry/Definitions"]
   Source_Controllers_Erp_Connect_Panel --> Source_Services_Erp_Registry_Definitions
@@ -1162,6 +1163,7 @@ Rodar só com `composer test:unit:offline`, `composer test:unit` ou `composer te
 - [0053 — Dashboard com alertas reais, chamada da lista de espera e próxima manutenção](../../docs/Organic%20Code/decisions/0053-operational-dashboard.md)
 - [0054 — Painéis do condomínio e da unidade, e outbox de notificações](../../docs/Organic%20Code/decisions/0054-condominium-unit-panels.md)
 - [0070 — Telas do Operacional e dashboard com dados reais](../../docs/Organic%20Code/decisions/0070-operational-screens.md)
+- [0071 — Telas dos painéis do condomínio (AP-002) e da unidade (AP-003)](../../docs/Organic%20Code/decisions/0071-condominium-unit-panel-screens.md)
 - [ADR-001 — Reutilizar núcleo de identidade e auditoria](../../docs/decisions/ADR-001-EXISTING-CORE.md)
 - [ADR-002 — Administradora única, sem SaaS](../../docs/decisions/ADR-002-ADMINISTRADORA-UNICA.md)
 - [ADR-003 — Design System do Studio em camada única](../../docs/decisions/ADR-003-STUDIO-DESIGN-SYSTEM.md)

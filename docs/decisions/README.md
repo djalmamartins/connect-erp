@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0071.** Os números 0055 a 0069 estão reservados para a thread Avançar.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0072.** Os números 0055 a 0069 estão reservados para a thread Avançar.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -80,3 +80,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0053](../Organic%20Code/decisions/0053-operational-dashboard.md) | Dashboard com alertas reais, situações pela data, chamada da lista de espera e próxima manutenção |
 | [0054](../Organic%20Code/decisions/0054-condominium-unit-panels.md) | Painéis do condomínio (AP-002) e da unidade (AP-003) e outbox de notificações (sem envio ainda) |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
+| [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |

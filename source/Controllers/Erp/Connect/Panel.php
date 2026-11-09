@@ -541,6 +541,68 @@ final class Panel extends Controller
         return $data;
     }
 
+    /**
+     * Painel do condomínio (AP-002, ADR 0054 e 0071) pelo PanelSummaries, o mesmo serviço de
+     * GET /api/v1/panels/condominium/{id}, para o condomínio da barra superior. Em "Todos" a tela pede
+     * a escolha de um condomínio. Sem banco ou sem erp.units.view, condoPanelReady false = demonstração.
+     */
+    private function condominiumPanelData(User $user): array
+    {
+        $data = ['condoPanelReady' => false, 'condoPanel' => null, 'condoPanelError' => null];
+        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
+            return $data;
+        }
+        $data['condoPanelReady'] = true;
+        $context = CondominiumContext::id();
+        if ($context === null) {
+            return $data;
+        }
+        try {
+            $data['condoPanel'] = (new \Source\Services\Erp\PanelSummaries())->condominium($user, $context);
+        } catch (RegistryNotFound) {
+            $data['condoPanelError'] = 'Condomínio fora do seu escopo de acesso.';
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'condominium_panel_failed']);
+            $data['condoPanelError'] = 'Não foi possível montar o painel agora. Tente de novo em instantes.';
+        }
+        return $data;
+    }
+
+    /**
+     * Painel da unidade (AP-003, ADR 0054 e 0071): escolhe-se a unidade (?unidade=) entre as do
+     * condomínio da barra superior; os dados vêm do PanelSummaries (GET /api/v1/panels/unit/{id}).
+     */
+    private function unitPanelData(User $user): array
+    {
+        $data = ['unitPanelReady' => false, 'unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null, 'unitPanelError' => null];
+        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
+            return $data;
+        }
+        $context = CondominiumContext::id();
+        try {
+            $units = (new RegistryService())->units($user);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_panel_failed']);
+            return $data;
+        }
+        $data['unitPanelReady'] = true;
+        $data['unitPanelUnits'] = array_values(array_filter($units, static fn (array $u): bool => $context === null || $u['condominium_id'] === $context));
+        $selected = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($selected === false || $selected === null) {
+            return $data;
+        }
+        $data['unitPanelSelected'] = (int)$selected;
+        try {
+            $data['unitPanel'] = (new \Source\Services\Erp\PanelSummaries())->unit($user, (int)$selected);
+        } catch (RegistryNotFound) {
+            $data['unitPanelError'] = 'Unidade não encontrada no seu escopo de condomínios.';
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_panel_failed']);
+            $data['unitPanelError'] = 'Não foi possível montar o painel agora. Tente de novo em instantes.';
+        }
+        return $data;
+    }
+
     /** Tamanho legível em pt-BR (regra pura): 512 B, 12,5 KB, 3,2 MB. */
     public static function fileSize(int $bytes): string
     {
@@ -663,6 +725,12 @@ final class Panel extends Controller
         if ($id === 'AP-114') {
             $data += $this->pendingReservationData($user);
         }
+        if ($id === 'AP-002') {
+            $data += $this->condominiumPanelData($user);
+        }
+        if ($id === 'AP-003') {
+            $data += $this->unitPanelData($user);
+        }
         if (isset(self::UNIT_DOCUMENT_PAGES[$id])) {
             $data += $this->unitDocumentData($user, $id);
         }
@@ -688,6 +756,8 @@ final class Panel extends Controller
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
+            $id === 'AP-002' && ($data['condoPanelReady'] ?? false) => 'pages/condominiums/panel',
+            $id === 'AP-003' && ($data['unitPanelReady'] ?? false) => 'pages/condominiums/unit-panel',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',
