@@ -218,3 +218,232 @@ da multa em `EntryShortcuts::createCharge` e a migration 20261108_0538.
 
 Teste de ponta a ponta: `CollectionsCycleIntegrationTest`.
 
+## Sexta rodada — Relatórios de cobrança (ADR 0081)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em e653430 · Correções: ADR 0067
+
+Escopo: `source/Services/Erp/CollectionReports.php` e `source/Controllers/Api/V1/CollectionReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: `erp.access` mais `erp.agreements.view` (acordos e inadimplentes) ou `erp.entries.view` (recebimentos). A visão por morador exige também `erp.residents.view`, inclusive no CSV | CONFIRMADO |
+| Escopo: o condomínio informado passa por `assertAccess` (404 fora do escopo). Sem condomínio, entram só os do escopo do usuário. Inadimplentes de um condomínio de fora voltam vazios, pela mesma regra da inadimplência, sem vazar dados. As consultas por conta do plano e por morador usam só ids que vieram da inadimplência já filtrada | CONFIRMADO; o teste confere as 5 visões e os 3 agrupamentos |
+| Máscara: o CPF ou CNPJ do responsável sai com só os 2 últimos dígitos, no JSON e no CSV | CONFIRMADO |
+| CSV: BOM, `;`, CRLF, apóstrofo na célula perigosa, inclusive no cabeçalho; `nosniff`, `no-store` e anexo com nome fixo; a exportação fica na auditoria | CONFIRMADO, com o achado 1 |
+| SQL: período e filtros por parâmetro; as listas de ids interpoladas são inteiros já convertidos; período de no máximo 366 dias | CONFIRMADO |
+| Custo: acordos pelo índice `(condominium_id, status, created_at)`, recebimentos pelo `(condominium_id, paid_on)` do ADR 0064 | CONFIRMADO, com o achado 2 |
+
+### Achados corrigidos (ADR 0067)
+
+1. **Fórmula depois de espaço, em largura total ou depois de LF.** `" =1+1"`, `"\u{FEFF}=x"`,
+   `"＝HYPERLINK(...)"` e uma célula que começa com quebra de linha passavam sem apóstrofo. Agora
+   todos recebem o apóstrofo.
+2. **Recebimentos sem teto.** Um ano de todos os condomínios era lido inteiro na memória. Agora o
+   teto é de 20.000 linhas, e acima disso a resposta é 422.
+
+### Lacunas
+
+- **E-mail e telefone completos na visão por morador.** Só o documento é mascarado. Quem tem
+  `erp.residents.view` já vê esses dados no cadastro, e a exportação fica na auditoria. Mesmo
+  assim, um CSV com contatos de inadimplentes é dado pessoal sensível de cobrança (LGPD): vale
+  limitar a visão ao perfil de cobrança.
+- **Leitura em JSON não é auditada.** Só o CSV deixa trilha.
+- **Sem paginação.** Inadimplentes e acordos voltam inteiros; o volume esperado de uma administradora
+  cabe, e o teto ficou só nos recebimentos.
+- **Frequência.** Continua sem limite de requisições na API.
+
+Teste com dois condomínios: `CollectionReportsScopeIntegrationTest`.
+
+## Sétima rodada — Relatórios gerenciais (ADR 0082)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 19bd187 · Correções: ADR 0068
+
+Escopo: `source/Services/Erp/ManagementReports.php` e `source/Controllers/Api/V1/ManagementReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: cada relatório pede a leitura dos dados que mostra (`erp.entries.view` mais `erp.cost_centers.view`, `erp.chart.view`, `erp.bank_accounts.view` ou `erp.units.view`; `erp.meter_readings.view` no consumo e `erp.bank_charges.view` nos boletos) | CONFIRMADO |
+| Escopo: condomínio informado por `assertAccess`; sem condomínio, só os do escopo. O rateio exige condomínio, e o extrato confere o condomínio da conta | CONFIRMADO, com o achado 1; o teste com dois condomínios cobre todos os relatórios |
+| CSV: `CollectionReports::csv` e `csvCell`, então a correção do ADR 0067 (espaço, controle, LF, largura total) vale aqui; auditoria da exportação | CONFIRMADO |
+| Tetos: 24 competências ou 366 dias; 5.000 linhas nos relatórios em linhas (demonstrativo, extrato, lançamentos, boletos), com aviso em vez de corte silencioso. Os agregados (consumo, centros de custo, comparativo) ficam limitados pelo número de grupos | CONFIRMADO, com o achado 2 no rateio |
+| SQL: período e filtros por parâmetro; listas de ids são inteiros já convertidos | CONFIRMADO, com o achado 3 |
+
+### Achados corrigidos (ADR 0068)
+
+1. **Oráculo de id no extrato.** Conta inexistente dava 422 e conta de outro condomínio dava 404.
+   Agora as duas dão 404.
+2. **Rateio sem teto na matriz.** A visão unidade × conta não tinha limite de linhas, e a matriz
+   despesas × unidades era montada inteira. Agora são até 5.000 despesas e 500.000 células, e a visão
+   para em 5.000 linhas.
+3. **Data concatenada no SQL do extrato.** A data de abertura da conta agora vai por parâmetro.
+
+### Lacunas
+
+- **Comparativo entre condomínios.** Sem condomínio, o comparativo soma por conta do plano todos os
+  condomínios do escopo. É o esperado para a administradora, mas a linha não diz de qual condomínio
+  veio cada valor.
+- **Frequência.** Continua sem limite de requisições na API.
+
+Teste com dois condomínios: `ManagementReportsScopeIntegrationTest`.
+
+## Oitava rodada — Dados dos gráficos (ADR 0083)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 2610241 · Correções: ADR 0069
+
+Escopo: `source/Services/Erp/ChartReports.php` e `source/Controllers/Api/V1/ChartReports.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: `erp.access` e a leitura dos dados de cada gráfico (`erp.entries.view`, mais `erp.chart.view` ou `erp.bank_accounts.view`; `erp.meter_readings.view`, `erp.agreements.view` e `erp.reservations.view`) | CONFIRMADO |
+| Escopo: condomínio informado por `assertAccess`; sem condomínio, só os do escopo. Unidade de fora no consumo responde igual à inexistente | CONFIRMADO, com o achado 1 |
+| CSV: os gráficos não exportam; só JSON | NÃO SE APLICA |
+| Custo: até 24 meses, agregado com `GROUP BY`; contas do plano e áreas comuns com 8 séries e "Outras" | CONFIRMADO, com os achados 1 e 2 nas contas bancárias |
+| SQL: período e natureza por parâmetro; listas de ids são inteiros já convertidos | CONFIRMADO |
+
+### Achados corrigidos (ADR 0069)
+
+1. **Subconsulta sem filtro de condomínio.** O saldo por conta bancária varria os lançamentos e as
+   transferências de todos os condomínios no período antes de filtrar pela conta. Agora cada parte
+   filtra o condomínio, e um lançamento de outro condomínio que aponte para a conta não entra no saldo.
+2. **Séries sem teto.** Uma série por conta bancária, sem limite. Agora são as 8 de maior movimento
+   e o resto em "Outras".
+
+### Lacunas
+
+- **Frequência.** Continua sem limite de requisições na API; cada gráfico faz uma consulta agregada.
+- **Inadimplência "hoje".** O vencido em aberto usa `CURDATE()` do banco; o mesmo período consultado
+  em dias diferentes dá números diferentes. É o comportamento esperado e está no rótulo da série.
+
+Teste com dois condomínios: `ChartReportsIntegrationTest::testBankAccountsCountOnlyMovementsOfTheSameCondominium`.
+
+## Nona rodada — Fechamento mensal e concorrência (ADR 0031)
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em a3dfc80 · Correções: ADR 0100
+
+Escopo: `source/Services/Erp/MonthClosing.php`, a trava `closing_lock` de
+`source/Services/Erp/Registry/RegistryService.php` e os serviços que chamam `isClosed`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: fechar, reabrir e consultar exigem `assertAccess`; a visão "Todos" usa só os condomínios do escopo | CONFIRMADO |
+| Reabertura com motivo de 5 a 255 caracteres, espaços colapsados; fechar e reabrir auditados | CONFIRMADO |
+| Trava da competência em todos os caminhos que gravam lançamento: cadastro, faturas, acordos, atalhos, importações, retorno bancário, lançamentos fixos | CONFIRMADO, com o achado 1 |
+| Lançamentos fixos: um por modelo e competência, com `FOR UPDATE` no modelo e índice único | CONFIRMADO |
+| SQL: competência validada como AAAA-MM e por parâmetro; listas de ids são inteiros | CONFIRMADO |
+
+### Achados corrigidos (ADR 0100)
+
+1. **Corrida entre fechar e gravar.** A competência era conferida com leitura simples, antes da gravação
+   e, no cadastro, fora de transação. Um lançamento gravado no mesmo instante do fechamento ficava numa
+   competência fechada, fora da foto. Agora a conferência é travada e fica na transação da gravação, e o
+   fechamento grava a situação antes de somar.
+2. **Transferência e fatura conferidas fora da transação.** A transferência entre contas gravava sem
+   transação, e a preparação da fatura conferia antes de abri-la. As duas agora reconferem dentro da
+   transação da gravação.
+3. **Reabertura sem trava.** Duas reaberturas ao mesmo tempo gravavam e auditavam duas vezes. Agora a
+   reabertura roda em transação, com a linha travada.
+
+### Lacunas
+
+- **Conferências fora de transação.** Algumas telas conferem a competência antes de abrir a transação,
+  só para mostrar o erro mais cedo. Isso é aceitável, porque a conferência que vale é a de dentro da
+  transação.
+- **Espera de trava.** Duas operações na mesma competência esperam uma pela outra. Se a espera passar
+  do `innodb_lock_wait_timeout`, a operação falha e precisa ser repetida.
+
+Teste com duas conexões: `MonthClosingIntegrationTest::testCloseWaitsForAWriteThatAlreadyCheckedTheCompetence`.
+
+## Décima rodada — Ocorrências, saldos bancários e candidatos a recibo
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 204e171 · Correções: ADR 0101
+
+Escopo: `source/Services/Erp/Occurrences.php`, `BankBalances.php` e `ReceiptCandidates.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: ocorrência, unidade e contas conferidas pelo condomínio; fora do escopo responde 404 (ocorrência e unidade) ou lista vazia (saldos) | CONFIRMADO |
+| Chamado da ocorrência: um por ocorrência | CONFIRMADO, com o achado 1 |
+| Saldo da conta: abertura, lançamentos pagos e transferências ativas desde a abertura | CONFIRMADO, com o achado 2 |
+| Candidatos a recibo: só receitas pagas da unidade sem recibo válido, até 120 | CONFIRMADO |
+| SQL: ids por parâmetro ou inteiros já convertidos | CONFIRMADO |
+
+### Achados corrigidos (ADR 0101)
+
+1. **Chamado órfão.** Dois pedidos ao mesmo tempo abriam dois chamados no Help Desk, e um deles ficava
+   sem ocorrência. Agora o vínculo é gravado na transação do chamado, com a ocorrência travada, e o
+   chamado a mais é desfeito.
+2. **Saldo sem filtro de condomínio.** Lançamentos e transferências de outro condomínio que apontassem
+   para a conta (dado inconsistente) entravam no saldo. Agora só entram os do condomínio da conta.
+
+### Lacunas
+
+- A corrida do chamado não tem teste automatizado (ver ADR 0101).
+
+## 11ª rodada — Balancete, prestação de contas e encargos
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 312a5ce · Correções: ADR 0102
+
+Escopo: `source/Services/Erp/FinancialReports.php` e `LateCharges.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: condomínio por `assertAccess`; "Todos" só com os do escopo; nomes das contas sintéticas só do padrão e dos condomínios do escopo | CONFIRMADO |
+| Tetos: 24 competências no balancete e 366 dias na prestação de contas; agregados por conta | CONFIRMADO |
+| Conciliação por conta bancária | CONFIRMADO, com o achado 1 |
+| Encargos: regra pura, laço de índices limitado a 600 meses, índice ausente informado em `missing_index` | CONFIRMADO |
+| SQL: datas e competências por parâmetro; listas de ids são inteiros | CONFIRMADO |
+
+### Achado corrigido (ADR 0102)
+
+1. **Conciliação sem filtro de condomínio e sem fim.** A conta juntava os lançamentos pagos de qualquer
+   condomínio e de qualquer data posterior. Agora junta só os do condomínio da conta e só até o fim do período.
+
+## 12ª rodada — Painéis e dashboard operacional
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 9c62bbe · Correções: ADR 0103
+
+Escopo: `source/Services/Erp/PanelSummaries.php` e `OperationalDashboard.php`.
+
+| Ponto | Situação |
+|---|---|
+| Permissões: cada painel exige as leituras que mostra (`missing()`); cartões financeiros só com permissão financeira | CONFIRMADO |
+| Escopo: condomínio e unidade por `canAccess`, 404 fora do escopo; contagens só dos condomínios do escopo | CONFIRMADO |
+| Custo: contagens agregadas; listas do painel da unidade com `LIMIT` | CONFIRMADO, com o achado 1 |
+| Lista de espera: uma chamada por vaga | CONFIRMADO, com o achado 2 |
+| Próxima manutenção: uma só por manutenção concluída (índice único em `previous_id`) | CONFIRMADO |
+
+### Achados corrigidos (ADR 0103)
+
+1. **Painel da unidade calculava o condomínio inteiro.** Agora lê só as contas da unidade.
+2. **Duas chamadas para a mesma vaga.** Agora a reserva fica travada, e só se chama o próximo depois da
+   desistência de quem já foi chamado.
+
+### Lacunas
+
+- **Dados pessoais.** O painel da unidade mostra telefone e e-mail dos moradores sem máscara, a quem
+  tem `erp.residents.view`. É a mesma lacuna das telas de moradores, registrada nas rodadas anteriores.
+
+## 13ª rodada — Leituras e consumo
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em dfb33cd · Correções: ADR 0104
+
+Escopo: `source/Services/Erp/MeterReadings.php` e a gravação de leituras da importação.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: relógio por `canAccess` (404 fora); lista só dos condomínios do escopo, com `LIMIT` | CONFIRMADO |
+| Concorrência: relógio travado (`FOR UPDATE`) ao gravar; cobrança trava as leituras e `entry_id` único barra duplicar | CONFIRMADO |
+| Leitura cobrada não muda; correção só sem leitura posterior | CONFIRMADO |
+| Competência fechada recusa a leitura | CONFIRMADO, com o achado 1 |
+| Descrição da conta cobrada | CONFIRMADO, com o achado 2 |
+
+### Achados corrigidos (ADR 0104)
+
+1. **Leitura em mês fechado.** O lançamento manual não conferia o fechamento, e a importação só conferia
+   na prévia. Agora `record` confere dentro da transação, com a leitura travada.
+2. **Energia descrita em m³.** Agora em kWh.
+
+### Lacunas
+
+- O teste de integração novo roda só no Mac; o CI roda apenas a suíte unitária.
+

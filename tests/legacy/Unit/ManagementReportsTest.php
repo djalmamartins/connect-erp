@@ -42,6 +42,25 @@ final class ManagementReportsTest extends TestCase
         self::assertSame([10 => 0, 11 => 0, 12 => 0], $shares[2]);
     }
 
+    /** ADR 0068: o rateio recusa a matriz grande demais, e o CSV gerencial usa o csvCell estrito do ADR 0067. */
+    public function testApportionmentMatrixCapAndStrictCsv(): void
+    {
+        ManagementReports::assertMatrix(ManagementReports::MAX_ROWS, 100);
+        foreach ([[ManagementReports::MAX_ROWS + 1, 1], [1000, 501]] as [$expenses, $units]) {
+            try {
+                ManagementReports::assertMatrix($expenses, $units);
+                self::fail("Aceitou {$expenses} × {$units}");
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+        $table = ManagementReports::csvTable('account-statement', ['rows' => [
+            ['on_date' => '2026-11-05', 'description' => ' =IMPORTXML("x")', 'amount_cents' => 100, 'balance_cents' => 100],
+            ['on_date' => '2026-11-05', 'description' => '＠SUM(A1)', 'amount_cents' => 100, 'balance_cents' => 200],
+        ]]);
+        self::assertSame(["' =IMPORTXML(\"x\")", "'＠SUM(A1)"], array_column($table['rows'], 1));
+    }
+
     public function testCsvTableIsSanitized(): void
     {
         $table = ManagementReports::csvTable('account-statement', ['rows' => [

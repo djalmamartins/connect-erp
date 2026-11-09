@@ -5,7 +5,7 @@
  * as contas geradas por unidade (?cobranca=ID) e, com erp.invoices.manage, lançar e cancelar pela API
  * /api/v1/extra-charges (erp.js, data-erp-shortcuts). As contas geradas ficam travadas no cadastro.
  * @var array $currentPage @var string $chargeKind @var ?string $chargeStatus @var array $charges @var ?array $chargeDetail
- * @var list<array> $chargeUnits @var list<array> $chargeAccounts @var bool $shortcutCanManage @var ?int $shortcutContext @var ?string $shortcutError
+ * @var list<array> $chargeUnits @var list<array> $chargeAccounts @var array $fineOrigins @var bool $shortcutCanManage @var ?int $shortcutContext @var ?string $shortcutError
  */
 use Source\Services\Erp\EntryShortcuts;
 
@@ -92,6 +92,12 @@ $this->insert('components/layout/page-head', [
                         <div class="erp-field erp-col-3"><label for="charge-amount" data-charge-amount-label><?= $fine ? 'Valor (R$)' : 'Valor por unidade (R$)' ?></label><input class="erp-input" id="charge-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required></div>
                         <?php if ($fine): ?>
                             <div class="erp-field erp-col-6"><label for="charge-unit">Unidade</label><select class="erp-select" id="charge-unit" name="unit_id" required><option value="">Selecione</option><?php foreach ($chargeUnits as $u): ?><option value="<?= (int)$u['id'] ?>"><?= $this->e($u['label']) ?></option><?php endforeach; ?></select></div>
+                            <?php $origins = $fineOrigins ?? ['occurrences' => [], 'reservations' => []]; if ($origins['occurrences'] !== [] || $origins['reservations'] !== []): ?>
+                                <div class="erp-field erp-col-6"><label for="charge-origin">Origem (opcional)</label><select class="erp-select" id="charge-origin" name="origin" data-fine-origin aria-describedby="charge-origin-hint"><option value="">Sem origem registrada</option>
+                                    <?php if ($origins['occurrences'] !== []): ?><optgroup label="Ocorrências"><?php foreach ($origins['occurrences'] as $o): ?><option value="occurrence:<?= (int)$o['id'] ?>" data-unit="<?= $o['unit_id'] === null ? '' : (int)$o['unit_id'] ?>">nº <?= (int)$o['id'] ?> · <?= $this->e(date('d/m/Y', (int)strtotime($o['occurred_on']))) ?> · <?= $this->e($o['subject']) ?></option><?php endforeach; ?></optgroup><?php endif; ?>
+                                    <?php if ($origins['reservations'] !== []): ?><optgroup label="Reservas"><?php foreach ($origins['reservations'] as $r): ?><option value="reservation:<?= (int)$r['id'] ?>" data-unit="<?= (int)$r['unit_id'] ?>">nº <?= (int)$r['id'] ?> · <?= $this->e(date('d/m/Y', (int)strtotime($r['reserved_on']))) ?> · <?= $this->e($r['area']) ?></option><?php endforeach; ?></optgroup><?php endif; ?>
+                                </select><small class="erp-muted" id="charge-origin-hint">Ocorrências do condomínio ou da unidade escolhida e reservas da unidade.</small></div>
+                            <?php endif; ?>
                             <div class="erp-field erp-col-12"><label for="charge-reason">Motivo</label><textarea class="erp-textarea" id="charge-reason" name="reason" minlength="5" maxlength="255" required placeholder="Ex.: art. 12 do regulamento interno, ocorrência nº 45"></textarea></div>
                         <?php else: ?>
                             <fieldset class="erp-field erp-col-12 erp-charge-units" data-charge-units>

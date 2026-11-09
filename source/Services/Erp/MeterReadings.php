@@ -23,6 +23,7 @@ use Source\Support\Audit;
  *   (troca de relógio = relógio novo). Valor pelas faixas progressivas do tipo vigentes na data da
  *   leitura: as do condomínio, se houver, senão as do padrão da Connect. Sem tarifa, valor zero.
  *   Lançar de novo a mesma competência corrige, se ela não foi cobrada e não há leitura posterior.
+ *   Competência fechada (ADR 0031) recusa a leitura (ADR 0104).
  * - bill(): gera uma conta a receber por leitura com valor, ainda não cobrada, da competência e do
  *   tipo, pelo RegistryService (mesmas regras dos lançamentos, inclusive a trava do fechamento).
  *   Tudo ou nada; entry_id único barra cobrar duas vezes.
@@ -63,6 +64,12 @@ final class MeterReadings
         return (int)round($total);
     }
 
+    /** Unidade de medida do consumo (regra pura): energia em kWh, água e gás em m³ (ADR 0104). */
+    public static function unitOf(string $kind): string
+    {
+        return $kind === 'energia' ? 'kWh' : 'm³';
+    }
+
     /** Leitura decimal ("123,456" ou 123.456) com até 3 casas, ou null se inválida. */
     public static function parseReading(mixed $value): ?float
     {
@@ -99,6 +106,11 @@ final class MeterReadings
         }
         try {
             $this->pdo->prepare('SELECT id FROM erp_meters WHERE id = :id FOR UPDATE')->execute(['id' => $meter['id']]);
+            // ADR 0104: competência fechada não recebe leitura, como na importação. Dentro da transação a
+            // leitura do fechamento é travada (ADR 0100), e a importação revalida aqui na gravação.
+            if ($this->registry->isClosed((int)$meter['condominium_id'], $competence)) {
+                throw new DomainException("A competência {$competence} está fechada. Reabra o mês para lançar a leitura.");
+            }
             $existing = $this->pdo->prepare('SELECT * FROM erp_meter_readings WHERE meter_id = :m AND competence = :c');
             $existing->execute(['m' => $meter['id'], 'c' => $competence]);
             $before = $existing->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -211,7 +223,7 @@ final class MeterReadings
                 }
                 $entry = $this->registry->save($user, 'entries', [
                     'condominium_id' => $condominium, 'nature' => 'receita', 'chart_account_id' => $account,
-                    'description' => mb_substr(sprintf('%s %s — %s (%s m³)', $labels[$kind], $competence, $row['unit_label'], number_format((float)$row['consumption'], 3, ',', '.')), 0, 160),
+                    'description' => mb_substr(sprintf('%s %s — %s (%s %s)', $labels[$kind], $competence, $row['unit_label'], number_format((float)$row['consumption'], 3, ',', '.'), self::unitOf($kind)), 0, 160),
                     'amount_cents' => number_format(((int)$row['amount_cents']) / 100, 2, ',', ''),
                     'competence' => $competence, 'due_on' => $dueOn, 'unit_id' => $row['unit_id'], 'document_number' => 'LEI-' . $row['id'],
                 ]);

@@ -118,6 +118,17 @@ $screens = [
     'pages-form' => ['components/pages/form', 'Nova página', 'pages', ['page' => null]],
     'blog-home' => ['components/blog/home', 'Artigos', 'blog', ['posts' => [], 'search' => '', 'paginator' => '']],
     'blog-post' => ['components/blog/post', 'Novo artigo', 'blog', ['post' => null, 'categories' => [], 'authors' => []]],
+    'users' => ['components/users/studio', 'Usuários', 'users', ['stats' => (object)['total' => 3, 'active' => 2, 'inactive' => 1, 'admins' => 1], 'search' => '', 'statusFilter' => '',
+        'users' => array_map(static fn (array $u): object => new class ($u) {
+            public function __construct(private array $u) { foreach ($u as $k => $v) $this->$k = $v; }
+            public function accessRole(): object { return (object)['slug' => $this->u['role'], 'name' => $this->u['role'] === 'admin' ? 'Administrador' : 'Usuário']; }
+            public function photo(): ?string { return null; }
+            public function fullName(): string { return $this->u['first_name'] . ' ' . $this->u['last_name']; }
+        }, [
+            ['id' => 1, 'first_name' => 'Ana', 'last_name' => 'Exemplo de Sobrenome Bem Comprido', 'email' => 'ana.exemplo.com.um.email.longo@condominio-exemplo.com.br', 'status' => 'confirmed', 'role' => 'admin'],
+            ['id' => 2, 'first_name' => 'Bruno', 'last_name' => '<Silva>', 'email' => 'bruno@example.invalid', 'status' => 'registered', 'role' => 'user'],
+        ]),
+        'activityMap' => [1 => (object)['last_access' => '2026-11-09 08:00:00', 'sessions' => 4]], 'shown' => 2, 'totalFiltered' => 2, 'paginator' => '']],
 ];
 foreach ($screens as $label => [$template, $title, $app, $data]) {
     try {
