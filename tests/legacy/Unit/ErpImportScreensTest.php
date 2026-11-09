@@ -42,6 +42,14 @@ final class ErpImportScreensTest extends TestCase
         self::assertSame('unidade;fracao', ImportScreens::templateHeader('fractions'));
         self::assertNull(ImportScreens::templateHeader('ofx'));
         self::assertNull(ImportScreens::templateHeader('nope'));
+        // NF-e (AP-141, ADR 0086 e 0079): página com permissão de importação e a conta de despesa enviada na prévia.
+        self::assertSame('erp.imports.view', Panel::pagePermissions()['AP-141']);
+        $view = $this->file(self::THEME . 'pages/imports/import.php');
+        self::assertStringContainsString('name="chart_account_id" required', $view);
+        self::assertStringContainsString("body.append('chart_account_id', expense.value)", $this->file(self::THEME . 'assets/js/erp.js'));
+        self::assertStringContainsString("body.append('due_on', dueOn.value)", $this->file(self::THEME . 'assets/js/erp.js'));
+        self::assertSame(1_000_000, ImportScreens::maxBytes('nfe'));
+        self::assertSame(Imports::MAX_BYTES, ImportScreens::maxBytes('entries'));
         self::assertSame('Conferidas', ImportScreens::appliedLabel('matched'));
         self::assertSame('outro', ImportScreens::appliedLabel('outro'));
     }

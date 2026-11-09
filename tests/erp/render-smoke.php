@@ -807,6 +807,15 @@ $assert(str_contains($html, 'data-erp-imports data-kind="entries"') && str_conta
     && str_contains($html, '<code>pago_em</code>') && str_contains($html, 'download="modelo-entries.csv"') && str_contains($html, 'natureza%3Bdescricao%3Bvalor') && str_contains($html, '/api/v1/imports/preview')
     && str_contains($html, 'data-import-preview') && str_contains($html, 'lancamentos &lt;nov&gt;.xlsx') && str_contains($html, '>Prévia com erros</span>') && str_contains($html, '>Aplicada</span>') && str_contains($html, '?importacao=42')
     && !str_contains($html, 'Linhas pendentes') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-144: enviar, modelo, prévia e lista');
+// NF-e em XML (AP-141; ADR 0086 e 0079): só quando o tipo existe no serviço (ciclo 35 do Avançar).
+if (isset(Source\Services\Erp\Imports\Imports::KINDS['nfe'])) {
+    $html = $agreementPage('AP-141', 'pages/imports/import', $importData('nfe', ['importExpenseAccounts' => [['id' => 9, 'condominium_id' => 1, 'label' => '2.2 Manutenção <predial>']]]), 'list');
+    $common($html, 'AP-141', 'Importação NF-e (xml)');
+    $assert(str_contains($html, 'data-kind="nfe"') && str_contains($html, 'accept=".xml"') && str_contains($html, 'name="chart_account_id" required') && str_contains($html, '2.2 Manutenção &lt;predial&gt;') && str_contains($html, 'name="due_on"') && str_contains($html, 'data-max-bytes="1000000"') && str_contains($html, 'até 1 MB')
+        && !str_contains($html, 'Baixar modelo CSV') && !str_contains($html, '5.000 linhas'), 'AP-141: XML com a conta de despesa, sem modelo');
+    $html = $agreementPage('AP-141', 'pages/imports/import', $importData('nfe', ['importExpenseAccounts' => []]));
+    $assert(!str_contains($html, 'data-import-form') && str_contains($html, 'não tem conta de despesa analítica ativa'), 'AP-141: sem conta de despesa não envia');
+}
 $html = $agreementPage('AP-143', 'pages/imports/import', $importData('fractions', ['importContext' => null]));
 $assert(!str_contains($html, 'data-import-form') && str_contains($html, 'Escolha um condomínio na barra superior para importar'), 'AP-143: em todos os condomínios pede a escolha');
 $html = $agreementPage('AP-145', 'pages/imports/import', $importData('unit_entries', ['canImport' => false, 'imports' => ['data' => [], 'total' => 0]]));
@@ -840,7 +849,8 @@ $html = $agreementPage('AP-140', 'pages/imports/import', $importData('ofx', ['im
     'lines' => [$stmtLine(['status' => 'matched', 'entry_id' => 61, 'note' => null]), $stmtLine(['id' => 8, 'status' => 'unmatched']), $stmtLine(['id' => 9, 'status' => 'ignored', 'note' => 'Tarifa <já lançada>'])]])]), 'ofx-detail');
 $assert(str_contains($html, 'O saldo do banco não confere') && str_contains($html, 'diferença R$ 200,00') && str_contains($html, '>Conferida</span>') && str_contains($html, '>Ignorada</span>') && str_contains($html, 'Tarifa &lt;já lançada&gt;')
     && str_contains($html, '?linha=8#conciliar') && str_contains($html, 'Conferidas: 1') && str_contains($html, '01/11/2026 a 05/11/2026'), 'AP-140: detalhe do extrato com saldo e linhas');
-$assert($Imp::pages() === ['AP-140' => 'ofx', 'AP-144' => 'entries', 'AP-145' => 'unit_entries', 'AP-146' => 'payables', 'AP-143' => 'fractions', 'AP-142' => 'delinquents', 'AP-044' => 'readings']
+$assert($Imp::pages() == ['AP-140' => 'ofx', 'AP-144' => 'entries', 'AP-145' => 'unit_entries', 'AP-146' => 'payables', 'AP-143' => 'fractions', 'AP-142' => 'delinquents', 'AP-044' => 'readings']
+        + (isset(Source\Services\Erp\Imports\Imports::KINDS['nfe']) ? ['AP-141' => 'nfe'] : [])
     && $Imp::templateHeader('fractions') === 'unidade;fracao' && $Imp::templateHeader('ofx') === null, 'importações: páginas e modelo');
 foreach (array_keys($Imp::pages()) as $importPage) {
     $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($importPage, ['importReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($importPage, ['importReady' => true]) === 'pages/imports/import', "{$importPage}: tela própria só com dados");
