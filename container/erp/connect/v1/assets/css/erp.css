@@ -124,7 +124,7 @@ p { margin: 0; }
 .erp-envswitch__panel a strong { font-size: 13px; }
 .erp-envswitch__panel a small { text-transform: none; letter-spacing: 0; }
 .erp-envswitch__panel em { font-style: normal; font-size: 11px; color: var(--erp-sidebar-accent); }
-.erp-nav { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
+.erp-nav { flex: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .erp-nav__link, .erp-nav__group > summary {
   display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border-radius: var(--erp-radius-md);
   color: var(--erp-sidebar-ink); font-size: 14px; font-weight: 550; cursor: pointer; list-style: none; transition: background .18s, color .18s;

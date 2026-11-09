@@ -329,6 +329,18 @@
    "title": "0083 — Dados dos gráficos (AP-102 a AP-109): séries mensais, só consulta"
   },
   {
+   "file": "docs/Organic Code/decisions/0100-month-closing-concurrency.md",
+   "title": "0100 — Fechamento mensal sem corrida com a gravação de lançamentos"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0101-occurrence-ticket-and-balances.md",
+   "title": "0101 — Chamado da ocorrência sem órfão e saldo bancário só com o próprio condomínio"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0102-statement-bank-filter.md",
+   "title": "0102 — Prestação de contas: conciliação bancária só com o próprio condomínio e até o fim do período"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -4086,7 +4098,7 @@
   }
  },
  "counts": {
-  "adrs": 85,
+  "adrs": 88,
   "classes": 211,
   "dynamic_route_lines": {
    "erp": 9,
