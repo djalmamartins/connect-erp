@@ -217,6 +217,14 @@
    "title": "0055 — Fila de envio dos avisos do ERP pelo container send"
   },
   {
+   "file": "docs/Organic Code/decisions/0056-notification-events.md",
+   "title": "0056 — Avisos de cobrança, acordo e reserva pela outbox"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0060-smtp-credentials-from-environment.md",
+   "title": "0060 — Credenciais SMTP pelo ambiente, valendo sobre a tabela settings"
+  },
+  {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
    "title": "0070 — Telas do Operacional e dashboard com dados reais"
   },
@@ -2060,6 +2068,7 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\NotificationOutbox",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Support\\AppLogger",
     "Source\\Support\\Audit"
@@ -2299,6 +2308,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
   },
@@ -2455,6 +2465,7 @@
     "tests/legacy/Unit/InvoicesTest.php",
     "tests/legacy/Unit/MeterReadingsTest.php",
     "tests/legacy/Unit/MonthClosingTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/OpenApiRoutesTest.php",
     "tests/legacy/Unit/OperationalRegistriesTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
@@ -2530,6 +2541,7 @@
     "Source\\Core\\Connect",
     "Source\\Models\\User",
     "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\NotificationOutbox",
     "Source\\Support\\Audit"
    ],
    "file": "source/Services/Erp/Registry/RegistryService.php",
@@ -2569,6 +2581,7 @@
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
+    "tests/legacy/Unit/NotificationDispatcherTest.php",
     "tests/legacy/Unit/UnitDefinitionTest.php"
    ]
   },
@@ -3105,6 +3118,18 @@
    "tables": [],
    "tests": []
   },
+  "Source\\Support\\MailConfig": {
+   "deps": [],
+   "file": "source/Support/MailConfig.php",
+   "kind": "class",
+   "layer": "Support",
+   "tables": [
+    "settings"
+   ],
+   "tests": [
+    "tests/legacy/Unit/MailConfigTest.php"
+   ]
+  },
   "Source\\Support\\MailTemplate": {
    "deps": [
     "Source\\Core\\View"
@@ -3289,8 +3314,8 @@
   }
  },
  "counts": {
-  "adrs": 59,
-  "classes": 183,
+  "adrs": 61,
+  "classes": 184,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
@@ -3298,7 +3323,7 @@
   "erp_pages": 172,
   "routes": 272,
   "tables": 99,
-  "tests": 117
+  "tests": 118
  },
  "erp_pages": [
   {
@@ -7715,7 +7740,8 @@
    "used_by": [
     "Source\\Controllers\\Studio\\Studio",
     "Source\\Models\\Settings\\Settings",
-    "Source\\Support\\Access"
+    "Source\\Support\\Access",
+    "Source\\Support\\MailConfig"
    ]
   },
   "studio_calendar_events": {
@@ -8305,6 +8331,9 @@
    "Source\\Models\\Auth",
    "Source\\Services\\LoginThrottle"
   ],
+  "tests/legacy/Unit/MailConfigTest.php": [
+   "Source\\Support\\MailConfig"
+  ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
   ],
@@ -8319,6 +8348,9 @@
   ],
   "tests/legacy/Unit/NotificationDispatcherTest.php": [
    "Source\\Services\\Erp\\NotificationDispatcher",
+   "Source\\Services\\Erp\\NotificationOutbox",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Support\\MailTemplate"
   ],
   "tests/legacy/Unit/OnboardingChecklistViewTest.php": [
