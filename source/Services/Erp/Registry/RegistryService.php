@@ -43,7 +43,7 @@ final class RegistryService
     }
 
     /**
-     * @param array{condominium_id?: mixed, status?: mixed, q?: mixed, page?: mixed, filter?: mixed} $filters
+     * @param array{condominium_id?: mixed, include_standard?: bool, status?: mixed, q?: mixed, page?: mixed, filter?: mixed} $filters
      * @return array{data: list<array<string, mixed>>, total: int, page: int, per_page: int, pages: int}
      */
     public function list(User $user, string $slug, array $filters = []): array
@@ -53,7 +53,12 @@ final class RegistryService
 
         $condominium = filter_var($filters['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($condominium !== false && $condominium !== null && $definition['scope'] !== 'none') {
-            $where[] = 't.condominium_id = :f_condominium';
+            // 'include_standard' (telas do ERP, ADR 0032): com um condomínio em contexto, os
+            // cadastros de escopo optional mostram também o padrão da Connect (sem condomínio),
+            // que esse condomínio usa (plano de contas, tipos de faturas, centros de custo).
+            $where[] = $definition['scope'] === 'optional' && !empty($filters['include_standard'])
+                ? '(t.condominium_id = :f_condominium OR t.condominium_id IS NULL)'
+                : 't.condominium_id = :f_condominium';
             $params['f_condominium'] = $condominium;
         }
         $status = (string)($filters['status'] ?? '');

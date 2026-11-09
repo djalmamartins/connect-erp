@@ -86,6 +86,81 @@ final class MonthClosing
         ];
     }
 
+    /**
+     * Visão da competência para a tela AP-030, no contexto da barra superior (ADR 0032): um
+     * condomínio, ou todos os do escopo do usuário quando o contexto é "Todos" (null).
+     * Condomínio fora do escopo lança CondominiumAccessDenied (a tela responde 404).
+     *
+     * @return array{competence:string, condominium_id:?int, rows:list<array>, totals:array}
+     */
+    public function overview(User $user, ?int $condominiumId, string $competence): array
+    {
+        if (!RecurringEntries::isCompetence($competence)) {
+            throw new InvalidArgumentException('Competência inválida. Use AAAA-MM.');
+        }
+        if ($condominiumId !== null) {
+            $this->scope->assertAccess($user, $condominiumId);
+            $ids = [$condominiumId];
+        } else {
+            $ids = $this->scope->allowedIds($user);
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        if ($ids === []) {
+            return ['competence' => $competence, 'condominium_id' => $condominiumId, 'rows' => [], 'totals' => self::overviewTotals([])];
+        }
+        $in = implode(',', $ids);
+        $stmt = $this->pdo->prepare("SELECT c.id AS condominium_id, c.name AS condominium_name,
+                mc.status, mc.closed_at, mc.reopened_at, mc.reopen_reason,
+                COALESCE(SUM(CASE WHEN e.nature = 'receita' THEN e.amount_cents END), 0) AS revenue_cents,
+                COALESCE(SUM(CASE WHEN e.nature = 'despesa' THEN e.amount_cents END), 0) AS expense_cents,
+                COALESCE(SUM(CASE WHEN e.nature = 'receita' AND e.paid_on IS NULL THEN e.amount_cents END), 0) AS open_revenue_cents,
+                COALESCE(SUM(CASE WHEN e.nature = 'despesa' AND e.paid_on IS NULL THEN e.amount_cents END), 0) AS open_expense_cents,
+                COUNT(e.id) AS entries
+            FROM condominiums c
+            LEFT JOIN erp_month_closings mc ON mc.condominium_id = c.id AND mc.competence = :m1
+            LEFT JOIN erp_entries e ON e.condominium_id = c.id AND e.competence = :m2 AND e.deleted_at IS NULL AND e.status = 'active'
+            WHERE c.id IN ({$in})
+            GROUP BY c.id, c.name, mc.status, mc.closed_at, mc.reopened_at, mc.reopen_reason
+            ORDER BY c.name, c.id");
+        $stmt->execute(['m1' => $competence, 'm2' => $competence]);
+        $rows = array_map(static fn (array $r): array => [
+            'condominium_id' => (int)$r['condominium_id'], 'condominium_name' => (string)$r['condominium_name'],
+            'status' => $r['status'] !== null ? (string)$r['status'] : 'open',
+            'closed_at' => $r['closed_at'], 'reopened_at' => $r['reopened_at'], 'reopen_reason' => $r['reopen_reason'],
+            'revenue_cents' => (int)$r['revenue_cents'], 'expense_cents' => (int)$r['expense_cents'],
+            'open_revenue_cents' => (int)$r['open_revenue_cents'], 'open_expense_cents' => (int)$r['open_expense_cents'],
+            'result_cents' => (int)$r['revenue_cents'] - (int)$r['expense_cents'], 'entries' => (int)$r['entries'],
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return ['competence' => $competence, 'condominium_id' => $condominiumId, 'rows' => $rows, 'totals' => self::overviewTotals($rows)];
+    }
+
+    /**
+     * Totais da visão (regra pura): somas e quantos condomínios estão fechados ou abertos
+     * (reaberto conta como aberto, porque aceita lançamentos).
+     *
+     * @param list<array{status:string, revenue_cents:int, expense_cents:int, open_revenue_cents:int, open_expense_cents:int}> $rows
+     */
+    public static function overviewTotals(array $rows): array
+    {
+        $totals = ['condominiums' => count($rows), 'closed' => 0, 'open' => 0, 'revenue_cents' => 0, 'expense_cents' => 0,
+            'open_revenue_cents' => 0, 'open_expense_cents' => 0, 'result_cents' => 0];
+        foreach ($rows as $row) {
+            $totals[$row['status'] === 'closed' ? 'closed' : 'open']++;
+            foreach (['revenue_cents', 'expense_cents', 'open_revenue_cents', 'open_expense_cents'] as $key) {
+                $totals[$key] += (int)$row[$key];
+            }
+        }
+        $totals['result_cents'] = $totals['revenue_cents'] - $totals['expense_cents'];
+        return $totals;
+    }
+
+    /** Competência pedida pela tela (?competencia=AAAA-MM); inválida ou ausente = mês atual. */
+    public static function competenceOrCurrent(mixed $value): string
+    {
+        $value = is_string($value) ? trim($value) : '';
+        return RecurringEntries::isCompetence($value) ? $value : date('Y-m');
+    }
+
     public function close(User $user, int $condominiumId, string $competence): array
     {
         $this->assertInput($user, $condominiumId, $competence);

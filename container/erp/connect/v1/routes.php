@@ -114,6 +114,11 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/operacional/vistorias/{id}/relatorio/pdf", "Inspections:reportPdf");
     $route->post("/operacional/vistorias/{id}/enviar", "Inspections:send");
 
+    // Fechamento mensal (AP-030): a tela é a página do catálogo (dados reais em Panel); fechar e
+    // reabrir valem para o condomínio da barra superior (ADR 0032), com CSRF.
+    $route->post("/financeiro/fechamento-mensal/fechar", "MonthClosings:close");
+    $route->post("/financeiro/fechamento-mensal/reabrir", "MonthClosings:reopen");
+
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
         if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias'], true) || in_array($pageId, $erpRegistryPages, true)) {
