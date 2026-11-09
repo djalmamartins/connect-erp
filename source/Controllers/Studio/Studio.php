@@ -110,7 +110,7 @@ class Studio extends Controller
     public function logout(): void
     {
         $helpDesk = $this->isHelpDeskRequest();
-        Auth::logout();
+        Auth::logout(true);
         redirect($helpDesk ? "/helpdesk/login" : "/studio/login");
     }
 
