@@ -25,6 +25,23 @@ components:
       in: header
       name: X-CSRF-Token
   schemas:
+    UnitBatchInput:
+      type: object
+      required: [condominium_id]
+      description: 'Informe floor_from, floor_to e units_per_floor, ou só extra_numbers. Listas: array ou texto separado por vírgula.'
+      properties:
+        condominium_id: { type: integer }
+        blocks: { oneOf: [{ type: string, example: 'A, B' }, { type: array, items: { type: string, maxLength: 20 } }] }
+        floor_from: { type: integer, minimum: 0, maximum: 300, description: '0 = térreo' }
+        floor_to: { type: integer, minimum: 0, maximum: 300 }
+        units_per_floor: { type: integer, minimum: 1, maximum: 99 }
+        digits: { type: integer, minimum: 1, maximum: 3, default: 2 }
+        first_position: { type: integer, minimum: 0, maximum: 9, default: 1 }
+        skip_floors: { oneOf: [{ type: string, example: '13' }, { type: array, items: { type: integer } }] }
+        skip_numbers: { oneOf: [{ type: string, example: '1207, 1208' }, { type: array, items: { type: string } }] }
+        extra_numbers: { oneOf: [{ type: string, example: 'Cobertura 1, Loja 1' }, { type: array, items: { type: string, maxLength: 16 } }] }
+        type: { type: string, enum: [apartamento, casa, sala, loja, garagem, outro], default: apartamento }
+        private_area: { type: string, example: '72,50' }
     Ticket:
       type: object
       description: Chamado do Help Desk (ADR 0034)
@@ -1946,6 +1963,84 @@ paths:
         '409': { description: Cobrada em paralelo }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Dados inválidos ou um lançamento fora das regras (fields), ex.: competência fechada' }
+  /unit-batches/preview:
+    post:
+      operationId: previewUnitBatch
+      summary: Pré-visualiza o cadastro rápido de unidades (erp.units.manage, ADR 0140)
+      description: >-
+        Sequência blocos × andares × unidades por andar (número = andar + posição; térreo = só a posição), com
+        andares e números pulados e unidades avulsas. Marca as que já existem no condomínio. Não grava.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UnitBatchInput' } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, units: [{ block, number, floor, label, exists }], total, new, existing, type, private_area } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-batches:
+    post:
+      operationId: createUnitBatch
+      summary: Cria as unidades novas da sequência, todas ou nenhuma (erp.units.manage, ADR 0140)
+      description: Mesmo corpo da pré-visualização. Unidades que já existem ficam como estão; cada criada é auditada.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UnitBatchInput' } } }
+      responses:
+        '201': { description: '{ data: { created, skipped, ids: [int] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-measures:
+    get:
+      operationId: listUnitMeasures
+      summary: Fração ideal e área das unidades ativas do condomínio (erp.units.view, ADR 0140)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, units: [{ id, label, block, number, floor, type, ideal_fraction, private_area }], fraction_sum, area_sum, missing_fraction, missing_area, complete } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    put:
+      operationId: saveUnitMeasures
+      summary: Grava fração ideal e área de várias unidades (erp.units.manage, ADR 0140)
+      description: >-
+        Campo ausente não muda; vazio limpa. Só as unidades alteradas são gravadas e auditadas. A soma das frações
+        não passa de 1; com todas preenchidas, precisa dar 1 dentro de params.fraction_tolerance. Tudo ou nada.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, units], properties: { condominium_id: { type: integer }, units: { type: array, maxItems: 2000, items: { type: object, required: [id], properties: { id: { type: integer }, ideal_fraction: { type: string, nullable: true, example: '0,012500 ou 1,25%' }, private_area: { type: string, nullable: true, example: '72,50' } } } } } } } }
+      responses:
+        '200': { description: 'Mesmo formato do GET, com updated' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-measures/distribute:
+    post:
+      operationId: distributeUnitFractions
+      summary: Propõe a divisão de 100% igualmente ou pela área, sem gravar (erp.units.manage, ADR 0140)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [mode, units], properties: { mode: { type: string, enum: [equal, area] }, units: { type: array, maxItems: 2000, items: { type: object, required: [id], properties: { id: { type: integer }, private_area: { type: string, description: 'Obrigatória em todas com mode=area' } } } } } } } }
+      responses:
+        '200': { description: '{ data: { fractions: { "<id>": "0.008772" } } } — soma exata 1.000000' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /documents:
     get:
       operationId: listVirtualDisk
