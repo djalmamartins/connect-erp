@@ -164,6 +164,57 @@ final class ImportsCycleIntegrationTest extends TestCase
         self::assertSame([], $this->imports->pendingLines($outsider)['data']);
     }
 
+    /**
+     * Leituras por importação (ciclo 27): correção da mesma competência substitui, depois da cobrança
+     * a leitura trava, relógio de outro condomínio não existe para o Alpha e o mesmo arquivo não entra duas vezes.
+     */
+    public function testReadingsImportReplaceBilledLockAndScope(): void
+    {
+        $this->service->save($this->admin, 'chart', ['code' => '1', 'nature' => 'receita', 'kind' => 'sintetica', 'name' => 'Receitas']);
+        $water = $this->service->save($this->admin, 'chart', ['code' => '1.05', 'nature' => 'receita', 'kind' => 'analitica', 'name' => 'Água individual'])['id'];
+        $this->service->save($this->admin, 'tariffs', ['kind' => 'agua', 'name' => 'Faixa única', 'from_amount' => '0', 'to_amount' => '',
+            'price_cents' => '5,00', 'valid_from' => '2026-01-01']);
+        $unit = $this->service->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '101', 'type' => 'apartamento'])['id'];
+        $this->service->save($this->admin, 'meters', ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'kind' => 'agua', 'number' => 'A-101', 'initial_reading' => '100']);
+        $betaUnit = $this->service->save($this->admin, 'units', ['condominium_id' => $this->beta, 'number' => '201', 'type' => 'apartamento'])['id'];
+        $this->service->save($this->admin, 'meters', ['condominium_id' => $this->beta, 'unit_id' => $betaUnit, 'kind' => 'agua', 'number' => 'B-201', 'initial_reading' => '0']);
+        $competence = date('m/Y');
+        $csv = static fn (string $meter, string $reading): string => "relogio;tipo;competencia;leitura\n{$meter};água;{$competence};{$reading}\n";
+        $preview = fn (string $content, string $name): array => $this->imports->preview($this->admin, 'readings', ['condominium_id' => $this->alpha], $this->upload($content, $name));
+
+        // 1. Primeira leitura e a correção da mesma competência, que substitui em vez de duplicar.
+        self::assertSame(['readings' => 1, 'amount_cents' => 5000], $this->imports->apply($this->admin, $preview($csv('A-101', '110'), 'l1.csv')['id'])['summary']['applied']);
+        $fix = $preview($csv('A-101', '112'), 'l2.csv');
+        self::assertSame([0, 1], [$fix['error_count'], $fix['summary']['replace']]);
+        self::assertSame(['readings' => 1, 'amount_cents' => 6000], $this->imports->apply($this->admin, $fix['id'])['summary']['applied']);
+        self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_meter_readings')->fetchColumn());
+
+        // 2. O mesmo arquivo de novo é recusado.
+        try {
+            $preview($csv('A-101', '112'), 'l2-de-novo.csv');
+            self::fail('O mesmo arquivo entrou duas vezes.');
+        } catch (\DomainException) {
+            self::addToAssertionCount(1);
+        }
+
+        // 3. Cobrada, a leitura trava: a importação mostra o erro e não aplica.
+        self::assertCount(1, (new MeterReadings($this->pdo))->bill($this->admin, ['condominium_id' => $this->alpha, 'competence' => date('Y-m'), 'kind' => 'agua',
+            'chart_account_id' => $water, 'due_on' => date('Y-m-d', strtotime('+10 days'))])['created']);
+        $locked = $preview($csv('A-101', '115'), 'l3.csv');
+        self::assertSame(1, $locked['error_count']);
+        self::assertStringContainsString('já foi cobrada', implode(' ', $locked['preview'][0]['errors']));
+
+        // 4. Relógio do Beta não existe para a importação do Alpha, e um usuário só do Beta não importa no Alpha.
+        self::assertSame(1, $preview($csv('B-201', '10'), 'l4.csv')['error_count']);
+        try {
+            $this->imports->preview($this->user([$this->beta]), 'readings', ['condominium_id' => $this->alpha], $this->upload($csv('A-101', '120'), 'l5.csv'));
+            self::fail('Usuário de fora importou leitura no Alpha.');
+        } catch (RegistryNotFound) {
+            self::addToAssertionCount(1);
+        }
+        self::assertSame(['112.000'], $this->pdo->query('SELECT reading FROM erp_meter_readings')->fetchAll(\PDO::FETCH_COLUMN), 'Nada mudou depois da cobrança.');
+    }
+
     private function upload(string $content, string $name): array
     {
         $path = tempnam(sys_get_temp_dir(), 'imp');
