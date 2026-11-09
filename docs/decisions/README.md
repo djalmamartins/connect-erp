@@ -88,6 +88,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0061](../Organic%20Code/decisions/0061-panels-require-module-permissions.md) | Painéis e dashboard exigem a permissão de cada módulo que mostram; disparo da fila de avisos só com acesso a todos os condomínios |
 | [0062](../Organic%20Code/decisions/0062-shortcuts-and-receipts-hardening.md) | Recibo sem oráculo de id de outro condomínio, teto de valor em `Invoices::cents` e no máximo 1000 unidades por cobrança extra |
 | [0063](../Organic%20Code/decisions/0063-imports-hardening.md) | Importações: valores do OFX e da planilha com teto e sem estouro, XLSX esparso recusado e leitura do ZIP limitada |
+| [0064](../Organic%20Code/decisions/0064-performance-indexes.md) | Índices de `erp_entries` por data de pagamento (condomínio e conta bancária) e EXPLAIN das consultas quentes na suíte de integração |
 | [0070](../Organic%20Code/decisions/0070-operational-screens.md) | Telas do Operacional: Agendamentos Pendentes, chamado do Help Desk na ocorrência, lista de espera, próxima manutenção e dashboard com dados reais |
 | [0071](../Organic%20Code/decisions/0071-condominium-unit-panel-screens.md) | Telas dos painéis do condomínio (AP-002) e da unidade (AP-003) sobre o PanelSummaries |
 | [0072](../Organic%20Code/decisions/0072-notification-queue-screen.md) | Tela da fila de avisos (CN-005): situação, trilha com endereços mascarados e reenvio manual |
