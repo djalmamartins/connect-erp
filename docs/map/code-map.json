@@ -225,12 +225,20 @@
    "title": "0057 — Lançamentos avulsos e recibos (AP-024 a AP-029 e AP-040)"
   },
   {
+   "file": "docs/Organic Code/decisions/0058-imports.md",
+   "title": "0058 — Importações: extrato OFX e planilhas, com prévia e idempotência"
+  },
+  {
    "file": "docs/Organic Code/decisions/0060-smtp-credentials-from-environment.md",
    "title": "0060 — Credenciais SMTP pelo ambiente, valendo sobre a tabela settings"
   },
   {
    "file": "docs/Organic Code/decisions/0061-panels-require-module-permissions.md",
    "title": "0061 — Painéis e dashboard exigem a permissão de cada módulo que mostram"
+  },
+  {
+   "file": "docs/Organic Code/decisions/0062-shortcuts-and-receipts-hardening.md",
+   "title": "0062 — Recibo sem oráculo de id, teto nos valores e limite de unidades por cobrança"
   },
   {
    "file": "docs/Organic Code/decisions/0070-operational-screens.md",
@@ -380,6 +388,23 @@
     "Source\\Support\\Access"
    ],
    "file": "source/Controllers/Api/V1/FinancialReports.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
+  "Source\\Controllers\\Api\\V1\\Imports": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\Erp\\Imports\\Imports",
+    "Source\\Services\\Erp\\Registry\\RegistryForbidden",
+    "Source\\Services\\Erp\\Registry\\RegistryLocked",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryValidationException",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/Imports.php",
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
@@ -1915,6 +1940,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
+    "tests/legacy/Integration/ImportsIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
@@ -1924,12 +1950,14 @@
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/ServiceDeskTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
@@ -1954,7 +1982,8 @@
     "tests/legacy/Integration/FinanceContextIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
-    "tests/legacy/Integration/MonthClosingIntegrationTest.php"
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php"
    ]
   },
   "Source\\Services\\CondominiumRegistry": {
@@ -2009,6 +2038,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
+    "tests/legacy/Integration/ImportsIntegrationTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
@@ -2019,10 +2049,12 @@
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/TicketIntakeTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
@@ -2102,6 +2134,7 @@
    "tests": [
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php"
    ]
@@ -2152,6 +2185,7 @@
     "tests/legacy/Integration/BankReturnFilesIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/BankingTest.php"
    ]
   },
@@ -2180,6 +2214,7 @@
     "tests/legacy/Integration/BankReturnFilesIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/BankReturnFilesTest.php",
     "tests/legacy/Unit/BankingTest.php"
    ]
@@ -2194,6 +2229,7 @@
     "tests/legacy/Integration/BankReturnFilesIntegrationTest.php",
     "tests/legacy/Integration/BankingIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/BankingTest.php"
    ]
   },
@@ -2253,6 +2289,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php"
    ]
   },
@@ -2276,7 +2313,68 @@
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/FinancialReportsTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Imports\\ImportRules": {
+   "deps": [],
+   "file": "source/Services/Erp/Imports/ImportRules.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ImportsTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Imports\\Imports": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Services\\Erp\\Registry\\Definitions",
+    "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+    "Source\\Services\\Erp\\Registry\\RegistryService",
+    "Source\\Services\\Erp\\Registry\\RegistryValidator",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/Imports/Imports.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_bank_statement_lines",
+    "erp_chart_accounts",
+    "erp_bank_transfers",
+    "erp_bank_accounts",
+    "erp_suppliers",
+    "condominiums",
+    "erp_entries",
+    "erp_imports",
+    "erp_units"
+   ],
+   "tests": [
+    "tests/legacy/Integration/ImportsIntegrationTest.php",
+    "tests/legacy/Unit/ImportsTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Imports\\OfxParser": {
+   "deps": [],
+   "file": "source/Services/Erp/Imports/OfxParser.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ImportsTest.php"
+   ]
+  },
+  "Source\\Services\\Erp\\Imports\\SpreadsheetReader": {
+   "deps": [],
+   "file": "source/Services/Erp/Imports/SpreadsheetReader.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Unit/ImportsTest.php"
    ]
   },
   "Source\\Services\\Erp\\Invoices": {
@@ -2305,6 +2403,7 @@
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Unit/InvoicesTest.php"
    ]
   },
@@ -2396,6 +2495,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Unit/NotificationDispatcherTest.php"
    ]
   },
@@ -2431,6 +2531,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Unit/OperationalRegistriesTest.php"
    ]
   },
@@ -2458,6 +2559,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Unit/OperationalDashboardTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
@@ -2486,6 +2588,7 @@
     "erp_pets"
    ],
    "tests": [
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Unit/PanelSummariesTest.php"
    ]
@@ -2636,12 +2739,15 @@
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
+    "tests/legacy/Integration/ImportsIntegrationTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/MeterReadingsIntegrationTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/VirtualDiskIntegrationTest.php"
    ]
@@ -2681,6 +2787,7 @@
     "tests/legacy/Integration/FinanceCycleIntegrationTest.php",
     "tests/legacy/Integration/FinancialReportsIntegrationTest.php",
     "tests/legacy/Integration/GatehouseIntegrationTest.php",
+    "tests/legacy/Integration/ImportsIntegrationTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
     "tests/legacy/Integration/InvoicesIntegrationTest.php",
     "tests/legacy/Integration/LateChargesIntegrationTest.php",
@@ -2689,10 +2796,12 @@
     "tests/legacy/Integration/NotificationDispatcherIntegrationTest.php",
     "tests/legacy/Integration/OperationalDashboardIntegrationTest.php",
     "tests/legacy/Integration/OperationalRegistriesIntegrationTest.php",
+    "tests/legacy/Integration/OperationsCycleIntegrationTest.php",
     "tests/legacy/Integration/PanelSummariesIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php",
     "tests/legacy/Unit/NotificationDispatcherTest.php",
@@ -2763,6 +2872,7 @@
    ],
    "tests": [
     "tests/legacy/Integration/EntryShortcutsIntegrationTest.php",
+    "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php",
     "tests/legacy/Integration/UnitDocumentsIntegrationTest.php",
     "tests/legacy/Unit/EntryShortcutsTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
@@ -3434,16 +3544,16 @@
   }
  },
  "counts": {
-  "adrs": 64,
-  "classes": 187,
+  "adrs": 66,
+  "classes": 192,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 284,
-  "tables": 103,
-  "tests": 123
+  "routes": 290,
+  "tables": 105,
+  "tests": 127
  },
  "erp_pages": [
   {
@@ -5365,10 +5475,64 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 137,
+   "method": "index",
+   "path": "/api/v1/imports",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 138,
+   "method": "preview",
+   "path": "/api/v1/imports/preview",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 139,
+   "method": "show",
+   "path": "/api/v1/imports/{id}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 140,
+   "method": "apply",
+   "path": "/api/v1/imports/{id}/apply",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 141,
+   "method": "pendingLines",
+   "path": "/api/v1/bank-statement-lines",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\Imports",
+   "env": "index",
+   "file": "index.php",
+   "line": 142,
+   "method": "resolveLine",
+   "path": "/api/v1/bank-statement-lines/{id}/resolve",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 151,
+   "line": 158,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -5377,7 +5541,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 152,
+   "line": 159,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -5386,7 +5550,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 153,
+   "line": 160,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -5395,7 +5559,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 154,
+   "line": 161,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -5404,7 +5568,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 155,
+   "line": 162,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -5413,7 +5577,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 156,
+   "line": 163,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -5422,7 +5586,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 157,
+   "line": 164,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -5431,7 +5595,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 158,
+   "line": 165,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -5440,7 +5604,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 160,
+   "line": 167,
    "method": "index",
    "path": "/api/v1/tickets",
    "verb": "GET"
@@ -5449,7 +5613,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 161,
+   "line": 168,
    "method": "store",
    "path": "/api/v1/tickets",
    "verb": "POST"
@@ -5458,7 +5622,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Tickets",
    "env": "index",
    "file": "index.php",
-   "line": 162,
+   "line": 169,
    "method": "show",
    "path": "/api/v1/tickets/{id}",
    "verb": "GET"
@@ -5467,7 +5631,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 171,
+   "line": 178,
    "method": "go",
    "path": "/ambiente/{environment}",
    "verb": "GET"
@@ -5476,7 +5640,7 @@
    "controller": "Source\\Controllers\\Environments\\Handoff",
    "env": "index",
    "file": "index.php",
-   "line": 172,
+   "line": 179,
    "method": "enter",
    "path": "/ambiente/entrar/{environment}/{token}",
    "verb": "GET"
@@ -5485,79 +5649,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 186,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 187,
-   "method": "challenge",
-   "path": "/studio/login/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 188,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 189,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
-   "line": 192,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
-   "env": "index",
-   "file": "index.php",
    "line": 193,
-   "method": "forget",
-   "path": "/forget",
-   "verb": "POST"
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 194,
-   "method": "reset",
-   "path": "/forget/{code}",
-   "verb": "GET"
+   "method": "challenge",
+   "path": "/studio/login/2fa",
+   "verb": "POST"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 195,
-   "method": "reset",
-   "path": "/reset",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
+   "env": "index",
+   "file": "index.php",
+   "line": 196,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 208,
+   "line": 199,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -5566,7 +5694,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 209,
+   "line": 200,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -5575,7 +5703,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 210,
+   "line": 201,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -5584,7 +5712,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 211,
+   "line": 202,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -5593,7 +5721,43 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 227,
+   "line": 215,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 216,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 217,
+   "method": "reset",
+   "path": "/forget/{code}",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 218,
+   "method": "reset",
+   "path": "/reset",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 234,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -5602,7 +5766,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 229,
+   "line": 236,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -7337,6 +7501,7 @@
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\NotificationDispatcher",
@@ -7388,6 +7553,7 @@
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\UnitDocuments"
@@ -7417,12 +7583,20 @@
     "Source\\Services\\Erp\\Banking\\BankReturns"
    ]
   },
+  "erp_bank_statement_lines": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0535_imports.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports"
+   ]
+  },
   "erp_bank_transfers": {
    "altered_in": [],
    "created_in": "database/migrations/20261108_0534_entry_shortcuts.sql",
    "used_by": [
     "Source\\Services\\Erp\\BankBalances",
-    "Source\\Services\\Erp\\EntryShortcuts"
+    "Source\\Services\\Erp\\EntryShortcuts",
+    "Source\\Services\\Erp\\Imports\\Imports"
    ]
   },
   "erp_billing_rules": {
@@ -7447,6 +7621,7 @@
    "used_by": [
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -7525,7 +7700,8 @@
     "database/migrations/20261108_0509_entry_recurring_link.sql",
     "database/migrations/20261108_0514_entry_unit_invoice_link.sql",
     "database/migrations/20261108_0520_entry_agreement_link.sql",
-    "database/migrations/20261108_0534_entry_shortcuts.sql"
+    "database/migrations/20261108_0534_entry_shortcuts.sql",
+    "database/migrations/20261108_0535_imports.sql"
    ],
    "created_in": "database/migrations/20261108_0506_entries.sql",
    "used_by": [
@@ -7535,6 +7711,7 @@
     "Source\\Services\\Erp\\Banking\\BankReturns",
     "Source\\Services\\Erp\\EntryShortcuts",
     "Source\\Services\\Erp\\FinancialReports",
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Invoices",
     "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\OperationalDashboard",
@@ -7562,6 +7739,13 @@
    "created_in": "database/migrations/20261108_0525_gatehouse.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_imports": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0535_imports.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports"
    ]
   },
   "erp_insurances": {
@@ -7747,6 +7931,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0201_erp_registries.sql",
    "used_by": [
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -7784,6 +7969,7 @@
     "Source\\Services\\Erp\\Agreements",
     "Source\\Services\\Erp\\Banking\\BankCharges",
     "Source\\Services\\Erp\\EntryShortcuts",
+    "Source\\Services\\Erp\\Imports\\Imports",
     "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\PanelSummaries",
     "Source\\Services\\Erp\\Registry\\Definitions",
@@ -8304,6 +8490,13 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/ImportsIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\Imports\\Imports",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/InspectionServiceTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -8398,6 +8591,16 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/OperationsCycleIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\NotificationDispatcher",
+   "Source\\Services\\Erp\\Occurrences",
+   "Source\\Services\\Erp\\OperationalDashboard",
+   "Source\\Services\\Erp\\PanelSummaries",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService"
+  ],
   "tests/legacy/Integration/PanelSummariesIntegrationTest.php": [
    "Source\\Models\\User",
    "Source\\Services\\CondominiumScope",
@@ -8447,6 +8650,21 @@
   ],
   "tests/legacy/Integration/SettingsAndVersionsTest.php": [
    "Source\\Models\\Settings\\Settings"
+  ],
+  "tests/legacy/Integration/ShortcutsCycleIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\BankBalances",
+   "Source\\Services\\Erp\\Banking\\BankCharges",
+   "Source\\Services\\Erp\\Banking\\BankReturns",
+   "Source\\Services\\Erp\\Banking\\SandboxBankAdapter",
+   "Source\\Services\\Erp\\EntryShortcuts",
+   "Source\\Services\\Erp\\FinancialReports",
+   "Source\\Services\\Erp\\Invoices",
+   "Source\\Services\\Erp\\Registry\\RegistryNotFound",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\UnitDocuments"
   ],
   "tests/legacy/Integration/TicketIntakeTest.php": [
    "Source\\Models\\User",
@@ -8613,6 +8831,12 @@
   ],
   "tests/legacy/Unit/HelpDeskSupportThemesTest.php": [
    "Source\\Controllers\\Studio\\Studio"
+  ],
+  "tests/legacy/Unit/ImportsTest.php": [
+   "Source\\Services\\Erp\\Imports\\ImportRules",
+   "Source\\Services\\Erp\\Imports\\Imports",
+   "Source\\Services\\Erp\\Imports\\OfxParser",
+   "Source\\Services\\Erp\\Imports\\SpreadsheetReader"
   ],
   "tests/legacy/Unit/InspectionPhotoStorageTest.php": [
    "Source\\Services\\Inspections\\InspectionError",
