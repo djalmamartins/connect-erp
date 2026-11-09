@@ -24,7 +24,8 @@ final class OperationalDashboard
 {
     public function show(): void
     {
-        $user = $this->authorize(null);
+        // Painel operacional só para quem vê as unidades (ADR 0111): o parceiro (erp_partner) não vê contagens.
+        $user = $this->authorize('erp.units.view');
         if ($user === null) {
             return;
         }

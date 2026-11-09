@@ -2025,7 +2025,7 @@ paths:
   /dashboard:
     get:
       operationId: operationalDashboard
-      summary: Números e alertas reais da administradora no contexto (erp.access)
+      summary: Números e alertas reais da administradora no contexto (erp.access e erp.units.view, ADR 0111)
       description: >-
         cards: maintenances_late, maintenances_week, insurances_renewal (até 30 dias), insurances_expired,
         contracts_renewal, contracts_expired, reservations_pending, occurrences_open, deliveries_waiting,
@@ -2643,6 +2643,182 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { description: Mais de 30 exportações em CSV na última hora }
+  /partner-agencies:
+    get:
+      operationId: listPartnerAgencies
+      summary: Imobiliárias parceiras, com usuários e condomínios do seu escopo; contatos mascarados (AP-148, erp.access_admin.view)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data[{ id, name, document, email, phone, status, users[{ user_id, name, email, condominium_ids[] }] }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createPartnerAgency
+      summary: Cadastra a imobiliária (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [name, document], properties: { name: { type: string }, document: { type: string, description: CNPJ }, email: { type: string }, phone: { type: string } } } } }
+      responses:
+        '201': { description: Imobiliária }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: CNPJ já cadastrado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /partner-agencies/{id}/deactivate:
+    post:
+      operationId: deactivatePartnerAgency
+      summary: Inativa a imobiliária e desvincula todos os usuários (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Inativada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /partner-agencies/{id}/users:
+    post:
+      operationId: linkPartnerUser
+      summary: Vincula usuário comum, sem papel e sem acesso, com o papel fixo erp_partner (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [user_id], properties: { user_id: { type: integer } } } } }
+      responses:
+        '201': { description: '{ agency_id, user_id, role }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Imobiliária inativa, usuário com nível administrativo, com papel, com acesso ou com permissão própria' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /partner-users/{user}/unlink:
+    post:
+      operationId: unlinkPartnerUser
+      summary: Tira o papel, todo o acesso a condomínios e o vínculo (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: user, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Desvinculado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: Não é parceiro }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /partner-users/{user}/condominiums:
+    post:
+      operationId: grantPartnerCondominium
+      summary: Concede ao parceiro um condomínio do seu escopo (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: user, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer } } } } }
+      responses:
+        '201': { description: Concedido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não é parceiro }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /partner-users/{user}/condominiums/revoke:
+    post:
+      operationId: revokePartnerCondominium
+      summary: Revoga do parceiro um condomínio do seu escopo (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: user, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer } } } } }
+      responses:
+        '200': { description: Revogado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não é parceiro }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /partner/view:
+    get:
+      operationId: partnerView
+      summary: Consulta da imobiliária parceira, com unidades e moradores mascarados do condomínio concedido (erp.partner.view)
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ condominium_id, units[{ id, label, type, status }], residents[{ unit_id, name, relationship, email, phone, document (mascarados) }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /resident-invitations:
+    get:
+      operationId: listResidentInvitations
+      summary: Convites do condomínio, sem token e com e-mail mascarado (AP-152, erp.access_admin.view e erp.residents.view)
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data[{ id, resident_id, name, email, status (pending, accepted, revoked, expired), expires_at, accepted_at, created_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: inviteResidents
+      summary: Convida moradores pela outbox; token de uso único, 7 dias (erp.access_admin.manage e erp.residents.view)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, resident_ids], properties: { condominium_id: { type: integer }, resident_ids: { type: array, items: { type: integer }, maxItems: 500 } } } } }
+      responses:
+        '201': { description: '{ invited, skipped[{ resident_id, reason (not_found, no_email, daily_limit) }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Evento de convite não registrado na outbox }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /resident-invitations/{id}/revoke:
+    post:
+      operationId: revokeResidentInvitation
+      summary: Revoga o convite pendente (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Revogado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não está pendente }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident-portal-permissions:
+    get:
+      operationId: residentPortalMatrix
+      summary: Matriz do portal do morador do condomínio; tudo começa desligado (AP-153, erp.access_admin.view)
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data[{ feature, label, enabled, updated_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: setResidentPortalPermission
+      summary: Liga ou desliga uma função do portal no condomínio, com auditoria (erp.access_admin.manage)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, feature, enabled], properties: { condominium_id: { type: integer }, feature: { type: string, enum: [boletos, reservations, occurrences, announcements, documents] }, enabled: { type: boolean } } } } }
+      responses:
+        '200': { description: Matriz atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /communication-addresses:
     get:
       operationId: listCommunicationAddresses

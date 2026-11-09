@@ -574,3 +574,35 @@ Escopo: `source/Services/Erp/BillingRules.php` e `source/Controllers/Api/V1/Bill
 - Um índice corrigido de um mês passado muda a correção das contas em aberto daquele período. É o
   esperado, mas a resposta da gravação não informa quantas contas são afetadas.
 
+## 19ª rodada — Acesso de parceiros, convite de morador e portal (ciclo 39)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 39 (sha256 29b2141d) sobre `claude-dev` em 4d798bb · Correções: ADR 0111
+
+Escopo: `PartnerAccess`, `ResidentInvitations`, `ResidentPortalPermissions`, `Api/V1/AccessAdmin`, migration 0544
+e os usuários que só têm `erp.access`.
+
+| Ponto | Situação |
+|---|---|
+| Escalada no `linkUser`: sem parâmetro de papel; só nível comum, sem papel, acesso nem permissão própria | CONFIRMADO, com o achado 2 |
+| Escopo no `grant` e no `revoke`: condomínio do escopo de quem concede (404) | CONFIRMADO, com o achado 3 |
+| Aceite do convite: `UPDATE` condicional, uso único, vencimento conferido | CONFIRMADO |
+| Hash provisório: de um valor aleatório que ninguém recebe; o token só nasce no envio | CONFIRMADO |
+| Token só em hash no banco; listagem sem token e com e-mail mascarado | CONFIRMADO |
+| Matriz do portal desligada por padrão e em qualquer erro; mudanças auditadas | CONFIRMADO |
+| Administração só com `erp.access_admin.*` (developer e super_admin) | CONFIRMADO |
+| O que o parceiro vê com `erp.access` | CONFIRMADO, com o achado 1 |
+
+### Achados corrigidos (ADR 0111)
+
+1. **Painel operacional.** `GET /api/v1/dashboard` e o painel da tela inicial mostravam ao parceiro as contagens
+   operacionais dos condomínios concedidos. Agora exigem `erp.units.view`.
+2. **Nível conferido fora da transação no `linkUser`.** Agora o usuário fica travado até o commit.
+3. **`grant`/`revoke` contra `unlinkUser`.** Agora os três travam o vínculo do usuário.
+4. **Entrega do convite.** O token novo sai só para quem ainda não recebeu, e a retentativa não invalida o link enviado.
+
+### Lacunas
+
+- A rota `/convite/{token}` (cadastro do Studio) ainda não existe. Até ela existir, não ligar o envio real.
+- O parceiro pode abrir chamado no Help Desk (só `erp.access`). Isso foi mantido.
+- As corridas não têm teste automático. O `AccessAdminIntegrationTest` roda só no Mac.
+
