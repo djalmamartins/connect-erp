@@ -31,6 +31,20 @@ final class CollectionsTest extends TestCase
         self::assertFalse(Collections::promiseBroken(null, '2026-11-09', true));
     }
 
+    /** ADR 0066: contas do caso conferidas antes de converter, sem repetição e com teto. */
+    public function testEntryIdsAreValidatedAndCapped(): void
+    {
+        self::assertSame([5, 9], Collections::entryIds([5, '9', '5']));
+        foreach ([null, 'x', [], ['1a'], [0], [-3], [1.5], array_fill(0, Collections::MAX_CASE_ENTRIES + 1, 1)] as $bad) {
+            try {
+                Collections::entryIds($bad);
+                self::fail('Aceitou ' . json_encode($bad));
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testFutureDateWindow(): void
     {
         self::assertNull(Collections::futureDate('', 90, 'x', '2026-11-09'));
