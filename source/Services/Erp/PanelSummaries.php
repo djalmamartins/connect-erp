@@ -8,7 +8,9 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Support\Access;
 
 /**
  * Painel do condomínio (AP-002) e painel da unidade (AP-003), ADR 0054. Somente leitura, calculados
@@ -18,13 +20,43 @@ use Source\Services\Erp\Registry\RegistryNotFound;
  */
 final class PanelSummaries
 {
+    /**
+     * O painel junta dados de vários módulos. Além de erp.units.view, quem vê o painel precisa da
+     * permissão de cada módulo que ele mostra (ADR 0061): sem ela, 403 em vez de vazar o dado.
+     */
+    public const REQUIRED = [
+        'condominium' => ['erp.units.view', 'erp.bank_accounts.view', 'erp.agreements.view', 'erp.closing.view'],
+        'unit' => ['erp.units.view', 'erp.residents.view', 'erp.agreements.view', 'erp.entries.view', 'erp.unit_documents.view'],
+    ];
+
     private PDO $pdo;
     private CondominiumScope $scope;
+    /** @var callable(string, User): bool */
+    private $can;
 
-    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null)
+    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?callable $can = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
+        $this->can = $can ?? static fn (string $permission, User $user): bool => Access::can($permission, $user);
+    }
+
+    /**
+     * Permissões do painel que faltam ao usuário (regra pura).
+     *
+     * @param callable(string): bool $can
+     * @return list<string>
+     */
+    public static function missing(string $panel, callable $can): array
+    {
+        return array_values(array_filter(self::REQUIRED[$panel] ?? [], static fn (string $permission): bool => !$can($permission)));
+    }
+
+    private function authorize(User $user, string $panel): void
+    {
+        if (self::missing($panel, fn (string $permission): bool => ($this->can)($permission, $user)) !== []) {
+            throw new RegistryForbidden();
+        }
     }
 
     /** Ocupação das unidades (regra pura): total, com morador ativo e vagas. */
@@ -38,6 +70,7 @@ final class PanelSummaries
     public function condominium(User $user, int $condominiumId, ?string $today = null): array
     {
         $today ??= date('Y-m-d');
+        $this->authorize($user, 'condominium');
         if (!$this->scope->canAccess($user, $condominiumId)) {
             throw new RegistryNotFound();
         }
@@ -68,13 +101,14 @@ final class PanelSummaries
                 'closing_status' => $closing['status'],
                 'competence_result_cents' => $closing['summary']['result_cents'],
             ],
-            'operations' => (new OperationalDashboard($this->pdo, $this->scope))->summary($user, $condominiumId, $today),
+            'operations' => (new OperationalDashboard($this->pdo, $this->scope, $this->can))->summary($user, $condominiumId, $today),
         ];
     }
 
     public function unit(User $user, int $unitId, ?string $today = null): array
     {
         $today ??= date('Y-m-d');
+        $this->authorize($user, 'unit');
         $stmt = $this->pdo->prepare('SELECT u.id, u.condominium_id, u.label, u.block, u.number, u.type, u.ideal_fraction, c.name AS condominium_name
             FROM erp_units u JOIN condominiums c ON c.id = u.condominium_id WHERE u.id = :id AND u.deleted_at IS NULL');
         $stmt->execute(['id' => $unitId]);

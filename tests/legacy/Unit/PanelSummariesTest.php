@@ -7,6 +7,7 @@ namespace MovesOSTests\Unit;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Source\Services\Erp\NotificationOutbox;
+use Source\Services\Erp\OperationalDashboard;
 use Source\Services\Erp\PanelSummaries;
 
 /** Painéis: ocupação; outbox: payload limpo e eventos conhecidos (ADR 0054). */
@@ -31,5 +32,23 @@ final class PanelSummariesTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         (new NotificationOutbox(new \PDO('sqlite::memory:')))->record('cobranca.enviada', 'k', 1, 't', 1, [], null);
+    }
+
+    /** ADR 0061: o painel exige a permissão de cada módulo que mostra. */
+    public function testPanelRequiresEveryModulePermission(): void
+    {
+        self::assertSame([], PanelSummaries::missing('condominium', static fn (string $p): bool => true));
+        self::assertSame(['erp.bank_accounts.view', 'erp.agreements.view', 'erp.closing.view'],
+            PanelSummaries::missing('condominium', static fn (string $p): bool => $p === 'erp.units.view'));
+        self::assertSame(['erp.residents.view'], PanelSummaries::missing('unit', static fn (string $p): bool => $p !== 'erp.residents.view'));
+        self::assertContains('erp.unit_documents.view', PanelSummaries::REQUIRED['unit']);
+    }
+
+    /** ADR 0061: cartões com valores do financeiro saem do dashboard de quem não tem erp.entries.view. */
+    public function testDashboardHidesFinanceCardsWithoutPermission(): void
+    {
+        $cards = ['maintenances_late' => 2, 'receivables_overdue_cents' => 100, 'receivables_week_cents' => 5, 'payables_week_cents' => 7];
+        self::assertSame($cards, OperationalDashboard::withoutFinance($cards, true));
+        self::assertSame(['maintenances_late' => 2], OperationalDashboard::withoutFinance($cards, false));
     }
 }
