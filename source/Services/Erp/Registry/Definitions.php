@@ -29,20 +29,34 @@ namespace Source\Services\Erp\Registry;
  * 'group' (padrão cadastros) é o grupo do catálogo; Unidades fica em condominios (ADR 0017).
  * 'base_where' + 'fixed' (ADR 0024): visão filtrada de outra tabela, que grava sempre os valores fixos.
  * 'closing_lock' => campo da competência (ADR 0031): competência fechada trava gravação e exclusão.
- * 'origin_lock' => ['field', 'columns', 'message'] (ADR 0033): registro gerado por outro módulo
- *   (field preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
+ * 'origin_lock' => ['fields', 'columns', 'message'] (ADR 0033/0039): registro gerado por outro módulo
+ *   (algum dos fields preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  */
 final class Definitions
 {
     private const STATUS = ['active' => 'Ativo', 'inactive' => 'Inativo'];
 
-    /** Lançamento gerado por fatura (ADR 0033): só a baixa (pago em, conta bancária) e as notas mudam aqui. */
+    /**
+     * Lançamento gerado por fatura (ADR 0033) ou ligado a acordo (ADR 0039, conta renegociada ou
+     * parcela): só a baixa (pago em, conta bancária), o documento e as notas mudam aqui.
+     */
     public const INVOICE_LOCK = [
-        'field' => 'invoice_item_id',
+        'fields' => ['invoice_item_id', 'agreement_id'],
         'columns' => ['condominium_id', 'nature', 'chart_account_id', 'amount_cents', 'competence', 'due_on', 'unit_id', 'status', 'description'],
-        'message' => 'Lançamento gerado por fatura: altere ou cancele pela fatura.',
+        'message' => 'Lançamento gerado por fatura ou ligado a acordo: altere ou cancele pela origem.',
     ];
+
+    /** O registro foi gerado por outro módulo (algum campo de origem preenchido)? */
+    public static function lockedByOrigin(array $definition, array $row): bool
+    {
+        foreach ($definition['origin_lock']['fields'] ?? [] as $field) {
+            if (($row[$field] ?? null) !== null) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /** @var array<string, array<string, mixed>>|null */
     private static ?array $cache = null;

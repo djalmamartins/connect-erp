@@ -252,6 +252,13 @@ final class Invoices
                 if ((int)$paid->fetchColumn() > 0) {
                     throw new DomainException('Há contas a receber desta fatura já pagas. Estorne a baixa antes de cancelar.');
                 }
+                // Conta renegociada em acordo ativo (ADR 0039): cancele o acordo antes.
+                $renegotiated = $this->pdo->prepare("SELECT COUNT(*) FROM erp_entries e JOIN erp_invoice_items it ON it.id = e.invoice_item_id
+                    WHERE it.invoice_id = :id AND e.agreement_id IS NOT NULL AND e.deleted_at IS NULL");
+                $renegotiated->execute(['id' => $invoiceId]);
+                if ((int)$renegotiated->fetchColumn() > 0) {
+                    throw new DomainException('Há contas desta fatura renegociadas em acordo. Cancele o acordo antes.');
+                }
                 $this->pdo->prepare("UPDATE erp_entries e JOIN erp_invoice_items it ON it.id = e.invoice_item_id
                     SET e.status = 'inactive', e.updated_by = :u WHERE it.invoice_id = :id AND e.deleted_at IS NULL")
                     ->execute(['u' => (int)$user->id, 'id' => $invoiceId]);

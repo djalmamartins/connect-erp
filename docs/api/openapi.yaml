@@ -944,6 +944,82 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /delinquency:
+    get:
+      operationId: listDelinquency
+      summary: Contas a receber vencidas e em aberto por unidade (erp.agreements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Data de referência; padrão hoje. Vence no dia = ainda não vencida.' }
+      responses:
+        '200': { description: '{ data: { as_of, units[{unit_id, unit_label, entries[{id, due_on, amount_cents, days_late, bucket}], amount_cents, max_days_late}], totals{units, entries, amount_cents, buckets{1-30, 31-60, 61-90, 90+}} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /agreements:
+    get:
+      operationId: listAgreements
+      summary: Acordos dos condomínios do escopo, com o andamento das parcelas
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [active, cancelled] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (25 por página); cada acordo traz paid_installments, paid_cents, open_cents e settled' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createAgreement
+      summary: Acordo das contas vencidas de uma unidade (erp.agreements.manage)
+      description: >-
+        As contas escolhidas (da mesma unidade, em aberto, fora de acordo, sem boleto ativo e de
+        competência aberta) ficam canceladas e ligadas ao acordo; as parcelas mensais viram contas a
+        receber novas na conta de receita informada. total = original + fees − discount; a sobra de
+        centavos vai para a primeira parcela. Multa e juros são informados, não calculados.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, installments, first_due_on, chart_account_id], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer } }, installments: { type: integer, minimum: 1, maximum: 60 }, first_due_on: { type: string, format: date }, chart_account_id: { type: integer }, fees_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, discount_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, notes: { type: string, maxLength: 255 } } } } }
+      responses:
+        '201': { description: 'Acordo com originals[] e parcels[]' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Conta já paga, em outro acordo, com boleto ativo ou de competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /agreements/{id}:
+    get:
+      operationId: showAgreement
+      summary: Acordo com as contas renegociadas e as parcelas
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Acordo }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /agreements/{id}/cancel:
+    post:
+      operationId: cancelAgreement
+      summary: Cancela o acordo sem parcela paga; as contas originais voltam a valer (erp.agreements.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 5, maxLength: 255 } } } } }
+      responses:
+        '200': { description: Cancelado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já cancelado, parcela paga, boleto ativo em parcela ou competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates
