@@ -78,6 +78,8 @@ final class EntryShortcutScreens
                 }
                 $data['chargeUnits'] = $context === null ? [] : Panel::documentUnits($registry->units($user), $condominiumNames(), $context);
                 $data['chargeAccounts'] = self::forContext($registry->references($user, RegistryService::definition('receivables'))['chart_account_id'] ?? [], $context);
+                // Origem da multa (ADR 0080): ocorrência ou reserva da unidade, opcional.
+                $data['fineOrigins'] = $kind === 'fine' && $context !== null ? (new \Source\Services\Erp\CollectionScreenOptions())->fineOrigins($user, $context) : ['occurrences' => [], 'reservations' => []];
             } else {
                 $status = in_array($_GET['situacao'] ?? null, ['active', 'cancelled'], true) ? $_GET['situacao'] : null;
                 $data['transferStatus'] = $status;
