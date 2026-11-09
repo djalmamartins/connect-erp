@@ -10,6 +10,7 @@ use Source\Models\Corporation\AppCorporations;
 use Source\Models\Session\AppLog;
 use Source\Support\Email;
 use Source\Support\AppLogger;
+use Source\Support\ClientIp;
 use Source\Support\MailTemplate;
 use Source\Services\PasswordResetService;
 use Source\Services\TwoFactorService;
@@ -200,7 +201,7 @@ class Auth extends Model
 
     private static function twoFactorSubjects(int $userId): array
     {
-        return LoginThrottle::subjects('user:' . $userId, $_SERVER['REMOTE_ADDR'] ?? null);
+        return LoginThrottle::subjects('user:' . $userId, ClientIp::resolve());
     }
 
     /**
@@ -275,7 +276,7 @@ class Auth extends Model
     {
         self::cancelTwoFactor();
         $throttle ??= new LoginThrottle();
-        $subjects = LoginThrottle::subjects(self::throttleAccount($email), $_SERVER['REMOTE_ADDR'] ?? null);
+        $subjects = LoginThrottle::subjects(self::throttleAccount($email), ClientIp::resolve());
         if ($throttle->blocked(LoginThrottle::LOGIN, $subjects)) {
             $this->message->error(self::THROTTLED_MESSAGE);
             return false;
