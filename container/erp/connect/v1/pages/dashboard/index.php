@@ -3,8 +3,15 @@
  * Dashboard da administradora (AP-001 reinterpretada, ADR-002).
  * Nesta fase os números vêm de database/fixtures/erp-demo/dashboard.php e são marcados
  * como demonstração. Sem o modo demonstração, a página mostra o estado vazio honesto.
+ * Desde o ADR 0030 responde ao condomínio da barra superior: "Todos" mostra a visão geral;
+ * um condomínio mostra o resumo dele (cadastros com dados reais do MariaDB).
  * @var array $dashboard
+ * @var list<array{label:string,count:int,href:string,icon:string}> $summary
+ * @var int $condoTotal
+ * @var ?array{id:int,name:string,slug:string} $condoCurrent
  */
+$summary ??= [];
+$condoTotal ??= 0;
 $this->layout('default');
 $hasData = $dashboard !== [];
 $firstName = trim((string)($user->first_name ?? ''));
@@ -21,10 +28,27 @@ ob_start(); ?>
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $hasData ? 'Visão geral · ' . $dashboard['period'] : 'Visão geral',
     'pageTitle' => $greeting . ($firstName !== '' ? ', ' . $firstName : '') . '!',
-    'pageLead' => 'Acompanhe a situação dos condomínios administrados pela Connect.',
+    'pageLead' => $condoCurrent === null ? 'Acompanhe a situação dos condomínios administrados pela Connect.' : 'Situação do ' . $condoCurrent['name'] . '. Para a visão geral, escolha "Todos os condomínios" na barra superior.',
     'pageActions' => $actions,
 ]);
 ?>
+
+<section class="erp-card" aria-labelledby="dash-summary-title">
+    <div class="erp-card__head">
+        <div><h2 id="dash-summary-title"><?= $condoCurrent === null ? 'Resumo de todos os condomínios' : 'Resumo do ' . $this->e($condoCurrent['name']) ?></h2>
+            <p><?= $condoCurrent === null ? ($condoTotal === 1 ? '1 condomínio' : $condoTotal . ' condomínios') . ' no seu escopo · dados reais' : 'Cadastros deste condomínio · dados reais' ?></p></div>
+        <?php if ($condoCurrent !== null): ?><a class="erp-btn erp-btn--sm" href="<?= erp_url('/condominios/' . (int)$condoCurrent['id']) ?>"><?= $icon('building', 'erp-icon--sm') ?>Ficha do condomínio</a><?php endif; ?>
+    </div>
+    <?php if ($summary === []): ?>
+        <p class="erp-field__hint">Nenhum cadastro disponível para a sua conta.</p>
+    <?php else: ?>
+        <ul class="erp-summary">
+            <?php foreach ($summary as $item): ?>
+                <li><a href="<?= erp_url($item['href']) ?>"><span class="erp-summary__icon"><?= $icon($item['icon'], 'erp-icon--sm') ?></span><strong><?= (int)$item['count'] ?></strong><small><?= $this->e($item['label']) ?></small></a></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+</section>
 
 <?php if ($demo): ?>
     <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><strong>Dados de demonstração</strong>Os valores desta tela são fictícios e servem para avaliar o layout. Nenhum dado é gravado. Para desligar, defina <code>ERP_DEMO_DATA=false</code>.</div></div>
@@ -42,7 +66,7 @@ $this->insert('components/layout/page-head', [
     <div class="erp-grid erp-grid--main">
         <section class="erp-card" aria-labelledby="dash-cash-title">
             <div class="erp-card__head">
-                <div><h2 id="dash-cash-title">Receitas e despesas</h2><p>Consolidado dos condomínios, últimos 6 meses</p></div>
+                <div><h2 id="dash-cash-title">Receitas e despesas</h2><p><?= $condoCurrent === null ? 'Consolidado dos condomínios' : $this->e($condoCurrent['name']) ?>, últimos 6 meses</p></div>
                 <span class="erp-demo-flag">Demonstração</span>
             </div>
             <?php $this->insert('components/charts/bars', ['chart' => $dashboard['cashflow'], 'chartCaption' => 'Receitas e despesas por mês']); ?>
@@ -56,7 +80,8 @@ $this->insert('components/layout/page-head', [
         </section>
     </div>
 
-    <div class="erp-grid erp-grid--main">
+    <div class="erp-grid<?= $condoCurrent === null ? ' erp-grid--main' : '' ?>">
+        <?php if ($condoCurrent === null): ?>
         <section class="erp-card erp-card--flush" aria-labelledby="dash-condos-title">
             <div class="erp-card__head">
                 <div><h2 id="dash-condos-title">Condomínios</h2><p>Arrecadação e inadimplência do mês</p></div>
@@ -96,6 +121,7 @@ $this->insert('components/layout/page-head', [
                 <div class="erp-pagination__pages" data-erp-pager-pages></div>
             </div>
         </section>
+        <?php endif; ?>
 
         <section class="erp-card" aria-labelledby="dash-alerts-title">
             <div class="erp-card__head"><div><h2 id="dash-alerts-title">Alertas</h2><p>O que precisa de atenção</p></div></div>
