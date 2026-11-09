@@ -181,6 +181,10 @@
    "title": "0046 — Telas dos documentos da unidade (AP-123, AP-124, AP-125 e AP-130)"
   },
   {
+   "file": "docs/Organic Code/decisions/0048-meter-readings-screen.md",
+   "title": "0048 — Tela de leituras do mês (AP-042)"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -768,7 +772,9 @@
     "Source\\Services\\Erp\\DemoData",
     "Source\\Services\\Erp\\FinancialReports",
     "Source\\Services\\Erp\\Invoices",
+    "Source\\Services\\Erp\\MeterReadings",
     "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
@@ -792,6 +798,7 @@
     "tests/legacy/Unit/ErpBankingScreensTest.php",
     "tests/legacy/Unit/ErpBillingScreensTest.php",
     "tests/legacy/Unit/ErpFinancialReportsScreensTest.php",
+    "tests/legacy/Unit/ErpMeterReadingsScreenTest.php",
     "tests/legacy/Unit/ErpThemeTest.php",
     "tests/legacy/Unit/ErpUnitDocumentsScreensTest.php",
     "tests/legacy/Unit/OnboardingChecklistViewTest.php"
@@ -2961,7 +2968,7 @@
   }
  },
  "counts": {
-  "adrs": 48,
+  "adrs": 49,
   "classes": 171,
   "dynamic_route_lines": {
    "erp": 8,
@@ -2970,7 +2977,7 @@
   "erp_pages": 172,
   "routes": 255,
   "tables": 84,
-  "tests": 100
+  "tests": 101
  },
  "erp_pages": [
   {
@@ -7576,6 +7583,9 @@
    "Source\\Controllers\\Erp\\Connect\\Erp"
   ],
   "tests/legacy/Unit/ErpLoginRedirectTest.php": [],
+  "tests/legacy/Unit/ErpMeterReadingsScreenTest.php": [
+   "Source\\Controllers\\Erp\\Connect\\Panel"
+  ],
   "tests/legacy/Unit/ErpMonthClosingScreenTest.php": [],
   "tests/legacy/Unit/ErpThemeTest.php": [
    "Source\\Controllers\\Erp\\Connect\\Condominiums",

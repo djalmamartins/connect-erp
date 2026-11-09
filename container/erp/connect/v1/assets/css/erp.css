@@ -535,6 +535,15 @@ p { margin: 0; }
   .erp-btn, .erp-input, .erp-select, .erp-card, .erp-badge { border: 1px solid CanvasText; }
   .erp-nav__link[aria-current="page"] { outline: 2px solid Highlight; }
 }
+/* Leituras do mês (ADR 0047): folha de lançamento em lote. */
+.erp-meter-input { width: 140px; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+.erp-meter-input.is-invalid { border-color: var(--erp-danger); }
+.erp-meter-sheet td { vertical-align: middle; }
+.erp-meter-head-actions { display: flex; gap: 12px; align-items: flex-end; }
+.erp-meter-actions { align-items: center; flex-wrap: wrap; }
+.erp-meter-actions [data-meter-changes] { margin-right: auto; }
+.erp-meter-note { margin: 8px 0 0; text-align: right; }
+
 /* Documentos da unidade (ADR 0046): folha para imprimir com o código de verificação. */
 .erp-unit-doc { display: grid; gap: 18px; padding: 28px; }
 .erp-unit-doc__head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid var(--erp-border); padding-bottom: 14px; }

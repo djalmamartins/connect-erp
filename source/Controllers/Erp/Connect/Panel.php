@@ -16,6 +16,8 @@ use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
 use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Invoices;
+use Source\Services\Erp\MeterReadings;
+use Source\Services\Erp\RecurringEntries;
 use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryNotFound;
@@ -364,6 +366,83 @@ final class Panel extends Controller
         return $rows;
     }
 
+    /** Tipos de relógio das leituras (ADR 0045). */
+    public const METER_KINDS = ['agua' => 'Água', 'gas' => 'Gás', 'energia' => 'Energia'];
+
+    /**
+     * Leituras do mês (AP-042, ADR 0045) no contexto da barra superior: ?competencia=AAAA-MM (padrão:
+     * mês atual) e ?tipo=agua|gas|energia. $meterSheet tem uma linha por relógio ativo do tipo, com a
+     * leitura anterior e a da competência (consumo, valor e se já foi cobrada). null = sem permissão ou
+     * sem banco (a tela segue com a demonstração). Lançar e faturar usam /api/v1/meter-readings.
+     *
+     * @return array<string, mixed>
+     */
+    private function meterReadingData(User $user): array
+    {
+        $competence = is_string($_GET['competencia'] ?? null) && RecurringEntries::isCompetence($_GET['competencia']) ? $_GET['competencia'] : date('Y-m');
+        $kind = is_string($_GET['tipo'] ?? null) && isset(self::METER_KINDS[$_GET['tipo']]) ? $_GET['tipo'] : 'agua';
+        $data = ['meterSheet' => null, 'meterCompetence' => $competence, 'meterKind' => $kind, 'canManageReadings' => false];
+        if (Connect::databaseDisabled() || !Access::can('erp.meter_readings.view', $user)) {
+            return $data;
+        }
+        $context = CondominiumContext::id();
+        try {
+            $registry = new RegistryService();
+            $meters = [];
+            for ($page = 1; $page <= 40; $page++) {
+                $chunk = $registry->list($user, 'meters', ['status' => 'active', 'filter' => $kind, 'condominium_id' => $context, 'page' => $page]);
+                $meters = array_merge($meters, $chunk['data']);
+                if ($page >= $chunk['pages']) {
+                    break;
+                }
+            }
+            $labels = array_column($registry->units($user), 'label', 'id');
+            $readings = (new MeterReadings())->list($user, $context, ['kind' => $kind])['data'];
+            $data['meterSheet'] = self::readingSheet($meters, $labels, $readings, $competence);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'meter_readings_screen_failed']);
+            return ['meterSheet' => null] + $data;
+        }
+        $data['canManageReadings'] = Access::can('erp.meter_readings.manage', $user);
+        return $data;
+    }
+
+    /**
+     * Folha de leituras da competência (regra pura): uma linha por relógio, com a leitura anterior (a
+     * mais recente de competência anterior, senão a inicial do relógio) e a leitura da competência, se
+     * houver. Ordenada por condomínio e unidade.
+     *
+     * @param list<array> $meters relógios (RegistryService 'meters')
+     * @param array<int, string> $unitLabels unidade => rótulo
+     * @param list<array> $readings leituras do tipo (MeterReadings::list), mais novas primeiro
+     * @return list<array{meter_id:int, condominium_id:int, condominium_name:?string, unit_label:string, number:string, previous:float, reading:?array}>
+     */
+    public static function readingSheet(array $meters, array $unitLabels, array $readings, string $competence): array
+    {
+        $current = [];
+        $previous = [];
+        foreach ($readings as $r) {
+            $meter = (int)$r['meter_id'];
+            if ($r['competence'] === $competence) {
+                $current[$meter] = $r;
+            } elseif ($r['competence'] < $competence && (!isset($previous[$meter]) || $r['competence'] > $previous[$meter]['competence'])) {
+                $previous[$meter] = $r;
+            }
+        }
+        $rows = [];
+        foreach ($meters as $m) {
+            $id = (int)$m['id'];
+            $rows[] = [
+                'meter_id' => $id, 'condominium_id' => (int)$m['condominium_id'], 'condominium_name' => $m['condominium_name'] ?? null,
+                'unit_label' => (string)($unitLabels[(int)$m['unit_id']] ?? '—'), 'number' => (string)$m['number'],
+                'previous' => isset($current[$id]) ? (float)$current[$id]['previous_reading'] : (isset($previous[$id]) ? (float)$previous[$id]['reading'] : (float)($m['initial_reading'] ?? 0)),
+                'reading' => $current[$id] ?? null,
+            ];
+        }
+        usort($rows, static fn (array $a, array $b): int => [(string)$a['condominium_name'], $a['unit_label'], $a['number']] <=> [(string)$b['condominium_name'], $b['unit_label'], $b['number']]);
+        return $rows;
+    }
+
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
     {
@@ -467,6 +546,9 @@ final class Panel extends Controller
         if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
+        if ($id === 'AP-042') {
+            $data += $this->meterReadingData($user);
+        }
         if (isset(self::UNIT_DOCUMENT_PAGES[$id])) {
             $data += $this->unitDocumentData($user, $id);
         }
@@ -489,6 +571,7 @@ final class Panel extends Controller
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
             isset(self::UNIT_DOCUMENT_PAGES[$id]) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
+            $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
             $id === 'AP-079' && (($data['trialBalance'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/trial-balance',
             $id === 'AP-051' && (($data['statement'] ?? null) !== null || ($data['reportError'] ?? null) !== null) => 'pages/reports/statement',
