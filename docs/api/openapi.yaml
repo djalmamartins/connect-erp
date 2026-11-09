@@ -1185,6 +1185,59 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/payments:
+    get:
+      operationId: paymentsReport
+      summary: Registro de pagamentos (AP-074), em JSON ou CSV seguro (erp.entries.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'Até 366 dias depois de from' }
+        - { name: nature, in: query, schema: { type: string, enum: [despesa, receita, all], default: despesa } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ from, to, nature, rows[{ paid_on, due_on, paid_late, description, document_number, account, bank_account, supplier, supplier_document (mascarado), unit_label, amount_cents }], totals{entries, amount_cents, by_bank_account} }, ou CSV' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Mais de 30 exportações em CSV na última hora }
+  /reports/calculation:
+    get:
+      operationId: calculationReport
+      summary: Memória de cálculo dos encargos das contas vencidas (AP-075), em JSON ou CSV seguro (erp.entries.view e erp.agreements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: unit_id, in: query, schema: { type: integer } }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Padrão hoje' }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ as_of, rule{fine_bp, monthly_interest_bp, price_index, source, formula}, rows[{ unit_label, description, competence, due_on, principal_cents, index_steps[{competence, rate_percent, factor}], days_late, correction_cents, fine_cents, interest_cents, total_cents, missing_index }], totals }, ou CSV' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Mais de 30 exportações em CSV na última hora }
+  /reports/transfers:
+    get:
+      operationId: transfersReport
+      summary: Transferências entre contas no período (AP-076), em JSON ou CSV seguro (erp.entries.view e erp.bank_accounts.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: active_only, in: query, schema: { type: string, enum: ['1'] }, description: '1 = esconde as canceladas' }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ from, to, rows[{ transferred_on, from_account, to_account, description, amount_cents, status, cancel_reason }], totals{transfers, amount_cents, cancelled} }, ou CSV' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Mais de 30 exportações em CSV na última hora }
   /charts/general:
     get:
       operationId: chartGeneral
