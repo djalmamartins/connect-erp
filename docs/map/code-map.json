@@ -117,6 +117,10 @@
    "title": "0030 — Condomínio da barra superior como contexto global do ERP, com slug na URL"
   },
   {
+   "file": "docs/Organic Code/decisions/0031-month-closing.md",
+   "title": "0031 — Fechamento mensal (AP-030): resumo da competência e trava dos lançamentos"
+  },
+  {
    "file": "docs/decisions/ADR-001-EXISTING-CORE.md",
    "title": "ADR-001 — Reutilizar núcleo de identidade e auditoria"
   },
@@ -210,6 +214,20 @@
    ],
    "tests": []
   },
+  "Source\\Controllers\\Api\\V1\\MonthClosings": {
+   "deps": [
+    "Source\\Models\\Auth",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Support\\Access"
+   ],
+   "file": "source/Controllers/Api/V1/MonthClosings.php",
+   "kind": "class",
+   "layer": "Controllers",
+   "tables": [],
+   "tests": []
+  },
   "Source\\Controllers\\Api\\V1\\OnboardingTemplates": {
    "deps": [
     "Source\\Models\\Auth",
@@ -244,6 +262,7 @@
     "Source\\Models\\User",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
     "Source\\Services\\Erp\\Registry\\RegistryInUse",
+    "Source\\Services\\Erp\\Registry\\RegistryLocked",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
@@ -571,6 +590,7 @@
     "Source\\Models\\User",
     "Source\\Services\\Erp\\Registry\\RegistryForbidden",
     "Source\\Services\\Erp\\Registry\\RegistryInUse",
+    "Source\\Services\\Erp\\Registry\\RegistryLocked",
     "Source\\Services\\Erp\\Registry\\RegistryNotFound",
     "Source\\Services\\Erp\\Registry\\RegistryService",
     "Source\\Services\\Erp\\Registry\\RegistryValidationException",
@@ -1418,6 +1438,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PasswordResetServiceTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
@@ -1439,7 +1460,8 @@
    "tables": [],
    "tests": [
     "tests/legacy/Integration/CondominiumRegistryTest.php",
-    "tests/legacy/Integration/CondominiumScopeTest.php"
+    "tests/legacy/Integration/CondominiumScopeTest.php",
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php"
    ]
   },
   "Source\\Services\\CondominiumRegistry": {
@@ -1487,6 +1509,7 @@
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InspectionServiceTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/OnboardingAlertsTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
@@ -1534,6 +1557,28 @@
     "tests/erp/render-smoke.php"
    ]
   },
+  "Source\\Services\\Erp\\MonthClosing": {
+   "deps": [
+    "Source\\Core\\Connect",
+    "Source\\Models\\User",
+    "Source\\Services\\CondominiumAccessDenied",
+    "Source\\Services\\CondominiumScope",
+    "Source\\Support\\Audit"
+   ],
+   "file": "source/Services/Erp/MonthClosing.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [
+    "erp_chart_accounts",
+    "erp_month_closings",
+    "erp_bank_accounts",
+    "erp_entries"
+   ],
+   "tests": [
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Unit/MonthClosingTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\RecurringEntries": {
    "deps": [
     "Source\\Core\\Connect",
@@ -1550,6 +1595,7 @@
     "erp_entries"
    ],
    "tests": [
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Unit/RecurringEntriesDefinitionTest.php"
    ]
@@ -1587,6 +1633,7 @@
     "tests/legacy/Unit/CostCenterBankAccountDefinitionTest.php",
     "tests/legacy/Unit/EntriesDefinitionTest.php",
     "tests/legacy/Unit/InvoiceTypesDefinitionTest.php",
+    "tests/legacy/Unit/MonthClosingTest.php",
     "tests/legacy/Unit/PayablesBalancesDefinitionTest.php",
     "tests/legacy/Unit/RecurringEntriesDefinitionTest.php",
     "tests/legacy/Unit/RegistryValidatorTest.php",
@@ -1618,6 +1665,17 @@
     "tests/legacy/Integration/UnitRegistryTest.php"
    ]
   },
+  "Source\\Services\\Erp\\Registry\\RegistryLocked": {
+   "deps": [],
+   "file": "source/Services/Erp/Registry/RegistryLocked.php",
+   "kind": "class",
+   "layer": "Services",
+   "tables": [],
+   "tests": [
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
+    "tests/legacy/Unit/MonthClosingTest.php"
+   ]
+  },
   "Source\\Services\\Erp\\Registry\\RegistryNotFound": {
    "deps": [],
    "file": "source/Services/Erp/Registry/RegistryNotFound.php",
@@ -1640,6 +1698,7 @@
    "kind": "class",
    "layer": "Services",
    "tables": [
+    "erp_month_closings",
     "system_audit_logs",
     "condominiums",
     "erp_units",
@@ -1650,6 +1709,7 @@
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RecurringEntriesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
@@ -1668,6 +1728,7 @@
     "tests/legacy/Integration/CostCenterBankAccountTest.php",
     "tests/legacy/Integration/EntriesTest.php",
     "tests/legacy/Integration/InvoiceTypesTest.php",
+    "tests/legacy/Integration/MonthClosingIntegrationTest.php",
     "tests/legacy/Integration/PayablesBalancesTest.php",
     "tests/legacy/Integration/RegistryServiceTest.php",
     "tests/legacy/Integration/UnitRegistryTest.php"
@@ -2249,16 +2310,16 @@
   }
  },
  "counts": {
-  "adrs": 32,
-  "classes": 139,
+  "adrs": 33,
+  "classes": 142,
   "dynamic_route_lines": {
    "erp": 8,
    "index": 6
   },
   "erp_pages": 172,
-  "routes": 206,
-  "tables": 63,
-  "tests": 68
+  "routes": 209,
+  "tables": 64,
+  "tests": 70
  },
  "erp_pages": [
   {
@@ -3595,10 +3656,37 @@
    "verb": "POST"
   },
   {
+   "controller": "Source\\Controllers\\Api\\V1\\MonthClosings",
+   "env": "index",
+   "file": "index.php",
+   "line": 57,
+   "method": "show",
+   "path": "/api/v1/closings",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\MonthClosings",
+   "env": "index",
+   "file": "index.php",
+   "line": 58,
+   "method": "close",
+   "path": "/api/v1/closings",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Api\\V1\\MonthClosings",
+   "env": "index",
+   "file": "index.php",
+   "line": 59,
+   "method": "reopen",
+   "path": "/api/v1/closings/reopen",
+   "verb": "POST"
+  },
+  {
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 71,
+   "line": 75,
    "method": "templates",
    "path": "/api/v1/inspection-templates",
    "verb": "GET"
@@ -3607,7 +3695,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 72,
+   "line": 76,
    "method": "index",
    "path": "/api/v1/inspections",
    "verb": "GET"
@@ -3616,7 +3704,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 73,
+   "line": 77,
    "method": "schedule",
    "path": "/api/v1/inspections/schedule",
    "verb": "GET"
@@ -3625,7 +3713,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 74,
+   "line": 78,
    "method": "store",
    "path": "/api/v1/inspections",
    "verb": "POST"
@@ -3634,7 +3722,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 75,
+   "line": 79,
    "method": "show",
    "path": "/api/v1/inspections/{id}",
    "verb": "GET"
@@ -3643,7 +3731,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 76,
+   "line": 80,
    "method": "answer",
    "path": "/api/v1/inspections/{id}/items/{item}",
    "verb": "PUT"
@@ -3652,7 +3740,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 77,
+   "line": 81,
    "method": "photo",
    "path": "/api/v1/inspections/{id}/items/{item}/photos",
    "verb": "POST"
@@ -3661,7 +3749,7 @@
    "controller": "Source\\Controllers\\Api\\V1\\Inspections",
    "env": "index",
    "file": "index.php",
-   "line": 78,
+   "line": 82,
    "method": "complete",
    "path": "/api/v1/inspections/{id}/complete",
    "verb": "POST"
@@ -3670,7 +3758,7 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 92,
+   "line": 96,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "GET"
@@ -3679,43 +3767,43 @@
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
-   "line": 93,
+   "line": 97,
    "method": "challenge",
    "path": "/studio/login/2fa",
    "verb": "POST"
   },
   {
    "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 94,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "GET"
-  },
-  {
-   "controller": "Source\\Controllers\\Studio\\TwoFactor",
-   "env": "index",
-   "file": "index.php",
-   "line": 95,
-   "method": "manage",
-   "path": "/studio/seguranca/2fa",
-   "verb": "POST"
-  },
-  {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
    "line": 98,
-   "method": "forget",
-   "path": "/forget",
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
    "verb": "GET"
   },
   {
-   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "controller": "Source\\Controllers\\Studio\\TwoFactor",
    "env": "index",
    "file": "index.php",
    "line": 99,
+   "method": "manage",
+   "path": "/studio/seguranca/2fa",
+   "verb": "POST"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 102,
+   "method": "forget",
+   "path": "/forget",
+   "verb": "GET"
+  },
+  {
+   "controller": "Source\\Controllers\\Web\\Connect\\Web",
+   "env": "index",
+   "file": "index.php",
+   "line": 103,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -3724,7 +3812,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 100,
+   "line": 104,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3733,7 +3821,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 101,
+   "line": 105,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3742,7 +3830,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 114,
+   "line": 118,
    "method": "forget",
    "path": "/forget",
    "verb": "GET"
@@ -3751,7 +3839,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 115,
+   "line": 119,
    "method": "forget",
    "path": "/forget",
    "verb": "POST"
@@ -3760,7 +3848,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 116,
+   "line": 120,
    "method": "reset",
    "path": "/forget/{code}",
    "verb": "GET"
@@ -3769,7 +3857,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 117,
+   "line": 121,
    "method": "reset",
    "path": "/reset",
    "verb": "POST"
@@ -3778,7 +3866,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 133,
+   "line": 137,
    "method": "unavailable",
    "path": "/",
    "verb": "GET"
@@ -3787,7 +3875,7 @@
    "controller": "Source\\Controllers\\Web\\Connect\\Web",
    "env": "index",
    "file": "index.php",
-   "line": 135,
+   "line": 139,
    "method": "error",
    "path": "/ops/{errcode}",
    "verb": "GET"
@@ -5454,6 +5542,7 @@
    "created_in": "database/migrations/20261108_0504_bank_accounts.sql",
    "used_by": [
     "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5470,6 +5559,7 @@
    "altered_in": [],
    "created_in": "database/migrations/20261108_0405_chart_of_accounts.sql",
    "used_by": [
+    "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
   },
@@ -5501,6 +5591,7 @@
    "created_in": "database/migrations/20261108_0506_entries.sql",
    "used_by": [
     "Source\\Services\\Erp\\BankBalances",
+    "Source\\Services\\Erp\\MonthClosing",
     "Source\\Services\\Erp\\RecurringEntries",
     "Source\\Services\\Erp\\Registry\\Definitions"
    ]
@@ -5526,6 +5617,14 @@
    "created_in": "database/migrations/20261108_0301_erp_condominium_areas_assets.sql",
    "used_by": [
     "Source\\Services\\Erp\\Registry\\Definitions"
+   ]
+  },
+  "erp_month_closings": {
+   "altered_in": [],
+   "created_in": "database/migrations/20261108_0511_month_closings.sql",
+   "used_by": [
+    "Source\\Services\\Erp\\MonthClosing",
+    "Source\\Services\\Erp\\Registry\\RegistryService"
    ]
   },
   "erp_pets": {
@@ -5968,6 +6067,16 @@
    "Source\\Services\\Erp\\Registry\\RegistryService",
    "Source\\Services\\Erp\\Registry\\RegistryValidationException"
   ],
+  "tests/legacy/Integration/MonthClosingIntegrationTest.php": [
+   "Source\\Models\\User",
+   "Source\\Services\\CondominiumAccessDenied",
+   "Source\\Services\\CondominiumScope",
+   "Source\\Services\\Erp\\MonthClosing",
+   "Source\\Services\\Erp\\RecurringEntries",
+   "Source\\Services\\Erp\\Registry\\RegistryLocked",
+   "Source\\Services\\Erp\\Registry\\RegistryService",
+   "Source\\Services\\Erp\\Registry\\RegistryValidationException"
+  ],
   "tests/legacy/Integration/NotificationQueueTest.php": [
    "Source\\Models\\Notification\\NotificationMessage"
   ],
@@ -6120,6 +6229,11 @@
   ],
   "tests/legacy/Unit/MailTemplateTest.php": [
    "Source\\Support\\MailTemplate"
+  ],
+  "tests/legacy/Unit/MonthClosingTest.php": [
+   "Source\\Services\\Erp\\MonthClosing",
+   "Source\\Services\\Erp\\Registry\\Definitions",
+   "Source\\Services\\Erp\\Registry\\RegistryLocked"
   ],
   "tests/legacy/Unit/OnboardingChecklistViewTest.php": [
    "Source\\Controllers\\Api\\V1\\CondominiumOnboarding",
