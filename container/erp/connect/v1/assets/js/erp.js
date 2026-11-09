@@ -1392,7 +1392,7 @@
         var data = json.data || {};
         var href = (box.getAttribute('data-href') || '').replace('__ID__', encodeURIComponent(String(data.ticket_id)));
         $('[data-ticket-state]', box).innerHTML = '<p class="erp-occurrence-ticket__status"><span class="erp-badge erp-badge--success">Chamado aberto</span> <strong>' + esc(data.protocol || ('nº ' + data.ticket_id)) + '</strong></p>'
-          + '<a class="erp-btn erp-btn--block" href="' + esc(href) + '" target="_blank" rel="noopener">Ver no Help Desk</a>';
+          + '<a class="erp-btn erp-btn--block" href="' + esc(href) + '">Acompanhar o chamado</a>';
         var status = document.querySelector('form [name="status"]');
         if (status && status.value === 'active') status.value = 'running';
         toast('Chamado ' + (data.protocol || '') + ' aberto no Help Desk.', 'success');

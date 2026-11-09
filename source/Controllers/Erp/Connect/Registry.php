@@ -238,7 +238,8 @@ final class Registry extends Controller
     {
         $ticket = filter_var($values['ticket_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $ticket = $ticket === false || $ticket === null ? null : (int)$ticket;
-        $pattern = \Source\Services\Environments::url('helpdesk', '/helpdesk/tickets?ticket=__ID__');
+        // O chamado da ocorrência abre no próprio ERP, com a conversa e o atalho para o Help Desk (ADR 0142).
+        $pattern = erp_url('/operacional/chamados/__ID__');
         return [
             'ticketId' => $ticket,
             'href' => $ticket !== null ? str_replace('__ID__', (string)$ticket, $pattern) : null,

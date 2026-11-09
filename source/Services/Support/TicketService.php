@@ -11,6 +11,7 @@ use Source\Models\Notification\NotificationCategory;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Environments;
+use Source\Support\Access;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
 use Source\Support\Email;
@@ -253,6 +254,243 @@ final class TicketService
         return self::present($row);
     }
 
+    /**
+     * Conversa do chamado (ADR 0142). Para o solicitante e o ERP, só o que é público: as notas
+     * internas do Help Desk ficam de fora. Cada mensagem diz se veio da equipe ou do solicitante.
+     *
+     * @return list<array{id:int,author:string,from_team:bool,message:string,internal:bool,created_at:string,attachments:list<array{name:string,url:string}>}>
+     */
+    public function conversation(array $ticket, bool $includeInternal = false): array
+    {
+        $ticketId = (int)$ticket['id'];
+        $requesterId = (int)($ticket['requester']['user_id'] ?? $ticket['requester_id'] ?? 0);
+        $creator = $this->pdo()->prepare('SELECT created_by FROM studio_support_tickets WHERE id = ?');
+        $creator->execute([$ticketId]);
+        $creatorId = (int)$creator->fetchColumn();
+        $stmt = $this->pdo()->prepare("SELECT m.id, m.user_id, m.message, m.is_internal, m.created_at,
+                NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), '') AS author
+            FROM studio_support_ticket_messages m LEFT JOIN users u ON u.id = m.user_id
+            WHERE m.ticket_id = :ticket" . ($includeInternal ? '' : ' AND m.is_internal = 0') . ' ORDER BY m.created_at, m.id');
+        $stmt->execute(['ticket' => $ticketId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $files = [];
+        if ($rows !== []) {
+            $attachments = $this->pdo()->prepare('SELECT message_id, file_path, original_name FROM studio_support_ticket_attachments WHERE ticket_id = :ticket AND message_id IS NOT NULL ORDER BY id');
+            $attachments->execute(['ticket' => $ticketId]);
+            foreach ($attachments->fetchAll(PDO::FETCH_ASSOC) as $file) {
+                $files[(int)$file['message_id']][] = ['name' => (string)$file['original_name'], 'url' => url('/' . ltrim((string)$file['file_path'], '/'))];
+            }
+        }
+        $messages = [];
+        foreach ($rows as $row) {
+            $authorId = (int)($row['user_id'] ?? 0);
+            $messages[] = [
+                'id' => (int)$row['id'],
+                'author' => (string)($row['author'] ?? 'Equipe Connect'),
+                'from_team' => $authorId === 0 || ($authorId !== $requesterId && $authorId !== $creatorId),
+                'message' => (string)$row['message'],
+                'internal' => (bool)$row['is_internal'],
+                'created_at' => (string)$row['created_at'],
+                'attachments' => $files[(int)$row['id']] ?? [],
+            ];
+        }
+        return $messages;
+    }
+
+    /**
+     * Resposta de quem abriu ou pediu o chamado, pelo ERP ou pela API (ADR 0142).
+     * Chamado aguardando o cliente volta para atendimento; resolvido ou fechado é reaberto.
+     * A equipe (responsável, ou o Help Desk se não houver) é avisada.
+     *
+     * @return array{message_id:int,status:string}
+     * @throws TicketError
+     */
+    public function replyAsRequester(User $user, int $ticketId, string $message): array
+    {
+        $ticket = $this->findFor($user, $ticketId);
+        if ($ticket === null) {
+            throw new TicketError('ticket', 'Chamado não encontrado.', 404);
+        }
+        $message = trim(strip_tags($message));
+        if (mb_strlen($message) < 2) {
+            throw new TicketError('message', 'Escreva a mensagem antes de enviar.');
+        }
+        $message = mb_substr($message, 0, 10000);
+        $status = match ($ticket['status']) {
+            'waiting_customer' => 'in_progress',
+            'resolved', 'closed' => 'open',
+            default => $ticket['status'],
+        };
+        $pdo = $this->pdo();
+        try {
+            $pdo->beginTransaction();
+            $pdo->prepare('INSERT INTO studio_support_ticket_messages (ticket_id, user_id, message, is_internal) VALUES (?, ?, ?, 0)')
+                ->execute([$ticketId, (int)$user->id, $message]);
+            $messageId = (int)$pdo->lastInsertId();
+            if ($status !== $ticket['status']) {
+                $pdo->prepare('UPDATE studio_support_tickets SET status = ?, resolved_at = NULL WHERE id = ?')->execute([$status, $ticketId]);
+                $pdo->prepare('INSERT INTO studio_support_ticket_events (ticket_id, user_id, event_type, old_value, new_value) VALUES (?, ?, ?, ?, ?)')
+                    ->execute([$ticketId, (int)$user->id, 'status', $ticket['status'], $status]);
+            }
+            $pdo->prepare('INSERT INTO studio_support_ticket_events (ticket_id, user_id, event_type, new_value) VALUES (?, ?, ?, ?)')
+                ->execute([$ticketId, (int)$user->id, 'requester_reply', 'erp']);
+            $pdo->commit();
+        } catch (\Throwable $error) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $error;
+        }
+        Audit::record('reply', 'studio_support_tickets', $ticketId, ['status' => $ticket['status']], ['status' => $status, 'message_id' => $messageId]);
+        try {
+            $this->notifyTeam($ticket, (int)$user->id, $message, $status !== $ticket['status'] && $status === 'open');
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
+        }
+        return ['message_id' => $messageId, 'status' => $status];
+    }
+
+    /**
+     * Avisa quem pediu o chamado que o Help Desk respondeu ou mudou a situação (ADR 0142).
+     * Quem tem conta recebe a notificação (sino do ERP e do Studio) e o e-mail com o link do chamado
+     * no ERP; solicitante sem conta recebe só o e-mail com a resposta. Nunca avisa o próprio autor.
+     *
+     * @param 'reply'|'status' $kind
+     */
+    public function notifyRequester(int $ticketId, string $kind, int $authorId, ?string $text = null): void
+    {
+        $stmt = $this->pdo()->prepare(self::SELECT . ' WHERE t.id = :id');
+        $stmt->execute(['id' => $ticketId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return;
+        }
+        $ticket = self::present($row);
+        $protocol = $ticket['protocol'];
+        $statusLabel = self::STATUS_LABELS[$ticket['status']] ?? $ticket['status'];
+        $title = $kind === 'reply' ? "Resposta no chamado {$protocol}" : "Chamado {$protocol}: {$statusLabel}";
+        $summary = $kind === 'reply'
+            ? mb_strimwidth(trim(preg_replace('/\s+/', ' ', (string)$text) ?? ''), 0, 160, '…')
+            : "A situação do chamado \"{$ticket['subject']}\" mudou para {$statusLabel}.";
+        $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $category = self::notificationCategory();
+
+        $recipients = array_unique(array_filter([(int)($ticket['requester']['user_id'] ?? 0), (int)($row['created_by'] ?? 0)]));
+        foreach ($recipients as $recipientId) {
+            if ($recipientId === $authorId) {
+                continue;
+            }
+            $recipient = (new User())->findById($recipientId);
+            if (!$recipient) {
+                continue;
+            }
+            $link = self::linkFor($recipient, $ticketId);
+            if ($category) {
+                $notification = new Notification();
+                $notification->users_id = $recipient->id;
+                $notification->category = $category->id;
+                $notification->image = 'images/default.svg';
+                $notification->title = $title;
+                $notification->body = $summary;
+                $notification->severity = $ticket['status'] === 'waiting_customer' ? 'warning' : 'info';
+                // link é obrigatório no modelo; sem ambiente para a pessoa, o clique leva ao início.
+                $notification->link = $link ?? '/';
+                $notification->view = 0;
+                $notification->save();
+            }
+            if (is_email((string)$recipient->email)) {
+                $body = '<p>Olá, ' . $e((string)$recipient->first_name) . '.</p>'
+                    . ($kind === 'reply'
+                        ? '<p>A equipe Connect respondeu o chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e((string)$text)) . '</blockquote>'
+                        : '<p>O chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . ') agora está <strong>' . $e($statusLabel) . '</strong>.</p>')
+                    . ($link !== null ? '<p><a href="' . $e($link) . '">Ver o chamado e responder</a></p>' : '');
+                (new Email())->bootstrap("[{$protocol}] {$title}", $body, $recipient->email, $recipient->fullName())
+                    ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, $recipient->id);
+            }
+        }
+        // Solicitante sem conta (site, morador informado no ERP): só o e-mail, sem link de sistema.
+        if ($ticket['requester']['user_id'] === null && is_email((string)$ticket['requester']['email'])) {
+            $name = (string)($ticket['requester']['name'] ?? '');
+            $body = '<p>Olá' . ($name !== '' ? ', ' . $e($name) : '') . '.</p>'
+                . ($kind === 'reply'
+                    ? '<p>Temos uma resposta para o seu chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e((string)$text)) . '</blockquote>'
+                    : '<p>O seu chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . ') agora está <strong>' . $e($statusLabel) . '</strong>.</p>')
+                . '<p>Para responder, use este e-mail ou fale com a administradora informando o protocolo.</p>';
+            (new Email())->bootstrap("[{$protocol}] {$title}", $body, (string)$ticket['requester']['email'], $name !== '' ? $name : (string)$ticket['requester']['email'])
+                ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'));
+        }
+    }
+
+    /**
+     * Onde a pessoa acompanha o chamado: no ERP (Operacional › Chamados) para quem entra no ERP,
+     * no Help Desk para quem só atende, ou null.
+     */
+    public static function linkFor(User $user, int $ticketId): ?string
+    {
+        if (Access::can('erp.access', $user)) {
+            return Environments::url('erp', self::erpPath($ticketId));
+        }
+        if (Access::can('support.manage', $user)) {
+            return Environments::url('helpdesk', self::helpdeskPath($ticketId));
+        }
+        return null;
+    }
+
+    public static function erpPath(int $ticketId): string
+    {
+        return '/operacional/chamados/' . $ticketId;
+    }
+
+    public static function helpdeskPath(int $ticketId): string
+    {
+        return '/helpdesk/tickets?ticket=' . $ticketId;
+    }
+
+    /** Avisa a equipe de uma resposta do solicitante: o responsável, ou o Help Desk inteiro. */
+    private function notifyTeam(array $ticket, int $authorId, string $message, bool $reopened): void
+    {
+        $recipientIds = [];
+        if ($ticket['assigned_to'] !== null) {
+            $recipientIds[] = (int)$ticket['assigned_to']['id'];
+        } else {
+            foreach ((new User())->find('level >= :level', 'level=' . self::ADMIN_LEVEL)->fetch(true) ?: [] as $member) {
+                $recipientIds[] = (int)$member->id;
+            }
+        }
+        $category = self::notificationCategory();
+        $link = Environments::url('helpdesk', self::helpdeskPath((int)$ticket['id']));
+        $title = ($reopened ? 'Chamado reaberto ' : 'Nova mensagem no chamado ') . $ticket['protocol'];
+        $summary = mb_strimwidth(trim(preg_replace('/\s+/', ' ', $message) ?? ''), 0, 160, '…');
+        $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        foreach (array_unique(array_filter($recipientIds)) as $recipientId) {
+            if ($recipientId === $authorId) {
+                continue;
+            }
+            $recipient = (new User())->findById($recipientId);
+            if (!$recipient) {
+                continue;
+            }
+            if ($category) {
+                $notification = new Notification();
+                $notification->users_id = $recipient->id;
+                $notification->category = $category->id;
+                $notification->image = 'images/default.svg';
+                $notification->title = $title;
+                $notification->body = $summary;
+                $notification->severity = $reopened ? 'warning' : 'info';
+                $notification->link = $link;
+                $notification->view = 0;
+                $notification->save();
+            }
+            if (is_email((string)$recipient->email)) {
+                $body = '<p>Olá, ' . $e((string)$recipient->first_name) . '.</p><p>' . $e($title) . ' (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e($message)) . '</blockquote>'
+                    . '<p><a href="' . $e($link) . '">Abrir no Help Desk</a></p>';
+                (new Email())->bootstrap("[{$ticket['protocol']}] {$title}", $body, $recipient->email, $recipient->fullName())
+                    ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, $recipient->id);
+            }
+        }
+    }
+
     /** @return list<array{id:int,label:string}> unidades ativas do condomínio */
     public function units(int $condominiumId): array
     {
@@ -350,7 +588,7 @@ final class TicketService
         }
         $category = self::notificationCategory();
         $priorityLabel = self::PRIORITY_LABELS[$data['priority']] ?? 'Média';
-        $link = Environments::url('helpdesk', '/helpdesk/tickets?ticket=' . $ticketId);
+        $link = Environments::url('helpdesk', self::helpdeskPath($ticketId));
         $where = $this->contextLine($data);
         foreach (array_unique(array_filter($recipientIds)) as $recipientId) {
             $recipient = (new User())->findById((int)$recipientId);

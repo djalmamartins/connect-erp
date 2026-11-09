@@ -75,6 +75,59 @@ final class EnvironmentsTest extends TestCase
         self::assertSame('http://studio.connect.lab/helpdesk/tickets?ticket=7', Environments::url('helpdesk', '/helpdesk/tickets?ticket=7', 'erp.connect.lab'));
     }
 
+    public function testSafePathKeepsDeepLinksInsideTheEnvironment(): void
+    {
+        self::assertSame('/helpdesk/tickets?ticket=7', Environments::safePath('helpdesk', '/helpdesk/tickets?ticket=7'));
+        self::assertSame('/operacional/chamados/7', Environments::safePath('erp', '/operacional/chamados/7'));
+        self::assertSame('/studio/notifications', Environments::safePath('studio', '/studio/notifications'));
+        self::assertNull(Environments::safePath('helpdesk', '/studio/users'), 'Help Desk só abre /helpdesk.');
+        self::assertNull(Environments::safePath('helpdesk', '/helpdeskmalicioso'));
+        self::assertNull(Environments::safePath('erp', '//evil.example/x'), 'Sem host externo.');
+        self::assertNull(Environments::safePath('erp', 'https://evil.example/'));
+        self::assertNull(Environments::safePath('erp', '/\\evil.example'));
+        self::assertNull(Environments::safePath('erp', "/a\nLocation: x"));
+        self::assertNull(Environments::safePath('erp', '/ambiente/helpdesk'), 'Sem laço pela troca.');
+        self::assertNull(Environments::safePath('erp', ''));
+        self::assertNull(Environments::safePath('nada', '/x'));
+    }
+
+    public function testLinkGoesStraightOnTheSameHostAndThroughHandoffAcrossHosts(): void
+    {
+        unset($_SERVER['HTTPS'], $_SERVER['HTTP_X_FORWARDED_PROTO']);
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['HTTP_HOST'] = 'erp.connect.lab';
+        self::assertStringEndsWith('erp.connect.lab/ambiente/helpdesk?ir=%2Fhelpdesk%2Ftickets%3Fticket%3D7', Environments::link('helpdesk', '/helpdesk/tickets?ticket=7'));
+        self::assertStringEndsWith('erp.connect.lab/operacional/chamados/7', Environments::link('erp', '/operacional/chamados/7'));
+        self::assertStringEndsWith('erp.connect.lab/ambiente/helpdesk', Environments::link('helpdesk', '/studio/users'), 'Caminho recusado cai na página inicial.');
+
+        $_SERVER['HTTP_HOST'] = 'studio.connect.lab';
+        self::assertStringEndsWith('studio.connect.lab/ambiente/erp?ir=%2Foperacional%2Fchamados%2F7', Environments::link('erp', '/operacional/chamados/7'));
+        self::assertStringEndsWith('studio.connect.lab/helpdesk/tickets?ticket=7', Environments::link('helpdesk', '/helpdesk/tickets?ticket=7'));
+
+        $_SERVER['HTTP_HOST'] = 'www.connect.lab';
+        self::assertStringEndsWith('www.connect.lab/erp/operacional/chamados/7', Environments::link('erp', '/operacional/chamados/7'), 'Host único: ERP em /erp.');
+        self::assertSame(['host' => 'www.connect.lab', 'path' => '/erp/operacional/chamados/7'], Environments::target('erp', 'www.connect.lab', '/operacional/chamados/7'));
+    }
+
+    public function testResolveLinkAcceptsOnlyOurHosts(): void
+    {
+        unset($_SERVER['HTTPS'], $_SERVER['HTTP_X_FORWARDED_PROTO']);
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $host = 'erp.connect.lab';
+        $_SERVER['HTTP_HOST'] = $host;
+        self::assertSame('/operacional/chamados/7', Environments::resolveLink('/operacional/chamados/7', $host));
+        self::assertSame('https://erp.connect.lab/x', Environments::resolveLink('https://erp.connect.lab/x', $host));
+        self::assertStringEndsWith('/ambiente/helpdesk?ir=%2Fhelpdesk%2Ftickets%3Fticket%3D7', (string)Environments::resolveLink('https://studio.connect.lab/helpdesk/tickets?ticket=7', $host));
+        self::assertStringEndsWith('/ambiente/studio?ir=%2Fstudio%2Fdash', (string)Environments::resolveLink('https://studio.connect.lab/studio/dash', $host));
+        self::assertSame('https://www.connect.lab/suporte', Environments::resolveLink('https://www.connect.lab/suporte', $host));
+        self::assertNull(Environments::resolveLink('https://evil.example/helpdesk', $host));
+        self::assertNull(Environments::resolveLink('https://studio.connect.lab.evil.example/x', $host));
+        self::assertNull(Environments::resolveLink('//evil.example/x', $host));
+        self::assertNull(Environments::resolveLink('javascript:alert(1)', $host));
+        self::assertNull(Environments::resolveLink('https://user@studio.connect.lab/helpdesk', $host));
+        self::assertNull(Environments::resolveLink('', $host));
+    }
+
     public function testEveryLoggedUserSeesErpStudioAndHelpDesk(): void
     {
         $_SERVER['HTTP_HOST'] = 'erp.connect.lab';

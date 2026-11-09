@@ -81,11 +81,11 @@ final class ErpOperationalScreensTest extends TestCase
         self::assertTrue($open['canOpen']);
         self::assertNull($open['href']);
         self::assertStringEndsWith('/api/v1/occurrences/5/ticket', $open['api']);
-        self::assertStringContainsString('studio.connect.lab/helpdesk/tickets?ticket=__ID__', $open['hrefPattern']);
+        self::assertStringEndsWith('/operacional/chamados/__ID__', $open['hrefPattern']);
         $done = \Source\Controllers\Erp\Connect\Registry::ticketData(5, ['ticket_id' => '77'], true);
         self::assertFalse($done['canOpen']);
         self::assertSame(77, $done['ticketId']);
-        self::assertStringEndsWith('/helpdesk/tickets?ticket=77', (string)$done['href']);
+        self::assertStringEndsWith('/operacional/chamados/77', (string)$done['href']);
             $closed = \Source\Controllers\Erp\Connect\Registry::ticketData(5, ['ticket_id' => null], false);
         } finally {
             if ($host === null) {

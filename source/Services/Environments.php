@@ -122,11 +122,12 @@ final class Environments
     }
 
     /**
-     * Host e caminho do ambiente a partir do host atual.
+     * Host e caminho do ambiente a partir do host atual. $path troca a página inicial do ambiente
+     * por outra (deep link); quem chama valida o caminho com safePath().
      *
      * @return array{host:string,path:string}
      */
-    public static function target(string $key, ?string $host = null): array
+    public static function target(string $key, ?string $host = null, ?string $path = null): array
     {
         if (!self::exists($key)) {
             throw new \InvalidArgumentException('Ambiente desconhecido.');
@@ -134,7 +135,7 @@ final class Environments
         $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
         $role = self::hostRole($host);
         $environment = self::ENVIRONMENTS[$key];
-        $path = $environment['path'];
+        $path ??= $environment['path'];
 
         if ($role === 'main') {
             // Host único: tudo no mesmo host; o ERP fica em /erp.
@@ -173,6 +174,87 @@ final class Environments
             return url($path);
         }
         return self::absolute($target['host'], $path);
+    }
+
+    /**
+     * Caminho de destino aceito para um ambiente (deep link do alternador, ADR 0142), ou null.
+     *
+     * Só caminho local (começa com uma barra, sem "//", sem barra invertida nem caracteres de
+     * controle), fora de /ambiente, e dentro da área do ambiente: Help Desk em /helpdesk, Studio em
+     * /studio. O ERP aceita qualquer caminho do host dele.
+     */
+    public static function safePath(string $key, ?string $path): ?string
+    {
+        $path = (string)$path;
+        if (!self::exists($key) || $path === '' || $path[0] !== '/' || str_starts_with($path, '//')
+            || strlen($path) > 300 || preg_match('/[\\\\\x00-\x1f\x7f\s]/', $path) || preg_match('~^/ambiente(?:/|\?|$)~i', $path)) {
+            return null;
+        }
+        $prefix = ['helpdesk' => '/helpdesk', 'studio' => '/studio'][$key] ?? null;
+        if ($prefix !== null && !preg_match('~^' . preg_quote($prefix, '~') . '(?:[/?#]|$)~', $path)) {
+            return null;
+        }
+        return $path;
+    }
+
+    /**
+     * Link para uma página de um ambiente (ex.: o chamado no Help Desk a partir do ERP).
+     * No mesmo host vai direto; em outro host passa pela troca com código, levando o destino em ?ir=.
+     */
+    public static function link(string $key, string $path, ?string $host = null): string
+    {
+        $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
+        $safe = self::safePath($key, $path);
+        if ($safe === null) {
+            return self::href($key, $host);
+        }
+        $target = self::target($key, $host, $safe);
+        if ($target['host'] === $host) {
+            return url($target['path']);
+        }
+        if (!self::ENVIRONMENTS[$key]['auth']) {
+            return self::absolute($target['host'], $target['path']);
+        }
+        return url('/ambiente/' . $key . '?ir=' . rawurlencode($safe));
+    }
+
+    /**
+     * Link guardado numa notificação, pronto para o clique no host atual, ou null se não for nosso.
+     * Aceita caminho local e endereço absoluto do próprio host ou de um host irmão (erp.*, studio.*,
+     * www.* do mesmo domínio); o host irmão passa pela troca com código.
+     */
+    public static function resolveLink(string $link, ?string $host = null): ?string
+    {
+        $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
+        if ($link === '') {
+            return null;
+        }
+        if ($link[0] === '/') {
+            return str_starts_with($link, '//') || preg_match('/[\\\\\x00-\x1f\x7f]/', $link) ? null : $link;
+        }
+        $parts = parse_url($link);
+        $scheme = strtolower((string)($parts['scheme'] ?? ''));
+        $linkHost = strtolower((string)($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $linkHost === '' || isset($parts['user']) || isset($parts['pass'])) {
+            return null;
+        }
+        $linkHostPort = $linkHost . (isset($parts['port']) ? ':' . $parts['port'] : '');
+        if ($linkHostPort === $host || $linkHost === $host) {
+            return $link;
+        }
+        $base = static fn (string $value): string => (string)preg_replace('/^(?:erp|studio|www)\./', '', $value);
+        if ($base($linkHostPort) !== $base($host) && $base($linkHost) !== $base($host)) {
+            return null;
+        }
+        $path = ($parts['path'] ?? '/') . (isset($parts['query']) ? '?' . $parts['query'] : '');
+        $role = self::hostRole($linkHostPort);
+        if ($role === 'erp') {
+            return self::link('erp', $path, $host);
+        }
+        if ($role === 'studio') {
+            return self::link(str_starts_with($path, '/helpdesk') ? 'helpdesk' : 'studio', $path, $host);
+        }
+        return $link;
     }
 
     public static function absolute(string $host, string $path): string

@@ -72,6 +72,46 @@ final class Tickets
         }
     }
 
+    /** GET /api/v1/tickets/{id}/messages — conversa pública (sem notas internas), ADR 0142. */
+    public function messages(array $data): void
+    {
+        $user = $this->user();
+        if ($user === null) {
+            return;
+        }
+        $service = new TicketService();
+        $ticket = $service->findFor($user, (int)($data['id'] ?? 0));
+        if ($ticket === null) {
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Chamado não encontrado.']]);
+            return;
+        }
+        JsonResponse::send(200, ['data' => $service->conversation($ticket)]);
+    }
+
+    /** POST /api/v1/tickets/{id}/messages {"message": "..."} — resposta de quem pediu, ADR 0142. */
+    public function reply(array $data): void
+    {
+        $user = $this->user();
+        if ($user === null) {
+            return;
+        }
+        try {
+            $raw = (string)file_get_contents('php://input');
+            $body = trim($raw) === '' ? [] : json_decode($raw, true, 16, JSON_THROW_ON_ERROR);
+            $service = new TicketService();
+            $result = $service->replyAsRequester($user, (int)($data['id'] ?? 0), (string)(is_array($body) ? ($body['message'] ?? '') : ''));
+            JsonResponse::send(201, ['data' => $result + ['ticket' => $service->findFor($user, (int)($data['id'] ?? 0))]]);
+        } catch (TicketError $error) {
+            $code = match ($error->status()) { 404 => 'not_found', 403 => 'forbidden', default => 'validation_failed' };
+            JsonResponse::send($error->status(), ['error' => ['code' => $code, 'message' => $error->getMessage(), 'fields' => [$error->field => $error->getMessage()]]]);
+        } catch (\JsonException) {
+            JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_reply_failed', 'origin' => 'api']);
+            JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível enviar a mensagem.']]);
+        }
+    }
+
     private function user(): ?\Source\Models\User
     {
         $user = Auth::user();
