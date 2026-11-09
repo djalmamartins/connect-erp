@@ -241,6 +241,23 @@ final class EntryShortcuts
         } else {
             $related = null;
         }
+        // Origem da multa (ADR 0080, AP-116): ocorrência do condomínio (da unidade ou sem unidade) ou reserva da unidade.
+        $occurrence = $kind === 'fine' ? $this->int($input['occurrence_id'] ?? null) : null;
+        $reservation = $kind === 'fine' ? $this->int($input['reservation_id'] ?? null) : null;
+        if ($occurrence !== null) {
+            $check = $this->pdo->prepare('SELECT id FROM erp_occurrences WHERE id = :id AND condominium_id = :c AND deleted_at IS NULL AND (unit_id IS NULL OR unit_id = :u)');
+            $check->execute(['id' => $occurrence, 'c' => $condominium, 'u' => $unitIds[0]]);
+            if ($check->fetchColumn() === false) {
+                throw new InvalidArgumentException('A ocorrência da multa precisa ser deste condomínio e desta unidade.');
+            }
+        }
+        if ($reservation !== null) {
+            $check = $this->pdo->prepare('SELECT id FROM erp_reservations WHERE id = :id AND condominium_id = :c AND unit_id = :u AND deleted_at IS NULL');
+            $check->execute(['id' => $reservation, 'c' => $condominium, 'u' => $unitIds[0]]);
+            if ($check->fetchColumn() === false) {
+                throw new InvalidArgumentException('A reserva da multa precisa ser desta unidade.');
+            }
+        }
         $fractions = [];
         foreach ($units as $unit) {
             $fractions[(int)$unit['id']] = $unit['ideal_fraction'];
@@ -252,9 +269,9 @@ final class EntryShortcuts
         $this->pdo->beginTransaction();
         try {
             $this->pdo->prepare('INSERT INTO erp_extra_charges (condominium_id, kind, description, chart_account_id, method, total_cents, units_count, competence, due_on,
-                    related_entry_id, reason, created_by) VALUES (:c, :k, :d, :a, :m, :t, :n, :comp, :due, :rel, :r, :u)')->execute([
+                    related_entry_id, occurrence_id, reservation_id, reason, created_by) VALUES (:c, :k, :d, :a, :m, :t, :n, :comp, :due, :rel, :occ, :res, :r, :u)')->execute([
                 'c' => $condominium, 'k' => $kind, 'd' => $description, 'a' => $account, 'm' => $method, 't' => $total, 'n' => count($units),
-                'comp' => $competence, 'due' => $dueOn, 'rel' => $related, 'r' => $reason, 'u' => (int)$user->id,
+                'comp' => $competence, 'due' => $dueOn, 'rel' => $related, 'occ' => $occurrence, 'res' => $reservation, 'r' => $reason, 'u' => (int)$user->id,
             ]);
             $chargeId = (int)$this->pdo->lastInsertId();
             $link = $this->pdo->prepare('UPDATE erp_entries SET extra_charge_id = :x WHERE id = :id');
@@ -507,6 +524,7 @@ final class EntryShortcuts
             'chart_account_id' => (int)$r['chart_account_id'], 'method' => (string)$r['method'], 'total_cents' => (int)$r['total_cents'],
             'units_count' => (int)$r['units_count'], 'competence' => (string)$r['competence'], 'due_on' => (string)$r['due_on'],
             'related_entry_id' => $r['related_entry_id'] !== null ? (int)$r['related_entry_id'] : null, 'reason' => $r['reason'],
+            'occurrence_id' => isset($r['occurrence_id']) ? (int)$r['occurrence_id'] : null, 'reservation_id' => isset($r['reservation_id']) ? (int)$r['reservation_id'] : null,
             'status' => (string)$r['status'], 'created_at' => (string)$r['created_at'], 'cancelled_at' => $r['cancelled_at'], 'cancel_reason' => $r['cancel_reason'],
         ];
     }

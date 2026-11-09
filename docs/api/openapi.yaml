@@ -1811,6 +1811,116 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /pending-fines:
+    get:
+      operationId: listPendingFines
+      summary: Multas avulsas não pagas, com a origem (ocorrência ou reserva) e se estão vencidas (AP-116, erp.collections.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: include_paid, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: '{ data[{ id, unit_label, description, reason, amount_cents, due_on, state open|overdue|paid, occurrence_id, reservation_id }], totals{fines, open_cents, overdue} }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /collection-desk:
+    get:
+      operationId: collectionDesk
+      summary: Fila de atendimento de cobrança (AP-117) com último contato, promessa quebrada, próxima ação e caso judicial (erp.collections.view e erp.agreements.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ as_of, data[{ unit_id, unit_label, amount_cents, max_days_late, last_contact, promise_broken, action_due, legal_case }], totals }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /units/{id}/collection-contacts:
+    get:
+      operationId: listCollectionContacts
+      summary: Contatos de cobrança da unidade, do mais novo ao mais antigo (erp.collections.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data[{ channel, outcome, promise_on, promise_cents, next_action_on, note, open_cents, created_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /collection-contacts:
+    post:
+      operationId: recordCollectionContact
+      summary: Registra um contato de cobrança; histórico, não se edita (erp.collections.manage)
+      description: Promessa de pagamento exige a data (até 90 dias). Próxima ação até 180 dias. Guarda o valor vencido em aberto no momento.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [unit_id, channel, outcome, note], properties: { unit_id: { type: integer }, channel: { type: string, enum: [phone, email, whatsapp, in_person, letter] }, outcome: { type: string, enum: [promise, negotiating, no_answer, refused, paid_claimed, other] }, note: { type: string, minLength: 5, maxLength: 1000 }, contact_name: { type: string }, promise_on: { type: string, format: date }, promise_cents: { type: string }, next_action_on: { type: string, format: date } } } } }
+      responses:
+        '201': { description: Contato registrado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /legal-cases:
+    get:
+      operationId: listLegalCases
+      summary: Casos de cobrança judicial (AP-039), só acompanhamento (erp.collections.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: status, in: query, schema: { type: string, enum: [preparing, filed, suspended, agreement, closed] } }
+        - { name: include_closed, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: '{ data[], total }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: openLegalCase
+      summary: Abre o caso judicial da unidade com contas vencidas em aberto, fora de acordo (erp.collections.manage e erp.agreements.view)
+      description: Só marca e acompanha. Não envia nada a advogado nem a tribunal e não cria encargo. Um caso aberto por unidade.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, note], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer }, maxItems: 200 }, lawyer_id: { type: integer }, case_number: { type: string }, court: { type: string }, opened_on: { type: string, format: date }, note: { type: string, minLength: 5, maxLength: 1000 } } } } }
+      responses:
+        '201': { description: Caso aberto }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: A unidade já tem caso aberto }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /legal-cases/{id}:
+    get:
+      operationId: getLegalCase
+      summary: Caso judicial com as contas (valor na abertura e situação atual) e o andamento (erp.collections.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: 'Caso com entries[], still_open_cents, events[] e next_statuses' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /legal-cases/{id}/events:
+    post:
+      operationId: addLegalCaseEvent
+      summary: Registra andamento do caso; to_status muda a situação pelas transições permitidas; encerrar exige nota (erp.collections.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [note], properties: { note: { type: string, minLength: 5, maxLength: 1000 }, to_status: { type: string, enum: [filed, suspended, agreement, closed] }, happened_on: { type: string, format: date }, lawyer_id: { type: integer }, case_number: { type: string }, court: { type: string } } } } }
+      responses:
+        '200': { description: Caso atualizado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Caso encerrado ou transição não permitida }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates

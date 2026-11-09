@@ -147,6 +147,15 @@ $route->post("/announcements/collection", "Announcements:collection", null, \Sou
 $route->get("/announcements/{id}", "Announcements:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/announcements/{id}/cancel", "Announcements:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/communication-addresses", "Announcements:addresses", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobrança e multas (ADR 0080): multas pendentes, atendimento de cobrança e casos judiciais (só acompanhamento).
+$route->get("/pending-fines", "Collections:fines", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/collection-desk", "Collections:desk", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/units/{id}/collection-contacts", "Collections:contacts", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/collection-contacts", "Collections:storeContact", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/legal-cases", "Collections:cases", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/legal-cases", "Collections:storeCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/legal-cases/{id}", "Collections:showCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/legal-cases/{id}/events", "Collections:caseEvent", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
