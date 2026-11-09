@@ -76,4 +76,14 @@ final class ErpCommunicationScreensTest extends TestCase
         $service = $this->file('source/Services/Erp/Announcements.php');
         self::assertStringContainsString('return $this->recentlyReminded($this->condominium($user, $condominiumId));', $service, 'avisadas: escopo conferido');
     }
+
+    public function testDeliveryNoticeExplainsThatNothingLeavesOutsideProduction(): void
+    {
+        // Teste da main (Djalma, 09/11, item 10): "enviou?" — fora de produção, a tela diz que nada sai.
+        self::assertNull(CommunicationScreens::deliveryNotice('production'));
+        self::assertStringContainsString('nenhum e-mail sai', (string)CommunicationScreens::deliveryNotice('log'));
+        self::assertStringContainsString('caixa de teste', (string)CommunicationScreens::deliveryNotice('sandbox'));
+        self::assertStringContainsString('nenhum e-mail sai', (string)CommunicationScreens::deliveryNotice('qualquer'), 'Modo desconhecido conta como registro.');
+        self::assertContains(CommunicationScreens::deliveryMode(), ['log', 'sandbox', 'production']);
+    }
 }

@@ -47,8 +47,12 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $announcementDetail !== null ? '<a class="erp-btn" href="' . $this->e($route) . '">Voltar</a>' : '',
 ]);
 ?>
-<div class="erp-stack" data-erp-communication data-route="<?= $this->e($route) ?>" data-cancel-api="<?= $this->e(url('/api/v1/announcements/__ID__/cancel')) ?>">
+<?php $commMode = $commMode ?? 'log'; $commNotice = CommunicationScreens::deliveryNotice($commMode); ?>
+<div class="erp-stack" data-erp-communication data-route="<?= $this->e($route) ?>" data-cancel-api="<?= $this->e(url('/api/v1/announcements/__ID__/cancel')) ?>" data-delivery-mode="<?= $this->e($commMode) ?>">
     <?= csrf_input() ?>
+    <?php if ($commNotice !== null): ?>
+        <div class="erp-alert" role="note" data-comm-delivery-notice><?= $icon('info') ?><div><strong><?= $this->e($commNotice) ?></strong><a href="<?= $this->e(erp_url('/configuracoes/fila-de-avisos')) ?>">Ver na Fila de avisos</a></div></div>
+    <?php endif; ?>
     <?php if ($commError !== null): ?>
         <div class="erp-alert erp-alert--warning" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($commError) ?></strong><a href="<?= $this->e($route) ?>">Voltar à lista</a></div></div>
     <?php endif; ?>
