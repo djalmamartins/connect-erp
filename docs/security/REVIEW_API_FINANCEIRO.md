@@ -353,3 +353,29 @@ Escopo: `source/Services/Erp/MonthClosing.php`, a trava `closing_lock` de
 
 Teste com duas conexões: `MonthClosingIntegrationTest::testCloseWaitsForAWriteThatAlreadyCheckedTheCompetence`.
 
+## Décima rodada — Ocorrências, saldos bancários e candidatos a recibo
+
+Data: 2026-11-09 · Código revisado: `claude-dev` em 204e171 · Correções: ADR 0101
+
+Escopo: `source/Services/Erp/Occurrences.php`, `BankBalances.php` e `ReceiptCandidates.php`.
+
+| Ponto | Situação |
+|---|---|
+| Escopo: ocorrência, unidade e contas conferidas pelo condomínio; fora do escopo responde 404 (ocorrência e unidade) ou lista vazia (saldos) | CONFIRMADO |
+| Chamado da ocorrência: um por ocorrência | CONFIRMADO, com o achado 1 |
+| Saldo da conta: abertura, lançamentos pagos e transferências ativas desde a abertura | CONFIRMADO, com o achado 2 |
+| Candidatos a recibo: só receitas pagas da unidade sem recibo válido, até 120 | CONFIRMADO |
+| SQL: ids por parâmetro ou inteiros já convertidos | CONFIRMADO |
+
+### Achados corrigidos (ADR 0101)
+
+1. **Chamado órfão.** Dois pedidos ao mesmo tempo abriam dois chamados no Help Desk, e um deles ficava
+   sem ocorrência. Agora o vínculo é gravado na transação do chamado, com a ocorrência travada, e o
+   chamado a mais é desfeito.
+2. **Saldo sem filtro de condomínio.** Lançamentos e transferências de outro condomínio que apontassem
+   para a conta (dado inconsistente) entravam no saldo. Agora só entram os do condomínio da conta.
+
+### Lacunas
+
+- A corrida do chamado não tem teste automatizado (ver ADR 0101).
+
