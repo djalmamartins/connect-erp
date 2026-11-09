@@ -2544,7 +2544,7 @@ paths:
         required: true
         content: { application/json: { schema: { type: object, required: [unit_id, attendee_name], properties: { unit_id: { type: integer }, attendee_name: { type: string, minLength: 3, maxLength: 160 }, is_proxy: { type: boolean }, proxy_document_id: { type: integer, description: 'Arquivo do Disco Virtual; obrigatório com is_proxy' } } } } }
       responses:
-        '201': { description: '{ id, unit_id, unit_label, is_proxy, eligible, overdue_cents }' }
+        '201': { description: '{ id, unit_id, unit_label, is_proxy, eligible, reason (inadimplente ou null), overdue_cents (só com erp.agreements.view; senão null, ADR 0095) }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }

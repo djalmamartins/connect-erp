@@ -683,5 +683,15 @@ Data: 2026-11-09 · Código revisado: patch do ciclo 43 (sha256 320cb566), porta
 
 ### Lacunas
 
-- Na entrada da assembleia, o check-in ainda devolve o `overdue_cents` da unidade para quem registra a presença. Isso foi mantido, porque explica por que a unidade não vota. Revisar se o Djalma quiser esconder.
+- Na entrada da assembleia, o check-in ainda devolvia o `overdue_cents` para quem registra a presença. Fechado no ADR 0095 (24ª rodada).
 - `listAgencies` mostra todas as imobiliárias (até 500) para qualquer pessoa com `erp.access_admin.*`. Só os usuários e as concessões são filtrados pelo escopo.
+
+## 24ª rodada — Valor vencido no check-in da assembleia (ciclo 44)
+
+Data: 2026-11-09 · Código revisado: patch do ciclo 44 (sha256 af186e99), portado sobre `claude-dev` 878f575 · ADR 0095
+
+| Ponto | Situação |
+|---|---|
+| Check-in devolve `overdue_cents` só com `erp.agreements.view`; sem a permissão, null | CONFIRMADO |
+| Direito a voto e motivo ("inadimplente") sempre visíveis; valor continua gravado e auditado sem o montante | CONFIRMADO |
+| Matriz de permissões cobre o `checkIn` | CONFIRMADO |
