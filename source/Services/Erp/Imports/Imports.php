@@ -28,7 +28,9 @@ use Source\Support\Audit;
  *
  * O mesmo arquivo (sha256) não é aplicado duas vezes no mesmo condomínio e tipo. O extrato OFX não
  * cria nem baixa lançamento: só concilia com o que já está pago (ImportRules::match), e o que não
- * bate fica pendente para resolver à mão. Escopo por condomínio (ADR-002); tudo auditado.
+ * bate fica pendente para resolver à mão. A NF-e XML (AP-141, ADR 0086) vira contas a pagar, uma por
+ * duplicata, só depois da prévia e da aplicação; a chave de acesso é única por condomínio e nada é
+ * consultado fora (sem SEFAZ). Escopo por condomínio (ADR-002); tudo auditado.
  */
 final class Imports
 {
@@ -50,6 +52,7 @@ final class Imports
             'required' => ['unidade', 'descricao', 'valor', 'competencia', 'vencimento', 'conta'], 'optional' => ['documento'], 'permission' => 'erp.entries.manage'],
         'readings' => ['page' => 'AP-044', 'label' => 'Importação de leituras', 'formats' => ['csv', 'xlsx'],
             'required' => ['relogio', 'tipo', 'competencia', 'leitura'], 'optional' => ['data_leitura'], 'permission' => 'erp.meter_readings.manage'],
+        'nfe' => ['page' => 'AP-141', 'label' => 'Importação de NF-e (XML)', 'formats' => ['xml'], 'required' => [], 'optional' => [], 'permission' => 'erp.entries.manage'],
     ];
     /** Soma das frações aceita (o arquivo traz todas as unidades ativas). */
     public const FRACTION_TOLERANCE = 0.0001;
@@ -59,6 +62,8 @@ final class Imports
     private RegistryService $registry;
     private string $root;
     private bool $acceptLocalFiles;
+    /** @var array<string, bool> condomínio|competência => fechada (refeito a cada validação) */
+    private array $closedCache = [];
 
     public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?string $root = null, bool $acceptLocalFiles = false)
     {
@@ -94,18 +99,22 @@ final class Imports
         if ($existing !== null && $existing['status'] === 'applied') {
             throw new DomainException('Este arquivo já foi importado neste condomínio (importação nº ' . $existing['id'] . ').');
         }
-        $result = $this->validate($kind, $condominium, $bankAccount, $content, $name);
+        // NF-e: a conta de despesa (e o vencimento, se a nota não tiver duplicatas) escolhidos na prévia valem na aplicação.
+        $options = $kind === 'nfe' ? array_filter(['chart_account_id' => $this->int($input['chart_account_id'] ?? null),
+            'due_on' => is_string($input['due_on'] ?? null) && $input['due_on'] !== '' ? $input['due_on'] : null]) : [];
+        $result = $this->validate($kind, $condominium, $bankAccount, $content, $name, $options);
         $summary = json_encode($result['summary'], JSON_UNESCAPED_UNICODE);
+        $optionsJson = $options === [] ? null : json_encode($options);
         if ($existing !== null) {
-            $this->pdo->prepare('UPDATE erp_imports SET rows_count = :r, error_count = :e, summary_json = :s, bank_account_id = :b WHERE id = :id')
-                ->execute(['r' => count($result['rows']), 'e' => $result['error_count'], 's' => $summary, 'b' => $bankAccount['id'] ?? null, 'id' => $existing['id']]);
+            $this->pdo->prepare('UPDATE erp_imports SET rows_count = :r, error_count = :e, summary_json = :s, bank_account_id = :b, options_json = :o WHERE id = :id')
+                ->execute(['r' => count($result['rows']), 'e' => $result['error_count'], 's' => $summary, 'b' => $bankAccount['id'] ?? null, 'o' => $optionsJson, 'id' => $existing['id']]);
             $id = (int)$existing['id'];
         } else {
             $relative = $condominium . '/' . $hash . '.' . strtolower(pathinfo($name, PATHINFO_EXTENSION));
             $this->store($relative, $content);
             try {
-                $this->pdo->prepare('INSERT INTO erp_imports (condominium_id, kind, bank_account_id, original_name, sha256, storage_path, size_bytes, rows_count, error_count, summary_json, created_by)
-                    VALUES (:c, :k, :b, :n, :h, :p, :sz, :r, :e, :s, :u)')->execute(['c' => $condominium, 'k' => $kind, 'b' => $bankAccount['id'] ?? null, 'n' => $name,
+                $this->pdo->prepare('INSERT INTO erp_imports (condominium_id, kind, bank_account_id, options_json, original_name, sha256, storage_path, size_bytes, rows_count, error_count, summary_json, created_by)
+                    VALUES (:c, :k, :b, :o, :n, :h, :p, :sz, :r, :e, :s, :u)')->execute(['c' => $condominium, 'k' => $kind, 'b' => $bankAccount['id'] ?? null, 'o' => $optionsJson, 'n' => $name,
                     'h' => $hash, 'p' => $relative, 'sz' => strlen($content), 'r' => count($result['rows']), 'e' => $result['error_count'], 's' => $summary, 'u' => (int)$user->id]);
             } catch (PDOException $error) {
                 if (($error->errorInfo[1] ?? null) !== 1062) {
@@ -141,7 +150,8 @@ final class Imports
             if ($lock->fetchColumn() !== 'previewed') {
                 throw new DomainException('Esta importação já foi aplicada.');
             }
-            $result = $this->validate($kind, $condominium, $bankAccount, $content, (string)$import['original_name']);
+            $options = json_decode((string)($import['options_json'] ?? ''), true) ?: [];
+            $result = $this->validate($kind, $condominium, $bankAccount, $content, (string)$import['original_name'], $options);
             if ($result['error_count'] > 0) {
                 throw new DomainException(sprintf('O arquivo tem %d linha(s) com erro. Corrija e envie de novo; nada foi gravado.', $result['error_count']));
             }
@@ -149,6 +159,7 @@ final class Imports
                 'ofx' => $this->applyOfx($user, $importId, $bankAccount, $result),
                 'fractions' => $this->applyFractions($user, $result['rows']),
                 'readings' => $this->applyReadings($user, $result['rows']),
+                'nfe' => $this->applyNfe($user, $importId, $condominium, $result),
                 default => $this->applyEntries($user, $importId, $result['rows']),
             };
             $summary = $result['summary'] + ['applied' => $applied];
@@ -261,10 +272,14 @@ final class Imports
      *
      * @return array{rows:list<array>, error_count:int, summary:array}
      */
-    private function validate(string $kind, int $condominium, ?array $bankAccount, string $content, string $name): array
+    private function validate(string $kind, int $condominium, ?array $bankAccount, string $content, string $name, array $options = []): array
     {
+        $this->closedCache = [];   // na aplicação, o fechamento é conferido de novo, dentro da transação
         if ($kind === 'ofx') {
             return $this->validateOfx($condominium, $bankAccount, $content);
+        }
+        if ($kind === 'nfe') {
+            return $this->validateNfe($condominium, $content, $options);
         }
         $sheet = SpreadsheetReader::read($content, $name);
         $definition = self::KINDS[$kind];
@@ -327,7 +342,7 @@ final class Imports
             }
             if ($competence === null) {
                 $problems[] = 'Competência inválida (MM/AAAA).';
-            } elseif ($this->registry->isClosed($condominium, $competence)) {
+            } elseif ($this->closed($condominium, $competence)) {
                 $problems[] = "A competência {$competence} está fechada.";
             }
             if ($due === null) {
@@ -416,9 +431,23 @@ final class Imports
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $meter) {
             $meters[$meter['kind'] . '|' . mb_strtolower(trim((string)$meter['number']))] = $meter;
         }
-        $current = $this->pdo->prepare('SELECT entry_id FROM erp_meter_readings WHERE meter_id = :m AND competence = :c');
-        $later = $this->pdo->prepare('SELECT 1 FROM erp_meter_readings WHERE meter_id = :m AND competence > :c LIMIT 1');
-        $previous = $this->pdo->prepare('SELECT reading FROM erp_meter_readings WHERE meter_id = :m AND competence < :c ORDER BY competence DESC LIMIT 1');
+        // ADR 0087 (M4): o histórico dos relógios do arquivo vem numa consulta só, em vez de três por linha.
+        $fileMeters = [];
+        foreach ($raw as $line) {
+            $kind = ImportRules::meterKind($line['values']['tipo'] ?? '');
+            $found = $kind !== null ? ($meters[$kind . '|' . mb_strtolower(trim($line['values']['relogio'] ?? ''))] ?? null) : null;
+            if ($found !== null) {
+                $fileMeters[(int)$found['id']] = true;
+            }
+        }
+        $history = [];
+        if ($fileMeters !== []) {
+            $rowsHistory = $this->pdo->query('SELECT meter_id, competence, reading, entry_id FROM erp_meter_readings WHERE meter_id IN ('
+                . implode(',', array_keys($fileMeters)) . ') ORDER BY meter_id, competence')->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rowsHistory as $h) {
+                $history[(int)$h['meter_id']][] = $h;
+            }
+        }
         $rows = [];
         $errors = 0;
         $seen = [];
@@ -441,7 +470,7 @@ final class Imports
             }
             if ($competence === null) {
                 $problems[] = 'Competência inválida (MM/AAAA).';
-            } elseif ($this->registry->isClosed($condominium, $competence)) {
+            } elseif ($this->closed($condominium, $competence)) {
                 $problems[] = "A competência {$competence} está fechada.";
             }
             if ($reading === null) {
@@ -453,20 +482,16 @@ final class Imports
             $base = null;
             if ($meter !== null && $competence !== null) {
                 $seen[$meter['id']] = true;
-                $current->execute(['m' => $meter['id'], 'c' => $competence]);
-                $existing = $current->fetch(PDO::FETCH_ASSOC);
-                if ($existing !== false && $existing['entry_id'] !== null) {
+                $context = ImportRules::readingContext($history[(int)$meter['id']] ?? [], $competence);
+                if ($context['billed']) {
                     $problems[] = "A leitura de {$competence} já foi cobrada e não pode mudar.";
-                } elseif ($existing !== false) {
+                } elseif ($context['exists']) {
                     $status = 'replace';
                 }
-                $later->execute(['m' => $meter['id'], 'c' => $competence]);
-                if ($later->fetchColumn()) {
+                if ($context['later']) {
                     $problems[] = 'Há leitura de competência posterior para este relógio.';
                 }
-                $previous->execute(['m' => $meter['id'], 'c' => $competence]);
-                $prior = $previous->fetchColumn();
-                $base = $prior !== false ? (float)$prior : (float)($meter['initial_reading'] ?? 0);
+                $base = $context['previous'] ?? (float)($meter['initial_reading'] ?? 0);
                 if ($reading !== null && $reading < $base) {
                     $problems[] = sprintf('Leitura menor que a anterior (%s). Relógio trocado = cadastre o relógio novo.', number_format($base, 3, ',', '.'));
                 }
@@ -499,6 +524,106 @@ final class Imports
         return ['readings' => count($rows), 'amount_cents' => $amount];
     }
 
+    /**
+     * NF-e (AP-141): a nota precisa ser para o CNPJ do condomínio, de fornecedor já cadastrado (pelo
+     * CNPJ/CPF do emitente; não é criado sozinho), com a chave ainda não lançada no condomínio e as
+     * duplicatas somando o valor líquido (ou o total). Sem duplicata, vale o vencimento informado na
+     * prévia. Cada duplicata vira uma conta a pagar na conta de despesa escolhida.
+     */
+    private function validateNfe(int $condominium, string $content, array $options): array
+    {
+        $nfe = NfeParser::parse($content);
+        $account = $this->pdo->prepare("SELECT id FROM erp_chart_accounts WHERE id = :id AND deleted_at IS NULL AND status = 'active' AND kind = 'analitica'
+            AND nature = 'despesa' AND (condominium_id IS NULL OR condominium_id = :c)");
+        $account->execute(['id' => (int)($options['chart_account_id'] ?? 0), 'c' => $condominium]);
+        $accountId = $account->fetchColumn();
+        if ($accountId === false) {
+            throw new InvalidArgumentException('Escolha a conta analítica de despesa da NF-e (chart_account_id).');
+        }
+        $problems = [];
+        $condo = $this->pdo->prepare('SELECT document FROM condominiums WHERE id = :id');
+        $condo->execute(['id' => $condominium]);
+        $document = (string)preg_replace('/\D/', '', (string)$condo->fetchColumn());
+        if ($document === '') {
+            $problems[] = 'Cadastre o CNPJ do condomínio para conferir o destinatário da NF-e.';
+        } elseif ($nfe['recipient_document'] !== $document) {
+            $problems[] = "A NF-e é para o documento {$nfe['recipient_document']}, e não para este condomínio.";
+        }
+        $supplier = $this->pdo->prepare("SELECT id FROM erp_suppliers WHERE document = :d AND deleted_at IS NULL AND status = 'active' LIMIT 1");
+        $supplier->execute(['d' => $nfe['issuer_document']]);
+        $supplierId = $supplier->fetchColumn();
+        if ($supplierId === false) {
+            $problems[] = "Fornecedor {$nfe['issuer_name']} ({$nfe['issuer_document']}) não está cadastrado. Cadastre antes de importar.";
+        }
+        $taken = $this->pdo->prepare('SELECT import_id FROM erp_nfe_documents WHERE condominium_id = :c AND access_key = :k');
+        $taken->execute(['c' => $condominium, 'k' => $nfe['access_key']]);
+        if ($taken->fetchColumn() !== false) {
+            $problems[] = 'Esta NF-e (chave de acesso) já foi lançada neste condomínio.';
+        }
+        $installments = $nfe['installments'];
+        if ($installments === []) {
+            $due = $options['due_on'] ?? null;
+            $date = is_string($due) ? \DateTimeImmutable::createFromFormat('!Y-m-d', $due) : false;
+            if ($date === false || $date->format('Y-m-d') !== $due) {
+                $problems[] = 'A NF-e não tem duplicatas: informe o vencimento (due_on) na prévia.';
+            } else {
+                $installments = [['number' => '1', 'due_on' => $due, 'amount_cents' => $nfe['net_cents'] ?? $nfe['total_cents']]];
+            }
+        }
+        $expected = $nfe['net_cents'] ?? $nfe['total_cents'];
+        $sum = array_sum(array_column($installments, 'amount_cents'));
+        if ($installments !== [] && $sum !== $expected) {
+            $problems[] = sprintf('As duplicatas somam %s, e a NF-e vale %s.', number_format($sum / 100, 2, ',', '.'), number_format($expected / 100, 2, ',', '.'));
+        }
+        $competence = substr($nfe['issued_on'], 0, 7);
+        if ($this->registry->isClosed($condominium, $competence)) {
+            $problems[] = "A competência {$competence} está fechada.";
+        }
+        $rows = [];
+        $count = count($installments);
+        foreach ($installments as $index => $installment) {
+            $data = ['condominium_id' => $condominium, 'nature' => 'despesa', 'chart_account_id' => (int)$accountId,
+                'description' => mb_substr(sprintf('NF-e %s %s — %d/%d', $nfe['number'], $nfe['issuer_name'], $index + 1, $count), 0, 160),
+                'amount_cents' => number_format($installment['amount_cents'] / 100, 2, ',', ''), 'competence' => $competence, 'due_on' => $installment['due_on'],
+                'supplier_id' => $supplierId !== false ? (int)$supplierId : null, 'document_number' => mb_substr('NF ' . $nfe['number'] . '/' . $nfe['series'], 0, 40)];
+            $lineProblems = $problems;
+            if ($supplierId !== false) {
+                [, $fieldErrors] = RegistryValidator::validate(Definitions::get('entries'), array_filter($data, static fn ($v): bool => $v !== null));
+                foreach ($fieldErrors as $field => $message) {
+                    $lineProblems[] = "{$field}: {$message}";
+                }
+            }
+            $rows[] = ['line' => $index + 1, 'status' => $lineProblems === [] ? 'ok' : 'error', 'errors' => $lineProblems, 'data' => $data];
+        }
+        if ($rows === []) {
+            $rows[] = ['line' => 1, 'status' => 'error', 'errors' => $problems, 'data' => null];
+        }
+        $errors = count(array_filter($rows, static fn (array $r): bool => $r['status'] === 'error'));
+        return ['rows' => $rows, 'error_count' => $errors, 'nfe' => $nfe, 'supplier_id' => $supplierId !== false ? (int)$supplierId : null, 'summary' => [
+            'rows' => count($rows), 'errors' => $errors, 'access_key' => $nfe['access_key'], 'number' => $nfe['number'], 'series' => $nfe['series'],
+            'issuer' => $nfe['issuer_name'], 'issuer_document' => $nfe['issuer_document'], 'issued_on' => $nfe['issued_on'], 'total_cents' => $nfe['total_cents'],
+            'net_cents' => $nfe['net_cents'], 'installments' => $count,
+        ]];
+    }
+
+    /** Grava as contas a pagar da NF-e e a chave de acesso (única por condomínio), na transação da importação. */
+    private function applyNfe(User $user, int $importId, int $condominium, array $result): array
+    {
+        $entries = $this->applyEntries($user, $importId, $result['rows']);
+        $nfe = $result['nfe'];
+        try {
+            $this->pdo->prepare('INSERT INTO erp_nfe_documents (condominium_id, access_key, import_id, supplier_id, number, series, issued_on, total_cents, installments, created_by)
+                VALUES (:c, :k, :i, :s, :n, :se, :d, :t, :q, :u)')->execute(['c' => $condominium, 'k' => $nfe['access_key'], 'i' => $importId, 's' => $result['supplier_id'],
+                'n' => $nfe['number'], 'se' => $nfe['series'], 'd' => $nfe['issued_on'], 't' => $nfe['total_cents'], 'q' => count($result['rows']), 'u' => (int)$user->id]);
+        } catch (PDOException $error) {
+            if (($error->errorInfo[1] ?? null) === 1062) {
+                throw new DomainException('Esta NF-e (chave de acesso) já foi lançada neste condomínio.');
+            }
+            throw $error;
+        }
+        return $entries + ['access_key' => $nfe['access_key']];
+    }
+
     private function validateOfx(int $condominium, array $bankAccount, string $content): array
     {
         $ofx = OfxParser::parse($content);
@@ -512,7 +637,7 @@ final class Imports
         $existing = $this->pdo->prepare('SELECT 1 FROM erp_bank_statement_lines WHERE bank_account_id = :b AND fitid = :f');
         foreach ($ofx['transactions'] as $index => $transaction) {
             $problems = [];
-            if ($this->registry->isClosed($condominium, substr($transaction['posted_on'], 0, 7))) {
+            if ($this->closed($condominium, substr($transaction['posted_on'], 0, 7))) {
                 $problems[] = 'A competência ' . substr($transaction['posted_on'], 0, 7) . ' está fechada.';
             }
             $existing->execute(['b' => $bankAccount['id'], 'f' => $transaction['fitid']]);
@@ -671,7 +796,7 @@ final class Imports
             throw new InvalidArgumentException('O arquivo não é um XLSX válido.');
         }
         if ($extension !== 'xlsx' && str_contains($content, "\0")) {
-            throw new InvalidArgumentException('O arquivo não é texto (CSV ou OFX).');
+            throw new InvalidArgumentException('O arquivo não é texto (CSV, OFX ou XML).');
         }
         return [$content, $name];
     }
@@ -694,7 +819,7 @@ final class Imports
 
     private function load(string $relative): string
     {
-        if (!preg_match('/^\d+\/[a-f0-9]{64}\.(csv|txt|xlsx|ofx)$/', $relative) || !is_file($this->root . '/' . $relative)) {
+        if (!preg_match('/^\d+\/[a-f0-9]{64}\.(csv|txt|xlsx|ofx|xml)$/', $relative) || !is_file($this->root . '/' . $relative)) {
             throw new DomainException('O arquivo da prévia não está mais guardado. Envie de novo.');
         }
         return (string)file_get_contents($this->root . '/' . $relative);
@@ -751,6 +876,12 @@ final class Imports
             'entry_id' => $r['entry_id'] !== null ? (int)$r['entry_id'] : null, 'transfer_id' => $r['transfer_id'] !== null ? (int)$r['transfer_id'] : null,
             'note' => $r['note'],
         ];
+    }
+
+    /** Fechamento mensal consultado uma vez por competência em cada validação (ADR 0087, M4). */
+    private function closed(int $condominium, string $competence): bool
+    {
+        return $this->closedCache[$condominium . '|' . $competence] ??= $this->registry->isClosed($condominium, $competence);
     }
 
     private function int(mixed $value): ?int
