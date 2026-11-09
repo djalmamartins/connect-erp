@@ -155,11 +155,11 @@ final class Panel extends Controller
         return $data;
     }
 
-    /** Páginas da prestação de contas com dados reais (ADR 0036): balancete e demonstrativo. */
+    /** Páginas da prestação de contas com dados reais (ADR 0037): balancete e demonstrativo. */
     public const REPORT_PAGES = ['AP-079', 'AP-051'];
 
     /**
-     * Relatórios financeiros reais (ADR 0036) no contexto da barra superior ("Todos" = escopo):
+     * Relatórios financeiros reais (ADR 0037) no contexto da barra superior ("Todos" = escopo):
      *  - AP-079 balancete de verificação: ?de=AAAA-MM&ate=AAAA-MM (padrão: mês atual) → $trialBalance;
      *  - AP-051 demonstrativo (prestação de contas por caixa, com conciliação bancária):
      *    ?de=AAAA-MM-DD&ate=AAAA-MM-DD (padrão: do dia 1 até hoje) → $statement.

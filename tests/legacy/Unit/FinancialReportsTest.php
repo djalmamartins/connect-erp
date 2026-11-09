@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use PHPUnit\Framework\TestCase;
 use Source\Services\Erp\FinancialReports;
 
-/** Relatórios financeiros: regras puras do balancete e da conciliação (ADR 0036). */
+/** Relatórios financeiros: regras puras do balancete e da conciliação (ADR 0037). */
 final class FinancialReportsTest extends TestCase
 {
     public function testRollupSumsAnalyticIntoSyntheticByCode(): void

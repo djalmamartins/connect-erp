@@ -60,4 +60,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0033](../Organic%20Code/decisions/0033-invoices.md) | Faturas (AP-032): cobrança por unidade, emitida como contas a receber, sem duplicar |
 | [0034](../Organic%20Code/decisions/0034-tickets-helpdesk-and-environment-switcher.md) | Todo chamado na fila do Help Desk (condomínio, unidade, solicitante) e alternador ERP / Studio / Help Desk |
 | [0035](../Organic%20Code/decisions/0035-bank-charges-sandbox.md) | Boletos, retorno e conciliação pelo adaptador bancário (só sandbox, sem credencial nem banco real) |
-| [0036](../Organic%20Code/decisions/0036-financial-reports.md) | Relatórios financeiros: balancete de verificação e prestação de contas com conciliação bancária |
+| [0037](../Organic%20Code/decisions/0037-financial-reports.md) | Relatórios financeiros: balancete de verificação e prestação de contas com conciliação bancária |

@@ -11,7 +11,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 
 /**
- * Relatórios financeiros (passo 6 do plano, ADR 0036), somente leitura e calculados dos lançamentos
+ * Relatórios financeiros (passo 6 do plano, ADR 0037), somente leitura e calculados dos lançamentos
  * válidos (sem tabela própria):
  *
  * - trialBalance(): balancete de verificação (AP-079) por conta do plano de contas num intervalo de

@@ -12,7 +12,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Registry\RegistryService;
 
-/** Balancete e prestação de contas com dados reais, conciliação e escopo (ADR 0036). */
+/** Balancete e prestação de contas com dados reais, conciliação e escopo (ADR 0037). */
 final class FinancialReportsIntegrationTest extends TestCase
 {
     private int $alpha;

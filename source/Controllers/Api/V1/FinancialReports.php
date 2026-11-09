@@ -12,7 +12,7 @@ use Source\Services\Erp\FinancialReports as Reports;
 use Source\Support\Access;
 
 /**
- * Relatórios financeiros (ADR 0036), somente leitura:
+ * Relatórios financeiros (ADR 0037), somente leitura:
  *  GET /api/v1/reports/trial-balance?condominium_id=&from=AAAA-MM&to=AAAA-MM    balancete de verificação
  *  GET /api/v1/reports/statement?condominium_id=&from=AAAA-MM-DD&to=AAAA-MM-DD  prestação de contas por caixa
  * condominium_id vazio = todos os condomínios do escopo. Exige erp.entries.view e erp.chart.view.
