@@ -64,6 +64,15 @@ $route->get("/invoices/{id}", "Invoices:show", null, \Source\Support\Middleware\
 $route->patch("/invoices/{id}/items/{item}", "Invoices:updateItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/issue", "Invoices:issue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/cancel", "Invoices:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Boletos, retorno e fila de divergências (ADR 0035), só com o adaptador sandbox.
+$route->get("/bank-charges", "Banking:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-charges", "Banking:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-charges/{id}", "Banking:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-returns", "Banking:importReturn", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.
 foreach (\Source\Services\Erp\Registry\Definitions::all() as $registrySlug => $registryDefinition) {
