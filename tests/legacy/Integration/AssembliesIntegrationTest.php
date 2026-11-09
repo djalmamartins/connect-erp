@@ -71,7 +71,9 @@ final class AssembliesIntegrationTest extends TestCase
         $service->checkIn($this->admin, $id, ['unit_id' => $this->units['102'], 'attendee_name' => 'Caio Inquilino'], $at);
         $blocked = $service->checkIn($this->admin, $id, ['unit_id' => $this->units['103'], 'attendee_name' => 'Duda Devedora'], $at);
         self::assertFalse($blocked['eligible']);
-        self::assertSame(30000, $blocked['overdue_cents']);
+        self::assertSame('inadimplente', $blocked['reason']);
+        self::assertNull($blocked['overdue_cents'], 'ADR 0095: sem erp.agreements.view, sem valor.');
+        self::assertSame(30000, (int)$this->pdo->query('SELECT overdue_cents FROM erp_assembly_attendance WHERE id = ' . (int)$blocked['id'])->fetchColumn(), 'O valor fica gravado.');
         $this->assertConflict(fn () => $service->checkIn($this->admin, $id, ['unit_id' => $this->units['101'], 'attendee_name' => 'Outra Pessoa'], $at), 'presença repetida');
         $this->assertConflict(fn () => $service->checkIn($this->admin, $id, ['unit_id' => $this->units['102'], 'attendee_name' => 'Procurador', 'is_proxy' => true]), 'procuração sem arquivo', true);
 

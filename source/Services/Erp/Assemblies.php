@@ -294,8 +294,10 @@ final class Assemblies
      * mesmo condomínio. A elegibilidade é conferida aqui: conta de receita vencida e não paga bloqueia o voto.
      *
      * @param array{unit_id?:mixed, attendee_name?:mixed, is_proxy?:mixed, proxy_document_id?:mixed} $input
+     * @param bool $withDebt ADR 0095: o valor vencido só volta para quem tem erp.agreements.view; o direito a voto
+     *                       e o motivo ("inadimplente") voltam sempre.
      */
-    public function checkIn(User $user, int $id, array $input, ?\DateTimeImmutable $now = null): array
+    public function checkIn(User $user, int $id, array $input, ?\DateTimeImmutable $now = null, bool $withDebt = false): array
     {
         $now ??= new \DateTimeImmutable();
         $assembly = $this->openRow($user, $id);
@@ -325,7 +327,8 @@ final class Assemblies
         }
         $attendance = (int)$this->pdo->lastInsertId();
         Audit::record('create', 'erp_assembly_attendance', $attendance, null, ['assembly_id' => $id, 'unit_id' => (int)$unit['id'], 'is_proxy' => $proxy, 'eligible' => $overdue === 0]);
-        return ['id' => $attendance, 'unit_id' => (int)$unit['id'], 'unit_label' => (string)$unit['label'], 'is_proxy' => $proxy, 'eligible' => $overdue === 0, 'overdue_cents' => $overdue];
+        return ['id' => $attendance, 'unit_id' => (int)$unit['id'], 'unit_label' => (string)$unit['label'], 'is_proxy' => $proxy, 'eligible' => $overdue === 0,
+            'reason' => $overdue === 0 ? null : 'inadimplente', 'overdue_cents' => $withDebt ? $overdue : null];
     }
 
     /** Põe um item em votação; só um por vez. */
