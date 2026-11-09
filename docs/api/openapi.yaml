@@ -73,6 +73,24 @@ components:
         reopened_by: { type: [integer, "null"] }
         reopened_at: { type: [string, "null"] }
         reopen_reason: { type: [string, "null"] }
+    BankReturnFile:
+      type: object
+      description: Arquivo de retorno importado (ADR 0035). applied = conciliados; divergence = fila de revisão; other = repetidos.
+      properties:
+        id: { type: integer }
+        condominium_id: { type: integer }
+        condominium_name: { type: string }
+        bank_account_id: { type: integer }
+        bank_account_name: { type: string }
+        adapter: { type: string, example: sandbox }
+        filename: { type: string }
+        sha256: { type: string, minLength: 64, maxLength: 64 }
+        events_count: { type: integer }
+        applied_count: { type: integer }
+        divergence_count: { type: integer }
+        other_count: { type: integer }
+        total_cents: { type: integer }
+        created_at: { type: string, description: Data da importação }
     BankCharge:
       type: object
       description: Boleto (ADR 0035). No sandbox, digitable_line e barcode começam com SANDBOX e não são pagáveis.
@@ -859,6 +877,18 @@ paths:
         '409': { description: 'Pago, recusado, já cancelado ou cancelamento não confirmado pelo banco' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
   /bank-returns:
+    get:
+      operationId: listBankReturns
+      summary: Arquivos de retorno importados, mais recentes primeiro (erp.bank_charges.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo; fora do escopo = lista vazia' }
+        - { name: bank_account_id, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/BankReturnFile' } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     post:
       operationId: importBankReturn
       summary: Importa um arquivo de retorno do sandbox e concilia (erp.bank_charges.manage)

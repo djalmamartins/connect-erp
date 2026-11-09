@@ -127,6 +127,45 @@ final class BankReturns
     }
 
     /**
+     * Arquivos de retorno importados, mais recentes primeiro ($condominiumId null = todos do escopo;
+     * condomínio fora do escopo = lista vazia, sem revelar se existe).
+     *
+     * @param array{page?:mixed, bank_account_id?:mixed} $filters
+     * @return array{data:list<array>, total:int, page:int, per_page:int, pages:int}
+     */
+    public function files(User $user, ?int $condominiumId = null, array $filters = []): array
+    {
+        $ids = array_map('intval', $this->scope->allowedIds($user));
+        if ($condominiumId !== null) {
+            $ids = in_array($condominiumId, $ids, true) ? [$condominiumId] : [];
+        }
+        $perPage = 25;
+        $page = max(1, (int)(filter_var($filters['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1));
+        if ($ids === []) {
+            return ['data' => [], 'total' => 0, 'page' => $page, 'per_page' => $perPage, 'pages' => 0];
+        }
+        $where = 'f.condominium_id IN (' . implode(',', $ids) . ')';
+        $params = [];
+        $bank = filter_var($filters['bank_account_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($bank !== false && $bank !== null) {
+            $where .= ' AND f.bank_account_id = :b';
+            $params['b'] = $bank;
+        }
+        $count = $this->pdo->prepare("SELECT COUNT(*) FROM erp_bank_return_files f WHERE {$where}");
+        $count->execute($params);
+        $total = (int)$count->fetchColumn();
+        $offset = ($page - 1) * $perPage;
+        $stmt = $this->pdo->prepare("SELECT f.*, b.name AS bank_account_name, c.name AS condominium_name FROM erp_bank_return_files f
+            JOIN erp_bank_accounts b ON b.id = f.bank_account_id JOIN condominiums c ON c.id = f.condominium_id
+            WHERE {$where} ORDER BY f.created_at DESC, f.id DESC LIMIT {$perPage} OFFSET {$offset}");
+        $stmt->execute($params);
+        return ['data' => array_map(static fn (array $r): array => self::presentFile($r) + [
+                'bank_account_name' => (string)$r['bank_account_name'], 'condominium_name' => (string)$r['condominium_name'],
+            ], $stmt->fetchAll(PDO::FETCH_ASSOC)),
+            'total' => $total, 'page' => $page, 'per_page' => $perPage, 'pages' => (int)ceil($total / $perPage)];
+    }
+
+    /**
      * Fila de revisão: eventos com divergência ou título não encontrado ainda não resolvidos.
      *
      * @return list<array>
@@ -260,13 +299,21 @@ final class BankReturns
         return array_map(fn (array $r): array => $this->presentEvent($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    private function presentFile(array $row): array
+    /**
+     * Arquivo de retorno para a API (regra pura). applied = conciliados (baixa ou mudança de estado);
+     * divergence = fila de revisão (inclui título não encontrado); other = repetidos.
+     */
+    public static function presentFile(array $row): array
     {
+        $events = (int)$row['events_count'];
+        $applied = (int)$row['applied_count'];
+        $divergence = (int)$row['divergence_count'];
         return [
             'id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'bank_account_id' => (int)$row['bank_account_id'],
             'adapter' => (string)$row['adapter'], 'filename' => (string)$row['filename'], 'sha256' => (string)$row['sha256'],
-            'events_count' => (int)$row['events_count'], 'applied_count' => (int)$row['applied_count'],
-            'divergence_count' => (int)$row['divergence_count'], 'total_cents' => (int)$row['total_cents'], 'created_at' => $row['created_at'],
+            'events_count' => $events, 'applied_count' => $applied, 'divergence_count' => $divergence,
+            'other_count' => max(0, $events - $applied - $divergence),
+            'total_cents' => (int)$row['total_cents'], 'created_at' => $row['created_at'],
         ];
     }
 

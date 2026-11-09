@@ -70,6 +70,7 @@ $route->post("/bank-charges", "Banking:store", null, \Source\Support\Middleware\
 $route->get("/bank-charges/{id}", "Banking:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-returns", "Banking:returns", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-returns", "Banking:importReturn", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Support\Middleware\ApiAuthenticated::class);
