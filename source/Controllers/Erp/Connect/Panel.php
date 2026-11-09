@@ -245,7 +245,8 @@ final class Panel extends Controller
         if ($id === 'AP-032') {
             $data += $this->invoiceData($user);
         }
-        $template = 'pages/modules/' . $kind;
+        // AP-032 com dados reais tem tela própria (lista, itens por unidade, emitir e cancelar).
+        $template = $id === 'AP-032' && ($data['invoices'] ?? null) !== null ? 'pages/finance/invoices' : 'pages/modules/' . $kind;
         return [$template, $this->layoutData($user, $id, $data)];
     }
 
