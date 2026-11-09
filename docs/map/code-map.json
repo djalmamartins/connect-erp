@@ -309,6 +309,10 @@
    "title": "0078 — Telas dos gráficos: um eixo por painel e a tabela equivalente"
   },
   {
+   "file": "docs/Organic Code/decisions/0079-nfe-import-screen.md",
+   "title": "0079 — Tela da importação de NF-e em XML (AP-141)"
+  },
+  {
    "file": "docs/Organic Code/decisions/0080-collections-and-fines.md",
    "title": "0080 — Cobrança e multas: multas pendentes, atendimento e acompanhamento judicial"
   },
@@ -2796,6 +2800,7 @@
     "erp_units"
    ],
    "tests": [
+    "tests/erp/render-smoke.php",
     "tests/legacy/Integration/ImportsCycleIntegrationTest.php",
     "tests/legacy/Integration/ImportsIntegrationTest.php",
     "tests/legacy/Unit/ErpImportScreensTest.php",
@@ -4081,7 +4086,7 @@
   }
  },
  "counts": {
-  "adrs": 84,
+  "adrs": 85,
   "classes": 211,
   "dynamic_route_lines": {
    "erp": 9,
@@ -9275,6 +9280,7 @@
    "Source\\Services\\Environments",
    "Source\\Services\\Erp\\DemoData",
    "Source\\Services\\Erp\\FinancialReports",
+   "Source\\Services\\Erp\\Imports\\Imports",
    "Source\\Services\\Erp\\LateCharges",
    "Source\\Services\\Erp\\MonthClosing",
    "Source\\Services\\Erp\\Registry\\Definitions",

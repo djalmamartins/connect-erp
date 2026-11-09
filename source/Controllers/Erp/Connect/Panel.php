@@ -47,7 +47,7 @@ final class Panel extends Controller
         'AP-029' => 'erp.entries.view', 'AP-040' => 'erp.unit_documents.view',
         // Importações (ADR 0058 e 0074).
         'AP-140' => 'erp.imports.view', 'AP-142' => 'erp.imports.view', 'AP-143' => 'erp.imports.view', 'AP-144' => 'erp.imports.view',
-        'AP-145' => 'erp.imports.view', 'AP-146' => 'erp.imports.view', 'AP-044' => 'erp.imports.view',
+        'AP-145' => 'erp.imports.view', 'AP-146' => 'erp.imports.view', 'AP-044' => 'erp.imports.view', 'AP-141' => 'erp.imports.view',
         // Comunicação (ADR 0059 e 0075).
         'AP-111' => 'erp.announcements.view', 'AP-137' => 'erp.announcements.view', 'AP-138' => 'erp.announcements.view', 'AP-139' => 'erp.announcements.view',
         // Cobrança e multas (ADR 0080 e 0076).

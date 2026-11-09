@@ -18,7 +18,9 @@ use Source\Support\Erp\CondominiumContext;
  * as importações do tipo da página no condomínio da barra superior, o detalhe de uma (?importacao=ID,
  * com as linhas do extrato no OFX) e, no extrato (AP-140), a fila de linhas pendentes com os
  * lançamentos candidatos da linha escolhida (?linha=ID). Enviar, aplicar e resolver são pela API
- * REST (erp.js, data-erp-imports). Sem banco ou sem erp.imports.view, importReady false = demonstração.
+ * REST (erp.js, data-erp-imports). Na NF-e (AP-141, ADR 0086 e 0079), a tela oferece as contas de despesa
+ * analíticas do condomínio para as contas a pagar geradas pelas duplicatas.
+ * Sem banco ou sem erp.imports.view, importReady false = demonstração.
  */
 final class ImportScreens
 {
@@ -41,7 +43,7 @@ final class ImportScreens
             return $data;
         }
         $context = CondominiumContext::id();
-        $data += ['importKind' => $kind, 'importContext' => $context, 'importDetail' => null, 'importError' => null, 'importBankAccounts' => [],
+        $data += ['importKind' => $kind, 'importContext' => $context, 'importDetail' => null, 'importError' => null, 'importBankAccounts' => [], 'importExpenseAccounts' => [],
             'pendingLines' => null, 'lineDetail' => null,
             'canImport' => Access::can('erp.imports.manage', $user) && Access::can(Imports::KINDS[$kind]['permission'], $user),
             'canResolveLines' => Access::can('erp.imports.manage', $user) && Access::can('erp.entries.manage', $user)];
@@ -60,6 +62,10 @@ final class ImportScreens
                 } catch (RegistryNotFound) {
                     $data['importError'] = 'Importação não encontrada no seu escopo.';
                 }
+            }
+            if ($kind === 'nfe') {
+                $data['importExpenseAccounts'] = EntryShortcutScreens::forContext(
+                    (new RegistryService())->references($user, RegistryService::definition('payables'))['chart_account_id'] ?? [], $context);
             }
             if ($kind === 'ofx') {
                 $data['importBankAccounts'] = EntryShortcutScreens::forContext(
@@ -82,6 +88,15 @@ final class ImportScreens
         return $data;
     }
 
+    /** Limite do XML da NF-e no leitor (NfeParser::MAX_BYTES), menor que o do envio. */
+    public const NFE_MAX_BYTES = 1_000_000;
+
+    /** Tamanho máximo do arquivo na tela (regra pura): 1 MB na NF-e, o do envio nos outros tipos. */
+    public static function maxBytes(string $kind): int
+    {
+        return $kind === 'nfe' ? self::NFE_MAX_BYTES : Imports::MAX_BYTES;
+    }
+
     /** Rótulo do que a aplicação gravou (summary.applied), para o resumo. */
     public static function appliedLabel(string $key): string
     {
@@ -93,12 +108,12 @@ final class ImportScreens
 
     /**
      * Linha do modelo de planilha (regra pura): as colunas obrigatórias e depois as opcionais, separadas
-     * por ponto e vírgula, como o leitor aceita. OFX não tem modelo.
+     * por ponto e vírgula, como o leitor aceita. Arquivo sem colunas (OFX, NF-e em XML) não tem modelo.
      */
     public static function templateHeader(string $kind): ?string
     {
         $definition = Imports::KINDS[$kind] ?? null;
-        if ($definition === null || $kind === 'ofx') {
+        if ($definition === null || $definition['required'] === []) {
             return null;
         }
         return implode(';', array_merge($definition['required'], $definition['optional']));
