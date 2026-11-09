@@ -29,10 +29,20 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <button type="button" class="erp-sidebar__collapse" data-erp-collapse aria-label="Recolher menu" aria-controls="erp-sidebar" aria-expanded="true"><?= $icon('chevron-left') ?></button>
         <button type="button" class="erp-sidebar__close" data-erp-nav-close aria-label="Fechar menu"><?= $icon('close') ?></button>
     </div>
-    <div class="erp-sidebar__context">
-        <small>ERP</small>
-        <strong>Connect ERP</strong>
-    </div>
+    <?php
+    // Alternador de ambientes (ADR 0034): mesmo catálogo do Studio e do Help Desk.
+    $environmentIcons = ['studio' => 'sparkle', 'erp' => 'building', 'helpdesk' => 'help', 'residents' => 'home', 'site' => 'eye'];
+    $environments = \Source\Services\Environments::menu($user, 'erp');
+    ?>
+    <details class="erp-sidebar__context erp-envswitch" data-erp-dropdown>
+        <summary title="Trocar de ambiente"><span><small>ERP</small><strong>Connect ERP</strong></span><?= $icon('chevron-right', 'erp-icon--sm erp-envswitch__chevron') ?></summary>
+        <nav class="erp-envswitch__panel" aria-label="Ambientes Connect">
+            <small class="erp-envswitch__title">Ambientes Connect</small>
+            <?php foreach ($environments as $environment): ?>
+                <a href="<?= $this->e($environment['href']) ?>"<?= $environment['current'] ? ' aria-current="page"' : '' ?>><?= $icon($environmentIcons[$environment['key']] ?? 'info', 'erp-icon--sm') ?><span><strong><?= $this->e($environment['label']) ?></strong><small><?= $this->e($environment['description']) ?></small></span><?= $environment['current'] ? '<em>Atual</em>' : '' ?></a>
+            <?php endforeach; ?>
+        </nav>
+    </details>
     <nav class="erp-nav" aria-label="Menu principal">
         <?php foreach ($catalog['groups'] as $groupKey => $group):
             $pages = $pagesByGroup[$groupKey] ?? [];
