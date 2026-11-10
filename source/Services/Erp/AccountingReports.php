@@ -15,7 +15,9 @@ use Source\Services\CondominiumScope;
  *
  * - ledger() — Livro Razão (AP-083): por conta do plano de contas, o saldo anterior, cada lançamento do
  *   período com débito ou crédito e o saldo acumulado, e o saldo final. Conta de despesa movimenta a
- *   débito e conta de receita a crédito; o saldo da conta cresce na sua natureza.
+ *   débito e conta de receita a crédito; o saldo da conta cresce na sua natureza. O saldo inicial do plano
+ *   (AP-161) com data até o início do período é a abertura da conta e substitui os lançamentos anteriores
+ *   à data dele (ADR 0167); saldo com data depois do início fica de fora e aparece em openings_ignored.
  * - accountBalances() — Saldos de Contas (AP-073): saldo de cada conta bancária numa data (as_of) ou num
  *   período (saldo anterior, entradas, saídas e saldo final), pela mesma conciliação do AP-051
  *   (FinancialReports::statement), com saldo inicial e transferências.
@@ -93,8 +95,9 @@ final class AccountingReports
             $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'on_date' => $line['on_date'], 'competence' => $line['competence'],
                 'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit, 'balance_cents' => $accounts[$key]['closing_cents']];
         }
-        uasort($accounts, static fn (array $a, array $b): int => [$a['nature'] === 'receita' ? 0 : 1, self::sortable($a['code'])]
-            <=> [$b['nature'] === 'receita' ? 0 : 1, self::sortable($b['code'])]);
+        $order = ['receita' => 0, 'despesa' => 1, 'asset' => 2, 'liability' => 3, 'equity' => 4];
+        uasort($accounts, static fn (array $a, array $b): int => [$order[$a['nature']] ?? 5, self::sortable($a['code'])]
+            <=> [$order[$b['nature']] ?? 5, self::sortable($b['code'])]);
         return array_values($accounts);
     }
 
@@ -127,7 +130,7 @@ final class AccountingReports
         $ids = $this->ids($user, $condominiumId);
         $base = ['condominium_id' => $condominiumId, 'from' => $from, 'to' => $to, 'basis' => $basis, 'account_code' => $code];
         if ($ids === []) {
-            return $base + ['truncated' => false, 'accounts' => []];
+            return $base + ['openings_ignored' => [], 'truncated' => false, 'accounts' => []];
         }
         $in = implode(',', $ids);
         [$before, $within, $params, $date] = $this->periodSql($basis, $from, $to);
@@ -143,6 +146,29 @@ final class AccountingReports
             $opening[$key] = ($opening[$key] ?? 0) + (int)$row['cents'];
             $names[$key] = (string)$row['name'];
         }
+        // Saldo inicial do plano (AP-161, ADR 0167): com data até o início do período, vira a abertura da conta
+        // e substitui os lançamentos anteriores à data dele; os lançamentos depois da data somam normalmente.
+        $replaced = $basis === 'cash' ? 'e.paid_on < o.opened_on' : 'e.competence < SUBSTR(o.opened_on, 1, 7)';
+        $initial = $this->pdo->prepare("SELECT a.code, a.name, a.nature, SUM(o.amount_cents) AS cents FROM erp_chart_account_openings o
+            JOIN erp_chart_accounts a ON a.id = o.chart_account_id WHERE o.condominium_id IN ({$in}) AND o.opened_on <= :fd{$codeSql} GROUP BY a.code, a.name, a.nature");
+        $initial->execute(['fd' => $from] + $codeParams);
+        foreach ($initial->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $key = $row['nature'] . '|' . $row['code'];
+            $opening[$key] = ($opening[$key] ?? 0) + (int)$row['cents'];
+            $names[$key] = (string)$row['name'];
+        }
+        $replacedBefore = $this->pdo->prepare("SELECT a.code, e.nature, SUM(e.amount_cents) AS cents FROM erp_entries e JOIN erp_chart_accounts a ON a.id = e.chart_account_id
+            JOIN erp_chart_account_openings o ON o.condominium_id = e.condominium_id AND o.chart_account_id = e.chart_account_id AND o.opened_on <= :fd
+            WHERE e.condominium_id IN ({$in}) AND e.deleted_at IS NULL AND e.status = 'active' AND {$before} AND {$replaced}{$codeSql} GROUP BY a.code, e.nature");
+        $replacedBefore->execute(['f' => $params['f'], 'fd' => $from] + $codeParams);
+        foreach ($replacedBefore->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $key = $row['nature'] . '|' . $row['code'];
+            $opening[$key] = ($opening[$key] ?? 0) - (int)$row['cents'];
+        }
+        $later = $this->pdo->prepare("SELECT DISTINCT a.code FROM erp_chart_account_openings o JOIN erp_chart_accounts a ON a.id = o.chart_account_id
+            WHERE o.condominium_id IN ({$in}) AND o.opened_on > :fd{$codeSql} ORDER BY a.code");
+        $later->execute(['fd' => $from] + $codeParams);
+        $base['openings_ignored'] = array_map('strval', $later->fetchAll(PDO::FETCH_COLUMN));
         $stmt = $this->pdo->prepare("SELECT a.code, a.name, e.nature, e.id, {$date} AS on_date, e.competence, e.description, e.amount_cents AS cents
             FROM erp_entries e JOIN erp_chart_accounts a ON a.id = e.chart_account_id
             WHERE e.condominium_id IN ({$in}) AND e.deleted_at IS NULL AND e.status = 'active' AND {$within}{$codeSql}
