@@ -60,7 +60,10 @@ img { max-width: 100%; height: auto; }
 
 /* Hero */
 .hc-hero { position: relative; overflow: hidden; background: var(--hc-mint); padding: 64px 0 132px; text-align: center; }
-.hc-hero__art { position: absolute; inset: 0; pointer-events: none; background: url(images/floral-connect.svg) center top / 340px 340px repeat; opacity: .5; -webkit-mask-image: radial-gradient(ellipse 46% 60% at 50% 42%, transparent 55%, #000 100%); mask-image: radial-gradient(ellipse 46% 60% at 50% 42%, transparent 55%, #000 100%); }
+.hc-hero__art { position: absolute; inset: 0; pointer-events: none; color: var(--hc-gold); opacity: .55; }
+.hc-hero__arcs { position: absolute; width: 220px; }
+.hc-hero__arcs--left { left: max(16px, calc(50% - 600px)); bottom: 40px; }
+.hc-hero__arcs--right { right: max(16px, calc(50% - 600px)); top: 40px; color: var(--hc-green-3); }
 .hc-hero__inner { position: relative; max-width: 760px; }
 .hc-pill { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--hc-green); border-radius: 999px; padding: 7px 16px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(13, 46, 39, .08); }
 .hc-pill .hc-icon { color: var(--hc-gold); font-size: 18px; }
@@ -75,7 +78,7 @@ img { max-width: 100%; height: auto; }
 .hc-channels { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 20px; margin-top: -84px; }
 .hc-channel { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 26px 24px; background: #fff; border: 1px solid var(--hc-line); border-radius: var(--hc-radius); box-shadow: var(--hc-shadow); text-align: left; text-decoration: none; color: inherit; font: inherit; cursor: pointer; transition: transform .2s, box-shadow .2s, border-color .2s; }
 .hc-channel:hover { transform: translateY(-4px); box-shadow: var(--hc-shadow-lift); border-color: var(--hc-gold); }
-.hc-channel i { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 18px; border-radius: 12px; background: var(--hc-mint); color: var(--hc-gold-strong); font-size: 25px; font-style: normal; }
+.hc-channel i { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 18px; border-radius: 12px; background: var(--hc-gold-soft); color: var(--hc-gold-strong); font-size: 25px; font-style: normal; }
 .hc-channel strong { font-size: 18px; font-weight: 600; color: var(--hc-green); }
 .hc-channel span { font-size: 14px; color: var(--hc-muted); }
 
@@ -248,7 +251,7 @@ img { max-width: 100%; height: auto; }
 .hc-social div { display: flex; gap: 10px; }
 .hc-social a { display: grid; place-items: center; width: 38px; height: 38px; border: 1.5px solid var(--hc-gold); border-radius: 50%; color: var(--hc-green); }
 .hc-footer { background: var(--hc-green); color: #c8dbd2; padding: 40px 0 28px; }
-.hc-footer__floral { height: 84px; background: url(images/floral-connect.svg) left top / 168px 168px repeat-x; opacity: .45; -webkit-mask-image: linear-gradient(90deg, #000, transparent 70%); mask-image: linear-gradient(90deg, #000, transparent 70%); }
+.hc-footer__arcs { display: block; width: 260px; color: var(--hc-gold); opacity: .8; }
 .hc-footer__bottom { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 28px; margin-top: -2px; padding-top: 24px; border-top: 1px solid var(--hc-gold); font-size: 13px; }
 .hc-footer__bottom img { width: 120px; height: 36px; object-fit: contain; object-position: left; display: block; }
 .hc-footer__bottom .hc-footer__links { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-left: auto; font-size: 14px; font-weight: 500; }
@@ -279,7 +282,7 @@ img { max-width: 100%; height: auto; }
   .hc-top .hc-btn { min-height: 38px; padding: 0 12px; font-size: 13px; }
   .hc-top .hc-btn .hc-icon { display: none; }
   .hc-hero { padding: 44px 0 112px; }
-  .hc-hero__art { background-size: 240px 240px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 45%); mask-image: linear-gradient(180deg, #000, transparent 45%); }
+  .hc-hero__arcs { display: none; }
   .hc-search { padding-left: 12px; }
   .hc-search .hc-btn { padding: 0 14px; }
   .hc-channels { grid-template-columns: 1fr 1fr; gap: 12px; }
