@@ -1050,6 +1050,101 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/accountability:
+    get:
+      operationId: accountability
+      summary: Prestação de contas mensal de um condomínio (erp.entries.view e erp.chart.view, ADR 0166)
+      description: >-
+        Junta balancete, DRE por competência, saldos bancários por caixa, inadimplência (até 500 unidades),
+        resumo e avisos (mês aberto, lançamentos em aberto, inadimplência).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: month, in: query, schema: { type: string, example: '2026-10' } }
+      responses:
+        '200': { description: '{ data: { closing, trial_balance, income_statement, bank_accounts, delinquency, summary, warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/deliveries:
+    get:
+      operationId: deliveriesReport
+      summary: Registros de entregas da portaria (erp.deliveries.view, ADR 0166)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: status, in: query, schema: { type: string, enum: [active, picked_up, inactive] } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Junto com from, no máximo 366 dias' }
+        - { name: unit_id, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { rows[], summary{waiting, picked_up, cancelled, average_pickup_days, oldest_waiting_days}, truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /delivery-pickups:
+    post:
+      operationId: deliveryPickUp
+      summary: Dá baixa na retirada de uma entrega (erp.deliveries.manage, ADR 0166)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delivery_id, picked_up_by]
+              properties:
+                delivery_id: { type: integer }
+                picked_up_by: { type: string, minLength: 2, maxLength: 160 }
+                picked_up_on: { type: string, format: date }
+      responses:
+        '200': { description: '{ data: { id, condominium_id, status, picked_up_on, picked_up_by } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Entrega já retirada ou cancelada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /chart-account-openings:
+    get:
+      operationId: chartAccountOpenings
+      summary: Saldo inicial do plano de contas de um condomínio (erp.settings.view, ADR 0166)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, rows[{code, name, nature, level, analytic, chart_account_id, opened_on, notes, amount_cents}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: setChartAccountOpening
+      summary: Grava o saldo inicial de uma conta analítica (erp.settings.manage, ADR 0166)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, chart_account_id, opened_on, amount_cents]
+              properties:
+                condominium_id: { type: integer }
+                chart_account_id: { type: integer }
+                opened_on: { type: string, format: date }
+                amount_cents: { oneOf: [{ type: integer }, { type: string, example: '-10,00' }] }
+                notes: { type: string, maxLength: 255 }
+      responses:
+        '200': { description: 'O mesmo formato do GET' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/statement:
     get:
       operationId: financialStatement
