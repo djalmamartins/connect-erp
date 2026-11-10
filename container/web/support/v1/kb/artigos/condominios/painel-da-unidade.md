@@ -8,7 +8,7 @@ menu: Condomínios > Painel da unidade
 icone: speedometer-outline
 situacao: funciona
 relacionados: unidades, proprietarios-e-inquilinos, condominios
-palavras: painel da unidade, condomínios, AP-003
+palavras: painel da unidade, condomínios, AP-003, ficha da pessoa, telefone do proprietário, cpf do morador, dados do inquilino
 rascunho: nao
 ---
 
@@ -32,6 +32,14 @@ Use os filtros no alto da lista: **Unidade do Residencial Jardim das Acácias**.
 Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros.
 
 > Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.
+
+## Ver a ficha da pessoa
+
+1. No bloco **Pessoas**, clique no nome do proprietário, inquilino ou morador.
+2. Abre a ficha com CPF/CNPJ, telefone, e-mail, início e fim do vínculo, se recebe boleto e comunicados por e-mail, o endereço da unidade, as outras unidades da pessoa nos seus condomínios e as observações.
+3. A ficha é só para consulta: nada pode ser alterado nela. Para corrigir um dado, clique em {{Abrir cadastro para alterar}}.
+
+> Clique no telefone ou no e-mail para ligar ou escrever direto.
 
 ## Quem pode usar
 

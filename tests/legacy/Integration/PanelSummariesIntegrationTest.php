@@ -80,6 +80,26 @@ final class PanelSummariesIntegrationTest extends TestCase
         }
     }
 
+    /** ADR 0155: a ficha da pessoa traz os dados do cadastro e só as outras unidades dentro do escopo. */
+    public function testPersonCardShowsRecordAndOtherUnitsInScope(): void
+    {
+        $document = (string)$this->pdo->query("SELECT document FROM erp_residents WHERE name = 'Ana Proprietária'")->fetchColumn();
+        $this->pdo->prepare("UPDATE erp_residents SET phone = '11999990000', email = 'ana@example.com', notes = 'Prefere WhatsApp' WHERE document = ?")->execute([$document]);
+        $betaUnit = $this->service->save($this->admin, 'units', ['condominium_id' => $this->beta, 'number' => '7', 'type' => 'sala'])['id'];
+        $this->service->save($this->admin, 'residents', ['condominium_id' => $this->beta, 'unit_id' => $betaUnit, 'relationship' => 'tenant',
+            'name' => 'Ana Proprietária', 'document' => $document]);
+        $this->pdo->prepare("UPDATE condominiums SET street = 'Rua das Flores', number = '10', city = 'Campinas', state = 'SP', zip_code = '13000000' WHERE id = ?")->execute([$this->alpha]);
+        $panels = new PanelSummaries($this->pdo, null, static fn (string $permission, User $user): bool => true);
+
+        $person = $panels->unit($this->admin, $this->unit)['people'][0];
+        self::assertSame([$document, '11999990000', 'ana@example.com', 'Prefere WhatsApp', false], [$person['document'], $person['phone'], $person['email'], $person['notes'], $person['has_portal_account']]);
+        self::assertSame([['unit_id' => $betaUnit, 'label' => '7', 'condominium_name' => 'Beta', 'relationship' => 'tenant']], $person['other_units']);
+        self::assertSame('Rua das Flores, 10 · unidade 101 · Campinas/SP · CEP 13000-000', $panels->unit($this->admin, $this->unit)['unit']['address']);
+
+        $onlyAlpha = $this->user([$this->alpha]);
+        self::assertSame([], $panels->unit($onlyAlpha, $this->unit)['people'][0]['other_units'], 'Unidade de outro condomínio não aparece fora do escopo.');
+    }
+
     public function testWaitlistCallIsRecordedInOutboxOnce(): void
     {
         $date = (new \DateTimeImmutable('today'))->modify('+10 days')->format('Y-m-d');

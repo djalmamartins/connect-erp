@@ -2758,7 +2758,7 @@ paths:
       security: [{ session: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: '{ data: { unit, as_of, people, finance, documents, operations } }' }
+        '200': { description: '{ data: { unit (com address), as_of, people (ficha: document, phone, email, starts_on, ends_on, billing_by_email, notices_opt_out, notes, has_portal_account, other_units), finance, documents, operations } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
