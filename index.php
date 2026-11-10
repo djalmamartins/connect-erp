@@ -76,6 +76,8 @@ $route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Sup
 $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios financeiros (ADR 0037): balancete de verificação e prestação de contas com conciliação.
 $route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0164: Balancete Anual (AP-080)
+$route->get("/reports/annual-balance", "AnnualBalance:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
