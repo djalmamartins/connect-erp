@@ -32,4 +32,4 @@ O ADR 0166 criou `Accountability` (`GET /api/v1/reports/accountability`), `Deliv
   demonstração até rodar `bash tools/help/prints.sh` no Mac.
 - Testes: `Cycle55ScreensIntegrationTest` (soma na sintética, filtros e escopo das entregas, prestação do mês e
   sem permissão) e o smoke de renderização das três telas.
-- O saldo inicial do plano ainda não entra no saldo anterior do Livro Razão (pendência do ADR 0166).
+- O saldo inicial do plano ainda não entra no saldo anterior do Livro Razão (pendência do ADR 0166). **Atualização:** resolvido pelo ADR 0167 (abertura do Razão); a tela passou a nomear as naturezas patrimoniais e a mostrar o total delas (ADR 0148).

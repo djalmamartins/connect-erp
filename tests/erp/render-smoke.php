@@ -1191,6 +1191,31 @@ $assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'n
 $assert($PC::month('2026-13', '2026-11-10') === '2026-10' && $PC::month('2026-11', '2026-11-10') === '2026-11' && $PC::month('2026-12', '2026-11-10') === '2026-10'
     && $PC::month(null, '2026-01-05') === '2025-12' && $PC::monthLabel('2026-03') === 'Março de 2026', 'prestação de contas: mês');
 
+// Balanço Patrimonial com dados reais (ADR 0148, sobre o ADR 0167): AP-081.
+$BP = Source\Controllers\Erp\Connect\BalanceSheetScreens::class;
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-081', ['balanceReady' => true]) === 'pages/reports/balance-sheet' && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-081', []) === null
+    && Source\Controllers\Erp\Connect\Panel::pagePermissions()['AP-081'] === 'erp.entries.view', 'AP-081: tela própria só com dados');
+$bpReport = ['condominium_id' => 1, 'truncated' => false] + Source\Services\Erp\BalanceSheet::compose([
+    ['code' => '7', 'name' => 'Ativo', 'nature' => 'asset', 'kind' => 'sintetica', 'opening_cents' => null],
+    ['code' => '8.2', 'name' => 'Fundo de reserva <F>', 'nature' => 'liability', 'kind' => 'analitica', 'opening_cents' => 20000],
+], ['banks' => [['name' => 'Corrente <Itaú>', 'closing_cents' => 150000]], 'receivable_cents' => 30000, 'receivable_overdue_cents' => 12000, 'payable_cents' => 10000,
+    'payable_overdue_cents' => 0, 'retained_prior_cents' => 0, 'current_result_cents' => 100000], '2026-11-10');
+$bpData = ['balanceReady' => true, 'balanceDate' => '2026-11-10', 'balanceNeedsCondo' => false, 'balanceError' => null, 'balance' => $bpReport];
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', $bpData, 'real');
+$common($html, 'AP-081', 'Balanço Patrimonial');
+$assert(str_contains($html, 'Balanço em 10/11/2026') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'Fundo de reserva &lt;F&gt;') && str_contains($html, 'R$ 120,00')
+    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'format=csv&amp;condominium_id=1&amp;date=2026-11-10')
+    && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'Patrimônio líquido') && !str_contains($html, 'Interface proposta'), 'AP-081: balanço com contas, bancos e vencido');
+$assert(($bpReport['balanced'] && str_contains($html, '>Fechado<')) || (!$bpReport['balanced'] && str_contains($html, 'Diferença de')), 'AP-081: selo de fechamento');
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceNeedsCondo' => true, 'balance' => null] + $bpData);
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'name="data"') && !str_contains($html, 'format=csv'), 'AP-081: pede o condomínio');
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceError' => 'Informe a data do balanço (AAAA-MM-DD).', 'balance' => null] + $bpData);
+$assert(str_contains($html, 'Informe a data do balanço') && !str_contains($html, 'Totais do balanço'), 'AP-081: erro');
+$assert($BP::date('2026-02-30', '2026-11-10') === '2026-11-10' && $BP::date('2026-12-01', '2026-11-10') === '2026-11-10' && $BP::date('2026-06-30', '2026-11-10') === '2026-06-30'
+    && $BP::date(null, '2026-11-10') === '2026-11-10', 'balanço: data');
+$bpRows = $BP::rows($bpReport['assets']);
+$assert(in_array('Corrente <Itaú>', array_column($bpRows, 'name'), true) && count(array_filter($bpRows, static fn ($r) => !empty($r['detail']))) === 1, 'balanço: linhas dos bancos');
+
 // Acessos com dados reais (ADR 0147): AP-148 imobiliárias, AP-152 convites de moradores e AP-153 portal do morador.
 $AC = Source\Controllers\Erp\Connect\AccessScreens::class;
 foreach ($AC::PAGES as $acPage => $acKind) {

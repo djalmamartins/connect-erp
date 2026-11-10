@@ -42,7 +42,7 @@ $this->insert('components/layout/page-head', [
         </section>
     <?php endif; ?>
     <section class="erp-card" aria-labelledby="co-title">
-        <div class="erp-card__head"><div><h2 id="co-title">Saldos iniciais</h2><p><?= $this->e($condoName) ?> · receitas <?= $this->e(ReportScreens::brl((int)$t['revenue_cents'])) ?> · despesas <?= $this->e(ReportScreens::brl((int)$t['expense_cents'])) ?> · total <?= $this->e(ReportScreens::brl((int)$t['total_cents'])) ?></p></div></div>
+        <div class="erp-card__head"><div><h2 id="co-title">Saldos iniciais</h2><p><?= $this->e($condoName) ?> · receitas <?= $this->e(ReportScreens::brl((int)$t['revenue_cents'])) ?> · despesas <?= $this->e(ReportScreens::brl((int)$t['expense_cents'])) ?> · total do resultado <?= $this->e(ReportScreens::brl((int)$t['total_cents'])) ?><?php foreach (['asset_cents' => 'ativo', 'liability_cents' => 'passivo', 'equity_cents' => 'patrimônio líquido'] as $k => $l): if (!empty($t[$k])): ?> · <?= $l ?> <?= $this->e(ReportScreens::brl((int)$t[$k])) ?><?php endif; endforeach; ?></p></div></div>
         <?php if ($chartOpenings['rows'] === []): ?>
             <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('wallet') ?></span><strong>Nenhum saldo inicial</strong><p>Sem saldo inicial, as contas do plano começam do zero.</p></div>
         <?php else: ?>
@@ -51,7 +51,7 @@ $this->insert('components/layout/page-head', [
                 <tbody><?php foreach ($chartOpenings['rows'] as $r): ?><tr<?= $r['analytic'] ? '' : ' class="erp-report-synthetic"' ?>>
                     <td class="erp-nowrap"><?= $this->e($r['code']) ?></td>
                     <td><span class="erp-report-account" style="--erp-level: <?= max(0, (int)$r['level'] - 1) ?>"><?= $this->e($r['name']) ?></span></td>
-                    <td><?= $r['nature'] === 'receita' ? 'Receita' : 'Despesa' ?></td>
+                    <td><?= $this->e(ucfirst(\Source\Controllers\Erp\Connect\SettingsScreens::NATURE_LABELS[$r['nature']] ?? $r['nature'])) ?></td>
                     <td class="erp-nowrap"><?= $r['opened_on'] !== null ? $this->e(ReportScreens::brDate($r['opened_on'])) : '<span class="erp-muted">soma</span>' ?></td>
                     <td class="is-num erp-nowrap"><?= $this->e(ReportScreens::brl((int)$r['amount_cents'])) ?></td>
                     <td><?= $r['notes'] !== null ? $this->e((string)$r['notes']) : '<span class="erp-muted">—</span>' ?></td>

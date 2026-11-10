@@ -11,7 +11,7 @@ AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-073 a AP-07
 AP-089, AP-090 e AP-093 a AP-099. Com o ADR 0144, as configurações AP-147, AP-151, AP-154, AP-155,
 AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Com o ADR 0145, as assembleias
 AP-017, AP-018, AP-088 e AP-092. Com o ADR 0146, as telas do ciclo 55
-(AP-101, AP-136, AP-161). Com o ADR 0147, os acessos AP-148, AP-152 e AP-153. Do que
+(AP-101, AP-136, AP-161). Com o ADR 0147, os acessos AP-148, AP-152 e AP-153. Com o ADR 0148, o Balanço Patrimonial (AP-081). Do que
 tinha API pronta, não sobra página de exemplo; seguem na demonstração só as que ainda precisam de backend.
 
 ## Critério

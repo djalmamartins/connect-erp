@@ -141,12 +141,15 @@ final class SettingsScreens
     }
 
     /** @return list<array{id:int, label:string}> contas analíticas ativas do padrão e do condomínio */
+    /** Naturezas do plano de contas (ADR 0167 trouxe as patrimoniais do Balanço). */
+    public const NATURE_LABELS = ['receita' => 'receita', 'despesa' => 'despesa', 'asset' => 'ativo', 'liability' => 'passivo', 'equity' => 'patrimônio líquido'];
+
     private static function analyticAccounts(PDO $pdo, int $condominiumId): array
     {
         $stmt = $pdo->prepare("SELECT id, code, name, nature FROM erp_chart_accounts WHERE deleted_at IS NULL AND status = 'active' AND kind = 'analitica'
-            AND (condominium_id IS NULL OR condominium_id = :c) ORDER BY nature = 'despesa', code");
+            AND (condominium_id IS NULL OR condominium_id = :c) ORDER BY FIELD(nature, 'receita', 'despesa', 'asset', 'liability', 'equity'), code");
         $stmt->execute(['c' => $condominiumId]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => trim($r['code'] . ' ' . $r['name']) . ' (' . ($r['nature'] === 'receita' ? 'receita' : 'despesa') . ')'],
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => trim($r['code'] . ' ' . $r['name']) . ' (' . (self::NATURE_LABELS[$r['nature']] ?? $r['nature']) . ')'],
             $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 }

@@ -38,7 +38,9 @@ legenda: Tela Saldo inicial (plano de contas)
 
 Gravar de novo a mesma conta substitui o saldo anterior; o valor antigo fica na auditoria.
 
-> **Atenção:** por enquanto o saldo inicial do plano ainda não entra no saldo anterior do Livro Razão.
+O saldo inicial é a abertura da conta no **Livro Razão**: com data até o início do período do relatório, ele substitui os lançamentos anteriores a essa data. Um saldo com data depois do início do período fica de fora e o Razão avisa.
+
+As contas de **ativo**, **passivo** e **patrimônio líquido** (fundos, resultados acumulados) também recebem saldo inicial aqui. É ele que move os fundos no [[Prestação de contas > Balanço Patrimonial]].
 
 ## Quem pode usar
 
