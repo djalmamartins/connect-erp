@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0171.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0171, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0172.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0172, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -162,3 +162,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0168](../Organic%20Code/decisions/0168-erp-admin-users-permissions.md) | Administração (AP-091), relatórios enviados pela auditoria (AP-100), usuários do ERP sem criar conta nem trocar papel (AP-149) e permissões erp.* fail-closed por papel e por usuário (AP-150) |
 | [0169](../Organic%20Code/decisions/0169-patrimonial-entries.md) | Lançamentos patrimoniais com partida dobrada entre contas 7/8/9 (fundos e PL), sem passar pela DRE nem pelo banco, com estorno em vez de exclusão; entram no Balanço e no Livro Razão |
 | [0170](../Organic%20Code/decisions/0170-investment-accounts.md) | Aplicação financeira ligada à conta corrente: aplicar e resgatar pela transferência entre contas (sem DRE), rendimento como receita e IR/IOF como despesa, 7.1 separada no Balanço e Razão das contas bancárias com os dois lados |
+| [0171](../Organic%20Code/decisions/0171-patrimonial-imports.md) | Importação de lançamentos patrimoniais por CSV/XLSX com prévia por linha, gravação tudo ou nada pelo PatrimonialEntries e chave de idempotência por condomínio |
