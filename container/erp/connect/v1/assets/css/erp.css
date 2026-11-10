@@ -875,3 +875,33 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-person-card__facts dd { overflow-wrap: anywhere; }
 .erp-person-card__wide { grid-column: 1 / -1; }
 .erp-person-card__notes { margin: 0; white-space: normal; overflow-wrap: anywhere; }
+
+/* Dashboard com dados reais (ADR 0157): financeiro em cima, alertas e cadastros na lateral. */
+.erp-dash-period { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+.erp-dash-period .erp-select { width: auto; min-width: 190px; }
+.erp-sr-only-focusable:not(:focus):not(:focus-visible) { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.erp-dash-month { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--erp-space-3); margin: 0 0 var(--erp-space-5); }
+.erp-dash-month > div { padding: 12px 14px; border: 1px solid var(--erp-border, #e5e7eb); border-radius: var(--erp-radius-md); min-width: 0; }
+.erp-dash-month dt { color: var(--erp-muted); font-size: 12px; font-weight: 600; }
+.erp-dash-month dd { margin: 4px 0 2px; font-size: 20px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.erp-dash-month dd.is-positive { color: var(--erp-success, #07884c); }
+.erp-dash-month dd.is-negative { color: var(--erp-danger); }
+.erp-dash-month small { color: var(--erp-muted); font-size: 12px; }
+.erp-dash-open { margin: 0 0 var(--erp-space-4); color: var(--erp-muted); font-size: 13px; }
+.erp-dash-open strong { display: block; color: var(--erp-text, inherit); font-size: 22px; font-variant-numeric: tabular-nums; }
+.erp-dash-col { display: grid; gap: var(--erp-space-4); align-content: start; min-width: 0; }
+.erp-dash-date { flex-direction: column; width: 44px; height: 44px; line-height: 1; }
+.erp-dash-date strong { font-size: 15px; }
+.erp-dash-date small { font-size: 10px; text-transform: uppercase; }
+.erp-summary--side { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.erp-summary--side li + li { border-top: 1px solid var(--erp-border, #e5e7eb); }
+.erp-summary--side a { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto; padding: 9px 4px; border: 0; border-radius: 0; }
+.erp-summary--side a:hover { box-shadow: none; background: var(--erp-info-soft); }
+.erp-summary--side .erp-summary__icon { grid-row: auto; width: 28px; height: 28px; }
+.erp-summary--side small { color: inherit; font-size: 13px; }
+.erp-summary--side strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .erp-dash-month { grid-template-columns: minmax(0, 1fr); } }
+.erp-dash-buckets { display: grid; gap: 0; margin: var(--erp-space-4) 0 0; font-size: 13px; }
+.erp-dash-buckets > div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--erp-border, #e5e7eb); }
+.erp-dash-buckets dt { color: var(--erp-muted); }
+.erp-dash-buckets dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
