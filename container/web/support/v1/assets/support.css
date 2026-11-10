@@ -251,9 +251,8 @@ img { max-width: 100%; height: auto; }
 .hc-social div { display: flex; gap: 10px; }
 .hc-social a { display: grid; place-items: center; width: 38px; height: 38px; border: 1.5px solid var(--hc-gold); border-radius: 50%; color: var(--hc-green); }
 .hc-footer { background: var(--hc-green); color: #c8dbd2; padding: 40px 0 28px; }
-.hc-footer__marks { display: block; width: 330px; max-width: 100%; height: auto; margin-bottom: 4px; overflow: visible; }
-.hc-footer__mark-line { fill: none; stroke: var(--hc-gold); stroke-width: .8; opacity: .45; }
-.hc-footer__mark-fill { fill: var(--hc-gold); }
+.hc-footer__marks { display: block; width: 230px; max-width: 100%; height: auto; margin-bottom: 4px; overflow: visible; }
+.hc-footer__mark { fill: var(--hc-gold); }
 .hc-footer__bottom { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 28px; margin-top: -2px; padding-top: 24px; border-top: 1px solid var(--hc-gold); font-size: 13px; }
 .hc-footer__bottom img { width: 120px; height: 36px; object-fit: contain; object-position: left; display: block; }
 .hc-footer__bottom .hc-footer__links { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-left: auto; font-size: 14px; font-weight: 500; }
