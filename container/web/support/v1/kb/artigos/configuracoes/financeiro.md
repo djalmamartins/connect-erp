@@ -1,6 +1,6 @@
 ---
 codigo: AP-157
-titulo: Configurar financeiro
+titulo: Configurações financeiras
 resumo: Financeiro: dia de vencimento padrão das faturas.
 categoria: configuracoes
 rota: /configuracoes/financeiro
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: financeiro, configurações, AP-157
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve

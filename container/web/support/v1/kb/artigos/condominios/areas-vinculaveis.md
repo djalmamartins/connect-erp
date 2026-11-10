@@ -1,67 +1,81 @@
 ---
 codigo: AP-007
-titulo: Cadastrar e gerenciar áreas Vinculáveis
-resumo: Vagas de garagem, depósitos e boxes que podem ser vinculados a uma unidade.
+titulo: Cadastrar vagas, depósitos e boxes
+resumo: Áreas vinculáveis são as que pertencem ou ficam reservadas a uma unidade: vagas de garagem, depósitos e boxes. Cadastre e vincule cada uma à unidade que usa.
 categoria: condominios
 rota: /condominios/areas-vinculaveis
 menu: Condomínios > Áreas Vinculáveis
 icone: list-outline
 situacao: funciona
-palavras: áreas vinculáveis, condomínios, AP-007
+relacionados: areas-comuns, patrimonio, unidades, painel-da-unidade
+palavras: áreas vinculáveis, condomínios, AP-007, vaga, garagem, depósito, box
 rascunho: nao
 ---
 
+Áreas vinculáveis são as que pertencem ou ficam reservadas a uma unidade: vagas de garagem, depósitos e boxes. Cadastre e vincule cada uma à unidade que usa.
+
 ## Onde fica
 
-No menu lateral, abra [[Condomínios > Áreas Vinculáveis]].
+No menu lateral, abra [[Condomínios > Áreas Vinculáveis]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela areas-vinculaveis
 rota: /condominios/areas-vinculaveis
 condominio: residencial-jardim-das-acacias
 legenda: Tela Áreas Vinculáveis
 1: menu | Áreas Vinculáveis no menu lateral
-2: main :is(a,button):has-text("Nova área vinculável") | Botão {{Nova área vinculável}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Tipo, Situação
-4: main table thead | Lista com Identificação, Condomínio, Tipo, Unidade vinculada (texto) e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Nova área vinculável") | Botão {{Nova área vinculável}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova área vinculável}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova área vinculável}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Tipo**, **Identificação** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela areas-vinculaveis-novo
+```tela areas-vinculaveis-nova-area-vinculavel
 rota: /condominios/areas-vinculaveis/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de área vinculável
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova área vinculável
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="kind"] | Tipo (obrigatório)
+3: main form:not([method=get]) [name="identifier"] | Identificação (obrigatório)
+4: main form:not([method=get]) [name="unit_id"] | Unidade vinculada
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Tipo** (obrigatório): opções: Vaga de garagem, Depósito, Box e Outro.
-- **Identificação** (obrigatório): ex.: G1-023.
-- **Unidade vinculada**: vazio: livre. Escolha entre as unidades do condomínio selecionado.
-- **Unidade vinculada (texto)**: preenchido pela unidade escolhida; digite só se ela ainda não estiver cadastrada.
-- **Localização**: ex.: Subsolo 1.
+- **Condomínio** (obrigatório).
+- **Tipo** (obrigatório): Opções: Vaga de garagem, Depósito, Box e Outro.
+- **Identificação** (obrigatório): Ex.: G1-023.
+- **Unidade vinculada**: Vazio: livre.
+- **Unidade vinculada (texto)**: Preenchido pela unidade escolhida; digite só se ela ainda não estiver cadastrada.
+- **Localização**: Ex.: Subsolo 1.
 - **Fração ideal (%)**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Identificação**, **Condomínio**, **Tipo**, **Unidade vinculada (texto)** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Cadastrar áreas comuns](artigo:areas-comuns), [Cadastrar o patrimônio do condomínio](artigo:patrimonio) e [Cadastrar unidades](artigo:unidades).

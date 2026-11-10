@@ -1,48 +1,48 @@
 ---
 codigo: AP-107
-titulo: Gráfico Gráfico de inadimplência
-resumo: Por competência: o cobrado das unidades, o que venceu e segue em aberto hoje e a taxa de inadimplência.
+titulo: Gráfico de inadimplência
+resumo: Por competência: o que foi cobrado das unidades, o que venceu e segue em aberto hoje e a taxa de inadimplência.
 categoria: relatorios
 rota: /relatorios/grafico-de-inadimplencia
 menu: Relatórios > Gráficos > Gráfico de inadimplência
 icone: bar-chart-outline
 situacao: funciona
+relacionados: grafico-financeiro, grafico-financeiro-por-conta, grafico-de-consumo-geral, grafico-de-areas-comuns
 palavras: gráfico de inadimplência, relatórios, AP-107
 rascunho: nao
 ---
 
+Por competência: o que foi cobrado das unidades, o que venceu e segue em aberto hoje e a taxa de inadimplência.
+
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gráficos > Gráfico de inadimplência]].
+No menu lateral, abra [[Relatórios > Gráficos > Gráfico de inadimplência]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela grafico-de-inadimplencia
 rota: /relatorios/grafico-de-inadimplencia
 condominio: residencial-jardim-das-acacias
 legenda: Tela Gráfico de inadimplência
 1: menu | Gráfico de inadimplência no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form[method=get] | Filtros: De, Até
-4: main table thead | Lista com Mês, Cobrado das unidades, Vencido em aberto hoje e Inadimplência (%)
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main :is(form[method=get], .erp-filters) | Filtros: De e Até
+4: main table thead | Colunas da lista
 ```
 
-## Como ler o gráfico
+## Escolher o período e os filtros
 
-1. Escolha de e até.
-2. Clique em {{Gerar}}.
-3. Confira o resultado na tela.
+Use os filtros no alto da lista: **De** e **Até**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
-### O que cada coluna mostra
+## O que o relatório mostra
 
-- **Mês**
-- **Cobrado das unidades**
-- **Vencido em aberto hoje**
-- **Inadimplência (%)**
+Colunas: **MÊS**, **Cobrado das unidades**, **Vencido em aberto hoje** e **Inadimplência (%)**.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado para a reunião, o conselho ou a planilha.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Gráfico financeiro (caixa)](artigo:grafico-financeiro), [Gráfico financeiro por conta bancária](artigo:grafico-financeiro-por-conta) e [Gráfico de consumo geral](artigo:grafico-de-consumo-geral).

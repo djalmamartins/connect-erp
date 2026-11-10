@@ -1,56 +1,51 @@
 ---
 codigo: AP-067
-titulo: Relatório Rateio por Conta
+titulo: Rateio por conta
 resumo: O rateio por conta do plano, com a maior e a menor parte de uma unidade.
 categoria: relatorios
 rota: /relatorios/rateio-por-conta
 menu: Relatórios > Financeiros > Rateio por Conta
 icone: document-text-outline
 situacao: funciona
+relacionados: rateio-analitico-detalhado, relatorio-de-lancamentos, rateio-analitico, relatorio-de-lancamentos-detalhado
 palavras: rateio por conta, relatórios, AP-067
 rascunho: nao
 ---
 
-## Para que serve
-
-O rateio por conta do plano, com a maior e a menor parte de uma unidade. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/apportionment`.
+O rateio por conta do plano, com a maior e a menor parte de uma unidade.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Financeiros > Rateio por Conta]].
+No menu lateral, abra [[Relatórios > Financeiros > Rateio por Conta]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela rateio-por-conta
 rota: /relatorios/rateio-por-conta
 condominio: residencial-jardim-das-acacias
-legenda: Tela Relatório Rateio por Conta
+legenda: Tela Rateio por Conta
 1: menu | Rateio por Conta no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form.erp-filters | Filtros: Competência
-4: main table thead | Colunas: Código, Conta, Valor, Maior parte, Menor parte
+2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+4: main :is(form[method=get], .erp-filters) | Filtros: Competência
+5: main table thead | Colunas da lista
 ```
 
->! Este relatório usa os dados de **um condomínio só**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **Competência**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
-1. **Competência**: o mês das despesas rateadas; o padrão é o mês atual.
-2. Clique em {{Gerar}}.
-3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Código**
-- **Conta**
-- **Valor**
-- **Maior parte**
-- **Menor parte**
-
->! Se alguma unidade ativa estiver sem fração ideal, o rateio não é calculado e a tela lista as unidades que faltam. Corrija em [[Configurações > Financeiro e parâmetros > Fração Ideal]].
+Colunas: **Código**, **Conta**, **Valor**, **Maior parte** e **Menor parte**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.entries.view** e **erp.units.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Rateio analítico detalhado](artigo:rateio-analitico-detalhado), [Relatório de lançamentos](artigo:relatorio-de-lancamentos) e [Rateio analítico de uma unidade](artigo:rateio-analitico).

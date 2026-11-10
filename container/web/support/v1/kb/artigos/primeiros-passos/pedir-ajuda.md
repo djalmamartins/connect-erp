@@ -9,6 +9,7 @@ icone: help-buoy-outline
 situacao: guia
 relacionados: entrar-no-sistema, encontrar-uma-tela
 palavras: ajuda, suporte, chamado, protocolo, atendimento, chat, whatsapp, contato, help desk
+manual: sim
 rascunho: nao
 ---
 

@@ -1,56 +1,51 @@
 ---
 codigo: AP-082
-titulo: Relatório Demonstração do resultado
-resumo: Receitas menos despesas do período por conta do plano, com as contas sintéticas somadas e o resultado.
+titulo: Demonstração do resultado (DRE)
+resumo: Receitas menos despesas do período por conta do plano, com as contas sintéticas somadas e o resultado final. Escolha a base: competência ou caixa.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/demonstracao-do-resultado
 menu: Prestação de contas > Demonstração do resultado
 icone: document-text-outline
 situacao: funciona
+relacionados: balanco-patrimonial, livro-razao, balancete-anual, balancete-verificacao
 palavras: demonstração do resultado, prestação de contas, AP-082
 rascunho: nao
 ---
 
-## Para que serve
-
-Receitas menos despesas do período por conta do plano, com as contas sintéticas somadas e o resultado. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/income-statement`.
+Receitas menos despesas do período por conta do plano, com as contas sintéticas somadas e o resultado final. Escolha a base: competência ou caixa.
 
 ## Onde fica
 
-No menu lateral, abra [[Prestação de contas > Demonstração do resultado]].
+No menu lateral, abra [[Prestação de contas > Demonstração do resultado]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela demonstracao-do-resultado
 rota: /prestacao-de-contas/demonstracao-do-resultado
 condominio: residencial-jardim-das-acacias
-legenda: Tela Relatório Demonstração do resultado
+legenda: Tela Demonstração do resultado
 1: menu | Demonstração do resultado no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form.erp-filters | Filtros: De e Até (datas), Base
-4: main table thead | Colunas: Código, Conta, Natureza, Valor
+2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+4: main :is(form[method=get], .erp-filters) | Filtros: De, Até e Base
+5: main table thead | Colunas da lista
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **De**, **Até** e **Base**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
-1. **De e Até (datas)**: o período em datas; o padrão vai de 1º de janeiro até hoje.
-2. **Base**: opções: competência, caixa (pagamento).
-3. Clique em {{Gerar}}.
-4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Código**
-- **Conta**
-- **Natureza**
-- **Valor**
-
-Na **Base**, "Competência" usa o mês da competência do lançamento e "Caixa" usa a data do pagamento. O período vai até 366 dias.
+Colunas: **Código**, **Conta**, **Natureza** e **Valor**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.entries.view** e **erp.chart.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Balanço patrimonial](artigo:balanco-patrimonial), [Livro razão](artigo:livro-razao) e [Balancete anual](artigo:balancete-anual).

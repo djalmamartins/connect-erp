@@ -1,6 +1,6 @@
 ---
 codigo: AP-166
-titulo: Configurar parâmetros
+titulo: Parâmetros gerais
 resumo: Parâmetros: tolerância da soma das frações ideais; máximo de linhas por relatório.
 categoria: configuracoes
 rota: /configuracoes/parametros
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: parâmetros, configurações, AP-166
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
@@ -25,7 +26,6 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Parâmetros
 1: menu | Parâmetros no menu lateral
 2: main form[data-setting-form] | Um parâmetro, com a origem do valor
-3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
 ## Os parâmetros

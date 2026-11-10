@@ -1,57 +1,45 @@
 ---
 codigo: AP-096
-titulo: Relatório de Endereços
-resumo: Endereço e contato de cada condomínio do seu escopo.
+titulo: Relatório de endereços dos condomínios
+resumo: Endereço completo e contato de cada condomínio do seu escopo.
 categoria: relatorios
 rota: /relatorios/relatorio-de-enderecos
 menu: Relatórios > Gerais > Relatório de Endereços
 icone: document-text-outline
 situacao: funciona
+relacionados: mudancas, logs, pagamentos-pendentes, pessoas-com-acesso
 palavras: relatório de endereços, relatórios, AP-096
 rascunho: nao
 ---
 
-## Para que serve
-
-Endereço e contato de cada condomínio do seu escopo. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/addresses`.
+Endereço completo e contato de cada condomínio do seu escopo.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Relatório de Endereços]].
+No menu lateral, abra [[Relatórios > Gerais > Relatório de Endereços]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela relatorio-de-enderecos
 rota: /relatorios/relatorio-de-enderecos
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de Endereços
 1: menu | Relatório de Endereços no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main table thead | Colunas: Condomínio, CEP, Logradouro, Número, Complemento, Bairro, Cidade, UF, Telefone, E-mail
+2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+4: main table thead | Colunas da lista
 ```
 
-> **Dica:** este relatório lista todos os condomínios que a sua conta pode ver, mesmo com um condomínio escolhido na barra superior.
+## O que o relatório mostra
 
-## Como gerar o relatório
-
-1. Abra a página: o relatório já aparece com a situação de hoje.
-2. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
-
-### O que cada coluna mostra
-
-- **Condomínio**
-- **CEP**
-- **Logradouro**
-- **Número**
-- **Complemento**
-- **Bairro**
-- **Cidade**
-- **UF**
-- **Telefone**
-- **E-mail**
+Colunas: **Condomínio**, **CEP**, **Logradouro**, **Número**, **Complemento**, **Bairro**, **Cidade**, **UF**, **Telefone** e **E-mail**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.condominiums.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Relatório de mudanças](artigo:mudancas), [Logs de auditoria](artigo:logs) e [Pagamentos pendentes](artigo:pagamentos-pendentes).

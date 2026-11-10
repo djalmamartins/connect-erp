@@ -1,6 +1,6 @@
 ---
 codigo: AP-163
-titulo: Configurar previsão Orçamentária
+titulo: Previsão orçamentária
 resumo: Quanto o condomínio prevê receber e gastar em cada conta do plano, mês a mês, para comparar depois com o que foi lançado.
 categoria: configuracoes
 rota: /configuracoes/previsao-orcamentaria
@@ -10,6 +10,7 @@ situacao: funciona
 relacionados: relatorio-de-previsao-orcamentaria
 palavras: previsão orçamentária, orçamento, configurações, AP-163
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
@@ -27,7 +28,6 @@ legenda: Tela Previsão Orçamentária
 1: menu | Previsão Orçamentária no menu lateral
 2: main form.erp-filters | Ano da previsão
 3: main form[data-budget-form] | Conta e os 12 meses
-4: main table thead | Contas com previsão no ano
 ```
 
 >! A previsão é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.

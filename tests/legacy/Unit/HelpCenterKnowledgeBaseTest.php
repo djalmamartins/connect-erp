@@ -6,6 +6,7 @@ namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use Source\Services\Help\ArticleRenderer;
+use Source\Services\Help\HelpWriter;
 use Source\Services\Help\Icons;
 use Source\Services\Help\KnowledgeBase;
 
@@ -124,6 +125,53 @@ MD);
             self::assertStringContainsString('AP-999', $problems);
         } finally {
             unlink($root . '/artigos/geral/Ruim.md');
+            unlink($root . '/categorias.json');
+            rmdir($root . '/artigos/geral');
+            rmdir($root . '/artigos');
+            rmdir($root);
+        }
+    }
+
+    public function testWriterBuildsStepsFieldsAndMarkedScreensFromTheScreenSurvey(): void
+    {
+        $root = sys_get_temp_dir() . '/kb-writer-' . bin2hex(random_bytes(4));
+        mkdir($root . '/artigos/geral', 0777, true);
+        file_put_contents($root . '/categorias.json', json_encode([['chave' => 'geral', 'titulo' => 'Geral', 'descricao' => 'Teste', 'icone' => 'list']]));
+        $file = $root . '/artigos/geral/unidades.md';
+        file_put_contents($file, "---\ncodigo: AP-006\ntitulo: Unidades\nresumo: Resumo antigo da tela de unidades.\ncategoria: geral\nrota: /condominios/unidades\nmenu: Condomínios > Unidades\n---\n\nTexto antigo que será substituído pelo passo a passo.\n");
+        $catalog = ['groups' => ['condominios' => ['label' => 'Condomínios']], 'pages' => ['AP-006' => ['name' => 'Unidades', 'group' => 'condominios', 'section' => '', 'route' => '/condominios/unidades', 'kind' => 'list']]];
+        $details = ['AP-006' => [
+            'kind' => 'list', 'lead' => 'Unidades de cada condomínio.', 'demo' => false, 'rows' => 3,
+            'actions' => [['text' => 'Nova unidade', 'tag' => 'a', 'href' => '/novo', 'formRoute' => '/condominios/unidades/novo', 'form' => [
+                'title' => 'Dados', 'intro' => [], 'sections' => [], 'submit' => ['Salvar'],
+                'fields' => [
+                    ['label' => 'Unidade', 'name' => 'number', 'type' => 'text', 'required' => true, 'hint' => 'Ex.: 101', 'options' => [], 'placeholder' => ''],
+                    ['label' => 'Tipo', 'name' => 'type', 'type' => 'select', 'required' => true, 'hint' => '', 'options' => ['Apartamento', 'Casa'], 'placeholder' => ''],
+                ],
+            ]], ['text' => 'Cadastro rápido', 'tag' => 'a', 'href' => '/cadastro-rapido']],
+            'filters' => ['Pesquisar', 'Tipo'], 'filterButtons' => ['Filtrar'], 'columns' => ['UNIDADE', 'TIPO', 'AÇÕES'],
+            'rowActions' => ['101', 'Editar registro 1'], 'cards' => [], 'notes' => [],
+        ]];
+        $texts = ['AP-006' => ['titulo' => 'Cadastrar unidades', 'para' => 'Cada apartamento é uma unidade <b>.', 'botoes' => ['Cadastro rápido' => 'gera várias de uma vez.']]];
+        try {
+            $kb = new KnowledgeBase($root);
+            self::assertSame(['artigos/geral/unidades.md'], array_map(static fn ($f) => substr($f, -strlen('artigos/geral/unidades.md')), (new HelpWriter($kb, $catalog, $details, $texts))->run()));
+            $article = KnowledgeBase::parse((string)file_get_contents($file));
+            self::assertSame('Cadastrar unidades', $article['title']);
+            self::assertStringContainsString('## Como cadastrar', $article['body']);
+            self::assertStringContainsString('**Unidade** (obrigatório): Ex.: 101.', $article['body']);
+            self::assertStringContainsString('Opções: Apartamento e Casa.', $article['body']);
+            self::assertStringContainsString('{{Cadastro rápido}}: gera várias de uma vez.', $article['body']);
+            self::assertStringContainsString('**Editar** abre o cadastro', $article['body']);
+            self::assertStringContainsString('Colunas: **Unidade** e **Tipo**.', $article['body']);
+            $screens = array_column($article['screens'], null, 'id');
+            self::assertSame('/condominios/unidades/novo', $screens['unidades-nova-unidade']['route']);
+            self::assertSame('main form:not([method=get]) [name="number"]', $screens['unidades-nova-unidade']['marks'][0]['selector']);
+            // O texto à mão passa pelo renderer, que escapa HTML.
+            self::assertStringContainsString('unidade &lt;b&gt;.', $this->renderer()->render($article['body'])['html']);
+            self::assertSame([], (new KnowledgeBase($root))->problems(['AP-006'], false));
+        } finally {
+            unlink($file);
             unlink($root . '/categorias.json');
             rmdir($root . '/artigos/geral');
             rmdir($root . '/artigos');

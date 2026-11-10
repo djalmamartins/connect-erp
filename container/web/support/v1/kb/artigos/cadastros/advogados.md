@@ -1,65 +1,81 @@
 ---
 codigo: AP-016
-titulo: Cadastrar e gerenciar advogados
-resumo: Advogados e escritórios parceiros para cobrança judicial e assessoria.
+titulo: Cadastrar advogados
+resumo: Advogados e escritórios parceiros que cuidam da cobrança judicial e da assessoria dos condomínios.
 categoria: cadastros
 rota: /cadastros/advogados
 menu: Cadastros > Advogados
 icone: list-outline
 situacao: funciona
+relacionados: cobranca-judicial, fornecedores, veiculos, funcionarios
 palavras: advogados, cadastros, AP-016
 rascunho: nao
 ---
 
+Advogados e escritórios parceiros que cuidam da cobrança judicial e da assessoria dos condomínios.
+
 ## Onde fica
 
-No menu lateral, abra [[Cadastros > Advogados]].
+No menu lateral, abra [[Cadastros > Advogados]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela advogados
 rota: /cadastros/advogados
 condominio: residencial-jardim-das-acacias
 legenda: Tela Advogados
 1: menu | Advogados no menu lateral
-2: main :is(a,button):has-text("Novo advogado") | Botão {{Novo advogado}}
-3: main form[method=get] | Filtros: Pesquisar, Situação
-4: main table thead | Lista com Nome, Oab, Escritório, Telefone e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Novo advogado") | Botão {{Novo advogado}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar e Situação
+4: main table thead | Colunas da lista
 ```
 
 ## Como cadastrar
 
-1. Clique em {{Novo advogado}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo advogado}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Nome**, **OAB** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela advogados-novo
+```tela advogados-novo-advogado
 rota: /cadastros/advogados/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de advogado
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo advogado
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="name"] | Nome (obrigatório)
+2: main form:not([method=get]) [name="oab"] | OAB (obrigatório)
+3: main form:not([method=get]) [name="document"] | CPF
+4: main form:not([method=get]) [name="firm"] | Escritório
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
 - **Nome** (obrigatório).
-- **OAB** (obrigatório): uF e número, ex.: SP 123456.
-- **CPF**: o sistema confere os dígitos do CPF.
+- **OAB** (obrigatório): UF e número, ex.: SP 123456.
+- **CPF**.
 - **Escritório**.
-- **E-mail**.
+- **E-mail**: Exemplo: nome@exemplo.com.
 - **Telefone**.
 - **Honorários (%)**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Nome**, **OAB**, **Escritório**, **Telefone** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Cobrança judicial](artigo:cobranca-judicial), [Cadastrar fornecedores](artigo:fornecedores) e [Cadastrar veículos das unidades](artigo:veiculos).

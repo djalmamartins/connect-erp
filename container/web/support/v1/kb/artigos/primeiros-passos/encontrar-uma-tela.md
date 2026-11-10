@@ -9,6 +9,7 @@ icone: navigate-outline
 situacao: guia
 relacionados: escolher-o-condominio, pedir-ajuda, dashboard
 palavras: menu, pesquisar página, atalho, ctrl k, ajuda desta página, notificações, navegação
+manual: sim
 rascunho: nao
 ---
 

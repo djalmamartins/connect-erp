@@ -9,6 +9,7 @@ icone: list-outline
 relacionados: faturas, arquivo-de-retorno, retornos, acordos
 situacao: funciona
 palavras: boletos, cobrança, AP-035
+manual: sim
 rascunho: nao
 ---
 

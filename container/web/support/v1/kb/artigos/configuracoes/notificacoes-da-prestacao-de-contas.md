@@ -1,6 +1,6 @@
 ---
 codigo: AP-151
-titulo: Configurar notificações da prestação de contas
+titulo: Envio da prestação de contas aos condôminos
 resumo: Notificações da prestação de contas: avisar o conselho quando o mês for fechado.
 categoria: configuracoes
 rota: /configuracoes/notificacoes-da-prestacao-de-contas
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: notificações da prestação de contas, configurações, AP-151
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
