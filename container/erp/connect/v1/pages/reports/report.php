@@ -36,7 +36,7 @@ $select = function (string $name, array $options, $current, string $label): stri
     return $html . '</select></div>';
 };
 $input = fn (string $name, string $type, string $label, $value): string => '<div class="erp-field erp-field--compact"><label for="rp-' . $name . '">' . $this->e($label) . '</label><input class="erp-input" type="' . $type . '" id="rp-' . $name . '" name="' . $name . '" value="' . $this->e((string)$value) . '" required></div>';
-$totals = Screens::totals($report);
+$totals = Screens::totals($report, $reportPage['totalLabels'] ?? []);
 
 ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
@@ -64,6 +64,7 @@ $this->insert('components/layout/page-head', [
             'until' => $input('limite', 'date', 'Vencimento até', $f['limite']),
             'as_of' => $input('referencia', 'date', 'Data de referência', $f['referencia']),
             'year' => $input('ano', 'number', 'Ano', $f['ano']),
+            'account_code' => '<div class="erp-field erp-field--compact"><label for="rp-codigo">Conta do plano (código)</label><input class="erp-input" type="text" id="rp-codigo" name="codigo" value="' . $this->e($f['codigo']) . '" placeholder="Todas" inputmode="decimal" pattern="\d+(\.\d+)*"></div>',
             'bank_account' => $select('conta', array_column($reportOptions['bank_account'], 'label', 'id'), $f['conta'], 'Conta bancária'),
             'unit' => $select('unidade', ($currentPageId === 'AP-065' ? [] : ['' => 'Todas']) + array_column($reportOptions['unit'], 'label', 'id'), $f['unidade'], 'Unidade'),
             default => isset(Screens::SELECTS[$filter]) ? $select($filter, Screens::SELECTS[$filter][2], $f[$filter], Screens::SELECTS[$filter][0]) : '',
@@ -77,7 +78,7 @@ $this->insert('components/layout/page-head', [
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong>Não foi possível gerar o relatório</strong><?= $this->e($reportError) ?></div></div>
 <?php else: ?>
     <?php if ($reportNotice !== null): ?>
-        <div class="erp-alert erp-alert--warning" role="alert"><?= $icon('alert') ?><div><strong>Rateio não calculado</strong><?= $this->e($reportNotice) ?></div></div>
+        <div class="erp-alert erp-alert--warning" role="alert"><?= $icon('alert') ?><div><strong><?= in_array($currentPageId, ['AP-062', 'AP-063', 'AP-064', 'AP-065', 'AP-066', 'AP-067'], true) ? 'Rateio não calculado' : 'Atenção' ?></strong><?= $this->e($reportNotice) ?></div></div>
     <?php endif; ?>
     <?php if (!empty($reportPage['personal'])): ?>
         <div class="erp-alert" role="note"><?= $icon('lock') ?><div>Dados pessoais: documento, e-mail, telefone e IP aparecem mascarados, e a exportação fica registrada na auditoria.</div></div>

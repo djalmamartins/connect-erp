@@ -7,6 +7,7 @@ namespace Source\Controllers\Erp\Connect;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
+use Source\Services\Erp\AccountingReports;
 use Source\Services\Erp\AnnualBalance;
 use Source\Services\Erp\ManagementReports;
 use Source\Services\Erp\PaymentReports;
@@ -105,6 +106,11 @@ final class ReportScreens
             'columns' => [['Condomínio', 'condominium_name', 'text'], ['Nosso número', 'our_number', 'text'], ['Situação', 'status', 'label:boleto'], ['Unidade', 'unit_label', 'text'],
                 ['Descrição', 'description', 'text'], ['Conta bancária', 'bank_account', 'text'], ['Vencimento', 'due_on', 'date'], ['Valor', 'amount_cents', 'money'],
                 ['Pagamento', 'paid_on', 'date'], ['Valor pago', 'paid_cents', 'money']]],
+        'AP-073' => ['api' => 'account-balances', 'filters' => ['as_of'], 'perms' => ['erp.entries.view', 'erp.chart.view'],
+            'totalLabels' => ['opening_cents' => 'Saldo anterior', 'received_cents' => 'Entradas', 'paid_cents' => 'Saídas', 'closing_cents' => 'Saldo final'],
+            'lead' => 'Saldo de cada conta bancária na data: o saldo do dia anterior, as entradas e saídas do dia e o saldo final.',
+            'columns' => [['Condomínio', 'condominium_name', 'text'], ['Conta bancária', 'name', 'text'], ['Saldo anterior', 'opening_cents', 'signed'],
+                ['Entradas', 'received_cents', 'money'], ['Saídas', 'paid_cents', 'money'], ['Saldo final', 'closing_cents', 'signed']]],
         'AP-074' => ['api' => 'payments', 'filters' => ['period', 'pagamento'], 'perms' => ['erp.entries.view'],
             'lead' => 'Contas pagas no período, pela data do pagamento, com a conta bancária e o fornecedor.',
             'columns' => [['Condomínio', 'condominium_name', 'text'], ['Natureza', 'nature', 'label:nature'], ['Pago em', 'paid_on', 'date'], ['Vencimento', 'due_on', 'date'],
@@ -126,6 +132,13 @@ final class ReportScreens
                 ['Mai', 'months_cents.4', 'money'], ['Jun', 'months_cents.5', 'money'], ['Jul', 'months_cents.6', 'money'], ['Ago', 'months_cents.7', 'money'],
                 ['Set', 'months_cents.8', 'money'], ['Out', 'months_cents.9', 'money'], ['Nov', 'months_cents.10', 'money'], ['Dez', 'months_cents.11', 'money'],
                 ['Total', 'total_cents', 'money']]],
+        'AP-082' => ['api' => 'income-statement', 'filters' => ['period', 'base'], 'perms' => ['erp.entries.view', 'erp.chart.view'],
+            'lead' => 'Receitas menos despesas do período por conta do plano, com as contas sintéticas somadas e o resultado.',
+            'columns' => [['Código', 'code', 'text'], ['Conta', 'name', 'tree'], ['Natureza', 'nature', 'label:nature'], ['Valor', 'amount_cents', 'money']]],
+        'AP-083' => ['api' => 'ledger', 'filters' => ['period', 'base', 'account_code'], 'perms' => ['erp.entries.view', 'erp.chart.view'],
+            'lead' => 'Movimento de cada conta do plano no período: saldo anterior, cada lançamento com débito ou crédito e o saldo corrido.',
+            'columns' => [['Código', 'code', 'text'], ['Conta', 'name', 'text'], ['Data', 'on_date', 'date'], ['Histórico', 'description', 'text'],
+                ['Débito', 'debit_cents', 'money'], ['Crédito', 'credit_cents', 'money'], ['Saldo', 'balance_cents', 'signed']]],
         'AP-085' => ['api' => 'reservations', 'filters' => ['period', 'reserva'], 'perms' => ['erp.reservations.view'],
             'lead' => 'Reservas das áreas comuns no período, com a taxa e a situação.',
             'columns' => [['Condomínio', 'condominium_name', 'text'], ['Área', 'area', 'text'], ['Unidade', 'unit_label', 'text'], ['Morador', 'resident_name', 'text'],
@@ -262,7 +275,10 @@ final class ReportScreens
             }
             $report = $this->run($user, $id, $context, $filters);
             $data['report'] = $report;
-            $data['reportRows'] = $report['rows'] ?? [];
+            $data['reportRows'] = $id === 'AP-083' ? self::ledgerRows($report['accounts'] ?? []) : ($report['rows'] ?? $report['accounts'] ?? []);
+            if (($report['truncated'] ?? false) === true) {
+                $data['reportNotice'] = 'O relatório passou do limite de linhas e foi cortado. Reduza o período ou escolha um condomínio.';
+            }
             if (($report['blocked'] ?? false) === true) {
                 $data['reportNotice'] = (string)($report['message'] ?? '') . (($report['missing_fraction'] ?? []) !== [] ? ' Unidades sem fração: ' . implode(', ', $report['missing_fraction']) . '.' : '');
             }
@@ -287,6 +303,7 @@ final class ReportScreens
         $m = fn (): ManagementReports => new ManagementReports();
         $r = fn (): RegistryReports => new RegistryReports();
         $p = fn (): PaymentReports => new PaymentReports();
+        $a = fn (): AccountingReports => new AccountingReports();
         $view = self::PAGES[$id]['query']['view'] ?? '';
         return match ($id) {
             'AP-045', 'AP-046' => $m()->consumption($user, $c, $f['de'], $f['ate'], $id === 'AP-046'),
@@ -300,6 +317,9 @@ final class ReportScreens
             'AP-074' => $p()->payments($user, $c, $f['de'], $f['ate'], $f['pagamento'] ?: 'despesa'),
             'AP-075' => $p()->calculation($user, (int)$c, $f['unidade'], $f['referencia']),
             'AP-076' => $p()->transfers($user, $c, $f['de'], $f['ate'], $f['ativas'] !== '1'),
+            'AP-073' => $a()->accountBalances($user, $c, $f['referencia']),
+            'AP-082' => $a()->incomeStatement($user, $c, $f['de'], $f['ate'], $f['base']),
+            'AP-083' => $a()->ledger($user, $c, $f['de'], $f['ate'], $f['base'], $f['codigo'] !== '' ? $f['codigo'] : null),
             'AP-080' => (new AnnualBalance())->report($user, $c, $f['ano'], $f['base']),
             'AP-085' => $r()->reservations($user, $c, $f['de'], $f['ate'], $f['reserva'] ?: null),
             'AP-086' => $r()->units($user, $c),
@@ -364,6 +384,7 @@ final class ReportScreens
             'referencia' => self::date($query['referencia'] ?? null) ?? $today,
             'conta' => self::id($query['conta'] ?? null),
             'unidade' => self::id($query['unidade'] ?? null),
+            'codigo' => is_string($query['codigo'] ?? null) && preg_match('/^\d+(\.\d+)*$/', trim($query['codigo'])) ? trim($query['codigo']) : '',
             'ano' => preg_match('/^20\d{2}$/', (string)(is_string($query['ano'] ?? null) ? $query['ano'] : '')) ? (int)$query['ano'] : (int)$year,
         ];
         foreach (self::SELECTS as $name => [, , $options]) {
@@ -391,6 +412,7 @@ final class ReportScreens
                 'until' => ['until' => $f['limite']],
                 'as_of' => ['as_of' => $f['referencia']],
                 'year' => ['year' => $f['ano']],
+                'account_code' => $f['codigo'] !== '' ? ['account_code' => $f['codigo']] : [],
                 'bank_account' => $f['conta'] !== null ? ['bank_account_id' => $f['conta']] : [],
                 'unit' => $f['unidade'] !== null ? ['unit_id' => $f['unidade']] : [],
                 default => isset(self::SELECTS[$filter]) && $f[$filter] !== '' ? [self::SELECTS[$filter][1] => $f[$filter]] : [],
@@ -404,11 +426,11 @@ final class ReportScreens
      *
      * @return list<array{0:string, 1:int}>
      */
-    public static function totals(?array $report): array
+    public static function totals(?array $report, array $labels = []): array
     {
         $totals = (array)($report['totals'] ?? []) + (isset($report['opening_cents']) ? ['opening_cents' => $report['opening_cents']] : []);
         $out = [];
-        foreach (self::TOTALS as $key => $label) {
+        foreach (($labels !== [] ? $labels : self::TOTALS) as $key => $label) {
             if (isset($totals[$key]) && is_int($totals[$key])) {
                 $out[] = [$label, $totals[$key]];
             }
@@ -445,6 +467,27 @@ final class ReportScreens
             'tree' => '<span class="erp-report-account" style="--erp-level: ' . max(0, (int)($row['level'] ?? 1) - 1) . '">' . $e((string)$value) . '</span>',
             default => $e(is_array($value) ? implode(', ', array_map('strval', $value)) : (string)$value),
         };
+    }
+
+    /**
+     * Livro Razão em linhas (regra pura): por conta, o saldo anterior, os lançamentos e o saldo final com o total de
+     * débitos e créditos. As linhas de saldo saem como sintéticas (negrito).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function ledgerRows(array $accounts): array
+    {
+        $rows = [];
+        foreach ($accounts as $account) {
+            $head = ['code' => $account['code'], 'name' => $account['name'], 'analytic' => false];
+            $rows[] = $head + ['description' => 'Saldo anterior', 'balance_cents' => (int)$account['opening_cents']];
+            foreach ($account['lines'] as $line) {
+                $rows[] = ['code' => $account['code'], 'name' => $account['name']] + $line;
+            }
+            $rows[] = $head + ['description' => 'Saldo final', 'debit_cents' => (int)$account['debit_cents'], 'credit_cents' => (int)$account['credit_cents'],
+                'balance_cents' => (int)$account['closing_cents']];
+        }
+        return $rows;
     }
 
     /** Valor de um caminho "a.b" no registro (regra pura). */

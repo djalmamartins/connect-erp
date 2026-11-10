@@ -1,17 +1,19 @@
 ---
 codigo: AP-073
 titulo: Relatório Saldos de Contas
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+resumo: Saldo de cada conta bancária na data: o saldo do dia anterior, as entradas e saídas do dia e o saldo final.
 categoria: relatorios
 rota: /relatorios/saldos-de-contas
 menu: Relatórios > Financeiros > Saldos de Contas
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: saldos de contas, relatórios, AP-073
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Saldo de cada conta bancária na data: o saldo do dia anterior, as entradas e saídas do dia e o saldo final. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/account-balances`.
 
 ## Onde fica
 
@@ -20,25 +22,25 @@ No menu lateral, abra [[Relatórios > Financeiros > Saldos de Contas]].
 ```tela saldos-de-contas
 rota: /relatorios/saldos-de-contas
 condominio: residencial-jardim-das-acacias
-legenda: Tela Saldos de Contas
+legenda: Tela Relatório Saldos de Contas
 1: menu | Saldos de Contas no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Conta, Saldo anterior, Entradas, Saídas e Saldo final
+3: main form.erp-filters | Filtros: Data de referência
+4: main table thead | Colunas: Condomínio, Conta bancária, Saldo anterior, Entradas, Saídas, Saldo final
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. **Data de referência**: o dia em que os encargos são calculados; o padrão é hoje.
+2. Clique em {{Gerar}}.
+3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
-- **Conta**
+- **Condomínio**
+- **Conta bancária**
 - **Saldo anterior**
 - **Entradas**
 - **Saídas**
@@ -46,9 +48,8 @@ legenda: Tela Saldos de Contas
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.entries.view** e **erp.chart.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

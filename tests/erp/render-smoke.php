@@ -1016,7 +1016,7 @@ $rsData = static function (string $id, array $rows, array $over = []) use ($RS):
         'report' => ['rows' => $rows, 'totals' => ['amount_cents' => -123456]], 'reportRows' => $rows, 'reportCsv' => $RS::csvUrl($id, $filters, 1), 'reportNeedsCondo' => false,
         'reportOptions' => ['bank_account' => [['id' => 3, 'label' => 'Corrente <Itaú>']], 'unit' => [['id' => 5, 'label' => 'Apto 101']]]];
 };
-$assert(count($RS::PAGES) === 33, 'relatórios: 33 páginas na tela única');
+$assert(count($RS::PAGES) === 36, 'relatórios: 36 páginas na tela única');
 foreach ($RS::PAGES as $rsPage => $rsDef) {
     $assert(isset($catalog['pages'][$rsPage]), "{$rsPage}: está no catálogo");
     $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => true]) === 'pages/reports/report', "{$rsPage}: tela própria só com dados");

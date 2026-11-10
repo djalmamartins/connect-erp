@@ -6,8 +6,8 @@ Inventário feito no ciclo 53 (ADR 0164), só leitura, em 2026-11-10, sobre o wo
 
 Conferido na main: 24 páginas da tabela já tinham tela real quando o inventário foi feito (AP-030, AP-039,
 AP-047, AP-048, AP-057 a AP-061, AP-071, AP-072, AP-102 a AP-109, AP-116, AP-117, AP-141, AP-167 e AP-171).
-Com o ADR 0143, mais 33 passaram a ler dados reais pela tela única de relatórios (`ReportScreens`): AP-045,
-AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-074 a AP-076, AP-080, AP-085 a AP-087,
+Com o ADR 0143, mais 36 passaram a ler dados reais pela tela única de relatórios (`ReportScreens`): AP-045,
+AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-073 a AP-076, AP-080, AP-082, AP-083, AP-085 a AP-087,
 AP-089, AP-090 e AP-093 a AP-099. Seguem para os próximos lotes: configurações (AP-084, AP-147, AP-151,
 AP-154, AP-155, AP-157 a AP-159, AP-162, AP-163, AP-166), acessos (AP-148, AP-152, AP-153) e assembleias
 (AP-017, AP-018, AP-088, AP-092).

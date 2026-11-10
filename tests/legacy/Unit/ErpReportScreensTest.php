@@ -7,6 +7,7 @@ namespace MovesOSTests\Unit;
 use MovesOSTests\TestCase;
 use Source\Controllers\Erp\Connect\Panel;
 use Source\Controllers\Erp\Connect\ReportScreens as Screens;
+use Source\Services\Erp\AccountingReports;
 use Source\Services\Erp\AnnualBalance;
 use Source\Services\Erp\ManagementReports;
 use Source\Services\Erp\PaymentReports;
@@ -41,6 +42,8 @@ final class ErpReportScreensTest extends TestCase
                 default => '',
             };
             $header = match (true) {
+                in_array($definition['api'], ['ledger', 'account-balances'], true) => AccountingReports::csvTable($definition['api'], ['accounts' => [], 'totals' => ['opening_cents' => 0, 'received_cents' => 0, 'paid_cents' => 0, 'closing_cents' => 0]])['header'],
+                $definition['api'] === 'income-statement' => AccountingReports::csvTable('income-statement', ['rows' => [], 'totals' => ['revenue_cents' => 0, 'expense_cents' => 0, 'result_cents' => 0]])['header'],
                 $definition['api'] === 'annual-balance' => AnnualBalance::csvTable(['rows' => [], 'totals' => ['revenue_months_cents' => [], 'expense_months_cents' => [], 'result_months_cents' => [], 'revenue_cents' => 0, 'expense_cents' => 0, 'result_cents' => 0]])['header'],
                 in_array($definition['api'], ['payments', 'calculation', 'transfers'], true) => PaymentReports::csvTable($kind, ['rows' => []])['header'],
                 $definition['api'] === 'financial-statement' => ManagementReports::csvTable('statement-' . $definition['query']['view'], ['rows' => []])['header'],
@@ -66,6 +69,21 @@ final class ErpReportScreensTest extends TestCase
         self::assertSame('/api/v1/reports/account-statement?format=csv&bank_account_id=3&from=2026-01-01&to=2026-11-10',
             Screens::csvUrl('AP-056', Screens::filters('AP-056', ['conta' => '3'], '2026-11-10'), null));
         self::assertSame('/api/v1/reports/annual-balance?format=csv&year=2025&basis=cash', Screens::csvUrl('AP-080', Screens::filters('AP-080', ['ano' => '2025', 'base' => 'cash'], '2026-11-10'), null));
+    }
+
+    public function testLedgerRowsAndAccountingUrls(): void
+    {
+        $rows = Screens::ledgerRows([['code' => '2.01', 'name' => 'Limpeza', 'nature' => 'despesa', 'opening_cents' => 500, 'debit_cents' => 100, 'credit_cents' => 0, 'closing_cents' => 600,
+            'lines' => [['entry_id' => 9, 'on_date' => '2026-11-05', 'competence' => '2026-11', 'description' => 'Faxina', 'debit_cents' => 100, 'credit_cents' => 0, 'balance_cents' => 600]]]]);
+        self::assertSame(['Saldo anterior', 'Faxina', 'Saldo final'], array_column($rows, 'description'));
+        self::assertSame([500, 600, 600], array_column($rows, 'balance_cents'));
+        self::assertSame(['erp-report-synthetic', '', 'erp-report-synthetic'], array_map([Screens::class, 'rowClass'], $rows));
+        self::assertSame('/api/v1/reports/ledger?format=csv&condominium_id=1&from=2026-01-01&to=2026-11-10&basis=cash&account_code=2.01',
+            Screens::csvUrl('AP-083', Screens::filters('AP-083', ['base' => 'cash', 'codigo' => '2.01'], '2026-11-10'), 1));
+        self::assertSame('', Screens::filters('AP-083', ['codigo' => '2;DROP'], '2026-11-10')['codigo']);
+        self::assertSame('/api/v1/reports/account-balances?format=csv&as_of=2026-11-10', Screens::csvUrl('AP-073', Screens::filters('AP-073', [], '2026-11-10'), null));
+        self::assertSame([['Saldo anterior', 1], ['Entradas', 2], ['Saídas', 3], ['Saldo final', 0]],
+            Screens::totals(['totals' => ['opening_cents' => 1, 'received_cents' => 2, 'paid_cents' => 3, 'closing_cents' => 0]], Screens::PAGES['AP-073']['totalLabels']));
     }
 
     public function testCellsAndTotals(): void

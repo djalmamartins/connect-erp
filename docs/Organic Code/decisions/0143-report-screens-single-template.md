@@ -8,13 +8,15 @@
 O inventário do ciclo 53 listou 88 páginas do catálogo ainda em demonstração. Conferido na main em
 10/11/2026, 24 delas já tinham tela real (cobrança, gráficos, relatórios de cobrança, fechamento, NF-e,
 fração ideal, integrações). Dos relatórios restantes, 32 já tinham serviço e API REST (ADR 0082, 0084 e
-0089), e o Balancete Anual (AP-080) ganhou API no ADR 0164. Faltava só a tela.
+0089); o Balancete Anual (AP-080) ganhou API no ADR 0164, e o Livro Razão (AP-083), os Saldos de Contas
+(AP-073) e a DRE (AP-082) no ADR 0165. Faltava só a tela.
 
 ## Decisão
 
 - Uma classe, `Source\Controllers\Erp\Connect\ReportScreens`, e um template, `pages/reports/report.php`,
-  atendem as 33 páginas: AP-045, 046, 049, 050, 052 a 054, 056, 062 a 070, 074 a 076, 080, 085 a 087,
-  089, 090, 093 a 099.
+  atendem as 36 páginas: AP-045, 046, 049, 050, 052 a 054, 056, 062 a 070, 073 a 076, 080, 082, 083,
+  085 a 087, 089, 090, 093 a 099. O Livro Razão vem por conta (saldo anterior, lançamentos e saldo final) e
+  a tela o mostra em linhas, com as de saldo em negrito.
 - Cada página é uma linha de `ReportScreens::PAGES`: a rota da API, os filtros, as permissões (as mesmas da
   API) e as colunas tipadas. A tela chama no servidor o mesmo método de serviço que a API usa, no condomínio
   da barra superior. Não há consulta nova nem regra de negócio nova.
@@ -33,5 +35,5 @@ fração ideal, integrações). Dos relatórios restantes, 32 já tinham serviç
 - Os prints da Central de Ajuda dessas páginas ainda mostram a demonstração até rodar
   `bash tools/help/prints.sh` no Mac com o banco `*_test`.
 - Testes: `tests/legacy/Unit/ErpReportScreensTest.php` (regras puras, colunas contidas no CSV de cada
-  serviço) e o smoke de renderização com uma linha de exemplo por página. Os testes de integração dos
-  serviços já existiam; nesta máquina não havia MariaDB para rodá-los de novo.
+  serviço), `tests/legacy/Integration/ReportScreensIntegrationTest.php` (as 36 páginas contra o MariaDB, com
+  e sem condomínio, e sem permissão) e o smoke de renderização com uma linha de exemplo por página.
