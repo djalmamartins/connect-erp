@@ -98,6 +98,9 @@ foreach (Definitions::all() as $slug => $d) {
     foreach ($d['computed'] ?? [] as $column) {
         $out[] = "            {$column}: { type: [string, \"null\"], readOnly: true }";
     }
+    foreach ($d['people']['roles'] ?? [] as $role => $column) {
+        $out[] = "            {$column}: { type: array, items: { type: string }, readOnly: true, description: " . $q('Na listagem: nomes dos vínculos ativos de ' . mb_strtolower($d['people']['labels'][$role]) . ' (só com ' . $d['people']['see'] . '). A pesquisa q também acha por esses nomes e documentos.') . ' }';
+    }
     $out[] = '            created_at: { type: string }';
     $out[] = '            updated_at: { type: string }';
     $paths[] = [$d, $name];

@@ -143,6 +143,8 @@ final class Definitions
                 'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries', 'erp_meters', 'erp_occurrences', 'erp_reservations', 'erp_waitlist', 'erp_moves'],
                 'title' => 'number',
                 'order' => 'label',
+                // Proprietários e inquilinos ativos de cada unidade na listagem e na pesquisa (10/11).
+                'people' => ['table' => 'erp_residents', 'see' => 'erp.residents.view', 'roles' => ['owner' => 'owners', 'tenant' => 'tenants'], 'labels' => ['owner' => 'Proprietário', 'tenant' => 'Inquilino']],
             ],
             'residents' => [
                 'page' => 'AP-005', 'table' => 'erp_residents', 'route' => '/cadastros/proprietarios-e-inquilinos',
