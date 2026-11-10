@@ -2571,7 +2571,7 @@ paths:
       security: [{ session: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: Aviso com deliveries[] }
+        '200': { description: 'Aviso com deliveries[]' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
