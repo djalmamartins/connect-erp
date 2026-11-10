@@ -66,6 +66,7 @@ final class PatrimonialEntryScreensIntegrationTest extends TestCase
         $all = (new PatrimonialEntryScreens())->data($this->admin, 'CN-006');
         self::assertTrue($all['patrimonialReady']);
         self::assertFalse($all['canManagePatrimonial'], 'Sem condomínio na barra, só a lista.');
+        self::assertFalse($all['canImportPatrimonial']);
         self::assertSame([], $all['patrimonialAccounts']);
 
         CondominiumContext::use([['id' => $this->alpha, 'name' => 'Alpha']], $this->alpha);
@@ -73,6 +74,7 @@ final class PatrimonialEntryScreensIntegrationTest extends TestCase
             'amount_cents' => '100,00', 'debit_account_id' => $result, 'credit_account_id' => $fund]);
         $data = (new PatrimonialEntryScreens())->data($this->admin, 'CN-006');
         self::assertTrue($data['canManagePatrimonial']);
+        self::assertTrue($data['canImportPatrimonial']);
         $labels = array_column($data['patrimonialAccounts'], 'label');
         self::assertContains('8.9 Fundo de obras (passivo)', $labels);
         self::assertSame([], array_filter($labels, static fn (string $l): bool => preg_match('/^(7\.1|7\.2|8\.1)( |\.)/', $l) === 1), 'Conta calculada pelo balanço não aparece.');

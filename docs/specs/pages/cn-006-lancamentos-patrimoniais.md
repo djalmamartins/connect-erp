@@ -16,9 +16,11 @@ API: `/api/v1/patrimonial-entries`.
 | Competência fechada recusa lançamento e estorno (409) | CONFIRMADO (ADR 0031) |
 | Ver exige `erp.entries.view` e `erp.chart.view`; lançar e estornar, também `erp.entries.manage` | CONFIRMADO |
 
+| Importação por planilha (CSV/XLSX até 2 MB): prévia por linha e gravação tudo ou nada; exige também `erp.imports.view` e `erp.imports.manage` | CONFIRMADO (ADR 0171) |
+
 ## PENDENTE
 
-- Importação de lançamentos patrimoniais por planilha (ADR 0171, quando chegar à main).
+- Histórico das importações patrimoniais na tela (a API só tem o detalhe por id).
 
 ## Estados
 

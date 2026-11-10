@@ -1224,7 +1224,7 @@ $peRow = static fn (array $over = []): array => $over + ['id' => 5, 'condominium
     'amount_cents' => 50000, 'debit' => ['code' => '9.2', 'name' => 'Resultado do exercício'], 'credit' => ['code' => '8.2', 'name' => 'Fundo de reserva <F>'], 'status' => 'active',
     'reversal_of_id' => null, 'reversal_reason' => null, 'bank_account_id' => null, 'linked_entry_id' => null, 'created_by' => 1];
 $peData = static fn (array $over = []): array => $over + ['patrimonialReady' => true, 'patrimonialContext' => 1, 'patrimonialFilters' => ['de' => '2026-01-01', 'ate' => '2026-11-10'],
-    'patrimonialError' => null, 'canManagePatrimonial' => true, 'patrimonialAccounts' => [['id' => 8, 'label' => '8.2 Fundo de reserva <F> (passivo)'], ['id' => 9, 'label' => '9.2 Resultado do exercício (PL)']],
+    'patrimonialError' => null, 'canManagePatrimonial' => true, 'canImportPatrimonial' => true, 'patrimonialAccounts' => [['id' => 8, 'label' => '8.2 Fundo de reserva <F> (passivo)'], ['id' => 9, 'label' => '9.2 Resultado do exercício (PL)']],
     'patrimonialBanks' => [['id' => 3, 'label' => 'Poupança <P> (poupança)']],
     'patrimonialList' => ['condominium_id' => 1, 'from' => '2026-01-01', 'to' => '2026-11-10', 'truncated' => false, 'totals' => ['entries' => 3, 'amount_cents' => 80000], 'rows' => [
         $peRow(), $peRow(['id' => 6, 'status' => 'reversed', 'description' => 'Lançado errado', 'amount_cents' => 15000]),
@@ -1235,10 +1235,12 @@ $assert(str_contains($html, 'data-erp-api-forms') && str_contains($html, 'data-a
     && str_contains($html, 'Poupança &lt;P&gt;') && str_contains($html, 'Apropriação &lt;fundo&gt;') && str_contains($html, '/api/v1/patrimonial-entries/5/reverse')
     && !str_contains($html, '/patrimonial-entries/6/reverse') && !str_contains($html, '/patrimonial-entries/7/reverse') && str_contains($html, '>Estornado<') && str_contains($html, '>Estorno<')
     && str_contains($html, 'Motivo: Valor &lt;errado&gt;') && str_contains($html, 'R$ 800,00') && str_contains($html, 'data-condo-field') && !str_contains($html, 'Interface proposta'), 'CN-006: lista, formulário e estorno');
-$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false, 'patrimonialContext' => null]));
+$assert(str_contains($html, 'data-patrimonial-import') && str_contains($html, 'data-preview-api="' . url('/api/v1/patrimonial-imports') . '"') && str_contains($html, 'data%2Cdescricao') === false
+    && str_contains($html, rawurlencode('data;descricao;valor;conta_debito;conta_credito;conta_bancaria;lancamento_origem')) && str_contains($html, 'accept=".csv,.xlsx"'), 'CN-006: importação por planilha');
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false, 'canImportPatrimonial' => false, 'patrimonialContext' => null]));
 $assert(!str_contains($html, 'data-access-form') && str_contains($html, 'escolha o condomínio na barra superior') && str_contains($html, '>Alpha &lt;A&gt;<'), 'CN-006: sem condomínio só lista');
-$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false]));
-$assert(!str_contains($html, 'data-access-form') && !str_contains($html, '/reverse'), 'CN-006: só leitura sem erp.entries.manage');
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false, 'canImportPatrimonial' => false]));
+$assert(!str_contains($html, 'data-access-form') && !str_contains($html, '/reverse') && !str_contains($html, 'data-patrimonial-import'), 'CN-006: só leitura sem erp.entries.manage');
 $html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['patrimonialError' => 'O período pode ter no máximo 366 dias.', 'patrimonialList' => null]));
 $assert(str_contains($html, 'no máximo 366 dias') && !str_contains($html, 'pe-list-title'), 'CN-006: erro do período');
 $assert($PE::filters(['de' => '2026-02-30', 'ate' => '2026-06-30'], '2026-11-10') === ['de' => '2026-01-01', 'ate' => '2026-06-30'], 'lançamentos patrimoniais: período');

@@ -5,7 +5,8 @@
  * /api/v1/patrimonial-entries (erp.js, data-erp-api-forms), com CSRF no cabeçalho; a API confere de novo
  * permissão, escopo, contas e competência fechada.
  * @var array $currentPage @var ?int $patrimonialContext @var array $patrimonialFilters @var ?string $patrimonialError @var ?array $patrimonialList
- * @var list<array> $patrimonialAccounts @var list<array> $patrimonialBanks @var bool $canManagePatrimonial
+ * @var list<array> $patrimonialAccounts @var list<array> $patrimonialBanks @var bool $canManagePatrimonial @var bool $canImportPatrimonial
+ * Importação por planilha (ADR 0171): prévia e aplicação tudo ou nada pela API /api/v1/patrimonial-imports.
  */
 use Source\Controllers\Erp\Connect\PatrimonialEntryScreens as Screens;
 use Source\Controllers\Erp\Connect\ReportScreens as RS;
@@ -51,6 +52,18 @@ $this->insert('components/layout/page-head', [
             <div data-form-error aria-live="assertive"></div>
             <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('plus', 'erp-icon--sm') ?>Lançar</button></div>
         </form>
+    <?php endif; ?>
+
+    <?php if ($canImportPatrimonial): $header = implode(';', array_merge(\Source\Services\Erp\Imports\PatrimonialImports::REQUIRED, \Source\Services\Erp\Imports\PatrimonialImports::OPTIONAL)); ?>
+        <section class="erp-card" data-patrimonial-import data-preview-api="<?= $this->e($api('/patrimonial-imports')) ?>" aria-labelledby="pe-import-title">
+            <div class="erp-card__head"><div><h2 id="pe-import-title">Importar planilha</h2><p>CSV ou XLSX de até 2 MB, uma linha por lançamento. Primeiro a prévia mostra o erro de cada linha; a gravação é tudo ou nada. <a href="data:text/csv;charset=utf-8,<?= rawurlencode("\u{FEFF}" . $header . "\r\n") ?>" download="modelo-lancamentos-patrimoniais.csv">Baixar modelo CSV</a></p></div></div>
+            <form class="erp-filters" data-import-form novalidate>
+                <div class="erp-field"><label for="pe-file">Arquivo</label><input class="erp-input" type="file" id="pe-file" name="file" accept=".csv,.xlsx" required><span class="erp-field__hint">Colunas: data, descricao, valor, conta_debito e conta_credito (código do plano); opcionais: conta_bancaria e lancamento_origem</span></div>
+                <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('upload', 'erp-icon--sm') ?>Ver prévia</button></div>
+                <div data-form-error aria-live="assertive"></div>
+            </form>
+            <div data-import-preview hidden aria-live="polite"></div>
+        </section>
     <?php endif; ?>
 
     <?php if ($patrimonialError !== null): ?>

@@ -29,6 +29,7 @@ legenda: Tela Lançamentos patrimoniais
 1: menu | Lançamentos patrimoniais no menu lateral
 2: main form.erp-filters | Período: De e Até
 3: main form[data-access-form] | Novo lançamento
+4: main [data-patrimonial-import] | Importar planilha
 ```
 
 >! Para lançar, escolha o condomínio na barra superior. Com "Todos os condomínios", a tela só lista.
@@ -49,6 +50,17 @@ legenda: Tela Lançamentos patrimoniais
 No ativo, o débito aumenta a conta. No passivo e no patrimônio líquido, quem aumenta é o crédito.
 
 > **Atenção:** 7.1 Disponível, 7.2 Contas a receber e 8.1 Contas a pagar são calculadas pelo balanço e não aparecem na lista de contas. O dinheiro entra e sai pelos lançamentos de receita e despesa.
+
+## Importar uma planilha
+
+Para lançar vários de uma vez, use o cartão **Importar planilha** (aparece com o condomínio escolhido e a permissão de importar).
+
+1. Clique em **Baixar modelo CSV** e preencha uma linha por lançamento. As colunas obrigatórias são `data` (DD/MM/AAAA), `descricao`, `valor` (1.234,56), `conta_debito` e `conta_credito` (o código do plano, como 8.2). As opcionais são `conta_bancaria` (o apelido da conta, como está no cadastro) e `lancamento_origem` (o nº do lançamento).
+2. Escolha o arquivo (CSV ou XLSX, até 2 MB) e clique em {{Ver prévia}}.
+3. A prévia mostra cada linha como **Certa** ou **Erro**, com o motivo. Se houver erro, corrija a planilha e envie de novo.
+4. Sem erros, clique em {{Gravar}}. A gravação é **tudo ou nada**: se um mês fechar no meio do caminho, nenhuma linha entra.
+
+O mesmo arquivo não é gravado duas vezes no mesmo condomínio.
 
 ## Estornar
 

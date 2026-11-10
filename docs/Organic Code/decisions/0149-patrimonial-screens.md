@@ -28,6 +28,11 @@ campo de vínculo no formulário do cadastro de contas bancárias.
   - nova regra do motor `only_if` no campo: só aceita valor quando outro campo tem o valor indicado (aqui,
     `kind = aplicacao`); o formulário esconde e limpa o campo nos outros casos;
   - são as mesmas regras de `Investments::link`, que segue valendo pela API.
+- **Importação por planilha (ADR 0171)** no próprio CN-006, sem página nova: cartão com o modelo CSV, a prévia
+  (`POST /api/v1/patrimonial-imports`, multipart) mostrando cada linha certa ou com erro, e "Gravar" (`/apply`,
+  tudo ou nada) só quando não há erro. Aparece com o condomínio na barra e `erp.imports.view`,
+  `erp.imports.manage` e `erp.entries.manage`, as permissões da API. O tipo não entra em `Imports::KINDS`
+  nem na tela genérica de importações, como o ADR 0171 decidiu.
 - **Balanço (AP-081):** as contas bancárias do Disponível mostram "(aplicação)" ou "(poupança)", como o CSV.
 
 ## Consequências
@@ -37,4 +42,6 @@ campo de vínculo no formulário do cadastro de contas bancárias.
 - Testes: `PatrimonialEntryScreensIntegrationTest` (contas aceitas sem as calculadas, lista, só leitura sem
   condomínio; vínculo só para aplicação, só com conta corrente e só do mesmo condomínio) e o smoke do CN-006.
 - Pendente: tela de aplicar e resgatar (a API do ADR 0170 existe; hoje a transferência do AP-029 faz o mesmo
-  movimento) e a importação patrimonial por planilha (ADR 0171).
+  movimento).
+- `TestCase` passa a limpar `erp_patrimonial_entries` e `erp_chart_account_openings` entre os testes de
+  integração (sobravam linhas de um teste para outro com o mesmo id de condomínio).

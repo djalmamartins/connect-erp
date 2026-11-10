@@ -16,7 +16,7 @@ use Source\Support\Erp\CondominiumContext;
 /**
  * Lançamentos patrimoniais (CN-006; ADR 0149, sobre o ADR 0169): lista do período pelo mesmo serviço da API
  * GET /api/v1/patrimonial-entries, com o formulário de partida dobrada (débito e crédito em contas patrimoniais
- * analíticas que não são calculadas pelo balanço) e o estorno. Gravações pelo erp.js na própria API.
+ * analíticas que não são calculadas pelo balanço), o estorno e a importação por planilha (ADR 0171). Gravações pelo erp.js na própria API.
  * Ver exige erp.entries.view e erp.chart.view, como a API; lançar e estornar, também erp.entries.manage.
  * Sem banco ou sem permissão, patrimonialReady false = a tela segue com a demonstração.
  */
@@ -42,6 +42,8 @@ final class PatrimonialEntryScreens
         $data = ['patrimonialReady' => false, 'patrimonialContext' => $context, 'patrimonialFilters' => $filters, 'patrimonialError' => null,
             'patrimonialList' => null, 'patrimonialAccounts' => [], 'patrimonialBanks' => [],
             'canManagePatrimonial' => $context !== null && Access::can('erp.entries.manage', $user)];
+        // Importação (ADR 0171): as mesmas permissões da API de prévia e aplicação.
+        $data['canImportPatrimonial'] = $data['canManagePatrimonial'] && Access::can('erp.imports.view', $user) && Access::can('erp.imports.manage', $user);
         try {
             try {
                 $data['patrimonialList'] = (new PatrimonialEntries())->list($user, $context, $filters['de'], $filters['ate']);
