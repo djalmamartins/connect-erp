@@ -67,7 +67,7 @@ final class RegistryService
     }
 
     /**
-     * @param array{condominium_id?: mixed, include_standard?: bool, status?: mixed, q?: mixed, page?: mixed, filter?: mixed} $filters
+     * @param array{condominium_id?: mixed, include_standard?: bool, prefer_condominium?: bool, status?: mixed, q?: mixed, page?: mixed, filter?: mixed} $filters
      * @return array{data: list<array<string, mixed>>, total: int, page: int, per_page: int, pages: int}
      */
     public function list(User $user, string $slug, array $filters = []): array
@@ -80,10 +80,19 @@ final class RegistryService
             // 'include_standard' (telas do ERP, ADR 0032): com um condomínio em contexto, os
             // cadastros de escopo optional mostram também o padrão da Connect (sem condomínio),
             // que esse condomínio usa (plano de contas, tipos de faturas, centros de custo).
-            $where[] = $definition['scope'] === 'optional' && !empty($filters['include_standard'])
+            $withStandard = $definition['scope'] === 'optional' && !empty($filters['include_standard']);
+            $where[] = $withStandard
                 ? '(t.condominium_id = :f_condominium OR t.condominium_id IS NULL)'
                 : 't.condominium_id = :f_condominium';
             $params['f_condominium'] = $condominium;
+            // ADR 0163: 'prefer_condominium' (API) com 'override' na definição: o registro do condomínio
+            // com o mesmo valor da coluna (ex.: o nome do tipo de fatura) prevalece sobre o padrão.
+            $override = $definition['override'] ?? null;
+            if ($withStandard && !empty($filters['prefer_condominium']) && is_string($override) && isset($definition['fields'][$override])) {
+                $where[] = "NOT (t.condominium_id IS NULL AND EXISTS (SELECT 1 FROM `{$definition['table']}` o
+                    WHERE o.condominium_id = :f_override AND o.deleted_at IS NULL AND o.`{$override}` = t.`{$override}`))";
+                $params['f_override'] = $condominium;
+            }
         }
         $status = (string)($filters['status'] ?? '');
         if (array_key_exists($status, $definition['status'])) {

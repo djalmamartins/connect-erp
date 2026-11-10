@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0163.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0163, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0164.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0164, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -147,3 +147,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0160](../Organic%20Code/decisions/0160-review-verification-antivirus.md) | Revisão de segurança da verificação pública e do antivírus: limite global de falhas, CSRF em tempo constante, cabeçalhos anti-frame, prazo total e teto de 25 MB no clamd, download bloqueado para infectado/erro |
 | [0161](../Organic%20Code/decisions/0161-document-rescan.md) | Reverificação em lotes dos arquivos do Disco Virtual quando o antivírus é ligado depois (tools/erp-rescan.php, com trava) e o bloco do antivírus na tela de Integrações |
 | [0162](../Organic%20Code/decisions/0162-optional-cnpj-people-search-links-lab-data.md) | CNPJ do condomínio opcional, busca e vínculo de proprietário/inquilino em várias unidades (API /people) e dados de exemplo do lab com trava |
+| [0163](../Organic%20Code/decisions/0163-api-optional-scope-includes-standard.md) | API de tipos de fatura com condominium_id inclui os tipos padrão (o do condomínio prevalece) e recusa condomínio fora do escopo |

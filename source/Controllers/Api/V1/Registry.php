@@ -7,6 +7,7 @@ namespace Source\Controllers\Api\V1;
 use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\CondominiumScope;
 use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryInUse;
 use Source\Services\Erp\Registry\RegistryLocked;
@@ -29,7 +30,13 @@ final class Registry
         if ($user === null) {
             return;
         }
-        $result = (new RegistryService())->list($user, $slug, [
+        $standard = self::standardFilters($definition, $_GET['condominium_id'] ?? null, $_GET['include_standard'] ?? null,
+            static fn (int $id): bool => (new CondominiumScope())->canAccess($user, $id));
+        if ($standard === null) {
+            $this->notFound();
+            return;
+        }
+        $result = (new RegistryService())->list($user, $slug, $standard + [
             'condominium_id' => $_GET['condominium_id'] ?? null,
             'status' => $_GET['status'] ?? null,
             'filter' => $_GET['type'] ?? null,
@@ -40,6 +47,28 @@ final class Registry
             'data' => $result['data'],
             'meta' => ['total' => $result['total'], 'page' => $result['page'], 'per_page' => $result['per_page'], 'pages' => $result['pages']],
         ]);
+    }
+
+    /**
+     * Padrão da Connect na listagem da API (regra pura, ADR 0163). Num cadastro de escopo optional (tipos de
+     * faturas, plano de contas, centros de custo) com condominium_id, a lista traz o padrão (condominium_id
+     * NULL) junto com o do condomínio, como as telas (ADR 0032); include_standard=0 volta a só o condomínio.
+     * Condomínio fora do escopo = null (404). Sem condominium_id ou outro escopo: nada muda ([]).
+     *
+     * @param callable(int):bool $canAccess
+     * @return array{include_standard?:bool, prefer_condominium?:bool}|null
+     */
+    public static function standardFilters(array $definition, mixed $condominium, mixed $includeStandard, callable $canAccess): ?array
+    {
+        $id = filter_var($condominium, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (($definition['scope'] ?? 'none') !== 'optional' || $id === false || $id === null) {
+            return [];
+        }
+        if (!$canAccess((int)$id)) {
+            return null;
+        }
+        $include = !in_array(is_scalar($includeStandard) ? strtolower((string)$includeStandard) : '', ['0', 'false', 'no'], true);
+        return ['include_standard' => $include, 'prefer_condominium' => $include];
     }
 
     public function show(string $slug, array $data): void
