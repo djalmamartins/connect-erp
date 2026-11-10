@@ -37,3 +37,17 @@ O Balanço Patrimonial (AP-081) já estava ligado pelo ADR 0148.
 - Testes: `ErpAdminScreensTest` (páginas, permissões, mudanças só pela API, regras puras) e o smoke das quatro
   telas, com escape de nome, retirada só de conta gerenciável e modo só leitura sem a permissão de mudar.
 - Com isto, do que tem API, nenhuma página do catálogo fica na demonstração; sobram AP-031 e AP-037 (banco real).
+
+## Revisão de cobertura de testes e do OpenAPI (10/11/2026)
+
+- OpenAPI × rotas: o `OpenApiRoutesTest` já cobre os dois sentidos (rota sem documentação e documentação sem
+  rota). Na leitura do contrato, nenhum `operationId` repetido e nenhum parâmetro de caminho sem declaração; três
+  operações da vistoria (`PUT /inspections/{id}/items/{item}`, `POST …/photos` e `POST …/complete`) não
+  documentavam o 401 e passaram a documentar. Os POST sem corpo documentado (emitir fatura, convocar e abrir
+  assembleia, etc.) conferem com os controllers, que não leem corpo.
+- Testes: todo serviço do ERP já é citado por algum teste. Os controllers da API sem teste próprio (`Me`,
+  `Notifications`, `Panels`, `RecurringEntriesGenerate`, `Tickets`) ficavam fora da matriz do ADR 0094, que só
+  vale para os controllers listados nela. O `ApiGuardCoverageTest` estende a varredura a todos os controllers de
+  `/api/v1`, inclusive os futuros: toda rota passa pelo `ApiAuthenticated` (menos `/health` e a confirmação do
+  2FA, que segue com CSRF, desafio pendente e limite de tentativas), e toda ação pública chega a `Auth::user()` ou
+  `Access::can`.
