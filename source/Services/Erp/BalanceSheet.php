@@ -116,7 +116,13 @@ final class BalanceSheet
                 'amount_cents' => (int)($account['opening_cents'] ?? 0) + (int)($values['movements'][$key] ?? 0)];
         }
 
-        $banks = array_map(static fn (array $b): array => ['name' => (string)$b['name'], 'amount_cents' => (int)$b['closing_cents']], $values['banks'] ?? []);
+        // Cada conta com o tipo (ADR 0170): a aplicação aparece separada da conta corrente dentro do Disponível.
+        $banks = array_map(static fn (array $b): array => ['name' => (string)$b['name'], 'kind' => (string)($b['kind'] ?? 'corrente'), 'amount_cents' => (int)$b['closing_cents']],
+            $values['banks'] ?? []);
+        $byKind = ['checking_cents' => 0, 'savings_cents' => 0, 'investments_cents' => 0];
+        foreach ($banks as $bank) {
+            $byKind[['poupanca' => 'savings_cents', 'aplicacao' => 'investments_cents'][$bank['kind']] ?? 'checking_cents'] += $bank['amount_cents'];
+        }
         $retainedOpening = 0;
         foreach ($accounts as $account) {
             if ((string)$account['code'] === '9.1' && $account['nature'] === 'equity') {
@@ -136,6 +142,7 @@ final class BalanceSheet
             }
             if ($row['role'] === 'bank') {
                 $row['lines'] = $banks;
+                $row += $byKind;
             } elseif ($row['role'] === 'receivable') {
                 $row['overdue_cents'] = (int)($values['receivable_overdue_cents'] ?? 0);
             } elseif ($row['role'] === 'payable') {
@@ -226,6 +233,7 @@ final class BalanceSheet
         $currentFrom = $retainedSince !== null && $retainedSince > $yearStart ? substr($retainedSince, 0, 7) . '-01' : $yearStart;
         $current = $accounting->incomeStatement($user, $c, $currentFrom, $date, 'competence');
         $banks = $accounting->accountBalances($user, $c, $date);
+        $kinds = (new Investments($this->pdo, $this->scope))->kinds(array_column($banks['accounts'], 'bank_account_id'));
         // Lançamentos patrimoniais (ADR 0169): o saldo inicial do PL também substitui os movimentos de PL anteriores à data dele.
         if ($retainedSince !== null && !isset($openedOn['equity|9.2'])) {
             $openedOn['equity|9.2'] = $retainedSince;
@@ -233,7 +241,7 @@ final class BalanceSheet
         $moves = PatrimonialEntries::balances((new PatrimonialEntries($this->pdo, $this->scope))->movements($c, $date), $openedOn, $yearStart);
 
         return ['condominium_id' => $c, 'truncated' => $truncated || !empty($current['truncated'])] + self::compose(array_values($accounts), [
-            'banks' => $banks['accounts'],
+            'banks' => array_map(static fn (array $b): array => $b + ['kind' => $kinds[(int)$b['bank_account_id']]['kind'] ?? 'corrente'], $banks['accounts']),
             'receivable_cents' => $openBy['receita'][0] ?? 0, 'receivable_overdue_cents' => $openBy['receita'][1] ?? 0,
             'payable_cents' => $openBy['despesa'][0] ?? 0, 'payable_overdue_cents' => $openBy['despesa'][1] ?? 0,
             'retained_prior_cents' => $priorResult, 'current_result_cents' => (int)$current['totals']['result_cents'],
@@ -251,7 +259,8 @@ final class BalanceSheet
             foreach ($report[$key]['rows'] as $r) {
                 $rows[] = [$label, $cell($r['code']), $cell(str_repeat('  ', (int)$r['level'] - 1) . $r['name']), $money($r['amount_cents'])];
                 foreach ($r['lines'] ?? [] as $line) {
-                    $rows[] = [$label, '', $cell(str_repeat('  ', (int)$r['level']) . $line['name']), $money($line['amount_cents'])];
+                    $suffix = ($line['kind'] ?? '') === 'aplicacao' ? ' (aplicação)' : (($line['kind'] ?? '') === 'poupanca' ? ' (poupança)' : '');
+                    $rows[] = [$label, '', $cell(str_repeat('  ', (int)$r['level']) . $line['name'] . $suffix), $money($line['amount_cents'])];
                 }
             }
             $rows[] = [$label, '', 'Total', $money($report[$key]['total_cents'])];
@@ -290,7 +299,7 @@ final class BalanceSheet
                 $tree[$code]['amount_cents'] += $row['amount_cents'];
                 if ($leaf) {
                     $tree[$code] = ['analytic' => true, 'name' => $row['name'], 'role' => $row['role']] + $tree[$code]
-                        + array_intersect_key($row, ['lines' => true, 'overdue_cents' => true]);
+                        + array_intersect_key($row, ['lines' => true, 'overdue_cents' => true, 'checking_cents' => true, 'savings_cents' => true, 'investments_cents' => true]);
                 }
             }
         }
