@@ -150,6 +150,65 @@ final class UnitRegistryTest extends TestCase
         self::assertNull($this->pdo->query("SELECT unit_id FROM erp_linkable_areas WHERE identifier = 'G2'")->fetchColumn() ?: null, 'Vaga livre continua livre.');
     }
 
+    public function testUnitListShowsActiveOwnersAndTenantsAndSearchFindsThem(): void
+    {
+        $user = $this->user([$this->alpha, $this->beta]);
+        $this->allowPeople($user, true);
+        $a101 = $this->service->save($user, 'units', ['condominium_id' => $this->alpha, 'block' => 'A', 'number' => '101', 'type' => 'apartamento']);
+        $a102 = $this->service->save($user, 'units', ['condominium_id' => $this->alpha, 'block' => 'A', 'number' => '102', 'type' => 'apartamento']);
+        $beta1 = $this->service->save($user, 'units', ['condominium_id' => $this->beta, 'number' => '1', 'type' => 'casa']);
+        // A mesma proprietária em duas unidades e em outro condomínio; inquilino em uma só.
+        foreach ([[$this->alpha, $a101], [$this->alpha, $a102], [$this->beta, $beta1]] as [$condominium, $unit]) {
+            $this->service->save($user, 'residents', ['condominium_id' => $condominium, 'unit_id' => $unit['id'], 'relationship' => 'owner', 'name' => 'Marta Ribeiro', 'document' => '52998224725']);
+        }
+        $this->service->save($user, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $a101['id'], 'relationship' => 'tenant', 'name' => 'Pedro Lima']);
+        $this->service->save($user, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $a101['id'], 'relationship' => 'tenant', 'name' => 'Antigo Inquilino', 'starts_on' => '2020-01-01', 'ends_on' => '2021-01-01']);
+        $this->service->save($user, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $a102['id'], 'relationship' => 'resident', 'name' => 'Morador Só']);
+        $this->service->save($user, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $a102['id'], 'relationship' => 'tenant', 'name' => 'Inativo Silva', 'status' => 'inactive']);
+
+        $rows = array_column($this->service->list($user, 'units', ['condominium_id' => $this->alpha])['data'], null, 'label');
+        self::assertSame(['Marta Ribeiro'], $rows['A - 101']['owners']);
+        self::assertSame(['Pedro Lima'], $rows['A - 101']['tenants'], 'Vínculo encerrado não aparece.');
+        self::assertSame(['Marta Ribeiro'], $rows['A - 102']['owners']);
+        self::assertSame([], $rows['A - 102']['tenants'], 'Morador e inquilino inativo não contam.');
+
+        $labels = static fn (array $result): array => array_column($result['data'], 'label');
+        self::assertSame(['A - 101'], $labels($this->service->list($user, 'units', ['q' => 'pedro'])));
+        self::assertSame(['1', 'A - 101', 'A - 102'], $labels($this->service->list($user, 'units', ['q' => 'Marta'])), 'Proprietária com várias unidades, em condomínios diferentes.');
+        self::assertSame(['A - 101', 'A - 102'], $labels($this->service->list($user, 'units', ['q' => '529.982', 'condominium_id' => $this->alpha])), 'Pelo CPF também.');
+        self::assertSame([], $labels($this->service->list($user, 'units', ['q' => 'Antigo'])));
+        self::assertSame(['A - 101'], $labels($this->service->list($user, 'units', ['q' => '101'])), 'Busca pela unidade continua.');
+
+        // Quem só vê unidades (sem o cadastro de pessoas) não recebe os nomes nem acha por eles.
+        $unitsOnly = $this->user([$this->alpha]);
+        $this->allowPeople($unitsOnly, false);
+        $row = $this->service->list($unitsOnly, 'units', ['q' => '101'])['data'][0];
+        self::assertArrayNotHasKey('owners', $row);
+        self::assertSame(0, $this->service->list($unitsOnly, 'units', ['q' => 'Marta'])['total']);
+        // Escopo: o outro condomínio não aparece nem pela pessoa.
+        $alphaOnly = $this->user([$this->alpha]);
+        $this->allowPeople($alphaOnly, true);
+        self::assertSame(['A - 101', 'A - 102'], $labels($this->service->list($alphaOnly, 'units', ['q' => 'Marta'])));
+    }
+
+    /** Papel com ou sem erp.residents.view (o TestCase limpa as permissões). */
+    private function allowPeople(User $user, bool $allowed): void
+    {
+        $permission = (int)$this->pdo->query("SELECT id FROM access_permissions WHERE slug = 'erp.residents.view'")->fetchColumn();
+        if ($permission === 0) {
+            $this->pdo->exec("INSERT INTO access_permissions (name, slug, group_name) VALUES ('Ver pessoas', 'erp.residents.view', 'Teste')");
+            $permission = (int)$this->pdo->lastInsertId();
+        }
+        $slug = 'people_' . ($allowed ? 'yes' : 'no') . '_' . $user->id;
+        $this->pdo->prepare('INSERT INTO access_roles (name, slug, level) VALUES (?, ?, 50)')->execute([$slug, $slug]);
+        $role = (int)$this->pdo->lastInsertId();
+        $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id) VALUES (?, ?)')->execute([$user->id, $role]);
+        if ($allowed) {
+            $this->pdo->prepare('INSERT INTO access_role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$role, $permission]);
+        }
+        \Source\Support\Access::clear((int)$user->id);
+    }
+
     private function assertInvalid(string $field, callable $call, string $message = ''): void
     {
         try {

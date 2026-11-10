@@ -13,6 +13,14 @@ $article = $definition['gender'] === 'a' ? 'Nova' : 'Novo';
 // Coluna principal (nome, razão social ou placa) primeiro, com o link para o registro.
 $listFields = [$definition['title'] => $definition['fields'][$definition['title']]] + array_filter($definition['fields'], static fn (array $f): bool => $f['list']);
 $hasCondominium = $definition['scope'] !== 'none';
+// Unidades: colunas de proprietário e inquilino quando o serviço trouxe os nomes (quem pode ver pessoas).
+$peopleColumns = [];
+if (isset($definition['people']) && $result['data'] !== [] && array_key_exists(reset($definition['people']['roles']), $result['data'][0])) {
+    foreach ($definition['people']['roles'] as $role => $column) {
+        $peopleColumns[$column] = $definition['people']['labels'][$role];
+    }
+}
+$searchHint = isset($definition['people']) ? 'Unidade, bloco, proprietário ou inquilino' : 'Nome, documento ou unidade';
 $query = static function (array $changes) use ($filters): string {
     $params = array_filter([
         'condominio' => $filters['condominium_id'] ?? null, 'situacao' => $filters['status'] ?? null,
@@ -52,7 +60,7 @@ $this->insert('components/layout/page-head', [
 
 <section class="erp-list-page" aria-label="<?= $this->e($definition['label']) ?>">
     <form class="erp-filters" role="search" method="get" action="<?= erp_url($route) ?>">
-        <div class="erp-field erp-field--grow"><label for="reg-q">Pesquisar</label><input class="erp-input" type="search" id="reg-q" name="q" maxlength="100" value="<?= $this->e((string)($filters['q'] ?? '')) ?>" placeholder="Nome, documento ou unidade"></div>
+        <div class="erp-field erp-field--grow"><label for="reg-q">Pesquisar</label><input class="erp-input" type="search" id="reg-q" name="q" maxlength="100" value="<?= $this->e((string)($filters['q'] ?? '')) ?>" placeholder="<?= $this->e($searchHint) ?>"></div>
         <?php if ($hasCondominium): ?>
             <div class="erp-field"><label for="reg-condo">Condomínio</label><select class="erp-select" id="reg-condo" name="condominio"><option value="">Todos</option>
                 <?php foreach ($condominiums as $condominium): ?><option value="<?= (int)$condominium['id'] ?>"<?= (string)$condominium['id'] === (string)($filters['condominium_id'] ?? '') ? ' selected' : '' ?>><?= $this->e($condominium['name']) ?></option><?php endforeach; ?>
@@ -85,6 +93,7 @@ $this->insert('components/layout/page-head', [
                     <caption class="erp-sr-only"><?= $this->e($definition['label']) ?> (<?= (int)$result['total'] ?>)</caption>
                     <thead><tr>
                         <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['label']) ?></th><?php endforeach; ?>
+                        <?php foreach ($peopleColumns as $label): ?><th scope="col"><?= $this->e($label) ?></th><?php endforeach; ?>
                         <th scope="col">Situação</th>
                         <th scope="col" class="is-num"><span class="erp-sr-only">Ações</span></th>
                     </tr></thead>
@@ -93,6 +102,9 @@ $this->insert('components/layout/page-head', [
                         <tr>
                             <?php foreach ($listFields as $name => $field): $text = RegistryFormat::display($field, $row[$name], $row['condominium_name'] ?? null); ?>
                                 <td><?php if ($first): $first = false; ?><a href="<?= $href ?>"><strong><?= $this->e($text) ?></strong></a><?php else: ?><?= $this->e($text) ?><?php endif; ?></td>
+                            <?php endforeach; ?>
+                            <?php foreach ($peopleColumns as $column => $label): $names = $row[$column] ?? []; ?>
+                                <td><?= $names === [] ? '<span class="erp-muted">—</span>' : $this->e(implode(', ', $names)) ?></td>
                             <?php endforeach; ?>
                             <td><span class="erp-badge erp-badge--<?= $row['status'] === 'active' ? 'success' : 'danger' ?>"><?= $this->e($definition['status'][$row['status']] ?? $row['status']) ?></span></td>
                             <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $href ?>" aria-label="<?= $canManage ? 'Editar' : 'Ver' ?> registro <?= (int)$row['id'] ?>"><?= $icon($canManage ? 'edit' : 'eye', 'erp-icon--sm') ?></a></td>

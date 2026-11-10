@@ -8,7 +8,7 @@ menu: Condomínios > Unidades
 icone: list-outline
 situacao: funciona
 relacionados: painel-da-unidade, areas-comuns, painel-do-condominio, areas-vinculaveis
-palavras: unidades, condomínios, AP-006, apartamento, casa, sala, loja, cadastro rápido, fração ideal
+palavras: unidades, condomínios, AP-006, proprietário, inquilino, pesquisar, apartamento, casa, sala, loja, cadastro rápido, fração ideal
 rascunho: nao
 ---
 
@@ -72,9 +72,13 @@ recorte: main form:not([method=get])
 Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
+Em **Pesquisar**, digite o número da unidade, o bloco ou o nome do proprietário ou do inquilino. O CPF ou CNPJ da pessoa também funciona. Um proprietário com várias unidades traz todas elas na mesma pesquisa.
+
 ## O que a lista mostra
 
-Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo** e **Situação**.
+Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo**, **Proprietário**, **Inquilino** e **Situação**.
+
+Proprietário e inquilino vêm de [[Cadastros > Proprietários e inquilinos]]. A lista mostra só os vínculos ativos: um inquilino com data de fim já passada ou inativado sai da coluna. As colunas aparecem para quem também pode ver o cadastro de proprietários e inquilinos.
 
 ## Ações de cada linha
 

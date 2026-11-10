@@ -51,6 +51,8 @@ components:
             id: { type: integer }
             condominium_name: { type: [string, "null"] }
             label: { type: [string, "null"], readOnly: true }
+            owners: { type: array, items: { type: string }, readOnly: true, description: 'Na listagem: nomes dos vínculos ativos de proprietário (só com erp.residents.view). A pesquisa q também acha por esses nomes e documentos.' }
+            tenants: { type: array, items: { type: string }, readOnly: true, description: 'Na listagem: nomes dos vínculos ativos de inquilino (só com erp.residents.view). A pesquisa q também acha por esses nomes e documentos.' }
             created_at: { type: string }
             updated_at: { type: string }
     ResidentsInput:
@@ -343,7 +345,7 @@ components:
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
         code: { type: [string, "null"], maxLength: 30 }
-        nature: { type: [string, "null"], enum: ['receita', 'despesa'] }
+        nature: { type: [string, "null"], enum: ['receita', 'despesa', 'asset', 'liability', 'equity'] }
         name: { type: [string, "null"], maxLength: 120 }
         kind: { type: [string, "null"], enum: ['sintetica', 'analitica'] }
         notes: { type: [string, "null"], maxLength: 2000 }
@@ -405,6 +407,7 @@ components:
         branch: { type: [string, "null"], maxLength: 10 }
         account_number: { type: [string, "null"], maxLength: 20 }
         kind: { type: [string, "null"], enum: ['corrente', 'poupanca', 'aplicacao'] }
+        parent_bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         wallet: { type: [string, "null"], maxLength: 20 }
         opening_balance_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
         opened_on: { type: [string, "null"], format: date }
@@ -1756,7 +1759,7 @@ paths:
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
-        - { name: type, in: query, description: 'Filtra por nature', schema: { type: string, enum: ['receita', 'despesa'] } }
+        - { name: type, in: query, description: 'Filtra por nature', schema: { type: string, enum: ['receita', 'despesa', 'asset', 'liability', 'equity'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/ChartAccounts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
