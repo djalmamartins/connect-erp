@@ -104,6 +104,12 @@ $route->post("/erp-permissions", "ErpAdmin:setRolePermission", null, \Source\Sup
 $route->get("/patrimonial-entries", "PatrimonialEntries:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/patrimonial-entries", "PatrimonialEntries:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/patrimonial-entries/{id}/reverse", "PatrimonialEntries:reverse", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0170: aplicação financeira ligada à conta corrente (/investments/positions antes de /investments/{id})
+$route->get("/investments/positions", "Investments:positions", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/bank-ledger", "Investments:bankLedger", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/investments/{id}/link", "Investments:link", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/investments/{id}/apply", "Investments:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/investments/{id}/redeem", "Investments:redeem", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);

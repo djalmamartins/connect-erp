@@ -1378,6 +1378,109 @@ paths:
         '409': { description: 'Já estornado, é um estorno ou competência fechada' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/positions:
+    get:
+      operationId: investmentPositions
+      summary: Saldo das aplicações e totais de corrente, poupança e aplicação na data (erp.entries.view e erp.chart.view, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, accounts[], totals{checking_cents, savings_cents, investments_cents, total_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/bank-ledger:
+    get:
+      operationId: bankLedger
+      summary: Razão das contas bancárias com lançamentos e transferências dos dois lados (erp.entries.view e erp.chart.view, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, truncated, accounts[{lines[]}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/link:
+    post:
+      operationId: linkInvestment
+      summary: Liga (ou desliga com null) a aplicação a uma conta corrente do mesmo condomínio (erp.bank_accounts.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent_bank_account_id: { type: integer, nullable: true }
+      responses:
+        '200': { description: '{ data: { id, condominium_id, name, kind, parent_bank_account_id } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/apply:
+    post:
+      operationId: applyInvestment
+      summary: Aplica da conta corrente na aplicação pela transferência entre contas, sem DRE (erp.entries.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: 'Conta de aplicação' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_cents]
+              properties:
+                amount_cents: { description: 'Inteiro em centavos ou texto como "400,00"; positivo' }
+                transferred_on: { type: string, format: date }
+                description: { type: string }
+      responses:
+        '201': { description: '{ data: { direction, investment_account_id, checking_account_id, transfer } }' }
+        '409': { description: 'Competência fechada' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/redeem:
+    post:
+      operationId: redeemInvestment
+      summary: Resgata da aplicação para a conta corrente pela transferência entre contas, sem DRE (erp.entries.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: 'Conta de aplicação' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_cents]
+              properties:
+                amount_cents: { description: 'Inteiro em centavos ou texto como "400,00"; positivo' }
+                transferred_on: { type: string, format: date }
+                description: { type: string }
+      responses:
+        '201': { description: '{ data: { direction, investment_account_id, checking_account_id, transfer } }' }
+        '409': { description: 'Competência fechada' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/statement:
     get:
       operationId: financialStatement
