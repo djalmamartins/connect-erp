@@ -2758,6 +2758,50 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /dashboard/finance:
+    get:
+      operationId: dashboardFinance
+      summary: Receitas e despesas, inadimplência por atraso e quadro por condomínio do dashboard (erp.entries.view, ADR 0157)
+      description: >-
+        months: os 6 meses até a competência, por competência como o balancete ({competence, label, revenue_cents,
+        revenue_received_cents, expense_cents, expense_paid_cents}). month: a competência escolhida com result_cents
+        (recebido menos pago), balance_cents (lançado), received_rate e os totais do mês anterior.
+        delinquency: {open_cents, buckets: [{key (1-30, 31-60, 61-90, 90+), label, amount_cents}]}.
+        condominiums: [{id, name, city, units, revenue_cents, received_cents, overdue_cents, expense_cents,
+        received_rate, delinquency_rate, status (Em dia, Atenção, Crítico, Sem lançamentos)}].
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: competence, in: query, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' }, description: 'AAAA-MM; vazio = mês atual' }
+      responses:
+        '200': { description: '{ data: { competence, as_of, months, month, delinquency, condominiums } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /dashboard/agenda:
+    get:
+      operationId: dashboardAgenda
+      summary: Próximos 30 dias do dashboard (assembleias, manutenções e reservas que o usuário pode ver), ADR 0157
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }]
+      responses:
+        '200': { description: '{ data: { items: [{ date, time, kind (assembly, maintenance, reservation), title, text, href }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /dashboard/activities:
+    get:
+      operationId: dashboardActivities
+      summary: Últimas ações da equipe nos módulos do ERP, só de registros do contexto (erp.audit.view), ADR 0157
+      description: Sem dados pessoais do registro; mostra módulo, ação, número do registro, condomínio e quem fez.
+      security: [{ session: [] }]
+      parameters: [{ name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }]
+      responses:
+        '200': { description: '{ data: { items: [{ at, icon, title, text, href }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /reservations/{id}/call-waitlist:
     post:
       operationId: callWaitlist
