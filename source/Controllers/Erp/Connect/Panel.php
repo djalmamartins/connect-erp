@@ -224,21 +224,26 @@ final class Panel extends Controller
     }
 
     /**
-     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 retornos com divergência;
-     * ADR 0035 e 0038), só no adaptador de sandbox. $bankCharges / $bankDivergences null = sem
+     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-037 remessas, AP-038 retornos com
+     * divergência; ADR 0035, 0038 e 0156), sandbox interno ou Inter (sandbox do banco). $bankCharges / $bankDivergences null = sem
      * permissão ou sem banco (a tela segue com a demonstração). As ações usam a API /api/v1.
      *
      * @return array{bankCharges?: ?array, bankDivergences?: ?array, bankReady: bool, canManageCharges: bool}
      */
     private function bankingData(User $user, string $id): array
     {
-        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : []);
+        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : [])
+            + ($id === 'AP-037' ? ['bankRemittances' => null] : []);
         if (Connect::databaseDisabled() || !Access::can('erp.bank_charges.view', $user)) {
             return $data;
         }
         try {
             if ($id === 'AP-035') {
                 $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
+            } elseif ($id === 'AP-037') {
+                $data['bankRemittances'] = (new \Source\Services\Erp\Banking\BankRemittances())->list($user, CondominiumContext::id(), [
+                    'from' => $_GET['de'] ?? null, 'to' => $_GET['ate'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
+                ]);
             } elseif ($id === 'AP-038') {
                 $returns = new BankReturns();
                 $data['bankDivergences'] = $returns->divergences($user, CondominiumContext::id());
@@ -759,7 +764,7 @@ final class Panel extends Controller
         if (in_array($id, ['AP-033', 'AP-034'], true)) {
             $data += $this->agreementData($user, $id);
         }
-        if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
+        if (in_array($id, ['AP-035', 'AP-036', 'AP-037', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
         if ($id === 'AP-122') {
@@ -845,6 +850,7 @@ final class Panel extends Controller
             $id === 'AP-034' && ($data['agreementParcels'] ?? null) !== null => 'pages/finance/agreement-parcels',
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
+            $id === 'AP-037' && ($data['bankRemittances'] ?? null) !== null => 'pages/finance/bank-remittances',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
             (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             isset(EntryShortcutScreens::PAGES[$id]) && ($data['shortcutReady'] ?? false) => EntryShortcutScreens::PAGES[$id],

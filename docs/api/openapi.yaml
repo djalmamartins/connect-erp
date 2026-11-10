@@ -110,13 +110,16 @@ components:
         created_at: { type: string, description: Data da importação }
     BankCharge:
       type: object
-      description: Boleto (ADR 0035). No sandbox, digitable_line e barcode começam com SANDBOX e não são pagáveis.
+      description: Boleto (ADR 0035 e 0156). No sandbox interno, digitable_line e barcode começam com SANDBOX e não são pagáveis; no Inter (só sandbox do banco) vêm do banco, com o Pix do boleto híbrido.
       properties:
         id: { type: integer }
         condominium_id: { type: integer }
         bank_account_id: { type: integer }
         entry_id: { type: integer }
-        adapter: { type: string, example: sandbox }
+        adapter: { type: string, enum: [sandbox, inter], example: sandbox }
+        bank_our_number: { type: string, nullable: true, description: 'Nosso número atribuído pelo banco (Inter)' }
+        pix_copy_paste: { type: string, nullable: true, description: 'Pix copia e cola do boleto híbrido (Inter)' }
+        pdf_available: { type: boolean, description: 'GET /bank-charges/{id}/pdf disponível' }
         status: { type: string, enum: [pending, registered, rejected, paid, cancelled] }
         status_label: { type: string }
         our_number: { type: string, example: '0000000001' }
@@ -893,6 +896,57 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: 'Pago, recusado, já cancelado ou cancelamento não confirmado pelo banco' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /bank-charges/{id}/pdf:
+    get:
+      operationId: getBankChargePdf
+      summary: PDF do boleto direto do banco, quando o adaptador oferece (Inter; erp.bank_charges.view)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Boleto não registrado ou banco sem PDF (sandbox interno)' }
+        '502': { description: 'O banco não devolveu o PDF agora' }
+  /webhooks/bank/{adapter}/{secret}:
+    post:
+      operationId: receiveBankWebhook
+      summary: Notificação de cobrança enviada pelo banco (ADR 0156)
+      description: >-
+        Chamado pelo banco, sem sessão. O segredo do endereço identifica a conta bancária (mostrado uma
+        vez por tools/bank-credentials.php). O corpo não é confiável: só os códigos das cobranças são
+        lidos e cada uma é consultada no banco antes de mudar estado. Mesma entrega processada = 200
+        sem efeito. No servidor, o proxy deve exigir o certificado do banco (mTLS) e liberar só os IPs dele.
+      security: []
+      parameters:
+        - { name: adapter, in: path, required: true, schema: { type: string, enum: [inter] } }
+        - { name: secret, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{48}$' } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: array, items: { type: object, properties: { codigoSolicitacao: { type: string }, seuNumero: { type: string }, situacao: { type: string } } } } } }
+      responses:
+        '200': { description: 'Processada (ou repetida)' }
+        '400': { description: 'Corpo malformado' }
+        '404': { description: 'Endereço desconhecido' }
+        '413': { description: 'Corpo vazio ou maior que 256 KB' }
+        '503': { description: 'Banco sem resposta na consulta; o banco deve reenviar' }
+  /bank-remittances:
+    get:
+      operationId: listBankRemittances
+      summary: Remessas (AP-037) - boletos enviados ao banco agrupados por conta bancária e dia (erp.bank_charges.view)
+      description: Com o Inter o registro é online, sem arquivo; o lote mostra o envio e a confirmação do banco.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [confirmed, sent, rejected] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { bank_account_id: { type: integer }, bank_account_name: { type: string }, sent_on: { type: string, format: date }, adapter: { type: string }, mode: { type: string }, charges_count: { type: integer }, total_cents: { type: integer }, confirmed_count: { type: integer }, pending_count: { type: integer }, rejected_count: { type: integer }, cancelled_count: { type: integer }, status: { type: string, enum: [confirmed, sent, rejected] }, status_label: { type: string } } } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /bank-returns:
     get:
       operationId: listBankReturns

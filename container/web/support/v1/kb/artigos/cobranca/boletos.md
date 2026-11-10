@@ -6,9 +6,9 @@ categoria: cobranca
 rota: /cobranca/boletos
 menu: Cobrança > Boletos
 icone: list-outline
-relacionados: faturas, arquivo-de-retorno, retornos, acordos
+relacionados: faturas, arquivo-de-retorno, retornos, acordos, remessas, banco-inter
 situacao: funciona
-palavras: boletos, cobrança, AP-035
+palavras: boletos, cobrança, AP-035, inter, pix, pdf, boleto híbrido
 manual: sim
 rascunho: nao
 ---
@@ -54,6 +54,19 @@ recorte: dialog[open]
 >! Enquanto o banco estiver em modo de teste, os boletos são de homologação e não valem para pagamento.
 
 O pagamento é baixado automaticamente quando o [arquivo de retorno](artigo:arquivo-de-retorno) do banco é importado.
+
+## Boletos pelo Banco Inter
+
+Quando a conta bancária de cobrança é do Banco Inter e a integração está ligada (veja [Ligar a cobrança pelo Banco Inter](artigo:banco-inter)), o boleto é registrado direto no Inter:
+
+- O boleto já sai **com Pix** (boleto híbrido). Na linha do boleto, {{Pix}} copia o Pix copia e cola e {{PDF}} abre o boleto do banco.
+- O **pagador** é o responsável financeiro da unidade ou, se não houver, o proprietário. Ele precisa ter **CPF ou CNPJ** no cadastro, e o condomínio precisa ter o endereço completo (CEP, rua, cidade e UF). Sem isso, o boleto fica **Recusado** com o motivo, sem ir ao banco.
+- Multa e juros vêm da régua de cobrança do condomínio.
+- O registro no Inter leva alguns segundos. Se o boleto ficar **Aguardando banco**, clique em {{Consultar}}.
+- A **baixa é automática**: quando o banco avisa um pagamento, o sistema consulta o boleto no Inter e dá baixa na conta a receber. Pagamento com valor diferente, ou de boleto já pago ou cancelado, vai para a fila de divergências em [Retornos](artigo:retornos), nunca é baixado sozinho.
+- Boleto cancelado ou vencido sem pagamento no Inter aparece como **Cancelado** e libera um boleto novo para a mesma conta a receber.
+
+>! Por enquanto o Inter está ligado só no **ambiente de testes do banco** (sandbox). Esses boletos não podem ser pagos.
 
 
 ## Como usar

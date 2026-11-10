@@ -15,7 +15,7 @@ use Source\Services\Erp\Banking\BankAdapters;
 /**
  * Integrações (AP-171, ADR 0091): só leitura. Mostra o estado de cada integração do ERP sem expor
  * credencial, endereço, host ou valor de ambiente; nada aqui liga, desliga ou testa conexão externa.
- * - banco: os adaptadores disponíveis (hoje só o sandbox, ADR 0035). Banco real depende de homologação;
+ * - banco: os adaptadores disponíveis (sandbox, ADR 0035, e Inter só sandbox, ADR 0156). Produção depende de homologação;
  * - e-mail: o modo efetivo da entrega (log, sandbox ou production, NotificationDispatcher::deliveryMode)
  *   e se há caixa de teste configurada, sem mostrar o endereço;
  * - índices de correção: a última competência carregada de cada índice e se está atrasada;
@@ -71,11 +71,11 @@ final class IntegrationStatus
             }
         }
         $banks = [];
-        foreach (['sandbox'] as $name) {
-            $banks[] = ['adapter' => $name, 'available' => BankAdapters::get($name) instanceof Banking\BankAdapter, 'production' => false];
-        }
+        $banks[] = ['adapter' => 'sandbox', 'available' => BankAdapters::get('sandbox') instanceof Banking\BankAdapter, 'production' => false];
+        // Inter (ADR 0156): disponível quando o cofre tem chave; só o ambiente sandbox do Inter.
+        $banks[] = ['adapter' => 'inter', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
         return [
-            'bank' => ['adapters' => $banks, 'note' => 'Banco real só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
+            'bank' => ['adapters' => $banks, 'note' => 'Inter ligado só no sandbox do banco (ADR 0156). Produção só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
             'mail' => self::mail(defined('CONF_APP_ENV') ? (string)CONF_APP_ENV : 'development', getenv('ERP_MAIL_DELIVERY') ?: 'log', getenv('ERP_MAIL_SANDBOX_TO') ?: null),
             'price_indexes' => $indexes,
             'outbox' => $outbox,

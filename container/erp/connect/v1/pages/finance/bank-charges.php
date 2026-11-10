@@ -3,7 +3,7 @@
  * Boletos (AP-035, ADR 0035 e 0038) com dados reais: lista ($bankCharges, de Panel::bankingData, no
  * contexto da barra superior), filtro por situação e as ações pela API /api/v1/bank-charges (erp.js,
  * data-erp-bank-charges): emitir de uma conta a receber em aberto, consultar no banco, cancelar e
- * copiar a linha digitável. Só o adaptador de sandbox existe: nada aqui é pagável.
+ * copiar a linha digitável ou o Pix e abrir o PDF (Inter, ADR 0156). Só ambientes de teste: nada aqui é pagável.
  * @var array $currentPage @var array $bankCharges @var bool $canManageCharges @var list<array> $condoOptions
  */
 $this->layout('default');
@@ -31,11 +31,11 @@ ob_start(); ?>
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
     'pageTitle' => $currentPage['name'],
-    'pageLead' => 'Boletos das contas a receber das unidades: registro no banco, consulta, cancelamento e baixa pelo arquivo de retorno.',
+    'pageLead' => 'Boletos das contas a receber das unidades: registro no banco, consulta, cancelamento e baixa pelo arquivo de retorno ou pelo aviso do banco.',
     'pageActions' => $actions,
 ]);
 ?>
-<div class="erp-alert erp-alert--warning" role="note"><div><strong>Ambiente de testes.</strong> Só o banco de testes (sandbox) está ligado: a linha digitável começa com SANDBOX e não pode ser paga. Nenhum banco real recebe estes títulos.</div></div>
+<div class="erp-alert erp-alert--warning" role="note"><div><strong>Ambiente de testes.</strong> Só bancos de teste estão ligados: o sandbox interno (linha digitável começa com SANDBOX) e o sandbox do Banco Inter. Nenhum destes boletos pode ser pago e nenhum banco real recebe estes títulos.</div></div>
 <div class="erp-stack" data-erp-bank-charges data-api="<?= $this->e(url('/api/v1/bank-charges')) ?>" data-entries-api="<?= $this->e(url('/api/v1/entries')) ?>" data-accounts-api="<?= $this->e(url('/api/v1/bank-accounts')) ?>">
     <?= csrf_input() ?>
     <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Filtrar boletos">
@@ -55,13 +55,15 @@ $this->insert('components/layout/page-head', [
                 <thead><tr><th>Nosso número</th><th>Vencimento</th><th class="is-num">Valor</th><th>Linha digitável</th><th>Situação</th><th class="is-num">Ações</th></tr></thead>
                 <tbody><?php foreach ($rows as $charge): $status = (string)$charge['status']; $open = in_array($status, ['pending', 'registered'], true); ?>
                     <tr>
-                        <td><strong><?= $this->e((string)$charge['our_number']) ?></strong><small class="erp-muted"><?= $context === null ? $this->e($condoNames[(int)$charge['condominium_id']] ?? ('Condomínio nº ' . (int)$charge['condominium_id'])) . ' · ' : '' ?>lançamento nº <?= (int)$charge['entry_id'] ?></small></td>
+                        <td><strong><?= $this->e((string)$charge['our_number']) ?></strong><small class="erp-muted"><?= $context === null ? $this->e($condoNames[(int)$charge['condominium_id']] ?? ('Condomínio nº ' . (int)$charge['condominium_id'])) . ' · ' : '' ?>lançamento nº <?= (int)$charge['entry_id'] ?><?= $charge['adapter'] === 'inter' ? ' · Banco Inter' . (!empty($charge['bank_our_number']) ? ' nº ' . $this->e((string)$charge['bank_our_number']) : '') : '' ?></small></td>
                         <td><?= $this->e($date((string)$charge['due_on'])) ?><?php if ($status === 'paid'): ?><small class="erp-muted">pago <?= $this->e($date($charge['paid_on'])) ?></small><?php endif; ?></td>
                         <td class="is-num"><?= $brl((int)$charge['amount_cents']) ?><?php if ($status === 'paid' && $charge['paid_cents'] !== null && (int)$charge['paid_cents'] !== (int)$charge['amount_cents']): ?><small class="erp-muted">pago <?= $brl((int)$charge['paid_cents']) ?></small><?php endif; ?></td>
                         <td class="erp-charge-line"><?php if (!empty($charge['digitable_line'])): ?><code><?= $this->e((string)$charge['digitable_line']) ?></code><?php else: ?><span class="erp-muted">—</span><?php endif; ?><?php if (!empty($charge['last_error'])): ?><small class="erp-muted"><?= $this->e((string)$charge['last_error']) ?></small><?php endif; ?></td>
                         <td><span class="erp-badge erp-badge--<?= $tones[$status] ?? 'plain' ?>"><?= $this->e((string)$charge['status_label']) ?></span></td>
                         <td class="is-num erp-invoice-actions"><div class="erp-table__actions">
                             <?php if (!empty($charge['digitable_line']) && $status === 'registered'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--ghost" data-charge-copy="<?= $this->e((string)$charge['digitable_line']) ?>" title="Copiar a linha digitável"><?= $icon('clipboard', 'erp-icon--sm') ?><span class="erp-sr-only">Copiar linha digitável</span></button><?php endif; ?>
+                            <?php if (!empty($charge['pix_copy_paste']) && $status === 'registered'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--ghost" data-charge-copy="<?= $this->e((string)$charge['pix_copy_paste']) ?>" data-copy-label="o Pix copia e cola" title="Copiar o Pix copia e cola">Pix<span class="erp-sr-only"> copia e cola</span></button><?php endif; ?>
+                            <?php if (!empty($charge['pdf_available'])): ?><a class="erp-btn erp-btn--sm erp-btn--ghost" href="<?= $this->e(url('/api/v1/bank-charges/' . (int)$charge['id'] . '/pdf')) ?>" target="_blank" rel="noopener" title="Abrir o PDF do boleto">PDF</a><?php endif; ?>
                             <?php if ($canManageCharges && $open): ?><button type="button" class="erp-btn erp-btn--sm" data-charge-refresh="<?= (int)$charge['id'] ?>">Consultar</button><?php endif; ?>
                             <?php if ($canManageCharges && $open): ?><button type="button" class="erp-btn erp-btn--sm" data-charge-cancel="<?= (int)$charge['id'] ?>" data-label="<?= $this->e((string)$charge['our_number']) ?>">Cancelar</button><?php endif; ?>
                         </div></td>
