@@ -87,13 +87,22 @@ final class AccountingReports
             $accounts[$key] ??= self::account((string)$line['code'], (string)$line['name'], (string)$line['nature'], 0);
             $accounts[$key]['name'] = (string)$line['name'];
             $cents = (int)$line['cents'];
-            $debit = $line['nature'] === 'despesa' ? $cents : 0;
-            $credit = $line['nature'] === 'receita' ? $cents : 0;
+            if (isset($line['side'])) {
+                // Lançamento patrimonial (ADR 0169): o lado vem do lançamento e o saldo cresce na natureza da conta.
+                $debit = $line['side'] === 'debit' ? $cents : 0;
+                $credit = $line['side'] === 'credit' ? $cents : 0;
+                $delta = PatrimonialEntries::signed((string)$line['nature'], (string)$line['side'], $cents);
+            } else {
+                $debit = $line['nature'] === 'despesa' ? $cents : 0;
+                $credit = $line['nature'] === 'receita' ? $cents : 0;
+                $delta = $cents;
+            }
             $accounts[$key]['debit_cents'] += $debit;
             $accounts[$key]['credit_cents'] += $credit;
-            $accounts[$key]['closing_cents'] += $cents;
-            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'on_date' => $line['on_date'], 'competence' => $line['competence'],
-                'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit, 'balance_cents' => $accounts[$key]['closing_cents']];
+            $accounts[$key]['closing_cents'] += $delta;
+            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'source' => isset($line['side']) ? 'patrimonial' : 'entry', 'on_date' => $line['on_date'],
+                'competence' => $line['competence'], 'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit,
+                'balance_cents' => $accounts[$key]['closing_cents']];
         }
         $order = ['receita' => 0, 'despesa' => 1, 'asset' => 2, 'liability' => 3, 'equity' => 4];
         uasort($accounts, static fn (array $a, array $b): int => [$order[$a['nature']] ?? 5, self::sortable($a['code'])]
@@ -175,6 +184,28 @@ final class AccountingReports
             ORDER BY a.code, {$date}, e.id LIMIT " . (self::MAX_LINES + 1));
         $stmt->execute($params + $codeParams);
         $lines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Lançamentos patrimoniais (ADR 0169): cada lado (débito e crédito) é uma linha da sua conta, pela data do
+        // lançamento nas duas bases. O que vem antes do saldo inicial (AP-161) da conta fica de fora, como nos demais.
+        foreach (['debit' => 'debit_account_id', 'credit' => 'credit_account_id'] as $side => $column) {
+            $join = "FROM erp_patrimonial_entries m JOIN erp_chart_accounts a ON a.id = m.{$column}
+                LEFT JOIN erp_chart_account_openings o ON o.condominium_id = m.condominium_id AND o.chart_account_id = a.id AND o.opened_on <= :fo
+                WHERE m.condominium_id IN ({$in}) AND (o.chart_account_id IS NULL OR m.entry_date >= o.opened_on){$codeSql}";
+            $prior = $this->pdo->prepare("SELECT a.code, a.name, a.nature, SUM(m.amount_cents) AS cents {$join} AND m.entry_date < :fd GROUP BY a.code, a.name, a.nature");
+            $prior->execute(['fo' => $from, 'fd' => $from] + $codeParams);
+            foreach ($prior->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $key = $row['nature'] . '|' . $row['code'];
+                $opening[$key] = ($opening[$key] ?? 0) + PatrimonialEntries::signed((string)$row['nature'], $side, (int)$row['cents']);
+                $names[$key] = (string)$row['name'];
+            }
+            $period = $this->pdo->prepare("SELECT a.code, a.name, a.nature, m.id, m.entry_date AS on_date, NULL AS competence, m.description, m.amount_cents AS cents
+                {$join} AND m.entry_date BETWEEN :fd AND :td ORDER BY a.code, m.entry_date, m.id LIMIT " . (self::MAX_LINES + 1));
+            $period->execute(['fo' => $from, 'fd' => $from, 'td' => $to] + $codeParams);
+            foreach ($period->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $lines[] = $row + ['side' => $side];
+            }
+        }
+        usort($lines, static fn (array $a, array $b): int => [self::sortable((string)$a['code']), (string)$a['on_date'], isset($a['side']) ? 1 : 0, (int)$a['id']]
+            <=> [self::sortable((string)$b['code']), (string)$b['on_date'], isset($b['side']) ? 1 : 0, (int)$b['id']]);
         $truncated = count($lines) > self::MAX_LINES;
         return $base + ['truncated' => $truncated, 'accounts' => self::ledgerAccounts($opening, array_slice($lines, 0, self::MAX_LINES), $names)];
     }

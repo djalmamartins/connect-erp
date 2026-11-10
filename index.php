@@ -100,6 +100,10 @@ $route->get("/erp-users/{id}/permissions", "ErpAdmin:userPermissions", null, \So
 $route->post("/erp-users/{id}/permissions", "ErpAdmin:setUserPermission", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/erp-permissions", "ErpAdmin:permissions", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/erp-permissions", "ErpAdmin:setRolePermission", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0169: lançamentos patrimoniais com partida dobrada (fundos e PL)
+$route->get("/patrimonial-entries", "PatrimonialEntries:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/patrimonial-entries", "PatrimonialEntries:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/patrimonial-entries/{id}/reverse", "PatrimonialEntries:reverse", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);

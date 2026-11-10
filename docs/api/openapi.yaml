@@ -1310,6 +1310,74 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-entries:
+    get:
+      operationId: patrimonialEntries
+      summary: Lançamentos patrimoniais (fundos e PL, contas 7/8/9) do período (erp.entries.view e erp.chart.view, ADR 0169)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, truncated, rows[], totals{entries, amount_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: createPatrimonialEntry
+      summary: Lança débito e crédito entre contas patrimoniais analíticas do mesmo condomínio (erp.entries.manage, ADR 0169)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, description, amount_cents, debit_account_id, credit_account_id]
+              properties:
+                condominium_id: { type: integer }
+                entry_date: { type: string, format: date, description: 'Até hoje; padrão hoje' }
+                description: { type: string, minLength: 3, maxLength: 255 }
+                amount_cents: { description: 'Inteiro em centavos ou texto como "1.234,56"; positivo' }
+                debit_account_id: { type: integer }
+                credit_account_id: { type: integer }
+                bank_account_id: { type: integer, nullable: true }
+                linked_entry_id: { type: integer, nullable: true }
+      responses:
+        '201': { description: '{ data: linha como no GET }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-entries/{id}/reverse:
+    post:
+      operationId: reversePatrimonialEntry
+      summary: Estorna um lançamento patrimonial com motivo (erp.entries.manage, ADR 0169)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3, maxLength: 255 }
+                date: { type: string, format: date, description: 'Padrão hoje; não antes do original' }
+      responses:
+        '200': { description: '{ data: { original, reversal } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já estornado, é um estorno ou competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/statement:
     get:
       operationId: financialStatement
