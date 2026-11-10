@@ -11,7 +11,7 @@ if (!in_array($mode, ['status', 'apply', 'baseline', 'rollback'], true)) {
 
 $envFile = $root . '/.env';
 if (is_file($envFile)) {
-    foreach (parse_ini_file($envFile, false, INI_SCANNER_RAW) ?: [] as $key => $value) {
+    foreach (parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($envFile)), false, INI_SCANNER_RAW) ?: [] as $key => $value) {
         if (getenv((string)$key) === false) putenv($key . '=' . (string)$value);
     }
 }

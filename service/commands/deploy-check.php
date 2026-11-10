@@ -25,7 +25,7 @@ $envFile = $root . '/.env';
 if (!is_file($envFile)) {
     $fail('.env não encontrado.');
 } else {
-    $env = parse_ini_file($envFile, false, INI_SCANNER_RAW) ?: [];
+    $env = parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($envFile)), false, INI_SCANNER_RAW) ?: [];
     foreach (['APP_ENV', 'APP_URL', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'] as $key) {
         array_key_exists($key, $env) ? $ok("{$key} configurado") : $fail("Variável ausente no .env: {$key}");
     }

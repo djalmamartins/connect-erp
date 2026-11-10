@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0167.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0167, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0168.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0168, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -156,3 +156,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0164](../Organic%20Code/decisions/0164-demo-pages-inventory-annual-balance.md) | Inventário das páginas em demonstração (docs/process/PAGINAS-EXEMPLO.md) e API do Balancete Anual GET /api/v1/reports/annual-balance (competência ou caixa, escopo, LIMIT, CSV com limite de 30/h) |
 | [0165](../Organic%20Code/decisions/0165-accounting-reports.md) | Relatórios contábeis: Livro Razão (/reports/ledger), Saldos de Contas (/reports/account-balances) e DRE (/reports/income-statement), com competência ou caixa, escopo, LIMIT e CSV; Balanço Patrimonial pendente (plano de contas sem natureza patrimonial) |
 | [0166](../Organic%20Code/decisions/0166-accountability-deliveries-chart-openings.md) | Prestação de contas mensal (AP-101) montada dos relatórios existentes, registros de entregas com baixa da retirada (AP-136) e saldo inicial do plano de contas só em conta analítica (AP-161) |
+| [0167](../Organic%20Code/decisions/0167-balance-sheet.md) | Balanço Patrimonial (AP-081) calculado na data a partir dos saldos bancários, contas a receber e a pagar, saldo inicial (AP-161) e DRE, com a diferença exposta; naturezas patrimoniais no plano (7/8/9) e o saldo inicial como abertura do Livro Razão |

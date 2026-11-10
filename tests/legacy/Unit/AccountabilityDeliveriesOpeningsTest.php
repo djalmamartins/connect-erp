@@ -216,7 +216,7 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
         self::assertSame([1000, 1000, 300, 500, -200], array_column($tree['rows'], 'amount_cents'), 'Sintética = soma das analíticas.');
         self::assertSame([false, true], [$tree['rows'][2]['analytic'], $tree['rows'][3]['analytic']]);
         self::assertSame([null, 4], [$tree['rows'][2]['chart_account_id'], $tree['rows'][3]['chart_account_id']]);
-        self::assertSame(['revenue_cents' => 1000, 'expense_cents' => 300, 'total_cents' => 1300], $tree['totals']);
+        self::assertSame(['revenue_cents' => 1000, 'expense_cents' => 300, 'asset_cents' => 0, 'liability_cents' => 0, 'equity_cents' => 0, 'total_cents' => 1300], $tree['totals']);
 
         $service = new ChartOpenings($this->pdo, new CondominiumScope($this->pdo));
         $service->set($this->user(), 1, 4, '2026-01-01', '1.234,56', ' saldo de abertura ');
