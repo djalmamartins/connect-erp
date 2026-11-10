@@ -219,7 +219,7 @@ cadastro) usam todos o mesmo motor: lista, novo, editar e excluir, com a defini�
 | Código | Página | Endereço | Estado | Arquivo de referência |
 |---|---|---|---|---|
 | AP-004 | Condomínios | `/condominios` | ✅ Funciona (tela própria) | `source/Controllers/Erp/Connect/Condominiums.php` |
-| AP-002 | Painel do condomínio | `/condominios/painel-do-condominio` | ✅ Funciona (tela própria) | `container/erp/connect/v1/pages/condominiums/panel.php` |
+| AP-002 | Painel do condomínio | `/condominios` (visão geral) | ✅ Funciona (fundido na visão geral, ADR 0154; a rota antiga redireciona) | `container/erp/connect/v1/pages/condominiums/show.php` |
 | AP-003 | Painel da unidade | `/condominios/painel-da-unidade` | ✅ Funciona (tela própria) | `container/erp/connect/v1/pages/condominiums/unit-panel.php` |
 | AP-006 | Unidades | `/condominios/unidades` | ✅ Funciona (cadastro) | `source/Services/Erp/Registry/Definitions.php` (`units`) |
 | AP-008 | Áreas Comuns | `/condominios/areas-comuns` | ✅ Funciona (cadastro) | `source/Services/Erp/Registry/Definitions.php` (`common_areas`) |

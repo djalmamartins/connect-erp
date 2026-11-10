@@ -47,6 +47,8 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/condominios", "Condominiums:index");
     // Cadastro e edição (ADR 0011) e checklist de chegada (ADR 0013). /novo antes das páginas
     // do catálogo; as rotas /{id}/... têm mais segmentos e não colidem com /condominios/unidades.
+    // O antigo "Painel do condomínio" (AP-002) foi fundido na visão geral (ADR 0154): links antigos voltam para ela.
+    $route->get("/condominios/painel-do-condominio", "Condominiums:panelRedirect");
     $route->get("/condominios/novo", "Condominiums:create");
     $route->post("/condominios/novo", "Condominiums:store");
     $route->get("/condominios/{id}/editar", "Condominiums:edit");

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Erp\Connect;
 
+use Source\Core\Connect;
 use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
@@ -13,7 +14,11 @@ use Source\Services\CondominiumRegistry;
 use Source\Services\CondominiumScope;
 use Source\Services\CondominiumValidator;
 use Source\Services\Erp\CondominiumSetup;
+use Source\Services\Erp\PanelSummaries;
+use Source\Services\Erp\Registry\RegistryForbidden;
+use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Access;
+use Source\Support\AppLogger;
 use Source\Support\Erp\CondominiumContext;
 
 /**
@@ -51,7 +56,7 @@ final class Condominiums extends Controller
             return;
         }
         echo $this->view->render('pages/condominiums/index', $this->layoutData($user, 'Condomínios', [
-            'condominiums' => (new CondominiumScope())->allowed($user),
+            'condominiums' => (new CondominiumScope())->listing($user),
             'condoOptionsById' => array_column(CondominiumContext::options(), null, 'id'),
         ]));
     }
@@ -111,7 +116,11 @@ final class Condominiums extends Controller
         redirect(url(erp_base() . '/condominios?' . CondominiumContext::FILTER_PARAM . '=' . $id));
     }
 
-    /** Visão geral: dados completos do cadastro, passos do cadastro e atalhos (ADR 0151). */
+    /**
+     * Visão geral única do condomínio (ADR 0151 e 0154): passos do cadastro em cima, indicadores e
+     * rotina do antigo "Painel do condomínio" (AP-002, PanelSummaries, o mesmo serviço de
+     * GET /api/v1/panels/condominium/{id}), identificação no centro e cadastros na lateral.
+     */
     private function overview(User $user, int $id): void
     {
         $condominium = (new CondominiumRegistry())->find($user, $id);
@@ -128,7 +137,37 @@ final class Condominiums extends Controller
                 'steps' => (new CondominiumSetup())->steps($user, $id),
                 'current' => null,
             ],
-        ]));
+        ] + $this->panelData($user, $id)));
+    }
+
+    /**
+     * Indicadores do condomínio (antigo AP-002, fundido na visão geral pelo ADR 0154). Sem banco ou
+     * sem erp.units.view, condoPanel fica null e a tela mostra só o cadastro; perfil sem acesso ao
+     * financeiro ou ao fechamento recebe um aviso em vez dos números.
+     */
+    private function panelData(User $user, int $id): array
+    {
+        $data = ['condoPanel' => null, 'condoPanelError' => null];
+        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
+            return $data;
+        }
+        try {
+            $data['condoPanel'] = (new PanelSummaries())->condominium($user, $id);
+        } catch (RegistryForbidden) {
+            $data['condoPanelError'] = 'Seu perfil não tem permissão para todos os indicadores do condomínio (financeiro e fechamento).';
+        } catch (RegistryNotFound) {
+            $data['condoPanelError'] = 'Condomínio fora do seu escopo de acesso.';
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'condominium_panel_failed']);
+            $data['condoPanelError'] = 'Não foi possível carregar os indicadores agora. Tente de novo em instantes.';
+        }
+        return $data;
+    }
+
+    /** GET /condominios/painel-do-condominio: a página foi fundida na visão geral (ADR 0154). */
+    public function panelRedirect(): void
+    {
+        redirect(erp_url('/condominios'));
     }
 
     private function guideAllowed(User $user, int $id, array $data): bool

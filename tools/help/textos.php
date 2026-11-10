@@ -19,12 +19,6 @@ return [
         'botoes' => ['Comunicado rápido' => 'abre o envio de um comunicado por e-mail para as unidades do condomínio escolhido.'],
         'palavras' => ['início', 'painel', 'resumo', 'alertas', 'agenda'],
     ],
-    'AP-002' => [
-        'titulo' => 'Painel do condomínio',
-        'para' => 'O painel reúne num só lugar a situação de um condomínio: unidades, saldo nos bancos, inadimplência, resultado do mês e os alertas. Use antes de uma reunião com o síndico ou para conferir rapidamente como o condomínio está.',
-        'botoes' => ['Ficha do condomínio' => 'abre o cadastro completo do condomínio, com endereço, CNPJ, contas e documentos.'],
-        'dicas' => ['Os números vêm dos cadastros e dos lançamentos. Se algo parecer errado, confira o lançamento na origem.'],
-    ],
     'AP-003' => [
         'titulo' => 'Painel da unidade',
         'para' => 'Tudo de uma unidade em uma tela: quem mora e quem é o responsável financeiro, débitos em aberto, acordos, documentos emitidos e a rotina (reservas, ocorrências, entregas). Ideal para atender um morador ao telefone.',
