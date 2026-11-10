@@ -1969,6 +1969,36 @@
     });
   });
 
+  /* CN-004: artigos da Central de Ajuda sugeridos pelo assunto do chamado (ADR 0153). ----- */
+  $$('[data-erp-help-suggest]').forEach(function (box) {
+    var input = document.getElementById(box.getAttribute('data-for'));
+    if (!input) return;
+    var call = apiClient(box);
+    var timer = null;
+    var last = '';
+    var render = function (items) {
+      if (!items.length) { box.hidden = true; box.innerHTML = ''; return; }
+      box.innerHTML = '<p class="erp-help-suggest__title">Talvez a Central de Ajuda já resolva:</p><ul>'
+        + items.map(function (item) {
+          return '<li><a href="' + esc(item.url) + '" target="_blank" rel="noopener"><strong>' + esc(item.title) + '</strong>'
+            + (item.summary ? '<small>' + esc(item.summary) + '</small>' : '') + '</a></li>';
+        }).join('') + '</ul><p class="erp-help-suggest__hint">Se não resolver, siga com o chamado normalmente.</p>';
+      box.hidden = false;
+    };
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        var q = input.value.trim();
+        if (q.length < 4) { render([]); last = ''; return; }
+        if (q === last) return;
+        last = q;
+        call('GET', box.getAttribute('data-api') + '?limit=4&q=' + encodeURIComponent(q))
+          .then(function (json) { if (last === q) render(json.data || []); })
+          .catch(function () { render([]); });
+      }, 400);
+    });
+  });
+
   /* AP-112: ocorrência abre chamado no Help Desk (ADR 0051 e 0070). ------------- */
   $$('[data-erp-occurrence-ticket]').forEach(function (box) {
     var button = $('[data-ticket-open]', box);

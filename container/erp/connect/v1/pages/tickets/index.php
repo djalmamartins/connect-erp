@@ -71,6 +71,8 @@ $this->insert('components/layout/page-head', [
             <label for="tk-subject">Assunto <span aria-hidden="true" style="color:var(--erp-danger)">*</span></label>
             <input class="erp-input" id="tk-subject" name="subject" maxlength="180" required value="<?= $this->e($value('subject')) ?>"<?= $invalid('subject', 'tk-subject') ?>>
             <span class="erp-field__error" id="tk-subject-error"><?= $this->e($error('subject')) ?></span>
+            <?php /* Central de Ajuda (ADR 0153): artigos sugeridos pelo assunto, antes de abrir o chamado. */ ?>
+            <div class="erp-help-suggest" data-erp-help-suggest data-api="<?= $this->e(url('/api/v1/help/articles')) ?>" data-for="tk-subject" aria-live="polite" hidden></div>
         </div>
         <div class="erp-field erp-col-12">
             <label for="tk-message">Descrição <span aria-hidden="true" style="color:var(--erp-danger)">*</span></label>

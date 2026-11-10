@@ -126,8 +126,24 @@ class Studio extends Controller
             "recentPosts" => (new Post())->find()->order("id DESC")->limit(5)->fetch(true) ?: [],
             "recentUsers" => (new User())->find()->order("id DESC")->limit(4)->fetch(true) ?: [],
             "accessDays" => (new Access())->find()->order("created_at DESC")->limit(7)->fetch(true) ?: [],
-            "onlineCount" => (new Online())->findByActive(true) ?: 0
+            "onlineCount" => (new Online())->findByActive(true) ?: 0,
+            // Painel de atendimento (ADR 0153): o Studio mostra a fila do Help Desk e leva ao ERP.
+            "supportSummary" => $this->dashSupportSummary($user),
+            "erpLink" => \Source\Support\Access::can("erp.access", $user) ? \Source\Services\Environments::href("erp") : null,
+            "helpdeskLink" => \Source\Support\Access::can("support.manage", $user) ? \Source\Services\Environments::href("helpdesk") : null,
         ]));
+    }
+
+    /** Resumo da fila do Help Desk para quem atende; null sem permissão ou se a consulta falhar. */
+    private function dashSupportSummary(User $user): ?array
+    {
+        if (!AccessControl::can("support.manage", $user)) { return null; }
+        try {
+            return (new \Source\Services\Support\TicketService())->queueSummary();
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, "tickets", ["event_type" => "ticket_summary_failed", "users_id" => (int)$user->id]);
+            return null;
+        }
     }
 
     public function search(): void
@@ -2028,6 +2044,20 @@ class Studio extends Controller
         $host = strtolower((string)parse_url($link, PHP_URL_HOST));
         $systemHost = strtolower((string)parse_url(url(), PHP_URL_HOST));
         return in_array($scheme, ["http", "https"], true) && $host !== "" && hash_equals($systemHost, $host) ? $link : null;
+    }
+
+    /** GET /helpdesk/tickets/artigos?q= — artigos da Central de Ajuda para colar na resposta (ADR 0153). */
+    public function ticketArticles(): void
+    {
+        $user = $this->guard("support.manage");
+        header("Content-Type: application/json; charset=utf-8");
+        header("Cache-Control: no-store, private");
+        try {
+            echo json_encode(["data" => (new \Source\Services\Support\HelpSuggestions())->search((string)($_GET["q"] ?? ""), 8, true)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, "support", ["event_type" => "help_suggestions_failed", "users_id" => (int)$user->id]);
+            echo json_encode(["data" => []]);
+        }
     }
 
     /** Aviso ao solicitante do chamado; falha no aviso não desfaz a resposta. */

@@ -45,6 +45,28 @@ $actions = [
     <?php endforeach; ?>
 </section>
 
+<?php if (!empty($supportSummary)): $priorityLabels = \Source\Services\Support\TicketService::PRIORITY_LABELS; $statusLabels = \Source\Services\Support\TicketService::STATUS_LABELS; ?>
+<section class="cx-card cx-support" aria-labelledby="cx-support-title">
+    <header class="cx-card__head"><div><h2 id="cx-support-title">Atendimento</h2><p>Fila do Help Desk, com os chamados que chegam do ERP, do site e da API</p></div>
+        <div class="studio-page-actions"><?php if (!empty($erpLink)): ?><a class="studio-btn ghost" href="<?= htmlspecialchars($erpLink) ?>"><ion-icon name="business-outline"></ion-icon>Abrir o ERP</a><?php endif; ?><?php if (!empty($helpdeskLink)): ?><a class="studio-btn primary" href="<?= htmlspecialchars($helpdeskLink) ?>"><ion-icon name="headset-outline"></ion-icon>Fila do Help Desk</a><?php endif; ?></div></header>
+    <div class="cx-support__counts">
+        <a href="<?= url('/helpdesk/tickets') ?>"><strong><?= $fmt((int)$supportSummary['open']) ?></strong><span>Novos e em atendimento</span></a>
+        <a href="<?= url('/helpdesk/tickets?due=overdue') ?>" class="<?= $supportSummary['overdue'] > 0 ? 'is-alert' : '' ?>"><strong><?= $fmt((int)$supportSummary['overdue']) ?></strong><span>SLA vencido</span></a>
+        <a href="<?= url('/helpdesk/tickets?status=waiting_customer') ?>"><strong><?= $fmt((int)$supportSummary['waiting']) ?></strong><span>Aguardando cliente</span></a>
+        <a href="<?= url('/helpdesk/tickets?origin=erp') ?>"><strong><?= $fmt((int)$supportSummary['erp_week']) ?></strong><span>Do ERP em 7 dias</span></a>
+    </div>
+    <?php if ($supportSummary['latest']): ?>
+        <ul class="cx-support__list">
+            <?php foreach ($supportSummary['latest'] as $ticket): $late = strtotime($ticket['due_at']) < time(); ?>
+                <li><a href="<?= url('/helpdesk/tickets?ticket=' . (int)$ticket['id']) ?>"><span class="studio-ticket-priority <?= htmlspecialchars($ticket['priority']) ?>"><i></i><?= htmlspecialchars($priorityLabels[$ticket['priority']] ?? $ticket['priority']) ?></span><strong><?= htmlspecialchars($ticket['protocol']) ?> · <?= htmlspecialchars($ticket['subject']) ?></strong><small><?= htmlspecialchars($ticket['context'] !== '' ? $ticket['context'] : 'Sem condomínio') ?> · <?= htmlspecialchars($statusLabels[$ticket['status']] ?? $ticket['status']) ?><?= $late ? ' · <em>vencido</em>' : '' ?></small></a></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <div class="cx-empty"><ion-icon name="checkmark-done-outline"></ion-icon><p>Nenhum chamado em aberto.</p></div>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
 <section class="cx-grid">
     <article class="cx-card cx-col-8">
         <header class="cx-card__head"><div><h2>Acessos ao site</h2><p>Páginas vistas por dia<?= $totalUsers ? ' · ' . $fmt($totalUsers) . ' visitantes no período' : '' ?></p></div><?php if ($user->can('reports.view')): ?><a class="studio-btn ghost" href="<?= url('/studio/reports') ?>">Relatórios</a><?php endif; ?></header>
