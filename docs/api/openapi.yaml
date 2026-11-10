@@ -971,6 +971,27 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/annual-balance:
+    get:
+      operationId: annualBalance
+      summary: Balancete Anual por conta e mês (erp.entries.view e erp.chart.view, ADR 0164)
+      description: >-
+        Por conta do plano de contas, o valor de cada mês do ano e o total; as analíticas somam nas
+        sintéticas pelo código. basis=competence (padrão) soma pela competência; basis=cash pelo mês do
+        pagamento. truncated = true quando passa de 6000 grupos. format=csv baixa o CSV (30 por hora).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: year, in: query, required: true, schema: { type: integer, minimum: 2000, maximum: 2100 } }
+        - { name: basis, in: query, schema: { type: string, enum: [competence, cash], default: competence } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { condominium_id, year, basis, truncated, months[12], rows[{code, name, nature, level, analytic, months_cents[12], total_cents}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
   /reports/statement:
     get:
       operationId: financialStatement
