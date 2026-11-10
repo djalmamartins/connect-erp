@@ -13,7 +13,7 @@ AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Com o ADR
 AP-017, AP-018, AP-088 e AP-092. Com o ADR 0146, as telas do ciclo 55
 (AP-101, AP-136, AP-161). Com o ADR 0147, os acessos AP-148, AP-152 e AP-153. Com o ADR 0148, o Balanço Patrimonial (AP-081). Com o ADR 0150, AP-091 Administração, AP-100
 Relatórios Enviados, AP-149 Usuários do Sistema e AP-150 Permissões de Usuários. Do que tinha API pronta, não sobra
-página de exemplo; seguem na demonstração só AP-031 e AP-037, que dependem do banco real.
+página de exemplo; segue na demonstração só AP-031 (pagamentos pelo banco, ADR 0156); AP-037 foi ligada com o Inter.
 
 ## Critério
 
@@ -34,7 +34,7 @@ Total: 88 páginas.
 | AP-030 Fechamento Mensal (financeiro) | checklist de fechamento de exemplo (pages/modules/closing.php) | `Services/Erp/MonthClosing.php`, `Controllers/Api/V1/MonthClosings.php` | ligar a tela à API existente |
 | AP-031 Pagamentos (Bancos) (financeiro) | lista com registros de demonstração (pages/modules/list.php) | — | backend (service e API) e depois ligar a tela |
 | AP-117 Atendimento Cobrança (cobranca) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Collections.php`, `Controllers/Api/V1/Collections.php` | ligar a tela à API existente |
-| AP-037 Remessas (cobranca) | lista com registros de demonstração (pages/modules/list.php) | — | backend (service e API) e depois ligar a tela |
+| AP-037 Remessas (cobranca) | ligada (ADR 0156): lotes por conta e dia, GET /api/v1/bank-remittances | BankRemittances | — |
 | AP-039 Cobrança Judicial (cobranca) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Collections.php`, `Controllers/Api/V1/Collections.php` | ligar a tela à API existente |
 | AP-116 Multas Pendentes (cobranca) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Collections.php`, `Services/Erp/EntryShortcuts.php`, `Controllers/Api/V1/Collections.php` | ligar a tela à API existente |
 | AP-101 Prestação de contas (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/reports/accountability` (ADR 0166) | ligar a tela (contrato no ADR 0166 e no docs/api/openapi.yaml) |

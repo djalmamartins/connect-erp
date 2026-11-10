@@ -35,6 +35,9 @@ $route->get("/health", static function (): void {
  */
 $route->namespace("Source\\Controllers\\Api\\V1");
 $route->post("/auth/2fa/verify", "TwoFactor:verify");
+// Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
+// consulta de cada título no banco antes de mudar qualquer estado.
+$route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -64,12 +67,14 @@ $route->get("/invoices/{id}", "Invoices:show", null, \Source\Support\Middleware\
 $route->patch("/invoices/{id}/items/{item}", "Invoices:updateItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/issue", "Invoices:issue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/cancel", "Invoices:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
-// Boletos, retorno e fila de divergências (ADR 0035), só com o adaptador sandbox.
+// Boletos, remessas, retorno e fila de divergências (ADR 0035 e 0156): sandbox interno ou Inter (sandbox do banco).
 $route->get("/bank-charges", "Banking:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges", "Banking:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-charges/{id}", "Banking:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-charges/{id}/pdf", "Banking:pdf", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-remittances", "Banking:remittances", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-returns", "Banking:returns", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-returns", "Banking:importReturn", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Support\Middleware\ApiAuthenticated::class);

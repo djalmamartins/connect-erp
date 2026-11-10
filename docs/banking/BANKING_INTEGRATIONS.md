@@ -24,5 +24,9 @@ BankAdapter: capabilities(), validateConfiguration(), registerCharge(), getCharg
 - Testes com fixtures sintéticas: sucesso, rejeição, duplicidade, timeout, webhook fora de ordem, retorno malformado, estorno, cancelamento e concorrência.
 - Nenhum teste envia cobranças reais.
 
+## Bancos
+- **Inter** (piloto, decidido em 10/11/2026): adaptador `InterBankAdapter`, só sandbox. Ver `docs/banking/INTER.md` e ADR 0156.
+- Próximos (proposta da issue #46): Itaú e um adaptador CNAB 240 genérico.
+
 ## Decisões pendentes
-Bancos prioritários; pessoa jurídica titular da cobrança; modalidade de cobrança, convênio e carteira; API vs CNAB; requisitos Pix; credenciais sandbox; regras de juros/multa e política de cobrança.
+ pessoa jurídica titular da cobrança; modalidade de cobrança, convênio e carteira; API vs CNAB; requisitos Pix; credenciais sandbox; regras de juros/multa e política de cobrança.

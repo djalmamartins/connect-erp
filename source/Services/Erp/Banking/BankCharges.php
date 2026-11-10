@@ -11,6 +11,7 @@ use PDOException;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\BillingRules;
 use Source\Services\Erp\NotificationOutbox;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
@@ -25,6 +26,8 @@ use Source\Support\AppLogger;
  * - Nosso número sequencial por conta bancária, sob lock da conta.
  * - cancel(): pending ou registered; pago não cancela (estorno é outro fluxo).
  * - Escopo por condomínio (ADR-002): fora do escopo = RegistryNotFound (404). Tudo auditado.
+ * - Adaptador da conta bancária (ADR 0156): sandbox ou Inter. Consulta que traz pagamento ou baixa
+ *   do banco vira evento e passa pela mesma conciliação do retorno (BankReturns::recordEvent).
  */
 final class BankCharges
 {
@@ -62,7 +65,7 @@ final class BankCharges
         if ($existing !== null) {
             return $this->present($existing);
         }
-        $adapter = BankAdapters::get(BankAdapters::DEFAULT);
+        $adapter = BankAdapters::forAccount($account, $this->pdo);
 
         $this->pdo->beginTransaction();
         try {
@@ -85,6 +88,7 @@ final class BankCharges
             throw $error;
         }
         Audit::record('create', 'erp_bank_charges', $chargeId, null, ['status' => 'pending', 'entry_id' => $entryId, 'our_number' => $ourNumber]);
+        $rule = (new BillingRules($this->pdo))->rule((int)$entry['condominium_id']);
 
         try {
             $result = $adapter->registerCharge([
@@ -92,12 +96,13 @@ final class BankCharges
                 'payer_name' => $entry['unit_label'], 'description' => (string)$entry['description'],
                 'bank_code' => (string)$account['bank_code'], 'branch' => (string)$account['branch'],
                 'account_number' => (string)$account['account_number'], 'wallet' => $account['wallet'],
+                'payer' => $this->payer($entry), 'fine_bp' => $rule['fine_bp'], 'monthly_interest_bp' => $rule['monthly_interest_bp'],
             ]);
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_register_failed', 'charge_id' => $chargeId]);
             $result = ['status' => 'pending', 'error' => 'Sem resposta do banco. Consulte o título de novo mais tarde.'];
         }
-        return $this->apply($chargeId, $result);
+        return $this->apply($chargeId, $result, 'pending', $user);
     }
 
     /** Consulta no banco um título pendente (ou registrado) e grava a resposta. */
@@ -108,12 +113,12 @@ final class BankCharges
             return $this->present($charge);
         }
         try {
-            $result = BankAdapters::get($charge['adapter'])->getCharge((string)$charge['our_number'], $charge['external_id']);
+            $result = $this->adapterOf($charge)->getCharge((string)$charge['our_number'], $charge['external_id']);
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_query_failed', 'charge_id' => $chargeId]);
             $result = ['status' => 'pending', 'error' => 'Sem resposta do banco. Consulte de novo mais tarde.'];
         }
-        return $this->apply($chargeId, $result, (string)$charge['status']);
+        return $this->apply($chargeId, $result, (string)$charge['status'], $user);
     }
 
     public function cancel(User $user, int $chargeId): array
@@ -122,7 +127,7 @@ final class BankCharges
         if (!in_array($charge['status'], ['pending', 'registered'], true)) {
             throw new DomainException('Só boleto aguardando banco ou registrado pode ser cancelado.');
         }
-        $result = BankAdapters::get($charge['adapter'])->cancelCharge((string)$charge['our_number'], $charge['external_id']);
+        $result = $this->adapterOf($charge)->cancelCharge((string)$charge['our_number'], $charge['external_id']);
         if (($result['status'] ?? null) !== 'cancelled') {
             $this->pdo->prepare('UPDATE erp_bank_charges SET last_error = :e WHERE id = :id')
                 ->execute(['e' => mb_substr((string)($result['error'] ?? 'Cancelamento não confirmado pelo banco.'), 0, 255), 'id' => $chargeId]);
@@ -171,7 +176,7 @@ final class BankCharges
     }
 
     /** Grava a resposta do banco num título ainda pendente ou registrado. */
-    private function apply(int $chargeId, array $result, string $before = 'pending'): array
+    private function apply(int $chargeId, array $result, string $before = 'pending', ?User $user = null): array
     {
         $status = in_array($result['status'] ?? null, ['registered', 'pending', 'rejected'], true) ? $result['status'] : 'pending';
         $this->pdo->beginTransaction();
@@ -189,7 +194,88 @@ final class BankCharges
             throw $error;
         }
         Audit::record('update', 'erp_bank_charges', $chargeId, ['status' => $before], ['status' => $row['status']]);
+        if (is_array($result['event'] ?? null) && in_array($row['status'], ['pending', 'registered'], true)) {
+            (new BankReturns($this->pdo, $this->scope))->recordEvent($user, $this->accountRow((int)$row['bank_account_id']), $result['event']);
+            $row = $this->rawRow($chargeId);
+        }
         return $this->present($row);
+    }
+
+    /**
+     * Consulta de um título vinda do webhook (ADR 0156): sem usuário, sem escopo (a conta já foi
+     * identificada pelo segredo do endereço). Só títulos daquela conta.
+     */
+    public function refreshFromBank(array $account, string $externalId): ?string
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_charges WHERE bank_account_id = :b AND external_id = :x LIMIT 1');
+        $stmt->execute(['b' => $account['id'], 'x' => $externalId]);
+        $charge = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($charge)) {
+            return null;
+        }
+        if (!in_array($charge['status'], ['pending', 'registered'], true)) {
+            return (string)$charge['status'];
+        }
+        $result = BankAdapters::forAccount($account, $this->pdo)->getCharge((string)$charge['our_number'], $externalId);
+        return $this->apply((int)$charge['id'], $result, (string)$charge['status'], null)['status'];
+    }
+
+    /** PDF do boleto, quando o adaptador oferece (Inter). */
+    public function pdf(User $user, int $chargeId): string
+    {
+        $charge = $this->row($user, $chargeId);
+        if (!in_array($charge['status'], ['registered', 'paid'], true)) {
+            throw new DomainException('O PDF só existe para boleto registrado.');
+        }
+        $adapter = $this->adapterOf($charge);
+        if (!$adapter instanceof BankChargeExtras) {
+            throw new DomainException('Este banco não fornece o PDF do boleto.');
+        }
+        Audit::record('read', 'erp_bank_charges', $chargeId, null, ['pdf' => true]);
+        return $adapter->downloadBoleto((string)$charge['our_number'], $charge['external_id']);
+    }
+
+    /**
+     * Pagador do boleto: responsável financeiro da unidade, senão o proprietário (ativos, com
+     * documento primeiro). Endereço de cobrança = endereço do condomínio, com a unidade no complemento.
+     */
+    private function payer(array $entry): ?array
+    {
+        if (empty($entry['unit_id'])) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare("SELECT r.name, r.document, r.email FROM erp_residents r
+            WHERE r.unit_id = :u AND r.relationship IN ('financial','owner') AND r.status = 'active' AND r.deleted_at IS NULL
+              AND (r.ends_on IS NULL OR r.ends_on >= CURDATE())
+            ORDER BY r.relationship = 'financial' DESC, r.document IS NULL, r.id LIMIT 1");
+        $stmt->execute(['u' => $entry['unit_id']]);
+        $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->pdo->prepare('SELECT street, number, district, city, state, zip_code FROM condominiums WHERE id = :c');
+        $stmt->execute(['c' => $entry['condominium_id']]);
+        $address = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        if (!is_array($person)) {
+            return null;
+        }
+        return ['name' => (string)$person['name'], 'document' => $person['document'], 'email' => $person['email'],
+            'street' => $address['street'] ?? null, 'number' => $address['number'] ?? null, 'complement' => (string)($entry['unit_label'] ?? ''),
+            'district' => $address['district'] ?? null, 'city' => $address['city'] ?? null, 'state' => $address['state'] ?? null, 'zip_code' => $address['zip_code'] ?? null];
+    }
+
+    private function adapterOf(array $charge): BankAdapter
+    {
+        $account = $this->accountRow((int)$charge['bank_account_id']);
+        if ((string)$account['adapter'] !== (string)$charge['adapter']) {
+            // Conta trocou de banco depois da emissão: o título continua no banco onde nasceu.
+            $account['adapter'] = $charge['adapter'];
+        }
+        return BankAdapters::forAccount($account, $this->pdo);
+    }
+
+    private function accountRow(int $bankAccountId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_accounts WHERE id = :id');
+        $stmt->execute(['id' => $bankAccountId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: throw new RegistryNotFound();
     }
 
     /**
@@ -215,10 +301,12 @@ final class BankCharges
     {
         $this->pdo->prepare("UPDATE erp_bank_charges SET status = :s,
                 external_id = COALESCE(:x, external_id), digitable_line = COALESCE(:l, digitable_line), barcode = COALESCE(:bc, barcode),
+                bank_our_number = COALESCE(:bn, bank_our_number), pix_txid = COALESCE(:pt, pix_txid), pix_copy_paste = COALESCE(:pc, pix_copy_paste),
                 last_error = :e, registered_at = CASE WHEN :s2 = 'registered' AND registered_at IS NULL THEN NOW() ELSE registered_at END
             WHERE id = :id AND status IN ('pending','registered')")->execute([
             's' => $status, 's2' => $status, 'x' => $result['external_id'] ?? null, 'l' => $result['digitable_line'] ?? null,
-            'bc' => $result['barcode'] ?? null, 'e' => isset($result['error']) ? mb_substr((string)$result['error'], 0, 255) : null, 'id' => $chargeId,
+            'bc' => $result['barcode'] ?? null, 'bn' => $result['bank_our_number'] ?? null, 'pt' => $result['pix_txid'] ?? null,
+            'pc' => $result['pix_copy_paste'] ?? null, 'e' => isset($result['error']) ? mb_substr((string)$result['error'], 0, 255) : null, 'id' => $chargeId,
         ]);
     }
 
@@ -278,6 +366,8 @@ final class BankCharges
             'status' => (string)$row['status'], 'status_label' => self::STATUSES[$row['status']] ?? (string)$row['status'],
             'our_number' => (string)$row['our_number'], 'amount_cents' => (int)$row['amount_cents'], 'due_on' => (string)$row['due_on'],
             'external_id' => $row['external_id'], 'digitable_line' => $row['digitable_line'], 'barcode' => $row['barcode'],
+            'bank_our_number' => $row['bank_our_number'] ?? null, 'pix_copy_paste' => $row['pix_copy_paste'] ?? null,
+            'pdf_available' => ($row['adapter'] ?? '') === 'inter' && !empty($row['external_id']) && in_array($row['status'], ['registered', 'paid'], true),
             'last_error' => $row['last_error'], 'paid_cents' => $row['paid_cents'] !== null ? (int)$row['paid_cents'] : null,
             'paid_on' => $row['paid_on'], 'registered_at' => $row['registered_at'], 'cancelled_at' => $row['cancelled_at'],
         ];
