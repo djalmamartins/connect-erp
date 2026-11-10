@@ -1481,6 +1481,58 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-imports:
+    post:
+      operationId: previewPatrimonialImport
+      summary: Prévia por linha de um CSV/XLSX de lançamentos patrimoniais; nada é lançado (erp.imports.manage e erp.entries.manage, ADR 0171)
+      security: [{ session: [] }]
+      parameters:
+        - { name: Idempotency-Key, in: header, schema: { type: string, pattern: '^[A-Za-z0-9._:-]{8,80}$' } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [condominium_id, file]
+              properties:
+                condominium_id: { type: integer }
+                file: { type: string, format: binary, description: 'CSV (; ou ,) ou XLSX, até 2 MB e 5000 linhas' }
+                idempotency_key: { type: string }
+      responses:
+        '201': { description: '{ data: { id, status, rows_count, error_count, summary, preview[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já aplicada ou a mesma chave com outro arquivo' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-imports/{id}:
+    get:
+      operationId: patrimonialImport
+      summary: Importação patrimonial sem a prévia (erp.imports.view, ADR 0171)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { id, condominium_id, status, rows_count, error_count, summary } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /patrimonial-imports/{id}/apply:
+    post:
+      operationId: applyPatrimonialImport
+      summary: Revalida e grava todas as linhas, tudo ou nada (erp.imports.manage e erp.entries.manage, ADR 0171)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { status: applied, summary{applied{entries, entry_ids}} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Linha com erro na revalidação (inclusive mês fechado), já aplicada ou arquivo diferente da prévia' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
   /reports/statement:
     get:
       operationId: financialStatement
