@@ -1145,6 +1145,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/balance-sheet:
+    get:
+      operationId: balanceSheet
+      summary: Balanço Patrimonial de um condomínio numa data (erp.entries.view e erp.chart.view, ADR 0167)
+      description: >-
+        Ativo (bancos e contas a receber), passivo (contas a pagar e fundos do saldo inicial) e patrimônio
+        líquido (resultados acumulados e do exercício). Quando não fecha, balanced = false e a diferença vem
+        exposta, com avisos e limitações. format=csv baixa o CSV (30 por hora).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: date, in: query, schema: { type: string, format: date }, description: 'Sem ela, vale hoje' }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { date, year_start, assets, liabilities, equity, totals, balanced, warnings[], limitations[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
   /reports/statement:
     get:
       operationId: financialStatement

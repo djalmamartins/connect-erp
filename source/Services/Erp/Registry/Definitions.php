@@ -417,12 +417,14 @@ final class Definitions
                 'page' => 'AP-160', 'table' => 'erp_chart_accounts', 'route' => '/configuracoes/plano-de-contas',
                 'api' => 'chart-accounts', 'permission' => 'erp.chart', 'label' => 'Plano de contas',
                 'entity' => 'conta', 'gender' => 'a', 'scope' => 'optional', 'group' => 'configuracoes',
-                'lead' => 'Contas de receita e despesa. Sem condomínio, a conta faz parte do plano padrão da Connect e vale para todos.',
+                'lead' => 'Contas de receita e despesa e as contas patrimoniais do balanço (ativo, passivo e patrimônio líquido). Sem condomínio, a conta faz parte do plano padrão da Connect e vale para todos.',
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: plano padrão da Connect (todos os condomínios)'],
                     'code' => ['label' => 'Código', 'type' => 'text', 'required' => true, 'max' => 30, 'span' => 3, 'list' => true, 'search' => true,
                         'pattern' => '/^\d{1,3}(\.\d{1,4}){0,5}$/', 'pattern_message' => 'Use números separados por ponto, ex.: 1, 1.01, 1.01.002.', 'hint' => 'Ex.: 2.01.003'],
-                    'nature' => ['label' => 'Natureza', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['receita' => 'Receita', 'despesa' => 'Despesa']],
+                    'nature' => ['label' => 'Natureza', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['receita' => 'Receita', 'despesa' => 'Despesa',
+                        // ADR 0167: contas patrimoniais (Balanço, AP-081). Não recebem lançamento: o lançamento é de receita ou despesa.
+                        'asset' => 'Ativo', 'liability' => 'Passivo', 'equity' => 'Patrimônio líquido']],
                     'name' => ['label' => 'Nome da conta', 'type' => 'text', 'required' => true, 'max' => 120, 'span' => 8, 'list' => true, 'search' => true],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 4, 'list' => true, 'options' => ['sintetica' => 'Sintética (agrupa)', 'analitica' => 'Analítica (recebe lançamentos)']],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
