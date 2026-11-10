@@ -1,6 +1,6 @@
 ---
 codigo: AP-158
-titulo: Configurar demonstrativo
+titulo: Modelo do demonstrativo
 resumo: Demonstrativo: mostrar contas em aberto no demonstrativo; agrupar o demonstrativo por.
 categoria: configuracoes
 rota: /configuracoes/demonstrativo
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: demonstrativo, configurações, AP-158
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve

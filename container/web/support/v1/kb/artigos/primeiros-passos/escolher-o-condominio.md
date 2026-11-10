@@ -9,6 +9,7 @@ icone: business-outline
 situacao: guia
 relacionados: entrar-no-sistema, encontrar-uma-tela, dashboard
 palavras: condomínio, trocar condomínio, todos os condomínios, contexto, barra superior
+manual: sim
 rascunho: nao
 ---
 

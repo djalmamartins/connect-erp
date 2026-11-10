@@ -32,3 +32,4 @@ graphify-out/
 tools/help/.inventario.json
 tools/help/node_modules/
 tools/help/package-lock.json
+tools/help/.detalhes.json

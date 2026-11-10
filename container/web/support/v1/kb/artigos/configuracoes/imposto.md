@@ -1,65 +1,75 @@
 ---
 codigo: AP-164
-titulo: Cadastrar e gerenciar imposto
-resumo: Alíquotas de retenção para conferir as notas de serviço. Sem condomínio, vale para todos. Não calcula nem lança sozinho.
+titulo: Impostos retidos
+resumo: Alíquotas de retenção (ISS, INSS, IR e outros) para conferir as notas de serviço. Sem condomínio, vale para todos. O sistema não calcula nem lança o imposto sozinho.
 categoria: configuracoes
 rota: /configuracoes/imposto
 menu: Configurações > Financeiro e parâmetros > Imposto
 icone: list-outline
 situacao: funciona
+relacionados: previsao-orcamentaria, indices, saldo-inicial-centro-de-custo, parametros
 palavras: imposto, configurações, AP-164
 rascunho: nao
 ---
 
+Alíquotas de retenção (ISS, INSS, IR e outros) para conferir as notas de serviço. Sem condomínio, vale para todos. O sistema não calcula nem lança o imposto sozinho.
+
 ## Onde fica
 
-No menu lateral, abra [[Configurações > Financeiro e parâmetros > Imposto]].
+No menu lateral, abra [[Configurações > Financeiro e parâmetros > Imposto]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela imposto
 rota: /configuracoes/imposto
 condominio: residencial-jardim-das-acacias
 legenda: Tela Imposto
 1: menu | Imposto no menu lateral
-2: main :is(a,button):has-text("Novo imposto") | Botão {{Novo imposto}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Imposto, Situação
-4: main .erp-card | Impostos
+2: main .erp-page-head__actions :is(a,button):has-text("Novo imposto") | Botão {{Novo imposto}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Imposto e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo imposto}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo imposto}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Imposto**, **Nome**, **Alíquota (%)**, **Aplica-se a** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela imposto-novo
+```tela imposto-novo-imposto
 rota: /configuracoes/imposto/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de imposto
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo imposto
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="kind"] | Imposto (obrigatório)
+2: main form:not([method=get]) [name="name"] | Nome (obrigatório)
+3: main form:not([method=get]) [name="rate"] | Alíquota (%) (obrigatório)
+4: main form:not([method=get]) [name="applies_to"] | Aplica-se a (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio**: vazio: padrão da Connect. Só aparecem os condomínios que a sua conta pode ver.
-- **Imposto** (obrigatório): opções: ISS, IRRF, INSS, PIS/COFINS/CSLL e Outro.
+- **Condomínio**: Vazio: padrão da Connect.
+- **Imposto** (obrigatório): Opções: ISS, IRRF, INSS, PIS/COFINS/CSLL e Outro.
 - **Nome** (obrigatório).
 - **Alíquota (%)** (obrigatório).
-- **Aplica-se a** (obrigatório): opções: Serviços, Materiais e Serviços e materiais.
+- **Aplica-se a** (obrigatório): Opções: Serviços, Materiais e Serviços e materiais.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Imposto** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Impostos**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Previsão orçamentária](artigo:previsao-orcamentaria), [Índices e regra de cobrança](artigo:indices) e [Saldo inicial dos centros de custo](artigo:saldo-inicial-centro-de-custo).

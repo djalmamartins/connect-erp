@@ -1,6 +1,6 @@
 ---
 codigo: AP-159
-titulo: Configurar alertas
+titulo: Alertas do sistema
 resumo: Alertas: alertar unidade em atraso há mais de (dias); alertar contrato e seguro que vencem em (dias); alertar conta bancária com saldo abaixo de.
 categoria: configuracoes
 rota: /configuracoes/alertas
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: alertas, configurações, AP-159
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve

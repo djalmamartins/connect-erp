@@ -9,6 +9,7 @@ icone: list-outline
 relacionados: boletos, contas-a-receber, acordos, fechamento-mensal
 situacao: funciona
 palavras: faturas, financeiro, AP-032
+manual: sim
 rascunho: nao
 ---
 

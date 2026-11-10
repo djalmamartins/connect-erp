@@ -1,68 +1,77 @@
 ---
 codigo: AP-126
-titulo: Cadastrar e gerenciar avisos de Recebimento
-resumo: Correspondências com aviso de recebimento (AR): envio, entrega ou devolução, com o comprovante.
+titulo: Avisos de recebimento (AR)
+resumo: Correspondências enviadas com aviso de recebimento: envio, entrega ou devolução, e o comprovante.
 categoria: documentos
 rota: /documentos/avisos-de-recebimento
 menu: Documentos > Avisos de Recebimento
 icone: list-outline
 situacao: funciona
+relacionados: comprovante-de-quitacao, copias-de-cheques, declaracao-de-inadimplencia, empenhos
 palavras: avisos de recebimento, documentos, AP-126
 rascunho: nao
 ---
 
+Correspondências enviadas com aviso de recebimento: envio, entrega ou devolução, e o comprovante.
+
 ## Onde fica
 
-No menu lateral, abra [[Documentos > Avisos de Recebimento]].
+No menu lateral, abra [[Documentos > Avisos de Recebimento]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela avisos-de-recebimento
 rota: /documentos/avisos-de-recebimento
 condominio: residencial-jardim-das-acacias
 legenda: Tela Avisos de Recebimento
 1: menu | Avisos de Recebimento no menu lateral
-2: main :is(a,button):has-text("Novo aviso de recebimento") | Botão {{Novo aviso de recebimento}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main .erp-card | Avisos de recebimento
+2: main .erp-page-head__actions :is(a,button):has-text("Novo aviso de recebimento") | Botão {{Novo aviso de recebimento}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo aviso de recebimento}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo aviso de recebimento}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Destinatário**, **Código de rastreio**, **Enviado em** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela avisos-de-recebimento-novo
+```tela avisos-de-recebimento-novo-aviso-de-recebimento
 rota: /documentos/avisos-de-recebimento/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de aviso de recebimento
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo aviso de recebimento
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="recipient"] | Destinatário (obrigatório)
+3: main form:not([method=get]) [name="tracking_code"] | Código de rastreio (obrigatório)
+4: main form:not([method=get]) [name="sent_on"] | Enviado em (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Unidade**: unidade cadastrada em Condomínios › Unidades. Escolha entre as unidades do condomínio selecionado.
+- **Condomínio** (obrigatório).
+- **Unidade**: Unidade cadastrada em Condomínios › Unidades.
 - **Destinatário** (obrigatório).
 - **Código de rastreio** (obrigatório).
-- **Assunto**: ex.: notificação de multa.
-- **Enviado em** (obrigatório): no formato dia/mês/ano.
-- **Entregue em**: no formato dia/mês/ano.
-- **Comprovante (AR)**: nº do arquivo no Disco Virtual (Documentos › Disco Virtual).
+- **Assunto**: Ex.: notificação de multa.
+- **Enviado em** (obrigatório).
+- **Entregue em**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Em trânsito, Entregue e Devolvido.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Avisos de recebimento**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Documentos**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Emitir o comprovante de quitação](artigo:comprovante-de-quitacao), [Cópias de cheques](artigo:copias-de-cheques) e [Emitir a declaração de inadimplência](artigo:declaracao-de-inadimplencia).

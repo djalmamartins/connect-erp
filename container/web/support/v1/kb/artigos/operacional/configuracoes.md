@@ -1,65 +1,75 @@
 ---
 codigo: AP-121
-titulo: Cadastrar e gerenciar configurações
-resumo: Regras de mudança de cada condomínio: dias, horário, antecedência mínima e taxa.
+titulo: Regras de mudança
+resumo: Define as regras de mudança de cada condomínio: dias e horários permitidos, antecedência mínima do pedido e taxa.
 categoria: operacional
 rota: /operacional/configuracoes
 menu: Operacional > Rotina > Configurações
 icone: list-outline
 situacao: funciona
+relacionados: agendamentos, contratos, seguros, lista-de-espera
 palavras: configurações, operacional, AP-121
 rascunho: nao
 ---
 
+Define as regras de mudança de cada condomínio: dias e horários permitidos, antecedência mínima do pedido e taxa.
+
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Configurações]].
+No menu lateral, abra [[Operacional > Rotina > Configurações]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela configuracoes
 rota: /operacional/configuracoes
 condominio: residencial-jardim-das-acacias
 legenda: Tela Configurações
 1: menu | Configurações no menu lateral
-2: main :is(a,button):has-text("Nova configuração") | Botão {{Nova configuração}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main .erp-card | Configurações de mudança
+2: main .erp-page-head__actions :is(a,button):has-text("Nova configuração") | Botão {{Nova configuração}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova configuração}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova configuração}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Dias permitidos** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela configuracoes-novo
+```tela configuracoes-nova-configuracao
 rota: /operacional/configuracoes/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de configuração
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova configuração
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="allowed_days"] | Dias permitidos (obrigatório)
+3: main form:not([method=get]) [name="hours"] | Horário
+4: main form:not([method=get]) [name="min_advance_days"] | Antecedência mínima (dias)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Dias permitidos** (obrigatório): ex.: segunda a sábado.
-- **Horário**: ex.: 8h às 17h.
+- **Condomínio** (obrigatório).
+- **Dias permitidos** (obrigatório): Ex.: segunda a sábado.
+- **Horário**: Ex.: 8h às 17h.
 - **Antecedência mínima (dias)**.
-- **Taxa**: em reais, por exemplo 1.250,00.
+- **Taxa**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Configurações de mudança**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Operacional**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Agendar mudanças](artigo:agendamentos), [Contratos com fornecedores](artigo:contratos) e [Seguros do condomínio](artigo:seguros).

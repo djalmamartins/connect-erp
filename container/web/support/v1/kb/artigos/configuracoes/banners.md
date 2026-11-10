@@ -1,65 +1,75 @@
 ---
 codigo: AP-156
-titulo: Cadastrar e gerenciar banners
-resumo: Avisos curtos no topo do aplicativo, por período. Sem condomínio, o banner aparece para todos.
+titulo: Banners do aplicativo
+resumo: Avisos curtos no topo do aplicativo dos moradores, por período. Sem condomínio, o banner aparece para todos.
 categoria: configuracoes
 rota: /configuracoes/banners
 menu: Configurações > Aplicativo e notificações > Banners
 icone: list-outline
 situacao: funciona
+relacionados: notificacoes-aplicativo, alertas, layout-da-aplicacao, notificacoes-da-prestacao-de-contas
 palavras: banners, configurações, AP-156
 rascunho: nao
 ---
 
+Avisos curtos no topo do aplicativo dos moradores, por período. Sem condomínio, o banner aparece para todos.
+
 ## Onde fica
 
-No menu lateral, abra [[Configurações > Aplicativo e notificações > Banners]].
+No menu lateral, abra [[Configurações > Aplicativo e notificações > Banners]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela banners
 rota: /configuracoes/banners
 condominio: residencial-jardim-das-acacias
 legenda: Tela Banners
 1: menu | Banners no menu lateral
-2: main :is(a,button):has-text("Novo banner") | Botão {{Novo banner}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main .erp-card | Banners
+2: main .erp-page-head__actions :is(a,button):has-text("Novo banner") | Botão {{Novo banner}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo banner}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo banner}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Título**, **Texto**, **Início**, **Fim** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela banners-novo
+```tela banners-novo-banner
 rota: /configuracoes/banners/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de banner
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo banner
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="title"] | Título (obrigatório)
+2: main form:not([method=get]) [name="message"] | Texto (obrigatório)
+3: main form:not([method=get]) [name="starts_on"] | Início (obrigatório)
+4: main form:not([method=get]) [name="ends_on"] | Fim (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio**: vazio: todos os condomínios. Só aparecem os condomínios que a sua conta pode ver.
+- **Condomínio**: Vazio: todos os condomínios.
 - **Título** (obrigatório).
 - **Texto** (obrigatório).
-- **Início** (obrigatório): no formato dia/mês/ano.
-- **Fim** (obrigatório): no formato dia/mês/ano.
-- **Ordem**: menor aparece primeiro.
+- **Início** (obrigatório).
+- **Fim** (obrigatório).
+- **Ordem**: Menor aparece primeiro.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Banners**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Notificações do aplicativo](artigo:notificacoes-aplicativo), [Alertas do sistema](artigo:alertas) e [Aparência do aplicativo](artigo:layout-da-aplicacao).

@@ -9,6 +9,7 @@ icone: document-text-outline
 situacao: funciona
 palavras: relatório de previsão orçamentária, relatórios, AP-084
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
@@ -26,7 +27,6 @@ legenda: Tela Relatório de previsão orçamentária
 1: menu | Relatório de previsão orçamentária no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
 3: main form.erp-filters | Filtros: Ano
-4: main table thead | Colunas: Código, Conta, Natureza, Previsto, Lançado, Diferença, Variação
 ```
 
 >! Este relatório usa os dados de **um condomínio só**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.

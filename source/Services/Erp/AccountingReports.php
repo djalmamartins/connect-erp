@@ -87,13 +87,22 @@ final class AccountingReports
             $accounts[$key] ??= self::account((string)$line['code'], (string)$line['name'], (string)$line['nature'], 0);
             $accounts[$key]['name'] = (string)$line['name'];
             $cents = (int)$line['cents'];
-            $debit = $line['nature'] === 'despesa' ? $cents : 0;
-            $credit = $line['nature'] === 'receita' ? $cents : 0;
+            if (isset($line['side'])) {
+                // Lançamento patrimonial (ADR 0169): o lado vem do lançamento e o saldo cresce na natureza da conta.
+                $debit = $line['side'] === 'debit' ? $cents : 0;
+                $credit = $line['side'] === 'credit' ? $cents : 0;
+                $delta = PatrimonialEntries::signed((string)$line['nature'], (string)$line['side'], $cents);
+            } else {
+                $debit = $line['nature'] === 'despesa' ? $cents : 0;
+                $credit = $line['nature'] === 'receita' ? $cents : 0;
+                $delta = $cents;
+            }
             $accounts[$key]['debit_cents'] += $debit;
             $accounts[$key]['credit_cents'] += $credit;
-            $accounts[$key]['closing_cents'] += $cents;
-            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'on_date' => $line['on_date'], 'competence' => $line['competence'],
-                'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit, 'balance_cents' => $accounts[$key]['closing_cents']];
+            $accounts[$key]['closing_cents'] += $delta;
+            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'source' => isset($line['side']) ? 'patrimonial' : 'entry', 'on_date' => $line['on_date'],
+                'competence' => $line['competence'], 'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit,
+                'balance_cents' => $accounts[$key]['closing_cents']];
         }
         $order = ['receita' => 0, 'despesa' => 1, 'asset' => 2, 'liability' => 3, 'equity' => 4];
         uasort($accounts, static fn (array $a, array $b): int => [$order[$a['nature']] ?? 5, self::sortable($a['code'])]
@@ -175,6 +184,28 @@ final class AccountingReports
             ORDER BY a.code, {$date}, e.id LIMIT " . (self::MAX_LINES + 1));
         $stmt->execute($params + $codeParams);
         $lines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Lançamentos patrimoniais (ADR 0169): cada lado (débito e crédito) é uma linha da sua conta, pela data do
+        // lançamento nas duas bases. O que vem antes do saldo inicial (AP-161) da conta fica de fora, como nos demais.
+        foreach (['debit' => 'debit_account_id', 'credit' => 'credit_account_id'] as $side => $column) {
+            $join = "FROM erp_patrimonial_entries m JOIN erp_chart_accounts a ON a.id = m.{$column}
+                LEFT JOIN erp_chart_account_openings o ON o.condominium_id = m.condominium_id AND o.chart_account_id = a.id AND o.opened_on <= :fo
+                WHERE m.condominium_id IN ({$in}) AND (o.chart_account_id IS NULL OR m.entry_date >= o.opened_on){$codeSql}";
+            $prior = $this->pdo->prepare("SELECT a.code, a.name, a.nature, SUM(m.amount_cents) AS cents {$join} AND m.entry_date < :fd GROUP BY a.code, a.name, a.nature");
+            $prior->execute(['fo' => $from, 'fd' => $from] + $codeParams);
+            foreach ($prior->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $key = $row['nature'] . '|' . $row['code'];
+                $opening[$key] = ($opening[$key] ?? 0) + PatrimonialEntries::signed((string)$row['nature'], $side, (int)$row['cents']);
+                $names[$key] = (string)$row['name'];
+            }
+            $period = $this->pdo->prepare("SELECT a.code, a.name, a.nature, m.id, m.entry_date AS on_date, NULL AS competence, m.description, m.amount_cents AS cents
+                {$join} AND m.entry_date BETWEEN :fd AND :td ORDER BY a.code, m.entry_date, m.id LIMIT " . (self::MAX_LINES + 1));
+            $period->execute(['fo' => $from, 'fd' => $from, 'td' => $to] + $codeParams);
+            foreach ($period->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $lines[] = $row + ['side' => $side];
+            }
+        }
+        usort($lines, static fn (array $a, array $b): int => [self::sortable((string)$a['code']), (string)$a['on_date'], isset($a['side']) ? 1 : 0, (int)$a['id']]
+            <=> [self::sortable((string)$b['code']), (string)$b['on_date'], isset($b['side']) ? 1 : 0, (int)$b['id']]);
         $truncated = count($lines) > self::MAX_LINES;
         return $base + ['truncated' => $truncated, 'accounts' => self::ledgerAccounts($opening, array_slice($lines, 0, self::MAX_LINES), $names)];
     }
@@ -196,6 +227,68 @@ final class AccountingReports
         return ['condominium_id' => $condominiumId, 'as_of' => $asOf, 'from' => $from, 'to' => $to, 'truncated' => false, 'accounts' => $banks,
             'totals' => ['opening_cents' => array_sum(array_column($banks, 'opening_cents')), 'received_cents' => array_sum(array_column($banks, 'received_cents')),
                 'paid_cents' => array_sum(array_column($banks, 'paid_cents')), 'closing_cents' => array_sum(array_column($banks, 'closing_cents'))]];
+    }
+
+    /**
+     * Razão das contas bancárias (7.1 Disponível, ADR 0170): por conta corrente, poupança ou aplicação, o saldo
+     * anterior (da conciliação, accountBalances), cada recebimento e pagamento com a conta bancária e cada
+     * transferência nos dois lados, com o saldo acumulado. A transferência sai de uma conta e entra na outra: no
+     * total do Disponível soma zero e não passa pela DRE.
+     */
+    public function bankLedger(User $user, ?int $condominiumId, mixed $from, mixed $to): array
+    {
+        [$from, $to] = self::period($from, $to);
+        $balances = $this->accountBalances($user, $condominiumId, null, $from, $to);
+        $base = ['condominium_id' => $condominiumId, 'from' => $from, 'to' => $to];
+        $banks = [];
+        foreach ($balances['accounts'] as $b) {
+            $banks[(int)$b['bank_account_id']] = ['bank_account_id' => (int)$b['bank_account_id'], 'condominium_id' => (int)$b['condominium_id'], 'name' => (string)$b['name'],
+                'kind' => 'corrente', 'opening_cents' => (int)$b['opening_cents'], 'debit_cents' => 0, 'credit_cents' => 0, 'closing_cents' => (int)$b['opening_cents'], 'lines' => []];
+        }
+        if ($banks === []) {
+            return $base + ['truncated' => false, 'accounts' => [], 'totals' => ['opening_cents' => 0, 'debit_cents' => 0, 'credit_cents' => 0, 'closing_cents' => 0]];
+        }
+        foreach ((new Investments($this->pdo, $this->scope))->kinds(array_keys($banks)) as $id => $k) {
+            $banks[$id]['kind'] = $k['kind'];
+        }
+        $in = implode(',', array_keys($banks));
+        $lines = [];
+        $entries = $this->pdo->prepare("SELECT e.id, e.bank_account_id AS bank, e.paid_on AS on_date, e.description, e.nature, e.amount_cents AS cents
+            FROM erp_entries e JOIN erp_bank_accounts b ON b.id = e.bank_account_id
+            WHERE e.bank_account_id IN ({$in}) AND e.condominium_id = b.condominium_id AND e.deleted_at IS NULL AND e.status = 'active'
+              AND e.paid_on BETWEEN :f AND :t LIMIT " . (self::MAX_LINES + 1));
+        $entries->execute(['f' => $from, 't' => $to]);
+        foreach ($entries->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $lines[] = ['source' => 'entry', 'bank' => (int)$r['bank'], 'id' => (int)$r['id'], 'on_date' => (string)$r['on_date'], 'description' => (string)$r['description'],
+                'side' => $r['nature'] === 'receita' ? 'debit' : 'credit', 'cents' => (int)$r['cents'], 'counterpart_bank_account_id' => null];
+        }
+        foreach (['from_bank_account_id' => 'credit', 'to_bank_account_id' => 'debit'] as $column => $side) {
+            $other = $column === 'from_bank_account_id' ? 'to_bank_account_id' : 'from_bank_account_id';
+            $transfers = $this->pdo->prepare("SELECT t.id, t.{$column} AS bank, t.{$other} AS other, t.transferred_on AS on_date, t.description, t.amount_cents AS cents
+                FROM erp_bank_transfers t WHERE t.{$column} IN ({$in}) AND t.status = 'active' AND t.transferred_on BETWEEN :f AND :t LIMIT " . (self::MAX_LINES + 1));
+            $transfers->execute(['f' => $from, 't' => $to]);
+            foreach ($transfers->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $lines[] = ['source' => 'transfer', 'bank' => (int)$r['bank'], 'id' => (int)$r['id'], 'on_date' => (string)$r['on_date'], 'description' => (string)$r['description'],
+                    'side' => $side, 'cents' => (int)$r['cents'], 'counterpart_bank_account_id' => (int)$r['other']];
+            }
+        }
+        usort($lines, static fn (array $a, array $b): int => [$a['bank'], $a['on_date'], $a['source'], $a['id'], $a['side']] <=> [$b['bank'], $b['on_date'], $b['source'], $b['id'], $b['side']]);
+        $truncated = count($lines) > self::MAX_LINES;
+        foreach (array_slice($lines, 0, self::MAX_LINES) as $line) {
+            $bank = &$banks[$line['bank']];
+            $debit = $line['side'] === 'debit' ? $line['cents'] : 0;
+            $credit = $line['side'] === 'credit' ? $line['cents'] : 0;
+            $bank['debit_cents'] += $debit;
+            $bank['credit_cents'] += $credit;
+            $bank['closing_cents'] += $debit - $credit;
+            $bank['lines'][] = ['source' => $line['source'], 'id' => $line['id'], 'on_date' => $line['on_date'], 'description' => $line['description'],
+                'debit_cents' => $debit, 'credit_cents' => $credit, 'balance_cents' => $bank['closing_cents'], 'counterpart_bank_account_id' => $line['counterpart_bank_account_id']];
+            unset($bank);
+        }
+        $accounts = array_values($banks);
+        return $base + ['truncated' => $truncated, 'accounts' => $accounts, 'totals' => ['opening_cents' => array_sum(array_column($accounts, 'opening_cents')),
+            'debit_cents' => array_sum(array_column($accounts, 'debit_cents')), 'credit_cents' => array_sum(array_column($accounts, 'credit_cents')),
+            'closing_cents' => array_sum(array_column($accounts, 'closing_cents'))]];
     }
 
     public function incomeStatement(User $user, ?int $condominiumId, mixed $from, mixed $to, mixed $basis = 'competence'): array

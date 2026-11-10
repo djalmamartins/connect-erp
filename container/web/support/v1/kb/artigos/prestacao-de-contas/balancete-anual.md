@@ -1,6 +1,6 @@
 ---
 codigo: AP-080
-titulo: Relatório Balancete Anual
+titulo: Balancete anual
 resumo: Receitas e despesas de cada conta do plano mês a mês no ano, com as contas sintéticas somadas e o resultado de cada mês.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/balancete-anual
@@ -9,6 +9,7 @@ icone: document-text-outline
 situacao: funciona
 palavras: balancete anual, prestação de contas, AP-080
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve

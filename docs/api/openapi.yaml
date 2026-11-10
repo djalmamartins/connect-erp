@@ -1165,6 +1165,322 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /erp-admin/overview:
+    get:
+      operationId: erpAdminOverview
+      summary: Administração — dados da administradora e resumo do escopo (erp.settings.view, ADR 0168)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { administrator, global_access, previous_month, summary } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/sent:
+    get:
+      operationId: sentReports
+      summary: Relatórios exportados, lidos da auditoria (erp.audit.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: report, in: query, schema: { type: string, example: ledger } }
+      responses:
+        '200': { description: '{ data: { rows[{id, created_at, user_name, entity, ip, report, condominium_id, bytes}], totals, truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-users:
+    get:
+      operationId: erpUsers
+      summary: Usuários com acesso aos condomínios do escopo, com e-mail mascarado (erp.users.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+      responses:
+        '200': { description: '{ data: { rows[{id, name, email, status, role, role_name, manageable, condominiums[]}], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /erp-users/invite:
+    post:
+      operationId: erpUsersInvite
+      summary: Dá acesso a condomínios do escopo para uma conta que já existe (erp.users.manage, ADR 0168)
+      description: Não cria conta nem troca papel; isso continua no Studio. O papel da conta precisa ter erp.access.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, condominium_ids]
+              properties:
+                email: { type: string, format: email }
+                condominium_ids: { type: array, items: { type: integer }, minItems: 1, maxItems: 200 }
+      responses:
+        '200': { description: '{ data: { user_id, granted[], already[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-users/{id}/deactivate:
+    post:
+      operationId: erpUsersDeactivate
+      summary: Tira o acesso a um condomínio ou a todos do escopo (erp.users.manage, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condominium_id: { type: integer }
+      responses:
+        '200': { description: '{ data: { user_id, revoked[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Sem acesso a condomínios do escopo }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /erp-users/{id}/permissions:
+    get:
+      operationId: erpUserPermissions
+      summary: Permissões erp.* de um usuário — do papel, exceção e efetivo (erp.permissions.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { user_id, role, manageable, rows[{slug, name, group, description, role, override, effective}] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: setErpUserPermission
+      summary: Exceção de um usuário numa permissão erp.* (erp.permissions.manage, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permission, effect]
+              properties:
+                permission: { type: string, example: erp.entries.view }
+                effect: { type: string, enum: [allow, deny, inherit] }
+      responses:
+        '200': { description: '{ data: { user_id, permission, effect, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-permissions:
+    get:
+      operationId: erpPermissions
+      summary: Papéis visíveis e as permissões erp.* de cada um (erp.permissions.view, ADR 0168)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { editable_roles, roles[{slug, name, level, editable, permissions[]}], permissions[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: setErpRolePermission
+      summary: Liga ou desliga uma permissão erp.* de um papel; exige acesso a todos os condomínios (erp.permissions.manage, ADR 0168)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, permission, allowed]
+              properties:
+                role: { type: string, example: manager }
+                permission: { type: string }
+                allowed: { type: boolean }
+      responses:
+        '200': { description: '{ data: { role, permission, allowed, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-entries:
+    get:
+      operationId: patrimonialEntries
+      summary: Lançamentos patrimoniais (fundos e PL, contas 7/8/9) do período (erp.entries.view e erp.chart.view, ADR 0169)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, truncated, rows[], totals{entries, amount_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: createPatrimonialEntry
+      summary: Lança débito e crédito entre contas patrimoniais analíticas do mesmo condomínio (erp.entries.manage, ADR 0169)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, description, amount_cents, debit_account_id, credit_account_id]
+              properties:
+                condominium_id: { type: integer }
+                entry_date: { type: string, format: date, description: 'Até hoje; padrão hoje' }
+                description: { type: string, minLength: 3, maxLength: 255 }
+                amount_cents: { description: 'Inteiro em centavos ou texto como "1.234,56"; positivo' }
+                debit_account_id: { type: integer }
+                credit_account_id: { type: integer }
+                bank_account_id: { type: integer, nullable: true }
+                linked_entry_id: { type: integer, nullable: true }
+      responses:
+        '201': { description: '{ data: linha como no GET }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /patrimonial-entries/{id}/reverse:
+    post:
+      operationId: reversePatrimonialEntry
+      summary: Estorna um lançamento patrimonial com motivo (erp.entries.manage, ADR 0169)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3, maxLength: 255 }
+                date: { type: string, format: date, description: 'Padrão hoje; não antes do original' }
+      responses:
+        '200': { description: '{ data: { original, reversal } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Já estornado, é um estorno ou competência fechada' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/positions:
+    get:
+      operationId: investmentPositions
+      summary: Saldo das aplicações e totais de corrente, poupança e aplicação na data (erp.entries.view e erp.chart.view, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, accounts[], totals{checking_cents, savings_cents, investments_cents, total_cents} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/bank-ledger:
+    get:
+      operationId: bankLedger
+      summary: Razão das contas bancárias com lançamentos e transferências dos dois lados (erp.entries.view e erp.chart.view, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: 'No máximo 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, truncated, accounts[{lines[]}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/link:
+    post:
+      operationId: linkInvestment
+      summary: Liga (ou desliga com null) a aplicação a uma conta corrente do mesmo condomínio (erp.bank_accounts.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent_bank_account_id: { type: integer, nullable: true }
+      responses:
+        '200': { description: '{ data: { id, condominium_id, name, kind, parent_bank_account_id } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/apply:
+    post:
+      operationId: applyInvestment
+      summary: Aplica da conta corrente na aplicação pela transferência entre contas, sem DRE (erp.entries.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: 'Conta de aplicação' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_cents]
+              properties:
+                amount_cents: { description: 'Inteiro em centavos ou texto como "400,00"; positivo' }
+                transferred_on: { type: string, format: date }
+                description: { type: string }
+      responses:
+        '201': { description: '{ data: { direction, investment_account_id, checking_account_id, transfer } }' }
+        '409': { description: 'Competência fechada' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /investments/{id}/redeem:
+    post:
+      operationId: redeemInvestment
+      summary: Resgata da aplicação para a conta corrente pela transferência entre contas, sem DRE (erp.entries.manage, ADR 0170)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: 'Conta de aplicação' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_cents]
+              properties:
+                amount_cents: { description: 'Inteiro em centavos ou texto como "400,00"; positivo' }
+                transferred_on: { type: string, format: date }
+                description: { type: string }
+      responses:
+        '201': { description: '{ data: { direction, investment_account_id, checking_account_id, transfer } }' }
+        '409': { description: 'Competência fechada' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/statement:
     get:
       operationId: financialStatement
@@ -2426,7 +2742,7 @@ paths:
       security: [{ session: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: Aviso com deliveries[] }
+        '200': { description: 'Aviso com deliveries[]' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }

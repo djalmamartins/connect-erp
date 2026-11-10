@@ -9,6 +9,7 @@ icone: log-in-outline
 situacao: guia
 relacionados: escolher-o-condominio, encontrar-uma-tela, pedir-ajuda
 palavras: login, entrar, acesso, senha, esqueci a senha, sair
+manual: sim
 rascunho: nao
 ---
 

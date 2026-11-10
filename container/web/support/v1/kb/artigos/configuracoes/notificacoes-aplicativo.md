@@ -1,6 +1,6 @@
 ---
 codigo: AP-155
-titulo: Configurar notificações aplicativo
+titulo: Notificações do aplicativo
 resumo: Notificações do aplicativo: enviar comunicados por e-mail; dias entre avisos de cobrança da mesma unidade.
 categoria: configuracoes
 rota: /configuracoes/notificacoes-aplicativo
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: notificações aplicativo, configurações, AP-155
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve

@@ -482,8 +482,9 @@ final class RegistryService
         }
         // Dentro de uma transação, a leitura é travada (ADR 0100): enxerga o fechamento já gravado por outra
         // sessão e segura a linha (ou o intervalo, se ainda não há linha) até o fim da gravação, de modo que
-        // MonthClosing::close espere. Fora de transação, é a leitura simples de antes.
-        $lock = $this->pdo->inTransaction() ? ' LOCK IN SHARE MODE' : '';
+        // MonthClosing::close espere. Fora de transação, é a leitura simples de antes. A trava é sintaxe do
+        // MariaDB: no SQLite dos testes de unidade (que já serializa as gravações) ela fica de fora.
+        $lock = $this->pdo->inTransaction() && $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' LOCK IN SHARE MODE' : '';
         $stmt = $this->pdo->prepare("SELECT status FROM erp_month_closings WHERE condominium_id = :c AND competence = :m{$lock}");
         $stmt->execute(['c' => (int)$condominiumId, 'm' => (string)$competence]);
         return $stmt->fetchColumn() === 'closed';
