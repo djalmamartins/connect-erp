@@ -122,6 +122,17 @@ final class RegistryService
                 $params["q{$i}"] = '%' . addcslashes($isNumeric ? $digits : ($field['type'] === 'plate' ? strtoupper((string)preg_replace('/[^0-9A-Za-z]/', '', $q)) : $q), '%_\\') . '%';
                 $i++;
             }
+            // Unidades (pedido do Djalma, 10/11): a pesquisa também acha pelo nome ou CPF/CNPJ do
+            // proprietário ou do inquilino vinculado. Só para quem pode ver o cadastro de pessoas.
+            $people = $this->peopleFor($user, $definition);
+            if ($people !== null) {
+                $like[] = 'EXISTS (SELECT 1 FROM `' . $people['table'] . '` pq WHERE ' . self::peopleMatch('pq') . " AND pq.relationship IN ('"
+                    . implode("', '", array_keys($people['roles'])) . "') AND (pq.name LIKE :q_people" . ($digits !== '' ? ' OR pq.document LIKE :q_people_doc' : '') . '))';
+                $params['q_people'] = '%' . addcslashes($q, '%_\\') . '%';
+                if ($digits !== '') {
+                    $params['q_people_doc'] = '%' . addcslashes($digits, '%_\\') . '%';
+                }
+            }
             $where[] = $like === [] ? '1 = 0' : '(' . implode(' OR ', $like) . ')';
         }
 
@@ -136,11 +147,77 @@ final class RegistryService
         $order = $definition['order'];
         $stmt = $this->pdo->prepare($this->select($definition) . " WHERE {$whereSql} ORDER BY t.`{$order}`, t.id LIMIT " . self::PER_PAGE . " OFFSET {$offset}");
         $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $names = $this->peopleNames($user, $definition, array_map(static fn (array $r): int => (int)$r['id'], $rows));
 
         return [
-            'data' => array_map(fn (array $row): array => $this->present($definition, $row), $stmt->fetchAll(PDO::FETCH_ASSOC)),
+            'data' => array_map(function (array $row) use ($definition, $names): array {
+                $out = $this->present($definition, $row);
+                if ($names !== null) {
+                    foreach ($definition['people']['roles'] as $role => $column) {
+                        $out[$column] = $names[(int)$row['id']][$role] ?? [];
+                    }
+                }
+                return $out;
+            }, $rows),
             'total' => $total, 'page' => $page, 'per_page' => self::PER_PAGE, 'pages' => $pages,
         ];
+    }
+
+    /**
+     * 'people' na definição (unidades): pessoas vinculadas listadas com o registro. Null quando a
+     * definição não tem ou quando o usuário não pode ver o cadastro de pessoas (LGPD: quem só vê
+     * unidades não recebe nomes nem busca por eles).
+     *
+     * @return array{table: string, see: string, roles: array<string, string>}|null
+     */
+    private function peopleFor(User $user, array $definition): ?array
+    {
+        $people = $definition['people'] ?? null;
+        return is_array($people) && $user->can($people['see']) ? $people : null;
+    }
+
+    /**
+     * Vínculo ativo de uma pessoa com a unidade t: pela unidade escolhida (unit_id) ou, em cadastro
+     * antigo sem unit_id, pelo texto da unidade no mesmo condomínio. Vínculo encerrado (fim no
+     * passado), inativo ou excluído não conta.
+     */
+    private static function peopleMatch(string $alias): string
+    {
+        return "({$alias}.unit_id = t.id OR ({$alias}.unit_id IS NULL AND {$alias}.condominium_id = t.condominium_id AND {$alias}.unit_label = t.label))"
+            . " AND {$alias}.deleted_at IS NULL AND {$alias}.status = 'active' AND ({$alias}.ends_on IS NULL OR {$alias}.ends_on >= CURDATE())";
+    }
+
+    /**
+     * Nomes por unidade e papel, para a página atual da listagem (uma consulta só).
+     *
+     * @param list<int> $ids
+     * @return array<int, array<string, list<string>>>|null
+     */
+    private function peopleNames(User $user, array $definition, array $ids): ?array
+    {
+        $people = $this->peopleFor($user, $definition);
+        if ($people === null) {
+            return null;
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(', ', array_map('intval', $ids));
+        $roles = "'" . implode("', '", array_keys($people['roles'])) . "'";
+        $stmt = $this->pdo->query("SELECT t.id AS unit_id, p.relationship, p.name FROM `{$definition['table']}` t
+            JOIN `{$people['table']}` p ON " . self::peopleMatch('p') . " AND p.relationship IN ({$roles})
+            WHERE t.id IN ({$in}) ORDER BY p.name, p.id");
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $list = &$out[(int)$row['unit_id']][(string)$row['relationship']];
+            $list ??= [];
+            if (!in_array($row['name'], $list, true)) {
+                $list[] = (string)$row['name'];
+            }
+            unset($list);
+        }
+        return $out;
     }
 
     /** @return array<string, mixed> */
