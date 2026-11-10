@@ -8,6 +8,7 @@ $contact = \Source\Services\Help\SupportContact::data();
 $logo = url('/container/web/default/v1/assets/images/logo-connect-condominios.svg');
 $logoLight = url('/container/web/default/v1/assets/svg/logo-connect-footer.svg');
 $cssFile = __DIR__ . '/../assets/support.css';
+$residentsUrl = \Source\Services\Environments::url('residents', '/app');
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -15,7 +16,9 @@ $cssFile = __DIR__ . '/../assets/support.css';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <?= $head ?>
-    <link rel="icon" href="<?= site_favicon_url() ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= url('/container/web/support/v1/assets/images/favicon-ajuda.svg') ?>">
+    <link rel="icon" type="image/png" sizes="96x96" href="<?= url('/container/web/support/v1/assets/images/favicon-ajuda.png') ?>">
+    <link rel="apple-touch-icon" href="<?= url('/container/web/support/v1/assets/images/favicon-ajuda.png') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -69,6 +72,13 @@ $cssFile = __DIR__ . '/../assets/support.css';
         <svg class="hc-footer__arcs" viewBox="0 0 260 60" aria-hidden="true"><path d="M2 58V40a28 28 0 0 1 56 0M58 58V30a30 30 0 0 1 60 0v28M118 58a32 32 0 0 1 64 0M182 58a36 36 0 0 1 72-4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         <div class="hc-footer__bottom">
             <a href="<?= url('/') ?>"><img src="<?= $logoLight ?>" alt="Connect Condomínios" width="120" height="36"></a>
+            <nav class="hc-footer__links" aria-label="Outros acessos">
+                <a href="<?= url('/') ?>"><?= \Source\Services\Help\Icons::svg('globe-outline') ?>Voltar para o site</a>
+                <a href="<?= htmlspecialchars($residentsUrl) ?>"><?= \Source\Services\Help\Icons::svg('home-outline') ?>App do morador</a>
+                <a href="<?= htmlspecialchars($contact['system_url']) ?>"><?= \Source\Services\Help\Icons::svg('log-in-outline') ?>Connect ERP</a>
+            </nav>
+        </div>
+        <div class="hc-footer__legal">
             <span>© <?= date('Y') ?> Connect Condomínios. Todos os direitos reservados.</span>
             <nav><a href="<?= url('/politica-de-privacidade') ?>">Privacidade</a><a href="<?= url('/termos-de-uso') ?>">Termos de uso</a></nav>
             <a class="hc-totop" href="#conteudo">Voltar ao topo <?= \Source\Services\Help\Icons::svg('arrow-up-outline') ?></a>
