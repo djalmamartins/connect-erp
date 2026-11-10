@@ -1,0 +1,9 @@
+{
+  "name": "connect-help-shots",
+  "private": true,
+  "description": "Prints marcados da Central de Ajuda (ADR 0141)",
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.49.1"
+  }
+}

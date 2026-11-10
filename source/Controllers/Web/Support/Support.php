@@ -6,6 +6,7 @@ use Source\Core\Connect;
 use Source\Core\Controller;
 use Source\Models\Support\SupportArticle;
 use Source\Models\Support\SupportCategory;
+use Source\Services\Help\KnowledgeBase;
 use Source\Support\Upload;
 
 class Support extends Controller
@@ -18,18 +19,101 @@ class Support extends Controller
     public function home(): void
     {
         $categories = $this->categories();
-        echo $this->view->render("pages/home", ["head" => $this->seo->render("Suporte - " . CONF_SITE_NAME, "Tutoriais e respostas para usar o MovesOS.", url("/suporte"), theme("/assets/images/share.jpg")), "categories" => $categories, "popular" => (new SupportArticle())->findPublished()->order("views DESC, helpful_yes DESC")->limit(6)->fetch(true) ?: []]);
+        $counts = [];
+        foreach (Connect::getInstance()->query("SELECT category_id, COUNT(*) total FROM support_articles WHERE status = 'published' AND published_at <= NOW() GROUP BY category_id")->fetchAll() ?: [] as $row) {
+            $counts[(int)$row->category_id] = (int)$row->total;
+        }
+        echo $this->view->render("pages/home", [
+            "head" => $this->seo->render("Central de Ajuda - " . CONF_SITE_NAME, "Tutoriais com as telas do sistema, passo a passo, e atendimento da Connect.", url("/suporte"), theme("/assets/images/share.jpg")),
+            "categories" => $categories,
+            "counts" => $counts,
+            "popular" => (new SupportArticle())->findPublished()->order("views DESC, helpful_yes DESC, id")->limit(6)->fetch(true) ?: [],
+            "formToken" => $this->widgetToken(),
+            "sent" => isset($_GET["enviado"]) ? preg_replace('/[^A-Z0-9]/', '', strtoupper((string)$_GET["enviado"])) : null,
+            "showcase" => is_file(dirname(__DIR__, 4) . KnowledgeBase::shotUrl('dashboard')) ? url(KnowledgeBase::shotUrl('dashboard')) : null,
+        ]);
+    }
+
+    /**
+     * "Deixe a sua mensagem" (ADR 0141): abre o chamado no Help Desk pelo serviço único (ADR 0034),
+     * origem site, com CSRF ou o token assinado do formulário, armadilha para robôs e limite por IP.
+     * Responde JSON para o envio por fetch e redireciona com o protocolo sem JavaScript.
+     */
+    public function message(array $data): void
+    {
+        $wantsJson = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
+        $reply = function (bool $ok, string $text, ?string $protocol = null, ?string $field = null) use ($wantsJson): void {
+            if ($wantsJson) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => $ok, 'message' => $text, 'protocol' => $protocol, 'field' => $field]);
+                return;
+            }
+            redirect('/suporte' . ($ok && $protocol ? '?enviado=' . $protocol : '') . '#mensagem');
+        };
+        if (!$this->validWidgetRequest($data)) { $reply(false, 'A página expirou. Atualize e envie de novo.'); return; }
+        if (!empty($data['website'])) { $reply(true, 'Mensagem enviada.'); return; }
+        if (request_limit('public_support_message', 5, 3600)) { $reply(false, 'Muitas mensagens em pouco tempo. Aguarde um pouco e tente de novo.'); return; }
+
+        $name = mb_substr(trim(strip_tags((string)($data['name'] ?? ''))), 0, 160);
+        $email = mb_strtolower(mb_substr(trim((string)($data['email'] ?? '')), 0, 190));
+        $phone = mb_substr(preg_replace('/[^0-9+() -]/', '', (string)($data['phone'] ?? '')) ?? '', 0, 30);
+        $message = trim(strip_tags((string)($data['message'] ?? '')));
+        if (mb_strlen($name) < 2) { $reply(false, 'Informe o seu nome.', null, 'name'); return; }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $reply(false, 'Informe um e-mail válido para a resposta.', null, 'email'); return; }
+        if (!empty($data['whatsapp']) && strlen(preg_replace('/\D+/', '', $phone) ?? '') < 10) { $reply(false, 'Para responder pelo WhatsApp, informe o telefone com DDD.', null, 'phone'); return; }
+        if (!empty($data['whatsapp'])) {
+            $message .= "\n\n[Aceita resposta por WhatsApp no telefone informado.]";
+        }
+        try {
+            $opened = (new \Source\Services\Support\TicketService())->open([
+                'subject' => (string)($data['subject'] ?? ''), 'message' => $message, 'category' => 'Central de Ajuda',
+                'requester_name' => $name, 'requester_email' => $email, 'requester_phone' => $phone,
+            ], 'site');
+            \Source\Support\AppLogger::log('info', 'Mensagem da Central de Ajuda virou chamado', ['event_type' => 'support_message_ticket', 'ticket_id' => $opened['id'], 'protocol' => $opened['protocol']], 'support');
+            $reply(true, 'Recebemos a sua mensagem. O protocolo é ' . $opened['protocol'] . ' e a resposta chega no seu e-mail.', $opened['protocol']);
+        } catch (\Source\Services\Support\TicketError $exception) {
+            $reply(false, $exception->getMessage(), null, $exception->field ?? null);
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, 'support', ['event_type' => 'support_message_failed']);
+            $reply(false, 'Não foi possível enviar agora. Tente de novo em alguns minutos.');
+        }
+    }
+
+    /**
+     * "Ajuda desta página" no ERP: leva do código da ficha (AP-xxx) ao tutorial publicado.
+     * O mapa vem dos arquivos da base (sem consulta); código sem artigo cai na página inicial.
+     */
+    public function screen(array $data): void
+    {
+        $code = strtoupper(preg_replace('/[^A-Za-z0-9-]/', '', (string)($data['code'] ?? '')) ?? '');
+        $article = $code !== '' ? ((new KnowledgeBase())->byCode()[$code] ?? null) : null;
+        if (!$article || $article['draft']) {
+            redirect('/suporte');
+            return;
+        }
+        redirect('/suporte/' . $article['folder'] . '/' . $article['slug']);
     }
 
     public function search(): void
     {
-        $search = trim(strip_tags((string)($_GET["q"] ?? "")));
+        $search = mb_substr(trim(strip_tags((string)($_GET["q"] ?? ""))), 0, 120);
         $articles = [];
-        if (mb_strlen($search) >= 2) {
-            $like = urlencode("%{$search}%");
-            $articles = (new SupportArticle())->findPublished("(title LIKE :q1 OR summary LIKE :q2 OR content LIKE :q3)", "q1={$like}&q2={$like}&q3={$like}")->order("views DESC, title")->limit(40)->fetch(true) ?: [];
+        $terms = array_slice(array_values(array_filter(preg_split('/\s+/u', $search) ?: [], static fn ($t) => mb_strlen($t) >= 2)), 0, 6);
+        if ($terms) {
+            // Cada palavra precisa aparecer no título, no resumo ou no texto; título vem primeiro.
+            $where = [];
+            $params = [];
+            foreach ($terms as $i => $term) {
+                $like = '%' . addcslashes($term, '%_\\') . '%';
+                $where[] = "(title LIKE :t{$i} OR summary LIKE :s{$i} OR content LIKE :c{$i})";
+                $params["t{$i}"] = $params["s{$i}"] = $params["c{$i}"] = $like;
+            }
+            $params['rank'] = '%' . addcslashes($terms[0], '%_\\') . '%';
+            $statement = Connect::getInstance()->prepare("SELECT * FROM support_articles WHERE status = 'published' AND published_at <= NOW() AND " . implode(' AND ', $where) . " ORDER BY (title LIKE :rank) DESC, views DESC, title LIMIT 40");
+            $statement->execute($params);
+            $articles = $statement->fetchAll(\PDO::FETCH_CLASS, SupportArticle::class) ?: [];
         }
-        echo $this->view->render("pages/search", ["head" => $this->seo->render("Busca no Suporte", "Resultados da busca de suporte.", url("/suporte/buscar?q=" . urlencode($search)), theme("/assets/images/share.jpg")), "search" => $search, "articles" => $articles, "categories" => $this->categories()]);
+        echo $this->view->render("pages/search", ["head" => $this->seo->render("Busca na Central de Ajuda", "Resultados da busca na Central de Ajuda.", url("/suporte/buscar?q=" . urlencode($search)), theme("/assets/images/share.jpg")), "search" => $search, "articles" => $articles, "categories" => $this->categories()]);
     }
 
     public function widget(): void
@@ -159,8 +243,47 @@ class Support extends Controller
         $article = (new SupportArticle())->findByUri(str_slug($data["article"] ?? ""), true);
         if (!$category || !$article || (int)$article->category_id !== (int)$category->id) { redirect("/suporte"); return; }
         Connect::getInstance()->prepare("UPDATE support_articles SET views=views+1 WHERE id=:id")->execute(["id" => $article->id]);
-        $related = (new SupportArticle())->findPublished("category_id=:category AND id!=:id", "category={$category->id}&id={$article->id}")->order("views DESC,title")->limit(5)->fetch(true) ?: [];
-        echo $this->view->render("pages/article", ["head" => $this->seo->render($article->title . " - Suporte", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $article->cover ? image($article->cover, 1200, 628) : theme("/assets/images/share.jpg")), "article" => $article, "category" => $category, "related" => $related, "categories" => $this->categories()]);
+        $meta = self::articleMeta($article);
+        $related = $meta['related'];
+        if (!$related) {
+            foreach ((new SupportArticle())->findPublished("category_id=:category AND id!=:id", "category={$category->id}&id={$article->id}")->order("views DESC,title")->limit(4)->fetch(true) ?: [] as $item) {
+                $related[] = ['title' => $item->title, 'url' => '/suporte/' . $category->uri . '/' . $item->uri];
+            }
+        }
+        $cover = $meta['cover'] ? url($meta['cover']) : ($article->cover ? image($article->cover, 1200, 628) : null);
+        echo $this->view->render("pages/article", [
+            "head" => $this->seo->render($article->title . " - Central de Ajuda", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $cover ?: ($meta['image'] ? url($meta['image']) : theme("/assets/images/share.jpg"))),
+            "article" => $article, "category" => $category, "related" => $related, "meta" => $meta, "cover" => $cover,
+            "categories" => $this->categories(),
+        ]);
+    }
+
+    /**
+     * Metadados do artigo: os da base de conhecimento (kb_meta, ADR 0141) ou, numa matéria escrita
+     * no Help Desk, o índice tirado dos títulos h2 do próprio texto.
+     *
+     * @return array{icon:string,route:string,menu:string,situation:string,toc:list<array{id:string,title:string}>,related:list<array{title:string,url:string}>,cover:?string,image:?string}
+     */
+    public static function articleMeta(object $article): array
+    {
+        $meta = json_decode((string)($article->kb_meta ?? ''), true);
+        $meta = is_array($meta) ? $meta : [];
+        $toc = $meta['toc'] ?? [];
+        if (!$toc && preg_match_all('/<h2[^>]*id="([^"]+)"[^>]*>(.*?)<\/h2>/is', (string)$article->content, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $toc[] = ['id' => $match[1], 'title' => html_entity_decode(strip_tags($match[2]), ENT_QUOTES, 'UTF-8')];
+            }
+        }
+        return [
+            'icon' => preg_match('/^[a-z0-9-]+$/', (string)($meta['icon'] ?? '')) ? $meta['icon'] : 'document-text-outline',
+            'route' => (string)($meta['route'] ?? ''),
+            'menu' => (string)($meta['menu'] ?? ''),
+            'situation' => (string)($meta['situation'] ?? ''),
+            'toc' => $toc,
+            'related' => array_values(array_filter($meta['related'] ?? [], static fn ($r) => is_array($r) && isset($r['title'], $r['url']) && str_starts_with((string)$r['url'], '/suporte/'))),
+            'cover' => isset($meta['cover']) && is_string($meta['cover']) && str_starts_with($meta['cover'], '/container/web/support/') ? $meta['cover'] : null,
+            'image' => isset($meta['image']) && is_string($meta['image']) && str_starts_with($meta['image'], '/container/web/support/') ? $meta['image'] : null,
+        ];
     }
 
     public function vote(array $data): void
