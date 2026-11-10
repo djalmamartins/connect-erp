@@ -43,10 +43,6 @@ O chamado cai na fila do Help Desk e a equipe é avisada na hora.
 
 > Enquanto você digita o assunto, a tela sugere artigos desta Central de Ajuda que falam do mesmo tema. Se um deles resolver, não precisa abrir o chamado; se não, siga normalmente.
 
-## Acompanhar e responder
-
-Clique no protocolo na lista para abrir o chamado. Ali aparecem a conversa com a equipe e a situação atual. Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
-
 ```tela chamados-form
 rota: /operacional/chamados
 condominio: residencial-jardim-das-acacias
@@ -71,6 +67,10 @@ recorte: main form:not([method=get])
 - **Nome do solicitante**.
 - **E-mail do solicitante**.
 - **Telefone**: Só quando o pedido é de outra pessoa.
+
+## Acompanhar e responder
+
+Clique no protocolo na lista para abrir o chamado. Ali aparecem a conversa com a equipe e a situação atual. Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
 
 ## Pesquisar e filtrar
 
