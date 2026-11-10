@@ -454,6 +454,8 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'unique' => [['fields' => ['condominium_id', 'name'], 'nullable' => ['condominium_id'], 'message' => 'Já existe um tipo de fatura com este nome neste plano.']],
+                // ADR 0163: na API com condominium_id, o tipo do condomínio com o mesmo nome prevalece sobre o padrão.
+                'override' => 'name',
                 'order' => 'name',
             ],
             // Centros de custo (CN-002, ADR 0021): onde a despesa ou a receita acontece (portaria,
