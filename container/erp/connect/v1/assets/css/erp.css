@@ -855,3 +855,11 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-help-suggest a { display: block; color: var(--erp-text); }
 .erp-help-suggest a small { display: block; color: var(--erp-muted); font-size: 12px; }
 .erp-help-suggest__hint { margin: 6px 0 0; font-size: 12px; color: var(--erp-muted); }
+
+/* Ficha da pessoa no painel da unidade (ADR 0155) ----------------------- */
+.erp-person-name { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--erp-brand-ink); text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .15s var(--erp-ease); }
+.erp-person-name:hover, .erp-person-name:focus-visible { text-decoration-color: currentColor; }
+.erp-person-name:focus-visible { outline: 3px solid var(--erp-focus); outline-offset: 2px; border-radius: 4px; }
+.erp-person-card__facts dd { overflow-wrap: anywhere; }
+.erp-person-card__wide { grid-column: 1 / -1; }
+.erp-person-card__notes { margin: 0; white-space: normal; overflow-wrap: anywhere; }

@@ -1358,8 +1358,10 @@ $html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' 
 $assert(str_contains($html, 'Escolha um condomínio') && str_contains($html, '/condominios/painel-do-condominio'), 'AP-002: em todos os condomínios pede a escolha');
 $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-002', ['condoPanelReady' => false]) === null, 'AP-002: sem permissão ou banco segue a demonstração');
 
-$unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025], 'as_of' => '2026-11-09',
-    'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'phone' => '(11) 99999-0000', 'email' => 'ana@example.com']],
+$unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025, 'address' => 'Rua das Flores, 10 · unidade A-101 · Campinas/SP'], 'as_of' => '2026-11-09',
+    'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'document' => '52998224725', 'phone' => '11999990000', 'email' => 'ana@example.com',
+        'starts_on' => '2024-03-01', 'ends_on' => null, 'billing_by_email' => true, 'notices_opt_out' => false, 'notes' => 'Prefere <WhatsApp>', 'has_portal_account' => false,
+        'other_units' => [['unit_id' => 30, 'label' => 'Sala 7', 'condominium_name' => 'Edifício Beta', 'relationship' => 'tenant']]]],
     'finance' => ['overdue' => [['id' => 3, 'description' => 'Taxa <outubro>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'amount_cents' => 80000, 'days_late' => 30, 'bucket' => '1-30']],
         'overdue_cents' => 80000, 'charges_cents' => 2400, 'max_days_late' => 30,
         'upcoming' => [['id' => 4, 'description' => 'Taxa novembro', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 80000]],
@@ -1372,6 +1374,10 @@ $common($html, 'AP-003', 'Unidade A-101');
 $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 824,00') && str_contains($html, 'Taxa &lt;outubro&gt;') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Proprietário')
     && str_contains($html, 'Quebrado') && str_contains($html, 'ABCD-EFGH') && str_contains($html, '<option value="9" selected>') && str_contains($html, 'data-erp-autosubmit')
     && str_contains($html, '1 entrega(s) · 1 ocorrência(s) · 2 reserva(s)'), 'AP-003: painel da unidade');
+$assert(str_contains($html, 'data-erp-modal-open="person-card-1"') && str_contains($html, '<dialog class="erp-modal erp-modal--wide erp-person-card" id="person-card-1"')
+    && str_contains($html, '529.982.247-25') && str_contains($html, 'href="tel:+5511999990000"') && str_contains($html, '(11) 99999-0000') && str_contains($html, '01/03/2024')
+    && str_contains($html, 'Sala 7') && str_contains($html, 'Edifício Beta') && str_contains($html, 'Prefere &lt;WhatsApp&gt;') && str_contains($html, 'Rua das Flores, 10')
+    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Escolha uma unidade') && !str_contains($html, 'data-erp-unit-panel'), 'AP-003: sem unidade escolhida pede a escolha');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => 99, 'unitPanelError' => 'Unidade não encontrada no seu escopo de condomínios.']));

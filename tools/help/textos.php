@@ -29,6 +29,9 @@ return [
         'titulo' => 'Painel da unidade',
         'para' => 'Tudo de uma unidade em uma tela: quem mora e quem é o responsável financeiro, débitos em aberto, acordos, documentos emitidos e a rotina (reservas, ocorrências, entregas). Ideal para atender um morador ao telefone.',
         'dicas' => ['Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.'],
+        // ADR 0155: o nome da pessoa abre a ficha somente leitura.
+        'secoes' => ['Ver a ficha da pessoa' => "1. No bloco **Pessoas**, clique no nome do proprietário, inquilino ou morador.\n2. Abre a ficha com CPF/CNPJ, telefone, e-mail, início e fim do vínculo, se recebe boleto e comunicados por e-mail, o endereço da unidade, as outras unidades da pessoa nos seus condomínios e as observações.\n3. A ficha é só para consulta: nada pode ser alterado nela. Para corrigir um dado, clique em {{Abrir cadastro para alterar}}.\n\n> Clique no telefone ou no e-mail para ligar ou escrever direto."],
+        'palavras' => ['ficha da pessoa', 'telefone do proprietário', 'cpf do morador', 'dados do inquilino'],
         'relacionados' => ['unidades', 'proprietarios-e-inquilinos'],
     ],
 

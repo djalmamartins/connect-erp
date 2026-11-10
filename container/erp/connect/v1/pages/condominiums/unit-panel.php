@@ -1,6 +1,6 @@
 <?php
 /**
- * Painel da unidade (AP-003, ADR 0054 e 0071) com dados reais: pessoas, débitos com encargos, a vencer,
+ * Painel da unidade (AP-003, ADR 0054, 0071 e 0155) com dados reais: pessoas (o nome abre a ficha somente leitura), débitos com encargos, a vencer,
  * acordos, documentos emitidos e rotina da unidade ($unitPanel de Panel::unitPanelData, mesmo serviço
  * de GET /api/v1/panels/unit/{id}). A unidade é escolhida por ?unidade=, entre as do condomínio da
  * barra superior.
@@ -102,9 +102,11 @@ $this->insert('components/layout/page-head', [
             <?php else: ?>
                 <ul class="erp-list">
                     <?php foreach ($panel['people'] as $p): ?>
-                        <li><span class="erp-list__icon"><?= $icon('user', 'erp-icon--sm') ?></span><div class="erp-list__body"><strong><?= $this->e((string)$p['name']) ?></strong><small><?= $this->e(implode(' · ', array_filter([(string)($p['phone'] ?? ''), (string)($p['email'] ?? '')]))) ?></small></div><span class="erp-badge erp-badge--plain"><?= $this->e($relationships[$p['relationship']] ?? (string)$p['relationship']) ?></span></li>
+                        <li><span class="erp-list__icon"><?= $icon('user', 'erp-icon--sm') ?></span><div class="erp-list__body"><strong><button type="button" class="erp-person-name" data-erp-modal-open="person-card-<?= (int)$p['id'] ?>" aria-haspopup="dialog" title="Ver a ficha de <?= $this->e((string)$p['name']) ?>"><?= $this->e((string)$p['name']) ?></button></strong><small><?= $this->e(implode(' · ', array_filter([($p['phone'] ?? null) !== null ? \Source\Support\Erp\RegistryFormat::phone((string)$p['phone']) : '', (string)($p['email'] ?? '')]))) ?></small></div><span class="erp-badge erp-badge--plain"><?= $this->e($relationships[$p['relationship']] ?? (string)$p['relationship']) ?></span></li>
                     <?php endforeach; ?>
                 </ul>
+                <p class="erp-field__hint">Clique no nome para ver a ficha completa da pessoa.</p>
+                <?php foreach ($panel['people'] as $p) { $this->insert('components/modals/person-card', ['person' => $p, 'unit' => $panel['unit'], 'relationships' => $relationships]); } ?>
             <?php endif; ?>
         </section>
 
