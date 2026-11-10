@@ -23,8 +23,8 @@ use Source\Services\CondominiumScope;
  * - 9.1 Resultados acumulados = saldo inicial da conta 9.1 (AP-161) + DRE dos anos anteriores desde a data
  *   desse saldo. A virada do ano é só virtual: no ano seguinte o resultado entra nos acumulados.
  * - As demais contas patrimoniais analíticas (fundos 8.2 e 8.3, contas próprias do condomínio) valem o
- *   saldo inicial (AP-161) com data até a data do balanço. Lançamento não vai para conta patrimonial
- *   (o lançamento é de receita ou despesa), então o fundo só muda pelo saldo inicial.
+ *   saldo inicial (AP-161) com data até a data do balanço, mais os lançamentos patrimoniais com partida
+ *   dobrada (ADR 0169), que não passam pela DRE nem pelo banco.
  *
  * Não força o fechamento: devolve "diferenca" = ativo − (passivo + PL) e um aviso quando não é zero.
  * Um condomínio só, obrigatório e do escopo (fora = CondominiumAccessDenied, 404).
@@ -45,7 +45,7 @@ final class BalanceSheet
     public const GROUPS = ['7' => ['asset', 'Ativo'], '8' => ['liability', 'Passivo'], '9' => ['equity', 'Patrimônio Líquido']];
     public const LIMITATIONS = [
         'Contas a receber e a pagar seguem a competência dos lançamentos; pagamento adiantado (competência futura) entra no Disponível e não no resultado.',
-        'Fundos e outras contas patrimoniais mudam só pelo saldo inicial (AP-161): os lançamentos são de receita ou despesa.',
+        'Fundos e outras contas patrimoniais mudam pelo saldo inicial (AP-161) e pelos lançamentos patrimoniais (ADR 0169), que não passam pela DRE.',
         'Lançamento pago sem conta bancária entra no resultado e não no Disponível.',
     ];
 
@@ -111,7 +111,9 @@ final class BalanceSheet
                 $names[$key] = (string)$account['name'];
                 continue;
             }
-            $analytic[$key] = ['code' => $code, 'name' => (string)$account['name'], 'nature' => $nature, 'role' => 'opening', 'amount_cents' => (int)($account['opening_cents'] ?? 0)];
+            // Saldo inicial (AP-161) + lançamentos patrimoniais (ADR 0169).
+            $analytic[$key] = ['code' => $code, 'name' => (string)$account['name'], 'nature' => $nature, 'role' => 'opening',
+                'amount_cents' => (int)($account['opening_cents'] ?? 0) + (int)($values['movements'][$key] ?? 0)];
         }
 
         $banks = array_map(static fn (array $b): array => ['name' => (string)$b['name'], 'amount_cents' => (int)$b['closing_cents']], $values['banks'] ?? []);
@@ -125,8 +127,8 @@ final class BalanceSheet
             'bank' => array_sum(array_column($banks, 'amount_cents')),
             'receivable' => (int)($values['receivable_cents'] ?? 0),
             'payable' => (int)($values['payable_cents'] ?? 0),
-            'retained' => $retainedOpening + (int)($values['retained_prior_cents'] ?? 0),
-            'current' => (int)($values['current_result_cents'] ?? 0),
+            'retained' => $retainedOpening + (int)($values['retained_prior_cents'] ?? 0) + (int)($values['retained_movements_cents'] ?? 0),
+            'current' => (int)($values['current_result_cents'] ?? 0) + (int)($values['current_movements_cents'] ?? 0),
         ];
         foreach ($analytic as &$row) {
             if ($row['role'] !== 'opening') {
@@ -182,11 +184,15 @@ final class BalanceSheet
         $raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $truncated = count($raw) > self::MAX_ACCOUNTS;
         $accounts = [];
+        $openedOn = [];
         $retainedSince = null;
         foreach (array_slice($raw, 0, self::MAX_ACCOUNTS) as $r) {
             // A conta do condomínio com o mesmo código substitui a do padrão (o padrão vem primeiro).
             $accounts[$r['nature'] . '|' . $r['code']] = ['code' => (string)$r['code'], 'name' => (string)$r['name'], 'nature' => (string)$r['nature'],
                 'kind' => (string)$r['kind'], 'opening_cents' => $r['amount_cents'] !== null ? (int)$r['amount_cents'] : null];
+            if ($r['opened_on'] !== null) {
+                $openedOn[$r['nature'] . '|' . $r['code']] = (string)$r['opened_on'];
+            }
             if ($r['code'] === '9.1' && $r['nature'] === 'equity' && $r['opened_on'] !== null) {
                 $retainedSince = (string)$r['opened_on'];
             }
@@ -220,12 +226,18 @@ final class BalanceSheet
         $currentFrom = $retainedSince !== null && $retainedSince > $yearStart ? substr($retainedSince, 0, 7) . '-01' : $yearStart;
         $current = $accounting->incomeStatement($user, $c, $currentFrom, $date, 'competence');
         $banks = $accounting->accountBalances($user, $c, $date);
+        // Lançamentos patrimoniais (ADR 0169): o saldo inicial do PL também substitui os movimentos de PL anteriores à data dele.
+        if ($retainedSince !== null && !isset($openedOn['equity|9.2'])) {
+            $openedOn['equity|9.2'] = $retainedSince;
+        }
+        $moves = PatrimonialEntries::balances((new PatrimonialEntries($this->pdo, $this->scope))->movements($c, $date), $openedOn, $yearStart);
 
         return ['condominium_id' => $c, 'truncated' => $truncated || !empty($current['truncated'])] + self::compose(array_values($accounts), [
             'banks' => $banks['accounts'],
             'receivable_cents' => $openBy['receita'][0] ?? 0, 'receivable_overdue_cents' => $openBy['receita'][1] ?? 0,
             'payable_cents' => $openBy['despesa'][0] ?? 0, 'payable_overdue_cents' => $openBy['despesa'][1] ?? 0,
             'retained_prior_cents' => $priorResult, 'current_result_cents' => (int)$current['totals']['result_cents'],
+            'movements' => $moves['accounts'], 'retained_movements_cents' => $moves['retained'], 'current_movements_cents' => $moves['current'],
         ], $date);
     }
 
