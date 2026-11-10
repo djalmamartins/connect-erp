@@ -1,56 +1,44 @@
 ---
 codigo: AP-136
-titulo: Registros de entregas
-resumo: Histórico das entregas registradas pela portaria.
+titulo: Registros de Entregas
+resumo: O histórico das encomendas da portaria, com filtros e resumo, e a baixa da retirada com o nome de quem retirou.
 categoria: operacional
 rota: /operacional/registros-de-entregas
 menu: Operacional > Portaria > Registros de Entregas
-icone: list-outline
-situacao: exemplo
-relacionados: entregas, achados-e-perdidos, registro-de-acessos, previsao-de-visita
-palavras: registros de entregas, operacional, AP-136
+icone: cube-outline
+situacao: funciona
+relacionados: entregas
+palavras: registros de entregas, encomendas, portaria, retirada, baixa, correios, AP-136
 rascunho: nao
 ---
 
-Histórico das entregas registradas pela portaria.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Mostra as encomendas que chegaram na portaria: a unidade, o destinatário, a transportadora, o rastreio, há quantos dias esperam e quem retirou. A chegada é registrada em [Entregas](artigo:entregas); aqui se dá a **baixa da retirada**.
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Registros de Entregas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Operacional > Portaria > Registros de Entregas]].
 
 ```tela registros-de-entregas
 rota: /operacional/registros-de-entregas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Registros de Entregas
 1: menu | Registros de Entregas no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-3: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De e Até
-4: main table thead | Colunas da lista
+2: main form.erp-filters | Filtros: situação, período da chegada e unidade
+3: main [data-erp-deliveries] | Resumo e lista das entregas
 ```
 
-## Pesquisar e filtrar
+> **Dica:** escolha o condomínio na barra superior para filtrar por unidade. Com "Todos os condomínios", a lista traz todos os do seu escopo.
 
-Use os filtros no alto da lista: **Condomínio**, **De** e **Até**.
-Depois clique em {{Limpar filtros}}. Para voltar à lista completa, limpe os filtros.
+## Como usar
 
-## O que a lista mostra
+1. Ajuste os filtros: **Situação** (aguardando, retirada ou cancelada), o período da chegada (até 366 dias) e a **Unidade**.
+2. Clique em {{Filtrar}}. O resumo mostra quantas aguardam, quantas foram retiradas, a média de dias até a retirada e a espera mais antiga.
+3. Para registrar a retirada, clique em {{Dar baixa}} na linha, informe **quem retirou** e a **data da retirada** (entre a chegada e hoje) e confirme.
 
-Colunas: **Retirada em**, **Unidade**, **Retirado por** e **Portaria**.
-
-## Ações de cada linha
-
-- **Ver** abre os detalhes do registro, sem alterar nada.
-- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
-- **Excluir** pede confirmação antes. O histórico guarda quem excluiu e quando.
-
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+>! A baixa não volta atrás pela tela: confira o nome antes de confirmar. Só o nome fica guardado; foto e documento de quem retira não são guardados.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Operacional**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Entregas na portaria](artigo:entregas), [Achados e perdidos](artigo:achados-e-perdidos) e [Registro de acessos da portaria](artigo:registro-de-acessos).
+Ver exige a permissão **erp.deliveries.view**; dar baixa, **erp.deliveries.manage**. A baixa fica na auditoria (a mudança de situação e a data).

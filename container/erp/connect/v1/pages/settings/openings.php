@@ -9,7 +9,7 @@ use Source\Controllers\Erp\Connect\ReportScreens;
 
 $this->layout('default');
 $condo = \Source\Support\Erp\CondominiumContext::current();
-$condoName = (string)($condoName ?? 'o condomínio');
+$condoName = (string)($condo['name'] ?? 'o condomínio');
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ($currentPage['section'] ? ' · ' . $currentPage['section'] : ''),
     'pageTitle' => $currentPage['name'],

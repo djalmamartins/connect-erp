@@ -1,86 +1,52 @@
 ---
 codigo: AP-018
-titulo: Assembleia virtual
-resumo: Assembleias do condomínio, com data, tipo, pauta, presenças e situação.
+titulo: Assembleia Virtual
+resumo: Criar a assembleia com a pauta, convocar pelo edital, abrir, registrar a presença por unidade, encerrar com a ata ou cancelar.
 categoria: comunicacao
 rota: /comunicacao/assembleia-virtual
 menu: Comunicação > Canais > Assembleia Virtual
-icone: list-outline
-situacao: exemplo
-relacionados: comunicados-gerais, votacao, cobranca, agendada
-palavras: assembleia virtual, comunicação, AP-018
+icone: people-outline
+situacao: funciona
+relacionados: votacao, listagem-de-presencas, parecer
+palavras: assembleia virtual, assembleia, AGO, AGE, edital, pauta, presença, procuração, ata, AP-018
 rascunho: nao
 ---
 
-Assembleias do condomínio, com data, tipo, pauta, presenças e situação.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui a assembleia nasce e anda até a ata: **rascunho** com a pauta, **convocada** com o edital publicado, **em andamento** com a presença das unidades e **encerrada** com a ata gerada. Ela pode ser presencial, virtual ou híbrida. A votação dos itens fica em [Votação](artigo:votacao).
 
 ## Onde fica
 
-No menu lateral, abra [[Comunicação > Canais > Assembleia Virtual]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Comunicação > Canais > Assembleia Virtual]].
 
 ```tela assembleia-virtual
 rota: /comunicacao/assembleia-virtual
 condominio: residencial-jardim-das-acacias
 legenda: Tela Assembleia Virtual
 1: menu | Assembleia Virtual no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Nova assembleia") | Botão {{Nova assembleia}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio e Pesquisar
-5: main table thead | Colunas da lista
+2: main [data-erp-assemblies] | Nova assembleia e a lista das assembleias
 ```
 
-## Como cadastrar
+## Criar a assembleia
 
-1. Clique em {{Nova assembleia}}. A janela abre por cima da lista.
-2. Preencha os campos obrigatórios: **Condomínio**, **Tipo**, **Data** e **Pauta**. Os outros podem ficar para depois.
-3. Clique em {{Salvar}}.
+>! A assembleia é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela só mostra a lista.
 
-```tela assembleia-virtual-nova-assembleia
-rota: /comunicacao/assembleia-virtual
-condominio: residencial-jardim-das-acacias
-legenda: Formulário: nova assembleia
-antes: clicar main .erp-page-head__actions :is(a,button):has-text("Nova assembleia")
-antes: esperar 500
-recorte: dialog[open]
-1: dialog[open] [name="ap-018-condominio"] | Condomínio (obrigatório)
-2: dialog[open] [name="ap-018-tipo"] | Tipo (obrigatório)
-3: dialog[open] [name="ap-018-data"] | Data (obrigatório)
-4: dialog[open] [name="ap-018-pauta"] | Pauta (obrigatório)
-5: dialog[open] [name="ap-018-edital-de-convocacao"] | Edital de convocação
-6: dialog[open] button:has-text("Salvar") | Botão {{Salvar}}
-```
+1. Em **Nova assembleia**, preencha o título, o tipo (ordinária ou extraordinária), o formato e o local ou o link da sala.
+2. Informe a **primeira convocação** e, se quiser, a **segunda** (pelo menos 30 minutos depois).
+3. Monte a **pauta**: cada item tem o assunto, a **base do voto** (fração ideal ou uma unidade, um voto) e o **quórum** (maioria simples dos votos, maioria absoluta do condomínio, dois terços ou unanimidade). Use {{Adicionar item}} para até 20 itens.
+4. Clique em {{Criar rascunho}}. A tela abre o detalhe da assembleia.
 
-### O que preencher
+## Do edital à ata
 
-- **Condomínio** (obrigatório).
-- **Tipo** (obrigatório): Opções: AGO e AGE.
-- **Data** (obrigatório).
-- **Pauta** (obrigatório).
-- **Edital de convocação**: PDF, JPG ou PNG. O envio será habilitado com o armazenamento do módulo. Escolha o arquivo no seu computador.
+1. **Convocar:** {{Convocar}} publica o edital pela fila de avisos, uma mensagem por unidade. O edital sai com pelo menos 8 dias de antecedência da primeira convocação. Fora de produção, os e-mails vão só para o log ou para a caixa de teste.
+2. **Abrir:** a partir do horário da primeira convocação, {{Abrir a assembleia}}.
+3. **Presença:** em **Registrar presença**, escolha a unidade e quem está presente. Por procuração, marque {{Por procuração}} e escolha o arquivo da procuração, enviado antes em [[Documentos > Disco Virtual]]. Unidade com conta vencida em aberto fica presente, mas **não vota** (Código Civil, art. 1.335, III).
+4. **Votar:** vote cada item em [Votação](artigo:votacao).
+5. **Encerrar:** com todos os itens apurados, {{Encerrar e gerar a ata}}. A ata fica guardada com um código de conferência (SHA-256) e não muda mais.
 
-## Pesquisar e filtrar
-
-Use os filtros no alto da lista: **Condomínio** e **Pesquisar**.
-Depois clique em {{Limpar filtros}}. Para voltar à lista completa, limpe os filtros.
-
-## O que a lista mostra
-
-Colunas: **Data**, **Condomínio**, **Tipo**, **Pauta**, **Presenças** e **Situação**.
-
-## Ações de cada linha
-
-- **Ver** abre os detalhes do registro, sem alterar nada.
-- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
-- **Excluir** pede confirmação antes. O histórico guarda quem excluiu e quando.
-
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+Rascunho e assembleia convocada podem ser canceladas em {{Cancelar a assembleia}}, com o motivo. O edital que ainda não saiu é cancelado junto.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Comunicação**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Enviar um comunicado por e-mail](artigo:comunicados-gerais), [Votações](artigo:votacao) e [Enviar aviso de cobrança](artigo:cobranca).
+Ver exige a permissão **erp.assemblies.view**; criar, abrir, registrar presença e encerrar, **erp.assemblies.manage**. Convocar também exige **erp.announcements.manage**, porque publica um comunicado. Cada pessoa só vê os condomínios vinculados à própria conta, e toda mudança fica na auditoria.

@@ -1080,6 +1080,181 @@ $common($html, 'AP-163', 'Previsão Orçamentária');
 $assert(substr_count($html, 'name="month"') === 12 && str_contains($html, 'data-budget-edit="7"') && str_contains($html, '100,00') && str_contains($html, 'R$ 1.200,00') && str_contains($html, '-25,00%') && str_contains($html, 'name="ano" min="2000"') && str_contains($html, 'value="2026"'), 'AP-163: previsão com 12 meses e edição');
 $assert($SS::year('1999', 2026) === 2026 && $SS::year('2031', 2026) === 2031 && $SS::year('2032', 2026) === 2026, 'configurações: ano do filtro');
 
+// Assembleias com dados reais (ADR 0145): AP-018 gestão, AP-017 votação, AP-088 presenças e AP-092 parecer.
+$AS = Source\Controllers\Erp\Connect\AssemblyScreens::class;
+$asRow = static fn (array $over = []): array => $over + ['id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial <Teste>', 'kind' => 'ordinaria', 'mode' => 'virtual',
+    'title' => 'AGO <2026>', 'location' => 'https://sala.exemplo/abc', 'first_call_at' => '2026-12-01 19:00:00', 'second_call_at' => '2026-12-01 19:30:00', 'status' => 'open',
+    'announcement_id' => 3, 'convened_at' => '2026-11-10 10:00:00', 'opened_at' => '2026-12-01 19:05:00', 'closed_at' => null, 'cancel_reason' => null];
+$asItem = static fn (array $over = []): array => $over + ['id' => 31, 'position' => 1, 'title' => 'Aprovar contas <2025>', 'description' => 'Balancete anual', 'vote_basis' => 'fraction',
+    'quorum' => 'simple', 'status' => 'pending', 'result' => null, 'decided_at' => null];
+$asDetail = static fn (array $over = [], array $items = []): array => $asRow($over) + ['items' => $items ?: [$asItem()], 'attendance' => ['units' => 3, 'proxies' => 1, 'without_vote' => 1],
+    'minutes' => null, 'minutes_sha256' => null];
+$asData = static fn (string $kind, array $over = []): array => $over + ['assemblyReady' => true, 'assemblyKind' => $kind, 'assemblyContext' => 1, 'assemblyError' => null,
+    'canManageAssembly' => true, 'canConvene' => true, 'assemblies' => ['data' => [$asRow(), $asRow(['id' => 8, 'status' => 'closed', 'title' => 'AGE obra'])], 'total' => 2],
+    'assemblyDetail' => null, 'assemblyReport' => null, 'assemblyUnits' => [], 'assemblyVoters' => [], 'assemblyDocuments' => []];
+foreach ($AS::PAGES as $asPage => $asKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($asPage, ['assemblyReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($asPage, ['assemblyReady' => true]) === 'pages/assemblies/assembly', "{$asPage}: tela própria só com dados");
+    $assert(Source\Controllers\Erp\Connect\Panel::pagePermissions()[$asPage] === 'erp.assemblies.view', "{$asPage}: permissão do menu");
+}
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage'), 'real');
+$common($html, 'AP-018', 'Assembleia Virtual');
+$assert(str_contains($html, 'data-erp-assemblies') && str_contains($html, 'data-assembly-create') && str_contains($html, 'data-agenda-template') && str_contains($html, '/api/v1/assemblies')
+    && str_contains($html, 'AGO &lt;2026&gt;') && str_contains($html, '?assembleia=9') && str_contains($html, 'Em andamento') && !str_contains($html, 'Interface proposta'), 'AP-018: lista e nova assembleia');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyContext' => null]));
+$assert(!str_contains($html, 'data-assembly-create') && str_contains($html, 'Escolha um condomínio') && str_contains($html, 'Residencial &lt;Teste&gt;'), 'AP-018: sem condomínio não cria');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyDetail' => $asDetail(['status' => 'draft'])]));
+$assert(str_contains($html, '/api/v1/assemblies/9/convene') && str_contains($html, 'data-assembly-cancel') && !str_contains($html, '/api/v1/assemblies/9/open'), 'AP-018: rascunho convoca ou cancela');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['canConvene' => false, 'assemblyDetail' => $asDetail(['status' => 'draft'])]));
+$assert(!str_contains($html, '/convene') && str_contains($html, 'permissão de enviar comunicados'), 'AP-018: convocar exige enviar comunicados');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyDetail' => $asDetail(), 'assemblyUnits' => [['id' => 4, 'label' => 'Apto <101>']], 'assemblyDocuments' => [['id' => 6, 'label' => 'Procuração <A>']]]), 'open');
+$assert(str_contains($html, 'data-assembly-checkin') && str_contains($html, '<option value="4">Apto &lt;101&gt;</option>') && str_contains($html, 'Procuração &lt;A&gt;') && str_contains($html, '/api/v1/assemblies/9/close')
+    && !str_contains($html, 'data-assembly-cancel'), 'AP-018: aberta registra presença e encerra');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['canManageAssembly' => false, 'canConvene' => false, 'assemblyDetail' => $asDetail()]));
+$assert(!str_contains($html, 'data-assembly-checkin') && !str_contains($html, 'data-assembly-action'), 'AP-018: só leitura sem erp.assemblies.manage');
+$html = $agreementPage('AP-017', 'pages/assemblies/assembly', $asData('voting', ['assemblyDetail' => $asDetail([], [$asItem(['status' => 'voting']), $asItem(['id' => 32, 'position' => 2, 'title' => 'Obra'])]),
+    'assemblyVoters' => [['id' => 4, 'label' => 'Apto 101', 'voted' => true], ['id' => 5, 'label' => 'Apto <102>', 'voted' => false]]]), 'real');
+$common($html, 'AP-017', 'Votação');
+$assert(str_contains($html, 'data-assembly-vote') && str_contains($html, '/api/v1/assemblies/9/items/31/votes') && str_contains($html, '/items/31/close') && !str_contains($html, '/items/32/start')
+    && str_contains($html, '<option value="5">Apto &lt;102&gt;</option>') && !str_contains($html, '<option value="4">') && str_contains($html, '1 de 2 unidade(s) já votaram') && substr_count($html, 'name="choice"') === 3, 'AP-017: voto no item em votação');
+$html = $agreementPage('AP-017', 'pages/assemblies/assembly', $asData('voting', ['assemblies' => ['data' => [$asRow(['status' => 'closed'])], 'total' => 1]]));
+$assert(str_contains($html, 'Nenhuma assembleia aberta') && !str_contains($html, 'data-assembly-vote'), 'AP-017: sem assembleia aberta');
+$html = $agreementPage('AP-088', 'pages/assemblies/assembly', $asData('attendance', ['assemblyDetail' => $asDetail(), 'assemblyReport' => ['assembly' => $asRow(), 'rows' => [
+    ['unit_label' => 'Apto <101>', 'attendee_name' => 'Ana <Souza>', 'is_proxy' => true, 'proxy_document_id' => 6, 'eligible' => false, 'overdue_cents' => 12345, 'checked_in_at' => '2026-12-01 19:10:00']],
+    'totals' => ['units' => 1, 'proxies' => 1, 'without_vote' => 1]]]), 'real');
+$common($html, 'AP-088', 'Listagem de presenças');
+$assert(str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Não vota') && str_contains($html, 'R$ 123,45') && str_contains($html, '/api/v1/assemblies/9/attendance-report?format=csv') && str_contains($html, '01/12/2026 19:10'), 'AP-088: presenças, vencido e CSV');
+$html = $agreementPage('AP-092', 'pages/assemblies/assembly', $asData('results', ['assemblyDetail' => $asDetail(['status' => 'closed', 'closed_at' => '2026-12-01 21:00:00', 'minutes' => "ATA <AGO>\nItem 1 aprovado", 'minutes_sha256' => str_repeat('a', 64)]),
+    'assemblyReport' => ['assembly' => $asRow(), 'rows' => [['position' => 1, 'title' => 'Aprovar <contas>', 'vote_basis' => 'fraction', 'quorum' => 'simple', 'status' => 'decided', 'yes' => '0,600000', 'no' => '0,100000',
+    'abstain' => '0,000000', 'total' => '1,000000', 'votes' => 3, 'approved' => true]]]]), 'real');
+$common($html, 'AP-092', 'Parecer');
+$assert(str_contains($html, 'Aprovar &lt;contas&gt;') && str_contains($html, '0,600000') && str_contains($html, 'Aprovado') && str_contains($html, 'ATA &lt;AGO&gt;<br') && str_contains($html, str_repeat('a', 64))
+    && str_contains($html, '/api/v1/assemblies/9/results?format=csv'), 'AP-092: resultados, ata e CSV');
+$assert($AS::selected(null, [['id' => 3, 'status' => 'draft'], ['id' => 2, 'status' => 'closed'], ['id' => 1, 'status' => 'open']], ['open']) === 1 && $AS::selected('7', [], ['open']) === 7
+    && $AS::selected('x', [['id' => 2, 'status' => 'draft']], ['open']) === null, 'assembleias: escolha da assembleia');
+$assert($AS::actions('draft', true, false) === ['cancel'] && $AS::actions('convened', true, true) === ['open', 'cancel'] && $AS::actions('open', false, false) === [] && $AS::actions('closed', true, true) === [], 'assembleias: ações por situação');
+$assert($AS::resultText($asItem(['vote_basis' => 'unit', 'result' => ['yes' => 3000000, 'no' => 1000000, 'abstain' => 0, 'total' => 5000000]])) === 'Sim 3 · Não 1 · Abstenção 0 de 5 unidades', 'assembleias: texto do resultado');
+
+// Ciclo 55 com dados reais (ADR 0146): AP-161 saldo inicial do plano, AP-136 registros de entregas e AP-101 prestação de contas.
+$html = $agreementPage('AP-161', 'pages/settings/chart-openings', $ssData('AP-161', ['openingAccounts' => [['id' => 7, 'label' => '2.01 Limpeza <x> (despesa)']],
+    'chartOpenings' => ['condominium_id' => 1, 'totals' => ['revenue_cents' => 0, 'expense_cents' => -5000, 'total_cents' => -5000], 'rows' => [
+        ['code' => '2', 'name' => 'Despesas', 'nature' => 'despesa', 'level' => 1, 'analytic' => false, 'chart_account_id' => null, 'opened_on' => null, 'notes' => null, 'amount_cents' => -5000],
+        ['code' => '2.01', 'name' => 'Limpeza <x>', 'nature' => 'despesa', 'level' => 2, 'analytic' => true, 'chart_account_id' => 7, 'opened_on' => '2026-01-01', 'notes' => 'Nota <n>', 'amount_cents' => -5000]]]]), 'real');
+$common($html, 'AP-161', 'Saldo inicial (plano de contas)');
+$assert(str_contains($html, 'data-chart-opening-form') && str_contains($html, '/api/v1/chart-account-openings') && str_contains($html, '<option value="7">2.01 Limpeza &lt;x&gt; (despesa)</option>')
+    && str_contains($html, 'erp-report-synthetic') && str_contains($html, '--erp-level: 1') && str_contains($html, 'Nota &lt;n&gt;') && substr_count($html, '−R$ 50,00') >= 3 && str_contains($html, '>soma<'), 'AP-161: árvore do saldo inicial e formulário');
+$html = $agreementPage('AP-161', 'pages/settings/chart-openings', $ssData('AP-161', ['settingsNeedsCondo' => true, 'settingsContext' => null]));
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'data-chart-opening-form'), 'AP-161: pede o condomínio');
+
+$DS = Source\Controllers\Erp\Connect\DeliveryScreens::class;
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-136', ['deliveryReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-136', ['deliveryReady' => true]) === 'pages/operational/deliveries'
+    && Source\Controllers\Erp\Connect\Panel::pagePermissions()['AP-136'] === 'erp.deliveries.view', 'AP-136: tela própria só com dados');
+$dsRow = static fn (array $over = []): array => $over + ['id' => 3, 'condominium_id' => 1, 'condominium_name' => 'Alpha', 'unit_id' => 4, 'unit_label' => 'Apto <101>', 'recipient' => 'Ana <A>',
+    'carrier' => 'mercado_livre', 'tracking_code' => 'BR123', 'received_on' => '2026-11-01', 'received_time' => '09:30:00', 'received_by_user_id' => 1, 'picked_up_on' => null, 'picked_up_by' => null,
+    'status' => 'active', 'waiting_days' => 9];
+$dsData = static fn (array $over = []): array => $over + ['deliveryReady' => true, 'deliveryContext' => 1, 'deliveryFilters' => $DS::filters([]), 'deliveryError' => null,
+    'deliveryUnits' => [['id' => 4, 'label' => 'Apto <101>']], 'canPickUp' => true, 'deliveryLog' => ['truncated' => false, 'rows' => [$dsRow(),
+    $dsRow(['id' => 5, 'status' => 'picked_up', 'picked_up_on' => '2026-11-03', 'picked_up_by' => 'Porteiro <B>', 'waiting_days' => null])],
+    'summary' => ['waiting' => 1, 'picked_up' => 1, 'cancelled' => 0, 'average_pickup_days' => 2.0, 'oldest_waiting_days' => 9]]];
+$html = $agreementPage('AP-136', 'pages/operational/deliveries', $dsData(), 'real');
+$common($html, 'AP-136', 'Registros de Entregas');
+$assert(str_contains($html, 'data-erp-deliveries') && str_contains($html, '/api/v1/delivery-pickups') && substr_count($html, 'data-pickup-open') === 1 && str_contains($html, 'data-received="2026-11-01"')
+    && str_contains($html, 'Ana &lt;A&gt;') && str_contains($html, 'Porteiro &lt;B&gt;') && str_contains($html, '9 dia(s) esperando') && str_contains($html, '2,0 dia(s)') && str_contains($html, 'id="delivery-pickup"')
+    && str_contains($html, '>Mercado Livre<') && !str_contains($html, 'Interface proposta'), 'AP-136: entregas, resumo e baixa');
+$html = $agreementPage('AP-136', 'pages/operational/deliveries', $dsData(['canPickUp' => false, 'deliveryContext' => null]));
+$assert(!str_contains($html, 'data-pickup-open') && !str_contains($html, 'id="delivery-pickup"') && str_contains($html, '>Alpha<'), 'AP-136: sem baixa sem erp.deliveries.manage');
+$html = $agreementPage('AP-136', 'pages/operational/deliveries', $dsData(['deliveryError' => 'Período máximo de 366 dias.', 'deliveryLog' => null]));
+$assert(str_contains($html, 'Período máximo de 366 dias.') && !str_contains($html, 'Resumo das entregas'), 'AP-136: erro do filtro');
+$f = $DS::filters(['situacao' => 'picked_up', 'de' => '2026-11-01', 'ate' => 'x', 'unidade' => '0']);
+$assert($f === ['situacao' => 'picked_up', 'de' => null, 'ate' => null, 'unidade' => null], 'entregas: filtros');
+
+$PC = Source\Controllers\Erp\Connect\AccountabilityScreens::class;
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-101', ['accountabilityReady' => true]) === 'pages/reports/accountability' && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-101', []) === null, 'AP-101: tela própria só com dados');
+$pcData = ['accountabilityReady' => true, 'accountabilityMonth' => '2026-10', 'accountabilityNeedsCondo' => false, 'accountabilityError' => null, 'accountability' => [
+    'condominium_id' => 1, 'competence' => '2026-10', 'from' => '2026-10-01', 'to' => '2026-10-31', 'truncated' => false,
+    'closing' => ['status' => 'open', 'closed_at' => null, 'closed_by' => null, 'reopened_at' => null, 'reopen_reason' => null],
+    'trial_balance' => ['rows' => [], 'totals' => []],
+    'income_statement' => ['rows' => [['code' => '1', 'name' => 'Receitas', 'nature' => 'receita', 'level' => 1, 'analytic' => false, 'amount_cents' => 100000],
+        ['code' => '1.01', 'name' => 'Taxa <cond>', 'nature' => 'receita', 'level' => 2, 'analytic' => true, 'amount_cents' => 100000]], 'totals' => []],
+    'bank_accounts' => ['accounts' => [['name' => 'Corrente <Itaú>', 'opening_cents' => 5000, 'received_cents' => 90000, 'paid_cents' => 40000, 'closing_cents' => 55000]], 'totals' => []],
+    'delinquency' => ['as_of' => '2026-10-31', 'truncated' => false, 'units' => [['unit_id' => 4, 'unit_label' => 'Apto <101>', 'entries' => 2, 'amount_cents' => 30000, 'charges_cents' => 0, 'total_cents' => 30000,
+        'oldest_due_on' => '2026-09-10', 'max_days_late' => 51]], 'totals' => ['units' => 1, 'entries' => 2, 'amount_cents' => 30000, 'charges_cents' => 0, 'total_cents' => 30000, 'buckets' => []]],
+    'summary' => ['revenue_cents' => 100000, 'expense_cents' => 40000, 'result_cents' => 60000, 'cash_in_cents' => 90000, 'cash_out_cents' => 40000, 'bank_opening_cents' => 5000,
+        'bank_closing_cents' => 55000, 'open_revenue_cents' => 10000, 'open_expense_cents' => 0, 'delinquent_cents' => 30000],
+    'warnings' => [['code' => 'month_open', 'message' => 'O mês ainda não foi fechado: os números podem mudar.']]]];
+$html = $agreementPage('AP-101', 'pages/reports/accountability', $pcData, 'real');
+$common($html, 'AP-101', 'Prestação de contas');
+$assert(str_contains($html, 'Outubro de 2026') && str_contains($html, 'Mês em aberto') && str_contains($html, 'O mês ainda não foi fechado') && str_contains($html, 'Taxa &lt;cond&gt;')
+    && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '51 dia(s)') && str_contains($html, 'R$ 600,00') && str_contains($html, 'name="mes"')
+    && str_contains($html, 'erp-report-synthetic') && !str_contains($html, 'Interface proposta'), 'AP-101: pacote do mês');
+$html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityNeedsCondo' => true, 'accountability' => null] + $pcData);
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'name="mes"'), 'AP-101: pede o condomínio');
+$assert($PC::month('2026-13', '2026-11-10') === '2026-10' && $PC::month('2026-11', '2026-11-10') === '2026-11' && $PC::month('2026-12', '2026-11-10') === '2026-10'
+    && $PC::month(null, '2026-01-05') === '2025-12' && $PC::monthLabel('2026-03') === 'Março de 2026', 'prestação de contas: mês');
+
+// Balanço Patrimonial com dados reais (ADR 0148, sobre o ADR 0167): AP-081.
+$BP = Source\Controllers\Erp\Connect\BalanceSheetScreens::class;
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-081', ['balanceReady' => true]) === 'pages/reports/balance-sheet' && Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-081', []) === null
+    && Source\Controllers\Erp\Connect\Panel::pagePermissions()['AP-081'] === 'erp.entries.view', 'AP-081: tela própria só com dados');
+$bpReport = ['condominium_id' => 1, 'truncated' => false] + Source\Services\Erp\BalanceSheet::compose([
+    ['code' => '7', 'name' => 'Ativo', 'nature' => 'asset', 'kind' => 'sintetica', 'opening_cents' => null],
+    ['code' => '8.2', 'name' => 'Fundo de reserva <F>', 'nature' => 'liability', 'kind' => 'analitica', 'opening_cents' => 20000],
+], ['banks' => [['name' => 'Corrente <Itaú>', 'closing_cents' => 150000]], 'receivable_cents' => 30000, 'receivable_overdue_cents' => 12000, 'payable_cents' => 10000,
+    'payable_overdue_cents' => 0, 'retained_prior_cents' => 0, 'current_result_cents' => 100000], '2026-11-10');
+$bpData = ['balanceReady' => true, 'balanceDate' => '2026-11-10', 'balanceNeedsCondo' => false, 'balanceError' => null, 'balance' => $bpReport];
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', $bpData, 'real');
+$common($html, 'AP-081', 'Balanço Patrimonial');
+$assert(str_contains($html, 'Balanço em 10/11/2026') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'Fundo de reserva &lt;F&gt;') && str_contains($html, 'R$ 120,00')
+    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'format=csv&amp;condominium_id=1&amp;date=2026-11-10')
+    && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'Patrimônio líquido') && !str_contains($html, 'Interface proposta'), 'AP-081: balanço com contas, bancos e vencido');
+$assert(($bpReport['balanced'] && str_contains($html, '>Fechado<')) || (!$bpReport['balanced'] && str_contains($html, 'Diferença de')), 'AP-081: selo de fechamento');
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceNeedsCondo' => true, 'balance' => null] + $bpData);
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'name="data"') && !str_contains($html, 'format=csv'), 'AP-081: pede o condomínio');
+$html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceError' => 'Informe a data do balanço (AAAA-MM-DD).', 'balance' => null] + $bpData);
+$assert(str_contains($html, 'Informe a data do balanço') && !str_contains($html, 'Totais do balanço'), 'AP-081: erro');
+$assert($BP::date('2026-02-30', '2026-11-10') === '2026-11-10' && $BP::date('2026-12-01', '2026-11-10') === '2026-11-10' && $BP::date('2026-06-30', '2026-11-10') === '2026-06-30'
+    && $BP::date(null, '2026-11-10') === '2026-11-10', 'balanço: data');
+$bpRows = $BP::rows($bpReport['assets']);
+$assert(in_array('Corrente <Itaú>', array_column($bpRows, 'name'), true) && count(array_filter($bpRows, static fn ($r) => !empty($r['detail']))) === 1, 'balanço: linhas dos bancos');
+
+// Acessos com dados reais (ADR 0147): AP-148 imobiliárias, AP-152 convites de moradores e AP-153 portal do morador.
+$AC = Source\Controllers\Erp\Connect\AccessScreens::class;
+foreach ($AC::PAGES as $acPage => $acKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($acPage, ['accessReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($acPage, ['accessReady' => true]) === 'pages/settings/access'
+        && Source\Controllers\Erp\Connect\Panel::pagePermissions()[$acPage] === 'erp.access_admin.view', "{$acPage}: tela própria só com dados");
+}
+$acData = static fn (string $kind, array $over = []): array => $over + ['accessReady' => true, 'accessKind' => $kind, 'accessContext' => 1, 'accessError' => null, 'accessNeedsCondo' => false,
+    'canManageAccess' => true, 'agencies' => [], 'scopeCondominiums' => [], 'eligibleUsers' => [], 'invitations' => [], 'invitableResidents' => [], 'portalMatrix' => []];
+$html = $agreementPage('AP-148', 'pages/settings/access', $acData('partners', ['scopeCondominiums' => [1 => 'Alpha <A>', 2 => 'Beta'], 'eligibleUsers' => [['id' => 9, 'label' => 'Caio <C> · c***@x.com']],
+    'agencies' => [['id' => 3, 'name' => 'Imob <Sul>', 'document' => '12.***.***/0001-**', 'email' => 'c***@imob.com', 'phone' => '(11) ****-1234', 'status' => 'active',
+        'users' => [['user_id' => 7, 'name' => 'Duda <D>', 'email' => 'd***@imob.com', 'condominium_ids' => [1]]]],
+        ['id' => 4, 'name' => 'Imob Antiga', 'document' => '98.***', 'email' => '', 'phone' => '', 'status' => 'inactive', 'users' => []]]]), 'real');
+$common($html, 'AP-148', 'Usuários de imobiliárias');
+$assert(str_contains($html, 'data-erp-access') && str_contains($html, '/api/v1/partner-agencies') && str_contains($html, 'Imob &lt;Sul&gt;') && str_contains($html, 'Duda &lt;D&gt;')
+    && str_contains($html, '/api/v1/partner-users/7/condominiums/revoke') && str_contains($html, '<option value="2">Beta</option>') && !str_contains($html, '<option value="1">Alpha')
+    && str_contains($html, '/api/v1/partner-agencies/3/users') && str_contains($html, 'Caio &lt;C&gt;') && str_contains($html, '/api/v1/partner-agencies/3/deactivate')
+    && !str_contains($html, '/api/v1/partner-agencies/4/deactivate') && str_contains($html, 'Inativa') && !str_contains($html, 'Interface proposta'), 'AP-148: imobiliárias, usuários e concessões');
+$html = $agreementPage('AP-148', 'pages/settings/access', $acData('partners', ['canManageAccess' => false, 'scopeCondominiums' => [1 => 'Alpha'],
+    'agencies' => [['id' => 3, 'name' => 'Imob', 'document' => '1', 'email' => '', 'phone' => '', 'status' => 'active', 'users' => [['user_id' => 7, 'name' => 'Duda', 'email' => '', 'condominium_ids' => [1]]]]]]));
+$assert(!str_contains($html, 'data-access-form') && !str_contains($html, 'data-access-post') && str_contains($html, 'Alpha'), 'AP-148: só leitura sem erp.access_admin.manage');
+$html = $agreementPage('AP-152', 'pages/settings/access', $acData('invitations', ['invitableResidents' => [
+    ['id' => 5, 'name' => 'Eva <E>', 'unit_label' => '101', 'relationship' => 'owner', 'email' => 'e***@x.com', 'has_email' => true],
+    ['id' => 6, 'name' => 'Fabio', 'unit_label' => '102', 'relationship' => 'tenant', 'email' => '', 'has_email' => false]],
+    'invitations' => [['id' => 11, 'resident_id' => 5, 'name' => 'Eva <E>', 'email' => 'e***@x.com', 'status' => 'pending', 'expires_at' => '2026-11-17 10:00:00', 'accepted_at' => null, 'created_at' => '2026-11-10 10:00:00'],
+        ['id' => 12, 'resident_id' => 7, 'name' => 'Gil', 'email' => 'g***@x.com', 'status' => 'expired', 'expires_at' => '2026-11-01 10:00:00', 'accepted_at' => null, 'created_at' => '2026-10-25 10:00:00']]]), 'real');
+$common($html, 'AP-152', 'Criação de usuários para moradores');
+$assert(str_contains($html, '/api/v1/resident-invitations') && str_contains($html, 'name="resident_ids[]" value="5"') && str_contains($html, 'value="6" disabled') && str_contains($html, 'convite pendente')
+    && str_contains($html, '/api/v1/resident-invitations/11/revoke') && !str_contains($html, '/resident-invitations/12/revoke') && str_contains($html, 'Vencido') && str_contains($html, 'Eva &lt;E&gt;'), 'AP-152: convites e convite em lote');
+$html = $agreementPage('AP-152', 'pages/settings/access', $acData('invitations', ['accessNeedsCondo' => true, 'accessContext' => null]));
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'data-erp-access'), 'AP-152: pede o condomínio');
+$html = $agreementPage('AP-153', 'pages/settings/access', $acData('portal', ['portalMatrix' => [['feature' => 'boletos', 'label' => 'Boletos e segunda via', 'enabled' => true, 'updated_at' => '2026-11-09 08:00:00'],
+    ['feature' => 'documents', 'label' => 'Documentos do condomínio', 'enabled' => false, 'updated_at' => null]]]), 'real');
+$common($html, 'AP-153', 'Permissões de Moradores');
+$assert(str_contains($html, 'data-portal-api') && str_contains($html, '/api/v1/resident-portal-permissions') && str_contains($html, 'data-portal-feature="boletos" checked') && str_contains($html, 'data-portal-feature="documents">')
+    && str_contains($html, 'Ligado') && str_contains($html, 'Desligado'), 'AP-153: matriz do portal');
+$html = $agreementPage('AP-153', 'pages/settings/access', $acData('portal', ['canManageAccess' => false, 'portalMatrix' => [['feature' => 'boletos', 'label' => 'Boletos', 'enabled' => false, 'updated_at' => null]]]));
+$assert(str_contains($html, 'data-portal-feature="boletos" disabled'), 'AP-153: só leitura sem erp.access_admin.manage');
+$assert($AC::condominiumNames([2, 9, 1], [1 => 'A', 2 => 'B']) === ['B', 'A'], 'acessos: nomes dos condomínios');
+
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
     'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],

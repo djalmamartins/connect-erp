@@ -1,52 +1,41 @@
 ---
 codigo: AP-088
-titulo: Listagem de presenças
-resumo: As presenças registradas no período.
+titulo: Relatório Listagem de presenças
+resumo: As unidades presentes na assembleia, com quem compareceu, procuração e direito a voto, para imprimir ou exportar em CSV.
 categoria: relatorios
 rota: /relatorios/listagem-de-presencas
 menu: Relatórios > Gerais > Listagem de presenças
 icone: document-text-outline
-situacao: exemplo
-relacionados: listagem-de-pessoas, relatorio-de-condominios, relatorio-de-unidades, relatorio-de-ocorrencias
-palavras: listagem de presenças, relatórios, AP-088
+situacao: funciona
+relacionados: assembleia-virtual, parecer
+palavras: listagem de presenças, presença, assembleia, procuração, relatórios, AP-088
 rascunho: nao
 ---
 
-As presenças registradas no período.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Lista a presença registrada na assembleia: a unidade, quem esteve presente, se foi por procuração, se a unidade vota e a hora da entrada. Unidade com conta vencida em aberto na hora da presença aparece como **Não vota**.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Listagem de presenças]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Relatórios > Gerais > Listagem de presenças]].
 
 ```tela listagem-de-presencas
 rota: /relatorios/listagem-de-presencas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Listagem de presenças
 1: menu | Listagem de presenças no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
-5: main table thead | Colunas da lista
+2: main [data-erp-assemblies] | Assembleia escolhida e as presenças
 ```
 
-## Escolher o período e os filtros
+## Como usar
 
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
+1. Em **Assembleia**, escolha a assembleia (em andamento ou encerrada) e clique em {{Abrir}}. A mais recente em andamento já vem escolhida.
+2. Confira os totais: unidades, procurações e unidades sem direito a voto.
+3. Use {{Imprimir}} ou {{Exportar CSV}}.
 
-## O que o relatório mostra
-
-Colunas: **Data**, **Condomínio**, **Descrição**, **Responsável** e **Situação**.
-Os totais aparecem no rodapé da tabela.
-
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+O valor vencido de cada unidade só aparece para quem tem a permissão **erp.agreements.view**, a mesma que mostra a inadimplência.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Listagem de pessoas](artigo:listagem-de-pessoas), [Relatório de condomínios](artigo:relatorio-de-condominios) e [Relatório de unidades](artigo:relatorio-de-unidades).
+Exige **erp.assemblies.view**. A exportação fica na auditoria e tem limite de exportações por hora.

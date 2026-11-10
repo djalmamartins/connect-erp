@@ -1,52 +1,41 @@
 ---
 codigo: AP-092
-titulo: Parecer do conselho
-resumo: Pareceres registrados no período.
+titulo: Relatório Parecer
+resumo: O resultado de cada item da pauta da assembleia, com o placar e o quórum, e a ata gerada no encerramento.
 categoria: relatorios
 rota: /relatorios/parecer
 menu: Relatórios > Gerais > Parecer
 icone: document-text-outline
-situacao: exemplo
-relacionados: administracao, pagamentos-pendentes, relatorio-de-ocorrencias, mudancas
-palavras: parecer, relatórios, AP-092
+situacao: funciona
+relacionados: assembleia-virtual, votacao, listagem-de-presencas
+palavras: parecer, resultado, ata, assembleia, votação, relatórios, AP-092
 rascunho: nao
 ---
 
-Pareceres registrados no período.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Mostra o resultado da assembleia: cada item com a base do voto, o quórum, os votos Sim, Não e Abstenção, o total do condomínio e se foi aprovado. Com a assembleia encerrada, mostra também a **ata** e o código de conferência (SHA-256).
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Parecer]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Relatórios > Gerais > Parecer]].
 
 ```tela parecer
 rota: /relatorios/parecer
 condominio: residencial-jardim-das-acacias
 legenda: Tela Parecer
 1: menu | Parecer no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
-5: main table thead | Colunas da lista
+2: main [data-erp-assemblies] | Assembleia escolhida, resultados e ata
 ```
 
-## Escolher o período e os filtros
+## Como usar
 
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
+1. Em **Assembleia**, escolha a assembleia e clique em {{Abrir}}. A mais recente encerrada já vem escolhida.
+2. Confira os resultados. Na base **fração ideal**, os votos aparecem em fração (de 0 a 1); na base **uma unidade, um voto**, em número de unidades.
+3. Use {{Imprimir}} ou {{Exportar CSV}}.
 
-## O que o relatório mostra
-
-Colunas: **Data**, **Condomínio**, **Descrição**, **Responsável** e **Situação**.
-Os totais aparecem no rodapé da tabela.
-
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+A ata é gerada no encerramento e não muda mais. O código SHA-256 permite conferir que o texto é o mesmo.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Relatório de administração](artigo:administracao), [Pagamentos pendentes](artigo:pagamentos-pendentes) e [Relatório de ocorrências](artigo:relatorio-de-ocorrencias).
+Exige **erp.assemblies.view**. A exportação fica na auditoria e tem limite de exportações por hora.
