@@ -992,6 +992,64 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/ledger:
+    get:
+      operationId: ledger
+      summary: Livro Razão por conta do plano (erp.entries.view e erp.chart.view, ADR 0165)
+      description: >-
+        Saldo anterior, débitos, créditos e saldo final de cada conta, com os lançamentos do período.
+        account_code filtra a conta e as subcontas. truncated = true quando passa de 5000 linhas.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: basis, in: query, schema: { type: string, enum: [competence, cash], default: competence } }
+        - { name: account_code, in: query, schema: { type: string, example: '2.01' } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { accounts[{code, name, nature, opening_cents, debit_cents, credit_cents, closing_cents, lines[]}], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
+  /reports/account-balances:
+    get:
+      operationId: accountBalances
+      summary: Saldos das contas bancárias numa data ou num período (erp.entries.view e erp.chart.view, ADR 0165)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Saldo no fim do dia; sem ele, use from e to' }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { accounts[{bank_account_id, condominium_id, condominium_name, name, opening_cents, received_cents, paid_cents, closing_cents}], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
+  /reports/income-statement:
+    get:
+      operationId: incomeStatement
+      summary: Demonstração do Resultado (DRE) por conta do plano (erp.entries.view e erp.chart.view, ADR 0165)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: basis, in: query, schema: { type: string, enum: [competence, cash], default: competence } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { rows[{code, name, nature, level, analytic, amount_cents}], totals{revenue_cents, expense_cents, result_cents, margin_percent} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
   /reports/statement:
     get:
       operationId: financialStatement

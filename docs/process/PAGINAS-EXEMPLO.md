@@ -31,9 +31,9 @@ Total: 88 páginas.
 | AP-054 Demonstrativo Situação (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-056 Extrato Conta (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-080 Balancete Anual (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AnnualBalance.php`, `GET /api/v1/reports/annual-balance` (ciclo 53) | ligar a tela (contrato em docs/handoff-0164-shared.md) |
-| AP-081 Balanço Patrimonial (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | backend (service e API) e depois ligar a tela |
-| AP-082 Demonstração do resultado (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | backend (service e API) e depois ligar a tela |
-| AP-083 Livro Razão (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | backend (service e API) e depois ligar a tela |
+| AP-081 Balanço Patrimonial (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | natureza patrimonial no plano de contas (ADR 0165); depois o backend |
+| AP-082 Demonstração do resultado (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AccountingReports.php`, GET /api/v1/reports/income-statement (ciclo 54) | ligar a tela (contrato no ADR 0165 e no docs/api/openapi.yaml) |
+| AP-083 Livro Razão (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AccountingReports.php`, GET /api/v1/reports/ledger (ciclo 54) | ligar a tela (contrato no ADR 0165 e no docs/api/openapi.yaml) |
 | AP-136 Registros de Entregas (operacional) | lista com registros de demonstração (pages/modules/list.php) | — | backend (service e API) e depois ligar a tela |
 | AP-018 Assembleia Virtual (comunicacao) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Assemblies.php` | ligar a tela à API existente |
 | AP-017 Votação (comunicacao) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Assemblies.php` | ligar a tela à API existente |
@@ -67,7 +67,7 @@ Total: 88 páginas.
 | AP-070 Relatório de boletos (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-071 Recebimentos (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/CollectionReports.php`, `Controllers/Api/V1/CollectionReports.php` | ligar a tela à API existente |
 | AP-072 Recebimentos por Conta (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/CollectionReports.php` | ligar a tela à API existente |
-| AP-073 Saldos de Contas (relatorios) | relatório com linhas fixas (pages/modules/report.php) | — | backend (service e API) e depois ligar a tela |
+| AP-073 Saldos de Contas (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AccountingReports.php`, GET /api/v1/reports/account-balances (ciclo 54) | ligar a tela (contrato no ADR 0165 e no docs/api/openapi.yaml) |
 | AP-074 Registro de Pagamentos (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/PaymentReports.php`, `Controllers/Api/V1/PaymentReports.php` | ligar a tela à API existente |
 | AP-075 Relatório Memória de Cálculo (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/PaymentReports.php`, `Controllers/Api/V1/PaymentReports.php` | ligar a tela à API existente |
 | AP-076 Relatório de transferências (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/PaymentReports.php`, `Controllers/Api/V1/PaymentReports.php` | ligar a tela à API existente |
