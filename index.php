@@ -110,6 +110,10 @@ $route->get("/reports/bank-ledger", "Investments:bankLedger", null, \Source\Supp
 $route->post("/investments/{id}/link", "Investments:link", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/investments/{id}/apply", "Investments:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/investments/{id}/redeem", "Investments:redeem", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0171: importação de lançamentos patrimoniais (CSV/XLSX) com prévia e aplicação tudo ou nada
+$route->post("/patrimonial-imports", "PatrimonialImports:preview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/patrimonial-imports/{id}", "PatrimonialImports:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/patrimonial-imports/{id}/apply", "PatrimonialImports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
