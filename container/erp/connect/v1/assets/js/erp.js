@@ -1221,7 +1221,7 @@
   });
 
   /* Acessos (ADR 0147): imobiliárias parceiras, convites de moradores e portal do morador pela API de AccessAdmin. */
-  $$('[data-erp-access]').forEach(function (root) {
+  $$('[data-erp-access], [data-erp-api-forms]').forEach(function (root) {
     var call = apiClient(root);
     var condo = parseInt(root.getAttribute('data-condominium') || '0', 10);
     $$('[data-access-post]', root).forEach(function (button) {
@@ -1282,6 +1282,72 @@
           .then(function () { input.disabled = false; if (state) state.textContent = on ? 'Ligado' : 'Desligado'; toast(on ? 'Função ligada no portal.' : 'Função desligada no portal.', 'success'); })
           .catch(function (error) { input.disabled = false; input.checked = !on; toast(error.message, 'danger'); });
       });
+    });
+  });
+
+  /* Cadastros: campo que só vale para um valor de outro campo (ADR 0149, 'only_if'), como a conta corrente da aplicação. */
+  $$('[data-only-if]').forEach(function (wrap) {
+    var rule = (wrap.getAttribute('data-only-if') || '').split('=');
+    var other = document.getElementById(rule[0]);
+    if (!other) return;
+    var sync = function () {
+      var on = other.value === rule[1];
+      wrap.hidden = !on;
+      if (!on) $$('select, input', wrap).forEach(function (field) { field.value = ''; });
+    };
+    other.addEventListener('change', sync);
+    sync();
+  });
+
+  /* Importação de lançamentos patrimoniais (ADR 0171 e 0149): prévia com o erro de cada linha e aplicação tudo ou nada. */
+  $$('[data-patrimonial-import]').forEach(function (card) {
+    var form = $('[data-import-form]', card);
+    var preview = $('[data-import-preview]', card);
+    var scope = card.closest('[data-erp-api-forms]') || document;
+    var call = apiClient(scope);
+    var csrf = function () { return (($('[name="csrf"]', scope) || {}).value || ''); };
+    var condo = scope.getAttribute ? scope.getAttribute('data-condominium') : '';
+    var fileInput = $('[name="file"]', form);
+    var show = function (data) {
+      var rows = data.preview || [];
+      var summary = data.summary || {};
+      var html = '<p><strong>' + esc(data.original_name || 'Arquivo') + '</strong> · ' + (summary.rows || 0) + ' linha(s) · ' + (summary.ok || 0) + ' certa(s) · ' + (summary.errors || 0) + ' com erro · ' + brl(summary.amount_cents || 0) + '</p>';
+      html += '<div class="erp-table-wrap" role="region" aria-label="Prévia da importação" tabindex="0"><table class="erp-table"><thead><tr><th scope="col">Linha</th><th scope="col">Descrição</th><th scope="col" class="is-num">Valor</th><th scope="col">Situação</th></tr></thead><tbody>';
+      rows.forEach(function (row) {
+        var d = row.data || {};
+        html += '<tr><td>' + esc(row.line) + '</td><td>' + esc(d.description || '') + '</td><td class="is-num erp-nowrap">' + (d.amount_cents ? brl(d.amount_cents) : '—') + '</td><td>' +
+          (row.status === 'ok' ? '<span class="erp-badge erp-badge--success">Certa</span>' : '<span class="erp-badge erp-badge--danger">Erro</span> ' + esc((row.errors || []).join(' '))) + '</td></tr>';
+      });
+      html += '</tbody></table></div><div class="erp-form__actions">' +
+        (data.error_count > 0 ? '<p class="erp-field__hint">Corrija as linhas com erro na planilha e envie de novo. Nada foi gravado.</p>' : '<button type="button" class="erp-btn erp-btn--primary" data-import-apply>Gravar ' + (summary.ok || 0) + ' lançamento(s)</button>') +
+        '<button type="button" class="erp-btn" data-import-reset>Enviar outro arquivo</button></div>';
+      preview.innerHTML = html;
+      preview.hidden = false;
+      form.hidden = true;
+      var apply = $('[data-import-apply]', preview);
+      if (apply) apply.addEventListener('click', function () {
+        busy(apply, true);
+        call('POST', card.getAttribute('data-preview-api') + '/' + data.id + '/apply', {})
+          .then(function () { toast('Importação gravada.', 'success'); reload(); })
+          .catch(function (error) { busy(apply, false); toast(error.message, 'danger'); });
+      });
+      $('[data-import-reset]', preview).addEventListener('click', function () { preview.hidden = true; preview.innerHTML = ''; form.hidden = false; form.reset(); fileInput.focus(); });
+    };
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!formValid(form)) return;
+      var file = fileInput.files[0];
+      var ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (['csv', 'xlsx'].indexOf(ext) < 0) { formError(form, 'Envie um arquivo CSV ou XLSX.', fileInput); return; }
+      if (file.size < 1 || file.size > 2000000) { formError(form, 'O arquivo está vazio ou passa de 2 MB.', fileInput); return; }
+      var body = new FormData();
+      body.append('condominium_id', condo);
+      body.append('file', file);
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      sendMultipart(card.getAttribute('data-preview-api'), csrf(), body, function () {})
+        .then(function (json) { busy(button, false); formError(form, ''); show(json.data || {}); })
+        .catch(function (error) { busy(button, false); formError(form, error.message, fileInput); });
     });
   });
 

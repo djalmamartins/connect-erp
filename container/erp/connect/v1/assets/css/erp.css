@@ -792,6 +792,12 @@ p { margin: 0; }
 .erp-inline-form > .erp-select { flex: 1 1 200px; width: auto; }
 .erp-inline-form > .erp-btn { flex: 0 0 auto; }
 .erp-inline-form [data-form-error] { flex-basis: 100%; }
+/* Lançamentos patrimoniais (ADR 0149): estorno aberto na própria linha. */
+.erp-reverse > summary { list-style: none; cursor: pointer; }
+.erp-reverse > summary::-webkit-details-marker { display: none; }
+.erp-reverse[open] > summary { margin-bottom: 8px; }
+.erp-reverse .erp-inline-form { min-width: 280px; justify-content: flex-start; }
+.erp-reverse .erp-inline-form > .erp-input { flex: 1 1 140px; width: auto; }
 .erp-select.erp-select--sm { height: 32px; min-height: 32px; min-width: 180px; padding-top: 0; padding-bottom: 0; font-size: 13px; }
 .erp-access-agency-actions { justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--erp-space-3, 12px); }
 .erp-access-agency-actions > .erp-inline-form { flex: 0 1 460px; justify-content: flex-start; }

@@ -65,7 +65,7 @@ final class Panel extends Controller
     /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
     public static function pagePermissions(): array
     {
-        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + DeliveryScreens::pagePermissions() + AccountabilityScreens::pagePermissions() + BalanceSheetScreens::pagePermissions() + AccessScreens::pagePermissions() + Definitions::pagePermissions();
+        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + DeliveryScreens::pagePermissions() + AccountabilityScreens::pagePermissions() + BalanceSheetScreens::pagePermissions() + PatrimonialEntryScreens::pagePermissions() + AccessScreens::pagePermissions() + Definitions::pagePermissions();
     }
 
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
@@ -845,6 +845,9 @@ final class Panel extends Controller
         if (isset(AccountabilityScreens::PAGES[$id])) {
             $data += (new AccountabilityScreens())->data($user, $id);
         }
+        if (isset(PatrimonialEntryScreens::PAGES[$id])) {
+            $data += (new PatrimonialEntryScreens())->data($user, $id);
+        }
         if (isset(BalanceSheetScreens::PAGES[$id])) {
             $data += (new BalanceSheetScreens())->data($user, $id);
         }
@@ -885,6 +888,7 @@ final class Panel extends Controller
             isset(DeliveryScreens::PAGES[$id]) && ($data['deliveryReady'] ?? false) => DeliveryScreens::PAGES[$id],
             isset(AccountabilityScreens::PAGES[$id]) && ($data['accountabilityReady'] ?? false) => AccountabilityScreens::PAGES[$id],
             isset(BalanceSheetScreens::PAGES[$id]) && ($data['balanceReady'] ?? false) => BalanceSheetScreens::PAGES[$id],
+            isset(PatrimonialEntryScreens::PAGES[$id]) && ($data['patrimonialReady'] ?? false) => PatrimonialEntryScreens::PAGES[$id],
             isset(AccessScreens::PAGES[$id]) && ($data['accessReady'] ?? false) => 'pages/settings/access',
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',

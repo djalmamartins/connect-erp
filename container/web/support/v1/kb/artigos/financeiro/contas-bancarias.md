@@ -56,6 +56,7 @@ recorte: main form:not([method=get])
 - **Agência** (obrigatório).
 - **Conta** (obrigatório).
 - **Tipo** (obrigatório): Opções: Conta corrente, Poupança e Aplicação.
+- **Conta corrente da aplicação**: aparece só quando o tipo é **Aplicação**. É a conta corrente do mesmo condomínio de onde sai o dinheiro ao aplicar e para onde ele volta no resgate.
 - **Carteira de cobrança**: Quando houver.
 - **Saldo inicial**.
 - **Data do saldo inicial**.
@@ -63,6 +64,10 @@ recorte: main form:not([method=get])
 - **Centro de custo padrão**: Opcional; sugerido nos lançamentos desta conta.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
+
+## Aplicação financeira
+
+Cadastre a aplicação como uma conta de tipo **Aplicação** e escolha a **Conta corrente da aplicação**. O rendimento é lançado como receita e o IR/IOF como despesa, com a aplicação como conta bancária. Aplicar e resgatar são transferências entre as duas contas: não entram na DRE. No [Balanço Patrimonial](artigo:balanco-patrimonial), o Disponível mostra cada conta com o tipo dela.
 
 ## Pesquisar e filtrar
 
