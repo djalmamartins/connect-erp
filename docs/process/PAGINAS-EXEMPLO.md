@@ -11,8 +11,9 @@ AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-073 a AP-07
 AP-089, AP-090 e AP-093 a AP-099. Com o ADR 0144, as configurações AP-147, AP-151, AP-154, AP-155,
 AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Com o ADR 0145, as assembleias
 AP-017, AP-018, AP-088 e AP-092. Com o ADR 0146, as telas do ciclo 55
-(AP-101, AP-136, AP-161). Com o ADR 0147, os acessos AP-148, AP-152 e AP-153. Com o ADR 0148, o Balanço Patrimonial (AP-081). Do que
-tinha API pronta, não sobra página de exemplo; seguem na demonstração só as que ainda precisam de backend.
+(AP-101, AP-136, AP-161). Com o ADR 0147, os acessos AP-148, AP-152 e AP-153. Com o ADR 0148, o Balanço Patrimonial (AP-081). Com o ADR 0150, AP-091 Administração, AP-100
+Relatórios Enviados, AP-149 Usuários do Sistema e AP-150 Permissões de Usuários. Do que tinha API pronta, não sobra
+página de exemplo; seguem na demonstração só AP-031 e AP-037, que dependem do banco real.
 
 ## Critério
 
@@ -90,7 +91,7 @@ Total: 88 páginas.
 | AP-088 Listagem de presenças (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/Assemblies.php`, `Controllers/Api/V1/Assemblies.php` | ligar a tela à API existente |
 | AP-089 Relatório de condomínios (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
 | AP-090 Relatório de ocorrências (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
-| AP-091 Administração (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/erp-admin/overview` (ADR 0168) | ligar a tela (contrato no ADR 0168 e no docs/api/openapi.yaml) |
+| AP-091 Administração (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/erp-admin/overview` (ADR 0168) | ligada no ADR 0150 (pages/settings/admin) |
 | AP-092 Parecer (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/Assemblies.php`, `Controllers/Api/V1/Assemblies.php` | ligar a tela à API existente |
 | AP-093 Pagamentos Pendentes (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
 | AP-095 Mudanças (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
@@ -98,11 +99,11 @@ Total: 88 páginas.
 | AP-097 Logs (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
 | AP-098 Pessoas com Acesso (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
 | AP-099 Boletos Enviados (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
-| AP-100 Relatórios Enviados (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/reports/sent` (ADR 0168) | ligar a tela (contrato no ADR 0168 e no docs/api/openapi.yaml) |
+| AP-100 Relatórios Enviados (relatorios) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/reports/sent` (ADR 0168) | ligada no ADR 0150 (pages/settings/admin) |
 | AP-141 Importação NF-e (xml) (importacoes) | pré-visualização de importação de exemplo (pages/modules/import.php) | `Services/Erp/Imports/NfeParser.php`, `Services/Erp/Imports/Imports.php` | ligar a tela à API existente |
 | AP-147 Administrativo (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php` | ligar a tela à API existente |
-| AP-149 Usuários do Sistema (configuracoes) | lista com registros de demonstração (pages/modules/list.php) | `GET /api/v1/erp-users`, `POST /api/v1/erp-users/invite` e `POST /api/v1/erp-users/{id}/deactivate` (ADR 0168) | ligar a tela (contrato no ADR 0168 e no docs/api/openapi.yaml) |
-| AP-150 Permissões de Usuários (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `GET/POST /api/v1/erp-permissions` e `GET/POST /api/v1/erp-users/{id}/permissions` (ADR 0168) | ligar a tela (contrato no ADR 0168 e no docs/api/openapi.yaml) |
+| AP-149 Usuários do Sistema (configuracoes) | lista com registros de demonstração (pages/modules/list.php) | `GET /api/v1/erp-users`, `POST /api/v1/erp-users/invite` e `POST /api/v1/erp-users/{id}/deactivate` (ADR 0168) | ligada no ADR 0150 (pages/settings/admin) |
+| AP-150 Permissões de Usuários (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `GET/POST /api/v1/erp-permissions` e `GET/POST /api/v1/erp-users/{id}/permissions` (ADR 0168) | ligada no ADR 0150 (pages/settings/admin) |
 | AP-153 Permissões de Moradores (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ResidentPortalPermissions.php`, `Controllers/Api/V1/AccessAdmin.php` | ligar a tela à API existente |
 | AP-148 Usuários de imobiliárias (configuracoes) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/PartnerAccess.php`, `Controllers/Api/V1/AccessAdmin.php` | ligar a tela à API existente |
 | AP-152 Criação de usuários para moradores (configuracoes) | formulário de exemplo (pages/modules/form.php) | `Services/Erp/ResidentInvitations.php`, `Services/Erp/ResidentInvitationAcceptance.php`, `Controllers/Api/V1/AccessAdmin.php` | ligar a tela à API existente |

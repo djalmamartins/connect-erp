@@ -1286,6 +1286,47 @@ $html = $agreementPage('AP-153', 'pages/settings/access', $acData('portal', ['ca
 $assert(str_contains($html, 'data-portal-feature="boletos" disabled'), 'AP-153: só leitura sem erp.access_admin.manage');
 $assert($AC::condominiumNames([2, 9, 1], [1 => 'A', 2 => 'B']) === ['B', 'A'], 'acessos: nomes dos condomínios');
 
+// Administração, relatórios enviados, usuários e permissões do ERP com dados reais (ADR 0150, sobre o ADR 0168).
+$AD = Source\Controllers\Erp\Connect\AdminScreens::class;
+foreach ($AD::PAGES as $adPage => $adKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($adPage, ['adminReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($adPage, ['adminReady' => true]) === 'pages/settings/admin'
+        && Source\Controllers\Erp\Connect\Panel::pagePermissions()[$adPage] === $AD::VIEW[$adPage], "{$adPage}: tela própria só com dados");
+}
+$adData = static fn (string $kind, array $over = []): array => $over + ['adminReady' => true, 'adminKind' => $kind, 'adminError' => null, 'canManageAdmin' => true, 'scopeCondominiums' => [1 => 'Alpha <A>', 2 => 'Beta']];
+$html = $agreementPage('AP-091', 'pages/settings/admin', $adData('admin', ['canManageAdmin' => false, 'overview' => ['administrator' => ['display_name' => 'Connect <Adm>', 'support_email' => 'atende@example.invalid', 'support_phone' => ''],
+    'global_access' => true, 'previous_month' => '2026-10', 'summary' => ['condominiums' => 3, 'units' => 1240, 'residents' => 980, 'users' => 7, 'bank_accounts' => 4, 'closed_previous_month' => 2, 'open_previous_month' => 1]]]), 'real');
+$common($html, 'AP-091', 'Administração');
+$assert(str_contains($html, 'Connect &lt;Adm&gt;') && str_contains($html, '1.240') && str_contains($html, 'Em aberto em 2026-10') && str_contains($html, 'erp-kpi--warning') && !str_contains($html, 'Interface proposta'), 'AP-091: administradora e resumo');
+$html = $agreementPage('AP-100', 'pages/settings/admin', $adData('sent', ['canManageAdmin' => false, 'sent' => ['from' => '2026-11-01', 'to' => '2026-11-10', 'report' => null, 'truncated' => true,
+    'rows' => [['id' => 9, 'created_at' => '2026-11-09 10:00:00', 'user_name' => 'A*** <B>', 'entity' => 'erp_reports', 'ip' => '10.0.*.*', 'report' => 'delinquency', 'condominium_id' => 1, 'bytes' => 2048],
+        ['id' => 8, 'created_at' => '2026-11-08 10:00:00', 'user_name' => 'Sistema', 'entity' => 'erp_units', 'ip' => '', 'report' => '', 'condominium_id' => null, 'bytes' => null]],
+    'totals' => ['exports' => 2, 'bytes' => 2048, 'by_report' => ['' => 1, 'delinquency' => 1]]]]), 'real');
+$common($html, 'AP-100', 'Relatórios Enviados');
+$assert(str_contains($html, 'A*** &lt;B&gt;') && str_contains($html, 'Alpha &lt;A&gt;') && str_contains($html, '2,0 KB') && str_contains($html, 'erp_units') && str_contains($html, '<option value="delinquency">')
+    && str_contains($html, 'Lista cortada') && str_contains($html, 'name="de" value="2026-11-01"'), 'AP-100: exportações da auditoria');
+$adUsers = ['condominium_id' => null, 'truncated' => false, 'rows' => [
+    ['id' => 5, 'name' => 'Eva <E>', 'email' => 'e***@x.com', 'status' => 'confirmed', 'role' => 'operator', 'role_name' => 'Operador', 'manageable' => true, 'condominiums' => [['id' => 1, 'name' => 'Alpha <A>']]],
+    ['id' => 6, 'name' => 'Chefe', 'email' => 'c***@x.com', 'status' => 'confirmed', 'role' => 'super_admin', 'role_name' => 'Super', 'manageable' => false, 'condominiums' => [['id' => 2, 'name' => 'Beta']]]]];
+$html = $agreementPage('AP-149', 'pages/settings/admin', $adData('users', ['erpUsers' => $adUsers]), 'real');
+$common($html, 'AP-149', 'Usuários do Sistema');
+$assert(str_contains($html, 'data-erp-access') && str_contains($html, '/api/v1/erp-users/invite') && str_contains($html, 'name="condominium_ids[]" value="2"') && str_contains($html, 'Eva &lt;E&gt;')
+    && str_contains($html, '/api/v1/erp-users/5/deactivate') && !str_contains($html, '/api/v1/erp-users/6/deactivate') && str_contains($html, 'Operador'), 'AP-149: usuários, convite e retirada só de quem é gerenciável');
+$html = $agreementPage('AP-149', 'pages/settings/admin', $adData('users', ['canManageAdmin' => false, 'erpUsers' => $adUsers]));
+$assert(!str_contains($html, 'data-access-form') && !str_contains($html, 'data-access-post') && str_contains($html, 'Chefe'), 'AP-149: só leitura sem erp.users.manage');
+$adMatrix = ['editable_roles' => true, 'roles' => [['slug' => 'manager', 'name' => 'Gerente', 'level' => 3, 'editable' => true, 'permissions' => ['erp.access']], ['slug' => 'super_admin', 'name' => 'Super', 'level' => 9, 'editable' => false, 'permissions' => ['erp.access', 'erp.units.view']]],
+    'permissions' => [['slug' => 'erp.access', 'name' => 'Acessar o ERP', 'group' => 'ERP', 'description' => null], ['slug' => 'erp.units.view', 'name' => 'Ver unidades', 'group' => 'ERP Cadastros', 'description' => null]]];
+$html = $agreementPage('AP-150', 'pages/settings/admin', $adData('permissions', ['matrix' => $adMatrix, 'erpUsers' => $adUsers, 'selectedUser' => 5, 'userPermissions' => ['user_id' => 5, 'role' => 'operator', 'manageable' => true,
+    'rows' => [['slug' => 'erp.access', 'name' => 'Acessar o ERP', 'group' => 'ERP', 'description' => null, 'role' => true, 'override' => null, 'effective' => true],
+        ['slug' => 'erp.units.view', 'name' => 'Ver unidades', 'group' => 'ERP Cadastros', 'description' => null, 'role' => false, 'override' => 'deny', 'effective' => false]]]]), 'real');
+$common($html, 'AP-150', 'Permissões de Usuários');
+$assert(str_contains($html, 'data-api-toggle') && str_contains($html, '/api/v1/erp-permissions') && substr_count($html, 'data-api-toggle') === 4 && substr_count($html, ' disabled>') >= 2
+    && str_contains($html, '/api/v1/erp-users/5/permissions') && str_contains($html, '<option value="deny" selected>') && str_contains($html, '<option value="5" selected>') && str_contains($html, 'Fechada'), 'AP-150: matriz por papel e exceção por usuário');
+$html = $agreementPage('AP-150', 'pages/settings/admin', $adData('permissions', ['canManageAdmin' => false, 'matrix' => $adMatrix, 'erpUsers' => $adUsers, 'selectedUser' => null, 'userPermissions' => null]));
+$assert(substr_count($html, 'data-api-toggle') === 4 && substr_count($html, 'data-api-toggle') === substr_count($html, '"disabled') + substr_count($html, ' disabled>') && !str_contains($html, 'data-api-select'), 'AP-150: só leitura sem erp.permissions.manage');
+$assert($AD::selected('5', $adUsers['rows']) === 5 && $AD::selected('7', $adUsers['rows']) === null && $AD::selected('x', $adUsers['rows']) === null, 'AP-150: usuário escolhido só do escopo');
+$assert($AD::effect(null) === 'inherit' && $AD::effect('deny') === 'deny' && $AD::effect('bogus') === 'inherit' && $AD::size(null) === '—' && $AD::size(512) === '512 B' && $AD::size(1048576) === '1,0 MB'
+    && $AD::report('delinquency') === 'delinquency' && $AD::report('../x') === null, 'administração: regras puras');
+
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
     'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],
