@@ -1,66 +1,51 @@
 ---
 codigo: AP-069
-titulo: Relatório de lançamentos (detalhado)
-resumo: Lançamentos das competências com fornecedor, centro de custo, conta bancária, documento e origem.
+titulo: Relatório de lançamentos detalhado
+resumo: Os lançamentos das competências com fornecedor, centro de custo, conta bancária, documento e origem. Use para conferência e auditoria.
 categoria: relatorios
 rota: /relatorios/relatorio-de-lancamentos-detalhado
 menu: Relatórios > Financeiros > Relatório de lançamentos (detalhado)
 icone: document-text-outline
 situacao: funciona
+relacionados: relatorio-de-lancamentos, relatorio-de-boletos, rateio-por-conta, recebimentos
 palavras: relatório de lançamentos (detalhado), relatórios, AP-069
 rascunho: nao
 ---
 
-## Para que serve
-
-Lançamentos das competências com fornecedor, centro de custo, conta bancária, documento e origem. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/entries`.
+Os lançamentos das competências com fornecedor, centro de custo, conta bancária, documento e origem. Use para conferência e auditoria.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Financeiros > Relatório de lançamentos (detalhado)]].
+No menu lateral, abra [[Relatórios > Financeiros > Relatório de lançamentos (detalhado)]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela relatorio-de-lancamentos-detalhado
 rota: /relatorios/relatorio-de-lancamentos-detalhado
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de lançamentos (detalhado)
 1: menu | Relatório de lançamentos (detalhado) no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form.erp-filters | Filtros: Competência inicial e final, Natureza, Situação
-4: main table thead | Colunas: Condomínio, Natureza, Descrição, Código, Unidade, Fornecedor, Centro de custo, Conta bancária, Documento, Origem, Competência, Vencimento, Pagamento, Situação, Valor
+2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+4: main :is(form[method=get], .erp-filters) | Filtros: Competência inicial, Competência final, Natureza e Situação
+5: main table thead | Colunas da lista
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **Competência inicial**, **Competência final**, **Natureza** e **Situação**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
-1. **Competência inicial e final**: a faixa de competências (no máximo 24); o padrão vai de janeiro até o mês atual.
-2. **Natureza**: opções: todas, receitas, despesas.
-3. **Situação**: opções: todas, pago, a vencer, vencido, cancelado.
-4. Clique em {{Gerar}}.
-5. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Condomínio**
-- **Natureza**
-- **Descrição**
-- **Código**
-- **Unidade**
-- **Fornecedor**
-- **Centro de custo**
-- **Conta bancária**
-- **Documento**
-- **Origem**
-- **Competência**
-- **Vencimento**
-- **Pagamento**
-- **Situação**
-- **Valor**
+Colunas: **Condomínio**, **Natureza**, **Descrição**, **Código**, **Unidade**, **Fornecedor**, **Centro de custo**, **Conta bancária**, **Documento**, **Origem**, **Competência**, **Vencimento**, **Pagamento**, **Situação** e **Valor**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.entries.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Relatório de lançamentos](artigo:relatorio-de-lancamentos), [Relatório de boletos](artigo:relatorio-de-boletos) e [Rateio por conta](artigo:rateio-por-conta).

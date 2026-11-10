@@ -1,72 +1,86 @@
 ---
 codigo: AP-023
-titulo: Cadastrar e gerenciar contas a Receber
-resumo: Receitas em aberto, por vencimento. Informe "Pago em" e a conta bancária para dar baixa.
+titulo: Contas a receber
+resumo: Receitas em aberto do condomínio, como taxas condominiais, multas e acordos, por vencimento. Os boletos saem daqui, e a baixa é feita pelo arquivo de retorno do banco ou à mão.
 categoria: financeiro
 rota: /financeiro/contas-a-receber
 menu: Financeiro > Contas e pagamentos > Contas a Receber
 icone: list-outline
 situacao: funciona
-palavras: contas a receber, financeiro, AP-023
+relacionados: boletos, lancar-receita, lancar-desconto, contas-a-pagar
+palavras: contas a receber, financeiro, AP-023, receita, receber, taxa condominial, baixa
 rascunho: nao
 ---
 
+Receitas em aberto do condomínio, como taxas condominiais, multas e acordos, por vencimento. Os boletos saem daqui, e a baixa é feita pelo arquivo de retorno do banco ou à mão.
+
 ## Onde fica
 
-No menu lateral, abra [[Financeiro > Contas e pagamentos > Contas a Receber]].
+No menu lateral, abra [[Financeiro > Contas e pagamentos > Contas a Receber]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela contas-a-receber
 rota: /financeiro/contas-a-receber
 condominio: residencial-jardim-das-acacias
 legenda: Tela Contas a Receber
 1: menu | Contas a Receber no menu lateral
-2: main :is(a,button):has-text("Nova conta a receber") | Botão {{Nova conta a receber}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main table thead | Lista com Descrição, Condomínio, Competência, Valor, Vencimento, Pago em e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Nova conta a receber") | Botão {{Nova conta a receber}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova conta a receber}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova conta a receber}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Competência**, **Descrição**, **Valor**, **Conta do plano de contas**, **Vencimento** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela contas-a-receber-novo
+```tela contas-a-receber-nova-conta-a-receber
 rota: /financeiro/contas-a-receber/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de conta a receber
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova conta a receber
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="competence"] | Competência (obrigatório)
+3: main form:not([method=get]) [name="description"] | Descrição (obrigatório)
+4: main form:not([method=get]) [name="amount_cents"] | Valor (obrigatório)
+5: main form:not([method=get]) [name="chart_account_id"] | Conta do plano de contas (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Competência** (obrigatório): aAAA-MM.
+- **Condomínio** (obrigatório).
+- **Competência** (obrigatório): AAAA-MM.
 - **Descrição** (obrigatório).
-- **Valor** (obrigatório): em reais, por exemplo 1.250,00.
+- **Valor** (obrigatório).
 - **Conta do plano de contas** (obrigatório).
 - **Centro de custo**.
-- **Vencimento** (obrigatório): no formato dia/mês/ano.
-- **Pago em**: preencha para dar baixa. No formato dia/mês/ano.
-- **Conta bancária**: obrigatória quando o lançamento está pago.
+- **Vencimento** (obrigatório).
+- **Pago em**: Preencha para dar baixa.
+- **Conta bancária**: Obrigatória quando o lançamento está pago.
 - **Fornecedor**.
-- **Unidade**: unidade que deve a receita (faturas preenchem sozinhas). Escolha entre as unidades do condomínio selecionado.
-- **Nº do documento**: nota fiscal, recibo ou boleto.
+- **Unidade**: Unidade que deve a receita (faturas preenchem sozinhas).
+- **Nº do documento**: Nota fiscal, recibo ou boleto.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Válido e Cancelado.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Descrição**, **Condomínio**, **Competência**, **Valor**, **Vencimento**, **Pago em** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Financeiro**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Boletos](artigo:boletos), [Lançar uma receita](artigo:lancar-receita) e [Lançar um desconto numa conta a receber](artigo:lancar-desconto).

@@ -1,70 +1,84 @@
 ---
 codigo: AP-009
-titulo: Cadastrar e gerenciar funcionários
-resumo: Funcionários próprios de cada condomínio.
+titulo: Cadastrar funcionários do condomínio
+resumo: Funcionários próprios do condomínio, como porteiros, zeladores e faxineiros, com função, contato e admissão.
 categoria: cadastros
 rota: /cadastros/funcionarios
 menu: Cadastros > Funcionários
 icone: list-outline
 situacao: funciona
-palavras: funcionários, cadastros, AP-009
+relacionados: sindico-e-conselho, fornecedores, proprietarios-e-inquilinos, advogados
+palavras: funcionários, cadastros, AP-009, porteiro, zelador, colaborador
 rascunho: nao
 ---
 
+Funcionários próprios do condomínio, como porteiros, zeladores e faxineiros, com função, contato e admissão.
+
 ## Onde fica
 
-No menu lateral, abra [[Cadastros > Funcionários]].
+No menu lateral, abra [[Cadastros > Funcionários]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela funcionarios
 rota: /cadastros/funcionarios
 condominio: residencial-jardim-das-acacias
 legenda: Tela Funcionários
 1: menu | Funcionários no menu lateral
-2: main :is(a,button):has-text("Novo funcionário") | Botão {{Novo funcionário}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Função, Situação
-4: main table thead | Lista com Nome completo, Condomínio, Função, Admissão, Telefone e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Novo funcionário") | Botão {{Novo funcionário}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Função e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo funcionário}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo funcionário}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Função**, **Nome completo**, **CPF**, **Admissão** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela funcionarios-novo
+```tela funcionarios-novo-funcionario
 rota: /cadastros/funcionarios/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de funcionário
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo funcionário
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="job"] | Função (obrigatório)
+3: main form:not([method=get]) [name="name"] | Nome completo (obrigatório)
+4: main form:not([method=get]) [name="document"] | CPF (obrigatório)
+5: main form:not([method=get]) [name="hired_on"] | Admissão (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Função** (obrigatório): opções: Zelador, Porteiro, Auxiliar de limpeza, Jardineiro, Manutenção, Vigia, Administrativo e Outra.
+- **Condomínio** (obrigatório).
+- **Função** (obrigatório).
 - **Nome completo** (obrigatório).
-- **CPF** (obrigatório): o sistema confere os dígitos do CPF.
-- **Admissão** (obrigatório): no formato dia/mês/ano.
-- **Desligamento**: no formato dia/mês/ano.
-- **Turno**: opções: Manhã, Tarde, Noite, 12x36 e Comercial.
-- **Salário**: em reais, por exemplo 1.250,00.
+- **CPF** (obrigatório).
+- **Admissão** (obrigatório).
+- **Desligamento**.
+- **Turno**: Opções: Manhã, Tarde, Noite, 12x36 e Comercial.
+- **Salário**.
 - **Telefone**.
-- **E-mail**.
+- **E-mail**: Exemplo: nome@exemplo.com.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Função** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Nome completo**, **Condomínio**, **Função**, **Admissão**, **Telefone** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Cadastrar síndico e conselho](artigo:sindico-e-conselho), [Cadastrar fornecedores](artigo:fornecedores) e [Cadastrar proprietários e inquilinos](artigo:proprietarios-e-inquilinos).

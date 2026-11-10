@@ -1,54 +1,52 @@
 ---
 codigo: AP-101
-titulo: Relatório Prestação de contas
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Prestação de contas
+resumo: Monta a prestação de contas do condomínio no período: saldo anterior, entradas, saídas e saldo final de cada conta.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/prestacao-de-contas
 menu: Prestação de contas > Prestação de contas
 icone: document-text-outline
 situacao: exemplo
+relacionados: listagem-de-prestacoes-de-contas, demonstrativo, demonstrativo-contas, demonstrativo-analitico
 palavras: prestação de contas, AP-101
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+Monta a prestação de contas do condomínio no período: saldo anterior, entradas, saídas e saldo final de cada conta.
+
+>! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
 
 ## Onde fica
 
-No menu lateral, abra [[Prestação de contas > Prestação de contas]].
+No menu lateral, abra [[Prestação de contas > Prestação de contas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela prestacao-de-contas
 rota: /prestacao-de-contas/prestacao-de-contas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Prestação de contas
 1: menu | Prestação de contas no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Conta, Saldo anterior, Entradas, Saídas e Saldo final
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
+4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
+5: main table thead | Colunas da lista
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Conta**
-- **Saldo anterior**
-- **Entradas**
-- **Saídas**
-- **Saldo final**
+Colunas: **Conta**, **Saldo anterior**, **Entradas**, **Saídas** e **Saldo final**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Listagem de prestações de contas](artigo:listagem-de-prestacoes-de-contas), [Demonstrativo (regime de caixa)](artigo:demonstrativo) e [Demonstrativo por conta](artigo:demonstrativo-contas).

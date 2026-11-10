@@ -1,6 +1,6 @@
 ---
 codigo: AP-147
-titulo: Configurar administrativo
+titulo: Dados da administradora
 resumo: Administrativo: e-mail de atendimento da administradora; telefone de atendimento.
 categoria: configuracoes
 rota: /configuracoes/administrativo
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: administrativo, configurações, AP-147
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
@@ -25,7 +26,6 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Administrativo
 1: menu | Administrativo no menu lateral
 2: main form[data-setting-form] | Um parâmetro, com a origem do valor
-3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
 ## Os parâmetros

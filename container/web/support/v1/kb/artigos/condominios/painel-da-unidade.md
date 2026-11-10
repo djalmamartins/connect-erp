@@ -1,15 +1,18 @@
 ---
 codigo: AP-003
 titulo: Painel da unidade
-resumo: Pessoas, débitos, acordos, documentos e rotina de uma unidade em uma tela.
+resumo: Tudo de uma unidade em uma tela: quem mora e quem é o responsável financeiro, débitos em aberto, acordos, documentos emitidos e a rotina (reservas, ocorrências, entregas). Ideal para atender um morador ao telefone.
 categoria: condominios
 rota: /condominios/painel-da-unidade
 menu: Condomínios > Painel da unidade
 icone: speedometer-outline
 situacao: funciona
+relacionados: unidades, proprietarios-e-inquilinos, painel-do-condominio
 palavras: painel da unidade, condomínios, AP-003
 rascunho: nao
 ---
+
+Tudo de uma unidade em uma tela: quem mora e quem é o responsável financeiro, débitos em aberto, acordos, documentos emitidos e a rotina (reservas, ocorrências, entregas). Ideal para atender um morador ao telefone.
 
 ## Onde fica
 
@@ -20,12 +23,18 @@ rota: /condominios/painel-da-unidade
 condominio: residencial-jardim-das-acacias
 legenda: Tela Painel da unidade
 1: menu | Painel da unidade no menu lateral
+2: main :is(form[method=get], .erp-filters) | Filtros: Unidade do Residencial Jardim das Acácias
 ```
 
-## O que a tela mostra
+## Pesquisar e filtrar
 
+Use os filtros no alto da lista: **Unidade do Residencial Jardim das Acácias**.
+Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros.
+
+> Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Cadastrar unidades](artigo:unidades), [Cadastrar proprietários e inquilinos](artigo:proprietarios-e-inquilinos) e [Painel do condomínio](artigo:painel-do-condominio).

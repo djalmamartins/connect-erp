@@ -1,58 +1,45 @@
 ---
 codigo: AP-099
-titulo: Relatório Boletos Enviados
-resumo: Avisos de boleto emitido que entraram na fila de envio no período.
+titulo: Boletos enviados
+resumo: Os avisos de boleto emitido que entraram na fila de envio por e-mail no período.
 categoria: relatorios
 rota: /relatorios/boletos-enviados
 menu: Relatórios > Gerais > Boletos Enviados
 icone: document-text-outline
 situacao: funciona
+relacionados: pessoas-com-acesso, relatorios-enviados, logs, relatorio-de-enderecos
 palavras: boletos enviados, relatórios, AP-099
 rascunho: nao
 ---
 
-## Para que serve
-
-Avisos de boleto emitido que entraram na fila de envio no período. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/sent-boletos`.
+Os avisos de boleto emitido que entraram na fila de envio por e-mail no período.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Boletos Enviados]].
+No menu lateral, abra [[Relatórios > Gerais > Boletos Enviados]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela boletos-enviados
 rota: /relatorios/boletos-enviados
 condominio: residencial-jardim-das-acacias
-legenda: Tela Relatório Boletos Enviados
+legenda: Tela Boletos Enviados
 1: menu | Boletos Enviados no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form.erp-filters | Filtros: De e Até (datas)
-4: main table thead | Colunas: Condomínio, Unidade, Nosso número, Valor, Vencimento, Situação, Entrega, Destinatários, Processado em
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main :is(form[method=get], .erp-filters) | Filtros: De e Até
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
-
-1. **De e Até (datas)**: o período em datas; o padrão vai de 1º de janeiro até hoje.
-2. Clique em {{Gerar}}.
-3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
-
-### O que cada coluna mostra
-
-- **Condomínio**
-- **Unidade**
-- **Nosso número**
-- **Valor**
-- **Vencimento**
-- **Situação**
-- **Entrega**
-- **Destinatários**
-- **Processado em**
+Use os filtros no alto da lista: **De** e **Até**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+
+> Na tela: *Nada neste filtro Não há registros para os filtros escolhidos.*
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.notifications.view** e **erp.bank_charges.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Pessoas com acesso aos condomínios](artigo:pessoas-com-acesso), [Relatórios enviados](artigo:relatorios-enviados) e [Logs de auditoria](artigo:logs).

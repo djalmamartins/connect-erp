@@ -1,6 +1,6 @@
 ---
 codigo: AP-154
-titulo: Configurar layout da Aplicação
+titulo: Aparência do aplicativo
 resumo: Layout da aplicação: nome exibido no aplicativo.
 categoria: configuracoes
 rota: /configuracoes/layout-da-aplicacao
@@ -9,6 +9,7 @@ icone: options-outline
 situacao: funciona
 palavras: layout da aplicação, configurações, AP-154
 rascunho: nao
+manual: sim
 ---
 
 ## Para que serve
@@ -25,7 +26,6 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Layout da Aplicação
 1: menu | Layout da Aplicação no menu lateral
 2: main form[data-setting-form] | Um parâmetro, com a origem do valor
-3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
 ## Os parâmetros

@@ -1,54 +1,52 @@
 ---
 codigo: AP-092
-titulo: Relatório Parecer
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Parecer do conselho
+resumo: Pareceres registrados no período.
 categoria: relatorios
 rota: /relatorios/parecer
 menu: Relatórios > Gerais > Parecer
 icone: document-text-outline
-situacao: sem-backend
+situacao: exemplo
+relacionados: administracao, pagamentos-pendentes, relatorio-de-ocorrencias, mudancas
 palavras: parecer, relatórios, AP-092
 rascunho: nao
 ---
 
->! Esta tela está **em implantação**: ela mostra como vai funcionar, com dados de exemplo, e ainda não grava nada.
+Pareceres registrados no período.
+
+>! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Parecer]].
+No menu lateral, abra [[Relatórios > Gerais > Parecer]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela parecer
 rota: /relatorios/parecer
 condominio: residencial-jardim-das-acacias
 legenda: Tela Parecer
 1: menu | Parecer no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Data, Condomínio, Descrição, Responsável e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
+4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
+5: main table thead | Colunas da lista
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Data**
-- **Condomínio**
-- **Descrição**
-- **Responsável**
-- **Situação**
+Colunas: **Data**, **Condomínio**, **Descrição**, **Responsável** e **Situação**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Relatório de administração](artigo:administracao), [Pagamentos pendentes](artigo:pagamentos-pendentes) e [Relatório de ocorrências](artigo:relatorio-de-ocorrencias).

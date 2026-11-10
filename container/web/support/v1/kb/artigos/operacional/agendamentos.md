@@ -1,66 +1,80 @@
 ---
 codigo: AP-120
-titulo: Cadastrar e gerenciar agendamentos
-resumo: Mudanças de entrada e saída por período. Um agendamento por período e dia em cada condomínio.
+titulo: Agendar mudanças
+resumo: Mudanças de entrada e saída, por dia e período. Só cabe um agendamento por período e dia em cada condomínio, seguindo as regras da configuração de mudança.
 categoria: operacional
 rota: /operacional/agendamentos
 menu: Operacional > Rotina > Agendamentos
 icone: list-outline
 situacao: funciona
+relacionados: mudancas, contratos, configuracoes, seguros
 palavras: agendamentos, operacional, AP-120
 rascunho: nao
 ---
 
+Mudanças de entrada e saída, por dia e período. Só cabe um agendamento por período e dia em cada condomínio, seguindo as regras da configuração de mudança.
+
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Agendamentos]].
+No menu lateral, abra [[Operacional > Rotina > Agendamentos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela agendamentos
 rota: /operacional/agendamentos
 condominio: residencial-jardim-das-acacias
 legenda: Tela Agendamentos
 1: menu | Agendamentos no menu lateral
-2: main :is(a,button):has-text("Novo agendamento") | Botão {{Novo agendamento}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Tipo, Situação
-4: main table thead | Lista com Morador, Condomínio, Unidade, Tipo, Data, Período e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Novo agendamento") | Botão {{Novo agendamento}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo agendamento}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo agendamento}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Unidade**, **Morador**, **Tipo**, **Data**, **Período** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela agendamentos-novo
+```tela agendamentos-novo-agendamento
 rota: /operacional/agendamentos/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de agendamento
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo agendamento
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="unit_id"] | Unidade (obrigatório)
+3: main form:not([method=get]) [name="resident_name"] | Morador (obrigatório)
+4: main form:not([method=get]) [name="kind"] | Tipo (obrigatório)
+5: main form:not([method=get]) [name="scheduled_on"] | Data (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Unidade** (obrigatório): unidade cadastrada em Condomínios › Unidades. Escolha entre as unidades do condomínio selecionado.
+- **Condomínio** (obrigatório).
+- **Unidade** (obrigatório): Unidade cadastrada em Condomínios › Unidades.
 - **Morador** (obrigatório).
-- **Tipo** (obrigatório): opções: Entrada e Saída.
-- **Data** (obrigatório): no formato dia/mês/ano.
-- **Período** (obrigatório): opções: Manhã e Tarde.
+- **Tipo** (obrigatório): Opções: Entrada e Saída.
+- **Data** (obrigatório).
+- **Período** (obrigatório): Opções: Manhã e Tarde.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Agendada, Realizada e Cancelada.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Morador**, **Condomínio**, **Unidade**, **Tipo**, **Data**, **Período** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Operacional**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Relatório de mudanças](artigo:mudancas), [Contratos com fornecedores](artigo:contratos) e [Regras de mudança](artigo:configuracoes).
