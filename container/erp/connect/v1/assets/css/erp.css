@@ -820,6 +820,18 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-setup-guide__steps li.is-current a > span { background: var(--erp-brand); color: var(--erp-on-brand); }
 @media (max-width: 720px) { .erp-setup-guide__steps small { display: none; } }
 .erp-condo-pick { display: flex; align-items: center; gap: 12px; }
+/* Botão "Selecionar" da lista (ADR 0154): discreto, contorno verde sobre branco; o verde cheio
+   só aparece no hover/foco, com o cursor de mão. */
+.erp-btn--pick { border-color: var(--erp-brand-line); background: var(--erp-surface); color: var(--erp-brand-ink); cursor: pointer; }
+.erp-btn--pick:hover, .erp-btn--pick:focus-visible { border-color: var(--erp-brand); background: var(--erp-brand); color: var(--erp-on-brand); }
+.erp-condo-address { color: var(--erp-muted); font-size: 13px; }
+/* Barra superior em "Todos": o rótulo vira "Selecione o condomínio" para indicar onde escolher. */
+.erp-condo-switch.is-unset { max-width: 460px; }
+.erp-condo-switch.is-unset .erp-condo-switch__label { color: var(--erp-brand); }
+/* Visão geral única (ADR 0154): identificação em blocos dentro de um cartão. */
+.erp-condo-blocks { display: grid; gap: var(--erp-space-4); }
+.erp-condo-blocks h3 { margin: 0 0 8px; color: var(--erp-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.erp-condo-blocks > div + div { padding-top: var(--erp-space-4); border-top: 1px solid var(--erp-border); }
 
 /* Seletor de mês e ano (ADR 0152): campo "nov/2026" com calendário só de meses (erp.js). */
 .erp-month { position: relative; }

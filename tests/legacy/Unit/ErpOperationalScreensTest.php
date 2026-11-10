@@ -131,12 +131,12 @@ final class ErpOperationalScreensTest extends TestCase
 
     public function testPanelsUseTheirOwnTemplatesOnlyWhenReady(): void
     {
-        self::assertNull(Panel::ownTemplate('AP-002', ['condoPanelReady' => false]));
-        self::assertSame('pages/condominiums/panel', Panel::ownTemplate('AP-002', ['condoPanelReady' => true]));
+        // AP-002 foi fundido na visão geral do condomínio (ADR 0154): sem template próprio no catálogo.
+        self::assertNull(Panel::ownTemplate('AP-002', ['condoPanelReady' => true]));
         self::assertNull(Panel::ownTemplate('AP-003', ['unitPanelReady' => false]));
         self::assertSame('pages/condominiums/unit-panel', Panel::ownTemplate('AP-003', ['unitPanelReady' => true]));
         $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
-        self::assertStringContainsString("(new \\Source\\Services\\Erp\\PanelSummaries())->condominium(\$user, \$context)", $panel);
+        self::assertStringContainsString('(new PanelSummaries())->condominium($user, $id)', $this->file('source/Controllers/Erp/Connect/Condominiums.php'));
         self::assertStringContainsString("(new \\Source\\Services\\Erp\\PanelSummaries())->unit(\$user, (int)\$selected)", $panel);
         self::assertStringContainsString("Access::can('erp.units.view', \$user)", $panel);
     }

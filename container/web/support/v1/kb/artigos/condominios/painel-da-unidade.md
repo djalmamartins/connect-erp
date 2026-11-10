@@ -7,7 +7,7 @@ rota: /condominios/painel-da-unidade
 menu: Condomínios > Painel da unidade
 icone: speedometer-outline
 situacao: funciona
-relacionados: unidades, proprietarios-e-inquilinos, painel-do-condominio
+relacionados: unidades, proprietarios-e-inquilinos, condominios
 palavras: painel da unidade, condomínios, AP-003
 rascunho: nao
 ---
@@ -37,4 +37,4 @@ Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
->> Veja também: [Cadastrar unidades](artigo:unidades), [Cadastrar proprietários e inquilinos](artigo:proprietarios-e-inquilinos) e [Painel do condomínio](artigo:painel-do-condominio).
+>> Veja também: [Cadastrar unidades](artigo:unidades), [Cadastrar proprietários e inquilinos](artigo:proprietarios-e-inquilinos) e [Visão geral do condomínio](artigo:condominios).

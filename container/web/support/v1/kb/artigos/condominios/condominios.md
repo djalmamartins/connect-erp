@@ -7,8 +7,8 @@ rota: /condominios
 menu: Condomínios > Condomínios
 icone: list-outline
 situacao: funciona
-relacionados: escolher-o-condominio, unidades, proprietarios-e-inquilinos, sindico-e-conselho, areas-vinculaveis, painel-do-condominio
-palavras: condomínios, AP-004, prédio, edifício, checklist, cnpj, cep, selecionar, visão geral, guia, receita
+relacionados: escolher-o-condominio, unidades, proprietarios-e-inquilinos, sindico-e-conselho, areas-vinculaveis, painel-da-unidade
+palavras: condomínios, AP-004, AP-002, prédio, edifício, checklist, cnpj, cep, selecionar, visão geral, painel do condomínio, indicadores, inadimplência, saldo, endereço, guia, receita
 manual: sim
 rascunho: nao
 ---
@@ -19,8 +19,8 @@ Aqui ficam os condomínios administrados pela Connect que a sua conta pode ver. 
 
 No menu lateral, abra [[Condomínios > Condomínios]].
 
-- **Com um condomínio na barra superior**, a tela abre direto a **visão geral** dele: identificação, endereço e contato, estrutura, contrato e banco, o andamento do cadastro e os atalhos para os cadastros dele.
-- **Em Todos os condomínios**, a tela mostra a lista dos condomínios do seu acesso.
+- **Com um condomínio na barra superior**, a tela abre direto a **visão geral** dele: o andamento do cadastro, os indicadores (unidades, saldo, inadimplência, resultado do mês), a identificação, os alertas e os atalhos para os cadastros dele.
+- **Em Todos os condomínios**, a tela mostra a lista dos condomínios do seu acesso, com CNPJ e um endereço curto (rua, número e cidade) para diferenciar condomínios de nome parecido. A pesquisa também procura pelo endereço.
 
 ```tela condominios
 rota: /condominios
@@ -33,7 +33,7 @@ legenda: Lista de condomínios (barra superior em Todos)
 
 ## Selecionar um condomínio para o sistema todo
 
-Na lista, clique em {{Selecionar}}, na frente do nome do condomínio. Ele passa para a barra superior e **todas as telas** do sistema passam a mostrar só os dados dele: cadastros, financeiro, cobrança, relatórios. A tela abre a visão geral do condomínio escolhido.
+Na lista, clique em {{Selecionar}}, na frente do nome do condomínio (o botão fica verde ao passar o mouse). Enquanto nenhum condomínio está escolhido, a barra superior mostra **Selecione o condomínio**; dá para escolher por ali também. Ele passa para a barra superior e **todas as telas** do sistema passam a mostrar só os dados dele: cadastros, financeiro, cobrança, relatórios. A tela abre a visão geral do condomínio escolhido.
 
 Para voltar à lista, escolha **Todos os condomínios** na barra superior ou clique em {{Todos os condomínios}} no alto da visão geral.
 
@@ -46,14 +46,21 @@ rota: /condominios
 condominio: residencial-jardim-das-acacias
 legenda: Visão geral do condomínio
 1: main [data-erp-setup-guide] | Andamento do cadastro
-2: main #condo-data-title | Dados completos do cadastro
-3: main #condo-related-title | Cadastros do condomínio
-4: main .erp-page-head__actions :is(a,button):has-text("Editar") | Botão {{Editar}}
+2: main [data-erp-condo-panel] | Indicadores do condomínio
+3: main #condo-data-title | Identificação do condomínio
+4: main #condo-related-title | Cadastros do condomínio
+5: main .erp-page-head__actions :is(a,button):has-text("Editar") | Botão {{Editar}}
 ```
 
+A visão geral é a única tela do condomínio: o antigo **Painel do condomínio** foi juntado a ela. De cima para baixo:
+
 - O cartão **Cadastro do condomínio** mostra os passos do cadastro e o que já foi feito (por exemplo, "12 de 40 unidades" com proprietário). Clique em {{Continuar o cadastro}} para abrir o guia no primeiro passo que falta.
-- **Cadastros do condomínio** abre cada lista já filtrada por ele.
-- {{Painel}} mostra ocupação, financeiro e rotina; {{Checklist de chegada}} mostra documentos, vencimentos e prazos.
+- Os **indicadores** mostram as unidades (ocupadas e vagas), o saldo em bancos, a inadimplência e o resultado do mês. Os números vêm dos cadastros e dos lançamentos; se algo parecer errado, confira o lançamento na origem.
+- No centro, a **Identificação** traz CNPJ, razão social, endereço e contato, estrutura, contrato e banco. Embaixo, os **alertas**, a **inadimplência por atraso** e as **contas bancárias**.
+- Na lateral, **Rotina** mostra as contagens de hoje (manutenções, reservas, ocorrências, entregas, contas a receber e a pagar) e **Cadastros do condomínio** abre cada lista já filtrada por ele.
+- {{Checklist de chegada}} mostra documentos, vencimentos e prazos.
+
+> Sem acesso às unidades, a tela mostra só o cadastro. Sem acesso ao financeiro, aparece um aviso no lugar dos indicadores.
 
 ## Cadastrar um condomínio novo
 
@@ -95,4 +102,4 @@ Use {{Próximo}} para ir ao passo seguinte ou clique em qualquer passo para ir d
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**; cadastrar e editar pedem a permissão de gerenciar condomínios. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou). Os passos do guia só aparecem para quem pode abrir a tela de cada um.
 
->> Veja também: [Painel do condomínio](artigo:painel-do-condominio), [Cadastrar unidades](artigo:unidades) e [Síndico e conselho](artigo:sindico-e-conselho).
+>> Veja também: [Painel da unidade](artigo:painel-da-unidade), [Cadastrar unidades](artigo:unidades) e [Síndico e conselho](artigo:sindico-e-conselho).

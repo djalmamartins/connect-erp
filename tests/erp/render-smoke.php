@@ -1349,14 +1349,17 @@ $condoPanel = ['condominium' => ['id' => 7, 'name' => 'Residencial <Aurora>', 's
         'delinquency_cents' => 300000, 'delinquency_charges_cents' => 12345, 'delinquent_units' => 3, 'buckets' => ['1-30' => 100000, '31-60' => 0, '61-90' => 50000, '90+' => 150000],
         'competence' => '2026-11', 'closing_status' => 'open', 'competence_result_cents' => -2000],
     'operations' => ['as_of' => '2026-11-09', 'condominium_id' => 7, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]];
-$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => $condoPanel, 'condoPanelError' => null], 'real');
-$common($html, 'AP-002', 'Residencial <Aurora>');
+// O painel do condomínio (AP-002) foi fundido na visão geral (ADR 0154): mesmos números dentro de show.
+$html = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 7, 'name' => 'Residencial <Aurora>', 'document' => null, 'status' => 'active'],
+    'condoPanel' => $condoPanel, 'condoPanelError' => null], 'Residencial <Aurora>'));
+$save('page-ap-004-overview-panel', $html);
 $assert(str_contains($html, 'data-erp-condo-panel') && str_contains($html, '36 ocupadas · 4 vagas (90,0%)') && str_contains($html, 'R$ 45.678,90') && str_contains($html, 'Itaú &lt;principal&gt;')
     && str_contains($html, 'encargos R$ 123,45') && str_contains($html, 'Resultado de 11/2026') && str_contains($html, 'Competência Aberta') && str_contains($html, 'Acima de 90 dias')
-    && str_contains($html, 'Manutenções atrasadas') && str_contains($html, '/condominios/7'), 'AP-002: painel com ocupação, financeiro e alertas');
-$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => null, 'condoPanelError' => null]);
-$assert(str_contains($html, 'Escolha um condomínio') && str_contains($html, '/condominios/painel-do-condominio'), 'AP-002: em todos os condomínios pede a escolha');
-$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-002', ['condoPanelReady' => false]) === null, 'AP-002: sem permissão ou banco segue a demonstração');
+    && str_contains($html, 'Manutenções atrasadas') && str_contains($html, 'Identificação') && str_contains($html, 'Cadastros do condomínio') && str_contains($html, 'Rotina'), 'AP-004: visão geral com ocupação, financeiro, alertas e identificação');
+$html = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 7, 'name' => 'Residencial Aurora', 'document' => null, 'status' => 'active'],
+    'condoPanel' => null, 'condoPanelError' => 'Seu perfil não tem permissão para todos os indicadores do condomínio (financeiro e fechamento).'], 'Residencial Aurora'));
+$assert(!str_contains($html, 'data-erp-condo-panel') && str_contains($html, 'permissão para todos os indicadores') && str_contains($html, 'Identificação'), 'AP-004: sem financeiro, aviso no lugar dos indicadores');
+$assert(!isset($catalog['pages']['AP-002']), 'AP-002 fundido na visão geral: fora do menu');
 
 $unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025], 'as_of' => '2026-11-09',
     'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'phone' => '(11) 99999-0000', 'email' => 'ana@example.com']],

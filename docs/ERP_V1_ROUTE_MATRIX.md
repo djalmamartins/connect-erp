@@ -3,14 +3,14 @@
 Gerada por `tools/erp-catalog.py` a partir de `docs/specs/routes.json` (inventário de 172 rotas da auditoria APControle).
 As rotas de referência do APControle não são rotas do Connect ERP: cada página recebeu uma rota própria em `/erp`.
 
-- Inventário: 172 · Validadas: 171 · Removidas: 3 · Fundidas: 3
+- Inventário: 172 · Validadas: 170 · Removidas: 3 · Fundidas: 4
 
 Componente: template que renderiza a rota hoje. Implementação: `interface proposta (demonstração)` = rota registrada e protegida, com a interface do seu tipo, colunas e campos propostos (a confirmar nas fichas) e dados fictícios; operações de negócio ficam pendentes até o backend. Teste: resultado de `tests/erp/render-smoke.php`.
 
 | AP | Nome no inventário | Página | Rota | Grupo | Tipo de interface | Componente | Layout | Ações visuais | Validação | Implementação | Teste | Observação |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | AP-001 | Administradora | Dashboard | `/erp/dashboard` | Dashboard | dashboard | pages/dashboard/index | default.php | período, exportar (pendente), comunicado rápido (modal), filtro/ordenação/paginação | REINTERPRETADA | completa (demonstração) | smoke OK | Dashboard interno da administradora Connect; não existe cadastro de administradoras |
-| AP-002 | Condomínio | Painel do condomínio | `/erp/condominios/painel-do-condominio` | Condomínios | dashboard | pages/modules/dashboard | default.php | contexto, indicadores, gráfico, tabela | VALIDADA | interface proposta (demonstração) | smoke OK |  |
+| AP-002 | Condomínio | — | `—` | — | — | — | — | — | FUNDIDA | — | — | Painel do condomínio fundido na visão geral do condomínio (ADR 0154) → AP-004 |
 | AP-003 | Unidade | Painel da unidade | `/erp/condominios/painel-da-unidade` | Condomínios | dashboard | pages/modules/dashboard | default.php | contexto, indicadores, gráfico, tabela | VALIDADA | interface proposta (demonstração) | smoke OK |  |
 | AP-004 | Condomínios | Condomínios | `/erp/condominios` | Condomínios | list | pages/modules/list | default.php | filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação | VALIDADA | interface proposta (demonstração) | smoke OK |  |
 | AP-005 | Inquilinos | Proprietários e inquilinos | `/erp/cadastros/proprietarios-e-inquilinos` | Cadastros | list | pages/modules/list | default.php | filtros, ordenação, paginação, cadastro/edição (modal), detalhe com abas, exclusão com confirmação | VALIDADA | interface proposta (demonstração) | smoke OK |  |
