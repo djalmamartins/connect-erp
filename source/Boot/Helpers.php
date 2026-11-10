@@ -131,7 +131,7 @@ function str_slug(string $string): string
 
     $slug = str_replace(["-----", "----", "---", "--"], "-",
         str_replace(" ", "-",
-            trim(strtr(utf8_decode($string), utf8_decode($formats), $replace))
+            trim(strtr(mb_convert_encoding($string, 'ISO-8859-1', 'UTF-8'), mb_convert_encoding($formats, 'ISO-8859-1', 'UTF-8'), $replace))
         )
     );
     return $slug;
