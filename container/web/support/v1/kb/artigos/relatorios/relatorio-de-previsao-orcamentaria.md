@@ -1,52 +1,58 @@
 ---
 codigo: AP-084
 titulo: Relatório de previsão orçamentária
-resumo: Compara o previsto no orçamento com o realizado de cada conta, com a diferença e a execução em porcentagem.
+resumo: O previsto de cada conta no ano contra o que foi lançado (competência), com a diferença e a variação.
 categoria: relatorios
 rota: /relatorios/relatorio-de-previsao-orcamentaria
 menu: Relatórios > Financeiros > Relatório de previsão orçamentária
 icone: document-text-outline
-situacao: exemplo
-relacionados: relatorio-de-transferencias, relatorio-memoria-de-calculo, registro-de-pagamentos, saldos-de-contas
+situacao: funciona
 palavras: relatório de previsão orçamentária, relatórios, AP-084
 rascunho: nao
+manual: sim
 ---
 
-Compara o previsto no orçamento com o realizado de cada conta, com a diferença e a execução em porcentagem.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+O previsto de cada conta no ano contra o que foi lançado (competência), com a diferença e a variação. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/budgets`.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Financeiros > Relatório de previsão orçamentária]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Relatórios > Financeiros > Relatório de previsão orçamentária]].
 
 ```tela relatorio-de-previsao-orcamentaria
 rota: /relatorios/relatorio-de-previsao-orcamentaria
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de previsão orçamentária
 1: menu | Relatório de previsão orçamentária no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
-5: main table thead | Colunas da lista
+2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main form.erp-filters | Filtros: Ano
 ```
 
-## Escolher o período e os filtros
+>! Este relatório usa os dados de **um condomínio só**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
+## Como gerar o relatório
 
-## O que o relatório mostra
+1. **Ano**: o ano do relatório.
+2. Clique em {{Gerar}}.
+3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
-Colunas: **Conta**, **Previsto**, **Realizado**, **Diferença** e **Execução**.
-Os totais aparecem no rodapé da tabela.
+### O que cada coluna mostra
 
-## Imprimir ou exportar
+- **Código**
+- **Conta**
+- **Natureza**
+- **Previsto**
+- **Lançado**
+- **Diferença**
+- **Variação**
 
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+O previsto vem de [[Configurações > Financeiro e parâmetros > Previsão Orçamentária]]; o lançado soma os lançamentos ativos pela competência. Este relatório não tem exportação em CSV: use {{Imprimir}}.
+
+## Imprimir
+
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Relatório de transferências](artigo:relatorio-de-transferencias), [Memória de cálculo dos encargos](artigo:relatorio-memoria-de-calculo) e [Registro de pagamentos](artigo:registro-de-pagamentos).
+A tela aparece para quem tem a permissão **erp.settings.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

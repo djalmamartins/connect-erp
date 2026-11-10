@@ -1,20 +1,20 @@
 ---
 codigo: AP-158
 titulo: Modelo do demonstrativo
-resumo: Define como o demonstrativo sai: modelo, agrupamento e se mostra o saldo anterior e a previsão orçamentária.
+resumo: Demonstrativo: mostrar contas em aberto no demonstrativo; agrupar o demonstrativo por.
 categoria: configuracoes
 rota: /configuracoes/demonstrativo
 menu: Configurações > Financeiro e parâmetros > Demonstrativo
 icone: options-outline
-situacao: exemplo
-relacionados: financeiro, plano-de-contas, saldo-inicial-plano-de-contas, saldo-inicial-centro-de-custo
+situacao: funciona
 palavras: demonstrativo, configurações, AP-158
 rascunho: nao
+manual: sim
 ---
 
-Define como o demonstrativo sai: modelo, agrupamento e se mostra o saldo anterior e a previsão orçamentária.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Demonstrativo**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,34 +25,24 @@ rota: /configuracoes/demonstrativo
 condominio: residencial-jardim-das-acacias
 legenda: Tela Demonstrativo
 1: menu | Demonstrativo no menu lateral
-2: main form:not([method=get]) | Demonstrativo
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
+3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
-## Demonstrativo
+## Os parâmetros
 
-1. Preencha os campos que quer alterar.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Mostrar contas em aberto no demonstrativo**: Sim ou Não. Padrão do sistema: Sim. Cada condomínio pode ter o seu.
+- **Agrupar o demonstrativo por**: escolha numa lista. Padrão do sistema: Conta do plano. Cada condomínio pode ter o seu.
 
-```tela configuracoes-demonstrativo-form
-rota: /configuracoes/demonstrativo
-condominio: residencial-jardim-das-acacias
-legenda: Demonstrativo
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-158-0-modelo"] | Modelo
-2: main form:not([method=get]) [name="ap-158-0-agrupar-por"] | Agrupar por
-3: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Modelo**: Opções: Sintético e Analítico.
-- **Agrupar por**: Opções: Plano de contas e Centro de custo.
-- **Mostrar saldo anterior**.
-- **Mostrar previsão orçamentária**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Configurações financeiras](artigo:financeiro), [Plano de contas](artigo:plano-de-contas) e [Saldo inicial do plano de contas](artigo:saldo-inicial-plano-de-contas).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

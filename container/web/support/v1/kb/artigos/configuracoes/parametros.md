@@ -1,20 +1,20 @@
 ---
 codigo: AP-166
 titulo: Parâmetros gerais
-resumo: Fuso horário, moeda, arredondamento e o tempo para a sessão expirar.
+resumo: Parâmetros: tolerância da soma das frações ideais; máximo de linhas por relatório.
 categoria: configuracoes
 rota: /configuracoes/parametros
 menu: Configurações > Financeiro e parâmetros > Parâmetros
 icone: options-outline
-situacao: exemplo
-relacionados: indices, fracao-ideal, imposto, tipos-de-faturas
+situacao: funciona
 palavras: parâmetros, configurações, AP-166
 rascunho: nao
+manual: sim
 ---
 
-Fuso horário, moeda, arredondamento e o tempo para a sessão expirar.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Parâmetros**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,36 +25,23 @@ rota: /configuracoes/parametros
 condominio: residencial-jardim-das-acacias
 legenda: Tela Parâmetros
 1: menu | Parâmetros no menu lateral
-2: main form:not([method=get]) | Parâmetros gerais
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
 ```
 
-## Parâmetros gerais
+## Os parâmetros
 
-1. Preencha os campos que quer alterar.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Tolerância da soma das frações ideais**: número decimal, de 0 a 0.01. Padrão do sistema: 0.0001. Vale para todos os condomínios.
+- **Máximo de linhas por relatório**: número inteiro, de 100 a 20000. Padrão do sistema: 5000. Vale para todos os condomínios.
 
-```tela parametros-form
-rota: /configuracoes/parametros
-condominio: residencial-jardim-das-acacias
-legenda: Parâmetros gerais
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-166-0-fuso-horario"] | Fuso horário
-2: main form:not([method=get]) [name="ap-166-0-moeda"] | Moeda
-3: main form:not([method=get]) [name="ap-166-0-arredondamento"] | Arredondamento
-4: main form:not([method=get]) [name="ap-166-0-dias-para-expirar-sessao"] | Dias para expirar sessão
-5: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Fuso horário**: Opções: America/Sao_Paulo.
-- **Moeda**: Opções: Real (R$).
-- **Arredondamento**: Opções: 2 casas e Sem centavos.
-- **Dias para expirar sessão**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Índices e regra de cobrança](artigo:indices), [Preencher a fração ideal e a área das unidades](artigo:fracao-ideal) e [Impostos retidos](artigo:imposto).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

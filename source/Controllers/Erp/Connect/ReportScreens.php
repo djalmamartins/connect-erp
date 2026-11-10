@@ -9,6 +9,7 @@ use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\AccountingReports;
 use Source\Services\Erp\AnnualBalance;
+use Source\Services\Erp\ErpSettings;
 use Source\Services\Erp\ManagementReports;
 use Source\Services\Erp\PaymentReports;
 use Source\Services\Erp\Registry\RegistryForbidden;
@@ -139,6 +140,10 @@ final class ReportScreens
             'lead' => 'Movimento de cada conta do plano no período: saldo anterior, cada lançamento com débito ou crédito e o saldo corrido.',
             'columns' => [['Código', 'code', 'text'], ['Conta', 'name', 'text'], ['Data', 'on_date', 'date'], ['Histórico', 'description', 'text'],
                 ['Débito', 'debit_cents', 'money'], ['Crédito', 'credit_cents', 'money'], ['Saldo', 'balance_cents', 'signed']]],
+        'AP-084' => ['api' => 'budgets', 'csv' => false, 'filters' => ['year'], 'condo' => true, 'perms' => ['erp.settings.view'],
+            'lead' => 'O previsto de cada conta no ano contra o que foi lançado (competência), com a diferença e a variação.',
+            'columns' => [['Código', 'code', 'text'], ['Conta', 'name', 'text'], ['Natureza', 'nature', 'label:nature'], ['Previsto', 'budget_total', 'money'],
+                ['Lançado', 'actual_total', 'money'], ['Diferença', 'difference_cents', 'signed'], ['Variação', 'percent', 'percent']]],
         'AP-085' => ['api' => 'reservations', 'filters' => ['period', 'reserva'], 'perms' => ['erp.reservations.view'],
             'lead' => 'Reservas das áreas comuns no período, com a taxa e a situação.',
             'columns' => [['Condomínio', 'condominium_name', 'text'], ['Área', 'area', 'text'], ['Unidade', 'unit_label', 'text'], ['Morador', 'resident_name', 'text'],
@@ -282,7 +287,7 @@ final class ReportScreens
             if (($report['blocked'] ?? false) === true) {
                 $data['reportNotice'] = (string)($report['message'] ?? '') . (($report['missing_fraction'] ?? []) !== [] ? ' Unidades sem fração: ' . implode(', ', $report['missing_fraction']) . '.' : '');
             }
-            $data['reportCsv'] = self::csvUrl($id, $filters, ($page['scope'] ?? null) === 'all' ? null : $context);
+            $data['reportCsv'] = ($page['csv'] ?? true) === false ? null : self::csvUrl($id, $filters, ($page['scope'] ?? null) === 'all' ? null : $context);
         } catch (\InvalidArgumentException $error) {
             $data['reportError'] = $error->getMessage();
         } catch (RegistryForbidden) {
@@ -321,6 +326,7 @@ final class ReportScreens
             'AP-082' => $a()->incomeStatement($user, $c, $f['de'], $f['ate'], $f['base']),
             'AP-083' => $a()->ledger($user, $c, $f['de'], $f['ate'], $f['base'], $f['codigo'] !== '' ? $f['codigo'] : null),
             'AP-080' => (new AnnualBalance())->report($user, $c, $f['ano'], $f['base']),
+            'AP-084' => (new ErpSettings())->budget($user, (int)$c, $f['ano']),
             'AP-085' => $r()->reservations($user, $c, $f['de'], $f['ate'], $f['reserva'] ?: null),
             'AP-086' => $r()->units($user, $c),
             'AP-087' => $r()->people($user, $c, $f['vinculo'] ?: null),

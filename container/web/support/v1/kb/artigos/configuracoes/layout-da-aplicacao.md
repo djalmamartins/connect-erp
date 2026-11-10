@@ -1,20 +1,20 @@
 ---
 codigo: AP-154
 titulo: Aparência do aplicativo
-resumo: Nome exibido, cor principal e logotipo do aplicativo dos moradores.
+resumo: Layout da aplicação: nome exibido no aplicativo.
 categoria: configuracoes
 rota: /configuracoes/layout-da-aplicacao
 menu: Configurações > Aplicativo e notificações > Layout da Aplicação
 icone: options-outline
-situacao: exemplo
-relacionados: notificacoes-da-prestacao-de-contas, notificacoes-aplicativo, banners, alertas
+situacao: funciona
 palavras: layout da aplicação, configurações, AP-154
 rascunho: nao
+manual: sim
 ---
 
-Nome exibido, cor principal e logotipo do aplicativo dos moradores.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Layout da aplicação**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,34 +25,22 @@ rota: /configuracoes/layout-da-aplicacao
 condominio: residencial-jardim-das-acacias
 legenda: Tela Layout da Aplicação
 1: menu | Layout da Aplicação no menu lateral
-2: main form:not([method=get]) | Aplicativo
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
 ```
 
-## Aplicativo
+## Os parâmetros
 
-1. Preencha **Nome exibido**.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Nome exibido no aplicativo**: texto, de 2 a 80 caracteres. Padrão do sistema: Connect. Vale para todos os condomínios.
 
-```tela layout-da-aplicacao-form
-rota: /configuracoes/layout-da-aplicacao
-condominio: residencial-jardim-das-acacias
-legenda: Aplicativo
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-154-0-nome-exibido"] | Nome exibido (obrigatório)
-2: main form:not([method=get]) [name="ap-154-0-cor-principal"] | Cor principal
-3: main form:not([method=get]) [name="ap-154-0-logotipo"] | Logotipo
-4: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Nome exibido** (obrigatório).
-- **Cor principal**: Opções: Dourado Connect e Azul-marinho.
-- **Logotipo**: PDF, JPG ou PNG. O envio será habilitado com o armazenamento do módulo. Escolha o arquivo no seu computador.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Envio da prestação de contas aos condôminos](artigo:notificacoes-da-prestacao-de-contas), [Notificações do aplicativo](artigo:notificacoes-aplicativo) e [Banners do aplicativo](artigo:banners).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

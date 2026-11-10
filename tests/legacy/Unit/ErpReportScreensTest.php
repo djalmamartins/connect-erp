@@ -35,6 +35,9 @@ final class ErpReportScreensTest extends TestCase
     public function testColumnsAreInTheCsvExport(): void
     {
         foreach (Screens::PAGES as $page => $definition) {
+            if (($definition['csv'] ?? true) === false) {
+                continue;   // AP-084: a API de previsão não exporta CSV
+            }
             $kind = $definition['api'] . match (true) {
                 $definition['api'] === 'financial-statement' => '',
                 $definition['api'] === 'apportionment' => '-' . $definition['query']['view'],

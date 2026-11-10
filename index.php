@@ -82,6 +82,14 @@ $route->get("/reports/annual-balance", "AnnualBalance:index", null, \Source\Supp
 $route->get("/reports/ledger", "AccountingReports:ledger", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/account-balances", "AccountingReports:accountBalances", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/income-statement", "AccountingReports:incomeStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0166: prestação de contas, registros de entregas e saldo inicial do plano de contas
+$route->get("/reports/accountability", "Accountability:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/deliveries", "DeliveryLog:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/delivery-pickups", "DeliveryLog:pickUp", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/chart-account-openings", "ChartOpenings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0167: Balanço Patrimonial (AP-081)
+$route->get("/reports/balance-sheet", "BalanceSheet:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);

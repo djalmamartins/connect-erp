@@ -1,20 +1,20 @@
 ---
 codigo: AP-157
 titulo: Configurações financeiras
-resumo: Padrões da cobrança: multa por atraso, juros ao mês, dias de carência, correção, desconto por pontualidade, conta bancária padrão e carteira.
+resumo: Financeiro: dia de vencimento padrão das faturas.
 categoria: configuracoes
 rota: /configuracoes/financeiro
 menu: Configurações > Financeiro e parâmetros > Financeiro
 icone: options-outline
-situacao: exemplo
-relacionados: indices, configuracoes-demonstrativo, plano-de-contas, saldo-inicial-plano-de-contas
+situacao: funciona
 palavras: financeiro, configurações, AP-157
 rascunho: nao
+manual: sim
 ---
 
-Padrões da cobrança: multa por atraso, juros ao mês, dias de carência, correção, desconto por pontualidade, conta bancária padrão e carteira.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Financeiro**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,40 +25,23 @@ rota: /configuracoes/financeiro
 condominio: residencial-jardim-das-acacias
 legenda: Tela Financeiro
 1: menu | Financeiro no menu lateral
-2: main form:not([method=get]) | Cobrança
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
+3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
-## Cobrança
+## Os parâmetros
 
-1. Preencha **Multa por atraso (%)** e **Juros ao mês (%)**.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Dia de vencimento padrão das faturas**: número inteiro, de 1 a 28. Padrão do sistema: 10. Cada condomínio pode ter o seu.
 
-```tela financeiro-form
-rota: /configuracoes/financeiro
-condominio: residencial-jardim-das-acacias
-legenda: Cobrança
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-157-0-multa-por-atraso"] | Multa por atraso (%) (obrigatório)
-2: main form:not([method=get]) [name="ap-157-0-juros-ao-mes"] | Juros ao mês (%) (obrigatório)
-3: main form:not([method=get]) [name="ap-157-0-dias-de-carencia"] | Dias de carência
-4: main form:not([method=get]) [name="ap-157-0-correcao"] | Correção
-5: main form:not([method=get]) [name="ap-157-0-desconto-por-pontualidade"] | Desconto por pontualidade (%)
-6: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Multa por atraso (%)** (obrigatório).
-- **Juros ao mês (%)** (obrigatório).
-- **Dias de carência**.
-- **Correção**: Opções: IPCA, IGP-M e Sem correção.
-- **Desconto por pontualidade (%)**.
-- **Conta bancária padrão**.
-- **Carteira de cobrança**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Índices e regra de cobrança](artigo:indices), [Modelo do demonstrativo](artigo:configuracoes-demonstrativo) e [Plano de contas](artigo:plano-de-contas).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

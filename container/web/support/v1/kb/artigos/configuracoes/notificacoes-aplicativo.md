@@ -1,20 +1,20 @@
 ---
 codigo: AP-155
 titulo: Notificações do aplicativo
-resumo: Escolha quais avisos o morador recebe no aplicativo: boleto novo, boleto vencendo, comunicado, entrega na portaria, reserva aprovada e assembleia.
+resumo: Notificações do aplicativo: enviar comunicados por e-mail; dias entre avisos de cobrança da mesma unidade.
 categoria: configuracoes
 rota: /configuracoes/notificacoes-aplicativo
 menu: Configurações > Aplicativo e notificações > Notificações aplicativo
 icone: options-outline
-situacao: exemplo
-relacionados: layout-da-aplicacao, banners, notificacoes-da-prestacao-de-contas, alertas
+situacao: funciona
 palavras: notificações aplicativo, configurações, AP-155
 rascunho: nao
+manual: sim
 ---
 
-Escolha quais avisos o morador recebe no aplicativo: boleto novo, boleto vencendo, comunicado, entrega na portaria, reserva aprovada e assembleia.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Notificações do aplicativo**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,34 +25,24 @@ rota: /configuracoes/notificacoes-aplicativo
 condominio: residencial-jardim-das-acacias
 legenda: Tela Notificações aplicativo
 1: menu | Notificações aplicativo no menu lateral
-2: main form:not([method=get]) | Notificações
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
+3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
-## Notificações
+## Os parâmetros
 
-1. Preencha os campos que quer alterar.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Enviar comunicados por e-mail**: Sim ou Não. Padrão do sistema: Sim. Cada condomínio pode ter o seu.
+- **Dias entre avisos de cobrança da mesma unidade**: número inteiro, de 1 a 90. Padrão do sistema: 7. Vale para todos os condomínios.
 
-```tela notificacoes-aplicativo-form
-rota: /configuracoes/notificacoes-aplicativo
-condominio: residencial-jardim-das-acacias
-legenda: Notificações
-recorte: main form:not([method=get])
-1: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Novo boleto**.
-- **Boleto vencendo**.
-- **Comunicado novo**.
-- **Entrega na portaria**.
-- **Reserva aprovada**.
-- **Assembleia convocada**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Aparência do aplicativo](artigo:layout-da-aplicacao), [Banners do aplicativo](artigo:banners) e [Envio da prestação de contas aos condôminos](artigo:notificacoes-da-prestacao-de-contas).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

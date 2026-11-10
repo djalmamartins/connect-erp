@@ -1,20 +1,20 @@
 ---
 codigo: AP-159
 titulo: Alertas do sistema
-resumo: Define quando o ERP alerta a equipe: conta a pagar vencendo, inadimplência acima de um limite, contrato e seguro a vencer.
+resumo: Alertas: alertar unidade em atraso há mais de (dias); alertar contrato e seguro que vencem em (dias); alertar conta bancária com saldo abaixo de.
 categoria: configuracoes
 rota: /configuracoes/alertas
 menu: Configurações > Aplicativo e notificações > Alertas
 icone: options-outline
-situacao: exemplo
-relacionados: banners, notificacoes-aplicativo, layout-da-aplicacao, notificacoes-da-prestacao-de-contas
+situacao: funciona
 palavras: alertas, configurações, AP-159
 rascunho: nao
+manual: sim
 ---
 
-Define quando o ERP alerta a equipe: conta a pagar vencendo, inadimplência acima de um limite, contrato e seguro a vencer.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Alertas**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,36 +25,25 @@ rota: /configuracoes/alertas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Alertas
 1: menu | Alertas no menu lateral
-2: main form:not([method=get]) | Alertas da equipe
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
+3: main form[data-setting-form] button[type=submit] | Botão {{Salvar}}
 ```
 
-## Alertas da equipe
+## Os parâmetros
 
-1. Preencha os campos que quer alterar.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **Alertar unidade em atraso há mais de (dias)**: número inteiro, de 1 a 365. Padrão do sistema: 30. Cada condomínio pode ter o seu.
+- **Alertar contrato e seguro que vencem em (dias)**: número inteiro, de 1 a 365. Padrão do sistema: 30. Cada condomínio pode ter o seu.
+- **Alertar conta bancária com saldo abaixo de**: valor em reais. Padrão do sistema: R$ 0,00. Cada condomínio pode ter o seu.
 
-```tela alertas-form
-rota: /configuracoes/alertas
-condominio: residencial-jardim-das-acacias
-legenda: Alertas da equipe
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-159-0-conta-a-pagar-vencendo-dias"] | Conta a pagar vencendo (dias)
-2: main form:not([method=get]) [name="ap-159-0-inadimplencia-acima-de"] | Inadimplência acima de (%)
-3: main form:not([method=get]) [name="ap-159-0-contrato-a-vencer-dias"] | Contrato a vencer (dias)
-4: main form:not([method=get]) [name="ap-159-0-seguro-a-vencer-dias"] | Seguro a vencer (dias)
-5: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Conta a pagar vencendo (dias)**.
-- **Inadimplência acima de (%)**.
-- **Contrato a vencer (dias)**.
-- **Seguro a vencer (dias)**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Banners do aplicativo](artigo:banners), [Notificações do aplicativo](artigo:notificacoes-aplicativo) e [Aparência do aplicativo](artigo:layout-da-aplicacao).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

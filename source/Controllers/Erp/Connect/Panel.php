@@ -65,7 +65,7 @@ final class Panel extends Controller
     /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
     public static function pagePermissions(): array
     {
-        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + Definitions::pagePermissions();
+        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + Definitions::pagePermissions();
     }
 
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
@@ -833,6 +833,9 @@ final class Panel extends Controller
         if (isset(ReportScreens::PAGES[$id])) {
             $data += (new ReportScreens())->data($user, $id);
         }
+        if (isset(SettingsScreens::PAGES[$id])) {
+            $data += (new SettingsScreens())->data($user, $id);
+        }
         if (isset(EntryShortcutScreens::PAGES[$id])) {
             $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
@@ -862,6 +865,7 @@ final class Panel extends Controller
             isset(CollectionReportScreens::PAGES[$id]) && ($data['cReportReady'] ?? false) => 'pages/reports/collection-report',
             isset(ChartScreens::PAGES[$id]) && ($data['chartReady'] ?? false) => 'pages/reports/chart',
             isset(ReportScreens::PAGES[$id]) && ($data['reportReady'] ?? false) => 'pages/reports/report',
+            isset(SettingsScreens::PAGES[$id]) && ($data['settingsReady'] ?? false) => SettingsScreens::template($id),
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',

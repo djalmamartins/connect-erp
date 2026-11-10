@@ -52,7 +52,7 @@ recorte: main form:not([method=get])
 
 - **Condomínio**: Vazio: plano padrão da Connect (todos os condomínios).
 - **Código** (obrigatório): Ex.: 2.01.003.
-- **Natureza** (obrigatório): Opções: Receita e Despesa.
+- **Natureza** (obrigatório): Opções: Receita, Despesa, Ativo, Passivo e Patrimônio líquido.
 - **Nome da conta** (obrigatório).
 - **Tipo** (obrigatório): Opções: Sintética (agrupa) e Analítica (recebe lançamentos).
 - **Observações**.

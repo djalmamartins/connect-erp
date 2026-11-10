@@ -1,51 +1,69 @@
 ---
 codigo: AP-080
 titulo: Balancete anual
-resumo: Receitas e despesas de cada conta do plano mês a mês no ano, com as contas sintéticas somadas e o resultado de cada mês. Escolha a base (competência ou caixa).
+resumo: Receitas e despesas de cada conta do plano mês a mês no ano, com as contas sintéticas somadas e o resultado de cada mês.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/balancete-anual
 menu: Prestação de contas > Balancete Anual
 icone: document-text-outline
 situacao: funciona
-relacionados: balancete-verificacao, balanco-patrimonial, extrato-conta, demonstracao-do-resultado
 palavras: balancete anual, prestação de contas, AP-080
 rascunho: nao
+manual: sim
 ---
 
-Receitas e despesas de cada conta do plano mês a mês no ano, com as contas sintéticas somadas e o resultado de cada mês. Escolha a base (competência ou caixa).
+## Para que serve
+
+Receitas e despesas de cada conta do plano mês a mês no ano, com as contas sintéticas somadas e o resultado de cada mês. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/annual-balance`.
 
 ## Onde fica
 
-No menu lateral, abra [[Prestação de contas > Balancete Anual]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Prestação de contas > Balancete Anual]].
 
 ```tela balancete-anual
 rota: /prestacao-de-contas/balancete-anual
 condominio: residencial-jardim-das-acacias
-legenda: Tela Balancete Anual
+legenda: Tela Relatório Balancete Anual
 1: menu | Balancete Anual no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
-3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Ano e Base
-5: main table thead | Colunas da lista
+2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main form.erp-filters | Filtros: Ano, Base
+4: main table thead | Colunas: Código, Conta, Natureza, Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez, Total
 ```
 
-## Escolher o período e os filtros
+> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
 
-Use os filtros no alto da lista: **Ano** e **Base**.
-Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
+## Como gerar o relatório
 
-## O que o relatório mostra
+1. **Ano**: o ano do relatório.
+2. **Base**: opções: competência, caixa (pagamento).
+3. Clique em {{Gerar}}.
+4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
-Colunas: **Código**, **Conta**, **Natureza**, **JAN**, **FEV**, **MAR**, **ABR**, **MAI**, **JUN**, **JUL**, **AGO**, **SET**, **OUT**, **NOV**, **DEZ** e **Total**.
-Os totais aparecem no rodapé da tabela.
+### O que cada coluna mostra
+
+- **Código**
+- **Conta**
+- **Natureza**
+- **Jan**
+- **Fev**
+- **Mar**
+- **Abr**
+- **Mai**
+- **Jun**
+- **Jul**
+- **Ago**
+- **Set**
+- **Out**
+- **Nov**
+- **Dez**
+- **Total**
+
+No rodapé ficam o total de receitas, o total de despesas e o resultado de cada mês. As contas sintéticas (em negrito) somam as analíticas abaixo delas. Na **Base**, "Competência" usa o mês da competência e "Caixa" usa o mês do pagamento.
 
 ## Imprimir ou exportar
 
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
-- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Balancete de verificação](artigo:balancete-verificacao), [Balanço patrimonial](artigo:balanco-patrimonial) e [Extrato da conta bancária](artigo:extrato-conta).
+A tela aparece para quem tem a permissão **erp.entries.view** e **erp.chart.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

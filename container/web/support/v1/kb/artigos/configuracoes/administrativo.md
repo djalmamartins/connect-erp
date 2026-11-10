@@ -1,20 +1,20 @@
 ---
 codigo: AP-147
 titulo: Dados da administradora
-resumo: Os dados da Connect que aparecem nos documentos e no atendimento: razão social, CNPJ, e-mail, telefone, horário de atendimento e prazo de resposta.
+resumo: Administrativo: e-mail de atendimento da administradora; telefone de atendimento.
 categoria: configuracoes
 rota: /configuracoes/administrativo
 menu: Configurações > Acesso > Administrativo
 icone: options-outline
-situacao: exemplo
-relacionados: usuarios-do-sistema, permissoes-de-usuarios, permissoes-de-moradores, usuarios-de-imobiliarias
+situacao: funciona
 palavras: administrativo, configurações, AP-147
 rascunho: nao
+manual: sim
 ---
 
-Os dados da Connect que aparecem nos documentos e no atendimento: razão social, CNPJ, e-mail, telefone, horário de atendimento e prazo de resposta.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Aqui ficam os parâmetros de **Administrativo**. Cada um tem um padrão do sistema; a Connect pode mudar o padrão para todos os condomínios, e cada condomínio pode ter o seu valor quando o parâmetro permite. As mudanças passam pela API `POST /api/v1/settings` e ficam na auditoria.
 
 ## Onde fica
 
@@ -25,39 +25,23 @@ rota: /configuracoes/administrativo
 condominio: residencial-jardim-das-acacias
 legenda: Tela Administrativo
 1: menu | Administrativo no menu lateral
-2: main form:not([method=get]) | Administradora
+2: main form[data-setting-form] | Um parâmetro, com a origem do valor
 ```
 
-## Administradora
+## Os parâmetros
 
-1. Preencha **Razão social** e **CNPJ**.
-2. Clique em {{Salvar configurações}}.
-3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
+- **E-mail de atendimento da administradora**: e-mail. Padrão do sistema: vazio. Vale para todos os condomínios.
+- **Telefone de atendimento**: texto, até 20 caracteres. Padrão do sistema: vazio. Vale para todos os condomínios.
 
-```tela administrativo-form
-rota: /configuracoes/administrativo
-condominio: residencial-jardim-das-acacias
-legenda: Administradora
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-147-0-razao-social"] | Razão social (obrigatório)
-2: main form:not([method=get]) [name="ap-147-0-cnpj"] | CNPJ (obrigatório)
-3: main form:not([method=get]) [name="ap-147-0-e-mail-de-contato"] | E-mail de contato
-4: main form:not([method=get]) [name="ap-147-0-telefone"] | Telefone
-5: main form:not([method=get]) [name="ap-147-1-horario-de-atendimento"] | Horário de atendimento
-6: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+## Como alterar
 
-### O que preencher
+1. Para mudar o padrão da Connect, deixe "Todos os condomínios" na barra superior. Para mudar só um condomínio, escolha-o na barra.
+2. Altere o valor do parâmetro e clique em {{Salvar}} ao lado dele.
+3. O selo abaixo do campo mostra de onde vem o valor: **Padrão do sistema**, **Padrão da Connect** ou **Próprio do condomínio**.
+4. Para desfazer, clique em {{Voltar ao padrão}}: o condomínio volta a seguir o padrão da Connect, e a Connect volta ao padrão do sistema.
 
-- **Razão social** (obrigatório).
-- **CNPJ** (obrigatório): Exemplo: Somente números.
-- **E-mail de contato**: Exemplo: nome@exemplo.com.
-- **Telefone**.
-- **Horário de atendimento**.
-- **Prazo de resposta (horas)**.
+>! O padrão da Connect só muda com acesso a todos os condomínios. Parâmetro que vale para todos não aparece para edição com um condomínio escolhido.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Usuários do sistema](artigo:usuarios-do-sistema), [Permissões dos perfis de usuário](artigo:permissoes-de-usuarios) e [Permissões dos moradores no aplicativo](artigo:permissoes-de-moradores).
+Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].

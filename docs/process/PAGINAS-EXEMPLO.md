@@ -8,9 +8,9 @@ Conferido na main: 24 páginas da tabela já tinham tela real quando o inventár
 AP-047, AP-048, AP-057 a AP-061, AP-071, AP-072, AP-102 a AP-109, AP-116, AP-117, AP-141, AP-167 e AP-171).
 Com o ADR 0143, mais 36 passaram a ler dados reais pela tela única de relatórios (`ReportScreens`): AP-045,
 AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-073 a AP-076, AP-080, AP-082, AP-083, AP-085 a AP-087,
-AP-089, AP-090 e AP-093 a AP-099. Seguem para os próximos lotes: configurações (AP-084, AP-147, AP-151,
-AP-154, AP-155, AP-157 a AP-159, AP-162, AP-163, AP-166), acessos (AP-148, AP-152, AP-153) e assembleias
-(AP-017, AP-018, AP-088, AP-092).
+AP-089, AP-090 e AP-093 a AP-099. Com o ADR 0144, as configurações AP-147, AP-151, AP-154, AP-155,
+AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Seguem para os próximos lotes: acessos
+(AP-148, AP-152, AP-153) e assembleias (AP-017, AP-018, AP-088, AP-092).
 
 ## Critério
 
@@ -34,17 +34,17 @@ Total: 88 páginas.
 | AP-037 Remessas (cobranca) | lista com registros de demonstração (pages/modules/list.php) | — | backend (service e API) e depois ligar a tela |
 | AP-039 Cobrança Judicial (cobranca) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Collections.php`, `Controllers/Api/V1/Collections.php` | ligar a tela à API existente |
 | AP-116 Multas Pendentes (cobranca) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Collections.php`, `Services/Erp/EntryShortcuts.php`, `Controllers/Api/V1/Collections.php` | ligar a tela à API existente |
-| AP-101 Prestação de contas (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | backend (service e API) e depois ligar a tela |
+| AP-101 Prestação de contas (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/reports/accountability` (ADR 0166) | ligar a tela (contrato no ADR 0166 e no docs/api/openapi.yaml) |
 | AP-094 Listagem de prestações de contas (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/RegistryReports.php`, `Controllers/Api/V1/RegistryReports.php` | ligar a tela à API existente |
 | AP-052 Demonstrativo Contas (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-053 Demonstrativo Analítico (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php` | ligar a tela à API existente |
 | AP-054 Demonstrativo Situação (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-056 Extrato Conta (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/ManagementReports.php`, `Controllers/Api/V1/ManagementReports.php` | ligar a tela à API existente |
 | AP-080 Balancete Anual (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AnnualBalance.php`, `GET /api/v1/reports/annual-balance` (ciclo 53) | ligar a tela (contrato em docs/handoff-0164-shared.md) |
-| AP-081 Balanço Patrimonial (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | — | natureza patrimonial no plano de contas (ADR 0165); depois o backend |
+| AP-081 Balanço Patrimonial (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `GET /api/v1/reports/balance-sheet` (ADR 0167) | ligar a tela (contrato no ADR 0167 e no docs/api/openapi.yaml) |
 | AP-082 Demonstração do resultado (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AccountingReports.php`, GET /api/v1/reports/income-statement (ciclo 54) | ligar a tela (contrato no ADR 0165 e no docs/api/openapi.yaml) |
 | AP-083 Livro Razão (prestacao-contas) | relatório com linhas fixas (pages/modules/report.php) | `Services/Erp/AccountingReports.php`, GET /api/v1/reports/ledger (ciclo 54) | ligar a tela (contrato no ADR 0165 e no docs/api/openapi.yaml) |
-| AP-136 Registros de Entregas (operacional) | lista com registros de demonstração (pages/modules/list.php) | — | backend (service e API) e depois ligar a tela |
+| AP-136 Registros de Entregas (operacional) | lista com registros de demonstração (pages/modules/list.php) | `GET /api/v1/reports/deliveries` e `POST /api/v1/delivery-pickups` (ADR 0166) | ligar a tela (contrato no ADR 0166 e no docs/api/openapi.yaml) |
 | AP-018 Assembleia Virtual (comunicacao) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Assemblies.php` | ligar a tela à API existente |
 | AP-017 Votação (comunicacao) | lista com registros de demonstração (pages/modules/list.php) | `Services/Erp/Assemblies.php` | ligar a tela à API existente |
 | AP-102 Gráficos gerais (relatorios) | gráfico com série fixa (pages/modules/chart.php) | `Services/Erp/ChartReports.php`, `Controllers/Api/V1/ChartReports.php` | ligar a tela à API existente |
@@ -110,7 +110,7 @@ Total: 88 páginas.
 | AP-159 Alertas (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php` | ligar a tela à API existente |
 | AP-157 Financeiro (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php` | ligar a tela à API existente |
 | AP-158 Demonstrativo (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php` | ligar a tela à API existente |
-| AP-161 Saldo inicial (plano de contas) (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | — | backend (service e API) e depois ligar a tela |
+| AP-161 Saldo inicial (plano de contas) (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `GET/POST /api/v1/chart-account-openings` (ADR 0166) | ligar a tela (contrato no ADR 0166 e no docs/api/openapi.yaml) |
 | AP-162 Saldo inicial (centro de custo) (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php`, `Controllers/Api/V1/ErpSettings.php` | ligar a tela à API existente |
 | AP-163 Previsão Orçamentária (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php`, `Controllers/Api/V1/ErpSettings.php` | ligar a tela à API existente |
 | AP-166 Parâmetros (configuracoes) | formulário de configuração de exemplo (pages/modules/settings.php) | `Services/Erp/ErpSettings.php` | ligar a tela à API existente |
