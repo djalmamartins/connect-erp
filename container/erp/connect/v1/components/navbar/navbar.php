@@ -78,6 +78,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                 <?php endif; ?>
             </div>
         </details>
+        <?php if (!empty($currentPageId)): ?><a class="erp-icon-button" href="<?= \Source\Services\Environments::url('site', '/suporte/tela/' . rawurlencode((string)$currentPageId)) ?>" target="_blank" rel="noopener" aria-label="Ajuda desta página" title="Ajuda desta página" data-erp-help><?= $icon('help') ?></a><?php endif; ?>
         <a class="erp-icon-button" href="<?= erp_url('/configuracoes') ?>" aria-label="Configurações" title="Configurações"><?= $icon('settings') ?></a>
         <details class="erp-dropdown" data-erp-dropdown>
             <summary class="erp-user-chip" aria-label="Menu do usuário"><span class="erp-avatar" aria-hidden="true"><?= $this->e($initial) ?></span><span><?= $this->e($user->first_name ?? '') ?></span></summary>

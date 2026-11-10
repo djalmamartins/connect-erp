@@ -27,6 +27,7 @@ Transformar a auditoria APControle em produto próprio Connect ERP, com implemen
 - Cada tarefa: plano curto → implementação → testes → revisão → documentação → relatório de cobertura.
 - Proibido afirmar '100% sem falhas'; informar testes executados, riscos e lacunas.
 - Antes de integrar ferramentas MCP, ler `.mcp.example.json` e configurar apenas servidores instalados, com credenciais locais fora do Git.
+- **Central de Ajuda (ADR 0141):** toda página ou funcionalidade nova entra na base de conhecimento no mesmo PR (`container/web/support/v1/kb/artigos/`), com prints marcados gerados por `tools/help/prints.sh` a partir de dados fictícios. Processo em `docs/process/HELP_CENTER.md`; `php tools/help.php check` precisa passar.
 
 ## Contrato de entrega
 Implementar por fatias verticais, reutilizando autenticação, usuários, permissões e logs já funcionais; validar contratos e complementar lacunas sem recriar esses módulos; priorizar condomínios, unidades, pessoas, MariaDB e núcleo financeiro antes das integrações bancárias. Não criar telas órfãs sem dados, autorização e testes.

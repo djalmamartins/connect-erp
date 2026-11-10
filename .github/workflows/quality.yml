@@ -17,6 +17,8 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
       - name: Unit tests without MariaDB
         run: composer test:unit:offline
+      - name: Base de conhecimento cobre todas as páginas do menu (ADR 0141)
+        run: php tools/help.php check --sem-prints
       - name: ERP render smoke without MariaDB
         run: php tests/erp/render-smoke.php
       - name: ERP render smoke on the ERP host

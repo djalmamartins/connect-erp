@@ -29,3 +29,6 @@ graphify-out/
 .phpunit.cache/
 .claude/settings.local.json
 .claude/backups/
+tools/help/.inventario.json
+tools/help/node_modules/
+tools/help/package-lock.json
