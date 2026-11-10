@@ -78,6 +78,10 @@ $route->post("/bank-events/{id}/resolve", "Banking:resolve", null, \Source\Suppo
 $route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0164: Balancete Anual (AP-080)
 $route->get("/reports/annual-balance", "AnnualBalance:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0165: relatórios contábeis
+$route->get("/reports/ledger", "AccountingReports:ledger", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/account-balances", "AccountingReports:accountBalances", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/income-statement", "AccountingReports:incomeStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
