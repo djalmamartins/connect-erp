@@ -62,7 +62,8 @@ final class HelpWriter
             }
             $file = $this->kb->root() . '/artigos/' . $article['folder'] . '/' . $article['slug'] . '.md';
             file_put_contents($file, $this->article($code, $page, $article, $articles));
-            $written[] = substr($file, strlen(dirname(__DIR__, 3)) + 1);
+            $repo = dirname(__DIR__, 3) . '/';
+            $written[] = str_starts_with($file, $repo) ? substr($file, strlen($repo)) : $file;
         }
         return $written;
     }
