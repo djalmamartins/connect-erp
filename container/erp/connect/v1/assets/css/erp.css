@@ -847,3 +847,11 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-alert__list a { color: inherit; font-weight: 600; }
 .erp-field__hint--warning { color: var(--erp-warning); }
 .erp-month__cell[disabled], .erp-month__foot .erp-btn[disabled] { opacity: .4; cursor: not-allowed; background: var(--erp-surface-muted); border-color: transparent; color: var(--erp-faint); }
+
+/* Chamado: artigos da Central de Ajuda sugeridos pelo assunto (ADR 0153). */
+.erp-help-suggest { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--erp-info-soft); border-radius: var(--erp-radius-md); background: var(--erp-info-soft); }
+.erp-help-suggest__title { margin: 0 0 6px; font-weight: 600; font-size: 13px; color: var(--erp-info); }
+.erp-help-suggest ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.erp-help-suggest a { display: block; color: var(--erp-text); }
+.erp-help-suggest a small { display: block; color: var(--erp-muted); font-size: 12px; }
+.erp-help-suggest__hint { margin: 6px 0 0; font-size: 12px; color: var(--erp-muted); }

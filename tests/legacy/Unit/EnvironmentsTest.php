@@ -128,6 +128,14 @@ final class EnvironmentsTest extends TestCase
         self::assertNull(Environments::resolveLink('', $host));
     }
 
+    public function testHelpSuggestionTermsSkipShortWordsAndLimitToSix(): void
+    {
+        self::assertSame(['consigo', 'emitir', 'boleto', 'não'], \Source\Services\Support\HelpSuggestions::terms('Não consigo emitir o boleto!'));
+        self::assertSame([], \Source\Services\Support\HelpSuggestions::terms(' a e o '));
+        self::assertCount(6, \Source\Services\Support\HelpSuggestions::terms('um dois três quatro cinco seis sete oito'));
+        self::assertSame(['boleto'], \Source\Services\Support\HelpSuggestions::terms('<b>Boleto</b> boleto'));
+    }
+
     public function testEveryLoggedUserSeesErpStudioAndHelpDesk(): void
     {
         $_SERVER['HTTP_HOST'] = 'erp.connect.lab';

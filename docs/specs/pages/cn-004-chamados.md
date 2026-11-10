@@ -23,6 +23,7 @@ Rota: `/erp/operacional/chamados` e `/erp/operacional/chamados/{id}` (grupo Oper
 | Resposta pelo ERP: aguardando cliente volta para atendimento; resolvido ou fechado é reaberto; a equipe é avisada | INFERIDO |
 | Resposta ao cliente ou mudança para aguardando/resolvido/fechado no Help Desk avisa quem pediu (sino e e-mail) | INFERIDO |
 | Sino do ERP com as notificações reais, as mesmas do Studio e do Help Desk | INFERIDO |
+| Formulário sugere artigos da Central de Ajuda pelo assunto, antes de abrir o chamado (ADR 0153) | INFERIDO |
 
 ## PENDENTE (para o proprietário)
 

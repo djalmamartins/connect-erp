@@ -3918,3 +3918,34 @@ paths:
         '404': { description: Não encontrado ou fora do escopo }
         '419': { description: CSRF inválido }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /help/articles:
+    get:
+      operationId: suggestHelpArticles
+      tags: [Tickets]
+      summary: Artigos publicados da Central de Ajuda que combinam com o texto (sugestão no formulário de chamado)
+      description: ADR 0153. Exige erp.access. Qualquer palavra de 2+ letras (até 6) no título, resumo ou texto; título primeiro, depois os mais vistos. Limite 120 buscas por minuto.
+      security: [{ session: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, maxLength: 120 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 10, default: 5 } }
+      responses:
+        '200':
+          description: Artigos sugeridos (lista vazia quando nada combina)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        title: { type: string }
+                        summary: { type: string }
+                        category: { type: string }
+                        url: { type: string }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { description: Muitas buscas em pouco tempo }

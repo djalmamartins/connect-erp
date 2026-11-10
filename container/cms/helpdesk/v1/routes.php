@@ -9,6 +9,7 @@ $route->post("/login", "Studio:login");
 $route->get("/sair", "Studio:logout");
 $route->get("/tickets", "Studio:tickets");
 $route->post("/tickets", "Studio:tickets");
+$route->get("/tickets/artigos", "Studio:ticketArticles");
 $route->get("/agenda", "Studio:agenda");
 $route->post("/agenda", "Studio:agenda");
 $route->get("/support", "Studio:support");
