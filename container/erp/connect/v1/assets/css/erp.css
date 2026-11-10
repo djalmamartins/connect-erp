@@ -787,3 +787,13 @@ p { margin: 0; }
 .erp-assembly-cancel > summary::-webkit-details-marker { display: none; }
 .erp-assembly-cancel[open] > summary { margin-bottom: var(--erp-space-3, 12px); }
 .erp-filters .erp-field.erp-assembly-pick { flex: 1 1 420px; max-width: 640px; }
+/* Acessos (ADR 0147): formulários de uma linha dentro da tabela e do cartão da imobiliária. */
+.erp-inline-form { display: inline-flex; flex-wrap: wrap; gap: var(--erp-space-2, 8px); align-items: center; justify-content: flex-end; }
+.erp-inline-form > .erp-select { flex: 1 1 200px; width: auto; }
+.erp-inline-form > .erp-btn { flex: 0 0 auto; }
+.erp-inline-form [data-form-error] { flex-basis: 100%; }
+.erp-select.erp-select--sm { height: 32px; min-height: 32px; min-width: 180px; padding-top: 0; padding-bottom: 0; font-size: 13px; }
+.erp-access-agency-actions { justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--erp-space-3, 12px); }
+.erp-access-agency-actions > .erp-inline-form { flex: 0 1 460px; justify-content: flex-start; }
+td.is-num .erp-inline-form { min-width: 300px; flex-wrap: nowrap; }
+td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }

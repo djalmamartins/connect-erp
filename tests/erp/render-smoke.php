@@ -1191,6 +1191,45 @@ $assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'n
 $assert($PC::month('2026-13', '2026-11-10') === '2026-10' && $PC::month('2026-11', '2026-11-10') === '2026-11' && $PC::month('2026-12', '2026-11-10') === '2026-10'
     && $PC::month(null, '2026-01-05') === '2025-12' && $PC::monthLabel('2026-03') === 'Março de 2026', 'prestação de contas: mês');
 
+// Acessos com dados reais (ADR 0147): AP-148 imobiliárias, AP-152 convites de moradores e AP-153 portal do morador.
+$AC = Source\Controllers\Erp\Connect\AccessScreens::class;
+foreach ($AC::PAGES as $acPage => $acKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($acPage, ['accessReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($acPage, ['accessReady' => true]) === 'pages/settings/access'
+        && Source\Controllers\Erp\Connect\Panel::pagePermissions()[$acPage] === 'erp.access_admin.view', "{$acPage}: tela própria só com dados");
+}
+$acData = static fn (string $kind, array $over = []): array => $over + ['accessReady' => true, 'accessKind' => $kind, 'accessContext' => 1, 'accessError' => null, 'accessNeedsCondo' => false,
+    'canManageAccess' => true, 'agencies' => [], 'scopeCondominiums' => [], 'eligibleUsers' => [], 'invitations' => [], 'invitableResidents' => [], 'portalMatrix' => []];
+$html = $agreementPage('AP-148', 'pages/settings/access', $acData('partners', ['scopeCondominiums' => [1 => 'Alpha <A>', 2 => 'Beta'], 'eligibleUsers' => [['id' => 9, 'label' => 'Caio <C> · c***@x.com']],
+    'agencies' => [['id' => 3, 'name' => 'Imob <Sul>', 'document' => '12.***.***/0001-**', 'email' => 'c***@imob.com', 'phone' => '(11) ****-1234', 'status' => 'active',
+        'users' => [['user_id' => 7, 'name' => 'Duda <D>', 'email' => 'd***@imob.com', 'condominium_ids' => [1]]]],
+        ['id' => 4, 'name' => 'Imob Antiga', 'document' => '98.***', 'email' => '', 'phone' => '', 'status' => 'inactive', 'users' => []]]]), 'real');
+$common($html, 'AP-148', 'Usuários de imobiliárias');
+$assert(str_contains($html, 'data-erp-access') && str_contains($html, '/api/v1/partner-agencies') && str_contains($html, 'Imob &lt;Sul&gt;') && str_contains($html, 'Duda &lt;D&gt;')
+    && str_contains($html, '/api/v1/partner-users/7/condominiums/revoke') && str_contains($html, '<option value="2">Beta</option>') && !str_contains($html, '<option value="1">Alpha')
+    && str_contains($html, '/api/v1/partner-agencies/3/users') && str_contains($html, 'Caio &lt;C&gt;') && str_contains($html, '/api/v1/partner-agencies/3/deactivate')
+    && !str_contains($html, '/api/v1/partner-agencies/4/deactivate') && str_contains($html, 'Inativa') && !str_contains($html, 'Interface proposta'), 'AP-148: imobiliárias, usuários e concessões');
+$html = $agreementPage('AP-148', 'pages/settings/access', $acData('partners', ['canManageAccess' => false, 'scopeCondominiums' => [1 => 'Alpha'],
+    'agencies' => [['id' => 3, 'name' => 'Imob', 'document' => '1', 'email' => '', 'phone' => '', 'status' => 'active', 'users' => [['user_id' => 7, 'name' => 'Duda', 'email' => '', 'condominium_ids' => [1]]]]]]));
+$assert(!str_contains($html, 'data-access-form') && !str_contains($html, 'data-access-post') && str_contains($html, 'Alpha'), 'AP-148: só leitura sem erp.access_admin.manage');
+$html = $agreementPage('AP-152', 'pages/settings/access', $acData('invitations', ['invitableResidents' => [
+    ['id' => 5, 'name' => 'Eva <E>', 'unit_label' => '101', 'relationship' => 'owner', 'email' => 'e***@x.com', 'has_email' => true],
+    ['id' => 6, 'name' => 'Fabio', 'unit_label' => '102', 'relationship' => 'tenant', 'email' => '', 'has_email' => false]],
+    'invitations' => [['id' => 11, 'resident_id' => 5, 'name' => 'Eva <E>', 'email' => 'e***@x.com', 'status' => 'pending', 'expires_at' => '2026-11-17 10:00:00', 'accepted_at' => null, 'created_at' => '2026-11-10 10:00:00'],
+        ['id' => 12, 'resident_id' => 7, 'name' => 'Gil', 'email' => 'g***@x.com', 'status' => 'expired', 'expires_at' => '2026-11-01 10:00:00', 'accepted_at' => null, 'created_at' => '2026-10-25 10:00:00']]]), 'real');
+$common($html, 'AP-152', 'Criação de usuários para moradores');
+$assert(str_contains($html, '/api/v1/resident-invitations') && str_contains($html, 'name="resident_ids[]" value="5"') && str_contains($html, 'value="6" disabled') && str_contains($html, 'convite pendente')
+    && str_contains($html, '/api/v1/resident-invitations/11/revoke') && !str_contains($html, '/resident-invitations/12/revoke') && str_contains($html, 'Vencido') && str_contains($html, 'Eva &lt;E&gt;'), 'AP-152: convites e convite em lote');
+$html = $agreementPage('AP-152', 'pages/settings/access', $acData('invitations', ['accessNeedsCondo' => true, 'accessContext' => null]));
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'data-erp-access'), 'AP-152: pede o condomínio');
+$html = $agreementPage('AP-153', 'pages/settings/access', $acData('portal', ['portalMatrix' => [['feature' => 'boletos', 'label' => 'Boletos e segunda via', 'enabled' => true, 'updated_at' => '2026-11-09 08:00:00'],
+    ['feature' => 'documents', 'label' => 'Documentos do condomínio', 'enabled' => false, 'updated_at' => null]]]), 'real');
+$common($html, 'AP-153', 'Permissões de Moradores');
+$assert(str_contains($html, 'data-portal-api') && str_contains($html, '/api/v1/resident-portal-permissions') && str_contains($html, 'data-portal-feature="boletos" checked') && str_contains($html, 'data-portal-feature="documents">')
+    && str_contains($html, 'Ligado') && str_contains($html, 'Desligado'), 'AP-153: matriz do portal');
+$html = $agreementPage('AP-153', 'pages/settings/access', $acData('portal', ['canManageAccess' => false, 'portalMatrix' => [['feature' => 'boletos', 'label' => 'Boletos', 'enabled' => false, 'updated_at' => null]]]));
+$assert(str_contains($html, 'data-portal-feature="boletos" disabled'), 'AP-153: só leitura sem erp.access_admin.manage');
+$assert($AC::condominiumNames([2, 9, 1], [1 => 'A', 2 => 'B']) === ['B', 'A'], 'acessos: nomes dos condomínios');
+
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
     'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],

@@ -1220,6 +1220,71 @@
     });
   });
 
+  /* Acessos (ADR 0147): imobiliárias parceiras, convites de moradores e portal do morador pela API de AccessAdmin. */
+  $$('[data-erp-access]').forEach(function (root) {
+    var call = apiClient(root);
+    var condo = parseInt(root.getAttribute('data-condominium') || '0', 10);
+    $$('[data-access-post]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var question = button.getAttribute('data-confirm');
+        if (question && !window.confirm(question)) return;
+        var body = {};
+        try { body = JSON.parse(button.getAttribute('data-body') || '{}'); } catch (e) { body = {}; }
+        busy(button, true);
+        call('POST', button.getAttribute('data-api'), body)
+          .then(function () { toast(button.getAttribute('data-done') || 'Feito.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
+    $$('[data-access-form]', root).forEach(function (form) {
+      var counter = $('[data-access-count]', form);
+      var boxes = $$('input[type="checkbox"][name$="[]"]', form);
+      var count = function () { if (counter) counter.textContent = '(' + boxes.filter(function (b) { return b.checked; }).length + ' marcados)'; };
+      boxes.forEach(function (b) { b.addEventListener('change', count); });
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(form)) return;
+        var ints = (form.getAttribute('data-int') || '').split(' ').filter(Boolean);
+        var body = {};
+        $$('input, select, textarea', form).forEach(function (field) {
+          if (!field.name || field.disabled) return;
+          if (/\[\]$/.test(field.name)) {
+            var key = field.name.slice(0, -2);
+            body[key] = body[key] || [];
+            if (field.checked) body[key].push(parseInt(field.value, 10));
+            return;
+          }
+          if (field.type === 'checkbox') { body[field.name] = field.checked; return; }
+          var value = field.value.trim();
+          body[field.name] = ints.indexOf(field.name) >= 0 ? parseInt(value, 10) : value;
+        });
+        if (form.hasAttribute('data-condo-field')) body.condominium_id = condo;
+        if (body.resident_ids && body.resident_ids.length === 0) { formError(form, 'Marque pelo menos um morador.'); return; }
+        var button = $('[type="submit"]', form);
+        busy(button, true);
+        call('POST', form.getAttribute('data-api'), body)
+          .then(function (result) {
+            var skipped = result && result.data && result.data.skipped;
+            toast(form.getAttribute('data-done') || 'Salvo.', 'success');
+            if (skipped && skipped.length) toast(skipped.length + ' morador(es) ficaram de fora (sem e-mail, não encontrado ou limite do dia).', 'warning');
+            reload();
+          })
+          .catch(function (error) { busy(button, false); if (!formError(form, error.message)) toast(error.message, 'danger'); });
+      });
+    });
+    var portal = $('[data-portal-api]', root);
+    if (portal) $$('[data-portal-feature]', portal).forEach(function (input) {
+      input.addEventListener('change', function () {
+        var on = input.checked;
+        var state = input.parentNode && $('[data-portal-state]', input.parentNode);
+        input.disabled = true;
+        call('POST', portal.getAttribute('data-portal-api'), { condominium_id: condo, feature: input.getAttribute('data-portal-feature'), enabled: on })
+          .then(function () { input.disabled = false; if (state) state.textContent = on ? 'Ligado' : 'Desligado'; toast(on ? 'Função ligada no portal.' : 'Função desligada no portal.', 'success'); })
+          .catch(function (error) { input.disabled = false; input.checked = !on; toast(error.message, 'danger'); });
+      });
+    });
+  });
+
   /* AP-123/124/125/130: documentos da unidade pela API /api/v1/unit-documents (ADR 0044 e 0046). */
   $$('[data-erp-print]').forEach(function (button) { button.addEventListener('click', function () { window.print(); }); });
   $$('[data-erp-unit-documents]').forEach(function (root) {
