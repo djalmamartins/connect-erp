@@ -1,0 +1,14 @@
+[
+  {"chave": "primeiros-passos", "titulo": "Primeiros passos", "descricao": "Entrar no sistema, escolher o condomínio, navegar pelo menu e pedir ajuda.", "icone": "rocket-outline"},
+  {"chave": "condominios", "titulo": "Condomínios e unidades", "descricao": "Cadastro do condomínio, checklist de chegada, unidades, áreas comuns e patrimônio.", "icone": "business-outline"},
+  {"chave": "cadastros", "titulo": "Cadastros de pessoas", "descricao": "Proprietários, inquilinos, síndico e conselho, funcionários, fornecedores e mais.", "icone": "people-outline"},
+  {"chave": "financeiro", "titulo": "Financeiro", "descricao": "Lançamentos, contas a pagar e a receber, faturas, recibos, contas bancárias e fechamento.", "icone": "wallet-outline"},
+  {"chave": "cobranca", "titulo": "Cobrança e boletos", "descricao": "Boletos, arquivo de retorno, divergências, acordos, multas e cobrança judicial.", "icone": "receipt-outline"},
+  {"chave": "prestacao-de-contas", "titulo": "Prestação de contas", "descricao": "Balancete, demonstrativos, extrato, balanço e livro razão.", "icone": "scale-outline"},
+  {"chave": "operacional", "titulo": "Operacional", "descricao": "Ocorrências, reservas, manutenções, vistorias, portaria, entregas e chamados.", "icone": "clipboard-outline"},
+  {"chave": "comunicacao", "titulo": "Comunicação", "descricao": "Comunicados, assembleias, avisos por e-mail e documentos para os moradores.", "icone": "megaphone-outline"},
+  {"chave": "documentos", "titulo": "Documentos", "descricao": "Certidão de débitos, declarações, Disco Virtual e documentos da unidade.", "icone": "document-text-outline"},
+  {"chave": "relatorios", "titulo": "Relatórios e gráficos", "descricao": "Relatórios financeiros, de cobrança, cadastrais e gráficos do condomínio.", "icone": "bar-chart-outline"},
+  {"chave": "importacoes", "titulo": "Importações", "descricao": "Importar planilhas, extratos, leituras, índices e notas fiscais.", "icone": "cloud-upload-outline"},
+  {"chave": "configuracoes", "titulo": "Configurações", "descricao": "Plano de contas, tipos de fatura, regras de cobrança, avisos e integrações.", "icone": "settings-outline"}
+]

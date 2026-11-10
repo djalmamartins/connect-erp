@@ -9,3 +9,4 @@
 - [ ] Testes unitários, integração e E2E relevantes passando
 - [ ] Documentação e rastreabilidade atualizadas
 - [ ] Revisão humana de regras financeiras e liberação de produção pendente
+- [ ] Página nova ou alterada no menu com artigo na Central de Ajuda (`php tools/help.php check`) e prints regerados (ADR 0141)

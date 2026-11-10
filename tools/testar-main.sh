@@ -239,6 +239,18 @@ else
   fi
 fi
 
+# --- 6c. Central de Ajuda (ADR 0141): publica os artigos da base no /suporte ---------------
+docker compose exec -T app php service/commands/database-migrate.php status >"$logs/migrations-ajuda.log" 2>&1
+if grep -q '^\[aplicada\] 20261109_0901_help_center' "$logs/migrations-ajuda.log"; then
+  if docker compose exec -T app php tools/help.php sync >"$logs/ajuda-sync.log" 2>&1; then
+    add "Central de Ajuda" OK "$(tail -1 "$logs/ajuda-sync.log" | cut -c1-80)"
+  else
+    add "Central de Ajuda" FALHOU "ver ajuda-sync.log"
+  fi
+else
+  add "Central de Ajuda" PULADO "migration 20261109_0901 ainda não aplicada"
+fi
+
 # --- 7. scheduler e HTTP ----------------------------------------------------------------------
 say "7/8 scheduler e páginas por HTTP"
 if docker compose up -d --build scheduler >"$logs/scheduler.log" 2>&1; then
