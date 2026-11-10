@@ -52,6 +52,73 @@ final class PanelSummaries
         return array_values(array_filter(self::REQUIRED[$panel] ?? [], static fn (string $permission): bool => !$can($permission)));
     }
 
+    /**
+     * Endereço da unidade em uma linha (regra pura): rua, número e complemento do condomínio, a unidade,
+     * bairro, cidade/UF e CEP. Sem rua cadastrada no condomínio = null.
+     *
+     * @param array<string, mixed> $c colunas de endereço do condomínio
+     */
+    public static function address(array $c, string $unitLabel): ?string
+    {
+        $street = trim((string)($c['street'] ?? ''));
+        if ($street === '') {
+            return null;
+        }
+        $zip = preg_replace('/\D/', '', (string)($c['zip_code'] ?? ''));
+        $city = trim((string)($c['city'] ?? ''));
+        $state = trim((string)($c['state'] ?? ''));
+        $parts = array_filter([
+            $street . (trim((string)($c['number'] ?? '')) !== '' ? ', ' . trim((string)$c['number']) : ''),
+            trim((string)($c['complement'] ?? '')),
+            $unitLabel !== '' ? 'unidade ' . $unitLabel : '',
+            trim((string)($c['district'] ?? '')),
+            $city . ($city !== '' && $state !== '' ? '/' : '') . $state,
+            strlen((string)$zip) === 8 ? 'CEP ' . substr((string)$zip, 0, 5) . '-' . substr((string)$zip, 5) : '',
+        ], static fn (string $p): bool => $p !== '');
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Para cada pessoa da unidade, as outras unidades ativas com o mesmo CPF/CNPJ, só nos condomínios do
+     * escopo do usuário (pessoa sem documento não tem como ser reconhecida em outra unidade).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withOtherUnits(User $user, int $unitId, array $rows): array
+    {
+        $documents = array_values(array_unique(array_filter(array_map(static fn (array $r): string => (string)($r['document'] ?? ''), $rows))));
+        $allowed = $this->scope->allowedIds($user);
+        $others = [];
+        if ($documents !== [] && $allowed !== []) {
+            $docIn = implode(',', array_fill(0, count($documents), '?'));
+            $condoIn = implode(',', array_fill(0, count($allowed), '?'));
+            $stmt = $this->pdo->prepare("SELECT r.document, r.relationship, u.id AS unit_id, u.label, c.name AS condominium_name
+                FROM erp_residents r JOIN erp_units u ON u.id = r.unit_id AND u.deleted_at IS NULL
+                JOIN condominiums c ON c.id = u.condominium_id
+                WHERE r.document IN ({$docIn}) AND r.unit_id <> ? AND r.deleted_at IS NULL AND r.status = 'active'
+                  AND u.condominium_id IN ({$condoIn})
+                ORDER BY c.name, u.label LIMIT 200");
+            $stmt->execute([...$documents, $unitId, ...$allowed]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $o) {
+                $others[(string)$o['document']][] = ['unit_id' => (int)$o['unit_id'], 'label' => (string)$o['label'],
+                    'condominium_name' => (string)$o['condominium_name'], 'relationship' => (string)$o['relationship']];
+            }
+        }
+        return array_map(static fn (array $r): array => [
+            'id' => (int)$r['id'], 'name' => (string)$r['name'], 'relationship' => (string)$r['relationship'],
+            'document' => $r['document'] !== null && $r['document'] !== '' ? (string)$r['document'] : null,
+            'phone' => $r['phone'] !== null && $r['phone'] !== '' ? (string)$r['phone'] : null,
+            'email' => $r['email'] !== null && $r['email'] !== '' ? (string)$r['email'] : null,
+            'starts_on' => $r['starts_on'] !== null ? (string)$r['starts_on'] : null,
+            'ends_on' => $r['ends_on'] !== null ? (string)$r['ends_on'] : null,
+            'billing_by_email' => (bool)$r['billing_by_email'], 'notices_opt_out' => (bool)$r['notices_opt_out'],
+            'notes' => $r['notes'] !== null && $r['notes'] !== '' ? (string)$r['notes'] : null,
+            'has_portal_account' => $r['user_id'] !== null,
+            'other_units' => $others[(string)($r['document'] ?? '')] ?? [],
+        ], $rows);
+    }
+
     private function authorize(User $user, string $panel): void
     {
         if (self::missing($panel, fn (string $permission): bool => ($this->can)($permission, $user)) !== []) {
@@ -117,9 +184,16 @@ final class PanelSummaries
             throw new RegistryNotFound();
         }
         $condominium = (int)$unit['condominium_id'];
-        $people = $this->pdo->prepare("SELECT id, name, relationship, phone, email FROM erp_residents
-            WHERE unit_id = :u AND deleted_at IS NULL AND status = 'active' ORDER BY name LIMIT 50");
+        // Ficha somente leitura de cada pessoa (pedido do Djalma, 10/11/2026): os mesmos dados do cadastro
+        // AP-005 que erp.residents.view já mostra, mais as outras unidades da pessoa (mesmo CPF/CNPJ) no escopo.
+        $people = $this->pdo->prepare("SELECT id, name, relationship, document, phone, email, starts_on, ends_on,
+                billing_by_email, notices_opt_out, notes, user_id
+            FROM erp_residents WHERE unit_id = :u AND deleted_at IS NULL AND status = 'active' ORDER BY name LIMIT 50");
         $people->execute(['u' => $unitId]);
+        $people = $this->withOtherUnits($user, $unitId, $people->fetchAll(PDO::FETCH_ASSOC));
+        $address = $this->pdo->prepare('SELECT zip_code, street, number, complement, district, city, state FROM condominiums WHERE id = :id');
+        $address->execute(['id' => $condominium]);
+        $address = $address->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $delinquency = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominium, $today, $unitId);
         $debts = array_values(array_filter($delinquency['units'], static fn (array $u): bool => (int)($u['unit_id'] ?? 0) === $unitId))[0] ?? null;
@@ -136,9 +210,10 @@ final class PanelSummaries
         return [
             'unit' => ['id' => (int)$unit['id'], 'condominium_id' => $condominium, 'condominium_name' => (string)$unit['condominium_name'],
                 'label' => (string)$unit['label'], 'block' => $unit['block'], 'number' => (string)$unit['number'], 'type' => (string)$unit['type'],
-                'ideal_fraction' => $unit['ideal_fraction'] !== null ? (float)$unit['ideal_fraction'] : null],
+                'ideal_fraction' => $unit['ideal_fraction'] !== null ? (float)$unit['ideal_fraction'] : null,
+                'address' => self::address($address, (string)$unit['label'])],
             'as_of' => $today,
-            'people' => $people->fetchAll(PDO::FETCH_ASSOC),
+            'people' => $people,
             'finance' => [
                 'overdue' => $debts['entries'] ?? [],
                 'overdue_cents' => (int)($debts['amount_cents'] ?? 0),
