@@ -144,8 +144,7 @@ final class RegistryService
         $pages = max(1, (int)ceil($total / self::PER_PAGE));
         $page = min($pages, max(1, (int)(filter_var($filters['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1)));
         $offset = ($page - 1) * self::PER_PAGE;
-        $order = $definition['order'];
-        $stmt = $this->pdo->prepare($this->select($definition) . " WHERE {$whereSql} ORDER BY t.`{$order}`, t.id LIMIT " . self::PER_PAGE . " OFFSET {$offset}");
+        $stmt = $this->pdo->prepare($this->select($definition) . " WHERE {$whereSql} ORDER BY {$definition['order_sql']}, t.id LIMIT " . self::PER_PAGE . " OFFSET {$offset}");
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $names = $this->peopleNames($user, $definition, array_map(static fn (array $r): int => (int)$r['id'], $rows));
@@ -513,7 +512,7 @@ final class RegistryService
             return [];
         }
         $in = implode(',', array_map('intval', $ids));
-        $rows = $this->pdo->query("SELECT id, condominium_id, label FROM erp_units WHERE deleted_at IS NULL AND status = 'active' AND condominium_id IN ({$in}) ORDER BY condominium_id, label")->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->pdo->query("SELECT id, condominium_id, label FROM erp_units WHERE deleted_at IS NULL AND status = 'active' AND condominium_id IN ({$in}) ORDER BY condominium_id, CHAR_LENGTH(COALESCE(block, '')), COALESCE(block, ''), CHAR_LENGTH(number), number, id")->fetchAll(PDO::FETCH_ASSOC);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'condominium_id' => (int)$r['condominium_id'], 'label' => (string)$r['label']], $rows);
     }
 
@@ -547,7 +546,7 @@ final class RegistryService
                 $match .= ", t.`{$column}` AS `m_{$column}`";
             }
             $stmt = $this->pdo->prepare("SELECT t.id, {$condominium} AS condominium_id, CONCAT_WS(' — ', {$labels}) AS label{$match}
-                FROM `{$target['table']}` t WHERE " . implode(' AND ', $where) . " ORDER BY t.`{$target['order']}`, t.id");
+                FROM `{$target['table']}` t WHERE " . implode(' AND ', $where) . " ORDER BY {$target['order_sql']}, t.id");
             $stmt->execute($params);
             $options[$name] = array_map(static function (array $r) use ($field): array {
                 $option = [

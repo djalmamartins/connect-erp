@@ -145,6 +145,8 @@ final class Definitions
                 'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries', 'erp_meters', 'erp_occurrences', 'erp_reservations', 'erp_waitlist', 'erp_moves'],
                 'title' => 'number',
                 'order' => 'label',
+                // Ordem natural: bloco e depois número pelo tamanho, para 501 vir antes de 1808 (texto puro poria 1808 antes).
+                'order_sql' => "CHAR_LENGTH(COALESCE(t.block, '')), COALESCE(t.block, ''), CHAR_LENGTH(t.number), t.number",
                 // Proprietários e inquilinos ativos de cada unidade na listagem e na pesquisa (10/11).
                 'people' => ['table' => 'erp_residents', 'see' => 'erp.residents.view', 'roles' => ['owner' => 'owners', 'tenant' => 'tenants'], 'labels' => ['owner' => 'Proprietário', 'tenant' => 'Inquilino']],
             ],
@@ -1084,6 +1086,7 @@ final class Definitions
             $definition['group'] ??= 'cadastros';
             $definition['status'] ??= self::STATUS;
             $definition['title'] ??= $definition['order'];
+            $definition['order_sql'] ??= "t.`{$definition['order']}`";
             $definition['unique'] ??= [];
             $definition['requires'] ??= [];
             $definition['single_active'] ??= [];
