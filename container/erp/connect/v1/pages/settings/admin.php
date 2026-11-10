@@ -98,7 +98,7 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-field erp-col-6"><label for="ad-email">E-mail da conta</label><input class="erp-input" type="email" id="ad-email" name="email" maxlength="254" required autocomplete="off"></div>
                 </div>
                 <fieldset class="erp-field erp-charge-units"><legend>Condomínios <span class="erp-muted" data-access-count>(0 marcados)</span></legend>
-                    <div class="erp-charge-units__grid"><?php foreach ($scopeCondominiums as $cid => $cname): ?><label class="erp-check"><input type="checkbox" name="condominium_ids[]" value="<?= (int)$cid ?>"<?= (int)($condo['id'] ?? 0) === (int)$cid ? ' checked' : '' ?>> <?= $this->e($cname) ?></label><?php endforeach; ?></div>
+                    <div class="erp-charge-units__grid erp-charge-units__grid--people"><?php foreach ($scopeCondominiums as $cid => $cname): ?><label class="erp-check"><input type="checkbox" name="condominium_ids[]" value="<?= (int)$cid ?>"<?= (int)($condo['id'] ?? 0) === (int)$cid ? ' checked' : '' ?>> <?= $this->e($cname) ?></label><?php endforeach; ?></div>
                 </fieldset>
                 <div data-form-error aria-live="assertive"></div>
                 <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('plus', 'erp-icon--sm') ?>Dar acesso</button></div>

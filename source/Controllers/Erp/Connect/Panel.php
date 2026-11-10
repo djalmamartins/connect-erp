@@ -1016,6 +1016,9 @@ final class Panel extends Controller
             ...$this->bell($user, $dashboard['notifications'] ?? []),
             'supportMenu' => $this->supportMenu($user, $pageId),
             'withNavigation' => true,
+            // Conferência de 10/11/2026: a linha "Ficha: docs/specs/..." (rastreio da spec) é de quem
+            // desenvolve; para a equipe da administradora fica escondida (classe erp-body--trace).
+            'showTrace' => (int)($user->level ?? 0) >= 5,
             'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
             'condoCurrent' => CondominiumContext::current(),
             // Guia de cadastro do condomínio novo (ADR 0151): só com o condomínio dele na barra superior.
