@@ -9,6 +9,7 @@ icone: list-outline
 relacionados: parcelas-de-acordo, boletos, faturas
 situacao: funciona
 palavras: acordos, cobrança, AP-033
+manual: sim
 rascunho: nao
 ---
 

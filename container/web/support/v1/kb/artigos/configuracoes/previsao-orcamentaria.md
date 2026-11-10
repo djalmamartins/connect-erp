@@ -1,17 +1,20 @@
 ---
 codigo: AP-163
-titulo: Configurar previsão Orçamentária
-resumo: Alterações valem para os condomínios indicados e ficam registradas no histórico.
+titulo: Previsão orçamentária
+resumo: O orçamento do exercício: reajuste previsto e fundo de reserva. Ele é comparado com o realizado no relatório de previsão orçamentária.
 categoria: configuracoes
 rota: /configuracoes/previsao-orcamentaria
 menu: Configurações > Financeiro e parâmetros > Previsão Orçamentária
 icone: options-outline
 situacao: exemplo
+relacionados: saldo-inicial-centro-de-custo, imposto, saldo-inicial-plano-de-contas, indices
 palavras: previsão orçamentária, configurações, AP-163
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+O orçamento do exercício: reajuste previsto e fundo de reserva. Ele é comparado com o realizado no relatório de previsão orçamentária.
+
+>! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
 
 ## Onde fica
 
@@ -22,19 +25,36 @@ rota: /configuracoes/previsao-orcamentaria
 condominio: residencial-jardim-das-acacias
 legenda: Tela Previsão Orçamentária
 1: menu | Previsão Orçamentária no menu lateral
-2: main .erp-card | Histórico de alterações
+2: main form:not([method=get]) | Previsão orçamentária
 ```
 
-## Como preencher
+## Previsão orçamentária
 
-- **Condomínio** (obrigatório)
-- **Exercício** (obrigatório)
-- **Reajuste previsto (%)**
-- **Fundo de reserva (%)**
+1. Preencha **Condomínio** e **Exercício**.
+2. Clique em {{Salvar configurações}}.
+3. Se mudou de ideia antes de gravar, {{Desfazer alterações}} volta como estava.
 
-Depois de preencher, clique em {{Salvar}}. O sistema avisa no próprio campo o que precisa corrigir.
+```tela previsao-orcamentaria-form
+rota: /configuracoes/previsao-orcamentaria
+condominio: residencial-jardim-das-acacias
+legenda: Previsão orçamentária
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="ap-163-0-condominio"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="ap-163-0-exercicio"] | Exercício (obrigatório)
+3: main form:not([method=get]) [name="ap-163-0-reajuste-previsto"] | Reajuste previsto (%)
+4: main form:not([method=get]) [name="ap-163-0-fundo-de-reserva"] | Fundo de reserva (%)
+5: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
+```
+
+### O que preencher
+
+- **Condomínio** (obrigatório).
+- **Exercício** (obrigatório): Opções: 2026 e 2027.
+- **Reajuste previsto (%)**.
+- **Fundo de reserva (%)**.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Saldo inicial dos centros de custo](artigo:saldo-inicial-centro-de-custo), [Impostos retidos](artigo:imposto) e [Saldo inicial do plano de contas](artigo:saldo-inicial-plano-de-contas).

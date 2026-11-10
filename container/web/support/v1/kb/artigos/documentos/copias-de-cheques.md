@@ -1,68 +1,77 @@
 ---
 codigo: AP-127
-titulo: Cadastrar e gerenciar cópias de Cheques
+titulo: Cópias de cheques
 resumo: Cheques emitidos pelo condomínio, com a imagem guardada no Disco Virtual.
 categoria: documentos
 rota: /documentos/copias-de-cheques
 menu: Documentos > Cópias de Cheques
 icone: list-outline
 situacao: funciona
+relacionados: avisos-de-recebimento, empenhos, comprovante-de-quitacao, malotes
 palavras: cópias de cheques, documentos, AP-127
 rascunho: nao
 ---
 
+Cheques emitidos pelo condomínio, com a imagem guardada no Disco Virtual.
+
 ## Onde fica
 
-No menu lateral, abra [[Documentos > Cópias de Cheques]].
+No menu lateral, abra [[Documentos > Cópias de Cheques]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela copias-de-cheques
 rota: /documentos/copias-de-cheques
 condominio: residencial-jardim-das-acacias
 legenda: Tela Cópias de Cheques
 1: menu | Cópias de Cheques no menu lateral
-2: main :is(a,button):has-text("Nova cópia de cheque") | Botão {{Nova cópia de cheque}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main .erp-card | Cópias de cheques
+2: main .erp-page-head__actions :is(a,button):has-text("Nova cópia de cheque") | Botão {{Nova cópia de cheque}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova cópia de cheque}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova cópia de cheque}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Conta bancária**, **Número do cheque**, **Data**, **Favorecido**, **Valor** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela copias-de-cheques-novo
+```tela copias-de-cheques-nova-copia-de-cheque
 rota: /documentos/copias-de-cheques/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de cópia de cheque
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova cópia de cheque
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="bank_account_id"] | Conta bancária (obrigatório)
+3: main form:not([method=get]) [name="check_number"] | Número do cheque (obrigatório)
+4: main form:not([method=get]) [name="issued_on"] | Data (obrigatório)
+5: main form:not([method=get]) [name="payee"] | Favorecido (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
+- **Condomínio** (obrigatório).
 - **Conta bancária** (obrigatório).
 - **Número do cheque** (obrigatório).
-- **Data** (obrigatório): no formato dia/mês/ano.
+- **Data** (obrigatório).
 - **Favorecido** (obrigatório).
-- **Valor** (obrigatório): em reais, por exemplo 1.250,00.
-- **Imagem do cheque** (obrigatório): nº do arquivo no Disco Virtual (Documentos › Disco Virtual).
+- **Valor** (obrigatório).
 - **Lançamento**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Emitido e Cancelado.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Cópias de cheques**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Documentos**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Avisos de recebimento (AR)](artigo:avisos-de-recebimento), [Empenhos](artigo:empenhos) e [Emitir o comprovante de quitação](artigo:comprovante-de-quitacao).

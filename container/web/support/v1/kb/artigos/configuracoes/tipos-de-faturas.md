@@ -1,65 +1,79 @@
 ---
 codigo: AP-168
-titulo: Cadastrar e gerenciar tipos de Faturas
-resumo: O que é cobrado das unidades e a conta de receita de cada cobrança. Sem condomínio, o tipo vale para todos.
+titulo: Tipos de faturas
+resumo: O que é cobrado das unidades (taxa condominial, fundo de reserva, consumo) e a conta de receita de cada cobrança, com valor padrão e recorrência. Sem condomínio, o tipo vale para todos.
 categoria: configuracoes
 rota: /configuracoes/tipos-de-faturas
 menu: Configurações > Financeiro e parâmetros > Tipos de Faturas
 icone: list-outline
 situacao: funciona
+relacionados: faturas, fracao-ideal, parametros, indices
 palavras: tipos de faturas, configurações, AP-168
 rascunho: nao
 ---
 
+O que é cobrado das unidades (taxa condominial, fundo de reserva, consumo) e a conta de receita de cada cobrança, com valor padrão e recorrência. Sem condomínio, o tipo vale para todos.
+
 ## Onde fica
 
-No menu lateral, abra [[Configurações > Financeiro e parâmetros > Tipos de Faturas]].
+No menu lateral, abra [[Configurações > Financeiro e parâmetros > Tipos de Faturas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela tipos-de-faturas
 rota: /configuracoes/tipos-de-faturas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Tipos de Faturas
 1: menu | Tipos de Faturas no menu lateral
-2: main :is(a,button):has-text("Novo tipo de fatura") | Botão {{Novo tipo de fatura}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Recorrência, Situação
-4: main table thead | Lista com Nome, Condomínio, Recorrência, Valor padrão e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Novo tipo de fatura") | Botão {{Novo tipo de fatura}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Recorrência e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo tipo de fatura}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo tipo de fatura}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Nome**, **Conta de receita**, **Recorrência** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela tipos-de-faturas-novo
+```tela tipos-de-faturas-novo-tipo-de-fatura
 rota: /configuracoes/tipos-de-faturas/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de tipo de fatura
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo tipo de fatura
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio
+2: main form:not([method=get]) [name="name"] | Nome (obrigatório)
+3: main form:not([method=get]) [name="chart_account_id"] | Conta de receita (obrigatório)
+4: main form:not([method=get]) [name="recurrence"] | Recorrência (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio**: vazio: tipo padrão da Connect (todos os condomínios). Só aparecem os condomínios que a sua conta pode ver.
-- **Nome** (obrigatório): ex.: Taxa condominial, Fundo de reserva.
-- **Conta de receita** (obrigatório): conta analítica de receita do plano de contas.
-- **Recorrência** (obrigatório): opções: Mensal e Avulsa.
-- **Valor padrão**: opcional. Em reais, por exemplo 1.250,00.
+- **Condomínio**: Vazio: tipo padrão da Connect (todos os condomínios).
+- **Nome** (obrigatório): Ex.: Taxa condominial, Fundo de reserva.
+- **Conta de receita** (obrigatório): Conta analítica de receita do plano de contas.
+- **Recorrência** (obrigatório): Opções: Mensal e Avulsa.
+- **Valor padrão**: Opcional.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Recorrência** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Nome**, **Condomínio**, **Recorrência**, **Valor padrão** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Faturas](artigo:faturas), [Preencher a fração ideal e a área das unidades](artigo:fracao-ideal) e [Parâmetros gerais](artigo:parametros).

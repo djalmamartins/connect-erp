@@ -1,69 +1,83 @@
 ---
 codigo: AP-011
-titulo: Cadastrar e gerenciar veículos
-resumo: Veículos autorizados por unidade, para a portaria e o controle de vagas.
+titulo: Cadastrar veículos das unidades
+resumo: Veículos autorizados de cada unidade, com placa, modelo e cor, para a portaria liberar a entrada e para o controle de vagas.
 categoria: cadastros
 rota: /cadastros/veiculos
 menu: Cadastros > Veículos
 icone: list-outline
 situacao: funciona
-palavras: veículos, cadastros, AP-011
+relacionados: advogados, visitantes, fornecedores, animais-de-estimacao
+palavras: veículos, cadastros, AP-011, carro, moto, placa
 rascunho: nao
 ---
 
+Veículos autorizados de cada unidade, com placa, modelo e cor, para a portaria liberar a entrada e para o controle de vagas.
+
 ## Onde fica
 
-No menu lateral, abra [[Cadastros > Veículos]].
+No menu lateral, abra [[Cadastros > Veículos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela veiculos
 rota: /cadastros/veiculos
 condominio: residencial-jardim-das-acacias
 legenda: Tela Veículos
 1: menu | Veículos no menu lateral
-2: main :is(a,button):has-text("Novo veículo") | Botão {{Novo veículo}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Situação
-4: main table thead | Lista com Placa, Condomínio, Unidade (texto), Marca e modelo, Cor e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Novo veículo") | Botão {{Novo veículo}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio e Situação
+4: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Novo veículo}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Novo veículo}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Placa**, **Tipo** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela veiculos-novo
+```tela veiculos-novo-veiculo
 rota: /cadastros/veiculos/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de veículo
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: novo veículo
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="unit_id"] | Unidade
+3: main form:not([method=get]) [name="plate"] | Placa (obrigatório)
+4: main form:not([method=get]) [name="kind"] | Tipo (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Unidade**: unidade cadastrada em Condomínios › Unidades. Escolha entre as unidades do condomínio selecionado.
-- **Unidade (texto)**: preenchido pela unidade escolhida; digite só se ela ainda não estiver cadastrada.
-- **Placa** (obrigatório).
-- **Tipo** (obrigatório): opções: Carro, Moto, Utilitário e Outro.
+- **Condomínio** (obrigatório).
+- **Unidade**: Unidade cadastrada em Condomínios › Unidades.
+- **Unidade (texto)**: Preenchido pela unidade escolhida; digite só se ela ainda não estiver cadastrada.
+- **Placa** (obrigatório): Exemplo: ABC1D23.
+- **Tipo** (obrigatório): Opções: Carro, Moto, Utilitário e Outro.
 - **Marca e modelo**.
 - **Cor**.
 - **Vaga**.
 - **Responsável**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Placa**, **Condomínio**, **Unidade (texto)**, **Marca e modelo**, **COR** e **Situação**.
+
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Cadastrar advogados](artigo:advogados), [Cadastrar visitantes autorizados](artigo:visitantes) e [Cadastrar fornecedores](artigo:fornecedores).

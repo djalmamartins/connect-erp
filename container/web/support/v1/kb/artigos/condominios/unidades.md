@@ -1,70 +1,92 @@
 ---
 codigo: AP-006
-titulo: Cadastrar e gerenciar unidades
-resumo: Unidades de cada condomínio. Proprietários, inquilinos, conselho, veículos, visitantes e animais se vinculam a elas.
+titulo: Cadastrar unidades
+resumo: Cada apartamento, casa, sala ou loja é uma unidade. As pessoas (proprietários e inquilinos), os veículos, os animais, as cobranças e as reservas ficam ligados a ela. Cadastre uma por vez ou o prédio inteiro de uma vez pelo cadastro rápido.
 categoria: condominios
 rota: /condominios/unidades
 menu: Condomínios > Unidades
 icone: list-outline
 situacao: funciona
-palavras: unidades, condomínios, AP-006
+relacionados: painel-da-unidade, areas-comuns, painel-do-condominio, areas-vinculaveis
+palavras: unidades, condomínios, AP-006, apartamento, casa, sala, loja, cadastro rápido, fração ideal
 rascunho: nao
 ---
 
+Cada apartamento, casa, sala ou loja é uma unidade. As pessoas (proprietários e inquilinos), os veículos, os animais, as cobranças e as reservas ficam ligados a ela. Cadastre uma por vez ou o prédio inteiro de uma vez pelo cadastro rápido.
+
 ## Onde fica
 
-No menu lateral, abra [[Condomínios > Unidades]].
+No menu lateral, abra [[Condomínios > Unidades]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela unidades
 rota: /condominios/unidades
 condominio: residencial-jardim-das-acacias
 legenda: Tela Unidades
 1: menu | Unidades no menu lateral
-2: main :is(a,button):has-text("Nova unidade") | Botão {{Nova unidade}}
-3: main :is(a,button):has-text("Cadastro rápido") | Botão {{Cadastro rápido}}
-4: main form[method=get] | Filtros: Pesquisar, Condomínio, Tipo, Situação
-5: main table thead | Lista com Unidade, Condomínio, Bloco ou torre, Tipo e Situação
+2: main .erp-page-head__actions :is(a,button):has-text("Nova unidade") | Botão {{Nova unidade}}
+3: main .erp-page-head__actions :is(a,button):has-text("Cadastro rápido") | Botão {{Cadastro rápido}}
+4: main .erp-page-head__actions :is(a,button):has-text("Fração ideal e área") | Botão {{Fração ideal e área}}
+5: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo e Situação
+6: main table thead | Colunas da lista
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova unidade}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova unidade}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Unidade**, **Tipo** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela unidades-novo
+```tela unidades-nova-unidade
 rota: /condominios/unidades/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de unidade
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova unidade
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="block"] | Bloco ou torre
+3: main form:not([method=get]) [name="number"] | Unidade (obrigatório)
+4: main form:not([method=get]) [name="type"] | Tipo (obrigatório)
+5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Bloco ou torre**: vazio se o condomínio não tem blocos.
-- **Unidade** (obrigatório): ex.: 101, Casa 3, Loja 2.
-- **Tipo** (obrigatório): opções: Apartamento, Casa, Sala comercial, Loja, Garagem e Outro.
+- **Condomínio** (obrigatório).
+- **Bloco ou torre**: Vazio se o condomínio não tem blocos.
+- **Unidade** (obrigatório): Ex.: 101, Casa 3, Loja 2.
+- **Tipo** (obrigatório): Opções: Apartamento, Casa, Sala comercial, Loja, Garagem e Outro.
 - **Andar**.
-- **Fração ideal**: entre 0 e 1, ex.: 0,012500.
+- **Fração ideal**: Entre 0 e 1, ex.: 0,012500.
 - **Área privativa (m²)**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Ativo e Inativo.
+
+## Outros botões da tela
+
+- {{Fração ideal e área}}: abre a grade para preencher a fração ideal e a área privativa de todas as unidades juntas.
+- {{Cadastro rápido}}: gera todas as unidades de uma vez pela sequência de andares (ex.: 101 a 1208, 8 por andar), com pré-visualização antes de criar.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a lista mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo** e **Situação**.
 
-> **Atenção:** um cadastro usado por outros (por exemplo, unidade com lançamentos ou pessoas vinculadas) não pode ser excluído. Marque-o como inativo para tirá-lo das listas sem perder o histórico.
+## Ações de cada linha
+
+- Clique no nome (primeira coluna) para abrir o registro.
+- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
+
+> A fração ideal pode ficar para depois: ela é usada no rateio de despesas e pode ser dividida igualmente ou pela área na grade de frações.
+
+>! Unidade inativa sai das cobranças novas, mas o histórico continua. Prefira inativar a excluir.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Painel da unidade](artigo:painel-da-unidade), [Cadastrar áreas comuns](artigo:areas-comuns) e [Painel do condomínio](artigo:painel-do-condominio).

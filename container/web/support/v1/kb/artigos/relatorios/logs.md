@@ -1,62 +1,45 @@
 ---
 codigo: AP-097
-titulo: Relatório Logs
-resumo: Registro de auditoria do ERP no período. Só aparece para quem acessa todos os condomínios.
+titulo: Logs de auditoria
+resumo: O registro de auditoria do ERP no período: quem fez o quê e quando. Só aparece para quem acessa todos os condomínios.
 categoria: relatorios
 rota: /relatorios/logs
 menu: Relatórios > Gerais > Logs
 icone: document-text-outline
 situacao: funciona
+relacionados: relatorio-de-enderecos, pessoas-com-acesso, mudancas, boletos-enviados
 palavras: logs, relatórios, AP-097
 rascunho: nao
 ---
 
-## Para que serve
-
-Registro de auditoria do ERP no período. Só aparece para quem acessa todos os condomínios. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/logs`.
+O registro de auditoria do ERP no período: quem fez o quê e quando. Só aparece para quem acessa todos os condomínios.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Logs]].
+No menu lateral, abra [[Relatórios > Gerais > Logs]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela logs
 rota: /relatorios/logs
 condominio: residencial-jardim-das-acacias
-legenda: Tela Relatório Logs
+legenda: Tela Logs
 1: menu | Logs no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main form.erp-filters | Filtros: De e Até (datas), Ação
-4: main table thead | Colunas: Data, Usuário, Ação, Entidade, Registro, Severidade, IP, Contexto
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main :is(form[method=get], .erp-filters) | Filtros: De, Até e Ação
 ```
 
-> **Dica:** este relatório lista todos os condomínios que a sua conta pode ver, mesmo com um condomínio escolhido na barra superior.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
-
-1. **De e Até (datas)**: o período em datas; o padrão vai de 1º de janeiro até hoje.
-2. **Ação**: opções: todas, criação, alteração, exclusão, exportação.
-3. Clique em {{Gerar}}.
-4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
-
-### O que cada coluna mostra
-
-- **Data**
-- **Usuário**
-- **Ação**
-- **Entidade**
-- **Registro**
-- **Severidade**
-- **IP**
-- **Contexto**
-
->! Dados pessoais aparecem mascarados (documento, e-mail, telefone e IP), conforme a LGPD.
-
->! Os logs não têm condomínio: só quem acessa todos os condomínios consegue ver este relatório.
+Use os filtros no alto da lista: **De**, **Até** e **Ação**.
+Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+
+> Na tela: *Dados pessoais: documento, e-mail, telefone e IP aparecem mascarados, e a exportação fica registrada na auditoria.*
 
 ## Quem pode usar
 
-A tela aparece para quem tem a permissão **erp.audit.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
+A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+
+>> Veja também: [Relatório de endereços dos condomínios](artigo:relatorio-de-enderecos), [Pessoas com acesso aos condomínios](artigo:pessoas-com-acesso) e [Relatório de mudanças](artigo:mudancas).

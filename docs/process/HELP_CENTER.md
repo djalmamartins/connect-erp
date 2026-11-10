@@ -22,6 +22,23 @@ Toda página ou funcionalidade nova do ERP entra na base de conhecimento **no me
 4. `php tools/help.php check` (sem `--sem-prints`) precisa passar. Confira os JPEGs antes do commit.
 5. Depois do merge, `php tools/help.php sync` publica no banco (o `tools/testar-main.sh` já faz isso).
 
+## Reescrever o passo a passo a partir das telas
+
+Os artigos das páginas do menu são escritos pela combinação de duas fontes:
+
+- **o levantamento real de cada tela**, feito por `node tools/help/details.mjs` (grava `tools/help/.detalhes.json`,
+  fora do Git): botões do cabeçalho e o que cada um abre (modal ou formulário, com campos, obrigatórios, dicas e
+  botão final), filtros, colunas, ações da linha e avisos;
+- **os textos escritos à mão** em `tools/help/textos.php`: título, para que serve, dicas, cuidados, o que fazem os
+  botões que levam a outra tela e seções extras.
+
+`php tools/help.php escrever [--only AP-006]` junta as duas e reescreve o artigo (rode duas vezes seguidas para os
+títulos dos "Veja também" saírem atualizados). Artigos com `manual: sim` no cabeçalho, como os de Primeiros passos,
+Faturas, Boletos e Acordos, não são tocados. Depois, regere os prints e confira.
+
+Quando uma tela mudar: rode o `details.mjs` só nela, ajuste o texto em `textos.php` se preciso, `escrever --only` e
+os prints daquele artigo.
+
 ## Formato do artigo
 
 ```

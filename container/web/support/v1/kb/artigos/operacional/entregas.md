@@ -1,70 +1,80 @@
 ---
 codigo: AP-135
-titulo: Cadastrar e gerenciar entregas
-resumo: Encomendas recebidas pela portaria. Informe a retirada para dar baixa.
+titulo: Entregas na portaria
+resumo: Encomendas recebidas pela portaria para cada unidade. Quando o morador retirar, informe a retirada para dar baixa.
 categoria: operacional
 rota: /operacional/entregas
 menu: Operacional > Portaria > Entregas
 icone: list-outline
 situacao: funciona
+relacionados: achados-e-perdidos, registros-de-entregas, registro-de-acessos, previsao-de-visita
 palavras: entregas, operacional, AP-135
 rascunho: nao
 ---
 
+Encomendas recebidas pela portaria para cada unidade. Quando o morador retirar, informe a retirada para dar baixa.
+
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Entregas]].
+No menu lateral, abra [[Operacional > Portaria > Entregas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela entregas
 rota: /operacional/entregas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Entregas
 1: menu | Entregas no menu lateral
-2: main :is(a,button):has-text("Nova entrega") | Botão {{Nova entrega}}
-3: main form[method=get] | Filtros: Pesquisar, Condomínio, Transportadora, Situação
-4: main .erp-card | Entregas
+2: main .erp-page-head__actions :is(a,button):has-text("Nova entrega") | Botão {{Nova entrega}}
+3: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Transportadora e Situação
 ```
-
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
 
 ## Como cadastrar
 
-1. Clique em {{Nova entrega}} no alto da tela.
-2. Preencha os campos. Os obrigatórios têm asterisco (*).
-3. Clique em {{Salvar}}. O sistema confere os dados e avisa, no próprio campo, o que precisa corrigir.
+1. Clique em {{Nova entrega}}, no alto da lista.
+2. Preencha os campos obrigatórios: **Condomínio**, **Unidade**, **Destinatário**, **Transportadora**, **Recebida em** e **Situação**. Os outros podem ficar para depois.
+3. Clique em {{Salvar}}.
+4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
-```tela entregas-novo
+```tela entregas-nova-entrega
 rota: /operacional/entregas/novo
 condominio: residencial-jardim-das-acacias
-legenda: Formulário de entrega
-recorte: main form.erp-form
-1: main form.erp-form .erp-field | Comece pelo primeiro campo; os obrigatórios têm *
-2: main .erp-form__actions button[type=submit] | Botão {{Salvar}} grava o cadastro
+legenda: Formulário: nova entrega
+recorte: main form:not([method=get])
+1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
+2: main form:not([method=get]) [name="unit_id"] | Unidade (obrigatório)
+3: main form:not([method=get]) [name="recipient"] | Destinatário (obrigatório)
+4: main form:not([method=get]) [name="carrier"] | Transportadora (obrigatório)
+5: main form:not([method=get]) [name="received_on"] | Recebida em (obrigatório)
+6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
 ```
 
 ### O que preencher
 
-- **Condomínio** (obrigatório): só aparecem os condomínios que a sua conta pode ver.
-- **Unidade** (obrigatório): unidade cadastrada em Condomínios › Unidades. Escolha entre as unidades do condomínio selecionado.
+- **Condomínio** (obrigatório).
+- **Unidade** (obrigatório): Unidade cadastrada em Condomínios › Unidades.
 - **Destinatário** (obrigatório).
-- **Transportadora** (obrigatório): opções: Correios, Mercado Livre, Amazon e Outra.
+- **Transportadora** (obrigatório): Opções: Correios, Mercado Livre, Amazon e Outra.
 - **Código de rastreio**.
-- **Recebida em** (obrigatório): no formato dia/mês/ano.
+- **Recebida em** (obrigatório).
 - **Hora**.
-- **Retirada em**: no formato dia/mês/ano.
+- **Retirada em**.
 - **Retirada por**.
 - **Portaria**.
 - **Observações**.
+- **Situação** (obrigatório): Opções: Aguardando retirada, Retirada e Cancelada.
 
 ## Pesquisar e filtrar
 
-Use o campo **Pesquisar** e os filtros acima da lista e clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros e filtre de novo.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Transportadora** e **Situação**.
+Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
-## Editar ou excluir
+## O que a tela mostra
 
-Clique no nome ou no lápis da linha para abrir o cadastro, altere o que precisar e clique em {{Salvar}}. Para excluir, abra o cadastro e use {{Excluir}}.
+- **Entregas**
+
+> Na tela: *Cadastre o primeiro registro para começar.*
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Operacional**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Achados e perdidos](artigo:achados-e-perdidos), [Registros de entregas](artigo:registros-de-entregas) e [Registro de acessos da portaria](artigo:registro-de-acessos).

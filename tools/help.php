@@ -76,6 +76,25 @@ switch ($command) {
         echo count($created) . " rascunho(s) criado(s). Complete o texto, rode os prints e troque 'rascunho: sim' por 'rascunho: nao'.\n";
         exit(0);
 
+    case 'escrever':
+        // Passo a passo a partir do levantamento das telas (node tools/help/details.mjs) e dos textos
+        // escritos à mão (tools/help/textos.php). Artigos com "manual: sim" ficam como estão.
+        $detailsFile = $root . '/tools/help/.detalhes.json';
+        if (!is_file($detailsFile)) {
+            fwrite(STDERR, "Falta tools/help/.detalhes.json: rode node tools/help/details.mjs.\n");
+            exit(1);
+        }
+        $only = [];
+        foreach ($options as $index => $option) {
+            if ($option === '--only' && isset($options[$index + 1])) {
+                $only = array_filter(explode(',', $options[$index + 1]));
+            }
+        }
+        $texts = is_file($root . '/tools/help/textos.php') ? require $root . '/tools/help/textos.php' : [];
+        $written = (new \Source\Services\Help\HelpWriter($kb, $catalog, json_decode((string)file_get_contents($detailsFile), true) ?: [], $texts))->run($only);
+        echo count($written) . " artigo(s) reescrito(s). Rode os prints e confira antes do commit.\n";
+        exit(0);
+
     case 'screens':
         $only = [];
         foreach ($options as $index => $option) {
@@ -116,6 +135,6 @@ switch ($command) {
         exit(0);
 
     default:
-        echo "Uso: php tools/help.php check|scaffold|screens|sync|stats\n";
+        echo "Uso: php tools/help.php check|scaffold|escrever|screens|sync|stats\n";
         exit($command === 'help' ? 0 : 1);
 }

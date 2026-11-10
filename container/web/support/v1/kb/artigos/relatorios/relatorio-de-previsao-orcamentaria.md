@@ -1,54 +1,52 @@
 ---
 codigo: AP-084
-titulo: Relatório Relatório de previsão orçamentária
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Relatório de previsão orçamentária
+resumo: Compara o previsto no orçamento com o realizado de cada conta, com a diferença e a execução em porcentagem.
 categoria: relatorios
 rota: /relatorios/relatorio-de-previsao-orcamentaria
 menu: Relatórios > Financeiros > Relatório de previsão orçamentária
 icone: document-text-outline
 situacao: exemplo
+relacionados: relatorio-de-transferencias, relatorio-memoria-de-calculo, registro-de-pagamentos, saldos-de-contas
 palavras: relatório de previsão orçamentária, relatórios, AP-084
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+Compara o previsto no orçamento com o realizado de cada conta, com a diferença e a execução em porcentagem.
+
+>! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Financeiros > Relatório de previsão orçamentária]].
+No menu lateral, abra [[Relatórios > Financeiros > Relatório de previsão orçamentária]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela relatorio-de-previsao-orcamentaria
 rota: /relatorios/relatorio-de-previsao-orcamentaria
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de previsão orçamentária
 1: menu | Relatório de previsão orçamentária no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Conta, Previsto, Realizado, Diferença e Execução
+2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
+4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
+5: main table thead | Colunas da lista
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+## Escolher o período e os filtros
 
-## Como gerar o relatório
+Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+## O que o relatório mostra
 
-### O que cada coluna mostra
-
-- **Conta**
-- **Previsto**
-- **Realizado**
-- **Diferença**
-- **Execução**
+Colunas: **Conta**, **Previsto**, **Realizado**, **Diferença** e **Execução**.
+Os totais aparecem no rodapé da tabela.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
 
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
+>> Veja também: [Relatório de transferências](artigo:relatorio-de-transferencias), [Memória de cálculo dos encargos](artigo:relatorio-memoria-de-calculo) e [Registro de pagamentos](artigo:registro-de-pagamentos).
