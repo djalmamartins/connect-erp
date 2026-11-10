@@ -534,19 +534,32 @@ final class RegistryService
             [$where, $params] = $this->scopeWhere($user, $target);
             $where[] = "t.status = 'active'";
             foreach ($field['ref_where'] ?? [] as $column => $value) {
-                $where[] = "t.`{$column}` = :w_{$column}";
-                $params["w_{$column}"] = $value;
+                [$sql, $bound] = self::refCondition("t.`{$column}`", "w_{$column}", $value);
+                $where[] = $sql;
+                $params += $bound;
             }
             $labels = implode(', ', array_map(static fn (string $c): string => "t.`{$c}`", $field['ref_label'] ?? ['id']));
             $condominium = $target['scope'] === 'none' ? 'NULL' : 't.condominium_id';
-            $stmt = $this->pdo->prepare("SELECT t.id, {$condominium} AS condominium_id, CONCAT_WS(' — ', {$labels}) AS label
+            // ADR 0152: as colunas de 'ref_match' vão junto, para o formulário mostrar só as opções que
+            // combinam com o campo do registro (ex.: só contas de despesa num lançamento de despesa).
+            $match = '';
+            foreach (array_keys($field['ref_match'] ?? []) as $column) {
+                $match .= ", t.`{$column}` AS `m_{$column}`";
+            }
+            $stmt = $this->pdo->prepare("SELECT t.id, {$condominium} AS condominium_id, CONCAT_WS(' — ', {$labels}) AS label{$match}
                 FROM `{$target['table']}` t WHERE " . implode(' AND ', $where) . " ORDER BY t.`{$target['order']}`, t.id");
             $stmt->execute($params);
-            $options[$name] = array_map(static fn (array $r): array => [
-                'id' => (int)$r['id'],
-                'condominium_id' => $r['condominium_id'] === null ? null : (int)$r['condominium_id'],
-                'label' => (string)$r['label'],
-            ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+            $options[$name] = array_map(static function (array $r) use ($field): array {
+                $option = [
+                    'id' => (int)$r['id'],
+                    'condominium_id' => $r['condominium_id'] === null ? null : (int)$r['condominium_id'],
+                    'label' => (string)$r['label'],
+                ];
+                foreach ($field['ref_match'] ?? [] as $column => $ownField) {
+                    $option['match'][$ownField] = (string)$r["m_{$column}"];
+                }
+                return $option;
+            }, $stmt->fetchAll(PDO::FETCH_ASSOC));
         }
         return $options;
     }
@@ -717,6 +730,25 @@ final class RegistryService
         return [];
     }
 
+    /**
+     * Filtro de 'ref_where': valor único (=) ou lista de valores aceitos (IN), ADR 0152.
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private static function refCondition(string $column, string $param, mixed $value): array
+    {
+        if (!is_array($value)) {
+            return ["{$column} = :{$param}", [$param => $value]];
+        }
+        $names = [];
+        $params = [];
+        foreach (array_values($value) as $i => $item) {
+            $names[] = ":{$param}_{$i}";
+            $params["{$param}_{$i}"] = $item;
+        }
+        return ["{$column} IN (" . implode(', ', $names) . ')', $params];
+    }
+
     private function refRules(array $definition, array $values): array
     {
         $errors = [];
@@ -737,7 +769,7 @@ final class RegistryService
                 continue;
             }
             foreach ($field['ref_where'] ?? [] as $column => $expected) {
-                if ((string)$row[$column] !== (string)$expected) {
+                if (!in_array((string)$row[$column], array_map('strval', (array)$expected), true)) {
                     $errors[$name] = $message;
                     continue 2;
                 }

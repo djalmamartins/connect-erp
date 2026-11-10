@@ -1051,6 +1051,8 @@ final class Panel extends Controller
             'withNavigation' => true,
             'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
             'condoCurrent' => CondominiumContext::current(),
+            // Guia de cadastro do condomínio novo (ADR 0151): só com o condomínio dele na barra superior.
+            'setupGuide' => $this->setupGuide($user),
             'anchor' => static fn (string $text): string => self::anchor($text),
             // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
             'canSee' => static fn (string $pageId): bool => !isset(self::pagePermissions()[$pageId]) || $user->can(self::pagePermissions()[$pageId]),
@@ -1059,6 +1061,32 @@ final class Panel extends Controller
                 return '<svg class="erp-icon ' . htmlspecialchars($class, ENT_QUOTES) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths . '</svg>';
             },
         ], $extra);
+    }
+
+    /**
+     * Passos do cadastro do condomínio cujo guia está aberto na sessão, quando ele é o da barra
+     * superior. Fora disso (ou sem banco, no smoke de renderização) não há guia.
+     *
+     * @return array{condominium:array{id:int,name:string,slug:string},steps:list<array>,current:?int}|null
+     */
+    private function setupGuide(User $user): ?array
+    {
+        $current = CondominiumContext::current();
+        if ($current === null || session_status() !== PHP_SESSION_ACTIVE
+            || (int)($_SESSION[\Source\Services\Erp\CondominiumSetup::GUIDE_KEY] ?? 0) !== $current['id']) {
+            return null;
+        }
+        try {
+            $steps = (new \Source\Services\Erp\CondominiumSetup())->steps($user, $current['id']);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'condominium_setup_failed', 'condominium_id' => $current['id']]);
+            return null;
+        }
+        return [
+            'condominium' => $current,
+            'steps' => $steps,
+            'current' => \Source\Services\Erp\CondominiumSetup::currentIndex($steps, CondominiumContext::relativePath()),
+        ];
     }
 
     /**

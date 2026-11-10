@@ -8,7 +8,7 @@ menu: Financeiro > Contas e pagamentos > Contas a Pagar
 icone: list-outline
 situacao: funciona
 relacionados: lancar-despesa, pagamentos-pendentes, contas-a-receber, pagamentos-bancos
-palavras: contas a pagar, financeiro, AP-022, despesa, pagar, vencimento, baixa
+palavras: contas a pagar, financeiro, AP-022, despesa, pagar, vencimento, baixa, competência, erro ao salvar
 rascunho: nao
 ---
 
@@ -33,7 +33,7 @@ legenda: Tela Contas a Pagar
 1. Clique em {{Nova conta a pagar}}, no alto da lista.
 2. Preencha os campos obrigatórios: **Condomínio**, **Competência**, **Descrição**, **Valor**, **Conta do plano de contas**, **Vencimento** e **Situação**. Os outros podem ficar para depois.
 3. Clique em {{Salvar}}.
-4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
+4. O registro aparece na lista. Se faltar algo, o alto do formulário lista os campos com problema e cada um fica marcado em vermelho com a explicação.
 
 ```tela contas-a-pagar-nova-conta-a-pagar
 rota: /financeiro/contas-a-pagar/novo
@@ -41,7 +41,7 @@ condominio: residencial-jardim-das-acacias
 legenda: Formulário: nova conta a pagar
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
-2: main form:not([method=get]) [name="competence"] | Competência (obrigatório)
+2: main form:not([method=get]) :is(.erp-month:has([name="competence"]), [name="competence"]:not([type=hidden])) | Competência (obrigatório)
 3: main form:not([method=get]) [name="description"] | Descrição (obrigatório)
 4: main form:not([method=get]) [name="amount_cents"] | Valor (obrigatório)
 5: main form:not([method=get]) [name="chart_account_id"] | Conta do plano de contas (obrigatório)
@@ -51,14 +51,14 @@ recorte: main form:not([method=get])
 ### O que preencher
 
 - **Condomínio** (obrigatório).
-- **Competência** (obrigatório): AAAA-MM.
+- **Competência** (obrigatório): mês e ano de referência, ex.: nov/2026. Clique no calendário ao lado do campo e escolha o mês (use as setas para trocar o ano), ou digite 11/2026.
 - **Descrição** (obrigatório).
 - **Valor** (obrigatório).
-- **Conta do plano de contas** (obrigatório).
-- **Centro de custo**.
+- **Conta do plano de contas** (obrigatório): só aparecem contas de despesa, por exemplo **2.04.01 Manutenção elétrica**. Não confunda com a conta 8.1 Contas a pagar do Balanço: ela é calculada sozinha a partir das despesas em aberto.
+- **Centro de custo**: opcional.
 - **Vencimento** (obrigatório).
 - **Pago em**: Preencha para dar baixa.
-- **Conta bancária**: Obrigatória quando o lançamento está pago.
+- **Conta bancária**: só é obrigatória ao dar baixa (com **Pago em** preenchido). Para registrar a conta a pagar, deixe as duas em branco.
 - **Fornecedor**.
 - **Unidade**: Unidade que deve a receita (faturas preenchem sozinhas).
 - **Nº do documento**: Nota fiscal, recibo ou boleto.

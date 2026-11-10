@@ -51,6 +51,8 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/condominios/novo", "Condominiums:store");
     $route->get("/condominios/{id}/editar", "Condominiums:edit");
     $route->post("/condominios/{id}/editar", "Condominiums:update");
+    $route->post("/condominios/{id}/guia", "Condominiums:guide");
+    $route->post("/condominios/{id}/guia/encerrar", "Condominiums:endGuide");
     $route->get("/condominios/{id}/checklist", "CondominiumChecklist:show");
     $route->post("/condominios/{id}/checklist/iniciar", "CondominiumChecklist:start");
     $route->post("/condominios/{id}/checklist/itens", "CondominiumChecklist:add");

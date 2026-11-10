@@ -8,7 +8,7 @@ menu: Financeiro > Lançamentos > Lançamentos
 icone: list-outline
 situacao: funciona
 relacionados: lancamentos-fixos, lancar-despesa, lancar-receita, lancar-desconto
-palavras: lançamentos, financeiro, AP-020, receita, despesa, baixa, pagamento, competência
+palavras: lançamentos, financeiro, AP-020, receita, despesa, baixa, pagamento, competência, mês, plano de contas, erro ao salvar
 rascunho: nao
 ---
 
@@ -33,7 +33,7 @@ legenda: Tela Lançamentos
 1. Clique em {{Novo lançamento}}, no alto da lista.
 2. Preencha os campos obrigatórios: **Condomínio**, **Natureza**, **Competência**, **Descrição**, **Valor**, **Conta do plano de contas**, **Vencimento** e **Situação**. Os outros podem ficar para depois.
 3. Clique em {{Salvar}}.
-4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
+4. O registro aparece na lista. Se faltar algo, o alto do formulário lista os campos com problema e cada um fica marcado em vermelho com a explicação.
 
 ```tela lancamentos-novo-lancamento
 rota: /financeiro/lancamentos/novo
@@ -42,7 +42,7 @@ legenda: Formulário: novo lançamento
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
 2: main form:not([method=get]) [name="nature"] | Natureza (obrigatório)
-3: main form:not([method=get]) [name="competence"] | Competência (obrigatório)
+3: main form:not([method=get]) :is(.erp-month:has([name="competence"]), [name="competence"]:not([type=hidden])) | Competência (obrigatório)
 4: main form:not([method=get]) [name="description"] | Descrição (obrigatório)
 5: main form:not([method=get]) [name="amount_cents"] | Valor (obrigatório)
 6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
@@ -52,14 +52,14 @@ recorte: main form:not([method=get])
 
 - **Condomínio** (obrigatório).
 - **Natureza** (obrigatório): Opções: Receita e Despesa.
-- **Competência** (obrigatório): AAAA-MM.
+- **Competência** (obrigatório): mês e ano de referência, ex.: nov/2026. Clique no calendário ao lado do campo e escolha o mês (use as setas para trocar o ano), ou digite 11/2026.
 - **Descrição** (obrigatório).
 - **Valor** (obrigatório).
-- **Conta do plano de contas** (obrigatório).
-- **Centro de custo**.
+- **Conta do plano de contas** (obrigatório): só aparecem as contas da natureza escolhida (receita ou despesa), por exemplo **2.04.01 Manutenção elétrica**. As contas do Balanço, como 8.1 Contas a pagar, não recebem lançamento.
+- **Centro de custo**: opcional.
 - **Vencimento** (obrigatório).
 - **Pago em**: Vazio enquanto estiver em aberto.
-- **Conta bancária**: Obrigatória quando o lançamento está pago.
+- **Conta bancária**: só é obrigatória quando o lançamento está pago (com **Pago em** preenchido). Para lançar uma conta em aberto, deixe as duas em branco.
 - **Fornecedor**.
 - **Unidade**: Unidade que deve a receita (faturas preenchem sozinhas).
 - **Nº do documento**: Nota fiscal, recibo ou boleto.
@@ -83,6 +83,8 @@ Colunas: **Descrição**, **Condomínio**, **Natureza**, **Competência**, **Val
 > Para dar baixa, edite o lançamento e informe **Pago em** e a **Conta bancária**.
 
 > Use a competência (mês de referência) certa: é ela que decide em que mês o valor aparece nos relatórios.
+
+>! Se a lista de contas aparecer vazia, cadastre as contas de receita e despesa em [[Configurações > Financeiro e parâmetros > Plano de Contas]]. O plano padrão da Connect já traz as mais comuns.
 
 >! Mês fechado no Fechamento Mensal não aceita lançamento novo nem alteração até ser reaberto.
 

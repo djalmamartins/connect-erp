@@ -59,8 +59,8 @@ recorte: main form:not([method=get])
 - **Conta bancária**: Conta sugerida; o lançamento gerado nasce em aberto.
 - **Fornecedor**.
 - **Dia do vencimento** (obrigatório): 1 a 28.
-- **Primeira competência** (obrigatório): AAAA-MM.
-- **Última competência**: Vazio = sem fim.
+- **Primeira competência** (obrigatório): mês e ano, ex.: nov/2026. Clique no calendário ao lado do campo e escolha o mês, ou digite 11/2026.
+- **Última competência**: escolha no calendário do mesmo jeito; vazio = sem fim.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 

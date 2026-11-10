@@ -40,7 +40,7 @@ legenda: Emitir
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="unit_id"] | Unidade (obrigatório)
 2: main form:not([method=get]) [name="as_of"] | Data de referência (obrigatório)
-3: main form:not([method=get]) [name="until_competence"] | Competências até (obrigatório)
+3: main form:not([method=get]) :is(.erp-month:has([name="until_competence"]), [name="until_competence"]:not([type=hidden])) | Competências até (obrigatório)
 4: main form:not([method=get]) button:has-text("Emitir documento") | Botão {{Emitir documento}}
 ```
 

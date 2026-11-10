@@ -491,6 +491,41 @@ final class TicketService
         }
     }
 
+    /**
+     * Resumo da fila do Help Desk para o painel do Studio (ADR 0153): abertos, vencidos, aguardando
+     * o cliente, vindos do ERP nos últimos 7 dias e os 5 abertos mais urgentes.
+     *
+     * @return array{open:int,overdue:int,waiting:int,erp_week:int,latest:list<array{id:int,protocol:string,subject:string,priority:string,status:string,context:string,due_at:string}>}
+     */
+    public function queueSummary(): array
+    {
+        $row = $this->pdo()->query("SELECT
+                SUM(status IN ('open','in_progress')) AS open_count,
+                SUM(status NOT IN ('resolved','closed') AND due_at < NOW()) AS overdue_count,
+                SUM(status = 'waiting_customer') AS waiting_count,
+                SUM(origin = 'erp' AND created_at >= (NOW() - INTERVAL 7 DAY)) AS erp_week
+            FROM studio_support_tickets")->fetch(PDO::FETCH_ASSOC) ?: [];
+        $latest = $this->pdo()->query("SELECT t.id, t.protocol, t.subject, t.priority, t.status, t.due_at, c.name AS condominium_name, u.label AS unit_label
+            FROM studio_support_tickets t LEFT JOIN condominiums c ON c.id = t.condominium_id LEFT JOIN erp_units u ON u.id = t.unit_id
+            WHERE t.status IN ('open','in_progress','waiting_customer')
+            ORDER BY FIELD(t.priority,'urgent','high','medium','low'), t.due_at, t.id LIMIT 5")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return [
+            'open' => (int)($row['open_count'] ?? 0),
+            'overdue' => (int)($row['overdue_count'] ?? 0),
+            'waiting' => (int)($row['waiting_count'] ?? 0),
+            'erp_week' => (int)($row['erp_week'] ?? 0),
+            'latest' => array_map(static fn (array $item): array => [
+                'id' => (int)$item['id'],
+                'protocol' => (string)$item['protocol'],
+                'subject' => (string)$item['subject'],
+                'priority' => (string)$item['priority'],
+                'status' => (string)$item['status'],
+                'context' => implode(' · ', array_filter([(string)($item['condominium_name'] ?? ''), $item['unit_label'] !== null ? 'Unid. ' . $item['unit_label'] : ''])),
+                'due_at' => (string)$item['due_at'],
+            ], $latest),
+        ];
+    }
+
     /** @return list<array{id:int,label:string}> unidades ativas do condomínio */
     public function units(int $condominiumId): array
     {

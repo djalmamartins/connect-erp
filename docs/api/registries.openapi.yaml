@@ -84,7 +84,7 @@ components:
             updated_at: { type: string }
     BoardMembersInput:
       type: object
-      required: [condominium_id, role, name, term_starts_on, term_ends_on]
+      required: [condominium_id, role, name, term_starts_on, term_ends_on, email, phone]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
         role: { type: [string, "null"], enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] }

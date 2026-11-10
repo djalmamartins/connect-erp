@@ -117,16 +117,25 @@ $attachment ??= null;
             foreach ($refOptions ?? [] as $refOption) {
                 $refGroups[$refOption['condominium_id'] === null ? 'padrao' : (int)$refOption['condominium_id']][] = $refOption;
             } ?>
-            <select class="erp-select" id="<?= $id ?>" name="<?= $this->e($name) ?>"<?= $required . $disabled . $invalid ?>>
+            <?php // ADR 0152: cada opção diz o condomínio e os valores de 'ref_match'; o erp.js esconde as que não
+            // combinam com o condomínio e a natureza escolhidos (o servidor confere de novo). ?>
+            <select class="erp-select" id="<?= $id ?>" name="<?= $this->e($name) ?>"<?= $required . $disabled . $invalid ?> data-erp-ref-filter>
                 <option value=""><?= ($refOptions ?? []) === [] ? 'Nenhuma opção cadastrada' : 'Selecione' ?></option>
                 <?php foreach ($refGroups as $groupKey => $group): ?>
                     <optgroup label="<?= $this->e($groupKey === 'padrao' ? 'Padrão da Connect' : (string)($condominiumNames[$groupKey] ?? ('Condomínio ' . $groupKey))) ?>">
-                        <?php foreach ($group as $refOption): ?>
-                            <option value="<?= (int)$refOption['id'] ?>"<?= (string)$refOption['id'] === $text ? ' selected' : '' ?>><?= $this->e($refOption['label']) ?></option>
+                        <?php foreach ($group as $refOption):
+                            $optionData = $refOption['condominium_id'] !== null ? ' data-condominium="' . (int)$refOption['condominium_id'] . '"' : '';
+                            foreach ($refOption['match'] ?? [] as $matchField => $matchValue) {
+                                $optionData .= ' data-match-' . $this->e(str_replace('_', '-', (string)$matchField)) . '="' . $this->e((string)$matchValue) . '"';
+                            } ?>
+                            <option value="<?= (int)$refOption['id'] ?>"<?= $optionData ?><?= (string)$refOption['id'] === $text ? ' selected' : '' ?>><?= $this->e($refOption['label']) ?></option>
                         <?php endforeach; ?>
                     </optgroup>
                 <?php endforeach; ?>
             </select>
+            <?php if (($refOptions ?? []) === [] && isset($field['ref_empty']) && !$readonly): ?>
+                <span class="erp-field__hint erp-field__hint--warning"><?= $this->e($field['ref_empty']['text']) ?> <a href="<?= erp_url($field['ref_empty']['route']) ?>">Abrir</a></span>
+            <?php endif; ?>
         <?php elseif ($field['type'] === 'longtext'): ?>
             <textarea class="erp-textarea" id="<?= $id ?>" name="<?= $this->e($name) ?>" maxlength="<?= (int)($field['max'] ?? 2000) ?>"<?= $required . $disabled . $invalid ?>><?= $this->e($text) ?></textarea>
         <?php else:
@@ -147,6 +156,7 @@ $attachment ??= null;
                 'oab' => ['text', ' maxlength="12"', 'SP 123456'],
                 default => ['text', ' maxlength="' . (int)($field['max'] ?? 160) . '"', ''],
             }; ?>
+            <?php if (!empty($field['month'])) { $extra .= ' data-erp-month'; } // ADR 0152: seletor de mês e ano (erp.js) ?>
             <input class="erp-input" type="<?= $type ?>" id="<?= $id ?>" name="<?= $this->e($name) ?>" value="<?= $this->e($display) ?>"<?= $extra ?><?= $placeholder !== '' ? ' placeholder="' . $this->e($placeholder) . '"' : '' ?><?= $required . $disabled . $invalid ?>>
         <?php endif; ?>
         <?php $hint = $attachment !== null ? 'Arquivo do Disco Virtual do mesmo condomínio do cadastro.' : ($field['hint'] ?? null); ?>

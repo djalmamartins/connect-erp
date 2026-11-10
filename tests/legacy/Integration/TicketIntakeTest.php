@@ -216,6 +216,49 @@ final class TicketIntakeTest extends TestCase
         self::assertSame(0, $feed->unreadCount($owner));
     }
 
+    public function testHelpSuggestionsReturnOnlyPublishedArticlesWithSiteLinks(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'erp.connect.lab';
+        $author = $this->user(5);
+        $this->pdo->exec("INSERT INTO support_categories (title, uri, icon, status, position) VALUES ('Cobrança', 'cobranca', 'card-outline', 'active', 1), ('Antiga', 'antiga', 'card-outline', 'inactive', 2)");
+        $active = (int)$this->pdo->query("SELECT id FROM support_categories WHERE uri = 'cobranca'")->fetchColumn();
+        $inactive = (int)$this->pdo->query("SELECT id FROM support_categories WHERE uri = 'antiga'")->fetchColumn();
+        $insert = $this->pdo->prepare('INSERT INTO support_articles (category_id, author_id, title, uri, summary, content, status, views, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $insert->execute([$active, (int)$author->id, 'Como emitir a segunda via do boleto', 'segunda-via-boleto', 'Passo a passo', '<p>Abra Cobrança.</p>', 'published', 10, date('Y-m-d H:i:s', strtotime('-1 day'))]);
+        $insert->execute([$active, (int)$author->id, 'Boleto em rascunho', 'boleto-rascunho', '', 'boleto', 'draft', 99, date('Y-m-d H:i:s', strtotime('-1 day'))]);
+        $insert->execute([$active, (int)$author->id, 'Boleto agendado', 'boleto-futuro', '', 'boleto', 'published', 99, date('Y-m-d H:i:s', strtotime('+2 days'))]);
+        $insert->execute([$inactive, (int)$author->id, 'Boleto antigo', 'boleto-antigo', '', 'boleto', 'published', 99, date('Y-m-d H:i:s', strtotime('-1 day'))]);
+
+        $service = new \Source\Services\Support\HelpSuggestions($this->pdo);
+        $found = $service->search('Não consigo emitir o boleto', 5, true);
+        self::assertCount(1, $found, 'Só publicado, já no ar e de categoria ativa.');
+        self::assertSame('Como emitir a segunda via do boleto', $found[0]['title']);
+        self::assertSame('Cobrança', $found[0]['category']);
+        self::assertStringEndsWith('www.connect.lab/suporte/cobranca/segunda-via-boleto', $found[0]['url']);
+        self::assertSame([], $service->search('portão garagem', 5, true));
+        self::assertSame([], $service->search('a', 5, true), 'Palavra curta não busca.');
+        self::assertCount(0, $service->search('boleto portão', 5, false), 'Sem $any, todas as palavras precisam estar no artigo.');
+    }
+
+    public function testQueueSummaryCountsOpenOverdueWaitingAndErpTickets(): void
+    {
+        $user = $this->user();
+        $service = new TicketService($this->pdo);
+        $first = $service->open(['subject' => 'Chamado urgente', 'message' => 'Descrição suficiente do chamado.', 'priority' => 'urgent'], 'erp', $user);
+        $second = $service->open(['subject' => 'Chamado do Help Desk', 'message' => 'Descrição suficiente do chamado.'], 'helpdesk', $user);
+        $third = $service->open(['subject' => 'Esperando resposta', 'message' => 'Descrição suficiente do chamado.'], 'erp', $user);
+        $this->pdo->exec("UPDATE studio_support_tickets SET due_at = NOW() - INTERVAL 1 HOUR WHERE id = {$second['id']}");
+        $this->pdo->exec("UPDATE studio_support_tickets SET status = 'waiting_customer' WHERE id = {$third['id']}");
+
+        $summary = $service->queueSummary();
+        self::assertSame(2, $summary['open']);
+        self::assertSame(1, $summary['overdue']);
+        self::assertSame(1, $summary['waiting']);
+        self::assertSame(2, $summary['erp_week']);
+        self::assertCount(3, $summary['latest']);
+        self::assertSame($first['id'], $summary['latest'][0]['id'], 'Urgente primeiro.');
+    }
+
     private function withScope(User $user, int $condominiumId): User
     {
         (new CondominiumScope($this->pdo))->grant((int)$user->id, $condominiumId);

@@ -72,6 +72,10 @@ Colunas: **Nome da conta**, **Condomínio**, **Código**, **Natureza**, **Tipo**
 - Clique no nome (primeira coluna) para abrir o registro.
 - **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
+> O plano padrão da Connect já vem com as contas mais comuns: **1 Receitas** (taxa condominial, fundo de reserva, multas e juros, rateios, rendimentos, locação de áreas comuns) e **2 Despesas** (pessoal, água, energia, **2.04 Manutenção e conservação** com elétrica, hidráulica, elevadores, jardinagem e pintura, limpeza, seguros, administração, tarifas bancárias e impostos). Ajuste os nomes ou crie contas do condomínio quando precisar.
+
+> As contas 7 (Ativo), 8 (Passivo) e 9 (Patrimônio Líquido) são do Balanço Patrimonial e não aparecem nos lançamentos de receita e despesa.
+
 > Contas sintéticas agrupam as analíticas e só somam nos relatórios; os lançamentos vão nas analíticas.
 
 >! Conta com lançamentos não deve ser excluída: inative para ela sair das listas sem perder o histórico.

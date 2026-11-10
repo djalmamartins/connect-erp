@@ -104,7 +104,7 @@ final class RegistryServiceTest extends TestCase
     {
         $user = $this->user([$this->alpha, $this->beta]);
         $service = new RegistryService($this->pdo);
-        $member = ['condominium_id' => $this->alpha, 'role' => 'sindico', 'name' => 'Marta', 'term_starts_on' => '2026-01-01', 'term_ends_on' => '2027-12-31'];
+        $member = ['condominium_id' => $this->alpha, 'role' => 'sindico', 'name' => 'Marta', 'term_starts_on' => '2026-01-01', 'term_ends_on' => '2027-12-31', 'email' => 'marta@example.invalid', 'phone' => '11999990000'];
         $first = $service->save($user, 'board', $member);
         try {
             $service->save($user, 'board', ['name' => 'João'] + $member);
