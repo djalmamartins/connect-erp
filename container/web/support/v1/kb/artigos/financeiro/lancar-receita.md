@@ -37,7 +37,7 @@ condominio: residencial-jardim-das-acacias
 legenda: Dados da conta a receber
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="condominium_id"] | Condomínio (obrigatório)
-2: main form:not([method=get]) [name="competence"] | Competência (obrigatório)
+2: main form:not([method=get]) :is(.erp-month:has([name="competence"]), [name="competence"]:not([type=hidden])) | Competência (obrigatório)
 3: main form:not([method=get]) [name="description"] | Descrição (obrigatório)
 4: main form:not([method=get]) [name="amount_cents"] | Valor (obrigatório)
 5: main form:not([method=get]) [name="chart_account_id"] | Conta do plano de contas (obrigatório)
@@ -47,7 +47,7 @@ recorte: main form:not([method=get])
 ### O que preencher
 
 - **Condomínio** (obrigatório).
-- **Competência** (obrigatório): AAAA-MM.
+- **Competência** (obrigatório): mês e ano de referência, ex.: nov/2026. Clique no calendário ao lado do campo e escolha o mês, ou digite 11/2026.
 - **Descrição** (obrigatório).
 - **Valor** (obrigatório).
 - **Conta do plano de contas** (obrigatório).

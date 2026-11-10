@@ -820,3 +820,30 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-setup-guide__steps li.is-current a > span { background: var(--erp-brand); color: var(--erp-on-brand); }
 @media (max-width: 720px) { .erp-setup-guide__steps small { display: none; } }
 .erp-condo-pick { display: flex; align-items: center; gap: 12px; }
+
+/* Seletor de mês e ano (ADR 0152): campo "nov/2026" com calendário só de meses (erp.js). */
+.erp-month { position: relative; }
+.erp-month .erp-month__display { width: 100%; padding-right: 40px; }
+.erp-month__toggle { position: absolute; top: 0; right: 0; width: 40px; height: var(--erp-control-height, 40px); display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--erp-muted); cursor: pointer; border-radius: 0 var(--erp-radius-sm) var(--erp-radius-sm) 0; }
+.erp-month__toggle:hover, .erp-month__toggle:focus-visible { color: var(--erp-brand-ink); }
+.erp-month__toggle:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: -2px; }
+.erp-month__toggle[disabled] { cursor: default; opacity: .5; }
+.erp-month__panel { display: none; position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 264px; max-width: calc(100vw - 32px); padding: 12px; background: var(--erp-surface); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); box-shadow: var(--erp-shadow-raised); }
+.erp-month.is-open .erp-month__panel { display: block; }
+.erp-month__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.erp-month__head strong { font-size: 15px; color: var(--erp-text); }
+.erp-month__nav { width: 32px; height: 32px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: var(--erp-surface); color: var(--erp-text); font-size: 18px; line-height: 1; cursor: pointer; }
+.erp-month__nav:hover { background: var(--erp-brand-soft); }
+.erp-month__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.erp-month__cell { height: 36px; border: 1px solid transparent; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); color: var(--erp-text); font: inherit; font-size: 13px; text-transform: capitalize; cursor: pointer; }
+.erp-month__cell:hover { background: var(--erp-brand-soft); border-color: var(--erp-brand-line); }
+.erp-month__cell:focus-visible, .erp-month__nav:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: 1px; }
+.erp-month__cell.is-today { border-color: var(--erp-brand-line); color: var(--erp-brand-ink); font-weight: 600; }
+.erp-month__cell.is-selected { background: var(--erp-brand); border-color: var(--erp-brand); color: var(--erp-on-brand); font-weight: 600; }
+.erp-month__foot { display: flex; justify-content: space-between; margin-top: 10px; }
+
+/* Lista de campos com problema no alerta do formulário e aviso de lista vazia (ADR 0152). */
+.erp-alert__list { margin: 6px 0 0; padding-left: 18px; }
+.erp-alert__list a { color: inherit; font-weight: 600; }
+.erp-field__hint--warning { color: var(--erp-warning); }
+.erp-month__cell[disabled], .erp-month__foot .erp-btn[disabled] { opacity: .4; cursor: not-allowed; background: var(--erp-surface-muted); border-color: transparent; color: var(--erp-faint); }

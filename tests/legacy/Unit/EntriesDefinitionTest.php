@@ -28,7 +28,8 @@ final class EntriesDefinitionTest extends TestCase
             }
         }
         self::assertSame(['chart_account_id' => 'chart', 'cost_center_id' => 'cost_centers', 'bank_account_id' => 'bank_accounts', 'supplier_id' => 'suppliers'], $refs);
-        self::assertSame(['kind' => 'analitica'], $definition['fields']['chart_account_id']['ref_where']);
+        // ADR 0152: as contas patrimoniais (7/8/9, ex.: 8.1 Contas a pagar) não aparecem no lançamento.
+        self::assertSame(['kind' => 'analitica', 'nature' => ['receita', 'despesa']], $definition['fields']['chart_account_id']['ref_where']);
         self::assertSame(['nature' => 'nature'], $definition['fields']['chart_account_id']['ref_match']);
         self::assertSame(['active' => 'Válido', 'inactive' => 'Cancelado'], $definition['status']);
     }
@@ -49,7 +50,7 @@ final class EntriesDefinitionTest extends TestCase
     public function testInvalidValuesAndPaymentNeedsBankAccount(): void
     {
         $definition = Definitions::get('entries');
-        foreach (['amount_cents' => ['0', '0,00', '-5'], 'competence' => ['2026-13', '11/2026', '2026-1'], 'nature' => ['outra']] as $field => $values) {
+        foreach (['amount_cents' => ['0', '0,00', '-5'], 'competence' => ['2026-13', '13/2026', '2026-1'], 'nature' => ['outra']] as $field => $values) {
             foreach ($values as $value) {
                 [, $errors] = RegistryValidator::validate($definition, [$field => $value] + self::VALID);
                 self::assertArrayHasKey($field, $errors, "{$field} = {$value}");
