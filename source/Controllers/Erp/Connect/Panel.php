@@ -94,11 +94,46 @@ final class Panel extends Controller
             return;
         }
         echo $this->view->render('pages/dashboard/index', $this->layoutData($user, 'AP-001', [
-            'dashboard' => DemoData::get('dashboard'),
             'summary' => $this->summary($user, CondominiumContext::id()),
             'condoTotal' => count($this->condominiumOptions($user)),
             'operational' => $this->operationalSummary($user),
-        ]));
+        ] + $this->dashboardData($user)));
+    }
+
+    /**
+     * Blocos do dashboard que eram demonstração (ADR 0157), agora do MariaDB no condomínio da barra
+     * superior: $finance (receitas e despesas, inadimplência por atraso e quadro por condomínio, com
+     * erp.entries.view), $agenda (próximos 30 dias) e $activities (com erp.audit.view). Cada um é null
+     * sem permissão, sem banco ou em falha (a tela mostra o aviso daquele bloco, sem números inventados).
+     *
+     * @return array{finance: ?array, agenda: ?array, activities: ?array, competence: string}
+     */
+    private function dashboardData(User $user): array
+    {
+        $competence = \Source\Services\Erp\FinancialDashboard::competenceOrCurrent($_GET['competencia'] ?? null);
+        $data = ['finance' => null, 'agenda' => null, 'activities' => null, 'competence' => $competence];
+        if (Connect::databaseDisabled()) {
+            return $data;
+        }
+        $service = new \Source\Services\Erp\FinancialDashboard();
+        $context = CondominiumContext::id();
+        $modules = \Source\Services\Erp\FinancialDashboard::agendaModules($user);
+        $blocks = [
+            'finance' => [Access::can('erp.entries.view', $user), fn () => $service->finance($user, $context, $competence)],
+            'agenda' => [in_array(true, $modules, true), fn () => $service->agenda($user, $context, $modules)],
+            'activities' => [Access::can('erp.audit.view', $user), fn () => $service->activities($user, $context)],
+        ];
+        foreach ($blocks as $key => [$allowed, $load]) {
+            if (!$allowed) {
+                continue;
+            }
+            try {
+                $data[$key] = $load();
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'dashboard_' . $key . '_failed']);
+            }
+        }
+        return $data;
     }
 
     /**

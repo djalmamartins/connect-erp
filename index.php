@@ -204,6 +204,10 @@ $route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\M
 $route->post("/occurrences/{id}/ticket", "Occurrences:ticket", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Dashboard e continuações do Operacional (ADR 0053): alertas, lista de espera e próxima manutenção.
 $route->get("/dashboard", "OperationalDashboard:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Blocos que eram demonstração no dashboard (ADR 0157): financeiro, agenda e atividades recentes.
+$route->get("/dashboard/finance", "OperationalDashboard:finance", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/dashboard/agenda", "OperationalDashboard:agenda", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/dashboard/activities", "OperationalDashboard:activities", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/reservations/{id}/call-waitlist", "OperationalDashboard:callWaitlist", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/maintenances/{id}/next", "OperationalDashboard:nextMaintenance", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Painéis do condomínio (AP-002) e da unidade (AP-003), ADR 0054.
