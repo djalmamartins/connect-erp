@@ -1,17 +1,19 @@
 ---
 codigo: AP-089
-titulo: Relatório Relatório de condomínios
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Relatório de condomínios
+resumo: Condomínios do seu escopo com unidades ativas, pessoas e contas bancárias.
 categoria: relatorios
 rota: /relatorios/relatorio-de-condominios
 menu: Relatórios > Gerais > Relatório de condomínios
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: relatório de condomínios, relatórios, AP-089
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Condomínios do seu escopo com unidades ativas, pessoas e contas bancárias. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/condominiums`.
 
 ## Onde fica
 
@@ -23,32 +25,31 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de condomínios
 1: menu | Relatório de condomínios no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Condomínio, Unidades, Síndico, Cidade e Situação
+3: main table thead | Colunas: Condomínio, CNPJ, Cidade, UF, Situação, Unidades, Pessoas, Contas bancárias
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** este relatório lista todos os condomínios que a sua conta pode ver, mesmo com um condomínio escolhido na barra superior.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. Abra a página: o relatório já aparece com a situação de hoje.
+2. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
 - **Condomínio**
-- **Unidades**
-- **Síndico**
+- **CNPJ**
 - **Cidade**
+- **UF**
 - **Situação**
+- **Unidades**
+- **Pessoas**
+- **Contas bancárias**
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.condominiums.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

@@ -1,17 +1,19 @@
 ---
 codigo: AP-075
-titulo: Relatório Relatório Memória de Cálculo
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Relatório Memória de Cálculo
+resumo: Correção, multa e juros de cada conta vencida na data de referência, pela regra de cobrança do condomínio.
 categoria: relatorios
 rota: /relatorios/relatorio-memoria-de-calculo
 menu: Relatórios > Financeiros > Relatório Memória de Cálculo
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: relatório memória de cálculo, relatórios, AP-075
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Correção, multa e juros de cada conta vencida na data de referência, pela regra de cobrança do condomínio. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/calculation`.
 
 ## Onde fica
 
@@ -23,31 +25,38 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório Memória de Cálculo
 1: menu | Relatório Memória de Cálculo no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Unidade, Fração ideal, Conta e Valor rateado
+3: main form.erp-filters | Filtros: Data de referência, Unidade
+4: main table thead | Colunas: Unidade, Descrição, Competência, Vencimento, Atraso, Principal, Correção, Multa, Juros, Total
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+>! Este relatório usa os dados de **um condomínio só**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. **Data de referência**: o dia em que os encargos são calculados; o padrão é hoje.
+2. **Unidade**: limita a uma unidade.
+3. Clique em {{Gerar}}.
+4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
 - **Unidade**
-- **Fração ideal**
-- **Conta**
-- **Valor rateado**
+- **Descrição**
+- **Competência**
+- **Vencimento**
+- **Atraso**
+- **Principal**
+- **Correção**
+- **Multa**
+- **Juros**
+- **Total**
+
+A tela mostra a regra de cobrança usada (multa, juros e índice) e a fórmula. Mês sem taxa do índice cadastrada fica sem correção e aparece no aviso.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.entries.view** e **erp.agreements.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

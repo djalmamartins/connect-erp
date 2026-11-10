@@ -985,6 +985,64 @@ $html = $render('pages/dashboard/index', $data);
 $assert(str_contains($html, 'data-erp-dashboard-real') && str_contains($html, 'Nada pendente') && !str_contains($html, 'Indicadores ainda indisponíveis'), 'dashboard: sem demonstração mostra os dados reais');
 putenv('ERP_DEMO_DATA=true');
 
+// Relatórios com serviço e API numa tela única (ADR 0143): cada página com uma linha de exemplo.
+$RS = Source\Controllers\Erp\Connect\ReportScreens::class;
+$rsSample = static function (array $columns) use ($RS): array {
+    $row = ['level' => 2, 'analytic' => true];
+    foreach ($columns as [, $field, $type]) {
+        $value = match (true) {
+            in_array($type, ['money', 'signed'], true) => -123456,
+            $type === 'date' => '2026-10-05',
+            $type === 'datetime' => '2026-10-05 14:30:00',
+            in_array($type, ['int', 'days'], true) => 7,
+            $type === 'number' => 12.5,
+            $type === 'percent' => 3.5,
+            $type === 'bool' => true,
+            str_starts_with($type, 'label:') => (string)array_key_first($RS::LABELS[substr($type, 6)]),
+            default => 'Valor <' . $field . '>',
+        };
+        if (str_contains($field, '.')) {
+            [$a, $b] = explode('.', $field, 2);
+            $row[$a][(int)$b] = $value;
+        } else {
+            $row[$field] = $value;
+        }
+    }
+    return $row;
+};
+$rsData = static function (string $id, array $rows, array $over = []) use ($RS): array {
+    $filters = $RS::filters($id, [], '2026-11-10');
+    return $over + ['reportReady' => true, 'reportPage' => $RS::PAGES[$id], 'reportFilters' => $filters, 'reportError' => null, 'reportNotice' => null,
+        'report' => ['rows' => $rows, 'totals' => ['amount_cents' => -123456]], 'reportRows' => $rows, 'reportCsv' => $RS::csvUrl($id, $filters, 1), 'reportNeedsCondo' => false,
+        'reportOptions' => ['bank_account' => [['id' => 3, 'label' => 'Corrente <Itaú>']], 'unit' => [['id' => 5, 'label' => 'Apto 101']]]];
+};
+$assert(count($RS::PAGES) === 36, 'relatórios: 36 páginas na tela única');
+foreach ($RS::PAGES as $rsPage => $rsDef) {
+    $assert(isset($catalog['pages'][$rsPage]), "{$rsPage}: está no catálogo");
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => true]) === 'pages/reports/report', "{$rsPage}: tela própria só com dados");
+    $assert(Source\Controllers\Erp\Connect\Panel::pagePermissions()[$rsPage] === $rsDef['perms'][0], "{$rsPage}: permissão do menu igual à da API");
+    $html = $agreementPage($rsPage, 'pages/reports/report', $rsData($rsPage, [$rsSample($rsDef['columns'])]), 'real');
+    $common($html, $rsPage, $catalog['pages'][$rsPage]['name']);
+    $assert(str_contains($html, 'erp-report-table') && substr_count($html, '<th scope="col"') === count($rsDef['columns']) && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=csv')
+        && !str_contains($html, 'Valor <') && !str_contains($html, 'Interface proposta'), "{$rsPage}: tabela real, escapada, com CSV da API");
+}
+$html = $agreementPage('AP-052', 'pages/reports/report', $rsData('AP-052', [$rsSample($RS::PAGES['AP-052']['columns'])]));
+$assert(str_contains($html, '−R$ 1.234,56') && str_contains($html, 'name="de" value="2026-01"') && str_contains($html, 'type="month"') && str_contains($html, 'view=accounts') && str_contains($html, 'erp-kpi'), 'AP-052: competências, valores e totais');
+$html = $agreementPage('AP-080', 'pages/reports/report', $rsData('AP-080', [['analytic' => false] + $rsSample($RS::PAGES['AP-080']['columns'])], ['report' => ['rows' => [], 'totals' => ['revenue_months_cents' => array_fill(0, 12, 1000), 'expense_months_cents' => array_fill(0, 12, 400), 'result_months_cents' => array_fill(0, 12, 600), 'revenue_cents' => 12000, 'expense_cents' => 4800, 'result_cents' => 7200]]]));
+$assert(str_contains($html, 'Total de receitas') && str_contains($html, 'R$ 72,00') && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'name="ano" value="2026"') && str_contains($html, 'year=2026&amp;basis=competence'), 'AP-080: balancete anual com meses, rodapé e base');
+$html = $agreementPage('AP-062', 'pages/reports/report', $rsData('AP-062', [], ['reportNeedsCondo' => true]));
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'erp-report-table') && !str_contains($html, 'Exportar CSV'), 'AP-062: rateio pede o condomínio');
+$html = $agreementPage('AP-062', 'pages/reports/report', $rsData('AP-062', [], ['reportNotice' => 'Há unidades sem fração ideal: o rateio não é calculado. Unidades sem fração: Apto <9>.']));
+$assert(str_contains($html, 'Rateio não calculado') && str_contains($html, 'Apto &lt;9&gt;') && str_contains($html, 'Nada neste filtro'), 'AP-062: rateio bloqueado por fração');
+$html = $agreementPage('AP-097', 'pages/reports/report', $rsData('AP-097', [], ['reportError' => 'Este relatório exige acesso a todos os condomínios.']));
+$assert(str_contains($html, 'exige acesso a todos') && !str_contains($html, 'Exportar CSV') && str_contains($html, 'name="acao"'), 'AP-097: logs sem acesso global');
+$html = $agreementPage('AP-056', 'pages/reports/report', $rsData('AP-056', [$rsSample($RS::PAGES['AP-056']['columns'])], ['reportFilters' => ['conta' => 3] + $RS::filters('AP-056', [], '2026-11-10')]));
+$assert(str_contains($html, '<option value="3" selected>Corrente &lt;Itaú&gt;</option>'), 'AP-056: escolhe a conta bancária');
+$f = $RS::filters('AP-068', ['de' => '2026-13', 'ate' => '2026-05', 'natureza' => 'x', 'situacao' => 'overdue'], '2026-11-10');
+$assert($f['de'] === '2026-01' && $f['ate'] === '2026-05' && $f['natureza'] === '' && $f['situacao'] === 'overdue', 'relatórios: filtros inválidos voltam ao padrão');
+$assert($RS::csvUrl('AP-063', $RS::filters('AP-063', [], '2026-01-15'), 4) === '/api/v1/reports/apportionment?format=csv&condominium_id=4&view=compare&competence=2026-01&compare_with=2025-12', 'relatórios: CSV do rateio comparativo');
+$assert($RS::csvUrl('AP-089', $RS::filters('AP-089', [], '2026-11-10'), null) === '/api/v1/reports/condominiums?format=csv', 'relatórios: CSV sem filtros');
+
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
     'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],

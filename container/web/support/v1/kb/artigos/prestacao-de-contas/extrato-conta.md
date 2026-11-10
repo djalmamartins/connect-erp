@@ -1,17 +1,19 @@
 ---
 codigo: AP-056
 titulo: Relatório Extrato Conta
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+resumo: Movimentos pagos e transferências da conta bancária, com o saldo anterior e o saldo corrido.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/extrato-conta
 menu: Prestação de contas > Extrato Conta
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: extrato conta, prestação de contas, AP-056
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Movimentos pagos e transferências da conta bancária, com o saldo anterior e o saldo corrido. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/account-statement`.
 
 ## Onde fica
 
@@ -20,35 +22,33 @@ No menu lateral, abra [[Prestação de contas > Extrato Conta]].
 ```tela extrato-conta
 rota: /prestacao-de-contas/extrato-conta
 condominio: residencial-jardim-das-acacias
-legenda: Tela Extrato Conta
+legenda: Tela Relatório Extrato Conta
 1: menu | Extrato Conta no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Data, Descrição, Conta, Tipo e Valor
+3: main form.erp-filters | Filtros: Conta bancária, De e Até (datas)
+4: main table thead | Colunas: Data, Histórico, Valor, Saldo
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. **Conta bancária**: a conta do extrato.
+2. **De e Até (datas)**: o período em datas; o padrão vai de 1º de janeiro até hoje.
+3. Clique em {{Gerar}}.
+4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
 - **Data**
-- **Descrição**
-- **Conta**
-- **Tipo**
+- **Histórico**
 - **Valor**
+- **Saldo**
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.entries.view** e **erp.bank_accounts.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
