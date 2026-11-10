@@ -69,15 +69,11 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
 
 <footer class="hc-footer">
     <div class="hc-wrap">
-        <svg class="hc-footer__marks" viewBox="0 0 330 56" aria-hidden="true">
+        <svg class="hc-footer__marks" viewBox="0 0 230 56" aria-hidden="true">
             <defs><path id="hc-mark" d="M35.6,14.8c-10.4,2.1-18.2,11.3-18.2,22.3c0,6.1,2.4,11.7,6.4,15.8l16.4,16.5l16.4-16.5c3.9-4.1,6.4-9.7,6.4-15.8c0-12.1-9.4-21.9-21.3-22.7v8.9c0,0,0,0,0,0h0v4.6l2.7-4c5.5,1.8,9.4,6.9,9.4,13c0,3.7-1.4,7-3.8,9.4l0,0l-9.9,9.9l-9.9-9.9l0,0c-2.4-2.5-3.8-5.8-3.8-9.4c0-7,5.3-12.8,12.1-13.6v-8.9c0,0,0,0,0,0v-4.2L35.6,14.8L35.6,14.8z"/></defs>
-            <?php for ($i = 1; $i <= 6; $i++): $x = ($i - 1) * 56 - 17; $fill = 14.8 + 54.6 * (1 - $i / 6); ?>
-                <g transform="translate(<?= $x ?> -14) scale(1)">
-                    <clipPath id="hc-mark-fill-<?= $i ?>"><rect x="0" y="<?= round($fill, 1) ?>" width="80" height="80"/></clipPath>
-                    <use href="#hc-mark" class="hc-footer__mark-line"/>
-                    <use href="#hc-mark" class="hc-footer__mark-fill" clip-path="url(#hc-mark-fill-<?= $i ?>)"/>
-                </g>
-            <?php endfor; ?>
+            <?php foreach ([0.06, 0.12, 0.2, 0.32, 0.5, 0.72, 1] as $i => $opacity): ?>
+                <use href="#hc-mark" class="hc-footer__mark" transform="translate(<?= $i * 26 - 17 ?> -14)" opacity="<?= $opacity ?>"/>
+            <?php endforeach; ?>
         </svg>
         <div class="hc-footer__bottom">
             <a href="<?= url('/') ?>"><img src="<?= $logoLight ?>" alt="Connect Condomínios" width="120" height="36"></a>
