@@ -97,4 +97,5 @@ $pdo->exec("INSERT INTO settings
     ON DUPLICATE KEY UPDATE site_name=VALUES(site_name),timezone_set=VALUES(timezone_set),access_studio=1,access_erp=1,access_app=1,access_site=1,access_support=1");
 
 putenv('CONNECT_2FA_KEY=' . base64_encode(str_repeat("\x07", 32)));
-putenv('CONNECT_2FA_ENFORCE_FROM');
+// Vazio (e não ausente): o Config.php só copia do .env o que o ambiente não tem, e o .env do lab liga o 2FA.
+putenv('CONNECT_2FA_ENFORCE_FROM=');
