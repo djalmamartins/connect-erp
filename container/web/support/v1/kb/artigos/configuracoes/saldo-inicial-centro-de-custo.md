@@ -1,17 +1,20 @@
 ---
 codigo: AP-162
 titulo: Configurar saldo inicial (centro de custo)
-resumo: Alterações valem para os condomínios indicados e ficam registradas no histórico.
+resumo: Saldo de partida de cada centro de custo do condomínio numa data, para o relatório de centros de custo começar do valor certo.
 categoria: configuracoes
 rota: /configuracoes/saldo-inicial-centro-de-custo
 menu: Configurações > Financeiro e parâmetros > Saldo inicial (centro de custo)
 icone: options-outline
-situacao: exemplo
-palavras: saldo inicial (centro de custo), configurações, AP-162
+situacao: funciona
+relacionados: relatorio-de-centros-de-custo
+palavras: saldo inicial (centro de custo), configurações, AP-162, implantação
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Quando um condomínio chega à Connect com saldo em algum centro de custo (um fundo de obras, por exemplo), o saldo inicial registra esse valor numa data. Cada centro de custo tem um saldo inicial por condomínio.
 
 ## Onde fica
 
@@ -22,19 +25,21 @@ rota: /configuracoes/saldo-inicial-centro-de-custo
 condominio: residencial-jardim-das-acacias
 legenda: Tela Saldo inicial (centro de custo)
 1: menu | Saldo inicial (centro de custo) no menu lateral
-2: main .erp-card | Histórico de alterações
+2: main form[data-opening-form] | Formulário do saldo inicial
+3: main table thead | Saldos já lançados
 ```
 
-## Como preencher
+>! O saldo inicial é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
-- **Condomínio** (obrigatório)
-- **Data de referência** (obrigatório)
-- **Centro de custo** (obrigatório)
-- **Saldo inicial** (obrigatório)
+## Como lançar
 
-Depois de preencher, clique em {{Salvar}}. O sistema avisa no próprio campo o que precisa corrigir.
+1. Escolha o **Centro de custo** (os do padrão da Connect e os do condomínio aparecem).
+2. Informe a **Data do saldo** (até hoje) e o **Valor**. Use o sinal de menos para saldo devedor, ex.: -1.500,00.
+3. Se quiser, escreva uma **Observação**.
+4. Clique em {{Salvar saldo inicial}}.
+
+Gravar de novo o mesmo centro de custo substitui o saldo anterior. Toda gravação fica na auditoria, com o valor de antes.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+Ver exige a permissão **erp.settings.view**; lançar, **erp.settings.manage**. Cada pessoa só vê os condomínios vinculados à própria conta.

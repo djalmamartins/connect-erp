@@ -59,7 +59,9 @@ final class ReportScreensIntegrationTest extends TestCase
             self::assertSame('pages/reports/report', Panel::ownTemplate($page, $data));
             self::assertNull($data['reportError'], "{$page}: " . (string)$data['reportError']);
             self::assertIsArray($data['report'], "{$page}: relatório");
-            self::assertStringStartsWith('/api/v1/reports/', (string)$data['reportCsv']);
+            if ((ReportScreens::PAGES[$page]['csv'] ?? true) !== false) {
+                self::assertStringStartsWith('/api/v1/reports/', (string)$data['reportCsv']);
+            }
         }
         $apportionment = (new ReportScreens())->data($this->admin, 'AP-062');
         self::assertSame(100001, array_sum(array_column($apportionment['reportRows'], 'amount_cents')));

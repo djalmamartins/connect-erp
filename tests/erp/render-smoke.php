@@ -1016,7 +1016,7 @@ $rsData = static function (string $id, array $rows, array $over = []) use ($RS):
         'report' => ['rows' => $rows, 'totals' => ['amount_cents' => -123456]], 'reportRows' => $rows, 'reportCsv' => $RS::csvUrl($id, $filters, 1), 'reportNeedsCondo' => false,
         'reportOptions' => ['bank_account' => [['id' => 3, 'label' => 'Corrente <Itaú>']], 'unit' => [['id' => 5, 'label' => 'Apto 101']]]];
 };
-$assert(count($RS::PAGES) === 36, 'relatórios: 36 páginas na tela única');
+$assert(count($RS::PAGES) === 37, 'relatórios: 37 páginas na tela única');
 foreach ($RS::PAGES as $rsPage => $rsDef) {
     $assert(isset($catalog['pages'][$rsPage]), "{$rsPage}: está no catálogo");
     $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($rsPage, ['reportReady' => true]) === 'pages/reports/report', "{$rsPage}: tela própria só com dados");
@@ -1042,6 +1042,43 @@ $f = $RS::filters('AP-068', ['de' => '2026-13', 'ate' => '2026-05', 'natureza' =
 $assert($f['de'] === '2026-01' && $f['ate'] === '2026-05' && $f['natureza'] === '' && $f['situacao'] === 'overdue', 'relatórios: filtros inválidos voltam ao padrão');
 $assert($RS::csvUrl('AP-063', $RS::filters('AP-063', [], '2026-01-15'), 4) === '/api/v1/reports/apportionment?format=csv&condominium_id=4&view=compare&competence=2026-01&compare_with=2025-12', 'relatórios: CSV do rateio comparativo');
 $assert($RS::csvUrl('AP-089', $RS::filters('AP-089', [], '2026-11-10'), null) === '/api/v1/reports/condominiums?format=csv', 'relatórios: CSV sem filtros');
+
+// Configurações com serviço e API (ADR 0144): parâmetros por página, saldo inicial e previsão orçamentária.
+$SS = Source\Controllers\Erp\Connect\SettingsScreens::class;
+$ssSetting = static fn (array $over): array => $over + ['key' => 'x.y', 'label' => 'Rótulo <x>', 'type' => 'text', 'scope' => 'condominium', 'options' => null, 'min' => null, 'max' => null,
+    'default' => '', 'value' => '', 'source' => 'code', 'editable_here' => true];
+$ssData = static fn (string $id, array $over = []): array => $over + ['settingsReady' => true, 'settingsKind' => $SS::PAGES[$id], 'settingsContext' => 1, 'settingsError' => null,
+    'settingsNeedsCondo' => false, 'canManageSettings' => true, 'canEditDefault' => true];
+foreach ($SS::PAGES as $ssPage => $ssKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($ssPage, ['settingsReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($ssPage, ['settingsReady' => true]) === $SS::template($ssPage), "{$ssPage}: tela própria só com dados");
+    $assert(Source\Controllers\Erp\Connect\Panel::pagePermissions()[$ssPage] === 'erp.settings.view', "{$ssPage}: permissão do menu");
+}
+$html = $agreementPage('AP-159', 'pages/settings/parameters', $ssData('AP-159', ['settingsGroup' => ['page' => 'AP-159', 'group' => 'Alertas', 'settings' => [
+    $ssSetting(['key' => 'alerts.overdue_days', 'type' => 'int', 'min' => 1, 'max' => 365, 'value' => 45, 'default' => 30, 'source' => 'condominium']),
+    $ssSetting(['key' => 'alerts.low_balance_cents', 'type' => 'money', 'value' => 150000, 'default' => 0, 'source' => 'connect']),
+    $ssSetting(['key' => 'statement.group_by', 'type' => 'enum', 'options' => ['chart' => 'Conta do plano', 'cost_center' => 'Centro <de> custo'], 'value' => 'cost_center', 'default' => 'chart']),
+    $ssSetting(['key' => 'app.notices_enabled', 'type' => 'bool', 'value' => false, 'default' => true]),
+    $ssSetting(['key' => 'admin.support_email', 'type' => 'email', 'scope' => 'global', 'editable_here' => false]),
+]]]), 'real');
+$common($html, 'AP-159', 'Alertas');
+$assert(substr_count($html, 'data-setting-form') === 5 && str_contains($html, 'data-erp-settings') && str_contains($html, '/api/v1/settings') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html)
+    && str_contains($html, 'value="45"') && str_contains($html, 'min="1"') && str_contains($html, 'value="1500,00"') && str_contains($html, '<option value="cost_center" selected>Centro &lt;de&gt; custo</option>')
+    && str_contains($html, '<option value="0" selected>Não</option>') && substr_count($html, 'data-setting-reset') === 1 && str_contains($html, 'Próprio do condomínio') && str_contains($html, 'Rótulo &lt;x&gt;')
+    && str_contains($html, 'ajuste com "Todos os condomínios"') && !str_contains($html, 'Interface proposta'), 'AP-159: parâmetros reais, origem, salvar e voltar ao padrão');
+$html = $agreementPage('AP-166', 'pages/settings/parameters', $ssData('AP-166', ['settingsContext' => null, 'canEditDefault' => false, 'settingsGroup' => ['page' => 'AP-166', 'group' => 'Parâmetros',
+    'settings' => [$ssSetting(['key' => 'params.report_max_rows', 'type' => 'int', 'scope' => 'global', 'value' => 5000])]]]));
+$assert(str_contains($html, 'só muda com acesso a todos') && str_contains($html, ' disabled') && !str_contains($html, '>Salvar</button>'), 'AP-166: padrão da Connect sem acesso global fica só leitura');
+$html = $agreementPage('AP-162', 'pages/settings/openings', $ssData('AP-162', ['openings' => ['condominium_id' => 1, 'total_cents' => -5000, 'rows' => [['cost_center_id' => 2, 'code' => '01', 'name' => 'Obras <A>',
+    'opened_on' => '2026-01-01', 'amount_cents' => -5000, 'notes' => null, 'updated_at' => '2026-11-09 10:00:00']]], 'costCenters' => [['id' => 2, 'label' => '01 Obras <A>']]]), 'real');
+$common($html, 'AP-162', 'Saldo inicial (centro de custo)');
+$assert(str_contains($html, 'data-opening-form') && str_contains($html, '/api/v1/cost-center-openings') && str_contains($html, '−R$ 50,00') && str_contains($html, 'Obras &lt;A&gt;') && str_contains($html, '<option value="2">01 Obras &lt;A&gt;</option>'), 'AP-162: saldos e formulário');
+$html = $agreementPage('AP-162', 'pages/settings/openings', $ssData('AP-162', ['settingsNeedsCondo' => true, 'settingsContext' => null]));
+$assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'data-opening-form'), 'AP-162: pede o condomínio');
+$html = $agreementPage('AP-163', 'pages/settings/budget', $ssData('AP-163', ['budgetYear' => 2026, 'budgetAccounts' => [['id' => 7, 'label' => '2.01 Limpeza (despesa)']], 'budget' => ['condominium_id' => 1, 'year' => 2026,
+    'rows' => [['chart_account_id' => 7, 'code' => '2.01', 'name' => 'Limpeza', 'nature' => 'despesa', 'budget' => array_fill(1, 12, 10000), 'actual' => array_fill(1, 12, 0), 'budget_total' => 120000, 'actual_total' => 90000, 'difference_cents' => -30000, 'percent' => -25.0]]]]), 'real');
+$common($html, 'AP-163', 'Previsão Orçamentária');
+$assert(substr_count($html, 'name="month"') === 12 && str_contains($html, 'data-budget-edit="7"') && str_contains($html, '100,00') && str_contains($html, 'R$ 1.200,00') && str_contains($html, '-25,00%') && str_contains($html, 'name="ano" min="2000"') && str_contains($html, 'value="2026"'), 'AP-163: previsão com 12 meses e edição');
+$assert($SS::year('1999', 2026) === 2026 && $SS::year('2031', 2026) === 2031 && $SS::year('2032', 2026) === 2026, 'configurações: ano do filtro');
 
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
