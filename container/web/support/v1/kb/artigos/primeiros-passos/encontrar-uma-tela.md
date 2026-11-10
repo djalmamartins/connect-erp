@@ -22,8 +22,9 @@ condominio: residencial-jardim-das-acacias
 legenda: Menu lateral e barra superior
 1: .erp-nav | Menu lateral com os assuntos do sistema
 2: [data-erp-navsearch-toggle] | Pesquisar páginas
-3: .erp-navbar__actions summary[aria-label="Notificações"] | Notificações
-4: .erp-user-chip | Seu nome: perfil e {{Sair}}
+3: .erp-navbar__actions summary[aria-label="Suporte"] | Suporte: ajuda desta página e chamados
+4: .erp-navbar__actions summary[aria-label^="Notificações"] | Notificações
+5: .erp-user-chip | Seu nome: perfil e {{Sair}}
 ```
 
 - Clique no nome de um assunto para abrir as telas dele. A tela aberta fica destacada no menu.
@@ -52,6 +53,19 @@ antes: esperar 400
 
 ## Ajuda desta página
 
-O ícone de interrogação na barra superior abre, em outra aba, o tutorial da tela em que você está, com os prints e o passo a passo. Se a tela ainda não tiver tutorial, abre a página inicial da Central de Ajuda.
+O ponto de interrogação na barra superior abre o menu **Suporte**:
+
+- **Ajuda desta página** abre o tutorial da tela em que você está, com os prints e o passo a passo. Se a tela ainda não tiver tutorial, abre a página inicial da Central de Ajuda.
+- **Abrir chamado** e **Meus chamados** levam aos seus chamados com a equipe da Connect.
+
+```tela menu-suporte
+rota: /dashboard
+condominio: residencial-jardim-das-acacias
+legenda: Menu Suporte aberto
+antes: clicar .erp-navbar__actions summary[aria-label="Suporte"]
+antes: esperar 300
+1: .erp-dropdown__item:has-text("Ajuda desta página") | Tutorial da tela atual
+2: .erp-dropdown__item:has-text("Abrir chamado") | Abrir um chamado
+```
 
 >> Veja também [Como pedir ajuda e abrir um chamado](artigo:pedir-ajuda).

@@ -20,10 +20,8 @@ rota: /relatorios/relatorio-de-acordos
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de acordos
 1: menu | Relatório de acordos no menu lateral
-2: main :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
-3: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-4: main form[method=get] | Filtros: De, Até, Situação
-5: main table thead | Lista com Condomínio, Unidade, Acordo, Situação, Criado em, Parcelas pagas, Total, Pago, Em aberto, Vencido e Próximo vencimento
+2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
+3: main form[method=get] | Filtros: De, Até, Situação
 ```
 
 > **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.

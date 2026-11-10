@@ -8,7 +8,7 @@ Toda página ou funcionalidade nova do ERP entra na base de conhecimento **no me
 - Categorias: `container/web/support/v1/kb/categorias.json`
 - Artigos: `container/web/support/v1/kb/artigos/<categoria>/<slug>.md`
 - Prints gerados: `container/web/support/v1/assets/kb/<id>.jpg`
-- Página pública: `/suporte` (tema `container/web/support/v1`); no ERP, o ícone **?** da barra superior abre o
+- Página pública: `/suporte` (tema `container/web/support/v1`); no ERP, o menu **Suporte** (ícone ?) da barra superior tem "Ajuda desta página", que abre o
   artigo da página atual (`/suporte/tela/{código}`).
 
 ## Passo a passo para uma página nova

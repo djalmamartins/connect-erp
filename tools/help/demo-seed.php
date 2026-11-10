@@ -163,7 +163,7 @@ $water = $save('chart', ['code' => '2.02', 'nature' => 'despesa', 'kind' => 'ana
 $upkeep = $save('chart', ['code' => '2.03', 'nature' => 'despesa', 'kind' => 'analitica', 'name' => 'Manutenção']);
 $center = $save('cost_centers', ['code' => '01', 'name' => 'Ordinário']);
 $save('cost_centers', ['code' => '02', 'name' => 'Fundo de reserva']);
-$type = $save('invoice_types', ['name' => 'Taxa condominial', 'chart_account_id' => $fee, 'recurrence' => 'mensal', 'default_amount_cents' => '650,00']);
+$type = $save('invoice_types', ['condominium_id' => $alpha, 'name' => 'Taxa condominial', 'chart_account_id' => $fee, 'recurrence' => 'mensal', 'default_amount_cents' => '650,00']);
 $bank = $save('bank_accounts', ['condominium_id' => $alpha, 'name' => 'Conta movimento', 'bank_code' => '001', 'branch' => '3456', 'account_number' => '12345-6', 'kind' => 'corrente', 'wallet' => '17', 'opening_balance_cents' => '18.500,00', 'opened_on' => $day($month(-3), 1), 'is_main' => '1', 'cost_center_id' => $center]);
 $save('bank_accounts', ['condominium_id' => $alpha, 'name' => 'Fundo de reserva', 'bank_code' => '001', 'branch' => '3456', 'account_number' => '65432-1', 'kind' => 'poupanca', 'opening_balance_cents' => '42.000,00', 'opened_on' => $day($month(-3), 1)]);
 foreach ($ids as $other) {

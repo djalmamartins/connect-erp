@@ -1011,7 +1011,7 @@ final class Panel extends Controller
             // Sino (ADR 0142): as notificações reais da pessoa, as mesmas do Studio e do Help Desk.
             // Sem banco (smoke de renderização) cai nas de demonstração, quando ligadas.
             ...$this->bell($user, $dashboard['notifications'] ?? []),
-            'supportMenu' => $this->supportMenu($user),
+            'supportMenu' => $this->supportMenu($user, $pageId),
             'withNavigation' => true,
             'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
             'condoCurrent' => CondominiumContext::current(),
@@ -1052,9 +1052,14 @@ final class Panel extends Controller
      *
      * @return list<array{label:string,text:string,href:string,icon:string}>
      */
-    private function supportMenu(User $user): array
+    private function supportMenu(User $user, ?string $pageId = null): array
     {
+        // Central de Ajuda (ADR 0141): o tutorial da página atual, com prints marcados, no site.
+        $help = $pageId !== null
+            ? ['label' => 'Ajuda desta página', 'text' => 'Passo a passo com as telas marcadas', 'href' => \Source\Services\Environments::url('site', '/suporte/tela/' . rawurlencode($pageId)), 'icon' => 'help']
+            : ['label' => 'Central de Ajuda', 'text' => 'Tutoriais de todas as telas', 'href' => \Source\Services\Environments::url('site', '/suporte'), 'icon' => 'help'];
         $items = [
+            $help,
             ['label' => 'Abrir chamado', 'text' => 'Vai para a fila do Help Desk', 'href' => erp_url('/operacional/chamados#abrir'), 'icon' => 'plus'],
             ['label' => 'Meus chamados', 'text' => 'Respostas da equipe e andamento', 'href' => erp_url('/operacional/chamados'), 'icon' => 'clipboard'],
         ];

@@ -40,7 +40,7 @@ Já existiam o tema público `container/web/support/v1` (tabelas `support_catego
    configurado, central, chamado), "Deixe a sua mensagem" que abre um chamado no Help Desk
    (`TicketService::open(..., 'site')`, token assinado do widget ou CSRF, honeypot e limite de 5 por hora por IP),
    artigo com índice, relacionados, bloco "Precisa de ajuda?" e "Não encontrou o que procurava?".
-6. **"Ajuda desta página" no ERP**: ícone na barra superior leva a `/suporte/tela/{código}`, que redireciona para o
+6. **"Ajuda desta página" no ERP**: primeiro item do menu Suporte da barra superior (ADR 0142) leva a `/suporte/tela/{código}`, que redireciona para o
    artigo publicado da página (ou para a Central, quando não há).
 
 ## Consequências

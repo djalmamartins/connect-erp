@@ -93,7 +93,8 @@ async function run(page, step) {
   } else throw new Error(`ação desconhecida "${verb}"`);
 }
 
-const browser = await chromium.launch();
+// --lang: campos de data e mês nativos em português (dd/mm/aaaa).
+const browser = await chromium.launch({ args: ['--lang=pt-BR'] });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
 const page = await context.newPage();
 const session = page;
@@ -198,7 +199,18 @@ for (const screen of screens) {
         badge.style.cssText = `position:absolute;left:${Math.max(4, b.x - pad - 15)}px;top:${Math.max(4, b.y - pad - 15)}px;width:30px;height:30px;border-radius:50%;background:#0d2e27;color:#f4d77a;border:2px solid #c5a131;font:800 15px/26px Inter,system-ui,sans-serif;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.25)`;
         layer.append(ring, badge);
       }
-      document.body.append(layer);
+      // Modal aberto fica na camada superior e cobriria as marcas: nesse caso elas vão dentro dele,
+      // com a posição relativa ao modal (que é position: fixed).
+      const dialog = document.querySelector('dialog[open]');
+      if (dialog) {
+        const r = dialog.getBoundingClientRect();
+        layer.style.left = `${-(r.left + window.scrollX + dialog.clientLeft) + dialog.scrollLeft}px`;
+        layer.style.top = `${-(r.top + window.scrollY + dialog.clientTop) + dialog.scrollTop}px`;
+        dialog.style.overflow = 'visible';
+        dialog.append(layer);
+      } else {
+        document.body.append(layer);
+      }
     }, boxes);
 
     const shotOptions = { type: 'jpeg', quality: 72 };
