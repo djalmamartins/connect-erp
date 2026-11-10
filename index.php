@@ -90,6 +90,16 @@ $route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Supp
 $route->post("/chart-account-openings", "ChartOpenings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0167: Balanço Patrimonial (AP-081)
 $route->get("/reports/balance-sheet", "BalanceSheet:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0168: administração, relatórios enviados, usuários e permissões do ERP (/erp-users/invite antes de /erp-users/{id})
+$route->get("/erp-admin/overview", "ErpAdmin:overview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/sent", "ErpAdmin:sentReports", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/erp-users", "ErpAdmin:users", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/erp-users/invite", "ErpAdmin:invite", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/erp-users/{id}/deactivate", "ErpAdmin:deactivate", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/erp-users/{id}/permissions", "ErpAdmin:userPermissions", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/erp-users/{id}/permissions", "ErpAdmin:setUserPermission", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/erp-permissions", "ErpAdmin:permissions", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/erp-permissions", "ErpAdmin:setRolePermission", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Relatórios de cobrança (ADR 0081): acordos, taxas de acordos, inadimplentes e recebimentos; ?format=csv.
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
