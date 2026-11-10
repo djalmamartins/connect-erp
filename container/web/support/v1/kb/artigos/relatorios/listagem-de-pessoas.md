@@ -1,17 +1,19 @@
 ---
 codigo: AP-087
-titulo: Relatório Listagem de Pessoas
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Listagem de Pessoas
+resumo: Pessoas ativas por unidade e vínculo.
 categoria: relatorios
 rota: /relatorios/listagem-de-pessoas
 menu: Relatórios > Gerais > Listagem de Pessoas
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: listagem de pessoas, relatórios, AP-087
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Pessoas ativas por unidade e vínculo. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/people`.
 
 ## Onde fica
 
@@ -23,32 +25,36 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Listagem de Pessoas
 1: menu | Listagem de Pessoas no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Nome, Unidade, Vínculo, Telefone e E-mail
+3: main form.erp-filters | Filtros: Vínculo
+4: main table thead | Colunas: Condomínio, Unidade, Vínculo, Nome, Documento, E-mail, Telefone, Cobrança por e-mail, Comunicados
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. **Vínculo**: opções: todos, proprietário, inquilino, morador, responsável financeiro.
+2. Clique em {{Gerar}}.
+3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
-- **Nome**
+- **Condomínio**
 - **Unidade**
 - **Vínculo**
-- **Telefone**
+- **Nome**
+- **Documento**
 - **E-mail**
+- **Telefone**
+- **Cobrança por e-mail**
+- **Comunicados**
+
+>! Dados pessoais aparecem mascarados (documento, e-mail, telefone e IP), conforme a LGPD.
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.residents.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.

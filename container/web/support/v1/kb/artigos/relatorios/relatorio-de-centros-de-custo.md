@@ -1,17 +1,19 @@
 ---
 codigo: AP-049
-titulo: Relatório Relatório de centros de custo
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+titulo: Relatório de centros de custo
+resumo: Previsto (pela competência), realizado (pago) e em aberto de cada centro de custo.
 categoria: relatorios
 rota: /relatorios/relatorio-de-centros-de-custo
 menu: Relatórios > Financeiros > Relatório de centros de custo
 icone: document-text-outline
-situacao: exemplo
+situacao: funciona
 palavras: relatório de centros de custo, relatórios, AP-049
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Previsto (pela competência), realizado (pago) e em aberto de cada centro de custo. Os números vêm dos lançamentos e cadastros do sistema, os mesmos da API `GET /api/v1/reports/cost-centers`.
 
 ## Onde fica
 
@@ -23,32 +25,32 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Relatório de centros de custo
 1: menu | Relatório de centros de custo no menu lateral
 2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Conta, Previsto, Realizado, Diferença e Execução
+3: main form.erp-filters | Filtros: Competência inicial e final
+4: main table thead | Colunas: Condomínio, Natureza, Código, Centro de custo, Previsto, Realizado, Em aberto
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela junta tudo o que a sua conta pode ver.
 
 ## Como gerar o relatório
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
+1. **Competência inicial e final**: a faixa de competências (no máximo 24); o padrão vai de janeiro até o mês atual.
+2. Clique em {{Gerar}}.
+3. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
 
 ### O que cada coluna mostra
 
-- **Conta**
+- **Condomínio**
+- **Natureza**
+- **Código**
+- **Centro de custo**
 - **Previsto**
 - **Realizado**
-- **Diferença**
-- **Execução**
+- **Em aberto**
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+A tela aparece para quem tem a permissão **erp.entries.view** e **erp.cost_centers.view**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta.
