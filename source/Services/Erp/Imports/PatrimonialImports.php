@@ -61,7 +61,7 @@ final class PatrimonialImports
     }
 
     /** @param array{condominium_id?:mixed, idempotency_key?:mixed} $input */
-    public function preview(User $user, array $input, array $upload, ?string $today = null): array
+    public function preview(User $user, array $input, array $upload, ?string $today = null, bool $retried = false): array
     {
         $condominium = $this->condominium($user, $input['condominium_id'] ?? null);
         [$content, $name] = $this->readUpload($upload);
@@ -86,10 +86,11 @@ final class PatrimonialImports
                     VALUES (:c, :k, :h, :n, :b, :st, :r, :e, :s, :u)')->execute(['c' => $condominium, 'k' => $key, 'h' => $sha, 'n' => $name, 'b' => $content, 'st' => 'previewed',
                     'r' => count($result['rows']), 'e' => $result['error_count'], 's' => $summary, 'u' => (int)$user->id]);
             } catch (PDOException $error) {
-                if (!in_array($error->errorInfo[1] ?? null, [1062, 19], true)) {
+                // Só a chave repetida (MySQL 1062, SQLite 19) e só uma vez: outra violação não vira laço (ADR 0172).
+                if ($retried || !in_array($error->errorInfo[1] ?? null, [1062, 19], true)) {
                     throw $error;
                 }
-                return $this->preview($user, $input, $upload, $today);   // pedido concorrente gravou primeiro: revalida sobre ele
+                return $this->preview($user, $input, $upload, $today, true);   // pedido concorrente gravou primeiro: revalida sobre ele
             }
             $id = (int)$this->pdo->lastInsertId();
             Audit::record('create', 'erp_patrimonial_imports', $id, null, ['condominium_id' => $condominium, 'file' => $name, 'rows' => count($result['rows']), 'errors' => $result['error_count']]);

@@ -89,10 +89,21 @@ final class ChartOpenings
         $before->execute(['c' => $condominiumId, 'a' => $accountId]);
         $old = $before->fetch(PDO::FETCH_ASSOC) ?: null;
         $values = ['c' => $condominiumId, 'a' => $accountId, 'd' => $openedOn, 'v' => $cents, 'n' => $note, 'u' => (int)$user->id];
-        $this->pdo->prepare($old === null
-            ? 'INSERT INTO erp_chart_account_openings (condominium_id, chart_account_id, opened_on, amount_cents, notes, updated_by) VALUES (:c, :a, :d, :v, :n, :u)'
-            : 'UPDATE erp_chart_account_openings SET opened_on = :d, amount_cents = :v, notes = :n, updated_by = :u WHERE condominium_id = :c AND chart_account_id = :a')
-            ->execute($values);
+        $update = 'UPDATE erp_chart_account_openings SET opened_on = :d, amount_cents = :v, notes = :n, updated_by = :u WHERE condominium_id = :c AND chart_account_id = :a';
+        if ($old === null) {
+            try {
+                $this->pdo->prepare('INSERT INTO erp_chart_account_openings (condominium_id, chart_account_id, opened_on, amount_cents, notes, updated_by)
+                    VALUES (:c, :a, :d, :v, :n, :u)')->execute($values);
+            } catch (\PDOException $error) {
+                // Gravação simultânea da mesma conta (chave única): a segunda vira atualização, sem erro 500 (ADR 0172).
+                if (!in_array($error->errorInfo[1] ?? null, [1062, 19], true)) {
+                    throw $error;
+                }
+                $this->pdo->prepare($update)->execute($values);
+            }
+        } else {
+            $this->pdo->prepare($update)->execute($values);
+        }
         Audit::record($old === null ? 'create' : 'update', 'erp_chart_account_openings', $accountId,
             $old === null ? null : ['amount_cents' => (int)$old['amount_cents'], 'opened_on' => (string)$old['opened_on']],
             ['condominium_id' => $condominiumId, 'opened_on' => $openedOn, 'amount_cents' => $cents]);

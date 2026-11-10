@@ -10,7 +10,7 @@ use Source\Controllers\Erp\Connect\SettingsScreens as Screens;
 
 $this->layout('default');
 $condo = \Source\Support\Erp\CondominiumContext::current();
-$condoName = (string)($condoName ?? 'o condomínio');
+$condoName = (string)($condo['name'] ?? 'o condomínio');
 $context = $settingsContext;
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ($currentPage['section'] ? ' · ' . $currentPage['section'] : ''),

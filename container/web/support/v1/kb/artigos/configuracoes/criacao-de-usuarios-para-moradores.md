@@ -1,20 +1,20 @@
 ---
 codigo: AP-152
-titulo: Criar o acesso de um morador
-resumo: Cria o usuário do morador no aplicativo, ligado à unidade, e envia o convite por e-mail. Revise o resumo antes de confirmar.
+titulo: Criação de usuários para moradores
+resumo: Convidar moradores por e-mail para criarem a própria conta, acompanhar os convites e revogar o que ainda está pendente.
 categoria: configuracoes
 rota: /configuracoes/criacao-de-usuarios-para-moradores
 menu: Configurações > Acesso > Criação de usuários para moradores
 icone: create-outline
-situacao: exemplo
-relacionados: usuarios-de-imobiliarias, permissoes-de-moradores, permissoes-de-usuarios, usuarios-do-sistema
-palavras: criação de usuários para moradores, configurações, AP-152
+situacao: funciona
+relacionados: permissoes-de-moradores, usuarios-de-imobiliarias
+palavras: convite, morador, criar usuário, conta do morador, portal, AP-152
 rascunho: nao
 ---
 
-Cria o usuário do morador no aplicativo, ligado à unidade, e envia o convite por e-mail. Revise o resumo antes de confirmar.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+O morador não recebe senha da administradora: ele recebe um **convite por e-mail** e cria a própria conta. O convite vale 7 dias e só pode ser usado uma vez.
 
 ## Onde fica
 
@@ -25,43 +25,19 @@ rota: /configuracoes/criacao-de-usuarios-para-moradores
 condominio: residencial-jardim-das-acacias
 legenda: Tela Criação de usuários para moradores
 1: menu | Criação de usuários para moradores no menu lateral
-2: main form:not([method=get]) | Dados do lançamento
+2: main [data-erp-access] | Convidar moradores e a lista de convites
 ```
 
-## Dados do lançamento
+>! Os convites são de **um condomínio**. Escolha o condomínio na barra superior.
 
-Campos com * são obrigatórios
+## Como convidar
 
-1. Preencha **Condomínio**, **Unidade**, **Morador**, **E-mail** e **Perfil no aplicativo**.
-2. Clique em {{Confirmar usuário de morador}}.
-3. Se mudou de ideia antes de gravar, {{Limpar}} volta como estava.
+1. Em **Convidar moradores**, marque os moradores. Quem não tem e-mail no cadastro aparece desmarcado e não pode ser convidado.
+2. Clique em {{Enviar convites}}. O convite sai pela fila de avisos; fora de produção, os e-mails vão só para o log ou para a caixa de teste.
+3. Acompanhe a situação em **Convites**: aguardando aceite, aceito, revogado ou vencido.
 
-```tela criacao-de-usuarios-para-moradores-form
-rota: /configuracoes/criacao-de-usuarios-para-moradores
-condominio: residencial-jardim-das-acacias
-legenda: Dados do lançamento
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="ap-152-condominio"] | Condomínio (obrigatório)
-2: main form:not([method=get]) [name="ap-152-unidade"] | Unidade (obrigatório)
-3: main form:not([method=get]) [name="ap-152-morador"] | Morador (obrigatório)
-4: main form:not([method=get]) [name="ap-152-e-mail"] | E-mail (obrigatório)
-5: main form:not([method=get]) [name="ap-152-perfil-no-aplicativo"] | Perfil no aplicativo (obrigatório)
-6: main form:not([method=get]) button:has-text("Confirmar usuário de morador") | Botão {{Confirmar usuário de morador}}
-```
-
-### O que preencher
-
-- **Condomínio** (obrigatório).
-- **Unidade** (obrigatório).
-- **Morador** (obrigatório).
-- **E-mail** (obrigatório): Exemplo: nome@exemplo.com.
-- **Perfil no aplicativo** (obrigatório): Opções: Morador, Proprietário e Responsável.
-- **Enviar convite por e-mail**.
-
-> Na tela: *Lançamentos financeiros só são confirmados pelo servidor, com auditoria. Esta tela não simula o resultado.*
+Um convite novo para o mesmo morador substitui o pendente. Para cancelar, clique em {{Revogar}}. O morador precisa ter CPF ou CNPJ válido no cadastro, e o condomínio pode enviar até 200 convites por dia.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Usuários de imobiliárias](artigo:usuarios-de-imobiliarias), [Permissões dos moradores no aplicativo](artigo:permissoes-de-moradores) e [Permissões dos perfis de usuário](artigo:permissoes-de-usuarios).
+Exige **erp.access_admin.view** e **erp.residents.view**; convidar e revogar, também **erp.access_admin.manage**. O e-mail aparece mascarado e o convite fica na auditoria, sem o e-mail.

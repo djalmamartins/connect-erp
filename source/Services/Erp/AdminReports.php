@@ -92,7 +92,7 @@ final class AdminReports
         $allowed = array_flip(array_map('intval', $this->scope->allowedIds($user)));
         $stmt = $this->pdo->prepare("SELECT l.id, l.users_id, l.created_at, l.entity, l.ip, l.context_json, u.first_name, u.last_name
             FROM system_audit_logs l LEFT JOIN users u ON u.id = l.users_id
-            WHERE l.action = 'export' AND l.entity LIKE 'erp\\_%' ESCAPE '\\' AND l.created_at BETWEEN :f AND :t ORDER BY l.id DESC LIMIT " . (self::MAX_SCAN + 1));
+            WHERE l.action = 'export' AND l.entity LIKE 'erp!_%' ESCAPE '!' AND l.created_at BETWEEN :f AND :t ORDER BY l.id DESC LIMIT " . (self::MAX_SCAN + 1));
         $stmt->execute(['f' => $from . ' 00:00:00', 't' => $to . ' 23:59:59']);
         $raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $truncated = count($raw) > self::MAX_SCAN;

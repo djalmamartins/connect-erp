@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0172.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0172, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0173.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0173, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -146,6 +146,10 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0142](../Organic%20Code/decisions/0142-erp-helpdesk-conversation-and-shared-bell.md) | Integração ERP, Help Desk e Studio: conversa do chamado no ERP com resposta, avisos nos dois sentidos, sino compartilhado e deep link entre ambientes (/ambiente/{env}?ir=) |
 | [0143](../Organic%20Code/decisions/0143-report-screens-single-template.md) | Tela única (ReportScreens) dos 36 relatórios que já tinham serviço e API, inclusive Balancete Anual, Livro Razão, Saldos de Contas e DRE; CSV pela própria API |
 | [0144](../Organic%20Code/decisions/0144-settings-screens.md) | Telas de configurações ligadas à API: parâmetros por página com origem e voltar ao padrão, saldo inicial por centro de custo, previsão orçamentária e relatório AP-084 |
+| [0145](../Organic%20Code/decisions/0145-assembly-screens.md) | Telas de assembleia ligadas à API: gestão com pauta e presença, votação por item, listagem de presenças e parecer com a ata |
+| [0146](../Organic%20Code/decisions/0146-cycle-55-screens.md) | Telas do ciclo 55 ligadas à API: prestação de contas mensal, registros de entregas com baixa da retirada e saldo inicial do plano de contas |
+| [0147](../Organic%20Code/decisions/0147-access-screens.md) | Telas de acesso ligadas à API: imobiliárias parceiras com vínculo e concessão, convites de moradores e matriz do portal do morador |
+| [0148](../Organic%20Code/decisions/0148-balance-sheet-screen.md) | Tela do Balanço Patrimonial (AP-081) ligada à API do ADR 0167; naturezas patrimoniais na tela de saldo inicial (AP-161) |
 | [0160](../Organic%20Code/decisions/0160-review-verification-antivirus.md) | Revisão de segurança da verificação pública e do antivírus: limite global de falhas, CSRF em tempo constante, cabeçalhos anti-frame, prazo total e teto de 25 MB no clamd, download bloqueado para infectado/erro |
 | [0161](../Organic%20Code/decisions/0161-document-rescan.md) | Reverificação em lotes dos arquivos do Disco Virtual quando o antivírus é ligado depois (tools/erp-rescan.php, com trava) e o bloco do antivírus na tela de Integrações |
 | [0162](../Organic%20Code/decisions/0162-optional-cnpj-people-search-links-lab-data.md) | CNPJ do condomínio opcional, busca e vínculo de proprietário/inquilino em várias unidades (API /people) e dados de exemplo do lab com trava |
@@ -158,3 +162,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0169](../Organic%20Code/decisions/0169-patrimonial-entries.md) | Lançamentos patrimoniais com partida dobrada entre contas 7/8/9 (fundos e PL), sem passar pela DRE nem pelo banco, com estorno em vez de exclusão; entram no Balanço e no Livro Razão |
 | [0170](../Organic%20Code/decisions/0170-investment-accounts.md) | Aplicação financeira ligada à conta corrente: aplicar e resgatar pela transferência entre contas (sem DRE), rendimento como receita e IR/IOF como despesa, 7.1 separada no Balanço e Razão das contas bancárias com os dois lados |
 | [0171](../Organic%20Code/decisions/0171-patrimonial-imports.md) | Importação de lançamentos patrimoniais por CSV/XLSX com prévia por linha, gravação tudo ou nada pelo PatrimonialEntries e chave de idempotência por condomínio |
+| [0172](../Organic%20Code/decisions/0172-review-accounting-coherence.md) | Revisão de segurança e coerência contábil dos ADRs 0166–0171: ESCAPE da auditoria, corridas de chave única, prévia sem laço, movimentos somados no banco e teste de ponta a ponta do ano |

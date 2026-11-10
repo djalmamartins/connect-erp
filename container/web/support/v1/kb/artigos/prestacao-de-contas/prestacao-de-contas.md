@@ -1,52 +1,43 @@
 ---
 codigo: AP-101
-titulo: Prestação de contas
-resumo: Monta a prestação de contas do condomínio no período: saldo anterior, entradas, saídas e saldo final de cada conta.
+titulo: Relatório Prestação de contas
+resumo: O pacote do mês de um condomínio: resultado, saldos bancários, inadimplência no fim do mês e a situação do fechamento, para conferir e imprimir.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/prestacao-de-contas
 menu: Prestação de contas > Prestação de contas
 icone: document-text-outline
-situacao: exemplo
-relacionados: listagem-de-prestacoes-de-contas, demonstrativo, demonstrativo-contas, demonstrativo-analitico
-palavras: prestação de contas, AP-101
+situacao: funciona
+relacionados: demonstracao-do-resultado, balancete-verificacao, saldos-de-contas
+palavras: prestação de contas, mensal, síndico, resultado, inadimplência, fechamento, AP-101
 rascunho: nao
 ---
 
-Monta a prestação de contas do condomínio no período: saldo anterior, entradas, saídas e saldo final de cada conta.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Junta numa página o que o síndico e o conselho precisam ver do mês: receitas e despesas da competência, o resultado, as entradas e saídas do caixa, o saldo das contas bancárias, a inadimplência no último dia do mês e se o mês já foi fechado. Os avisos no alto mostram o que ainda pode mudar os números.
 
 ## Onde fica
 
-No menu lateral, abra [[Prestação de contas > Prestação de contas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Prestação de contas > Prestação de contas]].
 
 ```tela prestacao-de-contas
 rota: /prestacao-de-contas/prestacao-de-contas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Prestação de contas
 1: menu | Prestação de contas no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
-5: main table thead | Colunas da lista
+2: main form.erp-filters | Mês da prestação
+3: main .erp-grid--kpi | Resumo do mês
 ```
 
-## Escolher o período e os filtros
+>! A prestação é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
+## Como usar
 
-## O que o relatório mostra
-
-Colunas: **Conta**, **Saldo anterior**, **Entradas**, **Saídas** e **Saldo final**.
-Os totais aparecem no rodapé da tabela.
-
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
+1. Escolha o **Mês** e clique em {{Gerar}}. A tela abre no mês anterior, que é o que costuma ser prestado.
+2. Leia os avisos: mês ainda não fechado, receitas ou despesas da competência em aberto e contas vencidas no fim do mês.
+3. Confira o resumo, a [Demonstração do resultado](artigo:demonstracao-do-resultado), os [Saldos de contas](artigo:saldos-de-contas) e a inadimplência por unidade.
+4. Use {{Imprimir}} para levar à reunião. Cada parte tem o CSV no relatório de origem; os links ficam no título de cada bloco.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Listagem de prestações de contas](artigo:listagem-de-prestacoes-de-contas), [Demonstrativo (regime de caixa)](artigo:demonstrativo) e [Demonstrativo por conta](artigo:demonstrativo-contas).
+Exige as permissões **erp.entries.view** e **erp.chart.view**. Cada pessoa só vê os condomínios vinculados à própria conta.

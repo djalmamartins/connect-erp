@@ -1,20 +1,20 @@
 ---
 codigo: AP-153
-titulo: Permissões dos moradores no aplicativo
-resumo: A grade define o que cada tipo de pessoa (proprietário, inquilino, morador, responsável financeiro) vê no aplicativo: boletos, prestação de contas, reservas e outros módulos.
+titulo: Configurar permissões de Moradores
+resumo: Ligar ou desligar cada função do portal do morador no condomínio: boletos, reservas, ocorrências, comunicados e documentos.
 categoria: configuracoes
 rota: /configuracoes/permissoes-de-moradores
 menu: Configurações > Acesso > Permissões de Moradores
 icone: options-outline
-situacao: exemplo
-relacionados: permissoes-de-usuarios, usuarios-de-imobiliarias, usuarios-do-sistema, criacao-de-usuarios-para-moradores
-palavras: permissões de moradores, configurações, AP-153
+situacao: funciona
+relacionados: criacao-de-usuarios-para-moradores
+palavras: permissões de moradores, portal do morador, funções, AP-153
 rascunho: nao
 ---
 
-A grade define o que cada tipo de pessoa (proprietário, inquilino, morador, responsável financeiro) vê no aplicativo: boletos, prestação de contas, reservas e outros módulos.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Define o que o portal do morador mostra em cada condomínio. **Tudo começa desligado**: a função só aparece no portal depois que alguém liga aqui.
 
 ## Onde fica
 
@@ -25,33 +25,18 @@ rota: /configuracoes/permissoes-de-moradores
 condominio: residencial-jardim-das-acacias
 legenda: Tela Permissões de Moradores
 1: menu | Permissões de Moradores no menu lateral
-2: main table thead | Colunas da lista
+2: main [data-erp-access] | Funções do portal do morador
 ```
 
-## Permissões por perfil
+>! A configuração é de **um condomínio**. Escolha o condomínio na barra superior.
 
-Marque o que cada perfil pode ver e alterar
+## Como usar
 
-```tela permissoes-de-moradores-form
-rota: /configuracoes/permissoes-de-moradores
-condominio: residencial-jardim-das-acacias
-legenda: Permissões por perfil
-recorte: main form:not([method=get])
-1: main form:not([method=get]) button:has-text("Salvar configurações") | Botão {{Salvar configurações}}
-```
+1. Marque a caixa da função para **ligar** ou desmarque para **desligar**. A mudança vale na hora.
+2. A coluna **Alterado em** mostra a última mudança.
 
-## O que a lista mostra
-
-Colunas: **Módulo**, **Proprietário**, **Inquilino**, **Morador** e **Responsável financeiro**.
-
-## Como mudar uma permissão
-
-1. Encontre o módulo na linha e o tipo de pessoa na coluna.
-2. Marque ou desmarque a caixa.
-3. Clique em {{Salvar configurações}}.
+As funções são: Boletos e segunda via, Reservas de áreas comuns, Ocorrências, Comunicados e Documentos do condomínio.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Permissões dos perfis de usuário](artigo:permissoes-de-usuarios), [Usuários de imobiliárias](artigo:usuarios-de-imobiliarias) e [Usuários do sistema](artigo:usuarios-do-sistema).
+Ver exige **erp.access_admin.view**; ligar e desligar, **erp.access_admin.manage**. Cada mudança fica na auditoria com o antes e o depois.
