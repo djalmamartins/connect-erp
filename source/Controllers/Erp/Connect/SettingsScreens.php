@@ -9,6 +9,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\ChartOpenings;
 use Source\Services\Erp\ErpSettings;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Access;
@@ -19,7 +20,8 @@ use Source\Support\Erp\CondominiumContext;
  *  - parâmetros por página (AP-147, AP-151, AP-154, AP-155, AP-157, AP-158, AP-159, AP-166): o valor efetivo e
  *    a origem de cada chave de ErpSettings::CATALOG, com salvar e voltar ao padrão por POST /api/v1/settings;
  *  - saldo inicial por centro de custo (AP-162): GET/POST /api/v1/cost-center-openings;
- *  - previsão orçamentária (AP-163): GET/POST /api/v1/budgets, 12 meses por conta analítica.
+ *  - previsão orçamentária (AP-163): GET/POST /api/v1/budgets, 12 meses por conta analítica;
+ *  - saldo inicial do plano de contas (AP-161, ADR 0146 sobre o 0166): GET/POST /api/v1/chart-account-openings.
  * Ver exige erp.settings.view; gravar, erp.settings.manage (a API confere de novo). Sem condomínio na barra
  * superior, os parâmetros mostram o padrão da Connect, que só muda com acesso a todos os condomínios; saldo
  * inicial e previsão pedem um condomínio. Sem banco ou sem permissão, settingsReady false = demonstração.
@@ -28,13 +30,13 @@ final class SettingsScreens
 {
     /** Página => tipo da tela. */
     public const PAGES = ['AP-147' => 'params', 'AP-151' => 'params', 'AP-154' => 'params', 'AP-155' => 'params', 'AP-157' => 'params',
-        'AP-158' => 'params', 'AP-159' => 'params', 'AP-166' => 'params', 'AP-162' => 'openings', 'AP-163' => 'budget'];
+        'AP-158' => 'params', 'AP-159' => 'params', 'AP-166' => 'params', 'AP-162' => 'openings', 'AP-163' => 'budget', 'AP-161' => 'chart-openings'];
 
     public const SOURCES = ['code' => ['Padrão do sistema', 'plain'], 'connect' => ['Padrão da Connect', 'info'], 'condominium' => ['Próprio do condomínio', 'success']];
 
     public static function template(string $id): string
     {
-        return ['params' => 'pages/settings/parameters', 'openings' => 'pages/settings/openings', 'budget' => 'pages/settings/budget'][self::PAGES[$id]];
+        return ['params' => 'pages/settings/parameters', 'openings' => 'pages/settings/openings', 'budget' => 'pages/settings/budget', 'chart-openings' => 'pages/settings/chart-openings'][self::PAGES[$id]];
     }
 
     /** @return array<string, string> */
@@ -63,6 +65,8 @@ final class SettingsScreens
                 $data += ['settingsGroup' => $group];
             } elseif ($context === null) {
                 $data['settingsNeedsCondo'] = true;
+            } elseif ($kind === 'chart-openings') {
+                $data += ['chartOpenings' => (new ChartOpenings())->list($user, $context), 'openingAccounts' => self::analyticAccounts($pdo, $context)];
             } elseif ($kind === 'openings') {
                 $data += ['openings' => $service->openings($user, $context), 'costCenters' => self::costCenters($pdo, $context)];
             } else {

@@ -1,17 +1,20 @@
 ---
 codigo: AP-161
 titulo: Configurar saldo inicial (plano de contas)
-resumo: Alterações valem para os condomínios indicados e ficam registradas no histórico.
+resumo: O saldo de partida de cada conta analítica do plano de contas numa data, com a soma nas contas sintéticas.
 categoria: configuracoes
 rota: /configuracoes/saldo-inicial-plano-de-contas
 menu: Configurações > Financeiro e parâmetros > Saldo inicial (plano de contas)
 icone: options-outline
-situacao: exemplo
-palavras: saldo inicial (plano de contas), configurações, AP-161
+situacao: funciona
+relacionados: saldo-inicial-centro-de-custo
+palavras: saldo inicial, plano de contas, abertura, implantação, configurações, AP-161
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Guarda o saldo de partida de cada conta do plano de contas do condomínio numa data, por exemplo na implantação do condomínio no sistema. Só a **conta analítica** recebe saldo; a **sintética** mostra a soma das analíticas abaixo dela. O saldo por centro de custo fica em [Saldo inicial (centro de custo)](artigo:saldo-inicial-centro-de-custo).
 
 ## Onde fica
 
@@ -22,19 +25,21 @@ rota: /configuracoes/saldo-inicial-plano-de-contas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Saldo inicial (plano de contas)
 1: menu | Saldo inicial (plano de contas) no menu lateral
-2: main .erp-card | Histórico de alterações
+2: main [data-erp-settings] | Lançar saldo inicial e a árvore dos saldos
 ```
 
-## Como preencher
+>! O saldo inicial é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
-- **Condomínio** (obrigatório)
-- **Data de referência** (obrigatório)
-- **Conta do plano** (obrigatório)
-- **Saldo inicial** (obrigatório)
+## Como lançar
 
-Depois de preencher, clique em {{Salvar}}. O sistema avisa no próprio campo o que precisa corrigir.
+1. Em **Conta analítica**, escolha a conta.
+2. Informe a **Data do saldo** (até hoje) e o **Valor**. Use o sinal de menos para saldo devedor.
+3. Se quiser, escreva uma observação e clique em {{Salvar saldo inicial}}.
+
+Gravar de novo a mesma conta substitui o saldo anterior; o valor antigo fica na auditoria.
+
+> **Atenção:** por enquanto o saldo inicial do plano ainda não entra no saldo anterior do Livro Razão.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+Ver exige a permissão **erp.settings.view**; gravar, **erp.settings.manage**. Toda gravação fica na auditoria.

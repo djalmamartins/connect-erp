@@ -1,17 +1,20 @@
 ---
 codigo: AP-101
 titulo: Relatório Prestação de contas
-resumo: Escolha o condomínio e o período. Período e critério aparecem na impressão e na exportação.
+resumo: O pacote do mês de um condomínio: resultado, saldos bancários, inadimplência no fim do mês e a situação do fechamento, para conferir e imprimir.
 categoria: prestacao-de-contas
 rota: /prestacao-de-contas/prestacao-de-contas
 menu: Prestação de contas > Prestação de contas
 icone: document-text-outline
-situacao: exemplo
-palavras: prestação de contas, AP-101
+situacao: funciona
+relacionados: demonstracao-do-resultado, balancete-verificacao, saldos-de-contas
+palavras: prestação de contas, mensal, síndico, resultado, inadimplência, fechamento, AP-101
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Junta numa página o que o síndico e o conselho precisam ver do mês: receitas e despesas da competência, o resultado, as entradas e saídas do caixa, o saldo das contas bancárias, a inadimplência no último dia do mês e se o mês já foi fechado. Os avisos no alto mostram o que ainda pode mudar os números.
 
 ## Onde fica
 
@@ -22,33 +25,19 @@ rota: /prestacao-de-contas/prestacao-de-contas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Prestação de contas
 1: menu | Prestação de contas no menu lateral
-2: main :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até, Critério, Pesquisar
-5: main table thead | Lista com Conta, Saldo anterior, Entradas, Saídas e Saldo final
+2: main form.erp-filters | Mês da prestação
+3: main .erp-grid--kpi | Resumo do mês
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+>! A prestação é de **um condomínio**. Escolha o condomínio na barra superior; com "Todos os condomínios", a tela pede a escolha.
 
-## Como gerar o relatório
+## Como usar
 
-1. Escolha condomínio, de, até, critério e pesquisar.
-2. Clique em {{Filtrar}}.
-3. Confira o resultado na tela.
-
-### O que cada coluna mostra
-
-- **Conta**
-- **Saldo anterior**
-- **Entradas**
-- **Saídas**
-- **Saldo final**
-
-## Imprimir ou exportar
-
-Use {{Imprimir}} e {{Exportar}} para levar o resultado para a reunião, o conselho ou a planilha.
+1. Escolha o **Mês** e clique em {{Gerar}}. A tela abre no mês anterior, que é o que costuma ser prestado.
+2. Leia os avisos: mês ainda não fechado, receitas ou despesas da competência em aberto e contas vencidas no fim do mês.
+3. Confira o resumo, a [Demonstração do resultado](artigo:demonstracao-do-resultado), os [Saldos de contas](artigo:saldos-de-contas) e a inadimplência por unidade.
+4. Use {{Imprimir}} para levar à reunião. Cada parte tem o CSV no relatório de origem; os links ficam no título de cada bloco.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+Exige as permissões **erp.entries.view** e **erp.chart.view**. Cada pessoa só vê os condomínios vinculados à própria conta.

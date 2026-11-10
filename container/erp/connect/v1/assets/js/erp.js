@@ -1050,6 +1050,17 @@
         .then(function () { toast('Saldo inicial salvo.', 'success'); reload(); })
         .catch(function (error) { busy(button, false); if (!formError(opening, error.message)) toast(error.message, 'danger'); });
     });
+    var chartOpening = $('[data-chart-opening-form]', root);
+    if (chartOpening) chartOpening.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!formValid(chartOpening)) return;
+      var button = $('[type="submit"]', chartOpening);
+      busy(button, true);
+      call('POST', root.getAttribute('data-chart-openings-api'), { condominium_id: condominium, chart_account_id: parseInt($('[name="chart_account_id"]', chartOpening).value, 10),
+        opened_on: $('[name="opened_on"]', chartOpening).value, amount_cents: $('[name="amount_cents"]', chartOpening).value.trim(), notes: $('[name="notes"]', chartOpening).value.trim() })
+        .then(function () { toast('Saldo inicial salvo.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); if (!formError(chartOpening, error.message)) toast(error.message, 'danger'); });
+    });
     var budget = $('[data-budget-form]', root);
     if (budget) {
       var monthInputs = $$('[name="month"]', budget);
@@ -1176,6 +1187,36 @@
       if (!formValid(vote)) return;
       var choice = $('[name="choice"]:checked', vote);
       post(vote.getAttribute('data-api'), { unit_id: parseInt($('[name="unit_id"]', vote).value, 10), choice: choice ? choice.value : null }, 'Voto registrado.', $('[type="submit"]', vote), vote);
+    });
+  });
+
+  /* AP-136 Registros de Entregas (ADR 0146): baixa da retirada pela API POST /api/v1/delivery-pickups. */
+  $$('[data-erp-deliveries]').forEach(function (root) {
+    var call = apiClient(root);
+    var dialog = $('#delivery-pickup', root);
+    var form = dialog && $('[data-pickup-form]', dialog);
+    if (!form) return;
+    var deliveryId = 0;
+    $$('[data-pickup-open]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        form.reset();
+        formError(form, '');
+        busy($('[type="submit"]', form), false);
+        deliveryId = parseInt(button.getAttribute('data-id'), 10);
+        $('[name="picked_up_on"]', form).min = button.getAttribute('data-received') || '';
+        $('[data-pickup-label]', form).textContent = button.getAttribute('data-label');
+        openDialog(dialog);
+        $('[name="picked_up_by"]', form).focus();
+      });
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!formValid(form)) return;
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', root.getAttribute('data-api'), { delivery_id: deliveryId, picked_up_by: $('[name="picked_up_by"]', form).value.trim(), picked_up_on: $('[name="picked_up_on"]', form).value })
+        .then(function () { dialog.close(); toast('Retirada registrada.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); if (!formError(form, error.message)) toast(error.message, 'danger'); });
     });
   });
 

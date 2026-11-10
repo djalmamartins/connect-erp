@@ -1,17 +1,20 @@
 ---
 codigo: AP-136
 titulo: Registros de Entregas
-resumo: Como usar a tela Registros de Entregas do Connect ERP: onde fica no menu, o que cada parte mostra e o passo a passo.
+resumo: O histórico das encomendas da portaria, com filtros e resumo, e a baixa da retirada com o nome de quem retirou.
 categoria: operacional
 rota: /operacional/registros-de-entregas
 menu: Operacional > Portaria > Registros de Entregas
-icone: list-outline
-situacao: exemplo
-palavras: registros de entregas, operacional, AP-136
+icone: cube-outline
+situacao: funciona
+relacionados: entregas
+palavras: registros de entregas, encomendas, portaria, retirada, baixa, correios, AP-136
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+Mostra as encomendas que chegaram na portaria: a unidade, o destinatário, a transportadora, o rastreio, há quantos dias esperam e quem retirou. A chegada é registrada em [Entregas](artigo:entregas); aqui se dá a **baixa da retirada**.
 
 ## Onde fica
 
@@ -22,29 +25,20 @@ rota: /operacional/registros-de-entregas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Registros de Entregas
 1: menu | Registros de Entregas no menu lateral
-2: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-3: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até
-4: main table thead | Lista com Retirada em, Unidade, Retirado por e Portaria
+2: main form.erp-filters | Filtros: situação, período da chegada e unidade
+3: main [data-erp-deliveries] | Resumo e lista das entregas
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+> **Dica:** escolha o condomínio na barra superior para filtrar por unidade. Com "Todos os condomínios", a lista traz todos os do seu escopo.
 
 ## Como usar
 
-Os botões no alto da tela são {{Exportar}}.
+1. Ajuste os filtros: **Situação** (aguardando, retirada ou cancelada), o período da chegada (até 366 dias) e a **Unidade**.
+2. Clique em {{Filtrar}}. O resumo mostra quantas aguardam, quantas foram retiradas, a média de dias até a retirada e a espera mais antiga.
+3. Para registrar a retirada, clique em {{Dar baixa}} na linha, informe **quem retirou** e a **data da retirada** (entre a chegada e hoje) e confirme.
 
-1. Ajuste os filtros (Condomínio, De e Até).
-2. Clique em {{Filtrar}}.
-3. Confira a lista. Use as ações da linha para abrir, alterar ou cancelar um item.
-
-### O que cada coluna mostra
-
-- **Retirada em**
-- **Unidade**
-- **Retirado por**
-- **Portaria**
+>! A baixa não volta atrás pela tela: confira o nome antes de confirmar. Só o nome fica guardado; foto e documento de quem retira não são guardados.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Operacional**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+Ver exige a permissão **erp.deliveries.view**; dar baixa, **erp.deliveries.manage**. A baixa fica na auditoria (a mudança de situação e a data).

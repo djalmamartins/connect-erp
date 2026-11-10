@@ -65,7 +65,7 @@ final class Panel extends Controller
     /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
     public static function pagePermissions(): array
     {
-        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + Definitions::pagePermissions();
+        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + DeliveryScreens::pagePermissions() + AccountabilityScreens::pagePermissions() + Definitions::pagePermissions();
     }
 
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
@@ -839,6 +839,12 @@ final class Panel extends Controller
         if (isset(AssemblyScreens::PAGES[$id])) {
             $data += (new AssemblyScreens())->data($user, $id);
         }
+        if (isset(DeliveryScreens::PAGES[$id])) {
+            $data += (new DeliveryScreens())->data($user, $id);
+        }
+        if (isset(AccountabilityScreens::PAGES[$id])) {
+            $data += (new AccountabilityScreens())->data($user, $id);
+        }
         if (isset(EntryShortcutScreens::PAGES[$id])) {
             $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
         }
@@ -870,6 +876,8 @@ final class Panel extends Controller
             isset(ReportScreens::PAGES[$id]) && ($data['reportReady'] ?? false) => 'pages/reports/report',
             isset(SettingsScreens::PAGES[$id]) && ($data['settingsReady'] ?? false) => SettingsScreens::template($id),
             isset(AssemblyScreens::PAGES[$id]) && ($data['assemblyReady'] ?? false) => 'pages/assemblies/assembly',
+            isset(DeliveryScreens::PAGES[$id]) && ($data['deliveryReady'] ?? false) => DeliveryScreens::PAGES[$id],
+            isset(AccountabilityScreens::PAGES[$id]) && ($data['accountabilityReady'] ?? false) => AccountabilityScreens::PAGES[$id],
             $id === 'AP-042' && ($data['meterSheet'] ?? null) !== null => 'pages/operational/meter-readings',
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',

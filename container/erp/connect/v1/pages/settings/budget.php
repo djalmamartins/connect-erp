@@ -11,7 +11,7 @@ use Source\Controllers\Erp\Connect\ReportScreens;
 
 $this->layout('default');
 $condo = \Source\Support\Erp\CondominiumContext::current();
-$condoName = (string)($condoName ?? 'o condomínio');
+$condoName = (string)($condo['name'] ?? 'o condomínio');
 $months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 $plain = static fn (int $cents): string => $cents === 0 ? '' : number_format($cents / 100, 2, ',', '');
 $this->insert('components/layout/page-head', [
