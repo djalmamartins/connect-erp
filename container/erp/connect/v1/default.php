@@ -38,6 +38,7 @@ foreach ($catalog['pages'] as $id => $page) {
         <?php $this->insert('components/navbar/navbar'); ?>
         <main id="erp-main" class="erp-main" tabindex="-1">
             <?php if ($erpFlash = flash()): ?><div class="erp-flash" role="status"><?= $erpFlash ?></div><?php endif; ?>
+            <?php if (!empty($setupGuide) && $setupGuide['current'] !== null): ?><?php $this->insert('components/layout/setup-guide', ['guide' => $setupGuide]); ?><?php endif; ?>
             <?= $this->section('content') ?>
         </main>
     </div>

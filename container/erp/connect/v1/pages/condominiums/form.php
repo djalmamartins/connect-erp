@@ -6,12 +6,16 @@
  * @var list<string> $states @var array<string, string> $statuses
  */
 $this->layout('default');
+$isNew = str_ends_with($action, '/novo');
 $v = static fn(string $key): string => (string)($values[$key] ?? '');
 $star = ' <span aria-hidden="true" style="color:var(--erp-danger)">*</span>';
 $field = function (string $key, string $label, int $span, string $type = 'text', array $attributes = [], ?string $hint = null) use ($v, $errors, $star): string {
     $id = 'condominium-' . str_replace('_', '-', $key);
     $extra = '';
     foreach ($attributes as $name => $value) {
+        if ($value === false) {
+            continue;
+        }
         $extra .= $value === true ? " {$name}" : " {$name}=\"" . $this->e((string)$value) . '"';
     }
     $error = $errors[$key] ?? null;
@@ -39,12 +43,11 @@ $select = function (string $key, string $label, int $span, array $options, bool 
     $html .= '</select><span class="erp-field__error" id="' . $id . '-error" aria-live="polite">' . ($error ? $this->e($error) : '') . '</span></div>';
     return $html;
 };
-$isNew = str_ends_with($action, '/novo');
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Condomínios',
     'pageTitle' => $formTitle,
     'pageLead' => $isNew
-        ? 'Preencha os dados e salve. Campos com * são obrigatórios. Ao salvar, o checklist de chegada é aberto.'
+        ? 'Preencha os dados e salve. Campos com * são obrigatórios. Comece pelo CNPJ, se houver. Ao salvar, o guia leva às unidades, proprietários, síndico e conselho, áreas e, por último, ao checklist.'
         : 'Altere os dados e salve. Campos com * são obrigatórios.',
 ]);
 ?>
@@ -59,10 +62,12 @@ $this->insert('components/layout/page-head', [
     <fieldset class="erp-fieldset">
         <legend>Identificação</legend>
         <div class="erp-form__grid">
+            <?php // ADR 0151: CNPJ primeiro; ao completar os 14 dígitos, erp.js busca os dados públicos e preenche os campos vazios. ?>
+            <?= $field('document', 'CNPJ', 4, 'text', ['inputmode' => 'numeric', 'maxlength' => 18, 'placeholder' => '00.000.000/0000-00', 'data-erp-cnpj-lookup' => true, 'autofocus' => $isNew], 'Opcional. Com o CNPJ, buscamos os dados na Receita e preenchemos o formulário.') ?>
+            <?= $select('status', 'Situação', 4, $statuses, false) ?>
+            <div class="erp-col-4" aria-hidden="true"></div>
             <?= $field('name', 'Nome', 6, 'text', ['required' => true, 'maxlength' => 160]) ?>
             <?= $field('legal_name', 'Razão social', 6, 'text', ['required' => true, 'maxlength' => 160]) ?>
-            <?= $field('document', 'CNPJ', 4, 'text', ['inputmode' => 'numeric', 'maxlength' => 18, 'placeholder' => '00.000.000/0000-00'], 'Opcional: deixe em branco se o condomínio não tiver CNPJ.') ?>
-            <?= $select('status', 'Situação', 4, $statuses, false) ?>
         </div>
     </fieldset>
 

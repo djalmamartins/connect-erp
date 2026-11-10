@@ -31,7 +31,7 @@ legenda: Tela Síndico e conselho
 ## Como cadastrar
 
 1. Clique em {{Novo membro}}, no alto da lista.
-2. Preencha os campos obrigatórios: **Condomínio**, **Cargo**, **Nome ou razão social**, **Início do mandato**, **Fim do mandato** e **Situação**. Os outros podem ficar para depois.
+2. Preencha os campos obrigatórios: **Condomínio**, **Cargo**, **Nome ou razão social**, **Início do mandato**, **Fim do mandato**, **E-mail**, **Telefone** e **Situação**. Os outros podem ficar para depois.
 3. Clique em {{Salvar}}.
 4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
@@ -58,8 +58,10 @@ recorte: main form:not([method=get])
 - **Unidade (texto)**: Vazio para síndico profissional.
 - **Início do mandato** (obrigatório).
 - **Fim do mandato** (obrigatório).
-- **E-mail**: Exemplo: nome@exemplo.com.
-- **Telefone**.
+- **E-mail** (obrigatório): Exemplo: nome@exemplo.com.
+- **Telefone** (obrigatório).
+
+> E-mail e telefone são obrigatórios porque são o canal de comunicação com o síndico e o conselho: avisos, assembleias e aprovações.
 - **Observações**: Ex.: ata da assembleia que elegeu.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 

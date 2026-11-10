@@ -803,3 +803,20 @@ p { margin: 0; }
 .erp-access-agency-actions > .erp-inline-form { flex: 0 1 460px; justify-content: flex-start; }
 td.is-num .erp-inline-form { min-width: 300px; flex-wrap: nowrap; }
 td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
+
+/* Guia de cadastro do condomínio (ADR 0151) */
+.erp-setup-guide { margin-bottom: var(--erp-space-4); border-color: var(--erp-brand-line); }
+.erp-setup-guide .erp-card__head { margin-bottom: var(--erp-space-3); }
+.erp-setup-guide .erp-card__head p { color: var(--erp-muted); font-size: 13px; }
+.erp-setup-guide__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.erp-setup-guide__actions form { margin: 0; }
+.erp-setup-guide__steps li { padding: 0; }
+.erp-setup-guide__steps a { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; color: inherit; text-decoration: none; border-radius: inherit; }
+.erp-setup-guide__steps a:hover b { text-decoration: underline; }
+.erp-setup-guide__steps a > span { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--erp-neutral-soft); font-size: 12px; }
+.erp-setup-guide__steps small { color: var(--erp-faint); font-weight: 500; font-size: 12px; }
+.erp-setup-guide__steps li.is-done { color: var(--erp-text); }
+.erp-setup-guide__steps li.is-done a > span { background: var(--erp-success-soft); color: var(--erp-success); }
+.erp-setup-guide__steps li.is-current a > span { background: var(--erp-brand); color: var(--erp-on-brand); }
+@media (max-width: 720px) { .erp-setup-guide__steps small { display: none; } }
+.erp-condo-pick { display: flex; align-items: center; gap: 12px; }
