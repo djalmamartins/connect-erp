@@ -9,8 +9,9 @@ AP-047, AP-048, AP-057 a AP-061, AP-071, AP-072, AP-102 a AP-109, AP-116, AP-117
 Com o ADR 0143, mais 36 passaram a ler dados reais pela tela única de relatórios (`ReportScreens`): AP-045,
 AP-046, AP-049, AP-050, AP-052 a AP-054, AP-056, AP-062 a AP-070, AP-073 a AP-076, AP-080, AP-082, AP-083, AP-085 a AP-087,
 AP-089, AP-090 e AP-093 a AP-099. Com o ADR 0144, as configurações AP-147, AP-151, AP-154, AP-155,
-AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Seguem para os próximos lotes: acessos
-(AP-148, AP-152, AP-153) e assembleias (AP-017, AP-018, AP-088, AP-092).
+AP-157 a AP-159, AP-162, AP-163, AP-166 e o relatório AP-084 também. Com o ADR 0145, as assembleias
+AP-017, AP-018, AP-088 e AP-092. Seguem para os próximos lotes: acessos (AP-148, AP-152, AP-153) e as telas do
+ciclo 55 (AP-101, AP-136, AP-161).
 
 ## Critério
 

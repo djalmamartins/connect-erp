@@ -776,3 +776,14 @@ p { margin: 0; }
 [data-setting-form] + [data-setting-form] { border-top: 1px solid var(--erp-border); margin-top: var(--erp-space-4, 16px); padding-top: var(--erp-space-4, 16px); }
 .erp-budget-months { display: grid; gap: var(--erp-space-3, 12px); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-top: var(--erp-space-4, 16px); }
 @media (max-width: 640px) { .erp-setting-actions { padding-top: 0; } }
+/* Assembleias (ADR 0145): pauta com itens repetidos e o cancelamento recolhido. */
+.erp-assembly-agenda { border: 0; margin: var(--erp-space-4, 16px) 0 0; padding: 0; }
+.erp-assembly-agenda legend { font-weight: 600; margin-bottom: var(--erp-space-2, 8px); }
+.erp-assembly-agenda__list { list-style: none; margin: 0 0 var(--erp-space-3, 12px); padding: 0; counter-reset: agenda; }
+.erp-assembly-agenda__item { counter-increment: agenda; border: 1px solid var(--erp-border); border-radius: var(--erp-radius, 8px); padding: var(--erp-space-3, 12px); margin-bottom: var(--erp-space-3, 12px); }
+.erp-assembly-agenda__item::before { content: "Item " counter(agenda); display: block; font-weight: 600; margin-bottom: var(--erp-space-2, 8px); }
+.erp-assembly-cancel { margin-top: var(--erp-space-3, 12px); }
+.erp-assembly-cancel > summary { list-style: none; display: inline-flex; cursor: pointer; }
+.erp-assembly-cancel > summary::-webkit-details-marker { display: none; }
+.erp-assembly-cancel[open] > summary { margin-bottom: var(--erp-space-3, 12px); }
+.erp-filters .erp-field.erp-assembly-pick { flex: 1 1 420px; max-width: 640px; }

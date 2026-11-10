@@ -1080,6 +1080,60 @@ $common($html, 'AP-163', 'Previsão Orçamentária');
 $assert(substr_count($html, 'name="month"') === 12 && str_contains($html, 'data-budget-edit="7"') && str_contains($html, '100,00') && str_contains($html, 'R$ 1.200,00') && str_contains($html, '-25,00%') && str_contains($html, 'name="ano" min="2000"') && str_contains($html, 'value="2026"'), 'AP-163: previsão com 12 meses e edição');
 $assert($SS::year('1999', 2026) === 2026 && $SS::year('2031', 2026) === 2031 && $SS::year('2032', 2026) === 2026, 'configurações: ano do filtro');
 
+// Assembleias com dados reais (ADR 0145): AP-018 gestão, AP-017 votação, AP-088 presenças e AP-092 parecer.
+$AS = Source\Controllers\Erp\Connect\AssemblyScreens::class;
+$asRow = static fn (array $over = []): array => $over + ['id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial <Teste>', 'kind' => 'ordinaria', 'mode' => 'virtual',
+    'title' => 'AGO <2026>', 'location' => 'https://sala.exemplo/abc', 'first_call_at' => '2026-12-01 19:00:00', 'second_call_at' => '2026-12-01 19:30:00', 'status' => 'open',
+    'announcement_id' => 3, 'convened_at' => '2026-11-10 10:00:00', 'opened_at' => '2026-12-01 19:05:00', 'closed_at' => null, 'cancel_reason' => null];
+$asItem = static fn (array $over = []): array => $over + ['id' => 31, 'position' => 1, 'title' => 'Aprovar contas <2025>', 'description' => 'Balancete anual', 'vote_basis' => 'fraction',
+    'quorum' => 'simple', 'status' => 'pending', 'result' => null, 'decided_at' => null];
+$asDetail = static fn (array $over = [], array $items = []): array => $asRow($over) + ['items' => $items ?: [$asItem()], 'attendance' => ['units' => 3, 'proxies' => 1, 'without_vote' => 1],
+    'minutes' => null, 'minutes_sha256' => null];
+$asData = static fn (string $kind, array $over = []): array => $over + ['assemblyReady' => true, 'assemblyKind' => $kind, 'assemblyContext' => 1, 'assemblyError' => null,
+    'canManageAssembly' => true, 'canConvene' => true, 'assemblies' => ['data' => [$asRow(), $asRow(['id' => 8, 'status' => 'closed', 'title' => 'AGE obra'])], 'total' => 2],
+    'assemblyDetail' => null, 'assemblyReport' => null, 'assemblyUnits' => [], 'assemblyVoters' => [], 'assemblyDocuments' => []];
+foreach ($AS::PAGES as $asPage => $asKind) {
+    $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate($asPage, ['assemblyReady' => false]) === null && Source\Controllers\Erp\Connect\Panel::ownTemplate($asPage, ['assemblyReady' => true]) === 'pages/assemblies/assembly', "{$asPage}: tela própria só com dados");
+    $assert(Source\Controllers\Erp\Connect\Panel::pagePermissions()[$asPage] === 'erp.assemblies.view', "{$asPage}: permissão do menu");
+}
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage'), 'real');
+$common($html, 'AP-018', 'Assembleia Virtual');
+$assert(str_contains($html, 'data-erp-assemblies') && str_contains($html, 'data-assembly-create') && str_contains($html, 'data-agenda-template') && str_contains($html, '/api/v1/assemblies')
+    && str_contains($html, 'AGO &lt;2026&gt;') && str_contains($html, '?assembleia=9') && str_contains($html, 'Em andamento') && !str_contains($html, 'Interface proposta'), 'AP-018: lista e nova assembleia');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyContext' => null]));
+$assert(!str_contains($html, 'data-assembly-create') && str_contains($html, 'Escolha um condomínio') && str_contains($html, 'Residencial &lt;Teste&gt;'), 'AP-018: sem condomínio não cria');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyDetail' => $asDetail(['status' => 'draft'])]));
+$assert(str_contains($html, '/api/v1/assemblies/9/convene') && str_contains($html, 'data-assembly-cancel') && !str_contains($html, '/api/v1/assemblies/9/open'), 'AP-018: rascunho convoca ou cancela');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['canConvene' => false, 'assemblyDetail' => $asDetail(['status' => 'draft'])]));
+$assert(!str_contains($html, '/convene') && str_contains($html, 'permissão de enviar comunicados'), 'AP-018: convocar exige enviar comunicados');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['assemblyDetail' => $asDetail(), 'assemblyUnits' => [['id' => 4, 'label' => 'Apto <101>']], 'assemblyDocuments' => [['id' => 6, 'label' => 'Procuração <A>']]]), 'open');
+$assert(str_contains($html, 'data-assembly-checkin') && str_contains($html, '<option value="4">Apto &lt;101&gt;</option>') && str_contains($html, 'Procuração &lt;A&gt;') && str_contains($html, '/api/v1/assemblies/9/close')
+    && !str_contains($html, 'data-assembly-cancel'), 'AP-018: aberta registra presença e encerra');
+$html = $agreementPage('AP-018', 'pages/assemblies/assembly', $asData('manage', ['canManageAssembly' => false, 'canConvene' => false, 'assemblyDetail' => $asDetail()]));
+$assert(!str_contains($html, 'data-assembly-checkin') && !str_contains($html, 'data-assembly-action'), 'AP-018: só leitura sem erp.assemblies.manage');
+$html = $agreementPage('AP-017', 'pages/assemblies/assembly', $asData('voting', ['assemblyDetail' => $asDetail([], [$asItem(['status' => 'voting']), $asItem(['id' => 32, 'position' => 2, 'title' => 'Obra'])]),
+    'assemblyVoters' => [['id' => 4, 'label' => 'Apto 101', 'voted' => true], ['id' => 5, 'label' => 'Apto <102>', 'voted' => false]]]), 'real');
+$common($html, 'AP-017', 'Votação');
+$assert(str_contains($html, 'data-assembly-vote') && str_contains($html, '/api/v1/assemblies/9/items/31/votes') && str_contains($html, '/items/31/close') && !str_contains($html, '/items/32/start')
+    && str_contains($html, '<option value="5">Apto &lt;102&gt;</option>') && !str_contains($html, '<option value="4">') && str_contains($html, '1 de 2 unidade(s) já votaram') && substr_count($html, 'name="choice"') === 3, 'AP-017: voto no item em votação');
+$html = $agreementPage('AP-017', 'pages/assemblies/assembly', $asData('voting', ['assemblies' => ['data' => [$asRow(['status' => 'closed'])], 'total' => 1]]));
+$assert(str_contains($html, 'Nenhuma assembleia aberta') && !str_contains($html, 'data-assembly-vote'), 'AP-017: sem assembleia aberta');
+$html = $agreementPage('AP-088', 'pages/assemblies/assembly', $asData('attendance', ['assemblyDetail' => $asDetail(), 'assemblyReport' => ['assembly' => $asRow(), 'rows' => [
+    ['unit_label' => 'Apto <101>', 'attendee_name' => 'Ana <Souza>', 'is_proxy' => true, 'proxy_document_id' => 6, 'eligible' => false, 'overdue_cents' => 12345, 'checked_in_at' => '2026-12-01 19:10:00']],
+    'totals' => ['units' => 1, 'proxies' => 1, 'without_vote' => 1]]]), 'real');
+$common($html, 'AP-088', 'Listagem de presenças');
+$assert(str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Não vota') && str_contains($html, 'R$ 123,45') && str_contains($html, '/api/v1/assemblies/9/attendance-report?format=csv') && str_contains($html, '01/12/2026 19:10'), 'AP-088: presenças, vencido e CSV');
+$html = $agreementPage('AP-092', 'pages/assemblies/assembly', $asData('results', ['assemblyDetail' => $asDetail(['status' => 'closed', 'closed_at' => '2026-12-01 21:00:00', 'minutes' => "ATA <AGO>\nItem 1 aprovado", 'minutes_sha256' => str_repeat('a', 64)]),
+    'assemblyReport' => ['assembly' => $asRow(), 'rows' => [['position' => 1, 'title' => 'Aprovar <contas>', 'vote_basis' => 'fraction', 'quorum' => 'simple', 'status' => 'decided', 'yes' => '0,600000', 'no' => '0,100000',
+    'abstain' => '0,000000', 'total' => '1,000000', 'votes' => 3, 'approved' => true]]]]), 'real');
+$common($html, 'AP-092', 'Parecer');
+$assert(str_contains($html, 'Aprovar &lt;contas&gt;') && str_contains($html, '0,600000') && str_contains($html, 'Aprovado') && str_contains($html, 'ATA &lt;AGO&gt;<br') && str_contains($html, str_repeat('a', 64))
+    && str_contains($html, '/api/v1/assemblies/9/results?format=csv'), 'AP-092: resultados, ata e CSV');
+$assert($AS::selected(null, [['id' => 3, 'status' => 'draft'], ['id' => 2, 'status' => 'closed'], ['id' => 1, 'status' => 'open']], ['open']) === 1 && $AS::selected('7', [], ['open']) === 7
+    && $AS::selected('x', [['id' => 2, 'status' => 'draft']], ['open']) === null, 'assembleias: escolha da assembleia');
+$assert($AS::actions('draft', true, false) === ['cancel'] && $AS::actions('convened', true, true) === ['open', 'cancel'] && $AS::actions('open', false, false) === [] && $AS::actions('closed', true, true) === [], 'assembleias: ações por situação');
+$assert($AS::resultText($asItem(['vote_basis' => 'unit', 'result' => ['yes' => 3000000, 'no' => 1000000, 'abstain' => 0, 'total' => 5000000]])) === 'Sim 3 · Não 1 · Abstenção 0 de 5 unidades', 'assembleias: texto do resultado');
+
 // Continuações do Operacional no formulário: chamar lista de espera e gerar a próxima manutenção.
 $actionForm = static fn (string $slug, string $page, array $values): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, $page, [
     'title' => 'Registro', 'definition' => Source\Services\Erp\Registry\Definitions::get($slug), 'recordId' => 8, 'values' => $values + ['id' => 8, 'condominium_id' => 1],

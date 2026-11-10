@@ -1,17 +1,20 @@
 ---
 codigo: AP-017
 titulo: Votação
-resumo: Como usar a tela Votação do Connect ERP: onde fica no menu, o que cada parte mostra e o passo a passo.
+resumo: Votar os itens da pauta da assembleia aberta, um por vez, com o voto de cada unidade presente e quite e a apuração pelo quórum do item.
 categoria: comunicacao
 rota: /comunicacao/votacao
 menu: Comunicação > Canais > Votação
-icone: list-outline
-situacao: exemplo
-palavras: votação, comunicação, AP-017
+icone: checkbox-outline
+situacao: funciona
+relacionados: assembleia-virtual, parecer
+palavras: votação, voto, assembleia, pauta, quórum, apuração, fração ideal, AP-017
 rascunho: nao
 ---
 
->! Esta tela ainda mostra **dados de exemplo**. Ela já abre com os filtros e as colunas definitivos, mas os números reais chegam numa próxima versão. Use-a para conhecer o relatório; não tome decisões com os valores mostrados.
+## Para que serve
+
+A votação acontece na assembleia **em andamento**. Um item da pauta fica em votação por vez; cada unidade presente e quite vota uma vez no item, e a apuração usa a base do voto (fração ideal ou uma unidade, um voto) e o quórum do item.
 
 ## Onde fica
 
@@ -22,31 +25,19 @@ rota: /comunicacao/votacao
 condominio: residencial-jardim-das-acacias
 legenda: Tela Votação
 1: menu | Votação no menu lateral
-2: main :is(a,button):has-text("Nova votação") | Botão {{Nova votação}}
-3: main :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, Pesquisar
-5: main table thead | Lista com Encerra em, Condomínio, Pergunta, Votos e Situação
+2: main [data-erp-assemblies] | Assembleia aberta, pauta e voto
 ```
 
-> **Dica:** escolha o condomínio na barra superior para ver só os dados dele. Com "Todos os condomínios", a tela soma tudo o que a sua conta pode ver.
+## Como votar
 
-## Como usar
+1. Em **Assembleia**, escolha a assembleia aberta e clique em {{Abrir}}. Com uma só aberta, ela já vem escolhida.
+2. Na **Pauta**, clique em {{Abrir votação}} no item.
+3. Em **Voto do item**, escolha a unidade, marque Sim, Não ou Abstenção e clique em {{Registrar voto}}. A lista só traz as unidades presentes, com direito a voto, que ainda não votaram no item.
+4. Quando todos votarem, clique em {{Apurar}}. O item mostra Aprovado ou Rejeitado e o placar. Depois disso, ninguém mais vota nele.
+5. Repita para os outros itens. Com todos apurados, encerre a assembleia em [Assembleia Virtual](artigo:assembleia-virtual).
 
-Os botões no alto da tela são {{Exportar}} e {{Nova votação}}.
-
-1. Ajuste os filtros (Condomínio e Pesquisar).
-2. Clique em {{Filtrar}}.
-3. Confira a lista. Use as ações da linha para abrir, alterar ou cancelar um item.
-
-### O que cada coluna mostra
-
-- **Encerra em**
-- **Condomínio**
-- **Pergunta**
-- **Votos**
-- **Situação**
+>! Unidade sem presença registrada ou com conta vencida em aberto na hora da presença não vota. Registre a presença em [Assembleia Virtual](artigo:assembleia-virtual).
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Comunicação**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
+Ver exige **erp.assemblies.view**; abrir a votação, registrar voto e apurar, **erp.assemblies.manage**. Cada voto fica na auditoria.
