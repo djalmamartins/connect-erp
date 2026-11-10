@@ -93,13 +93,17 @@ final class PatrimonialEntries
         return $out;
     }
 
-    /** Movimentos do condomínio até a data, um por lado (débito e crédito), para o balanço. */
+    /**
+     * Movimentos do condomínio até a data, por lado (débito e crédito), para o balanço. Somados no banco por conta e
+     * dia (ADR 0172): o volume não cresce com o número de lançamentos, só com contas × dias com movimento.
+     */
     public function movements(int $condominiumId, string $date): array
     {
         $rows = [];
         foreach (['debit' => 'debit_account_id', 'credit' => 'credit_account_id'] as $side => $column) {
-            $stmt = $this->pdo->prepare("SELECT a.code, a.nature, m.amount_cents AS cents, m.entry_date FROM erp_patrimonial_entries m
-                JOIN erp_chart_accounts a ON a.id = m.{$column} WHERE m.condominium_id = :c AND m.entry_date <= :d");
+            $stmt = $this->pdo->prepare("SELECT a.code, a.nature, SUM(m.amount_cents) AS cents, m.entry_date FROM erp_patrimonial_entries m
+                JOIN erp_chart_accounts a ON a.id = m.{$column} WHERE m.condominium_id = :c AND m.entry_date <= :d
+                GROUP BY a.code, a.nature, m.entry_date");
             $stmt->execute(['c' => $condominiumId, 'd' => $date]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $rows[] = $row + ['side' => $side];

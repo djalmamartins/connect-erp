@@ -146,7 +146,9 @@ final class ErpAccess
             if ($exists->fetchColumn() !== false) {
                 continue;
             }
-            $insert->execute(['u' => $userId, 'c' => $id, 'by' => (int)$admin->id]);
+            if (!$this->insertOnce($insert, ['u' => $userId, 'c' => $id, 'by' => (int)$admin->id])) {
+                continue;   // outro pedido deu o mesmo acesso ao mesmo tempo
+            }
             $granted[] = $id;
             Audit::record('create', 'user_condominium_access', $userId, null, ['condominium_id' => $id, 'origin' => 'erp_users']);
         }
@@ -219,8 +221,12 @@ final class ErpAccess
         $had->execute(['r' => (int)$role['id'], 'p' => $permissionId]);
         $before = $had->fetchColumn() !== false;
         if ($before !== $allowed) {
-            $this->pdo->prepare($allowed ? 'INSERT INTO access_role_permissions (role_id, permission_id) VALUES (:r, :p)'
-                : 'DELETE FROM access_role_permissions WHERE role_id = :r AND permission_id = :p')->execute(['r' => (int)$role['id'], 'p' => $permissionId]);
+            $params = ['r' => (int)$role['id'], 'p' => $permissionId];
+            if ($allowed) {
+                $this->insertOnce($this->pdo->prepare('INSERT INTO access_role_permissions (role_id, permission_id) VALUES (:r, :p)'), $params);
+            } else {
+                $this->pdo->prepare('DELETE FROM access_role_permissions WHERE role_id = :r AND permission_id = :p')->execute($params);
+            }
             Audit::record('update', 'access_role_permissions', (int)$role['id'], ['role' => $role['slug'], 'permission' => $permission, 'allowed' => $before ? '1' : '0'],
                 ['role' => $role['slug'], 'permission' => $permission, 'allowed' => $allowed ? '1' : '0']);
             Access::clear();
@@ -266,15 +272,42 @@ final class ErpAccess
         $before = $old->fetchColumn();
         $before = $before === false ? 'inherit' : (string)$before;
         if ($before !== $effect) {
-            $this->pdo->prepare('DELETE FROM access_user_overrides WHERE user_id = :u AND permission_id = :p')->execute(['u' => $userId, 'p' => $permissionId]);
-            if ($effect !== 'inherit') {
-                $this->pdo->prepare('INSERT INTO access_user_overrides (user_id, permission_id, effect, assigned_by) VALUES (:u, :p, :e, :by)')
-                    ->execute(['u' => $userId, 'p' => $permissionId, 'e' => $effect, 'by' => (int)$admin->id]);
+            // Apagar e gravar juntos (ADR 0172): uma falha no meio não deixa o usuário sem a exceção anterior.
+            $this->pdo->beginTransaction();
+            try {
+                $this->pdo->prepare('DELETE FROM access_user_overrides WHERE user_id = :u AND permission_id = :p')->execute(['u' => $userId, 'p' => $permissionId]);
+                if ($effect !== 'inherit') {
+                    $this->insertOnce($this->pdo->prepare('INSERT INTO access_user_overrides (user_id, permission_id, effect, assigned_by) VALUES (:u, :p, :e, :by)'),
+                        ['u' => $userId, 'p' => $permissionId, 'e' => $effect, 'by' => (int)$admin->id]);
+                }
+                $this->pdo->commit();
+            } catch (\Throwable $error) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                throw $error;
             }
             Audit::record('update', 'access_user_overrides', $userId, ['permission' => $permission, 'effect' => $before], ['permission' => $permission, 'effect' => $effect]);
             Access::clear($userId);
         }
         return ['user_id' => $userId, 'permission' => (string)$permission, 'effect' => $effect, 'changed' => $before !== $effect];
+    }
+
+    /**
+     * INSERT que aceita a chave repetida de um pedido simultâneo (MySQL 1062, SQLite 19) como "já existe", em vez de
+     * responder 500 (ADR 0172). Devolve false quando a linha já estava lá.
+     */
+    private function insertOnce(\PDOStatement $insert, array $params): bool
+    {
+        try {
+            $insert->execute($params);
+            return true;
+        } catch (\PDOException $error) {
+            if (!in_array($error->errorInfo[1] ?? null, [1062, 19], true)) {
+                throw $error;
+            }
+            return false;
+        }
     }
 
     /** @return array{slug:?string, level:int} */
