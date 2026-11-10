@@ -223,12 +223,12 @@ else
     if ! env_has CONNECT_2FA_KEY; then
       key=$(openssl rand -base64 32)
       sed -i.bak '/^CONNECT_2FA_KEY=/d' .env && rm -f .env.bak
-      printf '\n# 2FA (gerado por tools/testar-main.sh): chave do cofre TOTP. Trocar a chave invalida os 2FA já cadastrados.\nCONNECT_2FA_KEY=%s\n' "$key" >>.env
+      printf '\n# 2FA, gerado por tools/testar-main.sh: chave do cofre TOTP. Trocar a chave invalida os 2FA já cadastrados.\nCONNECT_2FA_KEY=%s\n' "$key" >>.env
       changed="chave criada"
     fi
     if ! env_has CONNECT_2FA_ENFORCE_FROM; then
       sed -i.bak '/^CONNECT_2FA_ENFORCE_FROM=/d' .env && rm -f .env.bak
-      printf '# 2FA obrigatório no login a partir desta data (AAAA-MM-DD).\nCONNECT_2FA_ENFORCE_FROM=%s\n' "$(date +%Y-%m-%d)" >>.env
+      printf '# 2FA obrigatório no login a partir desta data, no formato AAAA-MM-DD.\nCONNECT_2FA_ENFORCE_FROM=%s\n' "$(date +%Y-%m-%d)" >>.env
       changed="${changed:+$changed, }obrigatório a partir de hoje"
     fi
     if [ -n "$changed" ]; then
