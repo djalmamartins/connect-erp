@@ -10,7 +10,7 @@ $contact = \Source\Services\Help\SupportContact::data();
     <div class="hc-wrap hc-hero__inner">
         <span class="hc-pill"><?= \Source\Services\Help\Icons::svg('headset-outline') ?>Fale com a gente</span>
         <h1 id="hc-hero-title">Como podemos te ajudar hoje?</h1>
-        <p>Tutoriais passo a passo com as telas do Connect ERP marcadas, e atendimento de verdade quando você precisar.</p>
+        <p>Esta é a central de atendimento da Connect Condomínios: tutoriais passo a passo com as telas do Connect ERP marcadas, e atendimento de verdade quando você precisar.</p>
         <form class="hc-search" action="<?= url('/suporte/buscar') ?>" method="get" role="search">
             <?= \Source\Services\Help\Icons::svg('search-outline') ?>
             <input name="q" type="search" placeholder="Pesquise uma dúvida: boleto, cadastrar unidade, acordo…" minlength="2" required aria-label="Pesquisar na Central de Ajuda">
@@ -114,7 +114,7 @@ $contact = \Source\Services\Help\SupportContact::data();
 <section class="hc-wrap">
     <div class="hc-cta">
         <div class="hc-cta__text">
-            <small>Já é cliente da Connect?</small>
+            <small>Já é cliente da Connect Condomínios?</small>
             <h2>Acesse o Connect ERP</h2>
             <p>Condomínios, cobrança, prestação de contas e atendimento em um só lugar.</p>
             <a class="hc-btn hc-btn--gold" href="<?= htmlspecialchars($contact['system_url']) ?>">Entrar no sistema <?= \Source\Services\Help\Icons::svg('arrow-forward-outline') ?></a>
