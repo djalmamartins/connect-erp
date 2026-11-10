@@ -26,7 +26,8 @@ $display = match ($field['type']) {
 $units ??= [];
 $attachment ??= null;
 ?>
-<div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>">
+<?php $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . $expected) . '"'; } ?>
+<div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>"<?= $onlyIf ?>>
     <?php if ($field['type'] === 'bool'): ?>
         <span class="erp-field__label" aria-hidden="true">&nbsp;</span>
         <input type="hidden" name="<?= $this->e($name) ?>" value="0"<?= $disabled ?>>

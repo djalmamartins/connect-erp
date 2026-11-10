@@ -33,6 +33,8 @@ namespace Source\Services\Erp\Registry;
  *   (algum dos fields preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  * 'attachment' => campo (ADR 0050): ID de um arquivo do Disco Virtual do mesmo condomínio.
+ * 'only_if' => [campo => valor] no campo (ADR 0149): preenchido só quando o outro campo tem o valor; o
+ *   formulário esconde o campo nos outros casos e o validador recusa ('only_if_message').
  */
 final class Definitions
 {
@@ -494,6 +496,12 @@ final class Definitions
                     'account_number' => ['label' => 'Conta', 'type' => 'text', 'required' => true, 'max' => 20, 'span' => 3, 'list' => true, 'search' => true,
                         'pattern' => '/^\d{1,15}-[\dXx]$/', 'pattern_message' => 'Conta com dígito (ex.: 123456-7).'],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'filter' => true, 'options' => ['corrente' => 'Conta corrente', 'poupanca' => 'Poupança', 'aplicacao' => 'Aplicação']],
+                    // ADR 0170 e 0149: a aplicação aponta para a conta corrente de onde sai e para onde volta o dinheiro.
+                    'parent_bank_account_id' => ['label' => 'Conta corrente da aplicação', 'type' => 'ref', 'span' => 6, 'ref' => 'bank_accounts',
+                        'ref_where' => ['kind' => 'corrente'], 'ref_label' => ['name', 'bank_code', 'account_number'],
+                        'ref_message' => 'Escolha uma conta corrente ativa do mesmo condomínio.',
+                        'only_if' => ['kind' => 'aplicacao'], 'only_if_message' => 'Só uma conta de tipo aplicação é ligada a uma conta corrente.',
+                        'hint' => 'Só para aplicação: aplicar tira desta conta e resgatar devolve para ela'],
                     'wallet' => ['label' => 'Carteira de cobrança', 'type' => 'text', 'max' => 20, 'span' => 2, 'hint' => 'Quando houver'],
                     'opening_balance_cents' => ['label' => 'Saldo inicial', 'type' => 'money', 'span' => 3],
                     'opened_on' => ['label' => 'Data do saldo inicial', 'type' => 'date', 'span' => 3],

@@ -299,6 +299,16 @@ return [
         'tabs' => ['Dados', 'Cobrança', 'Histórico'],
         'kpis' => [],
     ],
+    'CN-006' => [
+        'kind' => 'list',
+        'entity' => 'lançamento patrimonial',
+        'gender' => 'o',
+        'columns' => ['Data:date', 'Descrição:text', 'Débito:text', 'Crédito:text', 'Valor:money', 'Situação:status(Ativo|Estornado)'],
+        'fields' => ['Data:date!@3', 'Descrição:text!@6', 'Valor:money!@3', 'Conta de débito:select(8.2 Fundo de reserva|9.2 Resultado do exercício)!@6', 'Conta de crédito:select(8.2 Fundo de reserva|9.2 Resultado do exercício)!@6'],
+        'filters' => ['condo', 'period'],
+        'tabs' => ['Dados', 'Histórico'],
+        'kpis' => [],
+    ],
     'AP-117' => [
         'kind' => 'list',
         'entity' => 'atendimento',
