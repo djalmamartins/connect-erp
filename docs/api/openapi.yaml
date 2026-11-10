@@ -1165,6 +1165,151 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /erp-admin/overview:
+    get:
+      operationId: erpAdminOverview
+      summary: Administração — dados da administradora e resumo do escopo (erp.settings.view, ADR 0168)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { administrator, global_access, previous_month, summary } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/sent:
+    get:
+      operationId: sentReports
+      summary: Relatórios exportados, lidos da auditoria (erp.audit.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: report, in: query, schema: { type: string, example: ledger } }
+      responses:
+        '200': { description: '{ data: { rows[{id, created_at, user_name, entity, ip, report, condominium_id, bytes}], totals, truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-users:
+    get:
+      operationId: erpUsers
+      summary: Usuários com acesso aos condomínios do escopo, com e-mail mascarado (erp.users.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+      responses:
+        '200': { description: '{ data: { rows[{id, name, email, status, role, role_name, manageable, condominiums[]}], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /erp-users/invite:
+    post:
+      operationId: erpUsersInvite
+      summary: Dá acesso a condomínios do escopo para uma conta que já existe (erp.users.manage, ADR 0168)
+      description: Não cria conta nem troca papel; isso continua no Studio. O papel da conta precisa ter erp.access.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, condominium_ids]
+              properties:
+                email: { type: string, format: email }
+                condominium_ids: { type: array, items: { type: integer }, minItems: 1, maxItems: 200 }
+      responses:
+        '200': { description: '{ data: { user_id, granted[], already[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-users/{id}/deactivate:
+    post:
+      operationId: erpUsersDeactivate
+      summary: Tira o acesso a um condomínio ou a todos do escopo (erp.users.manage, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condominium_id: { type: integer }
+      responses:
+        '200': { description: '{ data: { user_id, revoked[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Sem acesso a condomínios do escopo }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /erp-users/{id}/permissions:
+    get:
+      operationId: erpUserPermissions
+      summary: Permissões erp.* de um usuário — do papel, exceção e efetivo (erp.permissions.view, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { user_id, role, manageable, rows[{slug, name, group, description, role, override, effective}] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: setErpUserPermission
+      summary: Exceção de um usuário numa permissão erp.* (erp.permissions.manage, ADR 0168)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permission, effect]
+              properties:
+                permission: { type: string, example: erp.entries.view }
+                effect: { type: string, enum: [allow, deny, inherit] }
+      responses:
+        '200': { description: '{ data: { user_id, permission, effect, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /erp-permissions:
+    get:
+      operationId: erpPermissions
+      summary: Papéis visíveis e as permissões erp.* de cada um (erp.permissions.view, ADR 0168)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { editable_roles, roles[{slug, name, level, editable, permissions[]}], permissions[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: setErpRolePermission
+      summary: Liga ou desliga uma permissão erp.* de um papel; exige acesso a todos os condomínios (erp.permissions.manage, ADR 0168)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, permission, allowed]
+              properties:
+                role: { type: string, example: manager }
+                permission: { type: string }
+                allowed: { type: boolean }
+      responses:
+        '200': { description: '{ data: { role, permission, allowed, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/statement:
     get:
       operationId: financialStatement
@@ -2426,7 +2571,7 @@ paths:
       security: [{ session: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: Aviso com deliveries[] }
+        '200': { description: 'Aviso com deliveries[]' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
