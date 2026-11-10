@@ -9,7 +9,7 @@ declare(strict_types=1);
 if (!getenv("MOVESOS_ENV")) {
     $environmentFile = dirname(__DIR__, 2) . "/.env";
     if (is_file($environmentFile)) {
-        $environment = parse_ini_file($environmentFile, false, INI_SCANNER_RAW) ?: [];
+        $environment = parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($environmentFile)), false, INI_SCANNER_RAW) ?: [];
         if (!empty($environment["APP_ENV"])) putenv("MOVESOS_ENV=" . $environment["APP_ENV"]);
         foreach (["HOST", "USER", "PASS", "NAME"] as $key) {
             if (!empty($environment["DB_{$key}"])) putenv("MOVESOS_DB_{$key}=" . $environment["DB_{$key}"]);

@@ -41,6 +41,10 @@ class Connect
                     CONF_DB_PASS,
                     self::OPTIONS
                 );
+                // O MariaDB do Docker roda em UTC e o PHP no fuso de settings (America/Sao_Paulo): sem isto,
+                // NOW()/CURDATE() e as datas de TIMESTAMP viravam o dia seguinte depois das 21h de Brasília
+                // (documento emitido com data de amanhã, conta paga "fora da data"). date('P') = "-03:00".
+                self::syncTimezone();
             } catch (PDOException $exception) {
                 AppLogger::exception($exception, 'database', ['event_type' => 'database_connection_failed']);
                 // CLI, testes e boot anterior às constantes de URL não podem redirecionar (A6, C8):
@@ -53,6 +57,18 @@ class Connect
         }
 
         return self::$instance;
+    }
+
+    /**
+     * Alinha o fuso da sessão do MariaDB ao fuso atual do PHP (date('P'), ex.: "-03:00"). Chamado ao
+     * conectar e de novo em Boot/Settings.php depois do date_default_timezone_set, porque a primeira
+     * conexão acontece antes (é ela que lê o fuso em settings).
+     */
+    public static function syncTimezone(): void
+    {
+        if (self::$instance instanceof PDO) {
+            self::$instance->exec("SET time_zone = '" . date('P') . "'");
+        }
     }
 
     /**
