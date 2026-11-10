@@ -200,6 +200,9 @@ final class RegistryValidator
             case 'longtext':
             case 'text':
             default:
+                if (!empty($field['month'])) {
+                    $text = self::month($text);   // ADR 0152: 11/2026 e nov/2026 viram 2026-11
+                }
                 $max = (int)($field['max'] ?? ($type === 'longtext' ? 2000 : 160));
                 if (mb_strlen($text) > $max) {
                     return [null, "Máximo de {$max} caracteres."];
@@ -215,6 +218,22 @@ final class RegistryValidator
                 }
                 return [$text, null];
         }
+    }
+
+    private const MONTHS = ['jan' => 1, 'fev' => 2, 'mar' => 3, 'abr' => 4, 'mai' => 5, 'jun' => 6,
+        'jul' => 7, 'ago' => 8, 'set' => 9, 'out' => 10, 'nov' => 11, 'dez' => 12];
+
+    /** Competência digitada como MM/AAAA ou mmm/AAAA (nov/2026) vira AAAA-MM; o resto fica como veio. */
+    public static function month(string $text): string
+    {
+        $text = trim($text);
+        if (preg_match('~^(\d{1,2})\s*[/.-]\s*(\d{4})$~', $text, $m) && (int)$m[1] >= 1 && (int)$m[1] <= 12) {
+            return sprintf('%04d-%02d', (int)$m[2], (int)$m[1]);
+        }
+        if (preg_match('~^([a-zç]{3})[a-zç]*\.?\s*(?:/|de)?\s*(\d{4})$~u', mb_strtolower($text), $m) && isset(self::MONTHS[$m[1]])) {
+            return sprintf('%04d-%02d', (int)$m[2], self::MONTHS[$m[1]]);
+        }
+        return $text;
     }
 
     private static function number(float $value, int $scale): string

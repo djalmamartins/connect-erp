@@ -17,8 +17,12 @@ $this->insert('components/layout/page-head', [
     'pageLead' => $isNew ? 'Preencha os dados e salve. Campos com * são obrigatórios.' : ($readonly ? 'Você tem acesso somente para consulta.' : 'Altere os dados e salve. Toda alteração fica registrada no histórico.'),
 ]);
 ?>
-<?php if ($errors !== []): ?>
-    <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($errors['_form'] ?? 'Revise os campos destacados.') ?></strong><?= count(array_diff_key($errors, ['_form' => 1])) > 0 ? count(array_diff_key($errors, ['_form' => 1])) . ' campo(s) com problema.' : '' ?></div></div>
+<?php if ($errors !== []):
+    // ADR 0152: diz quais campos e o porquê, sem obrigar a procurar o destaque no formulário.
+    $fieldErrors = array_diff_key($errors, ['_form' => 1]); ?>
+    <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($errors['_form'] ?? 'Não foi possível salvar. Revise os campos abaixo.') ?></strong>
+        <?php if ($fieldErrors !== []): ?><ul class="erp-alert__list"><?php foreach ($fieldErrors as $errorField => $errorText): ?><li><a href="#f-<?= $this->e((string)$errorField) ?>"><?= $this->e((string)($definition['fields'][$errorField]['label'] ?? ($errorField === 'status' ? 'Situação' : $errorField))) ?></a>: <?= $this->e((string)$errorText) ?></li><?php endforeach; ?></ul><?php endif; ?>
+    </div></div>
 <?php endif; ?>
 <?php if ($definition['scope'] !== 'none' && $condominiums === [] && $isNew): ?>
     <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><?php if ($user->can('erp.condominiums.manage')): ?>Nenhum condomínio ativo cadastrado. <a href="<?= erp_url('/condominios/novo') ?>">Cadastre um condomínio</a> antes de continuar.<?php else: ?>Você ainda não tem acesso a nenhum condomínio ativo. Solicite o vínculo ao administrador do sistema.<?php endif; ?></div></div>

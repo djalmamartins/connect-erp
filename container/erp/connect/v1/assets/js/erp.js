@@ -430,6 +430,177 @@
     if (field.tagName === 'INPUT' && field.type === 'email') field.value = field.value.trim().toLowerCase();
   });
 
+  /* Seletor de mês e ano (ADR 0152) ------------------------------------------
+     input[type="month"] (o Safari não tem calendário de mês) e campos data-erp-month viram um campo
+     "nov/2026" com um calendário só de meses. O campo original continua com o nome e o valor AAAA-MM. */
+  var MONTH_NAMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var MONTH_FULL = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var monthLabel = function (value) {
+    var m = /^(\d{4})-(\d{2})$/.exec(value || '');
+    return m && +m[2] >= 1 && +m[2] <= 12 ? MONTH_NAMES[+m[2] - 1] + '/' + m[1] : '';
+  };
+  var monthParse = function (text) {
+    var t = String(text || '').trim().toLowerCase(), m;
+    if (t === '') return '';
+    if ((m = /^(\d{4})-(\d{1,2})$/.exec(t)) && +m[2] >= 1 && +m[2] <= 12) return m[1] + '-' + ('0' + (+m[2])).slice(-2);
+    if ((m = /^(\d{1,2})\s*[\/.\-]\s*(\d{4})$/.exec(t)) && +m[1] >= 1 && +m[1] <= 12) return m[2] + '-' + ('0' + (+m[1])).slice(-2);
+    if ((m = /^([a-zç]{3})[a-zç]*\.?\s*(?:\/|de)?\s*(\d{4})$/.exec(t)) && MONTH_NAMES.indexOf(m[1]) >= 0) return m[2] + '-' + ('0' + (MONTH_NAMES.indexOf(m[1]) + 1)).slice(-2);
+    return null;
+  };
+  var thisMonth = function () { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); };
+  var closeMonthPanels = function (except) {
+    $$('.erp-month.is-open').forEach(function (box) { if (box !== except) { box.classList.remove('is-open'); $('.erp-month__toggle', box).setAttribute('aria-expanded', 'false'); } });
+  };
+  var enhanceMonth = function (real) {
+    if (real.hasAttribute('data-erp-month-ready')) return;
+    real.setAttribute('data-erp-month-ready', '');
+    var id = real.id || ('erp-month-' + Math.random().toString(36).slice(2, 8));
+    var box = document.createElement('div');
+    box.className = 'erp-month';
+    real.parentNode.insertBefore(box, real);
+    var display = document.createElement('input');
+    display.type = 'text';
+    display.className = real.className + ' erp-month__display';
+    display.id = id;
+    display.placeholder = 'mês/ano';
+    display.autocomplete = 'off';
+    display.maxLength = 20;
+    display.value = monthLabel(real.value) || real.value;
+    ['required', 'disabled', 'aria-invalid', 'aria-describedby'].forEach(function (attr) { if (real.hasAttribute(attr)) display.setAttribute(attr, real.getAttribute(attr)); });
+    var minMonth = real.getAttribute('min') || '', maxMonth = real.getAttribute('max') || '';
+    real.id = id + '-valor';
+    real.removeAttribute('required');
+    real.type = 'hidden';
+    var panelId = id + '-meses';
+    var toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'erp-month__toggle';
+    toggle.setAttribute('aria-label', 'Abrir calendário de meses');
+    toggle.setAttribute('aria-haspopup', 'dialog');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', panelId);
+    toggle.disabled = real.disabled;
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    var panel = document.createElement('div');
+    panel.className = 'erp-month__panel';
+    panel.id = panelId;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Escolha o mês');
+    box.appendChild(display);
+    box.appendChild(toggle);
+    box.appendChild(real);
+    box.appendChild(panel);
+    var year = (/^(\d{4})/.exec(real.value || '') || [null, String(new Date().getFullYear())])[1] * 1;
+    var commit = function (value) {
+      var changed = real.value !== value;
+      real.value = value;
+      display.value = monthLabel(value);
+      display.setCustomValidity('');
+      display.setAttribute('aria-invalid', 'false');
+      var holder = box.closest('.erp-field');
+      var error = holder && $('.erp-field__error', holder);
+      if (error) error.textContent = '';
+      if (changed) {
+        real.dispatchEvent(new Event('input', { bubbles: true }));
+        real.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+    var render = function () {
+      var selected = real.value, now = thisMonth(), html = '<div class="erp-month__head"><button type="button" class="erp-month__nav" data-step="-1" aria-label="Ano anterior">‹</button><strong aria-live="polite">' + year + '</strong><button type="button" class="erp-month__nav" data-step="1" aria-label="Próximo ano">›</button></div><div class="erp-month__grid">';
+      MONTH_NAMES.forEach(function (name, i) {
+        var value = year + '-' + ('0' + (i + 1)).slice(-2);
+        var off = (minMonth !== '' && value < minMonth) || (maxMonth !== '' && value > maxMonth);
+        html += '<button type="button" class="erp-month__cell' + (value === selected ? ' is-selected' : '') + (value === now ? ' is-today' : '') + '" data-value="' + value + '" aria-label="' + MONTH_FULL[i] + ' de ' + year + '"' + (value === selected ? ' aria-pressed="true"' : '') + (off ? ' disabled' : '') + '>' + name + '</button>';
+      });
+      html += '</div><div class="erp-month__foot"><button type="button" class="erp-btn erp-btn--sm erp-btn--ghost" data-value="">Limpar</button><button type="button" class="erp-btn erp-btn--sm" data-value="' + now + '"' + ((minMonth !== '' && now < minMonth) || (maxMonth !== '' && now > maxMonth) ? ' disabled' : '') + '>Este mês</button></div>';
+      panel.innerHTML = html;
+    };
+    var open = function (keepFocus) {
+      if (real.disabled) return;
+      closeMonthPanels(box);
+      year = (/^(\d{4})/.exec(real.value || '') || [null, String(new Date().getFullYear())])[1] * 1;
+      render();
+      box.classList.add('is-open');
+      toggle.setAttribute('aria-expanded', 'true');
+      var focus = $('.is-selected', panel) || $('.is-today', panel) || $('.erp-month__cell', panel);
+      if (focus && !keepFocus) focus.focus();
+    };
+    var close = function (focusDisplay) {
+      box.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      if (focusDisplay) display.focus();
+    };
+    toggle.addEventListener('click', function () { if (box.classList.contains('is-open')) close(true); else open(false); });
+    display.addEventListener('click', function () { if (!box.classList.contains('is-open')) open(true); });
+    display.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); open(false); }
+      if (event.key === 'Escape' && box.classList.contains('is-open')) { event.preventDefault(); close(false); }
+    });
+    display.addEventListener('change', function () {
+      var value = monthParse(display.value);
+      if (value === null || (value !== '' && ((minMonth !== '' && value < minMonth) || (maxMonth !== '' && value > maxMonth)))) {
+        display.setCustomValidity('Escolha o mês e o ano, ex.: ' + monthLabel(thisMonth()) + '.');
+        real.value = '';
+        return;
+      }
+      commit(value);
+    });
+    panel.addEventListener('click', function (event) {
+      var nav = event.target.closest('[data-step]');
+      if (nav) { year += parseInt(nav.getAttribute('data-step'), 10); render(); $('[data-step="' + nav.getAttribute('data-step') + '"]', panel).focus(); return; }
+      var pick = event.target.closest('[data-value]');
+      if (pick) { commit(pick.getAttribute('data-value')); close(true); }
+    });
+    panel.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { event.preventDefault(); close(true); return; }
+      var cell = event.target.closest('.erp-month__cell');
+      if (!cell) return;
+      var cells = $$('.erp-month__cell', panel), i = cells.indexOf(cell), move = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 }[event.key];
+      if (move === undefined) return;
+      event.preventDefault();
+      var next = i + move;
+      if (next < 0 || next > 11) { year += next < 0 ? -1 : 1; render(); cells = $$('.erp-month__cell', panel); next = (next + 12) % 12; }
+      cells[next].focus();
+    });
+  };
+  $$('input[type="month"], input[data-erp-month]').forEach(enhanceMonth);
+  document.addEventListener('click', function (event) { if (event.target.isConnected && !event.target.closest('.erp-month')) closeMonthPanels(null); });
+
+  /* Opções de cadastros ligados (ADR 0152): a lista mostra só o que combina com o condomínio e com
+     os campos de 'ref_match' do formulário (ex.: contas de despesa num lançamento de despesa). */
+  $$('select[data-erp-ref-filter]').forEach(function (select) {
+    var form = select.form;
+    if (!form) return;
+    var condo = form.querySelector('[name="condominium_id"]');
+    var matchFields = {};
+    $$('option', select).forEach(function (option) {
+      Array.prototype.forEach.call(option.attributes, function (attr) {
+        if (attr.name.indexOf('data-match-') === 0) matchFields[attr.name.slice(11).replace(/-/g, '_')] = true;
+      });
+    });
+    var sources = Object.keys(matchFields).map(function (name) { return form.querySelector('[name="' + name + '"]'); }).filter(Boolean);
+    if (condo && condo.tagName === 'SELECT') sources.push(condo);
+    if (sources.length === 0) return;
+    var apply = function () {
+      var condoValue = condo ? condo.value : '';
+      $$('option', select).forEach(function (option) {
+        if (option.value === '') return;
+        var ok = !(condoValue !== '' && option.hasAttribute('data-condominium') && option.getAttribute('data-condominium') !== condoValue);
+        Object.keys(matchFields).forEach(function (name) {
+          var source = form.querySelector('[name="' + name + '"]');
+          var attr = 'data-match-' + name.replace(/_/g, '-');
+          if (ok && source && source.value !== '' && option.hasAttribute(attr) && option.getAttribute(attr) !== source.value) ok = false;
+        });
+        option.hidden = !ok;
+        option.disabled = !ok;
+        if (!ok && option.selected) select.value = '';
+      });
+      $$('optgroup', select).forEach(function (group) { group.hidden = $$('option', group).every(function (o) { return o.hidden; }); });
+    };
+    sources.forEach(function (source) { source.addEventListener('change', apply); });
+    apply();
+  });
+
   /* Validação de formulários no cliente (o servidor valida de novo) -------- */
   $$('form[data-erp-validate]').forEach(function (form) {
     form.setAttribute('novalidate', '');

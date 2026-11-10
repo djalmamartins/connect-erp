@@ -33,6 +33,8 @@ namespace Source\Services\Erp\Registry;
  *   (algum dos fields preenchido) não troca as colunas listadas nem é excluído; muda-se pela origem.
  * 'unique' aceita 'nullable' => [campos]: vazio conta como valor na comparação.
  * 'attachment' => campo (ADR 0050): ID de um arquivo do Disco Virtual do mesmo condomínio.
+ * ADR 0152: 'ref_where' aceita lista de valores (IN); 'ref_empty' => [text, route] explica a lista vazia;
+ *   'month' => true num texto AAAA-MM mostra o seletor de mês e aceita 11/2026 ou nov/2026.
  * 'only_if' => [campo => valor] no campo (ADR 0149): preenchido só quando o outro campo tem o valor; o
  *   formulário esconde o campo nos outros casos e o validador recusa ('only_if_message').
  */
@@ -530,14 +532,18 @@ final class Definitions
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
                     'nature' => ['label' => 'Natureza', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => ['receita' => 'Receita', 'despesa' => 'Despesa']],
-                    'competence' => ['label' => 'Competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true, 'search' => true,
-                        'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-11.', 'hint' => 'AAAA-MM'],
+                    'competence' => ['label' => 'Competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true, 'search' => true, 'month' => true,
+                        'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Escolha o mês e o ano, ex.: nov/2026.', 'hint' => 'Mês e ano, ex.: nov/2026'],
                     'description' => ['label' => 'Descrição', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'amount_cents' => ['label' => 'Valor', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 4, 'list' => true],
                     'chart_account_id' => ['label' => 'Conta do plano de contas', 'type' => 'ref', 'required' => true, 'span' => 6,
-                        'ref' => 'chart', 'ref_where' => ['kind' => 'analitica'], 'ref_label' => ['code', 'name'],
+                        // ADR 0152: só contas de receita ou despesa; as patrimoniais (7/8/9, ex.: 8.1 Contas a pagar)
+                        // são do Balanço e não recebem lançamento. O formulário mostra só as da natureza escolhida.
+                        'ref' => 'chart', 'ref_where' => ['kind' => 'analitica', 'nature' => ['receita', 'despesa']], 'ref_label' => ['code', 'name'],
                         'ref_match' => ['nature' => 'nature'], 'ref_match_message' => 'A conta precisa ter a mesma natureza do lançamento (receita ou despesa).',
-                        'ref_message' => 'Escolha uma conta analítica ativa do plano de contas.'],
+                        'ref_message' => 'Escolha uma conta analítica de receita ou despesa do plano de contas.',
+                        'ref_empty' => ['text' => 'Nenhuma conta de receita ou despesa ativa. Cadastre em Plano de contas.', 'route' => '/configuracoes/plano-de-contas'],
+                        'hint' => 'Conta de receita ou despesa (ex.: 2.04.01 Manutenção elétrica)'],
                     'cost_center_id' => ['label' => 'Centro de custo', 'type' => 'ref', 'span' => 6, 'ref' => 'cost_centers', 'ref_label' => ['code', 'name'],
                         'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.'],
                     'due_on' => ['label' => 'Vencimento', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
@@ -566,10 +572,10 @@ final class Definitions
         unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number'], $recurring['unit_id']);
         $recurring['bank_account_id']['hint'] = 'Conta sugerida; o lançamento gerado nasce em aberto';
         $recurring['day_of_month'] = ['label' => 'Dia do vencimento', 'type' => 'int', 'required' => true, 'min' => 1, 'max_value' => 28, 'span' => 3, 'list' => true, 'hint' => '1 a 28'];
-        $recurring['starts_competence'] = ['label' => 'Primeira competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true,
-            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-11.', 'hint' => 'AAAA-MM'];
-        $recurring['ends_competence'] = ['label' => 'Última competência', 'type' => 'text', 'max' => 7, 'span' => 3, 'list' => true, 'after' => 'starts_competence',
-            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Use ano e mês, ex.: 2026-12.', 'hint' => 'Vazio = sem fim'];
+        $recurring['starts_competence'] = ['label' => 'Primeira competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true, 'month' => true,
+            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Escolha o mês e o ano, ex.: nov/2026.', 'hint' => 'Mês e ano, ex.: nov/2026'];
+        $recurring['ends_competence'] = ['label' => 'Última competência', 'type' => 'text', 'max' => 7, 'span' => 3, 'list' => true, 'after' => 'starts_competence', 'month' => true,
+            'pattern' => '/^\d{4}-(0[1-9]|1[0-2])$/', 'pattern_message' => 'Escolha o mês e o ano, ex.: dez/2026.', 'hint' => 'Vazio = sem fim'];
         $notes = $recurring['notes'];
         unset($recurring['notes']);
         $recurring['notes'] = $notes;

@@ -36,7 +36,8 @@ final class RecurringEntriesDefinitionTest extends TestCase
         self::assertSame(10, $clean['day_of_month']);
         self::assertNull($clean['ends_competence']);
 
-        foreach (['day_of_month' => ['0', '29', '31'], 'starts_competence' => ['2026-13', '11/2026'], 'amount_cents' => ['0']] as $field => $values) {
+        // ADR 0152: 11/2026 e nov/2026 passaram a valer (viram 2026-11); mês inexistente continua recusado.
+        foreach (['day_of_month' => ['0', '29', '31'], 'starts_competence' => ['2026-13', '13/2026', 'xyz/2026'], 'amount_cents' => ['0']] as $field => $values) {
             foreach ($values as $value) {
                 [, $errors] = RegistryValidator::validate($definition, [$field => $value] + self::VALID);
                 self::assertArrayHasKey($field, $errors, "{$field} = {$value}");

@@ -37,7 +37,7 @@ legenda: Lançar cobrança extra
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="description"] | Descrição (obrigatório)
 2: main form:not([method=get]) [name="chart_account_id"] | Conta de receita (obrigatório)
-3: main form:not([method=get]) [name="competence"] | Competência (obrigatório)
+3: main form:not([method=get]) :is(.erp-month:has([name="competence"]), [name="competence"]:not([type=hidden])) | Competência (obrigatório)
 4: main form:not([method=get]) [name="due_on"] | Vencimento (obrigatório)
 5: main form:not([method=get]) [name="amount_cents"] | Valor por unidade (R$) (obrigatório)
 6: main form:not([method=get]) button:has-text("Lançar cobrança") | Botão {{Lançar cobrança}}
