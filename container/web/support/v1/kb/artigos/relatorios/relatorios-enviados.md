@@ -1,52 +1,40 @@
 ---
 codigo: AP-100
 titulo: Relatórios enviados
-resumo: Os relatórios enviados aos condôminos no período.
+resumo: Quem exportou qual relatório em CSV, quando e de qual condomínio, lido da auditoria.
 categoria: relatorios
 rota: /relatorios/relatorios-enviados
 menu: Relatórios > Gerais > Relatórios Enviados
 icone: document-text-outline
-situacao: exemplo
-relacionados: boletos-enviados, pessoas-com-acesso, logs, relatorio-de-enderecos
-palavras: relatórios enviados, relatórios, AP-100
+situacao: funciona
+relacionados: administracao, logs, pessoas-com-acesso
+palavras: relatórios enviados, exportação, CSV, auditoria, AP-100
 rascunho: nao
 ---
 
-Os relatórios enviados aos condôminos no período.
+## Para que serve
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+Lista as exportações de relatórios em CSV feitas no ERP. É o mesmo registro da auditoria que conta o limite de exportações por hora.
 
 ## Onde fica
 
-No menu lateral, abra [[Relatórios > Gerais > Relatórios Enviados]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Relatórios > Gerais > Relatórios Enviados]].
 
 ```tela relatorios-enviados
 rota: /relatorios/relatorios-enviados
 condominio: residencial-jardim-das-acacias
 legenda: Tela Relatórios Enviados
 1: menu | Relatórios Enviados no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Critério
-5: main table thead | Colunas da lista
+2: main form[method=get] | Filtros: De, Até e Relatório
+3: main [data-erp-access] | Exportações do período
 ```
 
-## Escolher o período e os filtros
+## Escolher o período
 
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até**, **Critério** e **Pesquisar**.
+Preencha **De** e **Até**, escolha o **Relatório** (ou deixe **Todos**) e clique em {{Gerar}}. O período tem limite; se a lista vier cortada, diminua o período.
 
-## O que o relatório mostra
+## O que aparece
 
-Colunas: **Data**, **Condomínio**, **Descrição**, **Responsável** e **Situação**.
-Os totais aparecem no rodapé da tabela.
+Data, usuário, relatório, condomínio, tamanho do arquivo e IP. O nome e o IP aparecem mascarados.
 
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
-- {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
-
-## Quem pode usar
-
-A tela aparece para quem tem acesso ao módulo **Relatórios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
-
->> Veja também: [Boletos enviados](artigo:boletos-enviados), [Pessoas com acesso aos condomínios](artigo:pessoas-com-acesso) e [Logs de auditoria](artigo:logs).
+>! Quem não acessa todos os condomínios vê só as exportações dos condomínios do próprio escopo e as que fez.

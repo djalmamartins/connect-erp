@@ -3743,6 +3743,7 @@ paths:
                 note: { type: string, maxLength: 1000 }
       responses:
         '200': { description: Vistoria atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: Não encontrada }
         '409': { description: Vistoria concluída ou cancelada }
@@ -3769,6 +3770,7 @@ paths:
                 longitude: { type: number }
       responses:
         '201': { description: Foto gravada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: Não encontrada }
         '409': { description: Vistoria concluída ou cancelada }
@@ -3787,6 +3789,7 @@ paths:
             schema: { type: object, properties: { summary: { type: string, maxLength: 4000 } } }
       responses:
         '200': { description: Concluída }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: Não encontrada }
         '409': { description: Já concluída ou cancelada }
