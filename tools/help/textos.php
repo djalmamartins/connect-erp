@@ -206,6 +206,12 @@ return [
         'para' => 'Centros de custo agrupam lançamentos por área ou projeto, como obra da fachada ou manutenção predial, para saber quanto cada um consumiu. Sem condomínio, o centro de custo vale para todos.',
         'relacionados' => ['relatorio-de-centros-de-custo', 'saldo-inicial-centro-de-custo'],
     ],
+    'CN-006' => [
+        'titulo' => 'Lançamentos patrimoniais',
+        'para' => 'Movimentos entre contas patrimoniais, como apropriar ou usar o fundo de reserva e ajustar o patrimônio líquido. Não entram na DRE e não mexem no banco.',
+        'relacionados' => ['balanco-patrimonial', 'saldo-inicial-plano-de-contas', 'lancamentos'],
+        'palavras' => ['fundo de reserva', 'partida dobrada', 'estorno', 'patrimônio líquido'],
+    ],
     'CN-003' => [
         'titulo' => 'Cadastrar contas bancárias',
         'para' => 'Contas correntes, poupanças e aplicações de cada condomínio. Uma delas é a principal. A conta de cobrança precisa dos dados do convênio para emitir boletos.',

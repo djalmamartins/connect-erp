@@ -49,6 +49,13 @@ final class RegistryValidator
                 $errors[$name] = sprintf('Não pode ser menor que "%s".', mb_strtolower($definition['fields'][$floor]['label']));
             }
         }
+        foreach ($definition['fields'] as $name => $field) {
+            foreach ($field['only_if'] ?? [] as $other => $expected) {
+                if (!isset($errors[$name]) && ($clean[$name] ?? null) !== null && (string)($clean[$other] ?? '') !== (string)$expected) {
+                    $errors[$name] = $field['only_if_message'] ?? 'Campo não se aplica.';
+                }
+            }
+        }
         foreach ($definition['requires'] as $rule) {
             $flag = (bool)($clean[$rule['when'] ?? $rule['unless']] ?? false);
             $needed = isset($rule['when']) ? $flag : !$flag;

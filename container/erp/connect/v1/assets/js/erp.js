@@ -1221,7 +1221,7 @@
   });
 
   /* Acessos (ADR 0147): imobiliárias parceiras, convites de moradores e portal do morador pela API de AccessAdmin. */
-  $$('[data-erp-access]').forEach(function (root) {
+  $$('[data-erp-access], [data-erp-api-forms]').forEach(function (root) {
     var call = apiClient(root);
     var condo = parseInt(root.getAttribute('data-condominium') || '0', 10);
     $$('[data-access-post]', root).forEach(function (button) {
@@ -1283,6 +1283,20 @@
           .catch(function (error) { input.disabled = false; input.checked = !on; toast(error.message, 'danger'); });
       });
     });
+  });
+
+  /* Cadastros: campo que só vale para um valor de outro campo (ADR 0149, 'only_if'), como a conta corrente da aplicação. */
+  $$('[data-only-if]').forEach(function (wrap) {
+    var rule = (wrap.getAttribute('data-only-if') || '').split('=');
+    var other = document.getElementById(rule[0]);
+    if (!other) return;
+    var sync = function () {
+      var on = other.value === rule[1];
+      wrap.hidden = !on;
+      if (!on) $$('select, input', wrap).forEach(function (field) { field.value = ''; });
+    };
+    other.addEventListener('change', sync);
+    sync();
   });
 
   /* AP-123/124/125/130: documentos da unidade pela API /api/v1/unit-documents (ADR 0044 e 0046). */

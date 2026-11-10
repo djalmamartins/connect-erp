@@ -85,7 +85,8 @@ final class BalanceSheetScreens
         foreach ($group['rows'] ?? [] as $row) {
             $out[] = $row;
             foreach ($row['lines'] ?? [] as $line) {
-                $out[] = ['code' => '', 'name' => (string)$line['name'], 'level' => (int)$row['level'] + 1, 'amount_cents' => (int)$line['amount_cents'], 'detail' => true];
+                $suffix = ['poupanca' => ' (poupança)', 'aplicacao' => ' (aplicação)'][$line['kind'] ?? ''] ?? '';   // ADR 0170
+                $out[] = ['code' => '', 'name' => (string)$line['name'] . $suffix, 'level' => (int)$row['level'] + 1, 'amount_cents' => (int)$line['amount_cents'], 'detail' => true];
             }
         }
         return $out;

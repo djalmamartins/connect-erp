@@ -1198,7 +1198,7 @@ $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-081', ['balanceRea
 $bpReport = ['condominium_id' => 1, 'truncated' => false] + Source\Services\Erp\BalanceSheet::compose([
     ['code' => '7', 'name' => 'Ativo', 'nature' => 'asset', 'kind' => 'sintetica', 'opening_cents' => null],
     ['code' => '8.2', 'name' => 'Fundo de reserva <F>', 'nature' => 'liability', 'kind' => 'analitica', 'opening_cents' => 20000],
-], ['banks' => [['name' => 'Corrente <Itaú>', 'closing_cents' => 150000]], 'receivable_cents' => 30000, 'receivable_overdue_cents' => 12000, 'payable_cents' => 10000,
+], ['banks' => [['name' => 'Corrente <Itaú>', 'closing_cents' => 100000], ['name' => 'CDB', 'kind' => 'aplicacao', 'closing_cents' => 50000]], 'receivable_cents' => 30000, 'receivable_overdue_cents' => 12000, 'payable_cents' => 10000,
     'payable_overdue_cents' => 0, 'retained_prior_cents' => 0, 'current_result_cents' => 100000], '2026-11-10');
 $bpData = ['balanceReady' => true, 'balanceDate' => '2026-11-10', 'balanceNeedsCondo' => false, 'balanceError' => null, 'balance' => $bpReport];
 $html = $agreementPage('AP-081', 'pages/reports/balance-sheet', $bpData, 'real');
@@ -1214,7 +1214,36 @@ $assert(str_contains($html, 'Informe a data do balanço') && !str_contains($html
 $assert($BP::date('2026-02-30', '2026-11-10') === '2026-11-10' && $BP::date('2026-12-01', '2026-11-10') === '2026-11-10' && $BP::date('2026-06-30', '2026-11-10') === '2026-06-30'
     && $BP::date(null, '2026-11-10') === '2026-11-10', 'balanço: data');
 $bpRows = $BP::rows($bpReport['assets']);
-$assert(in_array('Corrente <Itaú>', array_column($bpRows, 'name'), true) && count(array_filter($bpRows, static fn ($r) => !empty($r['detail']))) === 1, 'balanço: linhas dos bancos');
+$assert(in_array('Corrente <Itaú>', array_column($bpRows, 'name'), true) && count(array_filter($bpRows, static fn ($r) => !empty($r['detail']))) === 2 && in_array('CDB (aplicação)', array_column($bpRows, 'name'), true), 'balanço: linhas dos bancos');
+
+// Lançamentos patrimoniais com dados reais (ADR 0149, sobre o ADR 0169): CN-006.
+$PE = Source\Controllers\Erp\Connect\PatrimonialEntryScreens::class;
+$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('CN-006', ['patrimonialReady' => true]) === 'pages/finance/patrimonial-entries' && Source\Controllers\Erp\Connect\Panel::ownTemplate('CN-006', []) === null
+    && Source\Controllers\Erp\Connect\Panel::pagePermissions()['CN-006'] === 'erp.entries.view', 'CN-006: tela própria só com dados');
+$peRow = static fn (array $over = []): array => $over + ['id' => 5, 'condominium_id' => 1, 'condominium_name' => 'Alpha <A>', 'entry_date' => '2026-11-02', 'description' => 'Apropriação <fundo>',
+    'amount_cents' => 50000, 'debit' => ['code' => '9.2', 'name' => 'Resultado do exercício'], 'credit' => ['code' => '8.2', 'name' => 'Fundo de reserva <F>'], 'status' => 'active',
+    'reversal_of_id' => null, 'reversal_reason' => null, 'bank_account_id' => null, 'linked_entry_id' => null, 'created_by' => 1];
+$peData = static fn (array $over = []): array => $over + ['patrimonialReady' => true, 'patrimonialContext' => 1, 'patrimonialFilters' => ['de' => '2026-01-01', 'ate' => '2026-11-10'],
+    'patrimonialError' => null, 'canManagePatrimonial' => true, 'patrimonialAccounts' => [['id' => 8, 'label' => '8.2 Fundo de reserva <F> (passivo)'], ['id' => 9, 'label' => '9.2 Resultado do exercício (PL)']],
+    'patrimonialBanks' => [['id' => 3, 'label' => 'Poupança <P> (poupança)']],
+    'patrimonialList' => ['condominium_id' => 1, 'from' => '2026-01-01', 'to' => '2026-11-10', 'truncated' => false, 'totals' => ['entries' => 3, 'amount_cents' => 80000], 'rows' => [
+        $peRow(), $peRow(['id' => 6, 'status' => 'reversed', 'description' => 'Lançado errado', 'amount_cents' => 15000]),
+        $peRow(['id' => 7, 'reversal_of_id' => 6, 'description' => 'Estorno: Lançado errado', 'reversal_reason' => 'Valor <errado>', 'amount_cents' => 15000])]]];
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(), 'real');
+$common($html, 'CN-006', 'Lançamentos patrimoniais');
+$assert(str_contains($html, 'data-erp-api-forms') && str_contains($html, 'data-api="' . url('/api/v1/patrimonial-entries') . '"') && str_contains($html, '<option value="8">8.2 Fundo de reserva &lt;F&gt; (passivo)</option>')
+    && str_contains($html, 'Poupança &lt;P&gt;') && str_contains($html, 'Apropriação &lt;fundo&gt;') && str_contains($html, '/api/v1/patrimonial-entries/5/reverse')
+    && !str_contains($html, '/patrimonial-entries/6/reverse') && !str_contains($html, '/patrimonial-entries/7/reverse') && str_contains($html, '>Estornado<') && str_contains($html, '>Estorno<')
+    && str_contains($html, 'Motivo: Valor &lt;errado&gt;') && str_contains($html, 'R$ 800,00') && str_contains($html, 'data-condo-field') && !str_contains($html, 'Interface proposta'), 'CN-006: lista, formulário e estorno');
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false, 'patrimonialContext' => null]));
+$assert(!str_contains($html, 'data-access-form') && str_contains($html, 'escolha o condomínio na barra superior') && str_contains($html, '>Alpha &lt;A&gt;<'), 'CN-006: sem condomínio só lista');
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['canManagePatrimonial' => false]));
+$assert(!str_contains($html, 'data-access-form') && !str_contains($html, '/reverse'), 'CN-006: só leitura sem erp.entries.manage');
+$html = $agreementPage('CN-006', 'pages/finance/patrimonial-entries', $peData(['patrimonialError' => 'O período pode ter no máximo 366 dias.', 'patrimonialList' => null]));
+$assert(str_contains($html, 'no máximo 366 dias') && !str_contains($html, 'pe-list-title'), 'CN-006: erro do período');
+$assert($PE::filters(['de' => '2026-02-30', 'ate' => '2026-06-30'], '2026-11-10') === ['de' => '2026-01-01', 'ate' => '2026-06-30'], 'lançamentos patrimoniais: período');
+$assert($PE::situation(['reversal_of_id' => 3, 'status' => 'active'])[0] === 'Estorno' && $PE::situation(['reversal_of_id' => null, 'status' => 'reversed'])[2] === false
+    && $PE::situation(['reversal_of_id' => null, 'status' => 'active'])[2] === true, 'lançamentos patrimoniais: situação');
 
 // Acessos com dados reais (ADR 0147): AP-148 imobiliárias, AP-152 convites de moradores e AP-153 portal do morador.
 $AC = Source\Controllers\Erp\Connect\AccessScreens::class;
