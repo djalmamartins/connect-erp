@@ -4,6 +4,8 @@ $contact = \Source\Services\Help\SupportContact::data();
 ?>
 <section class="hc-hero" aria-labelledby="hc-hero-title">
     <div class="hc-hero__art" aria-hidden="true">
+        <svg class="hc-hero__arcs hc-hero__arcs--left" viewBox="0 0 220 160"><path d="M10 150V96a50 50 0 0 1 100 0v54M110 150V70a50 50 0 0 1 100 0v80" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <svg class="hc-hero__arcs hc-hero__arcs--right" viewBox="0 0 220 160"><path d="M10 150a60 60 0 0 1 120 0M90 150V80a45 45 0 0 1 90 0v70" fill="none" stroke="currentColor" stroke-width="2"/></svg>
     </div>
     <div class="hc-wrap hc-hero__inner">
         <span class="hc-pill"><?= \Source\Services\Help\Icons::svg('headset-outline') ?>Fale com a gente</span>
