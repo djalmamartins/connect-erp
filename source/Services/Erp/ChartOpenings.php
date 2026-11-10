@@ -42,7 +42,8 @@ final class ChartOpenings
     public static function tree(array $rows, array $names = []): array
     {
         $tree = [];
-        $totals = ['revenue_cents' => 0, 'expense_cents' => 0];
+        $keys = ['receita' => 'revenue_cents', 'despesa' => 'expense_cents', 'asset' => 'asset_cents', 'liability' => 'liability_cents', 'equity' => 'equity_cents'];
+        $totals = array_fill_keys(array_values($keys), 0);
         foreach ($rows as $row) {
             $parts = explode('.', (string)$row['code']);
             for ($depth = 1; $depth <= count($parts); $depth++) {
@@ -56,10 +57,12 @@ final class ChartOpenings
                     $tree[$key] = ['analytic' => true, 'chart_account_id' => (int)$row['chart_account_id'], 'opened_on' => (string)$row['opened_on'], 'notes' => $row['notes'] ?? null] + $tree[$key];
                 }
             }
-            $totals[$row['nature'] === 'receita' ? 'revenue_cents' : 'expense_cents'] += (int)$row['amount_cents'];
+            $totals[$keys[$row['nature']] ?? 'expense_cents'] += (int)$row['amount_cents'];
         }
         $sortable = static fn (string $code): string => implode('.', array_map(static fn (string $p): string => str_pad($p, 6, '0', STR_PAD_LEFT), explode('.', $code)));
-        uasort($tree, static fn (array $a, array $b): int => [$a['nature'] === 'receita' ? 0 : 1, $sortable($a['code'])] <=> [$b['nature'] === 'receita' ? 0 : 1, $sortable($b['code'])]);
+        $order = array_flip(array_keys($keys));
+        uasort($tree, static fn (array $a, array $b): int => [$order[$a['nature']] ?? 5, $sortable($a['code'])] <=> [$order[$b['nature']] ?? 5, $sortable($b['code'])]);
+        // total_cents continua sendo receita + despesa (contrato do ADR 0166); as patrimoniais têm o total por natureza.
         return ['rows' => array_values($tree), 'totals' => $totals + ['total_cents' => $totals['revenue_cents'] + $totals['expense_cents']]];
     }
 

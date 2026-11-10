@@ -2,7 +2,9 @@
 
 $environmentFile = dirname(__DIR__, 2) . "/.env";
 if (is_file($environmentFile)) {
-    $environment = parse_ini_file($environmentFile, false, INI_SCANNER_RAW) ?: [];
+    // Comentários com # (padrão do .env do Docker) são removidos antes: o parse_ini só aceita ';' e
+    // quebrava com '(' num comentário '#' (testar-main.sh, 10/11).
+    $environment = parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($environmentFile)), false, INI_SCANNER_RAW) ?: [];
     $allowedEnvironmentKeys = [
         "APP_ENV", "APP_DEBUG", "APP_URL",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",

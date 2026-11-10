@@ -41,6 +41,7 @@ if (\Source\Core\Connect::databaseDisabled()) {
     $setup = \Source\Models\Settings\Settings::dados();
 }
 date_default_timezone_set($setup->timezone_set);
+\Source\Core\Connect::syncTimezone();
 
 /**
  * PROJECT URLs
