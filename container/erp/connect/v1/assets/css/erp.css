@@ -771,3 +771,8 @@ p { margin: 0; }
 .erp-dropdown__foot { display: block; padding: 8px 10px 4px; font-size: 13px; font-weight: 600; }
 .erp-dropdown__panel--wide { max-height: min(70vh, 560px); overflow-y: auto; }
 .erp-dropdown__panel--wide .erp-dropdown__item small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* Configurações por parâmetro (ADR 0144): um formulário por chave; ações alinhadas ao campo, abaixo do rótulo. */
+.erp-setting-actions { display: flex; flex-wrap: wrap; gap: var(--erp-space-2, 8px); align-items: flex-start; padding-top: 25px; }
+[data-setting-form] + [data-setting-form] { border-top: 1px solid var(--erp-border); margin-top: var(--erp-space-4, 16px); padding-top: var(--erp-space-4, 16px); }
+.erp-budget-months { display: grid; gap: var(--erp-space-3, 12px); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-top: var(--erp-space-4, 16px); }
+@media (max-width: 640px) { .erp-setting-actions { padding-top: 0; } }

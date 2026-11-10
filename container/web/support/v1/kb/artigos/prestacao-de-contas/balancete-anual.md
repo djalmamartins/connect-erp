@@ -33,7 +33,7 @@ legenda: Tela Relatório Balancete Anual
 
 ## Como gerar o relatório
 
-1. **Ano**: o ano do balancete.
+1. **Ano**: o ano do relatório.
 2. **Base**: opções: competência, caixa (pagamento).
 3. Clique em {{Gerar}}.
 4. Confira os totais no topo (quando o relatório tem valores) e as linhas na tabela.
