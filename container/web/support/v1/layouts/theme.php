@@ -69,7 +69,7 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
 
 <footer class="hc-footer">
     <div class="hc-wrap">
-        <svg class="hc-footer__arcs" viewBox="0 0 260 60" aria-hidden="true"><path d="M2 58V40a28 28 0 0 1 56 0M58 58V30a30 30 0 0 1 60 0v28M118 58a32 32 0 0 1 64 0M182 58a36 36 0 0 1 72-4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <div class="hc-footer__floral" aria-hidden="true"></div>
         <div class="hc-footer__bottom">
             <a href="<?= url('/') ?>"><img src="<?= $logoLight ?>" alt="Connect Condomínios" width="120" height="36"></a>
             <nav class="hc-footer__links" aria-label="Outros acessos">
