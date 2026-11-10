@@ -35,8 +35,9 @@ return [
     // ── Condomínios ───────────────────────────────────────────────────────────────────────────
     'AP-004' => [
         'titulo' => 'Cadastrar um condomínio',
-        'para' => 'Aqui ficam os condomínios administrados pela Connect que a sua conta pode ver. O cadastro tem endereço, contato, síndico e dados fiscais. Depois de cadastrar, siga o checklist de chegada para deixar o condomínio pronto: unidades, pessoas, contas bancárias e cobrança.',
-        'dicas' => ['O CNPJ é opcional: dá para cadastrar o condomínio antes de ele ter CNPJ e completar depois.', 'Ao digitar o CEP, o endereço se preenche sozinho. Confira o número e o complemento.'],
+        // ADR 0151: o artigo condominios.md agora é manual (visão geral, Selecionar, guia de cadastro).
+        'para' => 'Com um condomínio na barra superior, o menu abre a visão geral dele; em Todos os condomínios, a lista para selecionar um. Um condomínio novo segue o guia: unidades, proprietários, síndico e conselho, áreas e o checklist por último.',
+        'dicas' => ['Comece pelo CNPJ: ao completar os 14 dígitos, os dados da Receita preenchem os campos vazios. O CNPJ é opcional.', 'Ao digitar o CEP, o endereço se preenche sozinho. Confira o número e o complemento.'],
         'palavras' => ['prédio', 'edifício', 'checklist', 'cnpj', 'cep'],
     ],
     'AP-006' => [

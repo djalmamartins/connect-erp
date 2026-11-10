@@ -2,9 +2,12 @@
 /**
  * Condomínios (AP-004) com dados reais (CondominiumScope); cadastro em /condominios/novo (ADR 0011).
  * @var list<array{id:int,name:string,document:?string,status:string}> $condominiums
- * @var ?array{id:int,name:string,slug:string} $contextCondominium  condomínio da barra superior (ADR 0030)
+ * @var array<int, array{id:int,name:string,slug:string}> $condoOptionsById  opções da barra superior (ADR 0030)
+ *
+ * Só aparece em "Todos os condomínios": com um condomínio na barra superior, o menu abre a visão
+ * geral dele (ADR 0151). "Selecionar" troca a barra superior e vale para todas as telas.
  */
-$contextCondominium ??= null;
+$condoOptionsById ??= [];
 $this->layout('default');
 ob_start(); ?>
     <?php if ($user->can('erp.condominiums.manage')): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url('/condominios/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?>Novo condomínio</a><?php endif; ?>
@@ -17,9 +20,7 @@ $this->insert('components/layout/page-head', [
 ]);
 ?>
 
-<?php if ($contextCondominium !== null): ?>
-    <div class="erp-alert" role="note"><?= $icon('filter') ?><div>Mostrando só <b><?= $this->e($contextCondominium['name']) ?></b>, o condomínio escolhido na barra superior. <a href="<?= erp_context_url('/condominios', null) ?>">Ver todos os condomínios</a></div></div>
-<?php endif; ?>
+<div class="erp-alert" role="note"><?= $icon('info') ?><div>Use <b>Selecionar</b> para trabalhar em um condomínio: ele passa para a barra superior e todas as telas do sistema mostram só os dados dele. Para voltar a esta lista, escolha <b>Todos os condomínios</b> na barra superior.</div></div>
 
 <?php if ($condominiums === []): ?>
     <section class="erp-card">
@@ -50,12 +51,13 @@ $this->insert('components/layout/page-head', [
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($condominiums as $condominium): $active = $condominium['status'] === 'active'; ?>
+                    <?php foreach ($condominiums as $condominium): $active = $condominium['status'] === 'active'; $option = $condoOptionsById[(int)$condominium['id']] ?? null; ?>
                         <tr>
-                            <td><a href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>"><strong><?= $this->e($condominium['name']) ?></strong></a></td>
+                            <td class="erp-condo-pick"><?php if ($option !== null): ?><a class="erp-btn erp-btn--sm erp-btn--primary" href="<?= $this->e(erp_context_url('/condominios', $option)) ?>" aria-label="Selecionar <?= $this->e($condominium['name']) ?> em todo o sistema"><?= $icon('check', 'erp-icon--sm') ?>Selecionar</a><?php endif; ?>
+                                <a href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>"><strong><?= $this->e($condominium['name']) ?></strong></a></td>
                             <td><?= $this->e(format_cnpj($condominium['document'])) ?></td>
                             <td><span class="erp-badge erp-badge--<?= $active ? 'success' : 'danger' ?>"><?= $active ? 'Ativo' : 'Inativo' ?></span></td>
-                            <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>" aria-label="Ver <?= $this->e($condominium['name']) ?>"><?= $icon('eye', 'erp-icon--sm') ?></a></td>
+                            <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>" aria-label="Visão geral de <?= $this->e($condominium['name']) ?>" title="Visão geral"><?= $icon('eye', 'erp-icon--sm') ?></a></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

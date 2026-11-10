@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Source\Controllers\Erp\Connect;
 
 use Source\Core\Controller;
+use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumRegistry;
 use Source\Services\CondominiumScope;
 use Source\Services\CondominiumValidator;
+use Source\Services\Erp\CondominiumSetup;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 
@@ -33,21 +35,24 @@ final class Condominiums extends Controller
         redirect(erp_url('/condominios'));
     }
 
+    /**
+     * Menu Condomínios (ADR 0151): com um condomínio na barra superior, abre direto a visão
+     * geral dele; em "Todos os condomínios", a lista com o botão "Selecionar" em cada linha.
+     */
     public function index(): void
     {
         $user = $this->authorize('erp.condominiums.view');
         if ($user === null) {
             return;
         }
-        // Com um condomínio na barra superior, a lista mostra só ele (ADR 0030).
-        $condominiums = (new CondominiumScope())->allowed($user);
         $context = CondominiumContext::current();
         if ($context !== null) {
-            $condominiums = array_values(array_filter($condominiums, static fn (array $c): bool => $c['id'] === $context['id']));
+            $this->overview($user, $context['id']);
+            return;
         }
         echo $this->view->render('pages/condominiums/index', $this->layoutData($user, 'Condomínios', [
-            'condominiums' => $condominiums,
-            'contextCondominium' => $context,
+            'condominiums' => (new CondominiumScope())->allowed($user),
+            'condoOptionsById' => array_column(CondominiumContext::options(), null, 'id'),
         ]));
     }
 
@@ -57,10 +62,9 @@ final class Condominiums extends Controller
         if ($user === null) {
             return;
         }
-        $id = (int)(filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0);
-        $scope = new CondominiumScope();
+        $id = $this->routeId($data);
         try {
-            $scope->assertAccess($user, $id);
+            (new CondominiumScope())->assertAccess($user, $id);
         } catch (CondominiumAccessDenied) {
             // 404 para não revelar condomínios fora do escopo do usuário.
             $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
@@ -72,15 +76,73 @@ final class Condominiums extends Controller
             redirect(url(erp_base() . $follow));
             return;
         }
-        foreach ($scope->allowed($user) as $condominium) {
-            if ($condominium['id'] === $id) {
-                echo $this->view->render('pages/condominiums/show', $this->layoutData($user, $condominium['name'], [
-                    'condominium' => $condominium,
-                ]));
-                return;
-            }
+        $this->overview($user, $id);
+    }
+
+    /** POST /condominios/{id}/guia — abre (ou retoma) o guia de cadastro no primeiro passo pendente. */
+    public function guide(array $data): void
+    {
+        $user = $this->authorize('erp.condominiums.view');
+        if ($user === null) {
+            return;
         }
-        $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+        $id = $this->routeId($data);
+        if (!$this->guideAllowed($user, $id, $data)) {
+            return;
+        }
+        (new Session())->set(CondominiumSetup::GUIDE_KEY, $id);
+        $next = CondominiumSetup::nextPending((new CondominiumSetup())->steps($user, $id));
+        redirect(url(erp_base() . ($next['route'] ?? '/condominios') . '?' . CondominiumContext::FILTER_PARAM . '=' . $id));
+    }
+
+    /** POST /condominios/{id}/guia/encerrar — fecha o guia e volta para a visão geral. */
+    public function endGuide(array $data): void
+    {
+        $user = $this->authorize('erp.condominiums.view');
+        if ($user === null) {
+            return;
+        }
+        $id = $this->routeId($data);
+        if (!$this->guideAllowed($user, $id, $data)) {
+            return;
+        }
+        (new Session())->unset(CondominiumSetup::GUIDE_KEY);
+        $this->message->success('Guia de cadastro fechado. Você pode retomá-lo pela visão geral do condomínio.')->flash();
+        redirect(url(erp_base() . '/condominios?' . CondominiumContext::FILTER_PARAM . '=' . $id));
+    }
+
+    /** Visão geral: dados completos do cadastro, passos do cadastro e atalhos (ADR 0151). */
+    private function overview(User $user, int $id): void
+    {
+        $condominium = (new CondominiumRegistry())->find($user, $id);
+        if ($condominium === null) {
+            $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+            return;
+        }
+        $condominium['id'] = (int)$condominium['id'];
+        $option = CondominiumContext::option($id);
+        echo $this->view->render('pages/condominiums/show', $this->layoutData($user, (string)$condominium['name'], [
+            'condominium' => $condominium,
+            'setupSteps' => [
+                'condominium' => $option ?? ['id' => $id, 'name' => (string)$condominium['name'], 'slug' => ''],
+                'steps' => (new CondominiumSetup())->steps($user, $id),
+                'current' => null,
+            ],
+        ]));
+    }
+
+    private function guideAllowed(User $user, int $id, array $data): bool
+    {
+        if (!csrf_verify($data)) {
+            $this->message->warning('Sessão expirada. Tente de novo.')->flash();
+            redirect(erp_url('/condominios'));
+            return false;
+        }
+        if (!(new CondominiumScope())->canAccess($user, $id)) {
+            $this->state($user, 404, 'Condomínio não encontrado', 'O condomínio não existe ou não está no seu escopo de acesso.');
+            return false;
+        }
+        return true;
     }
 
     /** GET /erp/condominios/novo */
@@ -112,8 +174,18 @@ final class Condominiums extends Controller
             $this->form($user, null, $data, $result['errors'], 422);
             return;
         }
-        $this->message->success('Condomínio cadastrado. Agora verifique o checklist de chegada: o que já existe, o que falta e o que vence.')->flash();
-        redirect('/erp/condominios/' . $result['id'] . '/checklist');
+        // Guia de cadastro (ADR 0151): unidades → proprietários → síndico e conselho → áreas →
+        // checklist por último. O ?condominio= troca a barra superior para o condomínio novo.
+        $id = (int)$result['id'];
+        if (($result['data']['status'] ?? 'active') !== 'active') {
+            $this->message->success('Condomínio cadastrado como inativo. Ative-o para cadastrar unidades e pessoas.')->flash();
+            redirect(url(erp_base() . '/condominios'));
+            return;
+        }
+        (new Session())->set(CondominiumSetup::GUIDE_KEY, $id);
+        $next = CondominiumSetup::nextPending((new CondominiumSetup())->steps($user, $id));
+        $this->message->success('Condomínio cadastrado. Agora cadastre as unidades; o guia no topo mostra os próximos passos.')->flash();
+        redirect(url(erp_base() . ($next['route'] ?? '/condominios') . '?' . CondominiumContext::FILTER_PARAM . '=' . $id));
     }
 
     /** GET /erp/condominios/{id}/editar */
@@ -159,7 +231,16 @@ final class Condominiums extends Controller
             return;
         }
         $this->message->success('Condomínio atualizado com sucesso.')->flash();
-        redirect('/erp/condominios/' . $id);
+        // Durante o guia de cadastro, salvar os dados leva ao próximo passo pendente.
+        $session = new Session();
+        if ($session->has(CondominiumSetup::GUIDE_KEY) && (int)$session->{CondominiumSetup::GUIDE_KEY} === $id) {
+            $next = CondominiumSetup::nextPending((new CondominiumSetup())->steps($user, $id));
+            if ($next !== null) {
+                redirect(url(erp_base() . $next['route'] . '?' . CondominiumContext::FILTER_PARAM . '=' . $id));
+                return;
+            }
+        }
+        redirect(url(erp_base() . '/condominios/' . $id));
     }
 
     /** Formulário único de cadastro/edição; os valores são escapados na view. */

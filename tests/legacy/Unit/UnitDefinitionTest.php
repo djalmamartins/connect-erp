@@ -58,7 +58,7 @@ final class UnitDefinitionTest extends TestCase
         [, $errors] = RegistryValidator::validate($pets, ['condominium_id' => '1', 'unit_id' => 'abc', 'name' => 'Rex', 'species' => 'cao']);
         self::assertArrayHasKey('unit_id', $errors);
 
-        [, $errors] = RegistryValidator::validate(Definitions::get('board'), ['condominium_id' => '1', 'role' => 'sindico', 'name' => 'Síndica Profissional', 'term_starts_on' => '2026-01-01', 'term_ends_on' => '2027-12-31']);
+        [, $errors] = RegistryValidator::validate(Definitions::get('board'), ['condominium_id' => '1', 'role' => 'sindico', 'name' => 'Síndica Profissional', 'term_starts_on' => '2026-01-01', 'term_ends_on' => '2027-12-31', 'email' => 'sindica@example.invalid', 'phone' => '11999990000']);
         self::assertSame([], $errors, 'Síndico profissional continua sem unidade.');
     }
 

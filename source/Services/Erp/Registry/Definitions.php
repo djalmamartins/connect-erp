@@ -190,8 +190,9 @@ final class Definitions
                     'unit_label' => $unitText('Unidade (texto)', false, 4, 'Vazio para síndico profissional'),
                     'term_starts_on' => ['label' => 'Início do mandato', 'type' => 'date', 'required' => true, 'span' => 4],
                     'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on'],
-                    'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
-                    'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
+                    // ADR 0151 (Djalma, 10/11/2026): e-mail e telefone obrigatórios; são o canal de comunicação com o conselho.
+                    'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6],
+                    'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12, 'hint' => 'Ex.: ata da assembleia que elegeu'],
                 ],
                 'single_active' => [['field' => 'role', 'value' => 'sindico', 'per' => 'condominium_id', 'message' => 'Este condomínio já tem um síndico ativo. Inative o atual antes de cadastrar outro.']],

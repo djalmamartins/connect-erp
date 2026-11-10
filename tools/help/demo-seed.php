@@ -121,7 +121,7 @@ foreach ($condominiums as $index => [$name, $legal, $street, $number, $district,
         }
     }
     $save('board', ['condominium_id' => $condo, 'role' => 'sindico', 'name' => $person(30 + $index), 'document' => cpf(300 + $index), 'unit_id' => $unitsBy[$condo][0], 'term_starts_on' => $date(-300), 'term_ends_on' => $date(430), 'email' => 'sindico' . ($index + 1) . '@exemplo.com.br', 'phone' => '(16) 99100-120' . $index]);
-    $save('board', ['condominium_id' => $condo, 'role' => 'fiscal', 'name' => $person(40 + $index), 'unit_id' => $unitsBy[$condo][2], 'term_starts_on' => $date(-300), 'term_ends_on' => $date(430)]);
+    $save('board', ['condominium_id' => $condo, 'role' => 'fiscal', 'name' => $person(40 + $index), 'unit_id' => $unitsBy[$condo][2], 'term_starts_on' => $date(-300), 'term_ends_on' => $date(430), 'email' => 'conselho' . ($index + 1) . '@exemplo.com.br', 'phone' => '(16) 99100-130' . $index]);
     $save('employees', ['condominium_id' => $condo, 'job' => 'zelador', 'name' => $person(50 + $index), 'document' => cpf(500 + $index), 'hired_on' => $date(-900), 'shift' => 'comercial', 'salary_cents' => '2.850,00', 'phone' => '(16) 99200-310' . $index]);
     $save('employees', ['condominium_id' => $condo, 'job' => 'porteiro', 'name' => $person(60 + $index), 'document' => cpf(600 + $index), 'hired_on' => $date(-500), 'shift' => '12x36', 'salary_cents' => '2.300,00']);
     $save('vehicles', ['condominium_id' => $condo, 'unit_id' => $unitsBy[$condo][1], 'plate' => 'BRA2E1' . $index, 'kind' => 'carro', 'model' => 'Hatch compacto', 'color' => 'Prata', 'parking_spot' => 'G-0' . ($index + 1)]);
