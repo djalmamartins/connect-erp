@@ -1468,6 +1468,7 @@
       var boxes = $$('input[type="checkbox"][name$="[]"]', form);
       var count = function () { if (counter) counter.textContent = '(' + boxes.filter(function (b) { return b.checked; }).length + ' marcados)'; };
       boxes.forEach(function (b) { b.addEventListener('change', count); });
+      count(); // já começa certo quando a tela vem com caixas marcadas (ex.: condomínio da barra superior)
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!formValid(form)) return;

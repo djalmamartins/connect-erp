@@ -325,6 +325,7 @@ p { margin: 0; }
 .erp-filters .erp-field.erp-field--compact { flex: 0 1 240px; }
 .erp-muted { color: var(--erp-muted); }
 .erp-trace { margin-top: 8px; font-size: 12px; }
+.erp-body:not(.erp-body--trace) .erp-trace { display: none; }
 .erp-invoice-item { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .erp-invoice-item .erp-input { width: 120px; height: 34px; min-height: 34px; padding: 6px 10px; text-align: right; }
 .erp-table td small.erp-muted { display: block; font-size: 12px; }
@@ -628,6 +629,11 @@ p { margin: 0; }
 .erp-charge-units, .erp-receipt-entries { border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); padding: 12px 16px; margin: 0; min-width: 0; }
 .erp-charge-units legend, .erp-receipt-entries legend { padding: 0 4px; font-size: 13px; font-weight: 650; }
 .erp-charge-units__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px 12px; margin-top: 8px; max-height: 240px; overflow-y: auto; }
+/* Lista de pessoas (convite de moradores): nome e detalhe em bloco, uma pessoa por célula larga. */
+.erp-charge-units__grid--people { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.erp-charge-units__grid--people .erp-check { align-items: flex-start; }
+.erp-charge-units__grid--people .erp-check input { margin-top: 2px; flex: none; }
+.erp-charge-units__grid--people .erp-check small { display: block; }
 .erp-receipt-entries { display: grid; gap: 2px; max-height: 340px; overflow-y: auto; margin-top: 12px; }
 .erp-receipt-entries__all { padding: 4px 0 8px; font-weight: 600; }
 .erp-receipt-entry { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--erp-border); }
