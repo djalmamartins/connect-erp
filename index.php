@@ -279,6 +279,8 @@ $route->get("/reports/lost-found", "LostFoundSummary:show", null, \Source\Suppor
 $route->post("/lost-found/dispose", "LostFoundDisposal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Situação das autorizações de visitantes numa data, somente leitura (ADR 0234). Antes do laço dos cadastros.
 $route->get("/reports/visitor-authorizations", "VisitorAuthorizations:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Bloqueio em lote das autorizações de visitantes vencidas e ainda liberadas (ADR 0235). Antes do laço dos cadastros.
+$route->post("/visitors/expire", "VisitorAuthorizationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
