@@ -11,9 +11,10 @@ use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 use Source\Support\Audit;
 
 /**
- * Credenciais bancárias de uma conta (ADR 0156). Gravadas só pelo comando de terminal
- * tools/bank-credentials.php (quem tem acesso ao servidor), nunca por formulário web: assim
- * client_secret, certificado e chave não passam pelo navegador nem pela API.
+ * Credenciais bancárias de uma conta (ADR 0156 e 0158). Gravadas pelo comando de terminal
+ * tools/bank-credentials.php ou, desde o ADR 0158, pela tela Integrações (BankCredentialSetup), que só
+ * aceita quem pode gerenciar configurações e contas bancárias do condomínio. Nos dois caminhos nada
+ * é gravado em disco nem volta para a tela.
  *
  * - Tudo cifrado no cofre (BankVault) com o contexto da conta; o banco de dados só vê metadados
  *   (4 últimos caracteres do client_id, titular e validade do certificado).
@@ -61,7 +62,7 @@ final class BankCredentials
      * @param array{client_id:string, client_secret:string, certificate:string, private_key:string} $secrets
      * @return array{webhook_secret:string, certificate_expires_on:string}
      */
-    public function save(int $bankAccountId, string $adapter, string $environment, array $secrets, ?int $userId = null): array
+    public function save(int $bankAccountId, string $adapter, string $environment, array $secrets, ?int $userId = null, string $source = 'cli'): array
     {
         if (!isset(self::ADAPTERS[$adapter])) {
             throw new InvalidArgumentException("Adaptador '{$adapter}' não aceita credenciais.");
@@ -105,19 +106,19 @@ final class BankCredentials
             throw $error;
         }
         Audit::record('update', 'erp_bank_credentials', $bankAccountId, null, ['adapter' => $adapter, 'environment' => $environment,
-            'certificate_expires_on' => $cert['expires_on'], 'source' => 'cli']);
+            'certificate_expires_on' => $cert['expires_on'], 'source' => $source === 'web' ? 'web' : 'cli', 'by' => $userId]);
         return ['webhook_secret' => $webhookSecret, 'certificate_expires_on' => $cert['expires_on']];
     }
 
     /** Desliga a integração da conta: volta ao sandbox e apaga as credenciais. */
-    public function remove(int $bankAccountId, ?int $userId = null): void
+    public function remove(int $bankAccountId, ?int $userId = null, string $source = 'cli'): void
     {
         $this->account($bankAccountId);
         $this->pdo->beginTransaction();
         $this->pdo->prepare('DELETE FROM erp_bank_credentials WHERE bank_account_id = :b')->execute(['b' => $bankAccountId]);
         $this->pdo->prepare("UPDATE erp_bank_accounts SET adapter = 'sandbox' WHERE id = :id")->execute(['id' => $bankAccountId]);
         $this->pdo->commit();
-        Audit::record('delete', 'erp_bank_credentials', $bankAccountId, null, ['source' => 'cli', 'by' => $userId]);
+        Audit::record('delete', 'erp_bank_credentials', $bankAccountId, null, ['source' => $source === 'web' ? 'web' : 'cli', 'by' => $userId]);
     }
 
     /** Segredos abertos, só para montar o adaptador. @return array<string, string> */

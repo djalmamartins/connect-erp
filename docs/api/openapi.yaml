@@ -947,6 +947,60 @@ paths:
         '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { bank_account_id: { type: integer }, bank_account_name: { type: string }, sent_on: { type: string, format: date }, adapter: { type: string }, mode: { type: string }, charges_count: { type: integer }, total_cents: { type: integer }, confirmed_count: { type: integer }, pending_count: { type: integer }, rejected_count: { type: integer }, cancelled_count: { type: integer }, status: { type: string, enum: [confirmed, sent, rejected] }, status_label: { type: string } } } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /bank-credentials:
+    get:
+      operationId: listBankCredentials
+      summary: Contas do Banco Inter (077) no escopo e a situação da credencial, sem segredo (erp.settings.view e erp.bank_accounts.view)
+      description: ADR 0158. Só metadados (4 últimos caracteres do client ID, titular e validade do certificado).
+      security: [{ session: [] }]
+      responses:
+        '200': { description: Contas, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, condominium_id: { type: integer }, condominium: { type: string }, adapter: { type: string }, credential: { type: [object, 'null'], properties: { adapter: { type: string }, environment: { type: string }, client_id_hint: { type: string }, certificate_subject: { type: string }, certificate_expires_on: { type: string, format: date }, updated_at: { type: string } } } } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /bank-credentials/{id}:
+    post:
+      operationId: connectBankCredential
+      summary: Abre o pacote do banco (ZIP ou .crt/.key em base64), testa a conexão no sandbox e grava cifrado (erp.settings.manage e erp.bank_accounts.manage)
+      description: 'ADR 0158. Nada é gravado em disco. Teste com falha não grava, salvo save_anyway. O endereço do webhook volta só nesta resposta. Limite de 10 tentativas por usuário por hora. Corpo até 1 MB.'
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer }, description: 'Conta bancária (banco 077)' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [client_id, client_secret, files], properties: { client_id: { type: string, maxLength: 200 }, client_secret: { type: string, maxLength: 500, writeOnly: true }, files: { type: array, maxItems: 4, items: { type: object, properties: { name: { type: string }, content: { type: string, contentEncoding: base64 } } } }, save_anyway: { type: boolean, default: false } } } } }
+      responses:
+        '201': { description: Gravada, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { connected: { type: boolean }, message: { type: string }, certificate_expires_on: { type: string, format: date }, webhook_url: { type: string }, credential: { type: object } } } } } } } }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Teste com o banco falhou (nada gravado) ou limite de tentativas' }
+        '413': { description: Envio grande demais }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Pacote sem certificado/chave, par que não combina, certificado vencido ou conta que não é do Inter' }
+    delete:
+      operationId: removeBankCredential
+      summary: Apaga a credencial; a conta volta ao sandbox interno (erp.settings.manage e erp.bank_accounts.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Removida, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { removed: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /bank-credentials/{id}/test:
+    post:
+      operationId: testBankCredential
+      summary: Testa a credencial gravada no sandbox do banco, só pedindo um token (erp.settings.manage e erp.bank_accounts.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: 'Resultado do teste (connected false traz o diagnóstico)', content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { connected: { type: boolean }, message: { type: string } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Conta sem credencial ou limite de tentativas' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
   /bank-returns:
     get:
       operationId: listBankReturns
