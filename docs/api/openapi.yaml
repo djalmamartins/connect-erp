@@ -2083,6 +2083,25 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/meter-reading-review:
+    get:
+      operationId: meterReadingReview
+      summary: Conferência das leituras de consumo de um mês (sem leitura, pico, queda, zero, leitura que não continua da anterior), somente leitura (erp.meter_readings.view, ADR 0220)
+      description: >-
+        Por relógio ativo do condomínio. A média usa só os meses com leitura dos 12 anteriores e exige 3 meses; com
+        histórico curto, average é null e nada é apontado por média. Pico = acima de factor × média; queda = abaixo da
+        média ÷ factor. Não grava nem envia nada; a correção é pelo lançamento da leitura. Sem nome de morador.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, required: true, schema: { type: string, example: '2026-11' } }
+        - { name: factor, in: query, schema: { type: number, minimum: 1.5, maximum: 5, default: 2 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, competence, factor, min_history, totals { meters, read, billed, short_history, missing }, summary { missing, sequence_break, zero, spike, drop }, items[{ meter_id, kind, number, unit_id, unit_label, consumption, billed, history_months, issues[], average, ratio }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
