@@ -2004,6 +2004,24 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/check-copy-review:
+    get:
+      operationId: checkCopyReview
+      summary: Conferência das cópias de cheques com os lançamentos e a sequência do talão por conta, somente leitura (erp.check_copies.view e erp.entries.view, ADR 0214)
+      description: >-
+        Por conta bancária, os números que faltam entre o primeiro e o último cheque registrado (emitidos e cancelados
+        preenchem a sequência). Por cheque, os problemas com o lançamento ligado (no_entry, entry_missing,
+        entry_cancelled, not_expense, amount_mismatch, other_account, entry_unpaid, cancelled_but_paid). Não grava nem
+        envia nada. Sem favorecido na resposta.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, checks, missing_numbers, accounts[{ bank_account_id, bank_account_name, checks, cancelled, issued_cents, first, last, missing_count, missing[] }], summary { problema: quantidade }, items[{ check_copy_id, bank_account_id, check_number, issued_on, amount_cents, status, entry_id, entry_amount_cents, issues[] }], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
