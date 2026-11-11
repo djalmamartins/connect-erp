@@ -275,6 +275,8 @@ $route->get("/reports/gatehouse-traffic", "GatehouseTraffic:show", null, \Source
 $route->post("/visit-forecasts/expire", "VisitForecastExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Resumo dos achados e perdidos do condomínio, somente leitura (ADR 0232). Antes do laço dos cadastros.
 $route->get("/reports/lost-found", "LostFoundSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Destino em lote dos achados e perdidos fora do prazo de guarda (ADR 0233). Antes do laço dos cadastros.
+$route->post("/lost-found/dispose", "LostFoundDisposal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
