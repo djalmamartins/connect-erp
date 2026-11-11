@@ -260,6 +260,8 @@ $route->post("/entries/settle", "BatchSettlement:store", null, \Source\Support\M
 $route->post("/entries/unsettle", "BatchReversal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Despesa parcelada (ADR 0195): N contas a pagar de uma compra, pelas regras do formulário, tudo ou nada.
 $route->post("/entries/installments", "InstallmentPayables:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reclassificação em lote (ADR 0196): conta e/ou centro de custo de vários lançamentos, pelas regras do formulário, com motivo.
+$route->post("/entries/reclassify", "EntryReclassification:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
