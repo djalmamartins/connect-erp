@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0181.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0181, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0182.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0182, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -182,3 +182,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0178](../Organic%20Code/decisions/0178-accountability-csv.md) | CSV da prestação de contas mensal (?format=csv em /api/v1/reports/accountability, limite de exportação, auditoria e neutralização de fórmula) |
 | [0179](../Organic%20Code/decisions/0179-accountability-publications.md) | Publicação da prestação de contas mensal em versões congeladas (sha256, versão, superseded, retirada com motivo; migration 0712) |
 | [0180](../Organic%20Code/decisions/0180-accountability-budget.md) | Previsto x realizado na prestação de contas mensal (seção budget, do mês e acumulado, também no CSV e na publicação) |
+| [0181](../Organic%20Code/decisions/0181-closing-readiness.md) | Conferência antes de fechar o mês (GET /api/v1/closings/readiness: erros, avisos e informação, só leitura) |
