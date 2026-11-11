@@ -294,6 +294,8 @@ $route->get("/imports/{id}", "Imports:show", null, \Source\Support\Middleware\Ap
 $route->post("/imports/{id}/apply", "Imports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-statement-lines", "Imports:pendingLines", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-statement-lines/{id}/resolve", "Imports:resolveLine", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Nova conferência do extrato pendente pela regra da importação (ADR 0209).
+$route->post("/bank-statement-lines/rematch", "StatementRematch:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Comunicação pela outbox (ADR 0059): comunicados, aviso de cobrança, agendados e endereços. /collection antes de /{id}.
 $route->get("/announcements", "Announcements:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/announcements", "Announcements:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
