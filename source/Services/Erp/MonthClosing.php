@@ -166,7 +166,11 @@ final class MonthClosing
     public function close(User $user, int $condominiumId, string $competence): array
     {
         $this->assertInput($user, $condominiumId, $competence);
-        $this->pdo->beginTransaction();
+        // Dentro de uma transação de fora (fechamento em lote, ADR 0205), grava nela: quem abriu confirma ou desfaz tudo.
+        $own = !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
         try {
             $before = $this->closingRow($condominiumId, $competence, true);
             if (($before['status'] ?? null) === 'closed') {
@@ -189,9 +193,11 @@ final class MonthClosing
                     'summary_json' => json_encode(['by_account' => $summary['by_account'], 'by_bank_account' => $summary['by_bank_account'], 'entries' => $summary['entries']], JSON_UNESCAPED_UNICODE),
                 ]);
             $after = $this->closingRow($condominiumId, $competence);
-            $this->pdo->commit();
+            if ($own) {
+                $this->pdo->commit();
+            }
         } catch (\Throwable $error) {
-            if ($this->pdo->inTransaction()) {
+            if ($own && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $error;
