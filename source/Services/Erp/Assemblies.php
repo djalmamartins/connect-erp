@@ -588,7 +588,7 @@ final class Assemblies
     }
 
     /** Soma, em centavos, das receitas da unidade vencidas antes de $asOf e não pagas (a mesma base do ADR 0039). */
-    private function overdueCents(int $condominium, int $unit, string $asOf): int
+    public function overdueCents(int $condominium, int $unit, string $asOf): int
     {
         $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(amount_cents), 0) FROM erp_entries WHERE condominium_id = :c AND unit_id = :u AND nature = 'receita'
             AND status = 'active' AND deleted_at IS NULL AND paid_on IS NULL AND due_on < :d");
@@ -597,7 +597,7 @@ final class Assemblies
     }
 
     /** Total do condomínio em milionésimos: soma das frações ideais ou número de unidades ativas. */
-    private function totalWeight(int $condominium, string $basis): int
+    public function totalWeight(int $condominium, string $basis): int
     {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) AS n, ROUND(COALESCE(SUM(ideal_fraction), 0) * " . self::SCALE . ") AS f FROM erp_units
             WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active'");

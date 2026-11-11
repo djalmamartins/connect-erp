@@ -316,6 +316,8 @@ $route->post("/assemblies/{id}/close", "Assemblies:close", null, \Source\Support
 $route->post("/assemblies/{id}/cancel", "Assemblies:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/assemblies/{id}/attendance-report", "Assemblies:attendanceReport", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/assemblies/{id}/results", "Assemblies:results", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Conferência antes da assembleia (ADR 0211), somente leitura.
+$route->get("/assemblies/{id}/readiness", "AssemblyReadiness:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/partner-agencies", "AccessAdmin:agencies", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/partner-agencies", "AccessAdmin:storeAgency", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/partner-agencies/{id}/deactivate", "AccessAdmin:deactivateAgency", null, \Source\Support\Middleware\ApiAuthenticated::class);
