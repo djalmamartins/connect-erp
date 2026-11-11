@@ -283,6 +283,8 @@ $route->get("/reports/visitor-authorizations", "VisitorAuthorizations:show", nul
 $route->post("/visitors/expire", "VisitorAuthorizationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Resumo dos animais de estimação e dos veículos cadastrados, somente leitura (ADR 0236). Antes do laço dos cadastros.
 $route->get("/reports/pets-vehicles", "PetsVehiclesSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote das inscrições vencidas da lista de espera (ADR 0237). Antes do laço dos cadastros.
+$route->post("/waitlist/expire", "WaitlistExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

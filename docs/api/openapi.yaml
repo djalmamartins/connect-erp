@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /waitlist/expire:
+    post:
+      operationId: expireWaitlistEntries
+      summary: Baixa em lote das inscrições da lista de espera das áreas comuns cuja data desejada passou (situação Desistiu pelo cadastro), tudo ou nada e com prévia (erp.access, erp.reservations.view e erp.reservations.manage, ADR 0237)
+      description: >-
+        Sem entry_ids, entram as inscrições aguardando do condomínio com data desejada anterior a before (padrão hoje;
+        nunca depois de hoje); as de área comum ou unidade inativa ficam de fora (skipped_inactive_link). Com entry_ids,
+        recusa inscrição não encontrada no condomínio, atendida ou desistente, com a data ainda por vir, ou de área ou
+        unidade inativa. Cada inscrição é regravada pelo cadastro só com a situação Desistiu (auditoria update do
+        formulário e expire por inscrição). Nenhum aviso é enviado. Sem morador, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, entry_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, skipped_inactive_link, count, changed, entries[{ id, common_area_id, desired_on, called }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou inscrição recusada (errors com _form ou os erros do formulário, e _entry); nada é gravado' }
   /reports/pets-vehicles:
     get:
       operationId: petsVehiclesSummary
