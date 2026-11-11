@@ -18,9 +18,8 @@ use Source\Support\Audit;
  * Cada conta precisa estar paga, válida e no condomínio, e não pode:
  * - estar em competência fechada (ADR 0031);
  * - ter recibo válido (RECEIPT_LOCK, ADR 0057): cancela-se o recibo antes, como no formulário;
- * - estar conciliada com uma linha de extrato importado (ADR 0058): a linha do banco ficaria apontando para uma conta em
- *   aberto, e o lote não desfaz conciliação;
- * - ter boleto que o banco confirmou como pago (erp_bank_charges.status = paid): o banco diz que entrou dinheiro.
+ * - estar conciliada com uma linha de extrato importado (ADR 0058) nem ter boleto que o banco confirmou como pago
+ *   (PaymentLocks, compartilhado com o formulário desde o ADR 0193).
  * O motivo é obrigatório (5 a 255 caracteres) e vai para a auditoria de cada conta.
  *
  * Tudo ou nada, como a baixa: numa transação, com as contas travadas (FOR UPDATE) e o UPDATE condicionado à baixa que
@@ -67,8 +66,7 @@ final class BatchReversal
             }
             $receipts = $this->ids("SELECT de.entry_id FROM erp_unit_document_entries de JOIN erp_unit_documents d ON d.id = de.document_id
                 WHERE d.status = 'issued' AND de.entry_id IN ({$marks})", $ids);
-            $reconciled = $this->ids("SELECT entry_id FROM erp_bank_statement_lines WHERE status = 'matched' AND entry_id IN ({$marks})", $ids);
-            $bankPaid = $this->ids("SELECT entry_id FROM erp_bank_charges WHERE status = 'paid' AND entry_id IN ({$marks})", $ids);
+            $bankLocks = PaymentLocks::find($this->pdo, $ids);   // conciliação e boleto pago pelo banco (ADR 0193: o mesmo do formulário)
             $registry = new Registry\RegistryService($this->pdo, $this->scope);
             $problems = [];
             foreach ($ids as $id) {
@@ -79,8 +77,7 @@ final class BatchReversal
                     $row['paid_on'] === null => ['not_paid', 'Conta em aberto: não há baixa para estornar.'],
                     $registry->isClosed((int)$condominium, $row['competence']) => ['closed_competence', 'A competência ' . $row['competence'] . ' está fechada.'],
                     isset($receipts[$id]) => ['receipt', Registry\Definitions::RECEIPT_LOCK['message']],
-                    isset($reconciled[$id]) => ['reconciled', 'Conta conciliada com o extrato bancário: o estorno em lote não desfaz conciliação.'],
-                    isset($bankPaid[$id]) => ['bank_confirmed', 'O banco confirmou o pagamento do boleto desta conta.'],
+                    isset($bankLocks[$id]) => [$bankLocks[$id]['code'], $bankLocks[$id]['message']],
                     default => null,
                 };
                 if ($problem !== null) {
