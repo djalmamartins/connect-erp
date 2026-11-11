@@ -2159,6 +2159,26 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /common-areas/booking-mode:
+    post:
+      operationId: changeCommonAreaBookingMode
+      summary: Bloqueio e liberação em lote das áreas comuns do condomínio (modo de reserva do cadastro), tudo ou nada e com prévia (erp.access, erp.common_areas.view e erp.common_areas.manage, ADR 0229)
+      description: >-
+        Cada área é regravada pelo cadastro das áreas comuns só com o novo modo de reserva (approval, free, blocked ou
+        none). Recusa área não encontrada no condomínio, inativa ou já no modo pedido e, para blocked ou none, área com
+        reserva aguardando ou confirmada de hoje em diante. Nenhuma reserva é tocada e nenhum aviso é enviado. Auditoria
+        update do formulário e booking_mode por área. Sem morador ou unidade na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, area_ids, booking_mode, reason], properties: { condominium_id: { type: integer }, area_ids: { type: array, items: { type: integer }, minItems: 1, maxItems: 100 }, booking_mode: { type: string, enum: [approval, free, blocked, none] }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, booking_mode, booking_mode_label, reason, count, changed, areas[{ id, name, from_mode, to_mode, upcoming_reservations }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
   /reports/common-area-usage:
     get:
       operationId: commonAreaUsage
