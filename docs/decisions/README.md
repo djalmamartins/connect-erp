@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0185.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0185, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0186.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0186, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -186,3 +186,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0182](../Organic%20Code/decisions/0182-annual-accountability.md) | Prestação de contas anual para a assembleia ordinária (GET /api/v1/reports/annual-accountability, JSON e CSV) |
 | [0183](../Organic%20Code/decisions/0183-annual-accountability-publication.md) | Publicação congelada da prestação de contas anual (kind annual, exige todos os meses fechados; migration 0713) |
 | [0184](../Organic%20Code/decisions/0184-unit-statement.md) | Extrato da unidade (GET /api/v1/reports/unit-statement, JSON e CSV, sem nome de morador) |
+| [0185](../Organic%20Code/decisions/0185-registry-health.md) | Qualidade do cadastro do condomínio (GET /api/v1/reports/registry-health): unidade sem proprietário, rótulo repetido, frações, CPF/CNPJ inválido ou faltando, sem expor nome nem documento |

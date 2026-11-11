@@ -1158,6 +1158,23 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/registry-health:
+    get:
+      operationId: registryHealth
+      summary: Qualidade do cadastro do condomínio (erp.units.view e erp.residents.view, ADR 0185)
+      description: >-
+        Conferências do cadastro: unidade cobrada sem proprietário, rótulo de unidade repetido, frações ideais
+        incompletas ou com soma diferente de 1, CPF/CNPJ inválido ou faltando e unidade sem proprietário. Os itens trazem
+        só o rótulo da unidade e o id do vínculo, nunca nome nem documento.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, ok, errors, warnings, summary{units, units_with_owner, people}, checks[{code, level, message, count, items[{unit_id, unit_label, resident_id?, relationship?}]}] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/ledger:
     get:
       operationId: ledger
