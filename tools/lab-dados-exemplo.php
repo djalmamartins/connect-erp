@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Dados de exemplo para testar a inadimplência no laboratório (ADR 0162).
  *   php tools/lab-dados-exemplo.php            cria (idempotente; tudo com "EXEMPLO" no nome)
  *   php tools/lab-dados-exemplo.php --usuario=ID  cria e gera também o ano contábil de exemplo (ADR 0173)
- *   php tools/lab-dados-exemplo.php --remover  apaga só o que tem a marca (antes do ano de exemplo)
+ *   php tools/lab-dados-exemplo.php --remover  apaga só o que tem a marca, inclusive o ano de exemplo (ADR 0175)
  *
  * Recusa rodar sem ERP_DEMO_DATA=true, fora de lab/dev (MOVESOS_ENV ou APP_ENV) ou com banco sem marca de
  * laboratório no nome (lab, dev, local ou sandbox). Não cria boleto, não chama banco e não manda e-mail.
@@ -57,7 +57,9 @@ foreach ($argv as $arg) {
 $service = new LabSampleData($pdo);
 try {
     if (in_array('--remover', $argv, true)) {
-        $result = ['removed' => $service->remove()];
+        // ADR 0175: o ano contábil de exemplo sai primeiro, na mesma transação dos cadastros.
+        $year = new LabSampleYear($pdo);
+        $result = ['removed' => $service->remove(static fn (): array => $year->purge())];
     } else {
         $result = ['created' => $service->create()];
         if ($userId !== null) {
