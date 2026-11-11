@@ -256,6 +256,8 @@ $route->post("/entries/{id}/discount", "EntryShortcuts:discount", null, \Source\
 $route->get("/entries/{id}/adjustments", "EntryShortcuts:adjustments", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote (ADR 0191): várias contas em aberto pagas numa data e numa conta bancária, tudo ou nada.
 $route->post("/entries/settle", "BatchSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Estorno em lote da baixa (ADR 0192): o caminho de volta, com motivo, respeitando recibo, conciliação e mês fechado.
+$route->post("/entries/unsettle", "BatchReversal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
