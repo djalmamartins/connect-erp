@@ -17,7 +17,9 @@ use Source\Services\CondominiumScope;
  *   período com débito ou crédito e o saldo acumulado, e o saldo final. Conta de despesa movimenta a
  *   débito e conta de receita a crédito; o saldo da conta cresce na sua natureza. O saldo inicial do plano
  *   (AP-161) com data até o início do período é a abertura da conta e substitui os lançamentos anteriores
- *   à data dele (ADR 0167); saldo com data depois do início fica de fora e aparece em openings_ignored.
+ *   à data dele (ADR 0167). Saldo com data dentro do período vira uma linha "Saldo inicial" na data dele, com
+ *   o ajuste até o valor informado (ADR 0176, lista em openings_in_period); só o com data depois do fim do
+ *   período fica de fora e aparece em openings_ignored.
  * - accountBalances() — Saldos de Contas (AP-073): saldo de cada conta bancária numa data (as_of) ou num
  *   período (saldo anterior, entradas, saídas e saldo final), pela mesma conciliação do AP-051
  *   (FinancialReports::statement), com saldo inicial e transferências.
@@ -87,7 +89,14 @@ final class AccountingReports
             $accounts[$key] ??= self::account((string)$line['code'], (string)$line['name'], (string)$line['nature'], 0);
             $accounts[$key]['name'] = (string)$line['name'];
             $cents = (int)$line['cents'];
-            if (isset($line['side'])) {
+            if (($line['source'] ?? null) === 'opening') {
+                // Saldo inicial dentro do período (ADR 0176): o valor da linha é o ajuste que leva a conta ao saldo
+                // informado. Vai a débito ou a crédito pelo lado em que a conta cresce (despesa e ativo a débito).
+                $debitSide = in_array($line['nature'], ['despesa', 'asset'], true);
+                $debit = $cents !== 0 && $debitSide === ($cents > 0) ? abs($cents) : 0;
+                $credit = $cents !== 0 && $debit === 0 ? abs($cents) : 0;
+                $delta = $cents;
+            } elseif (isset($line['side'])) {
                 // Lançamento patrimonial (ADR 0169): o lado vem do lançamento e o saldo cresce na natureza da conta.
                 $debit = $line['side'] === 'debit' ? $cents : 0;
                 $credit = $line['side'] === 'credit' ? $cents : 0;
@@ -100,7 +109,7 @@ final class AccountingReports
             $accounts[$key]['debit_cents'] += $debit;
             $accounts[$key]['credit_cents'] += $credit;
             $accounts[$key]['closing_cents'] += $delta;
-            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'source' => isset($line['side']) ? 'patrimonial' : 'entry', 'on_date' => $line['on_date'],
+            $accounts[$key]['lines'][] = ['entry_id' => (int)$line['id'], 'source' => $line['source'] ?? (isset($line['side']) ? 'patrimonial' : 'entry'), 'on_date' => $line['on_date'],
                 'competence' => $line['competence'], 'description' => (string)$line['description'], 'debit_cents' => $debit, 'credit_cents' => $credit,
                 'balance_cents' => $accounts[$key]['closing_cents']];
         }
@@ -139,7 +148,7 @@ final class AccountingReports
         $ids = $this->ids($user, $condominiumId);
         $base = ['condominium_id' => $condominiumId, 'from' => $from, 'to' => $to, 'basis' => $basis, 'account_code' => $code];
         if ($ids === []) {
-            return $base + ['openings_ignored' => [], 'truncated' => false, 'accounts' => []];
+            return $base + ['openings_ignored' => [], 'openings_in_period' => [], 'truncated' => false, 'accounts' => []];
         }
         $in = implode(',', $ids);
         [$before, $within, $params, $date] = $this->periodSql($basis, $from, $to);
@@ -174,9 +183,10 @@ final class AccountingReports
             $key = $row['nature'] . '|' . $row['code'];
             $opening[$key] = ($opening[$key] ?? 0) - (int)$row['cents'];
         }
+        // Só o saldo com data depois do fim do período fica de fora; o de dentro vira linha (ADR 0176, abaixo).
         $later = $this->pdo->prepare("SELECT DISTINCT a.code FROM erp_chart_account_openings o JOIN erp_chart_accounts a ON a.id = o.chart_account_id
-            WHERE o.condominium_id IN ({$in}) AND o.opened_on > :fd{$codeSql} ORDER BY a.code");
-        $later->execute(['fd' => $from] + $codeParams);
+            WHERE o.condominium_id IN ({$in}) AND o.opened_on > :td{$codeSql} ORDER BY a.code");
+        $later->execute(['td' => $to] + $codeParams);
         $base['openings_ignored'] = array_map('strval', $later->fetchAll(PDO::FETCH_COLUMN));
         $stmt = $this->pdo->prepare("SELECT a.code, a.name, e.nature, e.id, {$date} AS on_date, e.competence, e.description, e.amount_cents AS cents
             FROM erp_entries e JOIN erp_chart_accounts a ON a.id = e.chart_account_id
@@ -204,8 +214,27 @@ final class AccountingReports
                 $lines[] = $row + ['side' => $side];
             }
         }
-        usort($lines, static fn (array $a, array $b): int => [self::sortable((string)$a['code']), (string)$a['on_date'], isset($a['side']) ? 1 : 0, (int)$a['id']]
-            <=> [self::sortable((string)$b['code']), (string)$b['on_date'], isset($b['side']) ? 1 : 0, (int)$b['id']]);
+        // Saldo inicial do plano com data dentro do período (ADR 0176): uma linha na data dele, com o ajuste que leva
+        // a conta ao valor informado. O ajuste é o saldo informado menos tudo o que ele substitui (o histórico da
+        // conta naquele condomínio antes da data, pela mesma regra do saldo anterior), então o saldo final fica igual
+        // ao do Balanço: saldo inicial + movimentos depois da data. Os lançamentos antes da data continuam visíveis.
+        $inside = $this->pdo->prepare("SELECT o.id, o.condominium_id, o.chart_account_id, o.opened_on, o.amount_cents, a.code, a.name, a.nature
+            FROM erp_chart_account_openings o JOIN erp_chart_accounts a ON a.id = o.chart_account_id
+            WHERE o.condominium_id IN ({$in}) AND o.opened_on > :fd AND o.opened_on <= :td{$codeSql} ORDER BY a.code, o.opened_on, o.id");
+        $inside->execute(['fd' => $from, 'td' => $to] + $codeParams);
+        $base['openings_in_period'] = [];
+        foreach ($inside->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $history = $this->historyBefore((int)$o['condominium_id'], (int)$o['chart_account_id'], (string)$o['nature'], (string)$o['opened_on'], $basis);
+            $lines[] = ['code' => (string)$o['code'], 'name' => (string)$o['name'], 'nature' => (string)$o['nature'], 'id' => (int)$o['id'],
+                'on_date' => (string)$o['opened_on'], 'competence' => null, 'description' => 'Saldo inicial (AP-161)',
+                'cents' => (int)$o['amount_cents'] - $history, 'source' => 'opening'];
+            $base['openings_in_period'][] = (string)$o['code'];
+        }
+        $base['openings_in_period'] = array_values(array_unique($base['openings_in_period']));
+        // Na mesma data: o saldo inicial primeiro, depois os lançamentos e por fim os patrimoniais.
+        $rank = static fn (array $l): int => ($l['source'] ?? null) === 'opening' ? -1 : (isset($l['side']) ? 1 : 0);
+        usort($lines, static fn (array $a, array $b): int => [self::sortable((string)$a['code']), (string)$a['on_date'], $rank($a), (int)$a['id']]
+            <=> [self::sortable((string)$b['code']), (string)$b['on_date'], $rank($b), (int)$b['id']]);
         $truncated = count($lines) > self::MAX_LINES;
         return $base + ['truncated' => $truncated, 'accounts' => self::ledgerAccounts($opening, array_slice($lines, 0, self::MAX_LINES), $names)];
     }
@@ -356,6 +385,26 @@ final class AccountingReports
             return ['e.paid_on IS NOT NULL AND e.paid_on < :f', 'e.paid_on IS NOT NULL AND e.paid_on BETWEEN :f AND :t', ['f' => $from, 't' => $to], 'e.paid_on'];
         }
         return ['e.competence < :f', 'e.competence BETWEEN :f AND :t', ['f' => substr($from, 0, 7), 't' => substr($to, 0, 7)], 'e.due_on'];
+    }
+
+    /**
+     * Histórico que o saldo inicial substitui (ADR 0176): tudo o que a conta acumulou no condomínio antes da data,
+     * pela mesma regra do saldo anterior. Lançamentos: em caixa, pagos antes da data; em competência, de
+     * competência anterior ao mês da data. Patrimoniais: com data anterior, nas duas bases, com o sinal do lado.
+     */
+    private function historyBefore(int $condominiumId, int $accountId, string $nature, string $openedOn, string $basis): int
+    {
+        $cut = $basis === 'cash' ? 'e.paid_on IS NOT NULL AND e.paid_on < :d' : 'e.competence < :d';
+        $entries = $this->pdo->prepare("SELECT COALESCE(SUM(e.amount_cents), 0) FROM erp_entries e WHERE e.condominium_id = :c AND e.chart_account_id = :a
+            AND e.deleted_at IS NULL AND e.status = 'active' AND {$cut}");
+        $entries->execute(['c' => $condominiumId, 'a' => $accountId, 'd' => $basis === 'cash' ? $openedOn : substr($openedOn, 0, 7)]);
+        $total = (int)$entries->fetchColumn();
+        foreach (['debit' => 'debit_account_id', 'credit' => 'credit_account_id'] as $side => $column) {
+            $moves = $this->pdo->prepare("SELECT COALESCE(SUM(amount_cents), 0) FROM erp_patrimonial_entries WHERE condominium_id = :c AND {$column} = :a AND entry_date < :d");
+            $moves->execute(['c' => $condominiumId, 'a' => $accountId, 'd' => $openedOn]);
+            $total += PatrimonialEntries::signed($nature, $side, (int)$moves->fetchColumn());
+        }
+        return $total;
     }
 
     private static function account(string $code, string $name, string $nature, int $opening): array

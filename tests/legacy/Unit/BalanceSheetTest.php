@@ -160,15 +160,21 @@ final class BalanceSheetTest extends TestCase
     public function testLedgerUsesChartOpeningAsBalanceBroughtForward(): void
     {
         $this->opening(2, '2026-01-01', 500000);            // 1.01 do condomínio 1
-        $this->opening(4, '2026-10-15', 1234);              // 2.01 com data dentro do período: fica de fora
+        $this->opening(4, '2026-10-15', 1234);              // 2.01 com data dentro do período: vira linha (ADR 0176)
         $this->opening(2, '2026-01-01', 777, 2);            // outro condomínio não interfere
         $service = new AccountingReports($this->pdo, new CondominiumScope($this->pdo));
         $ledger = $service->ledger($this->user(), 1, '2026-10-01', '2026-10-31');
         $taxa = $ledger['accounts'][0];
         self::assertSame('1.01', $taxa['code']);
         self::assertSame([500000, 800000], [$taxa['opening_cents'], $taxa['closing_cents']], 'Saldo inicial substitui dez/25; outubro soma normalmente.');
-        self::assertSame(['2.01'], $ledger['openings_ignored']);
+        self::assertSame([[], ['2.01']], [$ledger['openings_ignored'], $ledger['openings_in_period']]);
         self::assertSame(0, $ledger['accounts'][1]['opening_cents']);
+        $energy = $ledger['accounts'][1];
+        $line = array_values(array_filter($energy['lines'], static fn (array $l): bool => $l['source'] === 'opening'))[0];
+        self::assertSame('2026-10-15', $line['on_date']);
+        self::assertSame(1234 + array_sum(array_map(static fn (array $l): int => $l['source'] === 'entry' && $l['competence'] >= '2026-10' ? $l['debit_cents'] : 0,
+            $energy['lines'])), $energy['closing_cents'], 'Saldo inicial + o que vem da competência dele em diante.');
+        self::assertSame(['2.01'], $service->ledger($this->user(), 1, '2026-09-01', '2026-09-30')['openings_ignored'], 'Data depois do período: fica de fora.');
         $cash = $service->ledger($this->user(), 1, '2026-10-01', '2026-10-31', 'cash');
         self::assertSame([500000, 600000], [$cash['accounts'][0]['opening_cents'], $cash['accounts'][0]['closing_cents']]);
         $before = $service->ledger($this->user(), 1, '2025-12-01', '2025-12-31');
