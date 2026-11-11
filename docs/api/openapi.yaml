@@ -1985,6 +1985,24 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /reports/agreement-watch:
+    get:
+      operationId: agreementWatch
+      summary: Acompanhamento dos acordos ativos pela regra de quebra do condomínio (breach_due, late, on_track), somente leitura (erp.agreements.view e erp.entries.view, ADR 0207)
+      description: >-
+        Mesmo cálculo da quebra do acordo (BillingRules e LateCharges::breach). late traz days_to_breach e
+        installments_to_breach. Não marca quebra nem envia aviso: a quebra continua sendo a ação do acordo. Quebrados e
+        cancelados ficam de fora. Sem dado de morador.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { as_of, condominium_id, summary { breach_due, late, on_track: { agreements, open_cents, overdue_cents } }, items[{ agreement_id, condominium_id, condominium_name, unit_id, unit_label, created_on, installments, total_cents, rule, state, overdue_installments, overdue_cents, open_cents, max_days_late, next_due_on, reasons[], days_to_breach, installments_to_breach }], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreements:
     get:
       operationId: reportAgreements
