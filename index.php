@@ -258,6 +258,8 @@ $route->get("/entries/{id}/adjustments", "EntryShortcuts:adjustments", null, \So
 $route->post("/entries/settle", "BatchSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Estorno em lote da baixa (ADR 0192): o caminho de volta, com motivo, respeitando recibo, conciliação e mês fechado.
 $route->post("/entries/unsettle", "BatchReversal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Despesa parcelada (ADR 0195): N contas a pagar de uma compra, pelas regras do formulário, tudo ou nada.
+$route->post("/entries/installments", "InstallmentPayables:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);

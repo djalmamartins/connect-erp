@@ -3369,6 +3369,22 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida (validation_failed) ou lote recusado (reversal_rejected, com problems[{ entry_id, code: not_found|cancelled|not_paid|closed_competence|receipt|reconciled|bank_confirmed|changed, message }]); nada é gravado' }
+  /entries/installments:
+    post:
+      operationId: createInstallmentPayables
+      summary: Despesa parcelada, N contas a pagar de uma compra, pelas regras do formulário, tudo ou nada; dry_run monta as parcelas sem gravar (erp.entries.view e erp.entries.manage, ADR 0195)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, chart_account_id, description, total, installments, first_due_on], properties: { condominium_id: { type: integer }, chart_account_id: { type: integer }, description: { type: string, maxLength: 150 }, total: { type: string, description: 'Valor total, ex.: 1.234,56 (ou inteiro em centavos)' }, installments: { type: integer, minimum: 2, maximum: 60 }, first_due_on: { type: string, format: date }, competence: { type: string, pattern: '^\d{4}-\d{2}$', description: 'Vazio = a do vencimento de cada parcela' }, cost_center_id: { type: integer }, supplier_id: { type: integer }, document_number: { type: string }, bank_account_id: { type: integer }, notes: { type: string }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: 'dry_run: { data: { condominium_id, dry_run, installments, total_cents, plan[{ installment, description, amount_cents, due_on, competence }], entries: [] } }' }
+        '201': { description: '{ data: { ..., plan[], entries[{ id, installment, description, amount_cents, due_on, competence }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou parcela recusada pelas regras do formulário (errors por campo e _installment); nada é gravado' }
   /extra-charges:
     get:
       operationId: listExtraCharges
