@@ -243,6 +243,8 @@ $route->post("/reservations/bill-fees", "ReservationFeeBilling:store", null, \So
 $route->post("/occurrences/sync-tickets", "OccurrenceTicketSync:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote de malotes e avisos de recebimento (ADR 0216). Antes do laço dos cadastros.
 $route->post("/document-transit/settle", "DocumentTransitSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Renovação de contratos em lote, com reajuste opcional (ADR 0217). Antes do laço dos cadastros (/contracts/{id}).
+$route->post("/contracts/renew", "ContractRenewal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
