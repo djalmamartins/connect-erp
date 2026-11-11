@@ -150,6 +150,8 @@ $route->get("/reports/statement", "FinancialReports:statement", null, \Source\Su
 $route->get("/reports/agreements", "CollectionReports:agreements", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-watch", "AgreementWatch:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/operations-summary", "OperationsSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Conferência das cópias de cheques (ADR 0214), somente leitura.
+$route->get("/reports/check-copy-review", "CheckCopyReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
