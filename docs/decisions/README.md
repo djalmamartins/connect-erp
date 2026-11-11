@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0205.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0205, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0206.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0206, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -206,3 +206,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0202](../Organic%20Code/decisions/0202-supplier-deactivation.md) | Inativação de fornecedores em lote: com motivo, tudo ou nada e prévia, recusando quem tem conta em aberto, recorrente ou empenho ativo, só com acesso a todos os condomínios | Aceita |
 | [0203](../Organic%20Code/decisions/0203-entry-cancellation.md) | Cancelamento de contas em aberto em lote pelas regras do formulário: com motivo, tudo ou nada e prévia, recusando paga, com boleto no banco, conciliada, com recibo, de origem ou em mês fechado | Aceita |
 | [0204](../Organic%20Code/decisions/0204-recurring-readjustment.md) | Reajuste percentual de lançamentos fixos em lote a partir de uma competência, pelas regras do formulário, com motivo, tudo ou nada e prévia; o já gerado não muda e vem listado | Aceita |
+| [0205](../Organic%20Code/decisions/0205-month-closing-batch.md) | Fechamento da mesma competência em vários condomínios pela conferência antes de fechar: erro nunca fecha, aviso só com allow_warnings, recusa com a lista inteira, tudo ou nada e prévia | Aceita |
