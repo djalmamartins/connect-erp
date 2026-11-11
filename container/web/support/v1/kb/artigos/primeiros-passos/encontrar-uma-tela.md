@@ -8,7 +8,7 @@ menu:
 icone: navigate-outline
 situacao: guia
 relacionados: escolher-o-condominio, pedir-ajuda, dashboard
-palavras: menu, pesquisar página, atalho, ctrl k, ajuda desta página, notificações, navegação
+palavras: menu, pesquisar página, aviso de sucesso, salvo com sucesso, atalho, ctrl k, ajuda desta página, notificações, navegação
 manual: sim
 rascunho: nao
 ---
@@ -70,3 +70,9 @@ antes: esperar 300
 ```
 
 >> Veja também [Como pedir ajuda e abrir um chamado](artigo:pedir-ajuda).
+
+## Quando você salva
+
+Sempre que um cadastro ou uma alteração dá certo, aparece no meio da tela um aviso com a marca da Connect: ela gira uma vez, vira um check e o texto diz o que foi feito, por exemplo "Fornecedor cadastrado com sucesso.". O aviso some sozinho em alguns segundos. Se quiser fechar antes, clique nele ou aperte **Esc**.
+
+Se algo der errado, o aviso continua na faixa colorida do topo da página, explicando o que precisa ser corrigido.
