@@ -2179,6 +2179,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /commitments/cancel-stale:
+    post:
+      operationId: cancelStaleCommitments
+      summary: Cancelamento em lote dos empenhos em aberto há muito tempo (situação Cancelado pelo cadastro), tudo ou nada e com prévia (erp.access, erp.commitments.view e erp.commitments.manage, ADR 0239)
+      description: >-
+        Sem commitment_ids, entram os empenhos em aberto do condomínio feitos há mais de older_than_days dias (padrão 90,
+        mínimo 30); os com lançamento ligado (skipped_with_entry) e os de fornecedor inativo ou documento removido
+        (skipped_inactive_link) ficam de fora. Com commitment_ids, recusa empenho não encontrado no condomínio, liquidado ou
+        cancelado, com lançamento ligado, dentro do prazo, ou de fornecedor inativo ou documento removido. Cada empenho é
+        regravado pelo cadastro só com a situação Cancelado (auditoria update do formulário e cancel por empenho). Nada é
+        apagado e nenhum aviso é enviado. Sem descrição, fornecedor, documento ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, older_than_days: { type: integer, minimum: 30, maximum: 3650, default: 90 }, commitment_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, committed_until, reason, skipped_with_entry, skipped_inactive_link, count, amount_cents, changed, commitments[{ id, committed_on, days_open, amount_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou empenho recusado (errors com _form ou os erros do formulário, e _commitment); nada é gravado' }
   /reports/commitments:
     get:
       operationId: commitmentsPosition
