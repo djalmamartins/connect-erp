@@ -2179,6 +2179,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/visitor-authorizations:
+    get:
+      operationId: visitorAuthorizations
+      summary: Situação das autorizações de visitantes do condomínio numa data (permanentes, válidas, vencendo, vencidas e ainda liberadas, sem data e bloqueadas), somente leitura (erp.access e erp.visitors.view, ADR 0234)
+      description: >-
+        Uma linha por situação, sempre as seis, com os visitantes do cadastro (sem os excluídos) na data on (padrão hoje)
+        e a janela de within_days dias (padrão 30). totals.visitors é a soma das linhas; attention = vencidos e ainda
+        liberados + liberados sem data nem acesso permanente. expired_by_age separa os vencidos e liberados pelos dias
+        desde o vencimento. Sem nome, documento, telefone, unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+        - { name: within_days, in: query, schema: { type: integer, minimum: 1, maximum: 365, default: 30 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, within_days, window_until, rows[{ situation, situation_label, status_label, visitors }], totals { visitors, active, attention }, expired_by_age { ate_30, de_31_a_90, mais_de_90 } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /lost-found/dispose:
     post:
       operationId: disposeLostFound
