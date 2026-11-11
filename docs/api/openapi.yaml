@@ -1175,6 +1175,85 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /accountability-publications:
+    get:
+      operationId: accountabilityPublications
+      summary: Versões publicadas da prestação de contas (erp.closing.view, erp.entries.view e erp.chart.view, ADR 0179)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: month, in: query, schema: { type: string, example: '2026-10' } }
+      responses:
+        '200': { description: '{ data: { condominium_id, competence, truncated, rows[{ id, competence, version, sha256, status, notes, published_by, published_at, withdrawn_* }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: accountabilityPublish
+      summary: Publica a prestação de contas de um mês fechado (também erp.closing.manage, ADR 0179)
+      description: Conteúdo igual ao da versão atual não cria versão nova (200, created = false).
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, month]
+              properties:
+                condominium_id: { type: integer }
+                month: { type: string, example: '2026-10' }
+                notes: { type: string, maxLength: 255 }
+      responses:
+        '200': { description: 'Mesmo conteúdo da versão atual: { data: { ..., created: false } }' }
+        '201': { description: '{ data: { id, version, sha256, status, ..., created: true } }' }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Mês aberto }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /accountability-publications/{id}:
+    get:
+      operationId: accountabilityPublication
+      summary: Uma versão publicada com o pacote congelado; ?format=csv baixa o CSV (ADR 0179)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { id, version, sha256, status, intact, payload } } ou text/csv' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { description: Mais de 30 exportações na última hora }
+  /accountability-publications/{id}/withdraw:
+    post:
+      operationId: accountabilityWithdraw
+      summary: Retira a versão atual com motivo; nada é apagado (erp.closing.manage, ADR 0179)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3, maxLength: 255 }
+      responses:
+        '200': { description: '{ data: { id, status: withdrawn, withdraw_reason, withdrawn_at } }' }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: A versão não é a atual }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/deliveries:
     get:
       operationId: deliveriesReport
