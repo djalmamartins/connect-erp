@@ -770,6 +770,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /closings/batch:
+    post:
+      operationId: closeMonthBatch
+      summary: Fechamento da mesma competência em vários condomínios, pela conferência antes de fechar, tudo ou nada e com prévia (erp.closing.view e erp.closing.manage, ADR 0205)
+      description: >-
+        Confere cada condomínio (ADR 0181). Recusa competência já fechada, conferência com erro (sempre) e conferência com
+        aviso (a não ser com allow_warnings). Com alguma recusa, nada é fechado e o 422 traz refused com todos os
+        condomínios e motivos. Sem recusa, fecha todos numa transação pelo fechamento de um por um (ADR 0031).
+        dry_run devolve a prévia sem gravar.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [competence, condominium_ids], properties: { competence: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' }, condominium_ids: { type: array, minItems: 1, maxItems: 100, items: { type: integer } }, allow_warnings: { type: boolean, default: false }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { competence, dry_run, allow_warnings, count, changed, revenue_cents, expense_cents, condominiums[{ condominium_id, name, closing_id, revenue_cents, expense_cents, open_revenue_cents, open_expense_cents, accepted_warnings[] }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou closing_refused com refused[{ condominium_id, name, reasons[{ code, level, message }] }]; nada é fechado' }
   /invoices:
     get:
       operationId: listInvoices
