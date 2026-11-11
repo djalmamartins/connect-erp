@@ -29,7 +29,7 @@ O Banco Inter é o primeiro banco ligado à cobrança do Connect ERP. Com a inte
 2. Marque as permissões de **leitura e escrita de boletos**.
 3. Baixe o **certificado** (.crt) e a **chave** (.key) e anote o **client_id** e o **client_secret**.
 
-> Para os testes, use a integração do ambiente **sandbox** do Inter.
+> Para os testes, crie a integração no portal de sandbox do Inter (https://developers.inter.co/sandbox), e não no Internet Banking. O certificado do Internet Banking é de produção e o sandbox recusa esse certificado com o erro `tlsv1 alert unknown ca`. O sandbox só funciona de segunda a sexta, das 8h às 20h.
 
 ## 2. Guardar a credencial no cofre do sistema
 
