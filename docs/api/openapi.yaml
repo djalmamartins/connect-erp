@@ -3242,6 +3242,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /employees/terminate:
+    post:
+      operationId: terminateEmployees
+      summary: Desligamento em lote de funcionários (data e motivo), pelo formulário, tudo ou nada e com prévia (erp.employees.view e erp.employees.manage, ADR 0225)
+      description: >-
+        Grava só a data de desligamento pelo RegistryService::save do cadastro (a situação do cadastro não muda). Recusa
+        funcionário não encontrado, inativo, já desligado (a data não é trocada aqui) ou admitido depois da data. Data até
+        30 dias à frente. Auditoria terminate por funcionário. Nada é enviado (rescisão e eSocial ficam fora). Sem nome, CPF,
+        contato ou salário na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, employee_ids, terminated_on, reason], properties: { condominium_id: { type: integer }, employee_ids: { type: array, items: { type: integer }, maxItems: 300 }, terminated_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, terminated_on, reason, count, changed, employees[{ id, job, shift, hired_on, terminated_on }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou funcionário recusado (errors com _form e _employee, ou os erros do formulário); nada é gravado' }
   /employees/readjust-salaries:
     post:
       operationId: readjustEmployeeSalaries
