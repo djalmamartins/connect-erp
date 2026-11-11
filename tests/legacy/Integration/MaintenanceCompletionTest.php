@@ -62,6 +62,18 @@ final class MaintenanceCompletionTest extends TestCase
             $next['frequency'], $next['done_on'], $next['status']]);
         self::assertSame('2026-11-05', substr((string)$this->pdo->query("SELECT done_on FROM erp_maintenances WHERE id = {$lift}")->fetchColumn(), 0, 10));
         self::assertSame(3, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_maintenances' AND action = 'complete'")->fetchColumn());
+        // ADR 0210: a próxima fica ligada à concluída (previous_id), inclusive a que já estava agendada; o botão do painel não duplica.
+        self::assertSame([$tank, $lift], [(int)$this->pdo->query("SELECT previous_id FROM erp_maintenances WHERE id = {$done['maintenances'][0]['next']['id']}")->fetchColumn(),
+            (int)$this->pdo->query("SELECT previous_id FROM erp_maintenances WHERE id = {$already}")->fetchColumn()]);
+        foreach ([$tank, $lift] as $completed) {
+            try {
+                (new \Source\Services\Erp\OperationalDashboard($this->pdo))->nextMaintenance($this->admin, $completed);
+                self::fail('O painel gerou a próxima de novo.');
+            } catch (\DomainException $exception) {
+                self::assertSame('A próxima manutenção desta já foi gerada.', $exception->getMessage());
+            }
+        }
+        self::assertSame(5, $this->maintenanceCount());
 
         $this->assertRefused([['id' => $tank, 'done_on' => '2026-11-10']], (string)$tank, 'Manutenção já concluída.');
     }

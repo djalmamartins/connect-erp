@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0210.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0210, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0211.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0211, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -211,3 +211,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0207](../Organic%20Code/decisions/0207-agreement-watch.md) | Acompanhamento dos acordos ativos pela regra de quebra do condomínio (breach_due, late com dias e parcelas até a quebra, on_track), somente leitura e sem aviso | Aceita |
 | [0208](../Organic%20Code/decisions/0208-maintenance-completion.md) | Conclusão de manutenções em lote pelo formulário com a próxima periódica agendada (calendário do contrato, fim de mês ajustado, sem duplicar), tudo ou nada e prévia | Aceita |
 | [0209](../Organic%20Code/decisions/0209-statement-rematch.md) | Nova conferência das linhas pendentes do extrato pela regra da importação (exatamente um candidato), para o extrato importado antes da baixa, com prévia e sem o memo do banco | Aceita |
+| [0210](../Organic%20Code/decisions/0210-operations-summary.md) | Resumo operacional do mês para o síndico (ocorrências, manutenções e reservas, somente leitura, sem dado pessoal) e a próxima manutenção da conclusão em lote ligada por previous_id (correção do 0208) | Aceita |
