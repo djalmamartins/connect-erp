@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /visitors/expire:
+    post:
+      operationId: expireVisitorAuthorizations
+      summary: Bloqueio em lote das autorizações de visitantes vencidas e ainda liberadas (situação Bloqueado pelo cadastro), tudo ou nada e com prévia (erp.access, erp.visitors.view e erp.visitors.manage, ADR 0235)
+      description: >-
+        Sem visitor_ids, entram os visitantes liberados do condomínio, sem acesso permanente, com "autorizado até"
+        anterior a before (padrão hoje; nunca depois de hoje). Com visitor_ids, recusa visitante não encontrado no
+        condomínio, já bloqueado, com acesso permanente, sem data ou ainda não vencido. Cada visitante é regravado pelo
+        cadastro só com a situação Bloqueado (auditoria update do formulário e expire por visitante). Nenhum aviso é
+        enviado. Sem nome, documento, telefone, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, visitor_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, count, changed, visitors[{ id, valid_until, days_expired }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou visitante recusado (errors com _form ou os erros do formulário, e _visitor); nada é gravado' }
   /reports/visitor-authorizations:
     get:
       operationId: visitorAuthorizations
