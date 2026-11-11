@@ -60,4 +60,21 @@ final class ErpBankingScreensTest extends TestCase
             }
         }
     }
+
+    public function testInterCredentialCardIsGatedAndNeverEchoesSecrets(): void
+    {
+        $view = $this->file('container/erp/connect/v1/pages/settings/integrations.php');
+        self::assertStringContainsString('<?php if ($canManageBankCredentials): ?>', $view, 'Formulário só para quem gerencia (ADR 0158).');
+        self::assertStringContainsString('type="password" id="inter-secret"', $view);
+        self::assertStringContainsString('csrf_input()', $view);
+        self::assertStringNotContainsString('client_secret\']', $view, 'O secret nunca é impresso.');
+        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        self::assertStringContainsString("Access::can('erp.settings.manage', \$user) && Access::can('erp.bank_accounts.manage', \$user)", $panel);
+        foreach (['assets/js/erp.js', 'assets/erp.min.js'] as $file) {
+            $js = $this->file('container/erp/connect/v1/' . $file);
+            foreach (['[data-erp-bank-credentials]', "'/test'", 'readAsDataURL', 'save_anyway'] as $needle) {
+                self::assertStringContainsString($needle, $js, "$file: $needle");
+            }
+        }
+    }
 }

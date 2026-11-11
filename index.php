@@ -75,6 +75,11 @@ $route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Supp
 $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-charges/{id}/pdf", "Banking:pdf", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-remittances", "Banking:remittances", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Credencial do banco pela tela Integrações (ADR 0158): pacote do banco, teste e cofre; só sandbox.
+$route->get("/bank-credentials", "BankCredentialsApi:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-credentials/{id}", "BankCredentialsApi:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-credentials/{id}/test", "BankCredentialsApi:test", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/bank-credentials/{id}", "BankCredentialsApi:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-returns", "Banking:returns", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-returns", "Banking:importReturn", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-events/divergences", "Banking:divergences", null, \Source\Support\Middleware\ApiAuthenticated::class);
