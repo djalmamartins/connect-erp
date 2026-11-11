@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/resident-link-endings:
+    get:
+      operationId: residentLinkEndings
+      summary: Vínculos de proprietários, inquilinos e moradores perto do fim ou vencidos sem baixa, por faixa de prazo e tipo de vínculo, somente leitura (erp.access e erp.residents.view, ADR 0242)
+      description: >-
+        Uma linha por faixa, sempre as seis (vencido há mais de 90, 31 a 90 e até 30 dias; termina em até 30, 31 a 60 e 61
+        a 90 dias), com os vínculos ativos, by_relationship (os tipos do cadastro) e inactive_unit (unidade inativa ou
+        excluída); totals é a soma das linhas. Vencido = fim anterior à data on (padrão hoje); o próprio dia ainda vale.
+        closable conta os vencidos com unidade ativa, o que o encerramento em lote (0241) pegaria com before = on;
+        open_ended conta os sem fim e later os com fim depois de 90 dias. Sem nome, documento, contato, unidade ou data
+        individual. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, links, by_relationship{ owner, tenant, resident, financial }, inactive_unit }], totals { links, by_relationship, inactive_unit }, closable, open_ended, later } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /residents/expire-ended:
     post:
       operationId: expireEndedResidentLinks
