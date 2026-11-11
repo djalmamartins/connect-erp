@@ -55,7 +55,10 @@ final class AdminScreens
             if ($kind === 'admin') {
                 $data['overview'] = (new AdminReports($pdo))->overview($user);
             } elseif ($kind === 'sent') {
-                $data['sent'] = (new AdminReports($pdo))->sent($user, $_GET['de'] ?? null, $_GET['ate'] ?? null, self::report($_GET['relatorio'] ?? null));
+                // Sem filtro na URL, abre no ano corrente até hoje (como Logs); antes a tela abria só com o aviso de datas inválidas.
+                $sentFrom = isset($_GET['de']) && $_GET['de'] !== '' ? $_GET['de'] : date('Y-01-01');
+                $sentTo = isset($_GET['ate']) && $_GET['ate'] !== '' ? $_GET['ate'] : date('Y-m-d');
+                $data['sent'] = (new AdminReports($pdo))->sent($user, $sentFrom, $sentTo, self::report($_GET['relatorio'] ?? null));
                 $data['scopeCondominiums'] = self::scopeCondominiums($pdo, $user);
             } elseif ($kind === 'users') {
                 $context = CondominiumContext::id();

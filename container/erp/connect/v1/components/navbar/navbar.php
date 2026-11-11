@@ -19,11 +19,11 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <strong><?= $this->e($title) ?></strong>
         <?php $this->insert('components/breadcrumbs/breadcrumbs'); ?>
     </div>
-    <form class="erp-condo-switch" method="post" action="<?= erp_url('/contexto/condominio') ?>" data-erp-condo-switch>
+    <form class="erp-condo-switch<?= $condoCurrent === null && $condoOptions !== [] ? ' is-unset' : '' ?>" method="post" action="<?= erp_url('/contexto/condominio') ?>" data-erp-condo-switch>
         <?= csrf_input() ?>
         <input type="hidden" name="back" value="<?= $this->e(\Source\Support\Erp\CondominiumContext::relativePath()) ?>">
         <span class="erp-condo-switch__icon" aria-hidden="true"><?= $icon('building', 'erp-icon--sm') ?></span>
-        <label class="erp-condo-switch__label" for="erp-condo-select">Condomínio</label>
+        <label class="erp-condo-switch__label" for="erp-condo-select"><?= $condoCurrent === null && $condoOptions !== [] ? 'Selecione o condomínio' : 'Condomínio' ?></label>
         <select id="erp-condo-select" name="condominium" class="erp-condo-switch__select"<?= $condoOptions === [] ? ' disabled' : '' ?>>
             <?php if ($condoOptions === []): ?>
                 <option value="0">Nenhum condomínio vinculado</option>

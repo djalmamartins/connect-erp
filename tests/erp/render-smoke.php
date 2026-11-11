@@ -104,29 +104,43 @@ $common = static function (string $html, string $label, string $title) use ($ass
     $assert((bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), "$label: logout com CSRF");
 };
 
-// Dashboard
-$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard')]);
+// Dashboard com dados reais (ADR 0157): financeiro, agenda e atividades vêm do serviço, sem demonstração.
+$dashMonths = array_map(static fn (string $m): array => ['competence' => $m, 'label' => Source\Services\Erp\FinancialDashboard::monthLabel($m),
+    'revenue_cents' => 1000000, 'revenue_received_cents' => 800000, 'expense_cents' => 700000, 'expense_paid_cents' => 650000], Source\Services\Erp\FinancialDashboard::window('2026-11'));
+$dashFinance = ['competence' => '2026-11', 'as_of' => '2026-11-10', 'months' => $dashMonths,
+    'month' => ['revenue_cents' => 1000000, 'revenue_received_cents' => 800000, 'expense_cents' => 700000, 'expense_paid_cents' => 900000, 'label' => 'novembro de 2026',
+        'result_cents' => -100000, 'balance_cents' => 300000, 'received_rate' => 80.0, 'previous_revenue_cents' => 1000000, 'previous_expense_cents' => 700000],
+    'delinquency' => ['open_cents' => 250000, 'buckets' => [['key' => '1-30', 'label' => 'Até 30 dias', 'amount_cents' => 150000], ['key' => '31-60', 'label' => '31 a 60 dias', 'amount_cents' => 0],
+        ['key' => '61-90', 'label' => '61 a 90 dias', 'amount_cents' => 0], ['key' => '90+', 'label' => 'Acima de 90 dias', 'amount_cents' => 100000]]],
+    'condominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>', 'city' => 'Campinas/SP', 'units' => 12, 'revenue_cents' => 1000000, 'received_cents' => 800000,
+        'overdue_cents' => 200000, 'expense_cents' => 700000, 'received_rate' => 80.0, 'delinquency_rate' => 20.0, 'status' => 'Crítico']]];
+$dashAgenda = [['date' => '2026-11-12', 'time' => '19:00', 'kind' => 'assembly', 'title' => 'AGO <anual>', 'text' => 'Residencial Exemplo · assembleia ordinária virtual', 'href' => '/comunicacao/assembleia-virtual']];
+$dashActivities = [['at' => '2026-11-10 09:00:00', 'icon' => 'receipt', 'title' => 'Lançamento cadastrado', 'text' => '#5 · Residencial Exemplo · Ana', 'href' => '/financeiro/lancamentos']];
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['finance' => $dashFinance, 'agenda' => $dashAgenda, 'activities' => $dashActivities, 'competence' => '2026-11',
+    'summary' => [['label' => 'Unidades', 'count' => 12, 'href' => '/condominios/unidades', 'icon' => 'building']], 'condoTotal' => 1]);
 $html = $render('pages/dashboard/index', $data);
 $common($html, 'dashboard', 'Dashboard');
-$assert(substr_count($html, 'erp-kpi ') >= 4, 'dashboard: 4 indicadores');
 $assert(str_contains($html, 'data-erp-condo-switch') && str_contains($html, '<option value="7"') && str_contains($html, 'Edifício &lt;Exemplo&gt;') && str_contains($html, 'Todos os condomínios'), 'navbar: seletor de condomínio com o escopo, escapado');
 $assert((bool)preg_match('~action="[^"]*/contexto/condominio"~', $html), 'navbar: seletor envia para /contexto/condominio');
 $assert(str_contains($html, 'data-erp-navsearch-toggle') && str_contains($html, 'id="erp-navsearch-panel" role="search" hidden'), 'navbar: busca em ícone, fechada por padrão');
 $css = (string)file_get_contents($theme . 'assets/css/erp.css');
 $assert(str_contains($css, '.erp-icon-button.erp-navbar__menu { display: none; }'), 'css: hambúrguer escondido no desktop');
 $assert(str_contains((string)file_get_contents($theme . 'assets/js/erp.js'), "Acordeão"), 'js: menu em acordeão');
-$assert(str_contains($html, 'erp-bars') && str_contains($html, 'erp-donut'), 'dashboard: gráficos');
-$assert(str_contains($html, 'data-erp-table'), 'dashboard: tabela paginável');
-$assert(str_contains($html, '<dialog class="erp-modal"'), 'dashboard: modal');
-$assert(str_contains($html, 'Dados de demonstração'), 'dashboard: aviso de demonstração');
+$assert(str_contains($html, 'data-erp-dashboard-finance') && str_contains($html, 'erp-bars') && str_contains($html, 'erp-donut'), 'dashboard: gráficos reais');
+$assert(str_contains($html, 'R$ 8.000,00') && str_contains($html, '− R$ 1.000,00') && str_contains($html, 'R$ 2.500,00') && str_contains($html, '<dt>Acima de 90 dias</dt><dd>R$ 1.000,00</dd>'), 'dashboard: mês do balancete e inadimplência por atraso');
+$assert(str_contains($html, 'data-erp-table') && str_contains($html, 'Residencial &lt;Exemplo&gt;') && str_contains($html, 'erp-badge--danger">Crítico'), 'dashboard: quadro por condomínio escapado');
+$assert(str_contains($html, 'AGO &lt;anual&gt;') && str_contains($html, 'Lançamento cadastrado') && str_contains($html, 'erp-summary--side'), 'dashboard: agenda, atividades e cadastros na lateral');
+$assert(str_contains($html, 'name="competencia"') && str_contains($html, 'value="2026-11" selected') && str_contains($html, 'balancete-verificacao?de=2026-11&amp;ate=2026-11'), 'dashboard: competência e link do balancete');
+$assert(!str_contains($html, 'Dados de demonstração') && !str_contains($html, '<dialog class="erp-modal" id="dash-quick-notice"') && !str_contains($html, 'R$ 1.284.530'), 'dashboard: sem demonstração');
+$assert(strpos($html, 'dash-cash-title') < strpos($html, 'dash-summary-title'), 'dashboard: financeiro antes dos cadastros');
 $save('dashboard', $html);
 
 // ADR 0030: com um condomínio na barra superior, os links levam o slug e o dashboard mostra o resumo dele.
 Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'Residencial Exemplo'], ['id' => 9, 'name' => 'Edifício <Exemplo>']], 7);
-$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'summary' => [['label' => 'Síndico e conselho', 'count' => 4, 'href' => '/cadastros/sindico-e-conselho', 'icon' => 'user']], 'condoTotal' => 2]);
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['finance' => $dashFinance, 'agenda' => $dashAgenda, 'summary' => [['label' => 'Síndico e conselho', 'count' => 4, 'href' => '/cadastros/sindico-e-conselho', 'icon' => 'user']], 'condoTotal' => 2]);
 $html = $render('pages/dashboard/index', $data);
 $assert(str_contains($html, '<option value="7" selected'), 'contexto: condomínio selecionado na navbar');
-$assert(str_contains($html, 'Resumo do Residencial Exemplo'), 'contexto: resumo do condomínio no dashboard');
+$assert(str_contains($html, 'Situação do Residencial Exemplo') && str_contains($html, 'dash-summary-title'), 'contexto: cadastros do condomínio no dashboard');
 $assert((bool)preg_match('~href="[^"]*/residencial-exemplo/cadastros/sindico-e-conselho"~', $html), 'contexto: links com o slug do condomínio');
 $assert((bool)preg_match('~action="[^"]*/contexto/condominio"~', $html) && !str_contains($html, 'residencial-exemplo/contexto'), 'contexto: troca de condomínio sem slug');
 $assert(!str_contains($html, 'dash-condos-title'), 'contexto: tabela de todos os condomínios some com um condomínio escolhido');
@@ -973,14 +987,14 @@ $operationalCards = ['maintenances_late' => 2, 'maintenances_week' => 1, 'insura
     'reservations_pending' => 3, 'occurrences_open' => 4, 'deliveries_waiting' => 0, 'receivables_overdue_cents' => 1234567, 'receivables_week_cents' => 50000, 'payables_week_cents' => 0, 'waitlist_to_call' => 1];
 $operationalAlerts = [['kind' => 'maintenances_late', 'severity' => 'danger', 'count' => 2, 'message' => 'Manutenções atrasadas', 'route' => '/operacional/manutencoes'],
     ['kind' => 'reservations_pending', 'severity' => 'info', 'count' => 3, 'message' => 'Reservas <aguardando> aprovação', 'route' => '/operacional/agendamentos-pendentes']];
-$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]]);
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]]);
 $html = $render('pages/dashboard/index', $data);
 $save('dashboard-real', $html);
 $assert(str_contains($html, 'data-erp-dashboard-real') && str_contains($html, 'R$ 12.345,67') && str_contains($html, 'Vence em 7 dias: R$ 500,00') && str_contains($html, '1 prevista para os próximos 7 dias')
     && str_contains($html, '3 reservas aguardando aprovação') && !str_contains($html, 'R$ 1.284.530') && str_contains($html, 'Reservas &lt;aguardando&gt; aprovação')
     && str_contains($html, '/operacional/agendamentos-pendentes') && substr_count($html, 'Alertas</h2>') === 1, 'dashboard: cards e alertas reais no lugar da demonstração');
 putenv('ERP_DEMO_DATA=false');
-$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard'), 'operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => []]]);
+$data = $layoutData->invoke($panel, $user, 'AP-001', ['operational' => ['as_of' => '2026-11-09', 'condominium_id' => null, 'cards' => $operationalCards, 'alerts' => []]]);
 $html = $render('pages/dashboard/index', $data);
 $assert(str_contains($html, 'data-erp-dashboard-real') && str_contains($html, 'Nada pendente') && !str_contains($html, 'Indicadores ainda indisponíveis'), 'dashboard: sem demonstração mostra os dados reais');
 putenv('ERP_DEMO_DATA=true');
@@ -1349,17 +1363,22 @@ $condoPanel = ['condominium' => ['id' => 7, 'name' => 'Residencial <Aurora>', 's
         'delinquency_cents' => 300000, 'delinquency_charges_cents' => 12345, 'delinquent_units' => 3, 'buckets' => ['1-30' => 100000, '31-60' => 0, '61-90' => 50000, '90+' => 150000],
         'competence' => '2026-11', 'closing_status' => 'open', 'competence_result_cents' => -2000],
     'operations' => ['as_of' => '2026-11-09', 'condominium_id' => 7, 'cards' => $operationalCards, 'alerts' => $operationalAlerts]];
-$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => $condoPanel, 'condoPanelError' => null], 'real');
-$common($html, 'AP-002', 'Residencial <Aurora>');
+// O painel do condomínio (AP-002) foi fundido na visão geral (ADR 0154): mesmos números dentro de show.
+$html = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 7, 'name' => 'Residencial <Aurora>', 'document' => null, 'status' => 'active'],
+    'condoPanel' => $condoPanel, 'condoPanelError' => null], 'Residencial <Aurora>'));
+$save('page-ap-004-overview-panel', $html);
 $assert(str_contains($html, 'data-erp-condo-panel') && str_contains($html, '36 ocupadas · 4 vagas (90,0%)') && str_contains($html, 'R$ 45.678,90') && str_contains($html, 'Itaú &lt;principal&gt;')
     && str_contains($html, 'encargos R$ 123,45') && str_contains($html, 'Resultado de 11/2026') && str_contains($html, 'Competência Aberta') && str_contains($html, 'Acima de 90 dias')
-    && str_contains($html, 'Manutenções atrasadas') && str_contains($html, '/condominios/7'), 'AP-002: painel com ocupação, financeiro e alertas');
-$html = $agreementPage('AP-002', 'pages/condominiums/panel', ['condoPanelReady' => true, 'condoPanel' => null, 'condoPanelError' => null]);
-$assert(str_contains($html, 'Escolha um condomínio') && str_contains($html, '/condominios/painel-do-condominio'), 'AP-002: em todos os condomínios pede a escolha');
-$assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-002', ['condoPanelReady' => false]) === null, 'AP-002: sem permissão ou banco segue a demonstração');
+    && str_contains($html, 'Manutenções atrasadas') && str_contains($html, 'Identificação') && str_contains($html, 'Cadastros do condomínio') && str_contains($html, 'Rotina'), 'AP-004: visão geral com ocupação, financeiro, alertas e identificação');
+$html = $render('pages/condominiums/show', $layoutData->invoke($panel, $user, 'AP-004', ['condominium' => ['id' => 7, 'name' => 'Residencial Aurora', 'document' => null, 'status' => 'active'],
+    'condoPanel' => null, 'condoPanelError' => 'Seu perfil não tem permissão para todos os indicadores do condomínio (financeiro e fechamento).'], 'Residencial Aurora'));
+$assert(!str_contains($html, 'data-erp-condo-panel') && str_contains($html, 'permissão para todos os indicadores') && str_contains($html, 'Identificação'), 'AP-004: sem financeiro, aviso no lugar dos indicadores');
+$assert(!isset($catalog['pages']['AP-002']), 'AP-002 fundido na visão geral: fora do menu');
 
-$unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025], 'as_of' => '2026-11-09',
-    'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'phone' => '(11) 99999-0000', 'email' => 'ana@example.com']],
+$unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' => 'Residencial Aurora', 'label' => 'A-101', 'block' => 'A', 'number' => '101', 'type' => 'apartamento', 'ideal_fraction' => 0.025, 'address' => 'Rua das Flores, 10 · unidade A-101 · Campinas/SP'], 'as_of' => '2026-11-09',
+    'people' => [['id' => 1, 'name' => 'Ana <Souza>', 'relationship' => 'owner', 'document' => '52998224725', 'phone' => '11999990000', 'email' => 'ana@example.com',
+        'starts_on' => '2024-03-01', 'ends_on' => null, 'billing_by_email' => true, 'notices_opt_out' => false, 'notes' => 'Prefere <WhatsApp>', 'has_portal_account' => false,
+        'other_units' => [['unit_id' => 30, 'label' => 'Sala 7', 'condominium_name' => 'Edifício Beta', 'relationship' => 'tenant']]]],
     'finance' => ['overdue' => [['id' => 3, 'description' => 'Taxa <outubro>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'amount_cents' => 80000, 'days_late' => 30, 'bucket' => '1-30']],
         'overdue_cents' => 80000, 'charges_cents' => 2400, 'max_days_late' => 30,
         'upcoming' => [['id' => 4, 'description' => 'Taxa novembro', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 80000]],
@@ -1372,6 +1391,10 @@ $common($html, 'AP-003', 'Unidade A-101');
 $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 824,00') && str_contains($html, 'Taxa &lt;outubro&gt;') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Proprietário')
     && str_contains($html, 'Quebrado') && str_contains($html, 'ABCD-EFGH') && str_contains($html, '<option value="9" selected>') && str_contains($html, 'data-erp-autosubmit')
     && str_contains($html, '1 entrega(s) · 1 ocorrência(s) · 2 reserva(s)'), 'AP-003: painel da unidade');
+$assert(str_contains($html, 'data-erp-modal-open="person-card-1"') && str_contains($html, '<dialog class="erp-modal erp-modal--wide erp-person-card" id="person-card-1"')
+    && str_contains($html, '529.982.247-25') && str_contains($html, 'href="tel:+5511999990000"') && str_contains($html, '(11) 99999-0000') && str_contains($html, '01/03/2024')
+    && str_contains($html, 'Sala 7') && str_contains($html, 'Edifício Beta') && str_contains($html, 'Prefere &lt;WhatsApp&gt;') && str_contains($html, 'Rua das Flores, 10')
+    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Escolha uma unidade') && !str_contains($html, 'data-erp-unit-panel'), 'AP-003: sem unidade escolhida pede a escolha');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => 99, 'unitPanelError' => 'Unidade não encontrada no seu escopo de condomínios.']));
@@ -1417,9 +1440,9 @@ $assert(str_contains($security(['twoFactorConfigured' => false]), 'CONNECT_2FA_K
 
 // Demonstração desligada: dashboard mostra estado vazio
 putenv('ERP_DEMO_DATA=false');
-$data = $layoutData->invoke($panel, $user, 'AP-001', ['dashboard' => Source\Services\Erp\DemoData::get('dashboard')]);
+$data = $layoutData->invoke($panel, $user, 'AP-001', []);
 $html = $render('pages/dashboard/index', $data);
-$assert(str_contains($html, 'Indicadores ainda indisponíveis') && !str_contains($html, 'R$ 1.284.530'), 'demo off: estado vazio sem números');
+$assert(str_contains($html, 'Indicadores ainda indisponíveis') && !str_contains($html, 'R$ 1.284.530'), 'sem banco: estado vazio sem números');
 [$template, $data] = $panel->pageView($user, 'AP-022');
 $html = $render($template, $data);
 $assert(str_contains($html, 'Nenhum registro ainda') && !str_contains($html, 'data-erp-table data-per-page'), 'demo off: listagem sem linhas fictícias');

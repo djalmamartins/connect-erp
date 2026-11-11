@@ -25,7 +25,8 @@ final class ErpBankingScreensTest extends TestCase
         self::assertNull(Panel::ownTemplate('AP-036', ['bankReady' => false]));
         self::assertSame('pages/finance/bank-return-import', Panel::ownTemplate('AP-036', ['bankReady' => true]));
         self::assertSame('pages/finance/bank-divergences', Panel::ownTemplate('AP-038', ['bankDivergences' => []]));
-        self::assertNull(Panel::ownTemplate('AP-037', ['bankReady' => true]), 'remessa (CNAB) ainda não existe');
+        self::assertNull(Panel::ownTemplate('AP-037', ['bankReady' => true, 'bankRemittances' => null]), 'Sem permissão ou sem banco: segue a demonstração.');
+        self::assertSame('pages/finance/bank-remittances', Panel::ownTemplate('AP-037', ['bankRemittances' => ['data' => []]]), 'Remessas ligada (ADR 0156).');
     }
 
     public function testPanelChecksPermissionsBeforeLoading(): void
@@ -42,6 +43,9 @@ final class ErpBankingScreensTest extends TestCase
         self::assertStringContainsString("in_array(\$status, ['pending', 'registered'], true)", $charges);
         $divergences = $this->file('container/erp/connect/v1/pages/finance/bank-divergences.php');
         self::assertStringContainsString('name="note" minlength="5" maxlength="255" required', $divergences);
+        $remittances = $this->file('container/erp/connect/v1/pages/finance/bank-remittances.php');
+        self::assertStringNotContainsString('method="post"', $remittances, 'Remessas é só leitura.');
+        self::assertStringContainsString("\$charge['pdf_available']", $charges, 'PDF só quando o banco oferece.');
         foreach (['bank-charges', 'bank-return-import', 'bank-divergences'] as $view) {
             self::assertStringContainsString('csrf_input()', $this->file("container/erp/connect/v1/pages/finance/{$view}.php"), $view);
         }

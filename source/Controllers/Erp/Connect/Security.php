@@ -24,6 +24,15 @@ final class Security extends Controller
 {
     private const CODES_KEY = 'auth2faRecoveryCodes';
 
+    /**
+     * O Router passa a instância do roteador ao construtor; Controller::__construct espera o
+     * caminho das views (?string). Sem este construtor a página /seguranca dava erro 500.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
     /** GET /seguranca */
     public function show(): void
     {

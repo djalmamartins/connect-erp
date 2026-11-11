@@ -23,9 +23,6 @@ return [
             ['Em implantação', '2'],
         ],
     ],
-    'AP-002' => [
-        'kind' => 'dashboard',
-    ],
     'AP-003' => [
         'kind' => 'dashboard',
     ],

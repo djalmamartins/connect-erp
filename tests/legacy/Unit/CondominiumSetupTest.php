@@ -83,6 +83,42 @@ final class CondominiumSetupTest extends TestCase
         self::assertStringNotContainsString('Mostrando só', $html);
     }
 
+    public function testListShowsShortAddressAndDiscreetSelectButton(): void
+    {
+        CondominiumContext::use([['id' => 7, 'name' => 'Residencial Aurora']], null);
+        $html = $this->render('pages/condominiums/index', [
+            'condominiums' => [['id' => 7, 'name' => 'Residencial Aurora', 'document' => null, 'status' => 'active', 'address' => 'Av. <Brasil>, 120 · Campinas/SP']],
+            'condoOptionsById' => array_column(CondominiumContext::options(), null, 'id'),
+        ]);
+        self::assertStringContainsString('Av. &lt;Brasil&gt;, 120 · Campinas/SP', $html, 'Endereço curto escapado.');
+        self::assertStringContainsString('erp-btn--pick', $html, 'Selecionar com contorno; verde só no hover (ADR 0154).');
+        self::assertStringNotContainsString('erp-btn--sm erp-btn--primary', $html);
+        $css = (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/assets/css/erp.css');
+        self::assertMatchesRegularExpression('/\.erp-btn--pick \{[^}]*background: var\(--erp-surface\)[^}]*cursor: pointer/', $css);
+        self::assertMatchesRegularExpression('/\.erp-btn--pick:hover[^{]*\{[^}]*background: var\(--erp-brand\)/', $css);
+    }
+
+    public function testShortAddressKeepsStreetNumberAndCity(): void
+    {
+        $short = [\Source\Services\CondominiumScope::class, 'shortAddress'];
+        self::assertSame('Av. Brasil, 120 · Campinas/SP', $short(['street' => 'Av. Brasil', 'number' => '120', 'city' => 'Campinas', 'state' => 'sp', 'district' => 'Centro']));
+        self::assertSame('Rua A · Campinas', $short(['street' => 'Rua A', 'number' => '', 'city' => 'Campinas', 'state' => null]));
+        self::assertSame('Campinas/SP', $short(['street' => null, 'city' => 'Campinas', 'state' => 'SP']));
+        self::assertSame('', $short([]));
+    }
+
+    public function testOldPanelRouteRedirectsToTheOverview(): void
+    {
+        $route = new class {
+            public array $calls = [];
+            public function __call(string $name, array $args): void { $this->calls[] = [$name, ...$args]; }
+        };
+        require moves_container_path('erp', 'connect') . '/routes.php';
+        self::assertContains(['get', '/condominios/painel-do-condominio', 'Condominiums:panelRedirect'], $route->calls);
+        $catalog = require moves_container_path('erp', 'connect') . '/components/layout/catalog.php';
+        self::assertArrayNotHasKey('AP-002', $catalog['pages'], 'Painel do condomínio fundido na visão geral (ADR 0154).');
+    }
+
     public function testOverviewShowsFullRecordAndSetupCard(): void
     {
         $steps = array_map(static fn (array $s): array => $s + ['count' => 0, 'total' => null, 'done' => $s['key'] === 'condominium', 'meta' => 'x'], CondominiumSetup::definitions(3));
@@ -97,6 +133,7 @@ final class CondominiumSetupTest extends TestCase
             self::assertStringContainsString($needle, $html);
         }
         self::assertStringContainsString("name='csrf'", $html, 'Retomar o guia é POST com CSRF.');
+        self::assertStringContainsString('/todos/condominios"', $html, 'Todos os condomínios limpa a barra superior (segmento /todos), senão a sessão volta para o condomínio.');
     }
 
     public function testGuideBarMarksCurrentStepAndOffersNextOrConclude(): void

@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Revisão de cobertura de 10/11/2026 (ADR 0150): a matriz do ADR 0094 cobre só os controllers listados nela.
  * Esta varredura estática vale para todos os controllers de /api/v1, inclusive os que vierem depois:
- *  - toda rota de /api/v1 passa pelo middleware ApiAuthenticated, menos o /health e a confirmação do 2FA,
+ *  - toda rota de /api/v1 passa pelo middleware ApiAuthenticated, menos o /health, a confirmação do 2FA e o webhook do banco (ADR 0156),
  *    que acontece antes da sessão completa;
  *  - toda ação pública de instância chama Auth::user() ou Access::can, direto ou por um método do próprio
  *    controller (authorize, write, guard...).
@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 final class ApiGuardCoverageTest extends TestCase
 {
     private const ROOT = __DIR__ . '/../../..';
-    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify'];
+    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify', 'POST /webhooks/bank/{adapter}/{secret}'];
 
     public function testEveryApiRouteUsesTheAuthenticatedMiddleware(): void
     {
@@ -57,7 +57,7 @@ final class ApiGuardCoverageTest extends TestCase
                 }
             }
             foreach ($actions as $action) {
-                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify'], true)) {
+                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify', 'BankWebhook::receive'], true)) {
                     $unguarded[] = $controller . '::' . $action;
                 }
             }
@@ -73,6 +73,16 @@ final class ApiGuardCoverageTest extends TestCase
         self::assertStringContainsString('ApiAuthenticated::validCsrf()', $body, 'Confirmação do 2FA exige CSRF.');
         self::assertStringContainsString('Auth::twoFactorPending()', $body, 'Só com desafio pendente.');
         self::assertStringContainsString("request_limit('api_2fa'", $body, 'Com limite de tentativas.');
+    }
+
+    public function testBankWebhookStaysLockedDown(): void
+    {
+        $source = (string)file_get_contents(self::ROOT . '/source/Controllers/Api/V1/BankWebhook.php');
+        self::assertStringContainsString('(new BankWebhooks())->receive(', $source, 'Webhook passa pelo serviço que confere o segredo e consulta o banco.');
+        self::assertStringNotContainsString('Auth::', $source, 'Webhook não usa sessão.');
+        $service = (string)file_get_contents(self::ROOT . '/source/Services/Erp/Banking/BankWebhooks.php');
+        self::assertStringContainsString('accountByWebhookSecret(', $service);
+        self::assertStringContainsString('refreshFromBank(', $service, 'Estado só muda pela consulta ao banco.');
     }
 
     /** @param array<string, string> $bodies @param array<string, true> $seen */

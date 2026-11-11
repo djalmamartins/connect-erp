@@ -5,7 +5,7 @@ Cada documento é uma ficha inicial gerada do inventário do PDF, NÃO uma espec
 Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOPO são funcionalidades do fornecedor SaaS e não serão implementadas; REINTERPRETAR indica adaptação ao modelo de administradora única.
 
 - [AP-001 — Administradora](pages/ap-001-administradora.md) · dashboards · CONFIRMADA · REINTERPRETAR
-- [AP-002 — Condomínio](pages/ap-002-condominio.md) · dashboards · CONFIRMADA
+- [AP-002 — Condomínio](pages/ap-002-condominio.md) · dashboards · CONFIRMADA · fundida na visão geral do condomínio (AP-004, ADR 0154)
 - [AP-003 — Unidade](pages/ap-003-unidade.md) · dashboards · CONFIRMADA
 - [AP-004 — Condomínios](pages/ap-004-condominios.md) · cadastros · CONFIRMADA
   - [Checklist de chegada do condomínio](modules/checklist-de-chegada.md) · funcionalidade própria do Connect ERP (ADR 0013)

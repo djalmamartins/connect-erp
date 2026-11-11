@@ -44,6 +44,15 @@ final class PanelSummariesTest extends TestCase
         self::assertContains('erp.unit_documents.view', PanelSummaries::REQUIRED['unit']);
     }
 
+    /** ADR 0155: endereço da unidade na ficha da pessoa. */
+    public function testUnitAddressLine(): void
+    {
+        self::assertNull(PanelSummaries::address(['street' => ' ', 'city' => 'Campinas'], 'A-101'));
+        self::assertSame('Rua A, 5 · Bloco 2 · unidade A-101 · Centro · Campinas/SP · CEP 13010-000',
+            PanelSummaries::address(['street' => 'Rua A', 'number' => '5', 'complement' => 'Bloco 2', 'district' => 'Centro', 'city' => 'Campinas', 'state' => 'SP', 'zip_code' => '13010000'], 'A-101'));
+        self::assertSame('Rua A · Campinas', PanelSummaries::address(['street' => 'Rua A', 'city' => 'Campinas', 'zip_code' => '123'], ''));
+    }
+
     /** ADR 0061: cartões com valores do financeiro saem do dashboard de quem não tem erp.entries.view. */
     public function testDashboardHidesFinanceCardsWithoutPermission(): void
     {

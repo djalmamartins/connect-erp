@@ -29,7 +29,7 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="icon" href="<?= theme('/assets/images/favicon-32x32.png') ?>">
     <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
 </head>
-<body class="erp-body">
+<body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?>">
 <a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
 <?php if ($withNavigation ?? true): ?>
 <div class="erp-shell" data-erp-shell>
