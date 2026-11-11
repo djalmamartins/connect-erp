@@ -2179,6 +2179,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/pets-vehicles:
+    get:
+      operationId: petsVehiclesSummary
+      summary: Resumo dos animais de estimação (espécie, porte, vacinação) e dos veículos (tipo, vaga) cadastrados no condomínio e das unidades com um, dois ou três ou mais, somente leitura (erp.access, erp.pets.view e erp.vehicles.view, ADR 0236)
+      description: >-
+        Só os registros ativos dos cadastros, sem os excluídos. pets.rows traz uma linha por espécie e vehicles.rows uma
+        linha por tipo, sempre as opções do cadastro; os totais são a soma das linhas. units traz as unidades ativas e,
+        para animais e veículos, quantas unidades têm um, dois ou três ou mais (a unidade é a vinculada ou, sem vínculo, o
+        texto da unidade, só para contar). Sem nome, raça, placa, modelo, cor, vaga, dono, tutor, unidade ou observação.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, pets { rows[{ species, species_label, pets, by_size{ pequeno, medio, grande, sem_porte }, vaccinated, not_vaccinated }], totals }, vehicles { rows[{ kind, kind_label, vehicles, with_spot, without_spot }], totals }, units { active_units, with_pets{ um, dois, tres_ou_mais, units }, with_vehicles{ um, dois, tres_ou_mais, units } } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /visitors/expire:
     post:
       operationId: expireVisitorAuthorizations
