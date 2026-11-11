@@ -14,6 +14,14 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 | Baixa | webhook + consulta no banco, conciliação do ADR 0035 |
 | Remessas | `GET /api/v1/bank-remittances` (lotes por conta e dia; sem arquivo) |
 
+## Sandbox: de onde vem a credencial
+
+- Crie a aplicação no portal de sandbox (https://developers.inter.co/sandbox). Não use o Internet Banking: a integração criada lá
+  tem certificado de **produção**, emitido pela "API Intermediate Certificate Authority", e o host de sandbox
+  recusa esse certificado no handshake com `tlsv1 alert unknown ca` (CONFIRMADO em 11/11/2026).
+- O sandbox só fica disponível de segunda a sexta, das 8h às 20h (horário de Brasília), segundo o aviso do portal. Fora desse horário, o `testar` falha.
+- Guarde o certificado de produção fora da pasta do projeto até a aprovação de produção.
+
 ## Passo a passo (servidor)
 
 1. `php tools/bank-credentials.php gerar-chave` → colar `CONNECT_BANK_VAULT_KEY=...` no `.env` (fora do Git).
