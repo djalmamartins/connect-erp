@@ -265,6 +265,8 @@ $route->post("/employees/readjust-salaries", "EmployeeSalaryReadjustment:store",
 $route->post("/employees/terminate", "EmployeeTermination:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Reatribuição em lote dos chamados de um responsável para outro (ADR 0227). Antes do laço dos cadastros.
 $route->post("/tickets/reassign", "TicketReassignment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Uso dos espaços comuns do condomínio no período, somente leitura (ADR 0228). Antes do laço dos cadastros.
+$route->get("/reports/common-area-usage", "CommonAreaUsage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
