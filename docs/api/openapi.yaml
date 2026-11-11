@@ -3472,6 +3472,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou conta recusada (paga, cancelada, com boleto ativo, mês fechado, trava de origem; errors e _entry); nada é gravado' }
+  /entries/cancel:
+    post:
+      operationId: cancelEntries
+      summary: Cancelamento de contas em aberto em lote, pelas regras do formulário, com motivo, tudo ou nada e prévia (erp.entries.view e erp.entries.manage, ADR 0203)
+      description: >-
+        Recusa conta já cancelada, já paga (estorne antes), com boleto pendente ou registrado no banco, com boleto pago ou
+        conciliada (ADR 0194), com recibo válido, gerada por fatura, acordo, cobrança extra ou multa, ou em mês fechado.
+        Uma recusada desfaz todas. dry_run devolve a prévia sem gravar. Cancelar não exclui: a conta fica "Cancelado".
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, entry_ids, reason], properties: { condominium_id: { type: integer }, entry_ids: { type: array, minItems: 1, maxItems: 200, items: { type: integer } }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, count, changed, total_cents, entries[{ id, description, nature, competence, due_on, amount_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou conta recusada (errors e _entry); nada é gravado' }
   /suppliers/deactivate:
     post:
       operationId: deactivateSuppliers
