@@ -96,6 +96,7 @@ $route->get("/reports/cash-forecast", "CashForecast:show", null, \Source\Support
 $route->get("/reports/expense-review", "ExpenseReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/supplier-spend", "SupplierSpend:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/billing-check", "BillingCheck:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/collection-progress", "CollectionProgress:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0165: relatórios contábeis
 $route->get("/reports/ledger", "AccountingReports:ledger", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/account-balances", "AccountingReports:accountBalances", null, \Source\Support\Middleware\ApiAuthenticated::class);
