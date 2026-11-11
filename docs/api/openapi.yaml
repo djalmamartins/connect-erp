@@ -1137,6 +1137,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/unit-statement:
+    get:
+      operationId: unitStatement
+      summary: Extrato da unidade no período (erp.entries.view, ADR 0184)
+      description: >-
+        As contas a receber da unidade com vencimento no período (até 366 dias), cada uma com a situação (paid, open,
+        overdue ou renegotiated), o saldo anterior, o cobrado e o pago no período, o em aberto no fim e o vencido na
+        data. Sem nome de morador. format=csv baixa o CSV (30 por hora, auditado).
+      security: [{ session: [] }]
+      parameters:
+        - { name: unit_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { unit{id, condominium_id, label}, from, to, as_of, truncated, rows[{entry_id, description, competence, due_on, paid_on, amount_cents, agreement_id, situation}], totals{opening_cents, charged_cents, paid_cents, open_cents, overdue_cents, paid, open, overdue, renegotiated} } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
   /reports/ledger:
     get:
       operationId: ledger
