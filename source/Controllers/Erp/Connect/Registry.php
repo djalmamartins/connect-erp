@@ -12,6 +12,7 @@ use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryInUse;
 use Source\Services\Erp\Registry\RegistryLocked;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Erp\Registry\RegistryPaymentLocked;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Erp\VirtualDisk;
@@ -159,6 +160,11 @@ final class Registry extends Controller
             redirect(erp_url($definition['route'] . '/' . $this->id($data)));
             return;
         } catch (RegistryLocked $locked) {
+            (new Message())->error($locked->getMessage())->flash();
+            redirect(erp_url($definition['route'] . '/' . $this->id($data)));
+            return;
+        } catch (RegistryPaymentLocked $locked) {
+            // ADR 0194: conta conciliada ou com boleto pago pelo banco não sai; volta ao registro com o motivo.
             (new Message())->error($locked->getMessage())->flash();
             redirect(erp_url($definition['route'] . '/' . $this->id($data)));
             return;

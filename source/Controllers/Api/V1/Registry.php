@@ -12,6 +12,7 @@ use Source\Services\Erp\Registry\RegistryForbidden;
 use Source\Services\Erp\Registry\RegistryInUse;
 use Source\Services\Erp\Registry\RegistryLocked;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Erp\Registry\RegistryPaymentLocked;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Support\Access;
@@ -114,6 +115,8 @@ final class Registry
             JsonResponse::send(409, ['error' => ['code' => 'in_use', 'message' => 'Registro em uso por cadastros ativos vinculados. Desvincule-os antes ou inative o registro.']]);
         } catch (RegistryLocked $locked) {
             JsonResponse::send(409, ['error' => ['code' => 'closed_competence', 'message' => $locked->getMessage()]]);
+        } catch (RegistryPaymentLocked $locked) {
+            JsonResponse::send(409, ['error' => ['code' => 'payment_locked', 'reason' => $locked->reason, 'message' => $locked->getMessage()]]);
         }
     }
 

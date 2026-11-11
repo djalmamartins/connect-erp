@@ -300,6 +300,14 @@ final class RegistryService
                 $errors['paid_on'] = $lock['message'];
             }
         }
+        // Cancelamento (ADR 0194): conta conciliada com o extrato ou com boleto pago pelo banco não vira inactive pelo formulário.
+        if ($errors === [] && $before !== null && ($definition['table'] ?? '') === 'erp_entries' && ($before['status'] ?? null) === 'active'
+            && ($values['status'] ?? null) === 'inactive') {
+            $lock = \Source\Services\Erp\PaymentLocks::removal($this->pdo, (int)$id);
+            if ($lock !== null) {
+                $errors['_form'] = $lock['message'];
+            }
+        }
         if ($errors !== []) {
             throw new RegistryValidationException($errors);
         }
@@ -390,6 +398,10 @@ final class RegistryService
         // Conta com recibo válido (ADR 0057) não sai: cancele o recibo antes.
         if (isset($definition['receipt_lock']) && $this->hasValidReceipt($id)) {
             throw new RegistryInUse();
+        }
+        // Conta conciliada com o extrato ou com boleto pago pelo banco não sai (ADR 0194).
+        if (($definition['table'] ?? '') === 'erp_entries' && ($lock = \Source\Services\Erp\PaymentLocks::removal($this->pdo, $id)) !== null) {
+            throw new RegistryPaymentLocked($lock['code'], $lock['message']);
         }
         // Unidade com cadastros ativos vinculados não sai (eles perderiam a unidade escolhida).
         foreach ($definition['referenced_by'] ?? [] as $table) {

@@ -31,6 +31,22 @@ final class PaymentLocksTest extends TestCase
         self::assertSame(PaymentLocks::RECONCILED, $locks[1]['message']);
         self::assertSame(PaymentLocks::BANK_CONFIRMED, $locks[2]['message']);
         self::assertSame([], PaymentLocks::find($pdo, []));
+
+        self::assertSame(['code' => 'reconciled', 'message' => PaymentLocks::RECONCILED_REMOVAL], PaymentLocks::removal($pdo, 3), 'ADR 0194: remoção.');
+        self::assertSame(['code' => 'bank_confirmed', 'message' => PaymentLocks::BANK_CONFIRMED_REMOVAL], PaymentLocks::removal($pdo, 2));
+        self::assertNull(PaymentLocks::removal($pdo, 5));
+    }
+
+    public function testFormRefusesCancelAndDeleteOfLockedEntry(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $registry = (string)file_get_contents($root . '/source/Services/Erp/Registry/RegistryService.php');
+        foreach (["(\$before['status'] ?? null) === 'active'", "(\$values['status'] ?? null) === 'inactive'", "\\Source\\Services\\Erp\\PaymentLocks::removal(\$this->pdo, (int)\$id)",
+            "\$errors['_form'] = \$lock['message'];", "throw new RegistryPaymentLocked(\$lock['code'], \$lock['message']);"] as $needle) {
+            self::assertStringContainsString($needle, $registry, $needle);
+        }
+        self::assertStringContainsString("'code' => 'payment_locked'", (string)file_get_contents($root . '/source/Controllers/Api/V1/Registry.php'));
+        self::assertStringContainsString('catch (RegistryPaymentLocked $locked)', (string)file_get_contents($root . '/source/Controllers/Erp/Connect/Registry.php'));
     }
 
     public function testFormAndBatchUseTheSameRule(): void
