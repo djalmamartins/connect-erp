@@ -18,7 +18,9 @@ use Source\Services\CondominiumScope;
  * - DRE do mês por competência (AP-082, AccountingReports::incomeStatement);
  * - saldos das contas bancárias no mês (AP-073, AccountingReports::accountBalances);
  * - inadimplência no último dia do mês (Agreements::delinquency, a mesma do AP-057);
- * - situação do fechamento mensal (AP-030, MonthClosing::status).
+ * - situação do fechamento mensal (AP-030, MonthClosing::status);
+ * - fundos do mês (ADR 0177): fundo de reserva e outros fundos pelo Livro Razão (AccountingReports::ledger),
+ *   com saldo anterior, entradas, saídas, saldo final e os movimentos.
  *
  * Um condomínio só, obrigatório e do escopo (fora = CondominiumAccessDenied, 404). Somente leitura.
  */
@@ -64,7 +66,33 @@ final class Accountability
             (new FinancialReports($this->pdo, $this->scope))->trialBalance($user, $condominiumId, $competence, $competence),
             $accounting->incomeStatement($user, $condominiumId, $from, $to, 'competence'),
             $accounting->accountBalances($user, $condominiumId, null, $from, $to),
-            ($this->delinquency)($user, $condominiumId, $to));
+            ($this->delinquency)($user, $condominiumId, $to),
+            // Fundos (ADR 0177): o Razão das contas de passivo do mês, para os números baterem com o Razão e o Balanço.
+            $accounting->ledger($user, $condominiumId, $from, $to, 'competence', '8'));
+    }
+
+    /**
+     * Fundos do mês (regra pura, ADR 0177): das contas do Razão, só as de passivo lançadas à mão (fundo de reserva,
+     * outros fundos e as do condomínio). Contas a pagar (8.1) é calculada e fica de fora. Por fundo: saldo anterior,
+     * entradas (a crédito, como a apropriação), saídas (a débito, como o uso) e saldo final, com os movimentos.
+     *
+     * @return array{accounts:list<array>, totals:array{opening_cents:int, in_cents:int, out_cents:int, closing_cents:int}}
+     */
+    public static function funds(array $ledger): array
+    {
+        $accounts = [];
+        foreach ($ledger['accounts'] ?? [] as $a) {
+            if (($a['nature'] ?? null) !== 'liability' || PatrimonialEntries::computed((string)$a['code'])) {
+                continue;
+            }
+            $accounts[] = ['code' => (string)$a['code'], 'name' => (string)$a['name'], 'opening_cents' => (int)$a['opening_cents'],
+                'in_cents' => (int)$a['credit_cents'], 'out_cents' => (int)$a['debit_cents'], 'closing_cents' => (int)$a['closing_cents'],
+                'movements' => array_map(static fn (array $l): array => ['on_date' => $l['on_date'], 'description' => (string)$l['description'], 'source' => (string)$l['source'],
+                    'in_cents' => (int)$l['credit_cents'], 'out_cents' => (int)$l['debit_cents'], 'balance_cents' => (int)$l['balance_cents']], $a['lines'] ?? [])];
+        }
+        $sum = static fn (string $key): int => array_sum(array_column($accounts, $key));
+        return ['accounts' => $accounts, 'totals' => ['opening_cents' => $sum('opening_cents'), 'in_cents' => $sum('in_cents'),
+            'out_cents' => $sum('out_cents'), 'closing_cents' => $sum('closing_cents')]];
     }
 
     /**
@@ -72,8 +100,9 @@ final class Accountability
      * Avisos: mês não fechado, receita/despesa da competência ainda em aberto e contas vencidas no fim do mês.
      */
     public static function assemble(int $condominiumId, string $competence, string $from, string $to, array $closing, array $trial,
-        array $income, array $balances, array $delinquency): array
+        array $income, array $balances, array $delinquency, array $ledger = []): array
     {
+        $funds = self::funds($ledger);
         $units = array_map(static fn (array $u): array => ['unit_id' => $u['unit_id'], 'unit_label' => (string)$u['unit_label'], 'entries' => count($u['entries'] ?? []),
             'amount_cents' => (int)$u['amount_cents'], 'charges_cents' => (int)($u['charges_cents'] ?? 0), 'total_cents' => (int)($u['total_cents'] ?? $u['amount_cents']),
             'oldest_due_on' => (string)$u['oldest_due_on'], 'max_days_late' => (int)$u['max_days_late']], $delinquency['units'] ?? []);
@@ -105,13 +134,15 @@ final class Accountability
         }
         return [
             'condominium_id' => $condominiumId, 'competence' => $competence, 'from' => $from, 'to' => $to,
-            'truncated' => $delinquentTruncated || !empty($income['truncated']) || !empty($balances['truncated']),
+            'truncated' => $delinquentTruncated || !empty($income['truncated']) || !empty($balances['truncated']) || !empty($ledger['truncated']),
             'closing' => $closingPart,
             'trial_balance' => ['rows' => $trial['rows'] ?? [], 'totals' => $tt],
             'income_statement' => ['rows' => $income['rows'] ?? [], 'totals' => $income['totals'] ?? []],
             'bank_accounts' => ['accounts' => $balances['accounts'] ?? [], 'totals' => $bank],
             'delinquency' => $delinquent,
+            'funds' => $funds,
             'summary' => [
+                'funds_opening_cents' => $funds['totals']['opening_cents'], 'funds_closing_cents' => $funds['totals']['closing_cents'],
                 'revenue_cents' => (int)($income['totals']['revenue_cents'] ?? 0), 'expense_cents' => (int)($income['totals']['expense_cents'] ?? 0),
                 'result_cents' => (int)($income['totals']['result_cents'] ?? 0),
                 'cash_in_cents' => (int)$bank['received_cents'], 'cash_out_cents' => (int)$bank['paid_cents'],

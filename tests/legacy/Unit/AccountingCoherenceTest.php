@@ -8,6 +8,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\Accountability;
 use Source\Services\Erp\AccountingReports;
 use Source\Services\Erp\BalanceSheet;
 use Source\Services\Erp\ChartOpenings;
@@ -151,6 +152,18 @@ final class AccountingCoherenceTest extends TestCase
         $transfers = array_merge(...array_map(static fn (array $a): array => array_filter($a['lines'], static fn (array $l): bool => $l['source'] === 'transfer'), $bank['accounts']));
         self::assertSame(array_sum(array_column($transfers, 'debit_cents')), array_sum(array_column($transfers, 'credit_cents')), 'Transferências somam zero.');
         self::assertNotContains($mistake['transfer']['id'], array_column($transfers, 'id'), 'A aplicação cancelada não aparece.');
+
+        // Fundos da prestação de contas (ADR 0177): outubro tem a apropriação e o uso do fundo; dezembro, o estorno
+        // e a importação em 8.3. O saldo final de cada fundo bate com o Balanço no último dia do mês.
+        $october = Accountability::funds($accounting->ledger($user, 1, '2025-10-01', '2025-10-31', 'competence', '8'));
+        self::assertSame([['8.2', 0, 50000, 20000, 30000]], array_map(static fn (array $f): array => [$f['code'], $f['opening_cents'], $f['in_cents'], $f['out_cents'],
+            $f['closing_cents']], $october['accounts']), 'Contas a pagar (8.1) fica de fora: é calculada.');
+        $sheetOct = array_column((new BalanceSheet($this->pdo, $scope))->build($user, 1, '2025-10-31')['liabilities']['rows'], 'amount_cents', 'code');
+        self::assertSame($sheetOct['8.2'], $october['accounts'][0]['closing_cents']);
+        $december = array_column(Accountability::funds($accounting->ledger($user, 1, '2025-12-01', '2025-12-31', 'competence', '8'))['accounts'], null, 'code');
+        self::assertSame([$liabilities['8.2'], $liabilities['8.3']], [$december['8.2']['closing_cents'], $december['8.3']['closing_cents']]);
+        self::assertSame([7000 + 5000, 7000], [$december['8.3']['in_cents'], $december['8.3']['out_cents']], 'O lançamento errado entra e sai (estorno).');
+        self::assertCount(3, $december['8.3']['movements']);
 
         $next = (new BalanceSheet($this->pdo, $scope))->build($user, 1, '2026-01-15');
         $equityNext = array_column($next['equity']['rows'], 'amount_cents', 'code');

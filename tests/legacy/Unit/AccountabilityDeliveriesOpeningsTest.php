@@ -42,6 +42,8 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
                 received_time TEXT, picked_up_on TEXT, picked_up_by TEXT, gatehouse_id INTEGER, notes TEXT, status TEXT DEFAULT 'active', created_by INTEGER, updated_by INTEGER, deleted_at TEXT)",
             'CREATE TABLE erp_chart_account_openings (id INTEGER PRIMARY KEY, condominium_id INTEGER, chart_account_id INTEGER, opened_on TEXT, amount_cents INTEGER, notes TEXT,
                 updated_by INTEGER, created_at TEXT, updated_at TEXT, UNIQUE (condominium_id, chart_account_id))',
+            "CREATE TABLE erp_patrimonial_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER, entry_date TEXT, description TEXT, amount_cents INTEGER, debit_account_id INTEGER,
+                credit_account_id INTEGER, bank_account_id INTEGER, linked_entry_id INTEGER, import_id INTEGER, status TEXT DEFAULT 'active', reversal_of_id INTEGER, created_by INTEGER)",
         ] as $sql) {
             $this->pdo->exec($sql);
         }
@@ -95,6 +97,8 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
         self::assertSame('102', $pack['delinquency']['units'][0]['unit_label']);
         self::assertArrayNotHasKey('entries_detail', $pack['delinquency']['units'][0]);
         self::assertFalse($pack['truncated']);
+        self::assertSame(['accounts' => [], 'totals' => ['opening_cents' => 0, 'in_cents' => 0, 'out_cents' => 0, 'closing_cents' => 0]], $pack['funds'],
+            'Sem conta de fundo no plano: seção vazia (ADR 0177).');
 
         $this->pdo->exec("INSERT INTO erp_month_closings (condominium_id, competence, status, revenue_cents, expense_cents, open_revenue_cents, open_expense_cents, closed_by, closed_at)
             VALUES (1, '2026-10', 'closed', 0, 0, 0, 0, 7, '2026-11-02 10:00:00')");
