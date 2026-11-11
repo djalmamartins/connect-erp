@@ -162,6 +162,10 @@ $route->get("/reports/obligation-calendar", "ObligationCalendar:show", null, \So
 $route->get("/reports/meter-reading-review", "MeterReadingReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência por bloco ou andar (ADR 0222), somente leitura.
 $route->get("/reports/delinquency-by-location", "DelinquencyByLocation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Quadro de funcionários e folha por função e turno (ADR 0224), somente leitura.
+$route->get("/reports/employee-headcount", "EmployeeHeadcount:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Tempo de atendimento dos chamados do condomínio (ADR 0226), somente leitura.
+$route->get("/reports/ticket-service-times", "TicketServiceTimes:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -257,6 +261,12 @@ $route->post("/contracts/renew", "ContractRenewal:store", null, \Source\Support\
 $route->post("/reservations/expire-pending", "ReservationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Reajuste salarial em lote dos funcionários (ADR 0223). Antes do laço dos cadastros (/employees/{id}).
 $route->post("/employees/readjust-salaries", "EmployeeSalaryReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Desligamento em lote de funcionários (ADR 0225). Antes do laço dos cadastros (/employees/{id}).
+$route->post("/employees/terminate", "EmployeeTermination:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reatribuição em lote dos chamados de um responsável para outro (ADR 0227). Antes do laço dos cadastros.
+$route->post("/tickets/reassign", "TicketReassignment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Uso dos espaços comuns do condomínio no período, somente leitura (ADR 0228). Antes do laço dos cadastros.
+$route->get("/reports/common-area-usage", "CommonAreaUsage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

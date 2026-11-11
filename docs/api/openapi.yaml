@@ -2121,6 +2121,64 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/employee-headcount:
+    get:
+      operationId: employeeHeadcount
+      summary: Quadro de funcionários e folha por função e turno (ativos no fim do período, salário somado e médio, admissões e desligamentos no período), somente leitura (erp.employees.view, ADR 0224)
+      description: >-
+        Ativo = cadastro ativo, admitido até "to" e sem desligamento até "to". Salário somado e média dos ativos com
+        salário. Admissões e desligamentos dentro do período. Sem turno = "Sem turno"; sem função = "Sem função". Os totais
+        são a soma das linhas. Saem só grupos e somas: nenhum nome, CPF, contato ou id de funcionário. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 731 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ job, job_label, shift, shift_label, active, with_salary, salary_total_cents, salary_avg_cents, hires, terminations }], totals { active, with_salary, salary_total_cents, salary_avg_cents, hires, terminations } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/ticket-service-times:
+    get:
+      operationId: ticketServiceTimes
+      summary: Tempo de atendimento dos chamados do condomínio por área e prioridade (abertos, concluídos, no prazo, atrasados, vencidos em aberto e tempo médio), somente leitura (erp.access, ADR 0226)
+      description: >-
+        Chamados do condomínio abertos no período. Prazo de cada prioridade pelo TicketService::slaHours; no prazo =
+        resolvido até o due_at. Tempo médio = minutos somados ÷ concluídos com data de resolução. Os totais são a soma das
+        linhas. A categoria livre fica de fora. Sem protocolo, assunto, mensagem, solicitante, unidade ou responsável. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ area, area_label, priority, priority_label, sla_hours, created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct }], totals { created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/common-area-usage:
+    get:
+      operationId: commonAreaUsage
+      summary: Uso dos espaços comuns do condomínio por área no período (reservas confirmadas, aguardando e canceladas, taxa, dias usados, ocupação, unidades distintas e dia da semana), somente leitura (erp.access e erp.reservations.view, ADR 0228)
+      description: >-
+        Uma linha por área comum (as ativas, mesmo sem reserva, e as inativas com reserva no período), com os rótulos do
+        cadastro. Taxa só das confirmadas; days_used = dias distintos com reserva confirmada; occupancy_pct = days_used ÷
+        dias do período; units = unidades distintas (só a contagem). Os totais são a soma das linhas. Sem morador, unidade,
+        horário ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, period_days, rows[{ area_id, name, booking_mode, booking_mode_label, area_active, reservations, confirmed, pending, cancelled, fee_cents, days_used, occupancy_pct, units, cancel_pct, by_weekday{ mon..sun } }], totals { areas, reservations, confirmed, pending, cancelled, fee_cents, days_used, cancel_pct, by_weekday } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
@@ -3223,6 +3281,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /employees/terminate:
+    post:
+      operationId: terminateEmployees
+      summary: Desligamento em lote de funcionários (data e motivo), pelo formulário, tudo ou nada e com prévia (erp.employees.view e erp.employees.manage, ADR 0225)
+      description: >-
+        Grava só a data de desligamento pelo RegistryService::save do cadastro (a situação do cadastro não muda). Recusa
+        funcionário não encontrado, inativo, já desligado (a data não é trocada aqui) ou admitido depois da data. Data até
+        30 dias à frente. Auditoria terminate por funcionário. Nada é enviado (rescisão e eSocial ficam fora). Sem nome, CPF,
+        contato ou salário na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, employee_ids, terminated_on, reason], properties: { condominium_id: { type: integer }, employee_ids: { type: array, items: { type: integer }, maxItems: 300 }, terminated_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, terminated_on, reason, count, changed, employees[{ id, job, shift, hired_on, terminated_on }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou funcionário recusado (errors com _form e _employee, ou os erros do formulário); nada é gravado' }
   /employees/readjust-salaries:
     post:
       operationId: readjustEmployeeSalaries
@@ -4897,6 +4975,27 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '419': { description: CSRF inválido }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /tickets/reassign:
+    post:
+      operationId: reassignTickets
+      summary: Reatribuição em lote dos chamados em aberto de um responsável para outro, no condomínio, tudo ou nada e com prévia (studio.access e support.manage, ADR 0227)
+      description: >-
+        Sem ticket_ids, entram os chamados em aberto (aberto, em atendimento, aguardando cliente) do condomínio atribuídos
+        a from_user_id. Com ticket_ids, recusa chamado não encontrado no condomínio, concluído ou de outro responsável. O
+        novo responsável precisa ser da equipe do Help Desk. Só o responsável muda; o histórico do chamado ganha o evento
+        assigned_to, e a auditoria um registro reassign por chamado. Nenhum aviso é enviado. Sem protocolo, assunto,
+        solicitante ou nome de responsável na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, from_user_id, to_user_id, reason], properties: { condominium_id: { type: integer }, from_user_id: { type: integer }, to_user_id: { type: integer }, reason: { type: string, minLength: 5, maxLength: 255 }, ticket_ids: { type: array, items: { type: integer }, maxItems: 500 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, from_user_id, to_user_id, reason, count, changed, tickets[{ id, priority, status, due_at }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou chamado recusado (errors com _form e _ticket); nada é gravado' }
   /tickets/{id}:
     get:
       operationId: showTicket
