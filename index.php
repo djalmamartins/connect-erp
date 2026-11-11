@@ -289,6 +289,8 @@ $route->post("/waitlist/expire", "WaitlistExpiry:store", null, \Source\Support\M
 $route->get("/reports/commitments", "CommitmentsPosition:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cancelamento em lote dos empenhos em aberto há muito tempo (ADR 0239). Antes do laço dos cadastros.
 $route->post("/commitments/cancel-stale", "CommitmentCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Perfil de ocupação das unidades numa data, somente leitura (ADR 0240). Antes do laço dos cadastros.
+$route->get("/reports/unit-occupancy", "UnitOccupancy:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
