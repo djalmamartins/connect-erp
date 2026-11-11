@@ -235,6 +235,8 @@ $route->post("/units/move-out", "UnitMoveOut:store", null, \Source\Support\Middl
 $route->post("/maintenances/complete", "MaintenanceCompletion:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobrança das taxas de reserva em lote pela cobrança extra (ADR 0212). Antes do laço dos cadastros.
 $route->post("/reservations/bill-fees", "ReservationFeeBilling:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Ocorrências com o chamado do Help Desk encerrado (ADR 0213). Antes do laço dos cadastros.
+$route->post("/occurrences/sync-tickets", "OccurrenceTicketSync:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
