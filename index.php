@@ -162,6 +162,8 @@ $route->get("/reports/obligation-calendar", "ObligationCalendar:show", null, \So
 $route->get("/reports/meter-reading-review", "MeterReadingReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência por bloco ou andar (ADR 0222), somente leitura.
 $route->get("/reports/delinquency-by-location", "DelinquencyByLocation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Quadro de funcionários e folha por função e turno (ADR 0224), somente leitura.
+$route->get("/reports/employee-headcount", "EmployeeHeadcount:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
