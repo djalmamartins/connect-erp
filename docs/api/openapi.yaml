@@ -2179,6 +2179,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/unit-occupancy:
+    get:
+      operationId: unitOccupancy
+      summary: Perfil de ocupação das unidades do condomínio numa data (alugadas, com morador, só proprietário, só responsável financeiro e sem vínculo, por tipo de unidade) e os vínculos por tipo, somente leitura (erp.access, erp.units.view e erp.residents.view, ADR 0240)
+      description: >-
+        Uma linha por situação, sempre as cinco, com as unidades ativas e by_type (os tipos do cadastro); totals é a soma
+        das linhas. Um vínculo vale na data on (padrão hoje) quando está ativo, já começou (ou não tem início) e não
+        terminou antes de on. links conta os vínculos valendo por tipo; unlinked conta os que não apontam para uma
+        unidade ativa. Sem nome, documento, contato, rótulo de unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ situation, situation_label, units, by_type{ apartamento, casa, sala, loja, garagem, outro } }], totals { units, by_type }, links { rows[{ relationship, relationship_label, links }], linked, unlinked } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /commitments/cancel-stale:
     post:
       operationId: cancelStaleCommitments
