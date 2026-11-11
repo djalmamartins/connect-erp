@@ -285,6 +285,8 @@ $route->post("/visitors/expire", "VisitorAuthorizationExpiry:store", null, \Sour
 $route->get("/reports/pets-vehicles", "PetsVehiclesSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote das inscrições vencidas da lista de espera (ADR 0237). Antes do laço dos cadastros.
 $route->post("/waitlist/expire", "WaitlistExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Posição dos empenhos do condomínio, somente leitura (ADR 0238). Antes do laço dos cadastros.
+$route->get("/reports/commitments", "CommitmentsPosition:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
