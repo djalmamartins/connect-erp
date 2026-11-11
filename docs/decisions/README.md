@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0216.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0216, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0217.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0217, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -218,3 +218,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0213](../Organic%20Code/decisions/0213-occurrence-ticket-sync.md) | Ocorrências com o chamado do Help Desk fechado ficam resolvidas pelo formulário (TicketService::findFor), resolvido só com include_resolved, tudo ou nada e prévia | Aceita |
 | [0214](../Organic%20Code/decisions/0214-check-copy-review.md) | Conferência das cópias de cheques, somente leitura: números que faltam no talão por conta e cheque que não bate com o lançamento (valor, conta, cancelado, em aberto), sem favorecido | Aceita |
 | [0215](../Organic%20Code/decisions/0215-document-transit.md) | Documentos em trânsito, somente leitura: malote sem recebimento ou sem conferência e AR em trânsito, com os dias e o atraso, sem portador, destinatário nem rastreio | Aceita |
+| [0216](../Organic%20Code/decisions/0216-document-transit-settlement.md) | Baixa em lote de malotes (recebido, conferido) e avisos de recebimento (entregue, devolvido) pelo formulário, tudo ou nada, prévia e auditoria | Aceita |

@@ -3143,6 +3143,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /document-transit/settle:
+    post:
+      operationId: settleDocumentTransit
+      summary: Baixa em lote de malotes (recebido, conferido) e avisos de recebimento (entregue, devolvido) pelo formulário, tudo ou nada e com prévia (erp.pouches.* e erp.delivery_notices.*, ADR 0216)
+      description: >-
+        Cada documento é regravado pelo RegistryService::save do cadastro, com as regras do formulário. Malote enviado
+        fica recebido (com check, também conferido); malote recebido fica conferido; AR em trânsito fica entregue
+        (outcome delivered) ou devolvido (returned). Documento de outro condomínio, apagado ou já resolvido recusa o lote
+        antes de gravar. Auditoria transit_settle por documento. Nada é enviado. Sem portador, conteúdo, destinatário,
+        assunto ou rastreio na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, on], properties: { condominium_id: { type: integer }, on: { type: string, format: date, description: 'Não pode ser futura' }, pouch_ids: { type: array, items: { type: integer } }, notice_ids: { type: array, items: { type: integer } }, check: { type: boolean, default: false }, outcome: { type: string, enum: [delivered, returned], default: delivered }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, on, check, outcome, settled, changed, documents[{ kind (pouch|notice), id, status_before, status_after }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, documento já resolvido ou fora do condomínio (errors com tipo:id), ou recusado pelo formulário (errors e _pouch/_notice); nada é gravado' }
   /occurrences/sync-tickets:
     post:
       operationId: syncOccurrenceTickets
