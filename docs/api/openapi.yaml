@@ -3385,6 +3385,21 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou parcela recusada pelas regras do formulário (errors por campo e _installment); nada é gravado' }
+  /entries/reclassify:
+    post:
+      operationId: reclassifyEntries
+      summary: Reclassificação em lote, troca a conta e/ou o centro de custo de vários lançamentos pelas regras do formulário, com motivo, tudo ou nada (erp.entries.view e erp.entries.manage, ADR 0196)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, entry_ids, reason], properties: { condominium_id: { type: integer }, entry_ids: { type: array, minItems: 1, maxItems: 200, items: { type: integer } }, chart_account_id: { type: integer }, cost_center_id: { type: integer, description: '0 tira o centro de custo' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, changes, count, changed, entries[{ id, description, competence, before{ chart_account_id, cost_center_id }, after{ chart_account_id, cost_center_id } }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou lançamento recusado pelas regras do formulário (errors por campo e _entry); nada é gravado' }
   /extra-charges:
     get:
       operationId: listExtraCharges
