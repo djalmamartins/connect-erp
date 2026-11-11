@@ -20,7 +20,8 @@ use Source\Services\CondominiumScope;
  * - inadimplência no último dia do mês (Agreements::delinquency, a mesma do AP-057);
  * - situação do fechamento mensal (AP-030, MonthClosing::status);
  * - fundos do mês (ADR 0177): fundo de reserva e outros fundos pelo Livro Razão (AccountingReports::ledger),
- *   com saldo anterior, entradas, saídas, saldo final e os movimentos.
+ *   com saldo anterior, entradas, saídas, saldo final e os movimentos;
+ * - orçamento (ADR 0180): previsto contra lançado no mês e no acumulado do ano (ErpSettings::budget, AP-163/AP-084).
  *
  * Um condomínio só, obrigatório e do escopo (fora = CondominiumAccessDenied, 404). Somente leitura.
  */
@@ -68,7 +69,42 @@ final class Accountability
             $accounting->accountBalances($user, $condominiumId, null, $from, $to),
             ($this->delinquency)($user, $condominiumId, $to),
             // Fundos (ADR 0177): o Razão das contas de passivo do mês, para os números baterem com o Razão e o Balanço.
-            $accounting->ledger($user, $condominiumId, $from, $to, 'competence', '8'));
+            $accounting->ledger($user, $condominiumId, $from, $to, 'competence', '8'),
+            // Orçamento (ADR 0180): a previsão do ano (AP-163) com o lançado, recortada no mês e no acumulado.
+            (new ErpSettings($this->pdo, $this->scope))->budget($user, $condominiumId, (int)substr($competence, 0, 4)));
+    }
+
+    /**
+     * Previsto contra realizado (regra pura, ADR 0180), a partir do ErpSettings::budget do ano (AP-163/AP-084): por
+     * conta com previsão, o previsto e o lançado do mês e do acumulado de janeiro até o mês, com a diferença
+     * (lançado − previsto) e o percentual. Lançado por competência, como a DRE do pacote. Totais por natureza.
+     *
+     * @return array{rows:list<array>, totals:array<string, array<string, int>>}
+     */
+    public static function budgetSection(array $budget, string $competence): array
+    {
+        $month = (int)substr($competence, 5, 2);
+        $rows = [];
+        $totals = [];
+        foreach ($budget['rows'] ?? [] as $r) {
+            $planned = (int)($r['budget'][$month] ?? 0);
+            $actual = (int)($r['actual'][$month] ?? 0);
+            $plannedYtd = $actualYtd = 0;
+            for ($m = 1; $m <= $month; $m++) {
+                $plannedYtd += (int)($r['budget'][$m] ?? 0);
+                $actualYtd += (int)($r['actual'][$m] ?? 0);
+            }
+            $nature = (string)$r['nature'];
+            $rows[] = ['code' => (string)$r['code'], 'name' => (string)$r['name'], 'nature' => $nature,
+                'month' => ['budget_cents' => $planned, 'actual_cents' => $actual] + ManagementReports::variation($planned, $actual),
+                'year_to_date' => ['budget_cents' => $plannedYtd, 'actual_cents' => $actualYtd] + ManagementReports::variation($plannedYtd, $actualYtd)];
+            $totals[$nature] ??= ['month_budget_cents' => 0, 'month_actual_cents' => 0, 'ytd_budget_cents' => 0, 'ytd_actual_cents' => 0];
+            $totals[$nature]['month_budget_cents'] += $planned;
+            $totals[$nature]['month_actual_cents'] += $actual;
+            $totals[$nature]['ytd_budget_cents'] += $plannedYtd;
+            $totals[$nature]['ytd_actual_cents'] += $actualYtd;
+        }
+        return ['rows' => $rows, 'totals' => $totals];
     }
 
     /**
@@ -109,6 +145,13 @@ final class Accountability
                 $date = is_string($m['on_date'] ?? null) && $m['on_date'] !== '' ? date('d/m/Y', (int)strtotime($m['on_date'])) . ' ' : '';
                 $rows[] = ['Fundos', '', $cell('  ' . $date . $m['description']), '', $money($m['in_cents']), $money($m['out_cents']), $money($m['balance_cents'])];
             }
+        }
+        // Orçamento (ADR 0180): previsto, lançado e diferença do mês; o acumulado do ano numa segunda linha.
+        foreach ($pack['budget']['rows'] ?? [] as $b) {
+            $rows[] = ['Orçamento (mês)', $cell($b['code']), $cell($b['name']), $money($b['month']['budget_cents']), $money($b['month']['actual_cents']), '',
+                $money($b['month']['difference_cents'])];
+            $rows[] = ['Orçamento (acumulado)', $cell($b['code']), $cell($b['name']), $money($b['year_to_date']['budget_cents']),
+                $money($b['year_to_date']['actual_cents']), '', $money($b['year_to_date']['difference_cents'])];
         }
         foreach ($pack['delinquency']['units'] ?? [] as $u) {
             $rows[] = ['Inadimplência', '', $cell('Unidade ' . $u['unit_label'] . ' (' . (int)$u['max_days_late'] . ' dias)'), '', '', '', $money($u['amount_cents'])];
@@ -151,9 +194,10 @@ final class Accountability
      * Avisos: mês não fechado, receita/despesa da competência ainda em aberto e contas vencidas no fim do mês.
      */
     public static function assemble(int $condominiumId, string $competence, string $from, string $to, array $closing, array $trial,
-        array $income, array $balances, array $delinquency, array $ledger = []): array
+        array $income, array $balances, array $delinquency, array $ledger = [], array $budget = []): array
     {
         $funds = self::funds($ledger);
+        $budgetPart = self::budgetSection($budget, $competence);
         $units = array_map(static fn (array $u): array => ['unit_id' => $u['unit_id'], 'unit_label' => (string)$u['unit_label'], 'entries' => count($u['entries'] ?? []),
             'amount_cents' => (int)$u['amount_cents'], 'charges_cents' => (int)($u['charges_cents'] ?? 0), 'total_cents' => (int)($u['total_cents'] ?? $u['amount_cents']),
             'oldest_due_on' => (string)$u['oldest_due_on'], 'max_days_late' => (int)$u['max_days_late']], $delinquency['units'] ?? []);
@@ -192,6 +236,7 @@ final class Accountability
             'bank_accounts' => ['accounts' => $balances['accounts'] ?? [], 'totals' => $bank],
             'delinquency' => $delinquent,
             'funds' => $funds,
+            'budget' => $budgetPart,
             'summary' => [
                 'funds_opening_cents' => $funds['totals']['opening_cents'], 'funds_closing_cents' => $funds['totals']['closing_cents'],
                 'revenue_cents' => (int)($income['totals']['revenue_cents'] ?? 0), 'expense_cents' => (int)($income['totals']['expense_cents'] ?? 0),

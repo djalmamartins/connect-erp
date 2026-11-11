@@ -45,6 +45,8 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
                 updated_by INTEGER, created_at TEXT, updated_at TEXT, UNIQUE (condominium_id, chart_account_id))',
             "CREATE TABLE erp_patrimonial_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER, entry_date TEXT, description TEXT, amount_cents INTEGER, debit_account_id INTEGER,
                 credit_account_id INTEGER, bank_account_id INTEGER, linked_entry_id INTEGER, import_id INTEGER, status TEXT DEFAULT 'active', reversal_of_id INTEGER, created_by INTEGER)",
+            'CREATE TABLE erp_budget_lines (id INTEGER PRIMARY KEY, condominium_id INTEGER, year INTEGER, chart_account_id INTEGER, month INTEGER, amount_cents INTEGER,
+                UNIQUE (condominium_id, year, chart_account_id, month))',
         ] as $sql) {
             $this->pdo->exec($sql);
         }
@@ -77,6 +79,9 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
 
     public function testAccountabilityMonthPackage(): void
     {
+        // Previsão orçamentária (AP-163): taxa 1.800,00 em set e out; energia 250,00 em out; outro condomínio não entra.
+        $this->pdo->exec('INSERT INTO erp_budget_lines (condominium_id, year, chart_account_id, month, amount_cents) VALUES
+            (1, 2026, 2, 9, 180000), (1, 2026, 2, 10, 180000), (1, 2026, 4, 10, 25000), (2, 2026, 2, 10, 999999)');
         $calls = [];
         $delinquency = static function (User $user, int $condominiumId, string $asOf) use (&$calls): array {
             $calls[] = [$condominiumId, $asOf];
@@ -101,11 +106,22 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
         self::assertSame(['accounts' => [], 'totals' => ['opening_cents' => 0, 'in_cents' => 0, 'out_cents' => 0, 'closing_cents' => 0]], $pack['funds'],
             'Sem conta de fundo no plano: seção vazia (ADR 0177).');
 
+        // Orçamento (ADR 0180): previsto contra lançado no mês e no acumulado, por competência.
+        $budget = array_column($pack['budget']['rows'], null, 'code');
+        self::assertSame(['budget_cents' => 180000, 'actual_cents' => 200000, 'difference_cents' => 20000, 'percent' => 11.11], $budget['1.01']['month']);
+        self::assertSame(['budget_cents' => 360000, 'actual_cents' => 200000, 'difference_cents' => -160000, 'percent' => -44.44], $budget['1.01']['year_to_date']);
+        self::assertSame([25000, 30000, 5000], [$budget['2.01']['month']['budget_cents'], $budget['2.01']['month']['actual_cents'], $budget['2.01']['month']['difference_cents']]);
+        self::assertSame(['month_budget_cents' => 25000, 'month_actual_cents' => 30000, 'ytd_budget_cents' => 25000, 'ytd_actual_cents' => 30000],
+            $pack['budget']['totals']['despesa']);
+        self::assertSame(['rows' => [], 'totals' => []], Accountability::budgetSection([], '2026-10'), 'Sem previsão: seção vazia.');
+
         // CSV do pacote (ADR 0178): uma tabela com a seção em cada linha, valores em reais.
         $table = Accountability::csvTable($pack);
         self::assertSame(['Seção', 'Código', 'Item', 'Saldo anterior', 'Entradas', 'Saídas', 'Valor ou saldo final'], $table['header']);
         $sections = array_unique(array_column($table['rows'], 0));
-        self::assertSame(['Resumo', 'Fechamento', 'DRE', 'Bancos', 'Inadimplência', 'Avisos'], array_values($sections));
+        self::assertSame(['Resumo', 'Fechamento', 'DRE', 'Bancos', 'Orçamento (mês)', 'Orçamento (acumulado)', 'Inadimplência', 'Avisos'], array_values($sections));
+        self::assertContains(['Orçamento (mês)', '1.01', 'Taxa condominial', '1800,00', '2000,00', '', '200,00'], $table['rows']);
+        self::assertContains(['Orçamento (acumulado)', '1.01', 'Taxa condominial', '3600,00', '2000,00', '', '-1600,00'], $table['rows']);
         $summary = array_column(array_filter($table['rows'], static fn (array $r): bool => $r[0] === 'Resumo'), 6, 2);
         self::assertSame(['2000,00', '300,00', '1700,00'], [$summary['Receitas'], $summary['Despesas'], $summary['Resultado']]);
         self::assertContains(['Bancos', '', 'Movimento', '500,00', '1000,00', '300,00', '1200,00'], $table['rows']);
