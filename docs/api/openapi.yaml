@@ -3143,6 +3143,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /contracts/renew:
+    post:
+      operationId: renewContracts
+      summary: Renova contratos em lote (fim + meses) com reajuste opcional do valor mensal, pelo formulário, tudo ou nada e com prévia (erp.contracts.view e erp.contracts.manage, ADR 0217)
+      description: >-
+        Mesmo percentual e arredondamento do reajuste de lançamentos fixos (RecurringReadjustment, ADR 0204). O dia que não
+        existe no mês de destino vira o último dia dele. Recusa contrato não encontrado, encerrado ou cancelado, de prazo
+        indeterminado ou "sem reajuste" com percentual. Auditoria renew por contrato. O lançamento fixo que paga o
+        contrato não muda (use o reajuste da ADR 0204). Nada é enviado.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, contract_ids, months, reason], properties: { condominium_id: { type: integer }, contract_ids: { type: array, items: { type: integer }, maxItems: 200 }, months: { type: integer, minimum: 1, maximum: 60 }, percent: { type: string, example: '4,62', description: 'Opcional; de −50 a 100, até 2 casas' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, months, percent, reason, before_cents, after_cents, count, changed, contracts[{ id, supplier_id, readjustment, ends_on_before, ends_on_after, monthly_before_cents, monthly_after_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou contrato recusado (errors com _form e _contract, ou os erros do formulário); nada é gravado' }
   /document-transit/settle:
     post:
       operationId: settleDocumentTransit
