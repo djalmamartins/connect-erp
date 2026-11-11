@@ -297,6 +297,8 @@ $route->post("/residents/expire-ended", "ResidentLinkExpiry:store", null, \Sourc
 $route->get("/reports/resident-link-endings", "ResidentLinkEndings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Encerramento em lote dos mandatos vencidos do síndico e do conselho, pelo cadastro (ADR 0243). Antes do laço dos cadastros.
 $route->post("/board-members/expire-terms", "BoardTermExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobertura de seguros do condomínio numa data, somente leitura (ADR 0244). Antes do laço dos cadastros.
+$route->get("/reports/insurance-coverage", "InsuranceCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

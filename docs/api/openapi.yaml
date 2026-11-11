@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/insurance-coverage:
+    get:
+      operationId: insuranceCoverage
+      summary: Cobertura de seguros do condomínio numa data (apólices por faixa de vigência, prêmio, cobertura e sem PDF; coberto ou não e até quando sem interrupção), somente leitura (erp.access e erp.insurances.view, ADR 0244)
+      description: >-
+        Uma linha por faixa, sempre as cinco (vencida e ainda vigente no cadastro; em vigor terminando em até 30, 31 a 90 ou
+        depois de 90 dias; começando depois da data), com policies, premium_cents, coverage_cents e without_pdf (sem a
+        apólice no Disco Virtual do condomínio); totals é a soma das linhas. covered diz se há apólice em vigor na data on
+        (padrão hoje); covered_until é o último dia coberto sem interrupção, emendando as apólices que começam até o dia
+        seguinte ao fim da anterior (null = descoberto); cancelled conta as canceladas. Sem seguradora, apólice, corretora
+        ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, policies, premium_cents, coverage_cents, without_pdf }], totals { policies, premium_cents, coverage_cents, without_pdf }, covered, covered_until, cancelled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /board-members/expire-terms:
     post:
       operationId: expireBoardTerms
