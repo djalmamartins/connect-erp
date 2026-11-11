@@ -291,6 +291,8 @@ $route->get("/reports/commitments", "CommitmentsPosition:show", null, \Source\Su
 $route->post("/commitments/cancel-stale", "CommitmentCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Perfil de ocupação das unidades numa data, somente leitura (ADR 0240). Antes do laço dos cadastros.
 $route->get("/reports/unit-occupancy", "UnitOccupancy:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos vínculos com o fim já passado, pelo cadastro (ADR 0241). Antes do laço dos cadastros.
+$route->post("/residents/expire-ended", "ResidentLinkExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0241.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0241, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0242.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0242, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -243,3 +243,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0238](../Organic%20Code/decisions/0238-commitments-position.md) | Posição dos empenhos do condomínio (por situação no período, tempo de liquidação, liquidações sem lançamento e idade dos em aberto), somente leitura e sem descrição nem fornecedor | Aceita |
 | [0239](../Organic%20Code/decisions/0239-commitment-cancellation.md) | Cancelamento em lote dos empenhos em aberto há muito tempo, pelo cadastro (Cancelado), recusando os que têm lançamento ligado, tudo ou nada, prévia e auditoria, sem apagar nada nem dado do empenho | Aceita |
 | [0240](../Organic%20Code/decisions/0240-unit-occupancy.md) | Perfil de ocupação das unidades do condomínio numa data (alugadas, com morador, só proprietário, só responsável financeiro, sem vínculo, por tipo) e vínculos por tipo, somente leitura e sem dado pessoal | Aceita |
+| [0241](../Organic%20Code/decisions/0241-resident-link-expiry.md) | Encerramento em lote dos vínculos de proprietários, inquilinos e moradores com o fim já passado e ainda ativos, pelo cadastro (inativo, mantendo o fim), com os convites pendentes do portal revogados, tudo ou nada, prévia e auditoria, sem dado pessoal | Aceita |
