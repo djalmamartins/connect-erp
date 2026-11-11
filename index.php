@@ -100,6 +100,8 @@ $route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Supp
 $route->post("/chart-account-openings", "ChartOpenings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0167: Balanço Patrimonial (AP-081)
 $route->get("/reports/balance-sheet", "BalanceSheet:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Livro caixa mensal (CN-007, ADR 0174).
+$route->get("/reports/cash-book", "CashBook:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0168: administração, relatórios enviados, usuários e permissões do ERP (/erp-users/invite antes de /erp-users/{id})
 $route->get("/erp-admin/overview", "ErpAdmin:overview", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/sent", "ErpAdmin:sentReports", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -210,6 +212,11 @@ $route->post("/documents", "VirtualDisk:store", null, \Source\Support\Middleware
 $route->get("/documents/{id}", "VirtualDisk:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/documents/{id}/download", "VirtualDisk:download", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Anexos dos lançamentos (ADR 0174): nota fiscal, comprovante e recibo, guardados no Disco Virtual.
+$route->get("/entries/{id}/attachments", "EntryAttachments:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/entries/{id}/attachments", "EntryAttachments:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/entries/{id}/attachments/{attachment}/download", "EntryAttachments:download", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/entries/{id}/attachments/{attachment}", "EntryAttachments:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ocorrência abre chamado na fila do Help Desk (ADR 0034/0051). O cadastro é /occurrences, do motor.
 $route->post("/occurrences/{id}/ticket", "Occurrences:ticket", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Dashboard e continuações do Operacional (ADR 0053): alertas, lista de espera e próxima manutenção.

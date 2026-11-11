@@ -66,6 +66,14 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     // Cadastro rápido de unidades (ADR 0140): antes do motor, para /{id} não capturar a rota.
     $route->get(\Source\Controllers\Erp\Connect\UnitBatchScreen::ROUTE, "UnitBatchScreen:show", $erpName('erp.units.batch'));
 
+    // Anexos dos lançamentos (ADR 0174) e downloads do livro caixa (CN-007): antes do motor e do catálogo.
+    $route->post("/financeiro/lancamentos/{id}/anexos", "EntryAttachmentScreens:store");
+    $route->get("/financeiro/lancamentos/{id}/anexos/{attachment}", "EntryAttachmentScreens:download");
+    $route->post("/financeiro/lancamentos/{id}/anexos/{attachment}/excluir", "EntryAttachmentScreens:remove");
+    $route->get("/prestacao-de-contas/livro-caixa/pdf", "CashBookScreens:pdf");
+    $route->get("/prestacao-de-contas/livro-caixa/pacote", "CashBookScreens:package");
+    $route->get("/prestacao-de-contas/livro-caixa/imprimir", "CashBookScreens:printView");
+
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.
     foreach ($erpRegistries as $registrySlug => $registry) {
