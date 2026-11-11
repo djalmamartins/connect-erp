@@ -254,6 +254,8 @@ $route->post("/notifications/{id}/retry", "Notifications:retry", null, \Source\S
 // Lançamentos avulsos (ADR 0057): desconto, multa avulsa e cobrança extra, transferência entre contas.
 $route->post("/entries/{id}/discount", "EntryShortcuts:discount", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/entries/{id}/adjustments", "EntryShortcuts:adjustments", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote (ADR 0191): várias contas em aberto pagas numa data e numa conta bancária, tudo ou nada.
+$route->post("/entries/settle", "BatchSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
