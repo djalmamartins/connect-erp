@@ -60,6 +60,7 @@ $route->post("/recurring-entries/generate", "RecurringEntriesGenerate:store", nu
 $route->get("/closings", "MonthClosings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/closings", "MonthClosings:close", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/closings/reopen", "MonthClosings:reopen", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/closings/readiness", "ClosingReadiness:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Faturas (ADR 0033): preparar, ajustar item, emitir (gera contas a receber) e cancelar.
 $route->get("/invoices", "Invoices:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices", "Invoices:store", null, \Source\Support\Middleware\ApiAuthenticated::class);

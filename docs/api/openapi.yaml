@@ -734,6 +734,23 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /closings/readiness:
+    get:
+      operationId: getClosingReadiness
+      summary: Conferência antes de fechar a competência (ADR 0181), somente leitura (erp.closing.view)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+      responses:
+        '200':
+          description: 'ready (sem erro), contagem de erros e avisos e a lista de conferências (balance_sheet, paid_without_bank, previous_open, open_entries, unmatched_statement, negative_bank, already_closed)'
+          content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { condominium_id: { type: integer }, competence: { type: string }, as_of: { type: string, format: date }, ready: { type: boolean }, errors: { type: integer }, warnings: { type: integer }, checks: { type: array, items: { type: object, properties: { code: { type: string }, level: { type: string, enum: [error, warning, info] }, message: { type: string }, count: { type: integer }, amount_cents: { type: integer } } } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /invoices:
     get:
       operationId: listInvoices
