@@ -13,6 +13,7 @@ use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Accountability;
 use Source\Services\Erp\ChartOpenings;
+use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\DeliveryLog;
 
 /** ADR 0166: prestação de contas mensal (AP-101), registros de entregas (AP-136) e saldo inicial do plano (AP-161). */
@@ -99,6 +100,42 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
         self::assertFalse($pack['truncated']);
         self::assertSame(['accounts' => [], 'totals' => ['opening_cents' => 0, 'in_cents' => 0, 'out_cents' => 0, 'closing_cents' => 0]], $pack['funds'],
             'Sem conta de fundo no plano: seção vazia (ADR 0177).');
+
+        // CSV do pacote (ADR 0178): uma tabela com a seção em cada linha, valores em reais.
+        $table = Accountability::csvTable($pack);
+        self::assertSame(['Seção', 'Código', 'Item', 'Saldo anterior', 'Entradas', 'Saídas', 'Valor ou saldo final'], $table['header']);
+        $sections = array_unique(array_column($table['rows'], 0));
+        self::assertSame(['Resumo', 'Fechamento', 'DRE', 'Bancos', 'Inadimplência', 'Avisos'], array_values($sections));
+        $summary = array_column(array_filter($table['rows'], static fn (array $r): bool => $r[0] === 'Resumo'), 6, 2);
+        self::assertSame(['2000,00', '300,00', '1700,00'], [$summary['Receitas'], $summary['Despesas'], $summary['Resultado']]);
+        self::assertContains(['Bancos', '', 'Movimento', '500,00', '1000,00', '300,00', '1200,00'], $table['rows']);
+        self::assertContains(['Inadimplência', '', 'Unidade 102 (21 dias)', '', '', '', '1000,00'], $table['rows']);
+        $csv = CollectionReports::csv($table);
+        self::assertStringStartsWith("\xEF\xBB\xBF", $csv);
+        self::assertStringContainsString('Mês 2026-10: Aberto', $csv);
+        self::assertStringContainsString("\r\n", $csv);
+
+        // Texto que vem do cadastro passa pela neutralização de fórmula em todas as seções.
+        $evil = '=HYPERLINK("http://x")';
+        $hostile = Accountability::csvTable(['competence' => '2026-10', 'summary' => [], 'closing' => ['status' => 'closed'], 'truncated' => true,
+            'income_statement' => ['rows' => [['code' => '1.01', 'name' => $evil, 'level' => 2, 'amount_cents' => 100]]],
+            'bank_accounts' => ['accounts' => [['name' => '+banco', 'opening_cents' => 0, 'received_cents' => 0, 'paid_cents' => 0, 'closing_cents' => 0]]],
+            'funds' => ['accounts' => [['code' => '8.2', 'name' => '@fundo', 'opening_cents' => 0, 'in_cents' => 0, 'out_cents' => 0, 'closing_cents' => 0,
+                'movements' => [['on_date' => '2026-10-05', 'description' => '-1+2', 'in_cents' => 5, 'out_cents' => 0, 'balance_cents' => 5]]]]],
+            'delinquency' => ['units' => [['unit_label' => '=1', 'max_days_late' => 3, 'amount_cents' => 1]]],
+            'warnings' => [['message' => '=aviso']]]);
+        foreach ($hostile['rows'] as $row) {
+            foreach ([1, 2] as $col) {
+                self::assertDoesNotMatchRegularExpression('/^\s*[=+\-@]/', $row[$col], json_encode($row));
+            }
+        }
+        self::assertContains(['Fundos', '', '  05/10/2026 -1+2', '', '0,05', '0,00', '0,05'], $hostile['rows'], 'Movimento com data e indentação (começa com espaço, não com sinal).');
+        self::assertSame('Relatório parcial: algum bloco passou do limite de linhas.', end($hostile['rows'])[2]);
+        $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Api/V1/Accountability.php');
+        foreach (['(new ReportExportLimit())->assertAllowed($user)', "Audit::record('export'", "'report' => 'accountability'", 'X-Content-Type-Options: nosniff',
+            "Access::can('erp.entries.view', \$user)", 'catch (DomainException'] as $needle) {
+            self::assertStringContainsString($needle, $controller, $needle);
+        }
 
         $this->pdo->exec("INSERT INTO erp_month_closings (condominium_id, competence, status, revenue_cents, expense_cents, open_revenue_cents, open_expense_cents, closed_by, closed_at)
             VALUES (1, '2026-10', 'closed', 0, 0, 0, 0, 7, '2026-11-02 10:00:00')");

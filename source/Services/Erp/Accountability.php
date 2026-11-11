@@ -72,6 +72,57 @@ final class Accountability
     }
 
     /**
+     * O pacote do mês em uma tabela para CSV (regra pura, ADR 0178). Cada linha diz a seção:
+     * resumo, fechamento, DRE, bancos, fundos (com os movimentos), inadimplência e avisos.
+     * Texto passa por CollectionReports::csvCell (neutraliza fórmula); valores em reais com vírgula.
+     *
+     * @return array{header:list<string>, rows:list<list<string>>}
+     */
+    public static function csvTable(array $pack): array
+    {
+        $money = static fn (mixed $c): string => number_format(((int)$c) / 100, 2, ',', '');
+        $cell = static fn (mixed $v): string => CollectionReports::csvCell((string)$v);
+        $s = $pack['summary'] ?? [];
+        $rows = [];
+        foreach ([
+            'Receitas' => 'revenue_cents', 'Despesas' => 'expense_cents', 'Resultado' => 'result_cents',
+            'Entradas no caixa' => 'cash_in_cents', 'Saídas do caixa' => 'cash_out_cents',
+            'Saldo bancário anterior' => 'bank_opening_cents', 'Saldo bancário final' => 'bank_closing_cents',
+            'Receitas da competência em aberto' => 'open_revenue_cents', 'Despesas da competência em aberto' => 'open_expense_cents',
+            'Contas vencidas no fim do mês' => 'delinquent_cents',
+            'Fundos: saldo anterior' => 'funds_opening_cents', 'Fundos: saldo final' => 'funds_closing_cents',
+        ] as $label => $key) {
+            $rows[] = ['Resumo', '', $label, '', '', '', $money($s[$key] ?? 0)];
+        }
+        $status = ['closed' => 'Fechado', 'open' => 'Aberto', 'reopened' => 'Reaberto'][(string)($pack['closing']['status'] ?? 'open')] ?? 'Aberto';
+        $rows[] = ['Fechamento', '', $cell('Mês ' . ($pack['competence'] ?? '') . ': ' . $status), '', '', '', ''];
+        foreach ($pack['income_statement']['rows'] ?? [] as $r) {
+            $rows[] = ['DRE', $cell($r['code']), $cell(str_repeat('  ', max(0, (int)($r['level'] ?? 1) - 1)) . $r['name']), '', '', '', $money($r['amount_cents'])];
+        }
+        foreach ($pack['bank_accounts']['accounts'] ?? [] as $b) {
+            $rows[] = ['Bancos', '', $cell($b['name'] ?? ''), $money($b['opening_cents'] ?? 0), $money($b['received_cents'] ?? 0), $money($b['paid_cents'] ?? 0),
+                $money($b['closing_cents'] ?? 0)];
+        }
+        foreach ($pack['funds']['accounts'] ?? [] as $f) {
+            $rows[] = ['Fundos', $cell($f['code']), $cell($f['name']), $money($f['opening_cents']), $money($f['in_cents']), $money($f['out_cents']), $money($f['closing_cents'])];
+            foreach ($f['movements'] ?? [] as $m) {
+                $date = is_string($m['on_date'] ?? null) && $m['on_date'] !== '' ? date('d/m/Y', (int)strtotime($m['on_date'])) . ' ' : '';
+                $rows[] = ['Fundos', '', $cell('  ' . $date . $m['description']), '', $money($m['in_cents']), $money($m['out_cents']), $money($m['balance_cents'])];
+            }
+        }
+        foreach ($pack['delinquency']['units'] ?? [] as $u) {
+            $rows[] = ['Inadimplência', '', $cell('Unidade ' . $u['unit_label'] . ' (' . (int)$u['max_days_late'] . ' dias)'), '', '', '', $money($u['amount_cents'])];
+        }
+        foreach ($pack['warnings'] ?? [] as $w) {
+            $rows[] = ['Avisos', '', $cell($w['message'] ?? ''), '', '', '', ''];
+        }
+        if (!empty($pack['truncated'])) {
+            $rows[] = ['Avisos', '', 'Relatório parcial: algum bloco passou do limite de linhas.', '', '', '', ''];
+        }
+        return ['header' => ['Seção', 'Código', 'Item', 'Saldo anterior', 'Entradas', 'Saídas', 'Valor ou saldo final'], 'rows' => $rows];
+    }
+
+    /**
      * Fundos do mês (regra pura, ADR 0177): das contas do Razão, só as de passivo lançadas à mão (fundo de reserva,
      * outros fundos e as do condomínio). Contas a pagar (8.1) é calculada e fica de fora. Por fundo: saldo anterior,
      * entradas (a crédito, como a apropriação), saídas (a débito, como o uso) e saldo final, com os movimentos.
