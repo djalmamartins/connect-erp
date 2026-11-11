@@ -3106,6 +3106,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reservations/bill-fees:
+    post:
+      operationId: billReservationFees
+      summary: Cobrança das taxas das reservas confirmadas do período, cada uma como cobrança extra da unidade (EntryShortcuts::createCharge), uma vez só, tudo ou nada e com prévia (erp.reservations.view, erp.invoices.view e erp.invoices.manage, ADR 0212)
+      description: >-
+        Entram as reservas confirmadas, não excluídas, com taxa maior que zero e sem cobrança extra ativa da própria
+        reserva (already_billed conta as já cobradas; cancelada a cobrança, volta a entrar). Competência = mês da
+        reserva; vencimento e conta de receita informados. Mês fechado ou outra recusa da cobrança extra desfaz todas.
+        Nada é enviado. Sem nome de morador.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, from, to, due_on, chart_account_id], properties: { condominium_id: { type: integer }, from: { type: string, format: date }, to: { type: string, format: date }, due_on: { type: string, format: date }, chart_account_id: { type: integer }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, dry_run, count, total_cents, already_billed, changed, reservations[{ id, area, reserved_on, fee_cents, charge_id }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou reserva recusada pela cobrança extra (errors com _form e _reservation); nada é gravado' }
   /maintenances/complete:
     post:
       operationId: completeMaintenances

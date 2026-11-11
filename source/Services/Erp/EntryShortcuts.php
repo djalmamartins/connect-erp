@@ -243,7 +243,8 @@ final class EntryShortcuts
         }
         // Origem da multa (ADR 0080, AP-116): ocorrência do condomínio (da unidade ou sem unidade) ou reserva da unidade.
         $occurrence = $kind === 'fine' ? $this->int($input['occurrence_id'] ?? null) : null;
-        $reservation = $kind === 'fine' ? $this->int($input['reservation_id'] ?? null) : null;
+        // ADR 0212: a cobrança extra também pode vir de uma reserva (a taxa da reserva), sempre de uma unidade só.
+        $reservation = $this->int($input['reservation_id'] ?? null);
         if ($occurrence !== null) {
             $check = $this->pdo->prepare('SELECT id FROM erp_occurrences WHERE id = :id AND condominium_id = :c AND deleted_at IS NULL AND (unit_id IS NULL OR unit_id = :u)');
             $check->execute(['id' => $occurrence, 'c' => $condominium, 'u' => $unitIds[0]]);
@@ -252,10 +253,13 @@ final class EntryShortcuts
             }
         }
         if ($reservation !== null) {
+            if (count($unitIds) !== 1) {
+                throw new InvalidArgumentException('A cobrança de uma reserva é de uma unidade só.');
+            }
             $check = $this->pdo->prepare('SELECT id FROM erp_reservations WHERE id = :id AND condominium_id = :c AND unit_id = :u AND deleted_at IS NULL');
             $check->execute(['id' => $reservation, 'c' => $condominium, 'u' => $unitIds[0]]);
             if ($check->fetchColumn() === false) {
-                throw new InvalidArgumentException('A reserva da multa precisa ser desta unidade.');
+                throw new InvalidArgumentException($kind === 'fine' ? 'A reserva da multa precisa ser desta unidade.' : 'A reserva da cobrança precisa ser desta unidade.');
             }
         }
         $fractions = [];
@@ -266,7 +270,11 @@ final class EntryShortcuts
         $total = array_sum($shares);
         $prefix = $kind === 'fine' ? 'MUL' : 'EXT';
 
-        $this->pdo->beginTransaction();
+        // Dentro de uma transação de fora (cobrança das taxas de reserva em lote, ADR 0212), grava nela: quem abriu confirma ou desfaz tudo.
+        $own = !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
         try {
             $this->pdo->prepare('INSERT INTO erp_extra_charges (condominium_id, kind, description, chart_account_id, method, total_cents, units_count, competence, due_on,
                     related_entry_id, occurrence_id, reservation_id, reason, created_by) VALUES (:c, :k, :d, :a, :m, :t, :n, :comp, :due, :rel, :occ, :res, :r, :u)')->execute([
@@ -284,9 +292,11 @@ final class EntryShortcuts
                 ]);
                 $link->execute(['x' => $chargeId, 'id' => (int)$entry['id']]);
             }
-            $this->pdo->commit();
+            if ($own) {
+                $this->pdo->commit();
+            }
         } catch (\Throwable $error) {
-            if ($this->pdo->inTransaction()) {
+            if ($own && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $error;
