@@ -444,6 +444,11 @@ return [
         'kind' => 'report',
         'columns' => ['Data:date', 'Descrição:text', 'Conta:text', 'Tipo:select(Receita|Despesa)', 'Valor:money'],
     ],
+    // Livro caixa mensal (ADR 0174): com banco e permissão, tela própria (pages/reports/cash-book).
+    'CN-007' => [
+        'kind' => 'report',
+        'columns' => ['Data:date', 'Histórico:text', 'Documento:text', 'Entrada:money', 'Saída:money', 'Saldo:money'],
+    ],
     'CN-001' => [
         'kind' => 'list',
         'entity' => 'vistorias',

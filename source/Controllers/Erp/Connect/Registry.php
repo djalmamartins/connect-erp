@@ -198,6 +198,7 @@ final class Registry extends Controller
             'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
             'registryAttachment' => self::attachmentData($user, $definition, $values),
+            'entryAttachments' => EntryAttachmentScreens::cardData($user, $definition['slug'], $id),
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
         ]));

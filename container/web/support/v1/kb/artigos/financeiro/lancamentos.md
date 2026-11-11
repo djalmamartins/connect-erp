@@ -7,8 +7,8 @@ rota: /financeiro/lancamentos
 menu: Financeiro > Lançamentos > Lançamentos
 icone: list-outline
 situacao: funciona
-relacionados: lancamentos-fixos, lancar-despesa, lancar-receita, lancar-desconto
-palavras: lançamentos, financeiro, AP-020, receita, despesa, baixa, pagamento, competência, mês, plano de contas, erro ao salvar
+relacionados: lancamentos-fixos, lancar-despesa, lancar-receita, lancar-desconto, livro-caixa
+palavras: lançamentos, financeiro, AP-020, anexo, nota fiscal, comprovante, recibo, receita, despesa, baixa, pagamento, competência, mês, plano de contas, erro ao salvar
 rascunho: nao
 ---
 
@@ -65,6 +65,19 @@ recorte: main form:not([method=get])
 - **Nº do documento**: Nota fiscal, recibo ou boleto.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Válido e Cancelado.
+
+## Anexar nota fiscal e comprovante
+
+Depois de salvar, o lançamento mostra o quadro **Notas e comprovantes**, ao lado do formulário.
+
+1. Abra o lançamento (clique no nome dele na lista).
+2. No quadro **Notas e comprovantes**, escolha o **Tipo**: Nota fiscal, Comprovante de pagamento, Recibo ou Outro documento.
+3. Escolha o **Arquivo** (PDF, foto JPG/PNG/WebP ou o XML da NF-e, até 20 MB) e clique em {{Anexar}}.
+4. O anexo aparece na lista do quadro. Clique no nome para abrir ou no ícone de download para baixar.
+
+Os anexos entram numerados no [Livro caixa mensal](artigo:livro-caixa). O arquivo fica guardado também no Disco Virtual, na pasta **Notas fiscais** ou **Comprovantes**. Se a mesma nota servir a duas parcelas, anexe o mesmo arquivo nas duas: o sistema guarda uma cópia só.
+
+>! Dá para anexar mesmo com o mês fechado (o comprovante costuma chegar depois). Remover um anexo de mês fechado não: reabra o mês antes.
 
 ## Pesquisar e filtrar
 

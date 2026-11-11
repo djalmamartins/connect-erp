@@ -1273,6 +1273,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/cash-book:
+    get:
+      operationId: cashBook
+      summary: Livro caixa mensal de um condomínio (erp.entries.view, CN-007, ADR 0174)
+      description: >-
+        Regime de caixa: saldo anterior (soma das contas bancárias no dia 1), cada lançamento válido pago no mês com
+        o saldo corrido, os anexos numerados A1, A2... (sem o caminho do arquivo), o resumo por conta, as contas
+        bancárias, as despesas pagas sem nota/comprovante/recibo e a conferência com os bancos (reconciled e
+        difference_cents). closed diz se a competência está fechada (senão é prévia). O PDF e o pacote ZIP com os
+        anexos saem da tela do ERP (/prestacao-de-contas/livro-caixa).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', example: '2026-11' } }
+      responses:
+        '200': { description: '{ data: { condominium, competence, from, to, closed, opening_cents, in_cents, out_cents, closing_cents, banks_closing_cents, difference_cents, reconciled, lines[{seq, entry_id, paid_on, nature, description, document_number, account_code, account_name, counterpart, bank_name, in_cents, out_cents, balance_cents, annex_refs[]}], annexes[{ref, number, line, id, entry_id, kind, kind_label, original_name, mime, size_bytes}], missing_proof[], accounts[], banks[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /erp-admin/overview:
     get:
       operationId: erpAdminOverview
@@ -2778,6 +2798,73 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /entries/{id}/attachments:
+    get:
+      operationId: listEntryAttachments
+      summary: Anexos do lançamento (erp.entries.view, ADR 0174)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: '{ data: [{ id, entry_id, document_id, kind, kind_label, title, original_name, mime, size_bytes, sha256, scan_status, attached_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: attachToEntry
+      summary: Anexa nota fiscal, comprovante, recibo ou outro documento ao lançamento (erp.entries.manage)
+      description: >-
+        O arquivo vai para o Disco Virtual (mesmas regras do ADR 0047: tipo pelo conteúdo, 20 MB, antivírus). Nota
+        fiscal na pasta notas_fiscais, comprovante e recibo em comprovantes, outro em outros. O mesmo arquivo já na
+        pasta é reaproveitado; no mesmo lançamento, 409. Até 20 anexos por lançamento. Vale em competência fechada.
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [nota_fiscal, comprovante, recibo, outro] }
+                title: { type: string, maxLength: 160 }
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: '{ data: anexo }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Arquivo já anexado a este lançamento }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '503': { description: Antivírus obrigatório fora do ar (ADR 0098) }
+  /entries/{id}/attachments/{attachment}/download:
+    get:
+      operationId: downloadEntryAttachment
+      summary: Baixa o anexo do lançamento (erp.entries.view, no escopo)
+      description: 'Content-Disposition attachment, X-Content-Type-Options nosniff, CSP sandbox, Cache-Control no-store. Bloqueado pelo antivírus = 403.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: attachment, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Conteúdo do arquivo, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /entries/{id}/attachments/{attachment}:
+    delete:
+      operationId: removeEntryAttachment
+      summary: Remove o anexo do lançamento (erp.entries.manage); o arquivo continua no Disco Virtual
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: attachment, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: Removido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência fechada no fechamento mensal }
   /occurrences/{id}/ticket:
     post:
       operationId: openOccurrenceTicket

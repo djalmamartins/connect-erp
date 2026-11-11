@@ -29,7 +29,7 @@ legenda: Tela Disco Virtual
 
 ## Enviar arquivo
 
-PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV ou TXT, até 20 MB.
+PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV, TXT ou XML, até 20 MB.
 
 1. Preencha **Pasta** e **Escolha ou arraste o arquivo Um arquivo por vez**.
 2. Clique em {{Enviar}}.

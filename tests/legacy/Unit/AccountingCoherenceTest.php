@@ -157,6 +157,42 @@ final class AccountingCoherenceTest extends TestCase
         self::assertSame([0, 100000 + 241020 - 30000, 0], [$equityNext['9.2'], $equityNext['9.1'], $next['diferenca']], 'Virada do ano: o exercício vai para os acumulados.');
     }
 
+    /** ADR 0176: saldo inicial com data dentro do período vira linha do Razão, e o saldo final bate com o Balanço. */
+    public function testLedgerOpeningInsideThePeriodMatchesTheBalanceSheet(): void
+    {
+        $scope = new CondominiumScope($this->pdo);
+        $user = $this->user();
+        $patrimonial = new PatrimonialEntries($this->pdo, $scope);
+        $move = static fn (string $date, int $cents): array => $patrimonial->create($user, ['condominium_id' => 1, 'entry_date' => $date,
+            'description' => "Reforço de outros fundos {$date}", 'amount_cents' => $cents, 'debit_account_id' => 82, 'credit_account_id' => 83], self::TODAY);
+        $move('2025-03-10', 2000);                       // antes do saldo inicial: histórico substituído
+        $move('2025-08-10', 1500);                       // depois: soma
+        $this->entries([
+            [1, 'receita', 2, 10, 'Taxa fevereiro', 100000, '2025-02', '2025-02-10', '2025-02-10'],
+            [2, 'receita', 2, 10, 'Taxa julho', 30000, '2025-07', '2025-07-10', '2025-07-10'],
+        ]);
+        $openings = new ChartOpenings($this->pdo, $scope);
+        $openings->set($user, 1, 83, '2025-06-01', 9000);
+        $openings->set($user, 1, 2, '2025-05-01', 50000);
+
+        $sheet = (new BalanceSheet($this->pdo, $scope))->build($user, 1, '2025-12-31');
+        $liabilities = array_column($sheet['liabilities']['rows'], 'amount_cents', 'code');
+        self::assertSame(9000 + 1500, $liabilities['8.3']);
+        foreach (['competence', 'cash'] as $basis) {
+            $ledger = (new AccountingReports($this->pdo, $scope))->ledger($user, 1, '2025-01-01', '2025-12-31', $basis);
+            $accounts = array_column($ledger['accounts'], null, 'code');
+            self::assertSame([[], ['1.01', '8.3']], [$ledger['openings_ignored'], $ledger['openings_in_period']], $basis);
+            self::assertSame($liabilities['8.3'], $accounts['8.3']['closing_cents'], "{$basis}: Razão da 8.3 = Balanço.");
+            self::assertSame(50000 + 30000, $accounts['1.01']['closing_cents'], "{$basis}: saldo inicial + o que vem depois.");
+            $line = array_values(array_filter($accounts['1.01']['lines'], static fn (array $l): bool => $l['source'] === 'opening'))[0];
+            self::assertSame(['2025-05-01', 50000, 0], [$line['on_date'], $line['debit_cents'], $line['credit_cents']], "{$basis}: receita que baixa vai a débito.");
+            $fund = array_values(array_filter($accounts['8.3']['lines'], static fn (array $l): bool => $l['source'] === 'opening'))[0];
+            self::assertSame([0, 7000, 9000], [$fund['debit_cents'], $fund['credit_cents'], $fund['balance_cents']], "{$basis}: o ajuste leva a conta ao saldo informado.");
+            $a = $accounts['8.3'];
+            self::assertSame($a['opening_cents'] + $a['credit_cents'] - $a['debit_cents'], $a['closing_cents'], "{$basis}: débitos e créditos fecham.");
+        }
+    }
+
     public function testReviewFixes(): void
     {
         $scope = new CondominiumScope($this->pdo);

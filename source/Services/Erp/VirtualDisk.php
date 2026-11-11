@@ -21,7 +21,7 @@ use Source\Support\Audit;
  * - Guardados fora da pasta pública (storage/private/documents/{condomínio}/{ano}/{aleatório}.{ext}),
  *   com nome gerado pelo sistema: o nome enviado só aparece na listagem e no download.
  * - Tipo conferido pelo conteúdo (finfo), numa lista fechada (PDF, imagens, planilhas e textos do
- *   Office/LibreOffice, CSV e texto), com a extensão batendo com o tipo. No máximo 20 MB.
+ *   Office/LibreOffice, CSV, texto e o XML da NF-e), com a extensão batendo com o tipo. No máximo 20 MB.
  * - O mesmo arquivo (sha256) já enviado na mesma pasta do condomínio é recusado.
  * - Download só com permissão e escopo (o controller manda como anexo, com nosniff).
  * - Exclusão lógica, auditada: o arquivo continua guardado.
@@ -32,7 +32,7 @@ use Source\Support\Audit;
 final class VirtualDisk
 {
     public const MAX_BYTES = 20971520; // 20 MB
-    public const FOLDERS = ['atas' => 'Atas', 'contratos' => 'Contratos', 'plantas' => 'Plantas', 'notas_fiscais' => 'Notas fiscais', 'outros' => 'Outros'];
+    public const FOLDERS = ['atas' => 'Atas', 'contratos' => 'Contratos', 'plantas' => 'Plantas', 'notas_fiscais' => 'Notas fiscais', 'comprovantes' => 'Comprovantes', 'outros' => 'Outros'];
     /** tipo (finfo) => extensões aceitas para ele */
     public const ALLOWED = [
         'application/pdf' => ['pdf'],
@@ -45,6 +45,9 @@ final class VirtualDisk
         'application/vnd.oasis.opendocument.spreadsheet' => ['ods'],
         'text/plain' => ['txt', 'csv'],
         'text/csv' => ['csv'],
+        // XML da NF-e (ADR 0174): só baixa como anexo (nosniff + CSP sandbox), nunca abre no navegador.
+        'text/xml' => ['xml'],
+        'application/xml' => ['xml'],
     ];
 
     private PDO $pdo;
@@ -122,7 +125,7 @@ final class VirtualDisk
         $extension = self::extension($original);
         $mime = strtolower((string)(new \finfo(FILEINFO_MIME_TYPE))->file($temporary));
         if (!self::accepts($mime, $extension)) {
-            throw new InvalidArgumentException('Tipo de arquivo não aceito. Envie PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV ou TXT, com a extensão certa.');
+            throw new InvalidArgumentException('Tipo de arquivo não aceito. Envie PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV, TXT ou XML, com a extensão certa.');
         }
         $title = is_string($input['title'] ?? null) ? trim((string)preg_replace('/\s+/u', ' ', $input['title'])) : '';
         $title = mb_substr($title !== '' ? $title : pathinfo($original, PATHINFO_FILENAME), 0, 160);

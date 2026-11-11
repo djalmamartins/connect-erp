@@ -59,6 +59,10 @@ $this->insert('components/layout/page-head', [
             'units' => $units ?? [], 'condominiums' => $condominiums,
         ]);
     } ?>
+    <?php if (($entryAttachments ?? null) !== null) {
+        // ADR 0174: nota fiscal, comprovante e recibo do lançamento, numerados no livro caixa.
+        $this->insert('components/cards/entry-attachments', ['attachments' => $entryAttachments]);
+    } ?>
     <?php if (($occurrenceTicket ?? null) !== null) {
         $this->insert('components/cards/occurrence-ticket', ['ticket' => $occurrenceTicket]);
     } ?>
