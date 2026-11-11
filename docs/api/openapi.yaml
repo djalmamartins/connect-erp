@@ -2041,6 +2041,26 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/obligation-calendar:
+    get:
+      operationId: obligationCalendar
+      summary: Calendário de vencimentos do condomínio (apólice, contrato, mandato do síndico e conselho, documentos e protocolos do checklist) em vencidos, 30, 60 e 90 dias, somente leitura (ADR 0218)
+      description: >-
+        Cada fonte só entra com a permissão de ver o cadastro dela (insurances = erp.insurances.view, contracts =
+        erp.contracts.view, board = erp.board.view, checklist = erp.condominiums.view); as demais vêm em hidden_sources.
+        O checklist usa a mesma situação da tela (OnboardingChecklist). Vencidos sempre entram; futuros até a janela.
+        Sem nome, documento, e-mail ou telefone de membro do conselho, sem responsável nem observações. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+        - { name: days, in: query, schema: { type: integer, enum: [30, 60, 90], default: 90 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, days, sources[], hidden_sources[], summary { expired, 30, 60, 90 }, items[{ source, id, kind (policy_end|contract_end|term_end|document_expiry|protocol_deadline), label, date, days, bucket, supplier_id?, category?, protocol? }], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
