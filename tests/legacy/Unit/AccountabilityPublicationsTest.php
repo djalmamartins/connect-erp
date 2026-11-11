@@ -44,7 +44,7 @@ final class AccountabilityPublicationsTest extends TestCase
             "CREATE TABLE erp_patrimonial_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER, entry_date TEXT, description TEXT, amount_cents INTEGER, debit_account_id INTEGER,
                 credit_account_id INTEGER, bank_account_id INTEGER, linked_entry_id INTEGER, import_id INTEGER, status TEXT DEFAULT 'active', reversal_of_id INTEGER, created_by INTEGER)",
             'CREATE TABLE erp_budget_lines (id INTEGER PRIMARY KEY, condominium_id INTEGER, year INTEGER, chart_account_id INTEGER, month INTEGER, amount_cents INTEGER)',
-            "CREATE TABLE erp_accountability_publications (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL, competence TEXT NOT NULL, version INTEGER NOT NULL,
+            "CREATE TABLE erp_accountability_publications (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT 'monthly', competence TEXT NOT NULL, version INTEGER NOT NULL,
                 sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'current', notes TEXT, published_by INTEGER, published_at TEXT NOT NULL,
                 withdrawn_by INTEGER, withdrawn_at TEXT, withdraw_reason TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE (condominium_id, competence, version))",
         ] as $sql) {

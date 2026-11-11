@@ -1215,20 +1215,22 @@ paths:
   /accountability-publications:
     get:
       operationId: accountabilityPublications
-      summary: Versões publicadas da prestação de contas (erp.closing.view, erp.entries.view e erp.chart.view, ADR 0179)
+      summary: Versões publicadas da prestação de contas mensal ou anual (erp.closing.view, erp.entries.view e erp.chart.view, ADR 0179/0183)
       security: [{ session: [] }]
       parameters:
         - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: kind, in: query, schema: { type: string, enum: [monthly, annual] } }
         - { name: month, in: query, schema: { type: string, example: '2026-10' } }
+        - { name: year, in: query, schema: { type: integer, minimum: 2000, maximum: 2100 }, description: 'Usado com kind=annual' }
       responses:
-        '200': { description: '{ data: { condominium_id, competence, truncated, rows[{ id, competence, version, sha256, status, notes, published_by, published_at, withdrawn_* }] } }' }
+        '200': { description: '{ data: { condominium_id, competence, truncated, rows[{ id, kind, competence, version, sha256, status, notes, published_by, published_at, withdrawn_* }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
     post:
       operationId: accountabilityPublish
-      summary: Publica a prestação de contas de um mês fechado (também erp.closing.manage, ADR 0179)
+      summary: Publica a prestação de contas de um mês fechado ou de um ano com todos os meses fechados (também erp.closing.manage, ADR 0179/0183)
       description: Conteúdo igual ao da versão atual não cria versão nova (200, created = false).
       security: [{ session: [] }]
       requestBody:
@@ -1237,10 +1239,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [condominium_id, month]
+              required: [condominium_id]
               properties:
                 condominium_id: { type: integer }
-                month: { type: string, example: '2026-10' }
+                kind: { type: string, enum: [monthly, annual], default: monthly }
+                month: { type: string, example: '2026-10', description: 'Obrigatório no mensal' }
+                year: { type: integer, minimum: 2000, maximum: 2100, description: 'Obrigatório quando kind=annual' }
                 notes: { type: string, maxLength: 255 }
       responses:
         '200': { description: 'Mesmo conteúdo da versão atual: { data: { ..., created: false } }' }
@@ -1249,7 +1253,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
-        '409': { description: Mês aberto }
+        '409': { description: 'Mês aberto ou, no anual, algum mês do ano ainda aberto' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
   /accountability-publications/{id}:
@@ -1261,7 +1265,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [csv] } }
       responses:
-        '200': { description: '{ data: { id, version, sha256, status, intact, payload } } ou text/csv' }
+        '200': { description: '{ data: { id, kind, version, sha256, status, intact, payload } } ou text/csv (formato anual quando kind=annual)' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
