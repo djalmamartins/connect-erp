@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0223.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0223, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0224.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0224, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -225,3 +225,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0220](../Organic%20Code/decisions/0220-meter-reading-review.md) | Conferência das leituras de consumo do mês, somente leitura: sem leitura, pico, queda, zero e leitura fora de sequência, com média só dos meses com leitura (mínimo 3) e sem morador | Aceita |
 | [0221](../Organic%20Code/decisions/0221-reservation-expiry.md) | Baixa em lote das reservas que passaram sem aprovação, canceladas pelo formulário, tudo ou nada, prévia e auditoria, sem aviso na outbox e sem tocar nas confirmadas | Aceita |
 | [0222](../Organic%20Code/decisions/0222-delinquency-by-location.md) | Inadimplência por bloco ou andar, somente leitura: taxa de unidades em atraso, valores com encargos e faixas de atraso pelo Agreements::delinquency, só grupos e somas, sem unidade ou morador | Aceita |
+| [0223](../Organic%20Code/decisions/0223-employee-salary-readjustment.md) | Reajuste salarial em lote dos funcionários pelo formulário (mesmo percentual e arredondamento da 0204), por função ou ids, sem desligados nem sem salário, tudo ou nada, prévia e auditoria, sem nome ou CPF | Aceita |

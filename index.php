@@ -255,6 +255,8 @@ $route->post("/document-transit/settle", "DocumentTransitSettlement:store", null
 $route->post("/contracts/renew", "ContractRenewal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote das reservas que passaram sem aprovação (ADR 0221). Antes do laço dos cadastros (/reservations/{id}).
 $route->post("/reservations/expire-pending", "ReservationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reajuste salarial em lote dos funcionários (ADR 0223). Antes do laço dos cadastros (/employees/{id}).
+$route->post("/employees/readjust-salaries", "EmployeeSalaryReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
