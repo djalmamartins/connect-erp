@@ -6,6 +6,7 @@ namespace Source\Services\Erp;
 
 use PDO;
 use RuntimeException;
+use Source\Support\Audit;
 
 /**
  * Dados de exemplo para testar a inadimplência no laboratório (ADR 0162). Só roda fora de produção:
@@ -172,8 +173,15 @@ final class LabSampleData
         return $created;
     }
 
-    /** Apaga só o que tem a marca, dentro dos condomínios marcados. @return array<string, int> */
-    public function remove(): array
+    /**
+     * Apaga só o que tem a marca, dentro dos condomínios marcados. $before (ADR 0175) roda antes, na mesma
+     * transação: é por onde o ano contábil de exemplo (LabSampleYear::purge) sai primeiro. Se qualquer passo
+     * falhar ou recusar, nada é apagado.
+     *
+     * @param null|callable(): array<string, int> $before
+     * @return array<string, int>
+     */
+    public function remove(?callable $before = null): array
     {
         $like = self::MARK . ' %';
         $ids = array_map('intval', $this->column('SELECT id FROM condominiums WHERE name LIKE ?', [$like]));
@@ -184,12 +192,15 @@ final class LabSampleData
         $in = implode(',', $ids);
         $this->pdo->beginTransaction();
         try {
+            $removed = ($before === null ? [] : $before()) + $removed;
             $removed['entries'] = $this->pdo->exec("DELETE FROM erp_entries WHERE condominium_id IN ({$in}) AND description LIKE " . $this->pdo->quote($like));
             $removed['residents'] = $this->pdo->exec("DELETE FROM erp_residents WHERE condominium_id IN ({$in}) AND name LIKE " . $this->pdo->quote($like));
             $removed['units'] = $this->pdo->exec("DELETE FROM erp_units WHERE condominium_id IN ({$in}) AND notes LIKE " . $this->pdo->quote(self::MARK . ':%'));
             $removed['bank_accounts'] = $this->pdo->exec("DELETE FROM erp_bank_accounts WHERE condominium_id IN ({$in}) AND name LIKE " . $this->pdo->quote($like));
             $removed['chart_accounts'] = $this->pdo->exec("DELETE FROM erp_chart_accounts WHERE condominium_id IN ({$in}) AND name LIKE " . $this->pdo->quote($like));
             $removed['condominiums'] = $this->pdo->exec("DELETE FROM condominiums WHERE id IN ({$in}) AND name LIKE " . $this->pdo->quote($like));
+            // Trilha do que saiu (ADR 0175): contagem por tipo e os condomínios de exemplo apagados.
+            Audit::record('delete', 'lab_sample_data', null, ['condominium_ids' => $ids] + $removed, null);
             $this->pdo->commit();
         } catch (\Throwable $error) {
             $this->pdo->rollBack();

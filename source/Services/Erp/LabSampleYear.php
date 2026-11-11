@@ -11,6 +11,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Imports\PatrimonialImports;
 use Source\Services\Erp\Registry\RegistryService;
+use Source\Support\Audit;
 
 /**
  * Ano contábil de exemplo no condomínio "EXEMPLO Residencial Aurora" (ADR 0173), para que Balanço, DRE, Razão,
@@ -173,6 +174,73 @@ final class LabSampleYear
         return $this->created;
     }
 
+    /**
+     * Tira o ano de exemplo (ADR 0175), para o LabSampleData::remove() apagar depois os lançamentos, as contas
+     * bancárias e as do plano com a marca. Roda dentro da transação de quem chama (não abre outra).
+     *
+     * Antes de apagar, confere que tudo o que está no condomínio de exemplo é de exemplo:
+     * - descrição com a marca, ou estorno de um lançamento com a marca;
+     * - a chave da importação e as observações do acordo;
+     * - parcelas só de acordos de exemplo;
+     * - nenhum recibo nem boleto sobre os lançamentos.
+     * Se achar um registro sem a marca, recusa dizendo qual, e nada sai.
+     *
+     * @return array<string, int> quantos registros saíram por tipo
+     */
+    public function purge(): array
+    {
+        $removed = ['outbox' => 0, 'patrimonial_entries' => 0, 'patrimonial_imports' => 0, 'agreements' => 0, 'agreement_installments' => 0,
+            'transfers' => 0, 'openings' => 0, 'investment_links' => 0];
+        $condominium = $this->id('SELECT id FROM condominiums WHERE name = ?', [self::CONDOMINIUM]);
+        if ($condominium === null) {
+            return $removed;
+        }
+        $like = self::MARK . ' %';
+        $agreements = array_map('intval', $this->column('SELECT id FROM erp_agreements WHERE condominium_id = ? AND notes = ?', [$condominium, self::AGREEMENT_NOTE]));
+        $agreementIn = $agreements === [] ? '0' : implode(',', $agreements);
+        $checks = [
+            'lançamento patrimonial' => ["SELECT m.id FROM erp_patrimonial_entries m WHERE m.condominium_id = ? AND m.description NOT LIKE ?
+                AND (m.reversal_of_id IS NULL OR NOT EXISTS (SELECT 1 FROM erp_patrimonial_entries o WHERE o.id = m.reversal_of_id AND o.description LIKE ?))",
+                [$condominium, $like, $like]],
+            'transferência' => ['SELECT id FROM erp_bank_transfers WHERE condominium_id = ? AND description NOT LIKE ?', [$condominium, $like]],
+            'importação patrimonial' => ['SELECT id FROM erp_patrimonial_imports WHERE condominium_id = ? AND idempotency_key <> ?', [$condominium, self::IMPORT_KEY]],
+            'saldo inicial' => ["SELECT id FROM erp_chart_account_openings WHERE condominium_id = ? AND COALESCE(notes, '') NOT LIKE ?", [$condominium, self::MARK . '%']],
+            'acordo' => ["SELECT id FROM erp_agreements WHERE condominium_id = ? AND id NOT IN ({$agreementIn})", [$condominium]],
+            'lançamento' => ["SELECT id FROM erp_entries WHERE condominium_id = ? AND description NOT LIKE ?
+                AND NOT (COALESCE(agreement_role, '') = 'installment' AND COALESCE(agreement_id, 0) IN ({$agreementIn}))", [$condominium, $like]],
+            'recibo sobre o lançamento' => ['SELECT de.entry_id FROM erp_unit_document_entries de JOIN erp_entries e ON e.id = de.entry_id WHERE e.condominium_id = ?', [$condominium]],
+            'boleto sobre o lançamento' => ['SELECT c.entry_id FROM erp_bank_charges c JOIN erp_entries e ON e.id = c.entry_id WHERE e.condominium_id = ?', [$condominium]],
+        ];
+        foreach ($checks as $what => [$sql, $params]) {
+            $found = $this->id($sql . ' LIMIT 1', $params);
+            if ($found !== null) {
+                throw new DomainException("Recusado: {$what} #{$found} está no condomínio de exemplo sem a marca \"" . self::MARK . '". Nada foi apagado.');
+            }
+        }
+
+        $c = [$condominium];
+        if ($agreements !== []) {
+            $removed['outbox'] = $this->run("DELETE FROM erp_notification_outbox WHERE condominium_id = ? AND subject_table = 'erp_agreements' AND subject_id IN ({$agreementIn})", $c);
+        }
+        // Estornos antes dos originais (reversal_of_id aponta para o original).
+        $removed['patrimonial_entries'] = $this->run('DELETE FROM erp_patrimonial_entries WHERE condominium_id = ? AND reversal_of_id IS NOT NULL', $c)
+            + $this->run('DELETE FROM erp_patrimonial_entries WHERE condominium_id = ?', $c);
+        $removed['patrimonial_imports'] = $this->run('DELETE FROM erp_patrimonial_imports WHERE condominium_id = ?', $c);
+        if ($agreements !== []) {
+            // A conta renegociada volta a ser só a conta vencida do ADR 0162 (o remove() apaga depois, pela marca).
+            $this->run("UPDATE erp_entries SET status = 'active', agreement_id = NULL, agreement_role = NULL WHERE condominium_id = ? AND agreement_id IN ({$agreementIn})
+                AND agreement_role = 'original'", $c);
+            $this->run("DELETE FROM erp_agreement_originals WHERE agreement_id IN ({$agreementIn})", []);
+            $removed['agreement_installments'] = $this->run("DELETE FROM erp_entries WHERE condominium_id = ? AND agreement_role = 'installment' AND agreement_id IN ({$agreementIn})", $c);
+            $removed['agreements'] = $this->run("DELETE FROM erp_agreements WHERE condominium_id = ? AND id IN ({$agreementIn})", $c);
+        }
+        $removed['transfers'] = $this->run('DELETE FROM erp_bank_transfers WHERE condominium_id = ?', $c);
+        $removed['openings'] = $this->run('DELETE FROM erp_chart_account_openings WHERE condominium_id = ?', $c);
+        $removed['investment_links'] = $this->run('UPDATE erp_bank_accounts SET parent_bank_account_id = NULL WHERE condominium_id = ? AND parent_bank_account_id IS NOT NULL', $c);
+        Audit::record('delete', 'lab_sample_year', $condominium, $removed + ['agreement_ids' => $agreements], null);
+        return $removed;
+    }
+
     /** Lançamento pelo RegistryService, uma vez só por descrição. */
     private function entry(User $user, int $condominium, string $text, string $nature, int $account, int $cents, string $competence, string $due, ?string $paid,
         int $bank, ?int $unit = null): int
@@ -332,6 +400,13 @@ final class LabSampleYear
             $units[$number] = $id;
         }
         return $units;
+    }
+
+    private function run(string $sql, array $params): int
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
     }
 
     private function id(string $sql, array $params): ?int
