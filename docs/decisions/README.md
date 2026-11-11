@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0195.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0195, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0196.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0196, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -196,3 +196,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0192](../Organic%20Code/decisions/0192-batch-reversal.md) | Estorno em lote da baixa (POST /api/v1/entries/unsettle, erp.entries.manage + CSRF): tudo ou nada, com motivo e dry_run; recusa recibo válido, competência fechada, conta conciliada com o extrato e boleto pago pelo banco |
 | [0193](../Organic%20Code/decisions/0193-form-reversal-bank-locks.md) | Estorno pelo formulário recusa conta conciliada com o extrato e boleto pago pelo banco, com o helper PaymentLocks compartilhado com o estorno em lote | Aceita |
 | [0194](../Organic%20Code/decisions/0194-form-removal-bank-locks.md) | Exclusão e cancelamento pelo formulário recusam conta conciliada com o extrato e boleto pago pelo banco (PaymentLocks::removal, 409 payment_locked) | Aceita |
+| [0195](../Organic%20Code/decisions/0195-installment-payables.md) | Despesa parcelada: N contas a pagar de uma compra, com sobra na primeira, vencimento no último dia quando falta, pelas regras do formulário e tudo ou nada | Aceita |
