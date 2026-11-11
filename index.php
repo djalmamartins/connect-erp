@@ -45,6 +45,8 @@ $route->get("/condominiums/{id}/onboarding", "CondominiumOnboarding:index", null
 $route->post("/condominiums/{id}/onboarding", "CondominiumOnboarding:start", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/condominiums/{id}/onboarding/items", "CondominiumOnboarding:add", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->patch("/condominiums/{id}/onboarding/items/{item}", "CondominiumOnboarding:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Renovação em lote do checklist de chegada (ADR 0219).
+$route->post("/condominiums/{id}/onboarding/renew", "OnboardingRenewal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/onboarding/templates", "OnboardingTemplates:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/onboarding/templates", "OnboardingTemplates:create", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->patch("/onboarding/templates/{id}", "OnboardingTemplates:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
