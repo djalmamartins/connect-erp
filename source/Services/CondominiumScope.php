@@ -89,6 +89,42 @@ final class CondominiumScope
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /**
+     * Lista da tela de condomínios: o mesmo escopo de allowed() mais um endereço curto
+     * ("Rua, número · Cidade/UF") para diferenciar condomínios de nome parecido (pedido de 10/11/2026).
+     * Fica separado de allowed() para não mudar o contrato de /api/v1/condominiums.
+     *
+     * @return list<array{id:int,name:string,document:?string,status:string,address:string}>
+     */
+    public function listing(?User $user): array
+    {
+        $ids = $this->allowedIds($user);
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("SELECT id, name, document, status, street, number, city, state
+            FROM condominiums WHERE id IN ({$placeholders}) ORDER BY name");
+        $stmt->execute($ids);
+        return array_map(static fn(array $row): array => [
+            'id' => (int)$row['id'], 'name' => (string)$row['name'],
+            'document' => $row['document'] !== null ? (string)$row['document'] : null, 'status' => (string)$row['status'],
+            'address' => self::shortAddress($row),
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /** "Av. Brasil, 120 · Campinas/SP"; partes vazias ficam de fora; sem nada, string vazia. */
+    public static function shortAddress(array $row): string
+    {
+        $street = trim((string)($row['street'] ?? ''));
+        $number = trim((string)($row['number'] ?? ''));
+        $city = trim((string)($row['city'] ?? ''));
+        $state = trim((string)($row['state'] ?? ''));
+        $first = $street !== '' && $number !== '' ? $street . ', ' . $number : $street;
+        $second = $city !== '' && $state !== '' ? $city . '/' . mb_strtoupper($state) : $city;
+        return implode(' · ', array_filter([$first, $second], static fn (string $part): bool => $part !== ''));
+    }
+
     public function canAccess(?User $user, int $condominiumId): bool
     {
         if ($user === null || $condominiumId <= 0) {

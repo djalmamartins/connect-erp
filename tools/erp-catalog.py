@@ -22,10 +22,10 @@ MERGED = {
     "AP-055": ("AP-052", "Duplicada de AP-052 (mesmo nome e rota de referência)"),
     "AP-077": ("AP-051", "Duplicada de AP-051 (Demonstrativo)"),
     "AP-078": ("AP-050", "Duplicada de AP-050 (Comparativo)"),
+    "AP-002": ("AP-004", "Painel do condomínio fundido na visão geral do condomínio (ADR 0154)"),
 }
 RENAMES = {
     "AP-001": "Dashboard",
-    "AP-002": "Painel do condomínio",
     "AP-003": "Painel da unidade",
     "AP-005": "Proprietários e inquilinos",
     "AP-014": "Síndico e conselho",

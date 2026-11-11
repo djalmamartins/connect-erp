@@ -852,7 +852,7 @@
     }
   });
 
-  /* AP-035: boletos pela API /api/v1/bank-charges (ADR 0035 e 0038, só sandbox) ------- */
+  /* AP-035: boletos pela API /api/v1/bank-charges (ADR 0035, 0038 e 0156) ------- */
   $$('[data-erp-bank-charges]').forEach(function (root) {
     var api = root.getAttribute('data-api');
     var call = apiClient(root);
@@ -860,9 +860,10 @@
     $$('[data-charge-copy]', root).forEach(function (button) {
       button.addEventListener('click', function () {
         var line = button.getAttribute('data-charge-copy');
-        var done = function () { toast('Linha digitável copiada.', 'success'); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie a linha digitável:', line); });
-        else window.prompt('Copie a linha digitável:', line);
+        var label = button.getAttribute('data-copy-label') || 'a linha digitável';
+        var done = function () { toast('Copiado: ' + label + '.', 'success'); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie ' + label + ':', line); });
+        else window.prompt('Copie ' + label + ':', line);
       });
     });
 
@@ -1468,6 +1469,7 @@
       var boxes = $$('input[type="checkbox"][name$="[]"]', form);
       var count = function () { if (counter) counter.textContent = '(' + boxes.filter(function (b) { return b.checked; }).length + ' marcados)'; };
       boxes.forEach(function (b) { b.addEventListener('change', count); });
+      count(); // já começa certo quando a tela vem com caixas marcadas (ex.: condomínio da barra superior)
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!formValid(form)) return;

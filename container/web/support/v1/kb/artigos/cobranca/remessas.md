@@ -1,20 +1,21 @@
 ---
 codigo: AP-037
 titulo: Remessas de cobrança
-resumo: Arquivos de remessa enviados ao banco com os boletos para registro.
+resumo: Boletos enviados ao banco, agrupados por conta bancária e dia, com a confirmação do registro. No Banco Inter não há arquivo de remessa: cada boleto é registrado na hora.
 categoria: cobranca
 rota: /cobranca/remessas
 menu: Cobrança > Remessas
 icone: list-outline
-situacao: exemplo
-relacionados: boletos, arquivo-de-retorno, parcelas-de-acordo, retornos
-palavras: remessas, cobrança, AP-037
+situacao: funciona
+relacionados: boletos, banco-inter, retornos, arquivo-de-retorno
+palavras: remessas, cobrança, AP-037, inter, registro, cnab, lote
+manual: sim
 rascunho: nao
 ---
 
-Arquivos de remessa enviados ao banco com os boletos para registro.
+Boletos enviados ao banco, agrupados por conta bancária e dia, com a confirmação do registro.
 
->! Esta tela ainda é uma **interface proposta com dados de exemplo**: os campos e colunas já aparecem, mas o que for gravado ou enviado por ela fica pendente até o módulo ser concluído. Use-a para conhecer o fluxo.
+> No **Banco Inter** não existe arquivo de remessa. Cada boleto é registrado na hora, quando você clica em {{Emitir}} na tela [Boletos](artigo:boletos). Esta tela mostra os lotes enviados e o que o banco já confirmou. Bancos que trabalham com arquivo CNAB entram aqui quando forem integrados.
 
 ## Onde fica
 
@@ -25,56 +26,31 @@ rota: /cobranca/remessas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Remessas
 1: menu | Remessas no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Nova remessa") | Botão {{Nova remessa}}
-3: main .erp-page-head__actions :is(a,button):has-text("Exportar") | Botão {{Exportar}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Condomínio, De, Até e Situação
-5: main table thead | Colunas da lista
+2: main .erp-page-head__actions :is(a,button):has-text("Ver boletos") | Botão {{Ver boletos}}
+3: main form.erp-filters | Filtros: De, Até e Situação
+4: main table thead | Colunas da lista
 ```
-
-## Como cadastrar
-
-1. Clique em {{Nova remessa}}. A janela abre por cima da lista.
-2. Preencha os campos obrigatórios: **Condomínio** e **Conta bancária**. Os outros podem ficar para depois.
-3. Clique em {{Salvar}}.
-
-```tela remessas-nova-remessa
-rota: /cobranca/remessas
-condominio: residencial-jardim-das-acacias
-legenda: Formulário: nova remessa
-antes: clicar main .erp-page-head__actions :is(a,button):has-text("Nova remessa")
-antes: esperar 500
-recorte: dialog[open]
-1: dialog[open] [name="ap-037-condominio"] | Condomínio (obrigatório)
-2: dialog[open] [name="ap-037-conta-bancaria"] | Conta bancária (obrigatório)
-3: dialog[open] button:has-text("Salvar") | Botão {{Salvar}}
-```
-
-### O que preencher
-
-- **Condomínio** (obrigatório).
-- **Conta bancária** (obrigatório).
-
-## Pesquisar e filtrar
-
-Use os filtros no alto da lista: **Condomínio**, **De**, **Até** e **Situação**.
-Depois clique em {{Limpar filtros}}. Para voltar à lista completa, limpe os filtros.
 
 ## O que a lista mostra
 
-Colunas: **Arquivo**, **Banco**, **Condomínio**, **Boletos**, **Gerada em** e **Situação**.
+Cada linha é um lote: os boletos de uma conta bancária emitidos no mesmo dia.
 
-## Ações de cada linha
+- **Enviada em**: o dia do envio.
+- **Conta bancária**: a conta de cobrança (com o condomínio, quando a barra superior está em "Todos").
+- **Forma de envio**: *Registro online (API do Inter), sem arquivo* ou *Sandbox interno (testes)*.
+- **Boletos** e **Confirmados**: quantos foram enviados e quantos o banco já registrou. Embaixo aparecem os que ainda aguardam o banco e os recusados.
+- **Valor**: a soma dos boletos do lote.
+- **Situação**:
+  - **Confirmada**: o banco registrou todos (ou foram pagos ou cancelados depois).
+  - **Enviada**: algum boleto ainda aguarda a confirmação do banco. Abra [Boletos](artigo:boletos) e use {{Consultar}}.
+  - **Com recusa**: o banco recusou algum boleto. Veja o motivo na linha do boleto, corrija (por exemplo, o CPF do responsável) e emita de novo.
 
-- **Ver** abre os detalhes do registro, sem alterar nada.
-- **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
-- **Excluir** pede confirmação antes. O histórico guarda quem excluiu e quando.
+## Pesquisar e filtrar
 
-## Imprimir ou exportar
-
-- {{Exportar}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+Use **De**, **Até** e **Situação** e clique em {{Filtrar}}. Para voltar à lista completa, clique em {{Limpar filtros}}.
 
 ## Quem pode usar
 
-A tela aparece para quem tem acesso ao módulo **Cobrança**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
+A tela aparece para quem tem a permissão de ver boletos (**ERP Cobrança**). É só consulta: emitir, consultar e cancelar ficam na tela Boletos. Cada pessoa só vê os condomínios vinculados à própria conta.
 
->> Veja também: [Boletos](artigo:boletos), [Importar o arquivo de retorno do banco](artigo:arquivo-de-retorno) e [Parcelas de acordo](artigo:parcelas-de-acordo).
+>> Veja também: [Boletos](artigo:boletos), [Ligar a cobrança pelo Banco Inter](artigo:banco-inter) e [Retornos](artigo:retornos).

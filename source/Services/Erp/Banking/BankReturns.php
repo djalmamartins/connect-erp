@@ -94,7 +94,7 @@ final class BankReturns
         if ($existing !== null) {
             return ['file' => $existing, 'duplicate_file' => true, 'events' => $this->eventsOfFile((int)$existing['id'])];
         }
-        $adapter = BankAdapters::get(BankAdapters::DEFAULT);
+        $adapter = BankAdapters::forAccount($account, $this->pdo);
         $events = $adapter->parseReturn($content);
 
         $this->pdo->beginTransaction();
@@ -106,7 +106,7 @@ final class BankReturns
             foreach ($events as $event) {
                 $counts['events']++;
                 $counts['total'] += (int)($event['amount_cents'] ?? 0);
-                $outcome = $this->processEvent($user, $account, $fileId, $event);
+                $outcome = $this->applyEvent($user, $account, $fileId, $event);
                 if ($outcome === 'applied') {
                     $counts['applied']++;
                 } elseif (in_array($outcome, ['divergence', 'unknown_charge'], true)) {
@@ -207,7 +207,30 @@ final class BankReturns
         return $this->presentEvent($stmt->fetch(PDO::FETCH_ASSOC));
     }
 
-    private function processEvent(User $user, array $account, int $fileId, array $event): string
+    /**
+     * Um evento fora de arquivo (consulta do boleto ou webhook, ADR 0156), na própria transação.
+     * $user null = processamento do sistema (webhook). Mesmo event_key = 'duplicate'.
+     */
+    public function recordEvent(?User $user, array $account, array $event): string
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $outcome = $this->applyEvent($user, $account, null, $event);
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            if ($error instanceof \PDOException && ($error->errorInfo[1] ?? null) === 1062) {
+                return 'duplicate';   // o mesmo evento chegou ao mesmo tempo por outro caminho
+            }
+            throw $error;
+        }
+        return $outcome;
+    }
+
+    /** Aplica um evento dentro da transação de quem chama. */
+    private function applyEvent(?User $user, array $account, ?int $fileId, array $event): string
     {
         $seen = $this->pdo->prepare('SELECT 1 FROM erp_bank_events WHERE bank_account_id = :b AND event_key = :k');
         $seen->execute(['b' => $account['id'], 'k' => $event['event_key']]);
@@ -220,7 +243,7 @@ final class BankReturns
         $decision = self::decide($event, $charge);
 
         if ($decision['outcome'] === 'applied' && $decision['status'] === 'paid') {
-            $decision = $this->settle($user, $account, $charge, $event) ?? $decision;
+            $decision = $this->settle($user, $account, $charge, $event, $fileId) ?? $decision;
         }
         if ($decision['outcome'] === 'applied' && $decision['status'] !== null) {
             $this->pdo->prepare('UPDATE erp_bank_charges SET status = :s, paid_cents = :p, paid_on = :d,
@@ -242,7 +265,7 @@ final class BankReturns
     }
 
     /** Baixa da conta a receber; devolve uma divergência quando não dá para baixar com segurança. */
-    private function settle(User $user, array $account, array $charge, array $event): ?array
+    private function settle(?User $user, array $account, array $charge, array $event, ?int $fileId = null): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM erp_entries WHERE id = :id FOR UPDATE');
         $stmt->execute(['id' => $charge['entry_id']]);
@@ -260,8 +283,9 @@ final class BankReturns
             return ['outcome' => 'divergence', 'status' => null, 'note' => 'Pagamento sem data.'];
         }
         $this->pdo->prepare('UPDATE erp_entries SET paid_on = :d, bank_account_id = :b, updated_by = :u WHERE id = :id AND paid_on IS NULL')
-            ->execute(['d' => $event['occurred_on'], 'b' => $account['id'], 'u' => (int)$user->id, 'id' => $entry['id']]);
-        Audit::record('update', 'erp_entries', (int)$entry['id'], ['paid_on' => null], ['paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'], 'source' => 'bank_return']);
+            ->execute(['d' => $event['occurred_on'], 'b' => $account['id'], 'u' => $user !== null ? (int)$user->id : null, 'id' => $entry['id']]);
+        Audit::record('update', 'erp_entries', (int)$entry['id'], ['paid_on' => null], ['paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'],
+            'source' => $fileId === null ? 'bank_api' : 'bank_return']);
         return null;
     }
 

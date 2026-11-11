@@ -94,11 +94,46 @@ final class Panel extends Controller
             return;
         }
         echo $this->view->render('pages/dashboard/index', $this->layoutData($user, 'AP-001', [
-            'dashboard' => DemoData::get('dashboard'),
             'summary' => $this->summary($user, CondominiumContext::id()),
             'condoTotal' => count($this->condominiumOptions($user)),
             'operational' => $this->operationalSummary($user),
-        ]));
+        ] + $this->dashboardData($user)));
+    }
+
+    /**
+     * Blocos do dashboard que eram demonstração (ADR 0157), agora do MariaDB no condomínio da barra
+     * superior: $finance (receitas e despesas, inadimplência por atraso e quadro por condomínio, com
+     * erp.entries.view), $agenda (próximos 30 dias) e $activities (com erp.audit.view). Cada um é null
+     * sem permissão, sem banco ou em falha (a tela mostra o aviso daquele bloco, sem números inventados).
+     *
+     * @return array{finance: ?array, agenda: ?array, activities: ?array, competence: string}
+     */
+    private function dashboardData(User $user): array
+    {
+        $competence = \Source\Services\Erp\FinancialDashboard::competenceOrCurrent($_GET['competencia'] ?? null);
+        $data = ['finance' => null, 'agenda' => null, 'activities' => null, 'competence' => $competence];
+        if (Connect::databaseDisabled()) {
+            return $data;
+        }
+        $service = new \Source\Services\Erp\FinancialDashboard();
+        $context = CondominiumContext::id();
+        $modules = \Source\Services\Erp\FinancialDashboard::agendaModules($user);
+        $blocks = [
+            'finance' => [Access::can('erp.entries.view', $user), fn () => $service->finance($user, $context, $competence)],
+            'agenda' => [in_array(true, $modules, true), fn () => $service->agenda($user, $context, $modules)],
+            'activities' => [Access::can('erp.audit.view', $user), fn () => $service->activities($user, $context)],
+        ];
+        foreach ($blocks as $key => [$allowed, $load]) {
+            if (!$allowed) {
+                continue;
+            }
+            try {
+                $data[$key] = $load();
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'dashboard_' . $key . '_failed']);
+            }
+        }
+        return $data;
     }
 
     /**
@@ -224,21 +259,26 @@ final class Panel extends Controller
     }
 
     /**
-     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 retornos com divergência;
-     * ADR 0035 e 0038), só no adaptador de sandbox. $bankCharges / $bankDivergences null = sem
+     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-037 remessas, AP-038 retornos com
+     * divergência; ADR 0035, 0038 e 0156), sandbox interno ou Inter (sandbox do banco). $bankCharges / $bankDivergences null = sem
      * permissão ou sem banco (a tela segue com a demonstração). As ações usam a API /api/v1.
      *
      * @return array{bankCharges?: ?array, bankDivergences?: ?array, bankReady: bool, canManageCharges: bool}
      */
     private function bankingData(User $user, string $id): array
     {
-        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : []);
+        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : [])
+            + ($id === 'AP-037' ? ['bankRemittances' => null] : []);
         if (Connect::databaseDisabled() || !Access::can('erp.bank_charges.view', $user)) {
             return $data;
         }
         try {
             if ($id === 'AP-035') {
                 $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
+            } elseif ($id === 'AP-037') {
+                $data['bankRemittances'] = (new \Source\Services\Erp\Banking\BankRemittances())->list($user, CondominiumContext::id(), [
+                    'from' => $_GET['de'] ?? null, 'to' => $_GET['ate'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
+                ]);
             } elseif ($id === 'AP-038') {
                 $returns = new BankReturns();
                 $data['bankDivergences'] = $returns->divergences($user, CondominiumContext::id());
@@ -588,35 +628,6 @@ final class Panel extends Controller
     }
 
     /**
-     * Painel do condomínio (AP-002, ADR 0054 e 0071) pelo PanelSummaries, o mesmo serviço de
-     * GET /api/v1/panels/condominium/{id}, para o condomínio da barra superior. Em "Todos" a tela pede
-     * a escolha de um condomínio. Sem banco ou sem erp.units.view, condoPanelReady false = demonstração.
-     */
-    private function condominiumPanelData(User $user): array
-    {
-        $data = ['condoPanelReady' => false, 'condoPanel' => null, 'condoPanelError' => null];
-        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
-            return $data;
-        }
-        $data['condoPanelReady'] = true;
-        $context = CondominiumContext::id();
-        if ($context === null) {
-            return $data;
-        }
-        try {
-            $data['condoPanel'] = (new \Source\Services\Erp\PanelSummaries())->condominium($user, $context);
-        } catch (\Source\Services\Erp\Registry\RegistryForbidden) {
-            $data['condoPanelError'] = 'Seu perfil não tem permissão para todos os dados do painel do condomínio (financeiro e fechamento).';
-        } catch (RegistryNotFound) {
-            $data['condoPanelError'] = 'Condomínio fora do seu escopo de acesso.';
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'condominium_panel_failed']);
-            $data['condoPanelError'] = 'Não foi possível montar o painel agora. Tente de novo em instantes.';
-        }
-        return $data;
-    }
-
-    /**
      * Painel da unidade (AP-003, ADR 0054 e 0071): escolhe-se a unidade (?unidade=) entre as do
      * condomínio da barra superior; os dados vêm do PanelSummaries (GET /api/v1/panels/unit/{id}).
      */
@@ -788,7 +799,7 @@ final class Panel extends Controller
         if (in_array($id, ['AP-033', 'AP-034'], true)) {
             $data += $this->agreementData($user, $id);
         }
-        if (in_array($id, ['AP-035', 'AP-036', 'AP-038'], true)) {
+        if (in_array($id, ['AP-035', 'AP-036', 'AP-037', 'AP-038'], true)) {
             $data += $this->bankingData($user, $id);
         }
         if ($id === 'AP-122') {
@@ -802,9 +813,6 @@ final class Panel extends Controller
         }
         if ($id === 'AP-171') {
             $data += $this->integrationData($user);
-        }
-        if ($id === 'AP-002') {
-            $data += $this->condominiumPanelData($user);
         }
         if ($id === 'AP-003') {
             $data += $this->unitPanelData($user);
@@ -877,6 +885,7 @@ final class Panel extends Controller
             $id === 'AP-034' && ($data['agreementParcels'] ?? null) !== null => 'pages/finance/agreement-parcels',
             $id === 'AP-035' && ($data['bankCharges'] ?? null) !== null => 'pages/finance/bank-charges',
             $id === 'AP-036' && ($data['bankReady'] ?? false) => 'pages/finance/bank-return-import',
+            $id === 'AP-037' && ($data['bankRemittances'] ?? null) !== null => 'pages/finance/bank-remittances',
             $id === 'AP-038' && ($data['bankDivergences'] ?? null) !== null => 'pages/finance/bank-divergences',
             (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) && ($data['unitDocuments'] ?? null) !== null => 'pages/documents/unit-document',
             isset(EntryShortcutScreens::PAGES[$id]) && ($data['shortcutReady'] ?? false) => EntryShortcutScreens::PAGES[$id],
@@ -898,7 +907,6 @@ final class Panel extends Controller
             $id === 'AP-122' && ($data['diskFiles'] ?? null) !== null => 'pages/documents/virtual-disk',
             $id === 'AP-114' && ($data['pendingReservations'] ?? null) !== null => 'pages/operational/pending-reservations',
             $id === 'AP-171' && ($data['integrations'] ?? null) !== null => 'pages/settings/integrations',
-            $id === 'AP-002' && ($data['condoPanelReady'] ?? false) => 'pages/condominiums/panel',
             $id === 'AP-003' && ($data['unitPanelReady'] ?? false) => 'pages/condominiums/unit-panel',
             $id === 'AP-167' && ($data['measuresReady'] ?? false) => 'pages/condominiums/unit-measures',
             // Relatórios (ADR 0037): com dados ou com erro de período; sem permissão/banco, a demonstração.
@@ -1049,6 +1057,9 @@ final class Panel extends Controller
             ...$this->bell($user, $dashboard['notifications'] ?? []),
             'supportMenu' => $this->supportMenu($user, $pageId),
             'withNavigation' => true,
+            // Conferência de 10/11/2026: a linha "Ficha: docs/specs/..." (rastreio da spec) é de quem
+            // desenvolve; para a equipe da administradora fica escondida (classe erp-body--trace).
+            'showTrace' => (int)($user->level ?? 0) >= 5,
             'condoOptions' => CondominiumContext::booted() ? CondominiumContext::options() : CondominiumContext::withSlugs($this->condominiumOptions($user)),
             'condoCurrent' => CondominiumContext::current(),
             // Guia de cadastro do condomínio novo (ADR 0151): só com o condomínio dele na barra superior.

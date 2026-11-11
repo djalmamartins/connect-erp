@@ -7,7 +7,10 @@
 - **Natureza desta ficha:** scaffold gerado automaticamente; detalhes ainda NÃO confirmados
 
 ## Objetivo funcional
-PENDENTE: detalhar com base na auditoria e decisões próprias do Connect ERP.
+DECIDIDO (ADR 0156): mostrar os boletos enviados ao banco agrupados por conta bancária e dia, com a confirmação do
+registro. Com o Banco Inter o registro é online pela API e não há arquivo de remessa; arquivo CNAB entra quando
+houver adaptador CNAB. Só leitura. API: `GET /api/v1/bank-remittances` (erp.bank_charges.view).
+Situação do lote: Confirmada (nada aguardando), Enviada (algum aguardando banco), Com recusa (algum recusado).
 
 ## Campos, controles, filtros, colunas e links
 PENDENTE: levantar evidências específicas; não inferir a partir da quantidade de controles.

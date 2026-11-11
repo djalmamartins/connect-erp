@@ -19,16 +19,13 @@ return [
         'botoes' => ['Comunicado rápido' => 'abre o envio de um comunicado por e-mail para as unidades do condomínio escolhido.'],
         'palavras' => ['início', 'painel', 'resumo', 'alertas', 'agenda'],
     ],
-    'AP-002' => [
-        'titulo' => 'Painel do condomínio',
-        'para' => 'O painel reúne num só lugar a situação de um condomínio: unidades, saldo nos bancos, inadimplência, resultado do mês e os alertas. Use antes de uma reunião com o síndico ou para conferir rapidamente como o condomínio está.',
-        'botoes' => ['Ficha do condomínio' => 'abre o cadastro completo do condomínio, com endereço, CNPJ, contas e documentos.'],
-        'dicas' => ['Os números vêm dos cadastros e dos lançamentos. Se algo parecer errado, confira o lançamento na origem.'],
-    ],
     'AP-003' => [
         'titulo' => 'Painel da unidade',
         'para' => 'Tudo de uma unidade em uma tela: quem mora e quem é o responsável financeiro, débitos em aberto, acordos, documentos emitidos e a rotina (reservas, ocorrências, entregas). Ideal para atender um morador ao telefone.',
         'dicas' => ['Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.'],
+        // ADR 0155: o nome da pessoa abre a ficha somente leitura.
+        'secoes' => ['Ver a ficha da pessoa' => "1. No bloco **Pessoas**, clique no nome do proprietário, inquilino ou morador.\n2. Abre a ficha com CPF/CNPJ, telefone, e-mail, início e fim do vínculo, se recebe boleto e comunicados por e-mail, o endereço da unidade, as outras unidades da pessoa nos seus condomínios e as observações.\n3. A ficha é só para consulta: nada pode ser alterado nela. Para corrigir um dado, clique em {{Abrir cadastro para alterar}}.\n\n> Clique no telefone ou no e-mail para ligar ou escrever direto."],
+        'palavras' => ['ficha da pessoa', 'telefone do proprietário', 'cpf do morador', 'dados do inquilino'],
         'relacionados' => ['unidades', 'proprietarios-e-inquilinos'],
     ],
 

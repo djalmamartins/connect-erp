@@ -7,7 +7,7 @@ rota: /condominios/unidades
 menu: Condomínios > Unidades
 icone: list-outline
 situacao: funciona
-relacionados: painel-da-unidade, areas-comuns, painel-do-condominio, areas-vinculaveis
+relacionados: painel-da-unidade, areas-comuns, condominios, areas-vinculaveis
 palavras: unidades, condomínios, AP-006, proprietário, inquilino, pesquisar, apartamento, casa, sala, loja, cadastro rápido, fração ideal
 rascunho: nao
 ---
@@ -93,4 +93,4 @@ Proprietário e inquilino vêm de [[Cadastros > Proprietários e inquilinos]]. A
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
->> Veja também: [Painel da unidade](artigo:painel-da-unidade), [Cadastrar áreas comuns](artigo:areas-comuns) e [Painel do condomínio](artigo:painel-do-condominio).
+>> Veja também: [Painel da unidade](artigo:painel-da-unidade), [Cadastrar áreas comuns](artigo:areas-comuns) e [Visão geral do condomínio](artigo:condominios).

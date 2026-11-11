@@ -117,9 +117,16 @@ final class Router
 
             [$controller, $action] = explode(":", $handler, 2);
             $class = $namespace ? $namespace . "\\" . ltrim($controller, "\\") : ltrim($controller, "\\");
-            $instance = new $class($this->router);
-            $reflection = new ReflectionMethod($instance, $action);
-            $reflection->invoke($instance, $requestData);
+            try {
+                $instance = new $class($this->router);
+                $reflection = new ReflectionMethod($instance, $action);
+                $reflection->invoke($instance, $requestData);
+            } catch (\Throwable $error) {
+                // O MovesCode Router troca qualquer exceção por "erro 500" sem registrar a causa:
+                // registra aqui (com o handler) antes de devolver, para o erro aparecer nos logs.
+                \Source\Support\AppLogger::exception($error, 'http', ['handler' => $handler]);
+                throw $error;
+            }
         }, $name, $middleware);
         return $this;
     }

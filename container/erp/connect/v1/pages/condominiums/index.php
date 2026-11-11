@@ -1,7 +1,7 @@
 <?php
 /**
  * Condomínios (AP-004) com dados reais (CondominiumScope); cadastro em /condominios/novo (ADR 0011).
- * @var list<array{id:int,name:string,document:?string,status:string}> $condominiums
+ * @var list<array{id:int,name:string,document:?string,status:string,address?:string}> $condominiums  endereço curto (CondominiumScope::listing)
  * @var array<int, array{id:int,name:string,slug:string}> $condoOptionsById  opções da barra superior (ADR 0030)
  *
  * Só aparece em "Todos os condomínios": com um condomínio na barra superior, o menu abre a visão
@@ -34,7 +34,7 @@ $this->insert('components/layout/page-head', [
 <?php else: ?>
     <section data-erp-list aria-label="Condomínios">
         <form class="erp-filters" role="search" onsubmit="return false">
-            <div class="erp-field erp-field--grow"><label for="condo-q">Pesquisar</label><input class="erp-input" type="search" id="condo-q" placeholder="Nome ou CNPJ" data-erp-table-filter></div>
+            <div class="erp-field erp-field--grow"><label for="condo-q">Pesquisar</label><input class="erp-input" type="search" id="condo-q" placeholder="Nome, CNPJ ou endereço" data-erp-table-filter></div>
             <div class="erp-field"><label for="condo-status">Situação</label><select class="erp-select" id="condo-status" data-erp-select-filter><option value="">Todas</option><option>Ativo</option><option>Inativo</option></select></div>
         </form>
         <div class="erp-card erp-card--flush" style="margin-top:16px">
@@ -46,16 +46,18 @@ $this->insert('components/layout/page-head', [
                     <tr>
                         <th scope="col"><button type="button" class="erp-sort" data-erp-sort="0">Nome</button></th>
                         <th scope="col"><button type="button" class="erp-sort" data-erp-sort="1">CNPJ</button></th>
-                        <th scope="col"><button type="button" class="erp-sort" data-erp-sort="2">Situação</button></th>
+                        <th scope="col"><button type="button" class="erp-sort" data-erp-sort="2">Endereço</button></th>
+                        <th scope="col"><button type="button" class="erp-sort" data-erp-sort="3">Situação</button></th>
                         <th scope="col" class="is-num"><span class="erp-sr-only">Ações</span></th>
                     </tr>
                     </thead>
                     <tbody>
                     <?php foreach ($condominiums as $condominium): $active = $condominium['status'] === 'active'; $option = $condoOptionsById[(int)$condominium['id']] ?? null; ?>
                         <tr>
-                            <td class="erp-condo-pick"><?php if ($option !== null): ?><a class="erp-btn erp-btn--sm erp-btn--primary" href="<?= $this->e(erp_context_url('/condominios', $option)) ?>" aria-label="Selecionar <?= $this->e($condominium['name']) ?> em todo o sistema"><?= $icon('check', 'erp-icon--sm') ?>Selecionar</a><?php endif; ?>
+                            <td class="erp-condo-pick"><?php if ($option !== null): ?><a class="erp-btn erp-btn--sm erp-btn--pick" href="<?= $this->e(erp_context_url('/condominios', $option)) ?>" aria-label="Selecionar <?= $this->e($condominium['name']) ?> em todo o sistema" title="Trabalhar neste condomínio em todas as telas"><?= $icon('check', 'erp-icon--sm') ?>Selecionar</a><?php endif; ?>
                                 <a href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>"><strong><?= $this->e($condominium['name']) ?></strong></a></td>
                             <td><?= $this->e(format_cnpj($condominium['document'])) ?></td>
+                            <td class="erp-condo-address"><?= ($condominium['address'] ?? '') !== '' ? $this->e($condominium['address']) : '<span class="erp-muted">—</span>' ?></td>
                             <td><span class="erp-badge erp-badge--<?= $active ? 'success' : 'danger' ?>"><?= $active ? 'Ativo' : 'Inativo' ?></span></td>
                             <td class="is-num"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= erp_url('/condominios/' . (int)$condominium['id']) ?>" aria-label="Visão geral de <?= $this->e($condominium['name']) ?>" title="Visão geral"><?= $icon('eye', 'erp-icon--sm') ?></a></td>
                         </tr>
