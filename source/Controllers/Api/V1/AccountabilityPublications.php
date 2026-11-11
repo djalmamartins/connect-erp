@@ -12,6 +12,7 @@ use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\Accountability;
 use Source\Services\Erp\AccountabilityPublications as Service;
+use Source\Services\Erp\AnnualAccountability;
 use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Support\Access;
@@ -19,9 +20,10 @@ use Source\Support\Audit;
 
 /**
  * Publicação da prestação de contas mensal (ADR 0179). CSRF e sessão ficam no middleware ApiAuthenticated:
- *  GET  /api/v1/accountability-publications?condominium_id=&month=      versões, sem o conteúdo
+ *  GET  /api/v1/accountability-publications?condominium_id=&kind=&month=|year=   versões, sem o conteúdo
  *  GET  /api/v1/accountability-publications/{id}                        uma versão com o pacote (?format=csv baixa o CSV dela)
- *  POST /api/v1/accountability-publications {condominium_id, month, notes?}   publica (mês fechado)
+ *  POST /api/v1/accountability-publications {condominium_id, month, notes?}   publica o mês (mês fechado)
+ *  POST /api/v1/accountability-publications {condominium_id, kind: annual, year, notes?}   publica o ano (ADR 0183, meses fechados)
  *  POST /api/v1/accountability-publications/{id}/withdraw {reason}      retira a versão atual
  * Ver exige erp.closing.view, erp.entries.view e erp.chart.view; publicar e retirar, também erp.closing.manage.
  * Fora do escopo = 404; inválido = 422; mês aberto ou versão que não é a atual = 409; CSV acima do limite = 429.
@@ -32,7 +34,9 @@ final class AccountabilityPublications
     {
         $user = $this->authorize(false);
         if ($user !== null) {
-            $this->run(fn (): array => (new Service())->list($user, $this->int($_GET['condominium_id'] ?? null), $_GET['month'] ?? null));
+            $kind = $_GET['kind'] ?? null;
+            $period = $kind === 'annual' ? ($_GET['year'] ?? null) : ($_GET['month'] ?? null);
+            $this->run(fn (): array => (new Service())->list($user, $this->int($_GET['condominium_id'] ?? null), $period, $kind));
         }
     }
 
@@ -51,7 +55,8 @@ final class AccountabilityPublications
         try {
             $publication = (new Service())->find($user, $id);
             (new ReportExportLimit())->assertAllowed($user);
-            $content = CollectionReports::csv(Accountability::csvTable($publication['payload']));
+            $content = CollectionReports::csv($publication['kind'] === 'annual' ? AnnualAccountability::csvTable($publication['payload'])
+                : Accountability::csvTable($publication['payload']));
             Audit::record('export', 'erp_reports', 0, null, ['report' => 'accountability-publication', 'publication_id' => $id,
                 'condominium_id' => $publication['condominium_id'], 'version' => $publication['version'], 'bytes' => strlen($content)]);
             header('Cache-Control: no-store, private');
@@ -70,7 +75,15 @@ final class AccountabilityPublications
     {
         [$user, $body] = $this->write();
         if ($user !== null) {
-            $this->run(fn (): array => (new Service())->publish($user, $this->int($body['condominium_id'] ?? null), $body['month'] ?? null, $body['notes'] ?? null), 201);
+            $condominium = $this->int($body['condominium_id'] ?? null);
+            $kind = $body['kind'] ?? 'monthly';
+            if (!in_array($kind, Service::KINDS, true)) {
+                JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Tipo inválido: use monthly ou annual.']]);
+                return;
+            }
+            $this->run(fn (): array => $kind === 'annual'
+                ? (new Service())->publishAnnual($user, $condominium, $body['year'] ?? null, $body['notes'] ?? null)
+                : (new Service())->publish($user, $condominium, $body['month'] ?? null, $body['notes'] ?? null), 201);
         }
     }
 

@@ -24,22 +24,27 @@ use Source\Support\Audit;
  * - list(): as versões, sem o conteúdo.
  * - find(): uma versão com o conteúdo e a conferência do sha256 (intact).
  * - withdraw(): retira a versão atual, com motivo. Nada é apagado.
+ * - publishAnnual() (ADR 0183): o mesmo para o pacote anual (kind = annual, competence = AAAA), com todos os meses
+ *   esperados fechados. Mensal e anual têm versões separadas.
  *
  * Escopo (ADR-002): fora do escopo = CondominiumAccessDenied (404), sem dizer se a publicação existe. Tudo auditado.
  */
 final class AccountabilityPublications
 {
     public const MAX_LIST = 200;
+    public const KINDS = ['monthly', 'annual'];
 
     private PDO $pdo;
     private CondominiumScope $scope;
     private Accountability $builder;
+    private AnnualAccountability $annual;
 
-    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?Accountability $builder = null)
+    public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?Accountability $builder = null, ?AnnualAccountability $annual = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
         $this->builder = $builder ?? new Accountability($this->pdo, $this->scope);
+        $this->annual = $annual ?? new AnnualAccountability($this->pdo, $this->scope);
     }
 
     /** JSON canônico do pacote (regra pura): o mesmo pacote dá sempre o mesmo texto e o mesmo sha256. */
@@ -63,26 +68,44 @@ final class AccountabilityPublications
         if (($pack['closing']['status'] ?? 'open') !== 'closed') {
             throw new DomainException('Feche o mês antes de publicar a prestação de contas.');
         }
-        $condominium = (int)$pack['condominium_id'];
-        $competence = (string)$pack['competence'];
+        return $this->store($user, (int)$pack['condominium_id'], 'monthly', (string)$pack['competence'], $pack, $notes);
+    }
+
+    /**
+     * Publica a prestação de contas anual (ADR 0183, pacote do AnnualAccountability, ADR 0182) com competence = 'AAAA'
+     * e kind = 'annual'. Exige todos os meses esperados fechados (de janeiro até o mês da data de corte), para o
+     * pacote congelado não mudar depois. Mesmas regras de versão, sha256 e retirada do mensal.
+     */
+    public function publishAnnual(User $user, ?int $condominiumId, mixed $year, mixed $notes = null, ?string $today = null): array
+    {
+        $pack = $this->annual->build($user, $condominiumId, $year, $today);   // valida o ano, o condomínio e o escopo (404)
+        if (($pack['months']['open'] ?? []) !== []) {
+            throw new DomainException('Feche todos os meses antes de publicar a prestação de contas anual. Abertos: ' . implode(', ', $pack['months']['open']) . '.');
+        }
+        return $this->store($user, (int)$pack['condominium_id'], 'annual', (string)$pack['year'], $pack, $notes);
+    }
+
+    /** Grava a versão (mesmo conteúdo = devolve a atual), numa transação, com uma nova tentativa em corrida. */
+    private function store(User $user, int $condominium, string $kind, string $competence, array $pack, mixed $notes): array
+    {
         $note = is_string($notes) && trim($notes) !== '' ? mb_substr(trim($notes), 0, 255) : null;
         $json = self::canonical($pack);
         $sha = hash('sha256', $json);
         for ($attempt = 0; ; $attempt++) {
             $this->pdo->beginTransaction();
             try {
-                $current = $this->current($condominium, $competence);
+                $current = $this->current($condominium, $kind, $competence);
                 if ($current !== null && hash_equals((string)$current['sha256'], $sha)) {
                     $this->pdo->commit();
                     return $this->present($current, false) + ['created' => false];
                 }
-                $version = (int)$this->value('SELECT COALESCE(MAX(version), 0) FROM erp_accountability_publications WHERE condominium_id = ? AND competence = ?',
-                    [$condominium, $competence]) + 1;
+                $version = (int)$this->value('SELECT COALESCE(MAX(version), 0) FROM erp_accountability_publications WHERE condominium_id = ? AND kind = ? AND competence = ?',
+                    [$condominium, $kind, $competence]) + 1;
                 if ($current !== null) {
                     $this->pdo->prepare("UPDATE erp_accountability_publications SET status = 'superseded' WHERE id = ? AND status = 'current'")->execute([(int)$current['id']]);
                 }
-                $this->pdo->prepare("INSERT INTO erp_accountability_publications (condominium_id, competence, version, sha256, payload_json, status, notes, published_by, published_at)
-                    VALUES (?, ?, ?, ?, ?, 'current', ?, ?, ?)")->execute([$condominium, $competence, $version, $sha, $json, $note, (int)$user->id, date('Y-m-d H:i:s')]);
+                $this->pdo->prepare("INSERT INTO erp_accountability_publications (condominium_id, kind, competence, version, sha256, payload_json, status, notes, published_by, published_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 'current', ?, ?, ?)")->execute([$condominium, $kind, $competence, $version, $sha, $json, $note, (int)$user->id, date('Y-m-d H:i:s')]);
                 $id = (int)$this->pdo->lastInsertId();
                 $this->pdo->commit();
             } catch (\PDOException $error) {
@@ -103,28 +126,45 @@ final class AccountabilityPublications
             break;
         }
         Audit::record('create', 'erp_accountability_publications', $id, $current === null ? null : ['superseded_id' => (int)$current['id']],
-            ['condominium_id' => $condominium, 'competence' => $competence, 'version' => $version, 'sha256' => $sha]);
+            ['condominium_id' => $condominium, 'kind' => $kind, 'competence' => $competence, 'version' => $version, 'sha256' => $sha]);
         return $this->present($this->row($id), false) + ['created' => true];
     }
 
-    /** @return array{condominium_id:int, competence:?string, truncated:bool, rows:list<array>} */
-    public function list(User $user, ?int $condominiumId, mixed $month = null): array
+    /**
+     * Versões, sem o conteúdo. $kind = monthly ou annual (vazio = os dois); $period = AAAA-MM no mensal ou AAAA no anual.
+     *
+     * @return array{condominium_id:int, kind:?string, competence:?string, truncated:bool, rows:list<array>}
+     */
+    public function list(User $user, ?int $condominiumId, mixed $period = null, mixed $kind = null): array
     {
         if ($condominiumId === null) {
             throw new InvalidArgumentException('Escolha o condomínio.');
         }
+        $kind = $kind === null || $kind === '' ? null : (string)$kind;
+        if ($kind !== null && !in_array($kind, self::KINDS, true)) {
+            throw new InvalidArgumentException('Tipo inválido: use monthly ou annual.');
+        }
         $this->scope->assertAccess($user, $condominiumId);
         $competence = null;
-        if ($month !== null && $month !== '') {
-            [$competence] = Accountability::month($month);
+        if ($period !== null && $period !== '') {
+            $competence = $kind === 'annual' ? (string)AnnualBalance::year($period) : Accountability::month($period)[0];
+            $kind ??= 'monthly';
         }
-        $sql = 'SELECT id, condominium_id, competence, version, sha256, status, notes, published_by, published_at, withdrawn_by, withdrawn_at, withdraw_reason
-            FROM erp_accountability_publications WHERE condominium_id = ?' . ($competence !== null ? ' AND competence = ?' : '')
-            . ' ORDER BY competence DESC, version DESC LIMIT ' . (self::MAX_LIST + 1);
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($competence !== null ? [$condominiumId, $competence] : [$condominiumId]);
+        $where = ['condominium_id = ?'];
+        $params = [$condominiumId];
+        if ($kind !== null) {
+            $where[] = 'kind = ?';
+            $params[] = $kind;
+        }
+        if ($competence !== null) {
+            $where[] = 'competence = ?';
+            $params[] = $competence;
+        }
+        $stmt = $this->pdo->prepare('SELECT id, condominium_id, kind, competence, version, sha256, status, notes, published_by, published_at, withdrawn_by, withdrawn_at, withdraw_reason
+            FROM erp_accountability_publications WHERE ' . implode(' AND ', $where) . ' ORDER BY competence DESC, kind, version DESC LIMIT ' . (self::MAX_LIST + 1));
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return ['condominium_id' => $condominiumId, 'competence' => $competence, 'truncated' => count($rows) > self::MAX_LIST,
+        return ['condominium_id' => $condominiumId, 'kind' => $kind, 'competence' => $competence, 'truncated' => count($rows) > self::MAX_LIST,
             'rows' => array_map(fn (array $r): array => $this->present($r, false), array_slice($rows, 0, self::MAX_LIST))];
     }
 
@@ -160,7 +200,8 @@ final class AccountabilityPublications
 
     private function present(array $row, bool $withPayload): array
     {
-        $out = ['id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'competence' => (string)$row['competence'],
+        $out = ['id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'kind' => (string)($row['kind'] ?? 'monthly'),
+            'competence' => trim((string)$row['competence']),
             'version' => (int)$row['version'], 'sha256' => (string)$row['sha256'], 'status' => (string)$row['status'], 'notes' => $row['notes'] ?? null,
             'published_by' => $row['published_by'] !== null ? (int)$row['published_by'] : null, 'published_at' => (string)$row['published_at'],
             'withdrawn_by' => isset($row['withdrawn_by']) ? (int)$row['withdrawn_by'] : null, 'withdrawn_at' => $row['withdrawn_at'] ?? null,
@@ -173,10 +214,10 @@ final class AccountabilityPublications
         return $out;
     }
 
-    private function current(int $condominiumId, string $competence): ?array
+    private function current(int $condominiumId, string $kind, string $competence): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM erp_accountability_publications WHERE condominium_id = ? AND competence = ? AND status = 'current' LIMIT 1");
-        $stmt->execute([$condominiumId, $competence]);
+        $stmt = $this->pdo->prepare("SELECT * FROM erp_accountability_publications WHERE condominium_id = ? AND kind = ? AND competence = ? AND status = 'current' LIMIT 1");
+        $stmt->execute([$condominiumId, $kind, $competence]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
