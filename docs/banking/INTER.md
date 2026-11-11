@@ -22,6 +22,13 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 - O sandbox só fica disponível de segunda a sexta, das 8h às 20h (horário de Brasília), segundo o aviso do portal. Fora desse horário, o `testar` falha.
 - Guarde o certificado de produção fora da pasta do projeto até a aprovação de produção.
 
+## Passo a passo pela tela (ADR 0158)
+
+1. `CONNECT_BANK_VAULT_KEY` no `.env` (uma vez por ambiente, `php tools/bank-credentials.php gerar-chave`).
+2. Conta bancária do condomínio com banco `077`.
+3. Configurações > Integrações > card **Banco Inter**: escolher a conta, client ID, secret e o ZIP da aplicação.
+   O sistema testa no sandbox antes de gravar e mostra o endereço do webhook uma única vez.
+
 ## Passo a passo (servidor)
 
 1. `php tools/bank-credentials.php gerar-chave` → colar `CONNECT_BANK_VAULT_KEY=...` no `.env` (fora do Git).

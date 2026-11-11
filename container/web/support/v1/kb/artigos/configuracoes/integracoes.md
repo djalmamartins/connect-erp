@@ -1,7 +1,7 @@
 ---
 codigo: AP-171
 titulo: Situação das integrações
-resumo: Mostra a situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. Esta tela só consulta; a configuração fica no servidor.
+resumo: Mostra a situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. No card Banco Inter você também liga uma conta do Inter (ambiente de testes) à cobrança; o resto da configuração fica no servidor.
 categoria: configuracoes
 rota: /configuracoes/integracoes
 menu: Configurações > Aplicativo e notificações > Integrações
@@ -12,7 +12,7 @@ palavras: integrações, configurações, AP-171
 rascunho: nao
 ---
 
-Mostra a situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. Esta tela só consulta; a configuração fica no servidor.
+Mostra a situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. No card Banco Inter você também liga uma conta do Inter (ambiente de testes) à cobrança; o resto da configuração fica no servidor.
 
 ## Onde fica
 
@@ -36,4 +36,4 @@ Colunas: **Situação** e **Arquivos**.
 
 A tela aparece para quem tem acesso ao módulo **Configurações**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
 
->> Veja também: [Fila de avisos por e-mail](artigo:fila-de-avisos), [Alertas do sistema](artigo:alertas) e [Banners do aplicativo](artigo:banners).
+>> Veja também: [Ligar a cobrança pelo Banco Inter](artigo:banco-inter), [Fila de avisos por e-mail](artigo:fila-de-avisos), [Alertas do sistema](artigo:alertas) e [Banners do aplicativo](artigo:banners).
