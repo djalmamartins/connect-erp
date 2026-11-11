@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /residents/expire-ended:
+    post:
+      operationId: expireEndedResidentLinks
+      summary: Encerramento em lote dos vínculos de proprietários, inquilinos e moradores cujo fim já passou e que seguem ativos (situação inativa pelo cadastro, mantendo o fim), tudo ou nada e com prévia (erp.access, erp.residents.view e erp.residents.manage, ADR 0241)
+      description: >-
+        Sem resident_ids, entram os vínculos ativos do condomínio com fim anterior a before (padrão hoje, nunca depois de
+        hoje), dos tipos em relationships (padrão todos); os de unidade inativa ficam de fora (skipped_inactive_unit). Com
+        resident_ids, recusa vínculo não encontrado no condomínio, já encerrado, sem fim informado (use a saída de
+        moradores), cujo fim ainda não passou ou de unidade inativa. Cada vínculo é regravado pelo cadastro só com a
+        situação inativa, mantendo o próprio fim (auditoria update do formulário e expire por vínculo), e os convites
+        pendentes do portal dessas pessoas são revogados. Nada é apagado e nenhum aviso é enviado. Sem nome, documento,
+        contato ou unidade na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, relationships: { type: array, items: { type: string, enum: [owner, tenant, resident, financial] } }, resident_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, relationships, reason, skipped_inactive_unit, invitations_revoked, count, changed, links[{ id, relationship, ends_on, days_since_end }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou vínculo recusado (errors com _form ou os erros do formulário, e _resident); nada é gravado' }
   /reports/unit-occupancy:
     get:
       operationId: unitOccupancy
