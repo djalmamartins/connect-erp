@@ -3472,6 +3472,24 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou conta recusada (paga, cancelada, com boleto ativo, mês fechado, trava de origem; errors e _entry); nada é gravado' }
+  /suppliers/deactivate:
+    post:
+      operationId: deactivateSuppliers
+      summary: Inativação de fornecedores em lote, com motivo, tudo ou nada e prévia (erp.suppliers.view e erp.suppliers.manage, só com acesso a todos os condomínios, ADR 0202)
+      description: >-
+        Recusa fornecedor não encontrado, já inativo, com conta a pagar em aberto em qualquer condomínio, com lançamento
+        recorrente ativo ou com empenho ativo. Um recusado desfaz todos. dry_run devolve a prévia sem gravar.
+        Inativar não apaga lançamentos nem histórico; o fornecedor volta pelo formulário.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [supplier_ids, reason], properties: { supplier_ids: { type: array, minItems: 1, maxItems: 100, items: { type: integer } }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { dry_run, reason, count, changed, suppliers[{ supplier_id, legal_name, trade_name, document_masked, last_used_on }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'Sem permissão, ou sem acesso a todos os condomínios' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou fornecedor recusado (errors e _supplier); nada é gravado' }
   /extra-charges:
     get:
       operationId: listExtraCharges
