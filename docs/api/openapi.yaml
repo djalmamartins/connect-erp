@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/commitments:
+    get:
+      operationId: commitmentsPosition
+      summary: Posição dos empenhos do condomínio (empenhados, liquidados e cancelados no período, tempo de liquidação, liquidações sem lançamento e idade dos em aberto), somente leitura (erp.access e erp.commitments.view, ADR 0238)
+      description: >-
+        rows traz uma linha por situação do cadastro (Empenhado, Liquidado, Cancelado) com os empenhos feitos no período
+        (quantidade e valor), e totals é a soma das linhas. settlement resume os liquidados do período: com e sem o
+        lançamento que pagou, e o tempo entre empenho e liquidação (dias somados, média e máximo). open conta os
+        empenhados ainda em aberto feitos até "to", pela idade (até 30 dias, 31 a 60, 61 a 90, mais de 90), e total é a
+        soma das faixas. Sem descrição, fornecedor, documento ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ status, status_label, commitments, amount_cents }], totals { commitments, amount_cents }, settlement { count, with_entry, without_entry, dated, days_total, avg_days, max_days }, open { by_age{ ate_30, de_31_a_60, de_61_a_90, mais_de_90 }, total } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /waitlist/expire:
     post:
       operationId: expireWaitlistEntries
