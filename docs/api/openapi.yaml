@@ -3087,6 +3087,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /maintenances/complete:
+    post:
+      operationId: completeMaintenances
+      summary: Conclusão de manutenções em lote pelo formulário, com a próxima periódica agendada, tudo ou nada e prévia (erp.maintenances.view e erp.maintenances.manage, ADR 0208)
+      description: >-
+        Cada manutenção agendada ou em execução fica concluída em done_on (até hoje). Nas periódicas, com schedule_next
+        (padrão), a próxima é criada com o mesmo serviço, fornecedor e periodicidade, na data prevista + período (fim de
+        mês ajustado), a primeira depois da conclusão; se a mesma já está agendada nessa data, não duplica
+        (already_scheduled). Recusa não encontrada, concluída ou cancelada, e as regras do formulário (fornecedor ativo).
+        Uma recusada desfaz todas. Nada é enviado.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, items], properties: { condominium_id: { type: integer }, items: { type: array, minItems: 1, maxItems: 100, items: { type: object, required: [id, done_on], properties: { id: { type: integer }, done_on: { type: string, format: date } } } }, schedule_next: { type: boolean, default: true }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, schedule_next, count, completed, scheduled, already_scheduled, changed, maintenances[{ id, service, frequency, planned_on, done_on, next { id, planned_on, already_scheduled } | null }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou manutenção recusada (errors e _maintenance); nada é gravado' }
   /units/move-out:
     post:
       operationId: unitMoveOut
