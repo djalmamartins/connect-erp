@@ -4955,6 +4955,27 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '419': { description: CSRF inválido }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /tickets/reassign:
+    post:
+      operationId: reassignTickets
+      summary: Reatribuição em lote dos chamados em aberto de um responsável para outro, no condomínio, tudo ou nada e com prévia (studio.access e support.manage, ADR 0227)
+      description: >-
+        Sem ticket_ids, entram os chamados em aberto (aberto, em atendimento, aguardando cliente) do condomínio atribuídos
+        a from_user_id. Com ticket_ids, recusa chamado não encontrado no condomínio, concluído ou de outro responsável. O
+        novo responsável precisa ser da equipe do Help Desk. Só o responsável muda; o histórico do chamado ganha o evento
+        assigned_to, e a auditoria um registro reassign por chamado. Nenhum aviso é enviado. Sem protocolo, assunto,
+        solicitante ou nome de responsável na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, from_user_id, to_user_id, reason], properties: { condominium_id: { type: integer }, from_user_id: { type: integer }, to_user_id: { type: integer }, reason: { type: string, minLength: 5, maxLength: 255 }, ticket_ids: { type: array, items: { type: integer }, maxItems: 500 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, from_user_id, to_user_id, reason, count, changed, tickets[{ id, priority, status, due_at }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou chamado recusado (errors com _form e _ticket); nada é gravado' }
   /tickets/{id}:
     get:
       operationId: showTicket

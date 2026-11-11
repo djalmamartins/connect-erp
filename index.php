@@ -263,6 +263,8 @@ $route->post("/reservations/expire-pending", "ReservationExpiry:store", null, \S
 $route->post("/employees/readjust-salaries", "EmployeeSalaryReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Desligamento em lote de funcionários (ADR 0225). Antes do laço dos cadastros (/employees/{id}).
 $route->post("/employees/terminate", "EmployeeTermination:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reatribuição em lote dos chamados de um responsável para outro (ADR 0227). Antes do laço dos cadastros.
+$route->post("/tickets/reassign", "TicketReassignment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
