@@ -4096,6 +4096,24 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { description: Mais de 30 exportações em CSV na última hora }
+  /assemblies/{id}/readiness:
+    get:
+      operationId: assemblyReadiness
+      summary: Conferência antes da assembleia, com as regras da própria assembleia, somente leitura (erp.assemblies.view, ADR 0211)
+      description: >-
+        Erros: notice_deadline (rascunho com a primeira convocação a menos de 8 dias), no_units, fraction_missing (item
+        por fração e unidade sem fração ideal), quorum_unreachable (nem com todas as unidades aptas votando sim o item
+        passa). Avisos: fraction_sum, debtors (inadimplentes hoje não votam). Informação: no_second_call. Por item: total,
+        aptas e o percentual. Só para rascunho, convocada ou aberta. Sem unidade, morador ou valor na resposta.
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { assembly_id, condominium_id, status, first_call_at, as_of, units, debtors, ready, errors, warnings, checks[{ code, level, message, count }], items[{ id, position, title, vote_basis, quorum, status, total, eligible, eligible_percent, reachable }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { description: 'Assembleia encerrada ou cancelada' }
   /assemblies/{id}/results:
     get:
       operationId: assemblyResults
