@@ -160,6 +160,8 @@ $route->get("/reports/document-transit", "DocumentTransit:show", null, \Source\S
 $route->get("/reports/obligation-calendar", "ObligationCalendar:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Conferência das leituras de consumo do mês (ADR 0220), somente leitura.
 $route->get("/reports/meter-reading-review", "MeterReadingReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inadimplência por bloco ou andar (ADR 0222), somente leitura.
+$route->get("/reports/delinquency-by-location", "DelinquencyByLocation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);

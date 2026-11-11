@@ -2102,6 +2102,25 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/delinquency-by-location:
+    get:
+      operationId: delinquencyByLocation
+      summary: Inadimplência agrupada por bloco ou andar, com taxa de unidades em atraso e faixas de atraso, sem identificar unidade ou morador, somente leitura (erp.agreements.view, ADR 0222)
+      description: >-
+        Mesmo cálculo do relatório de inadimplentes (Agreements::delinquency: contas vencidas em aberto e encargos
+        sugeridos) e as mesmas faixas (Agreements::bucket). Bloco ou andar vazio = "Sem bloco"/"Sem andar"; conta sem
+        unidade = "Sem unidade". Saem só os grupos e as somas. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: by, in: query, schema: { type: string, enum: [block, floor], default: block } }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, by, units_total, units_late, rows[{ group, units_total, units_late, rate_pct, entries, amount_cents, charges_cents, total_cents, max_days_late, units_by_bucket { 1-30, 31-60, 61-90, 90+ } }], totals { entries, amount_cents, charges_cents, total_cents, missing_index[] } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
