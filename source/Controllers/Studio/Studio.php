@@ -1053,12 +1053,15 @@ class Studio extends Controller
             header('Content-Disposition: attachment; filename="usuarios-movesos-' . date('Y-m-d') . '.csv"');
             $output = fopen("php://output", "wb");
             fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, ["Nome", "E-mail", "Telefone", "Perfil", "Status", "Cadastro"], ";");
+            fputcsv($output, ["Nome", "E-mail", "Telefone", "Perfil", "Status", "Cadastro"], ";", '"', "");
             foreach ($exportUsers as $exportUser) {
                 $exportRole = $exportUser->accessRole();
-                fputcsv($output, [$exportUser->fullName(), $exportUser->email, $exportUser->phone_cell, $exportRole->name ?? "Não definido", $exportUser->status === "confirmed" ? "Ativo" : "Inativo", date_fmt($exportUser->created_at, "d/m/Y")], ";");
+                // Nome e telefone vêm do cadastro público: célula saneada contra fórmula de planilha (ADR 0081).
+                fputcsv($output, array_map(static fn ($cell): string => \Source\Services\Erp\CollectionReports::csvCell((string)$cell), [$exportUser->fullName(), $exportUser->email, $exportUser->phone_cell, $exportRole->name ?? "Não definido", $exportUser->status === "confirmed" ? "Ativo" : "Inativo", date_fmt($exportUser->created_at, "d/m/Y")]), ";", '"', "");
             }
             fclose($output);
+            // LGPD: a exportação de contatos fica na trilha, só com a contagem e o filtro (sem dado pessoal).
+            \Source\Support\Audit::record("export", "users_csv", null, null, ["rows" => count($exportUsers), "filtered" => $search !== "" || $status !== ""]);
             return;
         }
         $find = (new User())->find($termsSql, $paramsSql);
