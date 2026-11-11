@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/lost-found:
+    get:
+      operationId: lostFoundSummary
+      summary: Resumo dos achados e perdidos do condomínio (itens achados no período por situação, tempo de devolução e idade dos guardados), somente leitura (erp.access e erp.lost_found.view, ADR 0232)
+      description: >-
+        rows traz uma linha por situação do cadastro (Guardado, Devolvido, Descartado) com os itens achados no período, e
+        totals.items é a soma das linhas. returns resume os devolvidos do período (com data: dias somados, média e
+        máximo). custody conta os guardados hoje achados até "to", pela idade (até 30 dias, 31 a 90, 91 a 180, mais de
+        180), e total é a soma das faixas. Sem item, local, quem achou, a quem foi devolvido ou observação. Não grava nem
+        envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ status, status_label, items }], totals { items }, returns { count, dated, days_total, avg_days, max_days }, custody { ate_30, de_31_a_90, de_91_a_180, mais_de_180, total } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /visit-forecasts/expire:
     post:
       operationId: expireVisitForecasts

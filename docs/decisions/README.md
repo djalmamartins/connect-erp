@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0232.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0232, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0233.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0233, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -234,3 +234,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0229](../Organic%20Code/decisions/0229-common-area-booking-mode.md) | Bloqueio e liberação em lote das áreas comuns pelo cadastro (modo de reserva), recusando bloquear área com reserva futura, tudo ou nada, prévia e auditoria, sem aviso nem dado do morador | Aceita |
 | [0230](../Organic%20Code/decisions/0230-gatehouse-traffic.md) | Movimento da portaria do condomínio no período por tipo de acesso (entradas, veículo, visita prevista, saídas sem registro, permanência e faixa do dia) e visitas previstas, somente leitura e sem dado pessoal | Aceita |
 | [0231](../Organic%20Code/decisions/0231-visit-forecast-expiry.md) | Baixa em lote das visitas previstas vencidas em aberto pelo cadastro (Cancelada), sem cancelar as que tiveram acesso na portaria, tudo ou nada, prévia e auditoria, sem aviso nem dado do visitante | Aceita |
+| [0232](../Organic%20Code/decisions/0232-lost-found-summary.md) | Resumo dos achados e perdidos do condomínio no período (itens por situação, tempo de devolução e idade dos guardados), somente leitura e sem dado do item | Aceita |
