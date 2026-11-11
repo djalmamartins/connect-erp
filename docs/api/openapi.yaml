@@ -3069,6 +3069,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /units/move-out:
+    post:
+      operationId: unitMoveOut
+      summary: Saída de moradores da unidade, encerrando os vínculos pelo formulário, revogando convites pendentes e, se pedido, inativando veículos e animais, tudo ou nada e com prévia (erp.residents.view e erp.residents.manage, ADR 0206)
+      description: >-
+        Vínculos padrão: inquilino e morador (proprietário e responsável financeiro só se pedidos). Fim do vínculo = ends_on
+        (até hoje) e situação inativa. Convites pendentes do portal dessas pessoas são revogados. include_vehicles exige
+        erp.vehicles.manage; include_pets exige erp.pets.manage. Nada é apagado nem enviado (sem e-mail). Avisos:
+        unit_without_residents e open_debt. Saem só ids, tipos de vínculo e datas.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, unit_id, ends_on, reason], properties: { condominium_id: { type: integer }, unit_id: { type: integer }, relationships: { type: array, items: { type: string, enum: [owner, tenant, resident, financial] }, description: 'Vazio = tenant e resident' }, ends_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, include_vehicles: { type: boolean, default: false }, include_pets: { type: boolean, default: false }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, unit_id, dry_run, ends_on, reason, relationships[], residents[{ id, relationship, starts_on, ends_on }], vehicles, pets, invitations_revoked, changed, warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, unidade sem vínculo ativo dos tipos escolhidos, ou registro recusado pelo formulário (errors, _registry e _record); nada é gravado' }
   /unit-measures/distribute:
     post:
       operationId: distributeUnitFractions
