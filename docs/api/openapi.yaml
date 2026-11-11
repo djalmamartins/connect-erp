@@ -2514,6 +2514,37 @@ paths:
         '409': { description: Competência fechada }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /budgets/proposal:
+    get:
+      operationId: getBudgetProposal
+      summary: Sugestão da previsão orçamentária do ano a partir do realizado dos últimos 12 meses completos, com reajuste (erp.settings.view e erp.entries.view, ADR 0187)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+        - { name: adjustment, in: query, schema: { type: number, minimum: -50, maximum: 100, default: 0 } }
+        - { name: distribution, in: query, schema: { type: string, enum: [flat, seasonal], default: flat } }
+      responses:
+        '200': { description: '{ data: { year, base_from, base_to, adjustment_percent, distribution, rows[{ chart_account_id, code, name, nature, base_months{1..12}, base_cents, suggested_months{1..12}, suggested_cents, current_budget_cents }], totals, warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: applyBudgetProposal
+      summary: Grava a sugestão como previsão do ano (todas as contas ou as escolhidas) pelo mesmo caminho do POST /budgets; ano com mês fechado é recusado (erp.settings.manage, ADR 0187)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, year], properties: { condominium_id: { type: integer }, year: { type: integer }, adjustment: { type: number }, distribution: { type: string, enum: [flat, seasonal] }, chart_account_ids: { type: array, items: { type: integer } } } } } }
+      responses:
+        '200': { description: '{ data: { year, applied_accounts[], budget } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Ano com mês fechado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /unit-fractions:
     post:
       operationId: setUnitFractions
