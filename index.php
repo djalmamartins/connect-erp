@@ -241,6 +241,8 @@ $route->post("/maintenances/complete", "MaintenanceCompletion:store", null, \Sou
 $route->post("/reservations/bill-fees", "ReservationFeeBilling:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ocorrências com o chamado do Help Desk encerrado (ADR 0213). Antes do laço dos cadastros.
 $route->post("/occurrences/sync-tickets", "OccurrenceTicketSync:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote de malotes e avisos de recebimento (ADR 0216). Antes do laço dos cadastros.
+$route->post("/document-transit/settle", "DocumentTransitSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
