@@ -251,6 +251,8 @@ $route->post("/occurrences/sync-tickets", "OccurrenceTicketSync:store", null, \S
 $route->post("/document-transit/settle", "DocumentTransitSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Renovação de contratos em lote, com reajuste opcional (ADR 0217). Antes do laço dos cadastros (/contracts/{id}).
 $route->post("/contracts/renew", "ContractRenewal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote das reservas que passaram sem aprovação (ADR 0221). Antes do laço dos cadastros (/reservations/{id}).
+$route->post("/reservations/expire-pending", "ReservationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

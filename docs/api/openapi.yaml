@@ -3204,6 +3204,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reservations/expire-pending:
+    post:
+      operationId: expirePendingReservations
+      summary: Cancela em lote as reservas que passaram sem aprovação (aguardando aprovação com data antes do corte), pelo formulário, tudo ou nada e com prévia (erp.reservations.view e erp.reservations.manage, ADR 0221)
+      description: >-
+        Sem reservation_ids, entram todas as reservas aguardando aprovação do condomínio com data antes de before (padrão
+        hoje, nunca depois de hoje). Com reservation_ids, cada uma precisa estar aguardando aprovação e com a data passada.
+        Reserva confirmada não é tocada. Cancelar não gera aviso na outbox (o aviso é só da aprovação). Auditoria expire por
+        reserva. Sem nome de morador na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, reservation_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, count, changed, reservations[{ id, common_area_id, unit_id, reserved_on, fee_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou reserva recusada (errors com _form e _reservation, ou os erros do formulário); nada é gravado' }
   /contracts/renew:
     post:
       operationId: renewContracts
