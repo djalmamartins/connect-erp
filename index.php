@@ -56,6 +56,8 @@ $route->delete("/users/{id}/2fa", "UserTwoFactor:reset", null, \Source\Support\M
 $route->get("/bank-accounts/balances", "BankBalances:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Geração dos lançamentos do mês a partir dos lançamentos fixos (ADR 0027).
 $route->post("/recurring-entries/generate", "RecurringEntriesGenerate:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reajuste de lançamentos fixos em lote (ADR 0204). Antes do laço dos cadastros: /recurring-entries/{id} capturaria "readjust".
+$route->post("/recurring-entries/readjust", "RecurringReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Fechamento mensal (ADR 0031): resumo, fechar e reabrir a competência de um condomínio.
 $route->get("/closings", "MonthClosings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/closings", "MonthClosings:close", null, \Source\Support\Middleware\ApiAuthenticated::class);

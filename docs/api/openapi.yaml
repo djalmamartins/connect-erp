@@ -646,6 +646,25 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /recurring-entries/readjust:
+    post:
+      operationId: readjustRecurringEntries
+      summary: Reajuste percentual de lançamentos fixos em lote, a partir de uma competência, pelas regras do formulário, com motivo, tudo ou nada e prévia (erp.recurring_entries.view e erp.recurring_entries.manage, ADR 0204)
+      description: >-
+        Valor novo = valor × (1 + percentual), arredondado ao centavo (meio para cima). Recusa lançamento fixo não
+        encontrado, inativo ou encerrado antes da competência. Lançamentos já gerados não mudam: os em aberto da
+        competência em diante vêm em already_generated e no aviso already_generated. Um recusado desfaz todos.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, recurring_ids, percent, from_competence, reason], properties: { condominium_id: { type: integer }, recurring_ids: { type: array, minItems: 1, maxItems: 200, items: { type: integer } }, percent: { type: string, example: '4,62', description: '-50 a 100, até 2 casas, diferente de zero' }, from_competence: { type: string, example: '2027-01' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, percent, from_competence, reason, count, changed, before_cents, after_cents, templates[{ id, description, nature, before_cents, after_cents, already_generated { count, cents } }], warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou lançamento fixo recusado (errors e _recurring); nada é gravado' }
   /recurring-entries/generate:
     post:
       operationId: generateRecurringEntries
