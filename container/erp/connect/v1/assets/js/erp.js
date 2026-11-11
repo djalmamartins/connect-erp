@@ -14,7 +14,7 @@
   var mobile = window.matchMedia('(max-width: 900px)');
 
   /* Toasts --------------------------------------------------------------- */
-  function toast(message, tone) {
+  function plainToast(message, tone) {
     var region = $('[data-erp-toasts]');
     if (!region) return;
     var item = document.createElement('div');
@@ -31,7 +31,53 @@
     region.appendChild(item);
     window.setTimeout(function () { item.remove(); }, 6000);
   }
-  window.ErpUI = { toast: toast };
+  /* Aviso de sucesso: a marca da Connect gira uma vez e o traço vira o check (ADR 0120). */
+  var DONE_ICON = '<svg viewBox="0 0 120 120" width="64" height="64" aria-hidden="true" focusable="false"><g><animateTransform attributeName="transform" type="rotate" dur="1.1s" fill="freeze" values="0 60 60;0 60 60;-360 60 60;-360 60 60" keyTimes="0;.18;.77;1" calcMode="spline" keySplines="0 0 1 1;.6 0 .3 1;0 0 1 1"/><path fill="#C5A131" transform="translate(60 56) scale(.72) translate(-52.9 -61.7)" d="M42.6,10.8C18.9,15.6,1.1,36.6,1.1,61.7c0,14,5.5,26.7,14.5,36l37.5,37.6l37.5-37.6c9-9.3,14.5-22,14.5-36c0-27.5-21.4-50.1-48.5-51.9v20.4c0,0,0,0,0.1,0h-0.1v10.5l6.1-9.2c12.5,4,21.5,15.8,21.5,29.6c0,8.4-3.3,16-8.7,21.6l0,0l-22.5,22.5L30.6,82.7l0,0C25.3,77.1,22,69.5,22,61.1c0-16,12.1-29.2,27.6-30.9V9.8c0,0,0,0,0,0V0.3L42.6,10.8L42.6,10.8z"><animate attributeName="opacity" dur="1.1s" fill="freeze" values="1;1;0" keyTimes="0;.18;.18" calcMode="discrete"/></path><path fill="none" stroke="#C5A131" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" opacity="0" d="M55.9 26.6C44.7 28.2 35.4 35.9 31.8 46.6C28.3 57.3 31.0 69.0 39.0 77.0C46.0 84.0 53.0 91.0 60.0 98.0C67.0 91.0 74.0 84.0 81.0 77.0C89.0 69.0 91.7 57.3 88.2 46.6C84.6 35.9 75.3 28.2 64.1 26.6"><animate attributeName="opacity" dur="1.1s" fill="freeze" values="0;1" keyTimes="0;.18" calcMode="discrete"/><animate attributeName="d" dur="1.1s" fill="freeze" values="M55.9 26.6C44.7 28.2 35.4 35.9 31.8 46.6C28.3 57.3 31.0 69.0 39.0 77.0C46.0 84.0 53.0 91.0 60.0 98.0C67.0 91.0 74.0 84.0 81.0 77.0C89.0 69.0 91.7 57.3 88.2 46.6C84.6 35.9 75.3 28.2 64.1 26.6;M55.9 26.6C44.7 28.2 35.4 35.9 31.8 46.6C28.3 57.3 31.0 69.0 39.0 77.0C46.0 84.0 53.0 91.0 60.0 98.0C67.0 91.0 74.0 84.0 81.0 77.0C89.0 69.0 91.7 57.3 88.2 46.6C84.6 35.9 75.3 28.2 64.1 26.6;M30.0 64.0C32.4 66.4 34.9 68.9 37.3 71.3C39.8 73.8 42.2 76.2 44.7 78.7C47.1 81.1 49.6 83.6 52.0 86.0C56.7 81.1 61.3 76.2 66.0 71.3C70.7 66.4 75.3 61.6 80.0 56.7C84.7 51.8 89.3 46.9 94.0 42.0;M30.0 64.0C32.4 66.4 34.9 68.9 37.3 71.3C39.8 73.8 42.2 76.2 44.7 78.7C47.1 81.1 49.6 83.6 52.0 86.0C56.7 81.1 61.3 76.2 66.0 71.3C70.7 66.4 75.3 61.6 80.0 56.7C84.7 51.8 89.3 46.9 94.0 42.0" keyTimes="0;.18;.77;1" calcMode="spline" keySplines="0 0 1 1;.6 0 .3 1;0 0 1 1"/><animate attributeName="stroke-width" dur="1.1s" fill="freeze" values="15;15;14;17;14" keyTimes="0;.18;.77;.88;1"/></path></g></svg>';
+  var DONE_SECONDS = 1.1;
+  function done(message) {
+    var region = $('[data-erp-toasts]');
+    if (!region) return;
+    $$('.erp-done', region).forEach(function (previous) { previous.parentNode.removeChild(previous); });
+    var item = document.createElement('div');
+    item.className = 'erp-done';
+    item.innerHTML = DONE_ICON;
+    var text = document.createElement('p');
+    text.textContent = message;
+    item.appendChild(text);
+    var closed = false;
+    var onKey;
+    var close = function () {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener('keydown', onKey);
+      item.classList.add('erp-done--leaving');
+      window.setTimeout(function () { if (item.parentNode) item.parentNode.removeChild(item); }, 250);
+    };
+    onKey = function (event) { if (event.key === 'Escape') close(); };
+    item.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    region.appendChild(item);
+    var icon = $('svg', item);
+    if (icon && icon.pauseAnimations && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      icon.pauseAnimations();
+      icon.setCurrentTime(DONE_SECONDS);
+    }
+    window.setTimeout(close, 3200);
+  }
+  function toast(message, tone, options) {
+    if (tone === 'success' && !(options && options.quiet)) { done(message); return; }
+    plainToast(message, tone);
+  }
+  // Mensagem de sucesso do servidor (flash depois de salvar) vira o aviso animado.
+  var flashSuccess = $('.erp-flash .message.success');
+  if (flashSuccess) {
+    var flashBox = flashSuccess.parentNode;
+    var flashText = flashSuccess.textContent.trim();
+    flashBox.removeChild(flashSuccess);
+    if (!flashBox.textContent.trim() && flashBox.parentNode) flashBox.parentNode.removeChild(flashBox);
+    if (flashText) done(flashText);
+  }
+  window.ErpUI = { toast: toast, done: done };
 
   /* Sidebar: recolher (desktop) e gaveta (celular) ------------------------- */
   var shell = $('[data-erp-shell]');
@@ -861,7 +907,7 @@
       button.addEventListener('click', function () {
         var line = button.getAttribute('data-charge-copy');
         var label = button.getAttribute('data-copy-label') || 'a linha digitável';
-        var done = function () { toast('Copiado: ' + label + '.', 'success'); };
+        var done = function () { toast('Copiado: ' + label + '.', 'success', { quiet: true }); };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie ' + label + ':', line); });
         else window.prompt('Copie ' + label + ':', line);
       });

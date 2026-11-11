@@ -8,7 +8,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
   (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0209.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0209, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0209, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -141,6 +141,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0113](../Organic%20Code/decisions/0113-calculation-report-limits.md) | Memória de cálculo: data de referência até 60 dias à frente e no máximo 120 mil meses de índice por consulta |
 | [0114](../Organic%20Code/decisions/0114-plain-text-uncommon-tlds.md) | Texto simples: domínio com caminho ou código de país recusado mesmo com TLD fora da lista |
 | [0115](../Organic%20Code/decisions/0115-fixed-verification-address-and-signatures.md) | Verificação pública no endereço fixo /verificar-certidao-debitos (formulário sem AJAX; /verificar redireciona) e assinaturas do síndico e da administradora nos documentos |
+| [0120](../Organic%20Code/decisions/0120-success-check-animation.md) | Aviso de sucesso com a marca da Connect girando uma vez e virando check, para o flash de sucesso do servidor e o ErpUI.toast de sucesso |
 | [0140](../Organic%20Code/decisions/0140-unit-batch-and-measures-grid.md) | Cadastro rápido de unidades (sequência por andares, pré-visualização, tudo ou nada) e fração ideal/área em grade no AP-167 |
 | [0141](../Organic%20Code/decisions/0141-help-center-knowledge-base.md) | Base de conhecimento em arquivos com prints marcados gerados pelo Playwright, cobertura obrigatória das páginas do menu e Central de Ajuda pública com mensagem que vira chamado |
 | [0142](../Organic%20Code/decisions/0142-erp-helpdesk-conversation-and-shared-bell.md) | Integração ERP, Help Desk e Studio: conversa do chamado no ERP com resposta, avisos nos dois sentidos, sino compartilhado e deep link entre ambientes (/ambiente/{env}?ir=) |
