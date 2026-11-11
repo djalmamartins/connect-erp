@@ -183,6 +183,9 @@ $route->get("/cost-center-openings", "ErpSettings:openings", null, \Source\Suppo
 $route->post("/cost-center-openings", "ErpSettings:storeOpening", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/budgets", "ErpSettings:budget", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/budgets", "ErpSettings:storeBudget", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Proposta de previsão orçamentária a partir do realizado (ADR 0187).
+$route->get("/budgets/proposal", "BudgetProposal:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/budgets/proposal", "BudgetProposal:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-fractions", "ErpSettings:fractions", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
