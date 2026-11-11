@@ -97,6 +97,7 @@ final class LabSampleYearRemovalTest extends TestCase
             'CREATE TABLE erp_notification_outbox (id INTEGER PRIMARY KEY, condominium_id INTEGER, event_type TEXT, event_key TEXT UNIQUE, subject_table TEXT, subject_id INTEGER,
                 payload_json TEXT, created_by INTEGER, available_at TEXT)',
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',
+            'CREATE TABLE erp_accountability_publications (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), competence TEXT, version INTEGER, status TEXT)',
             'CREATE TABLE erp_billing_rules (id INTEGER PRIMARY KEY, condominium_id INTEGER)',
             'CREATE TABLE erp_price_indexes (id INTEGER PRIMARY KEY, code TEXT, competence TEXT, rate_percent REAL)',
         ] as $sql) {
@@ -126,8 +127,13 @@ final class LabSampleYearRemovalTest extends TestCase
         $first = $this->generate();
         self::assertSame(1, $first['agreements']);
         $before = $this->counts();
+        // Mês fechado e prestação publicada no lab (ADR 0179): saem junto, senão a FK trava a remoção.
+        $aurora = (int)$this->pdo->query("SELECT id FROM condominiums WHERE name = 'EXEMPLO Residencial Aurora'")->fetchColumn();
+        $this->pdo->exec("INSERT INTO erp_month_closings (condominium_id, competence, status) VALUES ({$aurora}, '2026-05', 'closed')");
+        $this->pdo->exec("INSERT INTO erp_accountability_publications (condominium_id, competence, version, status) VALUES ({$aurora}, '2026-05', 1, 'current')");
 
         $removed = $this->remove();
+        self::assertSame([1, 1], [$removed['accountability_publications'], $removed['month_closings']]);
         self::assertSame([1, 1, 2, 2], [$removed['agreements'], $removed['patrimonial_imports'], $removed['transfers'], $removed['openings']]);
         self::assertSame(1, $removed['investment_links']);
         self::assertSame(3, $removed['agreement_installments']);

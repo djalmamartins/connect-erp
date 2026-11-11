@@ -94,6 +94,10 @@ $route->get("/reports/account-balances", "AccountingReports:accountBalances", nu
 $route->get("/reports/income-statement", "AccountingReports:incomeStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0166: prestação de contas, registros de entregas e saldo inicial do plano de contas
 $route->get("/reports/accountability", "Accountability:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/accountability-publications", "AccountabilityPublications:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/accountability-publications/{id}", "AccountabilityPublications:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/accountability-publications", "AccountabilityPublications:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/accountability-publications/{id}/withdraw", "AccountabilityPublications:withdraw", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/deliveries", "DeliveryLog:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/delivery-pickups", "DeliveryLog:pickUp", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
