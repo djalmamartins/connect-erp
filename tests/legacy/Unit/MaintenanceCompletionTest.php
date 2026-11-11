@@ -85,7 +85,8 @@ final class MaintenanceCompletionTest extends TestCase
         }
         $root = dirname(__DIR__, 3);
         $service = (string)file_get_contents($root . '/source/Services/Erp/MaintenanceCompletion.php');
-        foreach (["\$registry->save(\$user, 'maintenances'", ' FOR UPDATE', "Audit::record('complete'", '$this->pdo->rollBack()'] as $needle) {
+        foreach (["\$registry->save(\$user, 'maintenances'", ' FOR UPDATE', "Audit::record('complete'", '$this->pdo->rollBack()',
+            'SET previous_id = ? WHERE id = ? AND previous_id IS NULL', 'WHERE previous_id = ? AND deleted_at IS NULL'] as $needle) {
             self::assertStringContainsString($needle, $service, $needle);
         }
         self::assertStringNotContainsString('NotificationOutbox', $service);
