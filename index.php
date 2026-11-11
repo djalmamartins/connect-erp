@@ -262,6 +262,8 @@ $route->post("/entries/unsettle", "BatchReversal:store", null, \Source\Support\M
 $route->post("/entries/installments", "InstallmentPayables:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Reclassificação em lote (ADR 0196): conta e/ou centro de custo de vários lançamentos, pelas regras do formulário, com motivo.
 $route->post("/entries/reclassify", "EntryReclassification:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Prorrogação de vencimento em lote (ADR 0197): contas em aberto, data fixa ou dias, pelas regras do formulário, com motivo.
+$route->post("/entries/reschedule", "EntryReschedule:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
