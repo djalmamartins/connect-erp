@@ -65,7 +65,7 @@ final class Panel extends Controller
     /** @return array<string, string> PAGE_PERMISSIONS mais as permissões dos cadastros (migration 20261108_0202). */
     public static function pagePermissions(): array
     {
-        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + DeliveryScreens::pagePermissions() + AccountabilityScreens::pagePermissions() + BalanceSheetScreens::pagePermissions() + PatrimonialEntryScreens::pagePermissions() + AccessScreens::pagePermissions() + AdminScreens::pagePermissions() + Definitions::pagePermissions();
+        return self::PAGE_PERMISSIONS + ReportScreens::pagePermissions() + SettingsScreens::pagePermissions() + AssemblyScreens::pagePermissions() + DeliveryScreens::pagePermissions() + AccountabilityScreens::pagePermissions() + BalanceSheetScreens::pagePermissions() + CashBookScreens::pagePermissions() + PatrimonialEntryScreens::pagePermissions() + AccessScreens::pagePermissions() + AdminScreens::pagePermissions() + Definitions::pagePermissions();
     }
 
     /** @var array{groups: array<string, array<string, string>>, pages: array<string, array<string, string>>} */
@@ -869,6 +869,9 @@ final class Panel extends Controller
         if (isset(BalanceSheetScreens::PAGES[$id])) {
             $data += (new BalanceSheetScreens())->data($user, $id);
         }
+        if (isset(CashBookScreens::PAGES[$id])) {
+            $data += (new CashBookScreens())->data($user, $id);
+        }
         if (isset(AccessScreens::PAGES[$id])) {
             $data += (new AccessScreens())->data($user, $id);
         }
@@ -910,6 +913,7 @@ final class Panel extends Controller
             isset(DeliveryScreens::PAGES[$id]) && ($data['deliveryReady'] ?? false) => DeliveryScreens::PAGES[$id],
             isset(AccountabilityScreens::PAGES[$id]) && ($data['accountabilityReady'] ?? false) => AccountabilityScreens::PAGES[$id],
             isset(BalanceSheetScreens::PAGES[$id]) && ($data['balanceReady'] ?? false) => BalanceSheetScreens::PAGES[$id],
+            isset(CashBookScreens::PAGES[$id]) && ($data['cashReady'] ?? false) => CashBookScreens::PAGES[$id],
             isset(PatrimonialEntryScreens::PAGES[$id]) && ($data['patrimonialReady'] ?? false) => PatrimonialEntryScreens::PAGES[$id],
             isset(AccessScreens::PAGES[$id]) && ($data['accessReady'] ?? false) => 'pages/settings/access',
             isset(AdminScreens::PAGES[$id]) && ($data['adminReady'] ?? false) => 'pages/settings/admin',

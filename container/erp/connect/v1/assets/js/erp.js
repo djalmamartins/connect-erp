@@ -712,7 +712,7 @@
   var fileProblem = function (input, file) {
     var allowed = (input.getAttribute('accept') || '').split(',');
     var max = parseInt(input.getAttribute('data-max-bytes'), 10) || 20971520;
-    if (allowed.indexOf('.' + (file.name.split('.').pop() || '').toLowerCase()) < 0) return 'Tipo de arquivo não aceito. Envie PDF, imagem, DOCX, XLSX, ODT, ODS, CSV ou TXT.';
+    if (allowed.indexOf('.' + (file.name.split('.').pop() || '').toLowerCase()) < 0) return 'Tipo de arquivo não aceito. Envie PDF, imagem, DOCX, XLSX, ODT, ODS, CSV, TXT ou XML.';
     if (file.size < 1 || file.size > max) return 'O arquivo está vazio ou passa de 20 MB.';
     return '';
   };

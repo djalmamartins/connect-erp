@@ -7,7 +7,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0174.**
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0175.**
   Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0174, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
@@ -175,3 +175,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0171](../Organic%20Code/decisions/0171-patrimonial-imports.md) | Importação de lançamentos patrimoniais por CSV/XLSX com prévia por linha, gravação tudo ou nada pelo PatrimonialEntries e chave de idempotência por condomínio |
 | [0172](../Organic%20Code/decisions/0172-review-accounting-coherence.md) | Revisão de segurança e coerência contábil dos ADRs 0166–0171: ESCAPE da auditoria, corridas de chave única, prévia sem laço, movimentos somados no banco e teste de ponta a ponta do ano |
 | [0173](../Organic%20Code/decisions/0173-lab-sample-accounting-year.md) | Ano contábil de exemplo no laboratório: abertura, receitas e despesas, fundo de reserva, aplicação, inadimplência, acordo, estorno e importação patrimonial, pelos services e idempotente |
+| [0174](../Organic%20Code/decisions/0174-entry-attachments-cash-book.md) | Anexos dos lançamentos (nota fiscal, comprovante, recibo) no Disco Virtual e livro caixa mensal CN-007 com PDF pronto, pacote ZIP dos anexos e API /api/v1/reports/cash-book e /entries/{id}/attachments |

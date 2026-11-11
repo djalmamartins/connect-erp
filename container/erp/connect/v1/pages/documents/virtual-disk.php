@@ -22,7 +22,7 @@ $typeLabel = static function (string $mime, string $name): string {
     $ext = strtoupper(pathinfo($name, PATHINFO_EXTENSION));
     return $ext !== '' ? $ext : ($mime === 'application/pdf' ? 'PDF' : $mime);
 };
-$accept = '.pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.odt,.ods,.csv,.txt';
+$accept = '.pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.odt,.ods,.csv,.txt,.xml';
 $api = url('/api/v1/documents');
 
 $this->insert('components/layout/page-head', [
@@ -44,7 +44,7 @@ $this->insert('components/layout/page-head', [
     <div class="erp-grid erp-disk-layout">
         <?php if ($canManageFiles): ?>
             <form class="erp-card erp-form erp-disk-upload" data-disk-upload aria-labelledby="disk-upload-title" novalidate>
-                <div class="erp-card__head"><div><h2 id="disk-upload-title">Enviar arquivo</h2><p>PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV ou TXT, até 20 MB.</p></div></div>
+                <div class="erp-card__head"><div><h2 id="disk-upload-title">Enviar arquivo</h2><p>PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV, TXT ou XML, até 20 MB.</p></div></div>
                 <?php if ($context === null): ?>
                     <div class="erp-field"><label for="disk-condo">Condomínio</label><select class="erp-select" id="disk-condo" name="condominium_id" required><option value="">Selecione</option><?php foreach ($diskCondominiums as $c): ?><option value="<?= (int)$c['id'] ?>"><?= $this->e((string)$c['name']) ?></option><?php endforeach; ?></select></div>
                 <?php else: ?>
