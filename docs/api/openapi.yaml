@@ -1225,6 +1225,21 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/billing-check:
+    get:
+      operationId: billingCheck
+      summary: Conferência do faturamento da competência por unidade, sem cobrança, duplicada, variação, unidade inativa e receita sem unidade (erp.entries.view, ADR 0198)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}$' } }
+        - { name: tolerance, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 20 } }
+      responses:
+        '200': { description: '{ data: { competence, previous_competence, tolerance_percent, active_units, billed_units, total_cents, previous_total_cents, without_unit_cents, summary, missing, duplicates, variations, inactive_units, without_unit (cada um { total, truncated, items[] }), warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/ledger:
     get:
       operationId: ledger
