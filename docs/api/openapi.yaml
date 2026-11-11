@@ -3106,6 +3106,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /occurrences/sync-tickets:
+    post:
+      operationId: syncOccurrenceTickets
+      summary: Resolve as ocorrências do condomínio cujo chamado no Help Desk foi fechado, pelo formulário, tudo ou nada e com prévia (erp.occurrences.view e erp.occurrences.manage, ADR 0213)
+      description: >-
+        Lê a situação do chamado pelo TicketService::findFor (mesmo escopo). Fechado (closed) resolve; resolvido
+        (resolved) só com include_resolved, porque ainda pode ser reaberto. As outras vêm contadas em still_open pela
+        situação do chamado; chamado fora do escopo, em unavailable. Nada muda no Help Desk e nada é enviado. Sem
+        assunto, descrição, morador ou solicitante na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer }, include_resolved: { type: boolean, default: false }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, include_resolved, checked, settled, still_open { situação do chamado: quantidade }, unavailable, changed, occurrences[{ id, priority, occurred_on, status_before, ticket_protocol, ticket_status }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou ocorrência recusada pelo formulário (errors e _occurrence); nada é gravado' }
   /reservations/bill-fees:
     post:
       operationId: billReservationFees
