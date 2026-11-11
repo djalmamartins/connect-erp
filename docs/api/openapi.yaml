@@ -1264,6 +1264,24 @@ paths:
         '200': { description: '{ data: { as_of, global_scope, condominiums, suppliers, active_suppliers, summary, invalid_document, similar_names, inactive_in_use, no_payment_data, dormant (null sem acesso a todos os condomínios) (cada um { total, truncated, items[] }), warnings[] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/expense-benchmark:
+    get:
+      operationId: expenseBenchmark
+      summary: Comparativo de despesas entre os condomínios do escopo, por unidade por mês em cada conta do plano padrão, com mediana e outliers (erp.entries.view, ADR 0201)
+      description: >-
+        Só contas analíticas do plano padrão. Por unidade por mês = total ÷ unidades ativas ÷ meses do condomínio com despesa na faixa.
+        Condomínio com menos de 3 meses aparece marcado (short_history) e fica fora da mediana; outlier só com 3 ou mais comparáveis.
+        Só nomes de condomínio e valores.
+      security: [{ session: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, example: '2026-01' } }
+        - { name: to, in: query, required: true, schema: { type: string, example: '2026-12' }, description: 'No máximo 12 competências' }
+        - { name: tolerance, in: query, schema: { type: integer, minimum: 10, maximum: 500, default: 50 }, description: 'Percentual acima da mediana para outlier' }
+      responses:
+        '200': { description: '{ data: { from, to, tolerance_percent, condominiums[{condominium_id, name, units, months, short_history}], accounts[{chart_account_id, code, name, median_per_unit_month_cents, comparable_condominiums, items[]}], outliers[], warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/ledger:
     get:
       operationId: ledger
