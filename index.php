@@ -90,6 +90,7 @@ $route->get("/reports/trial-balance", "FinancialReports:trialBalance", null, \So
 // ADR 0164: Balancete Anual (AP-080)
 $route->get("/reports/annual-balance", "AnnualBalance:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/annual-accountability", "AnnualAccountability:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/reports/unit-statement", "UnitStatement:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // ADR 0165: relatórios contábeis
 $route->get("/reports/ledger", "AccountingReports:ledger", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/account-balances", "AccountingReports:accountBalances", null, \Source\Support\Middleware\ApiAuthenticated::class);
