@@ -140,7 +140,11 @@ final class MaintenanceCompletion
                 $rows[(int)$r['id']] = $r;
             }
             $exists = $this->pdo->prepare("SELECT id FROM erp_maintenances WHERE condominium_id = ? AND service = ? AND planned_on = ?
-                AND status IN ('active', 'running') AND deleted_at IS NULL LIMIT 1");
+                AND status IN ('active', 'running') AND deleted_at IS NULL AND (previous_id IS NULL OR previous_id = ?) LIMIT 1");
+            // ADR 0210: a próxima fica ligada à concluída por previous_id (único), o mesmo vínculo do OperationalDashboard::nextMaintenance
+            // (ADR 0053); assim nenhum dos dois caminhos gera a próxima duas vezes.
+            $linked = $this->pdo->prepare('SELECT id, planned_on FROM erp_maintenances WHERE previous_id = ? AND deleted_at IS NULL LIMIT 1');
+            $link = $this->pdo->prepare('UPDATE erp_maintenances SET previous_id = ? WHERE id = ? AND previous_id IS NULL');
             foreach ($items as $id => $doneOn) {
                 $row = $rows[$id] ?? null;
                 $problem = self::problem($row);
@@ -157,14 +161,22 @@ final class MaintenanceCompletion
                     $nextId = null;
                     $already = false;
                     if ($next !== null) {
-                        $exists->execute([(int)$condominium, (string)$row['service'], $next]);
-                        $found = $exists->fetchColumn();
-                        if ($found !== false) {
+                        $linked->execute([$id]);
+                        $previous = $linked->fetch(PDO::FETCH_ASSOC);
+                        $exists->execute([(int)$condominium, (string)$row['service'], $next, $id]);
+                        $found = $previous === false ? $exists->fetchColumn() : false;
+                        if ($previous !== false) {   // já gerada antes (pelo painel): vale a que existe, na data dela
+                            $already = true;
+                            $nextId = (int)$previous['id'];
+                            $next = substr((string)$previous['planned_on'], 0, 10);
+                        } elseif ($found !== false) {
                             $already = true;
                             $nextId = (int)$found;
+                            $link->execute([$id, $nextId]);
                         } else {
                             $nextId = (int)$registry->save($user, 'maintenances', array_merge($data, ['planned_on' => $next, 'done_on' => null,
                                 'document_id' => null, 'status' => 'active']))['id'];
+                            $link->execute([$id, $nextId]);
                         }
                     }
                 } catch (RegistryValidationException $error) {

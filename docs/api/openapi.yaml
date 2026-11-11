@@ -1985,6 +1985,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /reports/operations-summary:
+    get:
+      operationId: operationsSummary
+      summary: Resumo operacional do mês para o síndico (ocorrências, manutenções e reservas), somente leitura (erp.occurrences.view, erp.maintenances.view e erp.reservations.view, ADR 0210)
+      description: >-
+        Mês: ocorrências abertas por prioridade, manutenções previstas e feitas, reservas confirmadas e taxas por área.
+        Hoje (o cadastro guarda a situação atual): ocorrências abertas por prioridade e idade (0-7, 8-30, 31+ dias),
+        manutenções atrasadas (até 50, com truncated) e dos próximos 30 dias, reservas aguardando aprovação. Só
+        contagens, serviços, nomes de área e taxas: nenhum assunto ou descrição de ocorrência, morador ou unidade.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+      responses:
+        '200': { description: '{ data: { condominium_id, competence, from, to, today, occurrences { opened_in_month { total, by_priority }, open_today { total, by_priority, by_age, running } }, maintenances { planned_in_month, done_in_month, next_30_days, overdue_today { total, truncated, items[{ service, frequency, planned_on, days_late }] } }, reservations { confirmed_in_month, fees_in_month_cents, by_area[{ area, confirmed, fees_cents }], pending_approval_today } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
