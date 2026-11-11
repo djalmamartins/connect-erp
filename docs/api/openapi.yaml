@@ -1175,6 +1175,24 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/cash-forecast:
+    get:
+      operationId: cashForecast
+      summary: Previsão de caixa do condomínio (erp.entries.view, ADR 0186)
+      description: >-
+        O saldo das contas bancárias hoje e, mês a mês (1 a 12, padrão 6), as contas a receber e a pagar em aberto que
+        vencem no mês e os lançamentos fixos ainda não gerados, com o saldo previsto. A receber vencido fica à parte; a
+        pagar vencido entra no primeiro mês. Avisa o primeiro mês com saldo negativo.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: months, in: query, schema: { type: integer, minimum: 1, maximum: 12, default: 6 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, opening_cash_cents, overdue_receivables_cents, overdue_payables_cents, months[{competence, from, to, receivables_cents, payables_cents, recurring_in_cents, recurring_out_cents, opening_cents, in_cents, out_cents, net_cents, closing_cents}], lowest{competence, closing_cents}, warnings[{code, message, competence}] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/ledger:
     get:
       operationId: ledger
