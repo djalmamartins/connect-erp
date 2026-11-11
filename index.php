@@ -154,6 +154,8 @@ $route->get("/reports/operations-summary", "OperationsSummary:show", null, \Sour
 $route->get("/reports/check-copy-review", "CheckCopyReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Documentos em trânsito: malotes e avisos de recebimento parados (ADR 0215), somente leitura.
 $route->get("/reports/document-transit", "DocumentTransit:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Calendário de vencimentos: seguro, contrato, mandato e checklist (ADR 0218), somente leitura.
+$route->get("/reports/obligation-calendar", "ObligationCalendar:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
