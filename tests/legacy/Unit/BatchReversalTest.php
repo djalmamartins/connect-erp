@@ -15,7 +15,7 @@ use Source\Services\Erp\BatchSettlementRejected;
 
 /**
  * ADR 0192: estorno em lote da baixa. Unit com SQLite (Pdo\Sqlite quando existe; PDO no PHP 8.2). O PDO de teste tira
- * o FOR UPDATE e, quando $race está ligado, muda a baixa da conta 2 "por outra pessoa" logo antes do UPDATE do lote.
+ * o FOR UPDATE e o LOCK IN SHARE MODE da competência fechada (ADR 0100) e, quando $race está ligado, muda a baixa da conta 2 "por outra pessoa" logo antes do UPDATE do lote.
  */
 final class BatchReversalTest extends TestCase
 {
@@ -32,14 +32,14 @@ final class BatchReversalTest extends TestCase
                 public function prepare(string $query, array $options = []): \PDOStatement|false
                 {
                     BatchReversalTest::race($this, $query);
-                    return parent::prepare(str_replace(' FOR UPDATE', '', $query), $options);
+                    return parent::prepare(str_replace([' FOR UPDATE', ' LOCK IN SHARE MODE'], '', $query), $options);
                 }
             }
             : new class ('sqlite::memory:') extends PDO {
                 public function prepare(string $query, array $options = []): \PDOStatement|false
                 {
                     BatchReversalTest::race($this, $query);
-                    return parent::prepare(str_replace(' FOR UPDATE', '', $query), $options);
+                    return parent::prepare(str_replace([' FOR UPDATE', ' LOCK IN SHARE MODE'], '', $query), $options);
                 }
             };
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
