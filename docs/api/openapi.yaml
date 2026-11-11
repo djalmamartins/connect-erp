@@ -1255,6 +1255,15 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/supplier-health:
+    get:
+      operationId: supplierHealth
+      summary: Conferência do cadastro de fornecedores, com documento inválido, nome repetido, inativo com conta em aberto, sem dados de pagamento e sem uso em 24 meses (erp.suppliers.view e erp.entries.view, ADR 0200)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { as_of, global_scope, condominiums, suppliers, active_suppliers, summary, invalid_document, similar_names, inactive_in_use, no_payment_data, dormant (null sem acesso a todos os condomínios) (cada um { total, truncated, items[] }), warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /reports/ledger:
     get:
       operationId: ledger
