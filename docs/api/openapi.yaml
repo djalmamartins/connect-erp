@@ -1117,6 +1117,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Limite de exportações por hora }
+  /reports/annual-accountability:
+    get:
+      operationId: annualAccountability
+      summary: Prestação de contas anual para a assembleia (erp.entries.view e erp.chart.view, ADR 0182)
+      description: >-
+        O pacote do ano de um condomínio: DRE do ano por competência, Balanço no fim do ano (ou hoje no ano
+        corrente), fundos no ano pelo Livro Razão, previsto contra realizado do ano, inadimplência na data e
+        meses fechados, com avisos. format=csv baixa o CSV (30 por hora, auditado).
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: year, in: query, required: true, schema: { type: integer, minimum: 2000, maximum: 2100 } }
+        - { name: format, in: query, schema: { type: string, enum: [csv] } }
+      responses:
+        '200': { description: '{ data: { condominium_id, year, from, to, as_of, truncated, months{expected, closed, open}, income_statement, balance_sheet, funds, budget, delinquency, summary, warnings } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de exportações por hora }
   /reports/ledger:
     get:
       operationId: ledger
