@@ -295,6 +295,8 @@ $route->get("/reports/unit-occupancy", "UnitOccupancy:show", null, \Source\Suppo
 $route->post("/residents/expire-ended", "ResidentLinkExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Vínculos perto do fim ou vencidos, por faixa de prazo, somente leitura (ADR 0242). Antes do laço dos cadastros.
 $route->get("/reports/resident-link-endings", "ResidentLinkEndings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos mandatos vencidos do síndico e do conselho, pelo cadastro (ADR 0243). Antes do laço dos cadastros.
+$route->post("/board-members/expire-terms", "BoardTermExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
