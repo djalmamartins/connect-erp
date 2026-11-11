@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0243.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0243, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0244.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0244, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -245,3 +245,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0240](../Organic%20Code/decisions/0240-unit-occupancy.md) | Perfil de ocupação das unidades do condomínio numa data (alugadas, com morador, só proprietário, só responsável financeiro, sem vínculo, por tipo) e vínculos por tipo, somente leitura e sem dado pessoal | Aceita |
 | [0241](../Organic%20Code/decisions/0241-resident-link-expiry.md) | Encerramento em lote dos vínculos de proprietários, inquilinos e moradores com o fim já passado e ainda ativos, pelo cadastro (inativo, mantendo o fim), com os convites pendentes do portal revogados, tudo ou nada, prévia e auditoria, sem dado pessoal | Aceita |
 | [0242](../Organic%20Code/decisions/0242-resident-link-endings.md) | Vínculos de proprietários, inquilinos e moradores perto do fim ou vencidos sem baixa, por faixa de prazo e tipo de vínculo, com o que o encerramento em lote (0241) pegaria, somente leitura e sem dado pessoal | Aceita |
+| [0243](../Organic%20Code/decisions/0243-board-term-expiry.md) | Encerramento em lote dos mandatos vencidos do síndico, do subsíndico e do conselho pelo cadastro (inativo, mantendo o fim do mandato), com os síndicos ativos que restam, tudo ou nada, prévia e auditoria, sem dado pessoal | Aceita |
