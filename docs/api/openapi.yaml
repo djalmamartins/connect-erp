@@ -3400,6 +3400,21 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou lançamento recusado pelas regras do formulário (errors por campo e _entry); nada é gravado' }
+  /entries/reschedule:
+    post:
+      operationId: rescheduleEntries
+      summary: Prorrogação de vencimento em lote de contas em aberto, para uma data ou deslocando N dias, pelas regras do formulário, com motivo, tudo ou nada (erp.entries.view e erp.entries.manage, ADR 0197)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, entry_ids, reason], properties: { condominium_id: { type: integer }, entry_ids: { type: array, minItems: 1, maxItems: 200, items: { type: integer } }, due_on: { type: string, format: date, description: 'Novo vencimento para todas (ou days)' }, days: { type: integer, minimum: -365, maximum: 365, description: 'Desloca cada vencimento (ou due_on), diferente de zero' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, due_on, days, count, changed, entries[{ id, description, competence, before, after }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, ou conta recusada (paga, cancelada, com boleto ativo, mês fechado, trava de origem; errors e _entry); nada é gravado' }
   /extra-charges:
     get:
       operationId: listExtraCharges
