@@ -164,6 +164,8 @@ $route->get("/reports/meter-reading-review", "MeterReadingReview:show", null, \S
 $route->get("/reports/delinquency-by-location", "DelinquencyByLocation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Quadro de funcionários e folha por função e turno (ADR 0224), somente leitura.
 $route->get("/reports/employee-headcount", "EmployeeHeadcount:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Tempo de atendimento dos chamados do condomínio (ADR 0226), somente leitura.
+$route->get("/reports/ticket-service-times", "TicketServiceTimes:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);

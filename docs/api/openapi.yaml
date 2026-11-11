@@ -2140,6 +2140,25 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/ticket-service-times:
+    get:
+      operationId: ticketServiceTimes
+      summary: Tempo de atendimento dos chamados do condomínio por área e prioridade (abertos, concluídos, no prazo, atrasados, vencidos em aberto e tempo médio), somente leitura (erp.access, ADR 0226)
+      description: >-
+        Chamados do condomínio abertos no período. Prazo de cada prioridade pelo TicketService::slaHours; no prazo =
+        resolvido até o due_at. Tempo médio = minutos somados ÷ concluídos com data de resolução. Os totais são a soma das
+        linhas. A categoria livre fica de fora. Sem protocolo, assunto, mensagem, solicitante, unidade ou responsável. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ area, area_label, priority, priority_label, sla_hours, created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct }], totals { created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
