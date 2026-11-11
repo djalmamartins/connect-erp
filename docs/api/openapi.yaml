@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/gatehouse-traffic:
+    get:
+      operationId: gatehouseTraffic
+      summary: Movimento da portaria do condomínio por tipo de acesso no período (entradas, com veículo, com unidade, de visita prevista, saídas sem registro, permanência e faixa do dia) e as visitas previstas, somente leitura (erp.access, erp.access_logs.view e erp.visit_forecasts.view, ADR 0230)
+      description: >-
+        Uma linha por tipo do registro de acessos (visitante, prestador, entregador, morador), sem os excluídos e sem os
+        cancelados. Permanência = saída menos entrada no mesmo dia; faixas madrugada (0–6 h), manhã, tarde e noite. Os
+        totais são a soma das linhas. As visitas previstas no período saem à parte (total = realizadas + canceladas + em
+        aberto; overdue = em aberto com a data já passada). Sem nome, documento, placa, unidade, portaria ou observação.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ kind, kind_label, entries, with_vehicle, with_unit, from_forecast, exited, no_exit, timed, stay_minutes_total, avg_stay_minutes, by_band{ madrugada, manha, tarde, noite } }], totals { entries, with_vehicle, with_unit, from_forecast, exited, no_exit, timed, stay_minutes_total, avg_stay_minutes, by_band }, forecasts { total, done, cancelled, open, overdue } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/common-area-usage:
     get:
       operationId: commonAreaUsage

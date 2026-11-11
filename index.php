@@ -269,6 +269,8 @@ $route->post("/tickets/reassign", "TicketReassignment:store", null, \Source\Supp
 $route->get("/reports/common-area-usage", "CommonAreaUsage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Bloqueio e liberação em lote das áreas comuns (ADR 0229). Antes do laço dos cadastros.
 $route->post("/common-areas/booking-mode", "CommonAreaBookingMode:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Movimento da portaria do condomínio no período, somente leitura (ADR 0230). Antes do laço dos cadastros.
+$route->get("/reports/gatehouse-traffic", "GatehouseTraffic:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
