@@ -2022,6 +2022,25 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/document-transit:
+    get:
+      operationId: documentTransit
+      summary: Malotes e avisos de recebimento parados (aguardando recebimento, aguardando conferência, AR em trânsito), somente leitura (erp.pouches.view e erp.delivery_notices.view, ADR 0215)
+      description: >-
+        Dias desde o envio (ou o recebimento, para conferir) pela mesma conta dos atrasos; atrasado = mais dias que
+        days. Conferidos, entregues e devolvidos ficam de fora. Não grava nem envia nada. Sem portador, conteúdo,
+        destinatário, assunto nem código de rastreio.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+        - { name: days, in: query, schema: { type: integer, minimum: 1, maximum: 90, default: 7 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, as_of, days, summary { awaiting_receipt, awaiting_check, in_transit: { open, overdue } }, overdue, items[{ kind (pouch|notice), id, stage, sent_on, since, days, overdue, documents_count, unit_id }], truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
