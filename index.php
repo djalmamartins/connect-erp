@@ -230,6 +230,8 @@ $route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\
 $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Saída de moradores da unidade (ADR 0206). Antes do laço dos cadastros.
 $route->post("/units/move-out", "UnitMoveOut:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Conclusão de manutenções com a próxima agendada (ADR 0208). Antes do laço dos cadastros.
+$route->post("/maintenances/complete", "MaintenanceCompletion:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
