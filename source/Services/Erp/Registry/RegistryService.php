@@ -291,6 +291,15 @@ final class RegistryService
                 }
             }
         }
+        // Estorno da baixa (ADR 0193): conta conciliada com o extrato (ADR 0058) ou com boleto pago pelo banco não volta para
+        // "em aberto" pelo formulário, com a mesma regra e mensagem do estorno em lote (ADR 0192).
+        if ($errors === [] && $before !== null && ($definition['table'] ?? '') === 'erp_entries' && ($before['paid_on'] ?? null) !== null
+            && array_key_exists('paid_on', $values) && ($values['paid_on'] ?? null) === null) {
+            $lock = \Source\Services\Erp\PaymentLocks::find($this->pdo, [(int)$id])[(int)$id] ?? null;
+            if ($lock !== null) {
+                $errors['paid_on'] = $lock['message'];
+            }
+        }
         if ($errors !== []) {
             throw new RegistryValidationException($errors);
         }
