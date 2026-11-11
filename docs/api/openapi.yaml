@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /lost-found/dispose:
+    post:
+      operationId: disposeLostFound
+      summary: Destino em lote (doação ou descarte) dos achados e perdidos guardados além do prazo de guarda, pelo cadastro (situação Descartado), tudo ou nada e com prévia (erp.access, erp.lost_found.view e erp.lost_found.manage, ADR 0233)
+      description: >-
+        Sem item_ids, entram os itens guardados do condomínio achados há mais de older_than_days dias (padrão 90, mínimo
+        30). Com item_ids, recusa item não encontrado no condomínio, devolvido ou descartado, ou ainda dentro do prazo.
+        Cada item é regravado pelo cadastro só com a situação Descartado; o destino (doacao ou descarte) e o motivo ficam
+        na auditoria dispose, além da update do formulário. Nenhum aviso é enviado. Sem item, local, quem achou ou
+        observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, destination, reason], properties: { condominium_id: { type: integer }, destination: { type: string, enum: [doacao, descarte] }, older_than_days: { type: integer, minimum: 30, maximum: 3650, default: 90 }, item_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, found_until, destination, destination_label, reason, count, changed, items[{ id, found_on, days_kept }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou item recusado (errors com _form ou os erros do formulário, e _item); nada é gravado' }
   /reports/lost-found:
     get:
       operationId: lostFoundSummary
