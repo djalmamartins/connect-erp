@@ -3795,6 +3795,25 @@ paths:
         '200': { description: '{ data[{ id, fitid, kind, posted_on, amount_cents, memo, status, bank_account }], total }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /bank-statement-lines/rematch:
+    post:
+      operationId: rematchStatementLines
+      summary: Nova conferência das linhas pendentes do extrato pela regra da importação (mesmo sentido, valor, até 3 dias e exatamente um candidato), com prévia (erp.imports.view, erp.imports.manage e erp.entries.manage, ADR 0209)
+      description: >-
+        Para o extrato importado antes da baixa. Candidatos: lançamentos pagos na conta e transferências da conta, ainda
+        não conciliados. Linha com nenhum ou mais de um candidato continua pendente (nunca escolhe sozinho). Ignoradas e
+        já conciliadas não mudam. Uma conta ou todas as ativas do condomínio. O histórico (memo) do banco não sai.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer }, bank_account_id: { type: integer, description: 'Vazio = todas as contas ativas do condomínio' }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, match_days, pending_before, matched, still_pending, changed, accounts[{ bank_account_id, name, pending_before, matched, still_pending }], lines[{ id, bank_account_id, posted_on, amount_cents, direction, entry_id, transfer_id }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /bank-statement-lines/{id}/resolve:
     post:
       operationId: resolveStatementLine
