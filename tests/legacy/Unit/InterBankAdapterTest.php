@@ -132,6 +132,14 @@ final class InterBankAdapterTest extends TestCase
         InterBankAdapter::mapCharge(['cobranca' => ['seuNumero' => '999', 'situacao' => 'RECEBIDO']], '0000000001', 'abc-12345678');
     }
 
+    public function testVaultKeyReachesPhpFromDotEnv(): void
+    {
+        // O Apache do lab só recebe do .env as chaves listadas em Config.php (PR #147).
+        $config = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Boot/Config.php');
+        self::assertStringContainsString('"' . BankVault::ENV_KEY . '"', $config);
+        self::assertStringContainsString('"BANK_WEBHOOK_BASE_URL"', $config);
+    }
+
     public function testRemittanceStatusRule(): void
     {
         self::assertSame('confirmed', \Source\Services\Erp\Banking\BankRemittances::status(0, 0));

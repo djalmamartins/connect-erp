@@ -22,6 +22,9 @@ if (is_file($environmentFile)) {
         "CONNECT_2FA_KEY", "CONNECT_2FA_ENFORCE_FROM", "CONNECT_TRUSTED_PROXIES",
         // ERP: dados de exemplo, entrega de avisos (log/sandbox/production) e antivírus do Disco Virtual.
         "ERP_DEMO_DATA", "ERP_DEMO_DB", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
+        // Cobrança bancária (ADR 0156): chave do cofre das credenciais e base pública do endereço do webhook.
+        // Sem elas aqui, o Apache do lab não recebe a chave e o Inter não abre a credencial.
+        "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {
