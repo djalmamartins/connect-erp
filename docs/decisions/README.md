@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0199.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0199, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0200.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0200, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -200,3 +200,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0196](../Organic%20Code/decisions/0196-entry-reclassification.md) | Reclassificação em lote: conta e/ou centro de custo de vários lançamentos pelas regras do formulário, com motivo auditado, dry_run e tudo ou nada | Aceita |
 | [0197](../Organic%20Code/decisions/0197-entry-reschedule.md) | Prorrogação de vencimento em lote: contas em aberto para uma data ou N dias, recusa boleto ativo no banco, pelas regras do formulário, com motivo, dry_run e tudo ou nada | Aceita |
 | [0198](../Organic%20Code/decisions/0198-billing-check.md) | Conferência do faturamento: por unidade na competência, sem cobrança, duplicada na mesma conta, variação acima da tolerância, unidade inativa e receita sem unidade | Aceita |
+| [0199](../Organic%20Code/decisions/0199-collection-progress.md) | Acompanhamento da arrecadação: cobrado, recebido e vencido da competência numa data, faixas de pagamento em relação ao vencimento, mês anterior e tendência de 6 meses | Aceita |
