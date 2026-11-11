@@ -2560,6 +2560,23 @@ paths:
         '409': { description: Ano com mês fechado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /budgets/fee-simulation:
+    get:
+      operationId: getFeeSimulation
+      summary: Simulação da taxa condominial a partir da despesa prevista no ano, com fundo de reserva e margem de inadimplência, por unidade (erp.settings.view e erp.entries.view, ADR 0189)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+        - { name: reserve_percent, in: query, schema: { type: number, minimum: 0, maximum: 30, default: 0 } }
+        - { name: delinquency_percent, in: query, schema: { type: number, minimum: 0, maximum: 50, default: 0 } }
+        - { name: split, in: query, schema: { type: string, enum: [fraction, equal], default: fraction } }
+      responses:
+        '200': { description: '{ data: { year, split, reserve_percent, delinquency_percent, budget_expense_cents, budget_revenue_cents, budget_expense_months, observed_delinquency{from, to, months, billed_cents, overdue_cents, percent}, compared_competence, monthly_total_cents, reserve_cents, missing_fraction[], blocked, message?, rows[{ unit_id, unit_label, ideal_fraction, fee_cents, billed_last_month_cents, variation_percent }], billed_last_month_cents, warnings[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /unit-fractions:
     post:
       operationId: setUnitFractions

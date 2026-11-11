@@ -187,6 +187,8 @@ $route->post("/budgets", "ErpSettings:storeBudget", null, \Source\Support\Middle
 // Proposta de previsão orçamentária a partir do realizado (ADR 0187).
 $route->get("/budgets/proposal", "BudgetProposal:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/budgets/proposal", "BudgetProposal:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Simulação da taxa condominial a partir da previsão (ADR 0189).
+$route->get("/budgets/fee-simulation", "FeeSimulation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-fractions", "ErpSettings:fractions", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência e acordos (ADR 0039): contas vencidas por unidade, acordo com parcelas e cancelamento.
 $route->get("/delinquency", "Agreements:delinquency", null, \Source\Support\Middleware\ApiAuthenticated::class);
