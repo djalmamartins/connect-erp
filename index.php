@@ -233,6 +233,8 @@ $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Sourc
 $route->post("/units/move-out", "UnitMoveOut:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Conclusão de manutenções com a próxima agendada (ADR 0208). Antes do laço dos cadastros.
 $route->post("/maintenances/complete", "MaintenanceCompletion:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobrança das taxas de reserva em lote pela cobrança extra (ADR 0212). Antes do laço dos cadastros.
+$route->post("/reservations/bill-fees", "ReservationFeeBilling:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
