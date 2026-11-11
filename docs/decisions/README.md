@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0173.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0173, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0174.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0120; Avançar: 0174, na faixa nova 0160–0199, porque 0080–0099 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -160,6 +160,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0156](../Organic%20Code/decisions/0156-bank-inter-sandbox-adapter.md) | Banco Inter como primeiro adaptador real, só sandbox: adaptador por conta bancária, boleto com Pix, cofre CONNECT_BANK_VAULT_KEY com credencial só pelo terminal, webhook que consulta o banco antes de mudar estado e tela Remessas ligada |
 | [0157](../Organic%20Code/decisions/0157-dashboard-real-data-layout.md) | Dashboard todo com dados reais (receitas e despesas como no balancete, inadimplência por atraso, quadro por condomínio, agenda e atividades), API /api/v1/dashboard/finance, /agenda e /activities, e novo layout com cadastros na lateral |
 | [0158](../Organic%20Code/decisions/0158-bank-credentials-web-upload.md) | Credencial do banco pela tela Integrações: pacote ZIP aberto em memória, certificado e chave achados pelo conteúdo, teste no sandbox antes de gravar com diagnóstico (certificado de produção = unknown ca), API /api/v1/bank-credentials e limite de tentativas |
+| [0159](../Organic%20Code/decisions/0159-api-security-review-nov-11.md) | Revisão de segurança da API e das exportações: escopo por condomínio, SQL, CSRF e LGPD conferidos; CSV de usuários do Studio saneado e auditado |
 | [0160](../Organic%20Code/decisions/0160-review-verification-antivirus.md) | Revisão de segurança da verificação pública e do antivírus: limite global de falhas, CSRF em tempo constante, cabeçalhos anti-frame, prazo total e teto de 25 MB no clamd, download bloqueado para infectado/erro |
 | [0161](../Organic%20Code/decisions/0161-document-rescan.md) | Reverificação em lotes dos arquivos do Disco Virtual quando o antivírus é ligado depois (tools/erp-rescan.php, com trava) e o bloco do antivírus na tela de Integrações |
 | [0162](../Organic%20Code/decisions/0162-optional-cnpj-people-search-links-lab-data.md) | CNPJ do condomínio opcional, busca e vínculo de proprietário/inquilino em várias unidades (API /people) e dados de exemplo do lab com trava |
@@ -173,3 +174,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0170](../Organic%20Code/decisions/0170-investment-accounts.md) | Aplicação financeira ligada à conta corrente: aplicar e resgatar pela transferência entre contas (sem DRE), rendimento como receita e IR/IOF como despesa, 7.1 separada no Balanço e Razão das contas bancárias com os dois lados |
 | [0171](../Organic%20Code/decisions/0171-patrimonial-imports.md) | Importação de lançamentos patrimoniais por CSV/XLSX com prévia por linha, gravação tudo ou nada pelo PatrimonialEntries e chave de idempotência por condomínio |
 | [0172](../Organic%20Code/decisions/0172-review-accounting-coherence.md) | Revisão de segurança e coerência contábil dos ADRs 0166–0171: ESCAPE da auditoria, corridas de chave única, prévia sem laço, movimentos somados no banco e teste de ponta a ponta do ano |
+| [0173](../Organic%20Code/decisions/0173-lab-sample-accounting-year.md) | Ano contábil de exemplo no laboratório: abertura, receitas e despesas, fundo de reserva, aplicação, inadimplência, acordo, estorno e importação patrimonial, pelos services e idempotente |
