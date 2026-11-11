@@ -3223,6 +3223,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /employees/readjust-salaries:
+    post:
+      operationId: readjustEmployeeSalaries
+      summary: Reajuste salarial em lote dos funcionários do condomínio (percentual sobre o salário, mesma regra da 0204), pelo formulário, tudo ou nada e com prévia (erp.employees.view e erp.employees.manage, ADR 0223)
+      description: >-
+        Sem employee_ids, entram os funcionários ativos com salário e sem desligamento até effective_on (opcionalmente só
+        de uma função). Com employee_ids, recusa funcionário não encontrado, inativo, desligado até a data ou sem
+        salário. Auditoria readjust por funcionário. Nada é enviado; os lançamentos fixos de salário não mudam (reajuste da
+        0204). Sem nome, CPF, telefone ou e-mail na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, percent, effective_on, reason], properties: { condominium_id: { type: integer }, percent: { type: string, example: '5,5' }, effective_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, job: { type: string }, employee_ids: { type: array, items: { type: integer }, maxItems: 300 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, percent, effective_on, job, reason, before_cents, after_cents, count, changed, employees[{ id, job, shift, salary_before_cents, salary_after_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou funcionário recusado (errors com _form e _employee, ou os erros do formulário); nada é gravado' }
   /reservations/expire-pending:
     post:
       operationId: expirePendingReservations
