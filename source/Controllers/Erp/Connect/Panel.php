@@ -595,6 +595,16 @@ final class Panel extends Controller
         } catch (\Throwable $error) {
             \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integrations_screen_failed']);
         }
+        // Banco Inter pela tela (ADR 0158): contas 077 do escopo e quem pode enviar a credencial.
+        $data['bankCredentialAccounts'] = null;
+        $data['canManageBankCredentials'] = Access::can('erp.settings.manage', $user) && Access::can('erp.bank_accounts.manage', $user);
+        if (Access::can('erp.bank_accounts.view', $user)) {
+            try {
+                $data['bankCredentialAccounts'] = (new \Source\Services\Erp\Banking\BankCredentialSetup())->accounts($user);
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'bank_credentials_screen_failed']);
+            }
+        }
         return $data;
     }
 

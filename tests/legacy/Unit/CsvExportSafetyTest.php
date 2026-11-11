@@ -10,7 +10,7 @@ use RecursiveIteratorIterator;
 use Source\Services\Erp\CollectionReports;
 
 /**
- * Toda planilha exportada pelo sistema passa as células por CollectionReports::csvCell (ADR 0081 e 0158):
+ * Toda planilha exportada pelo sistema passa as células por CollectionReports::csvCell (ADR 0081 e 0159):
  * um nome cadastrado como "=HYPERLINK(...)" não pode virar fórmula no Excel de quem baixa o arquivo.
  */
 final class CsvExportSafetyTest extends TestCase

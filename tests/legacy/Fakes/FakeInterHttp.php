@@ -22,6 +22,8 @@ final class FakeInterHttp implements InterHttp
     /** Próxima resposta forçada (status, body) ou exceção de rede. */
     public ?array $nextResponse = null;
     public bool $failNext = false;
+    /** Falha de rede/TLS no pedido de token (ex.: 'tlsv1 alert unknown ca'). */
+    public ?string $tokenError = null;
     private int $sequence = 0;
 
     public function request(string $method, string $url, array $headers, ?string $body, string $certificatePem, string $privateKeyPem): array
@@ -32,6 +34,9 @@ final class FakeInterHttp implements InterHttp
             throw new RuntimeException('sem mTLS');
         }
         if ($path === '/oauth/v2/token') {
+            if ($this->tokenError !== null) {
+                throw new RuntimeException('Sem resposta do Inter: ' . $this->tokenError);
+            }
             return ['status' => 200, 'body' => json_encode(['access_token' => 'tok-' . (++$this->sequence), 'expires_in' => 3600])];
         }
         if ($this->failNext) {
@@ -96,6 +101,21 @@ final class FakeInterHttp implements InterHttp
             'boleto' => $hasBoleto ? ['nossoNumero' => '9' . $digits, 'codigoBarras' => '07799' . str_repeat('0', 29) . $digits, 'linhaDigitavel' => '07790.00009 ' . $digits . ' TESTE'] : null,
             'pix' => $hasBoleto ? ['txid' => 'TXIDTESTE' . $digits, 'pixCopiaECola' => '00020101021226TESTE' . $digits] : null,
         ];
+    }
+
+    /**
+     * ZIP montado à mão (sem ZipArchive), como o pacote que o banco entrega. @param array<string,string> $files nome => conteúdo
+     */
+    public static function zip(array $files, bool $deflate = true): string
+    {
+        $local = $central = '';
+        foreach ($files as $name => $content) {
+            $data = $deflate ? (string)gzdeflate($content) : $content;
+            $head = pack('vvvvvVVVvv', 20, 0, $deflate ? 8 : 0, 0, 0, crc32($content), strlen($data), strlen($content), strlen($name), 0);
+            $central .= "PK\x01\x02" . pack('v', 20) . $head . pack('vvvVV', 0, 0, 0, 0, strlen($local)) . $name;
+            $local .= "PK\x03\x04" . $head . $name . $data;
+        }
+        return $local . $central . "PK\x05\x06" . pack('vvvvVVv', 0, 0, count($files), count($files), strlen($central), strlen($local), 0);
     }
 
     /** Par certificado/chave autoassinado gerado na hora (nunca um certificado real). @return array{0:string,1:string} */

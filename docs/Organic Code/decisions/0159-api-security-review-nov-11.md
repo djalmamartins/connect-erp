@@ -1,4 +1,4 @@
-# ADR 0158 — Revisão de segurança da API e das exportações (11/11/2026)
+# ADR 0159 — Revisão de segurança da API e das exportações (11/11/2026)
 
 - Situação: aceita (11/11/2026)
 - Contexto: pedido do Djalma de 11/11 ("tem mais alguma coisa para fazer ou melhorar?" → revisão de segurança).
