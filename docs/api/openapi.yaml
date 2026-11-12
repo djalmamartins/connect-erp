@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/legal-cases:
+    get:
+      operationId: legalCasePortfolio
+      summary: Carteira da cobrança judicial do condomínio por fase (processos, valor cobrado, recuperado e ainda em aberto, parados sem andamento, sem advogado, idade média e abertos e encerrados em 12 meses), somente leitura (erp.access e erp.collections.view, ADR 0250)
+      description: >-
+        Uma linha por fase da cobrança, sempre as cinco, com cases, claimed_cents (cobrado na abertura), recovered_cents
+        (contas cobradas já pagas, pelo valor cobrado), still_open_cents (contas ativas ainda sem pagamento, pelo valor
+        atual), stale (processo não encerrado sem andamento há mais de stale_days dias; padrão 90, de 30 a 365),
+        without_lawyer e avg_age_days (da abertura até hoje ou até o encerramento); totals soma as linhas e recalcula a
+        média; opened_12m e closed_12m contam os abertos e os encerrados nos últimos 12 meses. Sem unidade, devedor,
+        advogado, número do processo, vara ou andamento. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: stale_days, in: query, schema: { type: integer, minimum: 30, maximum: 365, default: 90 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, stale_days, rows[{ status, status_label, cases, claimed_cents, recovered_cents, still_open_cents, stale, without_lawyer, avg_age_days }], totals { cases, claimed_cents, recovered_cents, still_open_cents, stale, without_lawyer, avg_age_days }, opened_12m, closed_12m } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /check-copies/link-entries:
     post:
       operationId: linkCheckCopiesToEntries

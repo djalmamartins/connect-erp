@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0250.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0250, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0251.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0251, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -252,3 +252,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0247](../Organic%20Code/decisions/0247-move-settlement.md) | Baixa em lote dos agendamentos de mudança com a data já passada pelo cadastro (Realizada ou Cancelada, mantendo a data), com as saídas cuja unidade ainda tem inquilino apontadas para a saída de moradores, tudo ou nada, prévia e auditoria, sem dado pessoal | Aceita |
 | [0248](../Organic%20Code/decisions/0248-maintenance-compliance.md) | Cumprimento do plano de manutenções num período por periodicidade: no prazo, com atraso e a média de dias, atrasadas sem baixa, a vencer, taxa no prazo e concluídas sem laudo, somente leitura e sem dado da manutenção | Aceita |
 | [0249](../Organic%20Code/decisions/0249-check-copy-matching.md) | Vínculo em lote das cópias de cheques sem lançamento ao único lançamento pago que confere (mesma conta, mesmo valor, pago no prazo), pelo cadastro e sem tocar o lançamento, tudo ou nada, prévia e auditoria, sem favorecido | Aceita |
+| [0250](../Organic%20Code/decisions/0250-legal-case-portfolio.md) | Carteira da cobrança judicial do condomínio por fase: processos, valor cobrado, recuperado e ainda em aberto, parados sem andamento, sem advogado, idade média e abertos e encerrados em 12 meses, somente leitura e sem dado do processo | Aceita |
