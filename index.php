@@ -313,6 +313,8 @@ $route->post("/check-copies/link-entries", "CheckCopyMatching:store", null, \Sou
 $route->get("/reports/legal-cases", "LegalCasePortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Encerramento em lote dos processos de cobrança com as contas quitadas (ADR 0251). Antes do laço dos cadastros.
 $route->post("/legal-cases/close-settled", "LegalCaseSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobertura dos contatos úteis do condomínio por serviço, somente leitura (ADR 0252). Antes do laço dos cadastros.
+$route->get("/reports/contact-coverage", "ContactCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
