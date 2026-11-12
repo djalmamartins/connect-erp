@@ -2121,6 +2121,518 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/employee-headcount:
+    get:
+      operationId: employeeHeadcount
+      summary: Quadro de funcionários e folha por função e turno (ativos no fim do período, salário somado e médio, admissões e desligamentos no período), somente leitura (erp.employees.view, ADR 0224)
+      description: >-
+        Ativo = cadastro ativo, admitido até "to" e sem desligamento até "to". Salário somado e média dos ativos com
+        salário. Admissões e desligamentos dentro do período. Sem turno = "Sem turno"; sem função = "Sem função". Os totais
+        são a soma das linhas. Saem só grupos e somas: nenhum nome, CPF, contato ou id de funcionário. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 731 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ job, job_label, shift, shift_label, active, with_salary, salary_total_cents, salary_avg_cents, hires, terminations }], totals { active, with_salary, salary_total_cents, salary_avg_cents, hires, terminations } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/ticket-service-times:
+    get:
+      operationId: ticketServiceTimes
+      summary: Tempo de atendimento dos chamados do condomínio por área e prioridade (abertos, concluídos, no prazo, atrasados, vencidos em aberto e tempo médio), somente leitura (erp.access, ADR 0226)
+      description: >-
+        Chamados do condomínio abertos no período. Prazo de cada prioridade pelo TicketService::slaHours; no prazo =
+        resolvido até o due_at. Tempo médio = minutos somados ÷ concluídos com data de resolução. Os totais são a soma das
+        linhas. A categoria livre fica de fora. Sem protocolo, assunto, mensagem, solicitante, unidade ou responsável. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ area, area_label, priority, priority_label, sla_hours, created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct }], totals { created, done, open, timed, on_time, late, overdue_open, resolution_minutes_total, avg_resolution_hours, on_time_pct } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /common-areas/booking-mode:
+    post:
+      operationId: changeCommonAreaBookingMode
+      summary: Bloqueio e liberação em lote das áreas comuns do condomínio (modo de reserva do cadastro), tudo ou nada e com prévia (erp.access, erp.common_areas.view e erp.common_areas.manage, ADR 0229)
+      description: >-
+        Cada área é regravada pelo cadastro das áreas comuns só com o novo modo de reserva (approval, free, blocked ou
+        none). Recusa área não encontrada no condomínio, inativa ou já no modo pedido e, para blocked ou none, área com
+        reserva aguardando ou confirmada de hoje em diante. Nenhuma reserva é tocada e nenhum aviso é enviado. Auditoria
+        update do formulário e booking_mode por área. Sem morador ou unidade na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, area_ids, booking_mode, reason], properties: { condominium_id: { type: integer }, area_ids: { type: array, items: { type: integer }, minItems: 1, maxItems: 100 }, booking_mode: { type: string, enum: [approval, free, blocked, none] }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, booking_mode, booking_mode_label, reason, count, changed, areas[{ id, name, from_mode, to_mode, upcoming_reservations }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /check-copies/link-entries:
+    post:
+      operationId: linkCheckCopiesToEntries
+      summary: Vínculo em lote das cópias de cheques sem lançamento ao único lançamento pago que confere (mesma conta, mesmo valor, pago no prazo), pelo cadastro, tudo ou nada e com prévia (erp.access, erp.check_copies.view, erp.check_copies.manage e erp.entries.view, ADR 0249)
+      description: >-
+        Sem check_copy_ids, entram os cheques emitidos e sem lançamento do condomínio; os de conta bancária inativa ou
+        imagem removida ficam de fora (skipped_inactive_link). Confere a despesa ativa paga pela mesma conta, com o mesmo
+        valor, paga do dia do cheque até window_days depois (padrão 30, de 0 a 120) e ainda não ligada a outra cópia de
+        cheque. Só entra o par sem dúvida; os sem lançamento que confira (skipped_no_match) e os com mais de um, ou com o
+        mesmo lançamento de outro cheque (skipped_ambiguous), ficam como estão. Com check_copy_ids, recusa cheque não
+        encontrado no condomínio, cancelado, já ligado, de conta inativa ou imagem removida, sem par ou com dúvida. Cada
+        cheque é regravado pelo cadastro só com o lançamento (auditoria update do formulário e link_entry por cheque); o
+        lançamento não é tocado. Nada é apagado e nenhum aviso é enviado. Sem favorecido, descrição ou documento na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, window_days: { type: integer, minimum: 0, maximum: 120, default: 30 }, check_copy_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, window_days, reason, skipped_inactive_link, skipped_no_match, skipped_ambiguous, count, changed, checks[{ id, check_number, issued_on, amount_cents, entry_id, paid_on, days_to_payment }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou cheque recusado (errors com _form ou os erros do formulário, e _check); nada é gravado' }
+  /reports/maintenance-compliance:
+    get:
+      operationId: maintenanceCompliance
+      summary: Cumprimento do plano de manutenções num período, por periodicidade (no prazo, com atraso e a média de dias, atrasadas sem baixa, a vencer, canceladas, taxa no prazo e concluídas sem laudo), somente leitura (erp.access e erp.maintenances.view, ADR 0248)
+      description: >-
+        Entram as manutenções com a data prevista de from a to (padrão os últimos 12 meses até hoje; até 3 anos). Uma
+        linha por periodicidade do cadastro, sempre todas, com planned (menos as canceladas), done_on_time (concluída até
+        a data prevista), done_late (depois, com avg_delay_days), overdue (agendada ou em execução com a data prevista antes
+        de reference_on, o fim do período ou hoje), upcoming, cancelled, on_time_rate (no prazo sobre as que venceram, em
+        %) e done_without_document (concluída sem o laudo no Disco Virtual do condomínio); totals soma as linhas e recalcula
+        as médias. Sem serviço, fornecedor, descrição ou documento. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = 12 meses antes do fim' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, reference_on, rows[{ frequency, frequency_label, planned, done_on_time, done_late, overdue, upcoming, cancelled, done_without_document, avg_delay_days, on_time_rate }], totals { planned, done_on_time, done_late, overdue, upcoming, cancelled, done_without_document, avg_delay_days, on_time_rate } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /moves/settle-past:
+    post:
+      operationId: settlePastMoves
+      summary: Baixa em lote dos agendamentos de mudança com a data já passada (Realizada ou Cancelada pelo cadastro, mantendo a data), tudo ou nada e com prévia (erp.access, erp.moves.view e erp.moves.manage, ADR 0247)
+      description: >-
+        Sem move_ids, entram os agendamentos "Agendada" do condomínio com a data anterior a before (padrão hoje, nunca
+        depois de hoje), dos tipos em kinds (padrão entrada e saída); os de unidade inativa ficam de fora
+        (skipped_inactive_unit). Com move_ids, recusa agendamento não encontrado no condomínio, já realizado ou cancelado,
+        com a data ainda por vir ou de unidade inativa. outcome done (padrão) marca Realizada; inactive marca Cancelada (não
+        compareceu). Cada agendamento é regravado pelo cadastro só com a situação, mantendo a data e o período (auditoria
+        update do formulário e settle por agendamento). move_outs_to_review conta as unidades de uma saída realizada que
+        ainda têm inquilino ou morador ativo, que não são tocadas. Nada é apagado e nenhum aviso é enviado. Sem morador,
+        unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, outcome: { type: string, enum: [done, inactive], default: done }, kinds: { type: array, items: { type: string, enum: [entrada, saida] } }, move_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, outcome, kinds, reason, skipped_inactive_unit, move_outs_to_review, count, changed, moves[{ id, kind, scheduled_on, period, days_since }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou agendamento recusado (errors com _form ou os erros do formulário, e _move); nada é gravado' }
+  /reports/contract-portfolio:
+    get:
+      operationId: contractPortfolio
+      summary: Carteira de contratos do condomínio numa data (contratos e valor mensal por faixa de vigência e por índice de reajuste, sem documento, encerráveis e reajustes nos próximos 90 dias), somente leitura (erp.access e erp.contracts.view, ADR 0246)
+      description: >-
+        Uma linha por faixa, sempre as seis (vencido e ainda vigente no cadastro; em vigor terminando em até 30, 31 a 90 ou
+        depois de 90 dias; prazo indeterminado; começando depois da data), com contracts, monthly_cents, by_readjustment
+        (os índices do cadastro, somando monthly_cents) e without_document (sem o contrato assinado no Disco Virtual do
+        condomínio); totals é a soma das linhas. closable conta os vencidos com fornecedor ativo e documento, o que o
+        encerramento em lote (0245) pegaria; readjustment_due conta os contratos em vigor com índice cujo aniversário do
+        início cai nos próximos 90 dias, com a soma mensal; ended e cancelled contam os encerrados e os cancelados. Sem
+        objeto, fornecedor, documento ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, contracts, monthly_cents, by_readjustment{ ipca, igpm, nenhum }, without_document }], totals { contracts, monthly_cents, by_readjustment, without_document }, closable, readjustment_due { contracts, monthly_cents }, ended, cancelled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /contracts/close-ended:
+    post:
+      operationId: closeEndedContracts
+      summary: Encerramento em lote dos contratos com a vigência terminada (situação Encerrado pelo cadastro, mantendo o fim e o valor), tudo ou nada e com prévia (erp.access, erp.contracts.view e erp.contracts.manage, ADR 0245)
+      description: >-
+        Sem contract_ids, entram os contratos vigentes do condomínio com fim anterior a before (padrão hoje, nunca depois
+        de hoje); os de fornecedor inativo ou documento removido ficam de fora (skipped_inactive_link). Com contract_ids,
+        recusa contrato não encontrado no condomínio, encerrado ou cancelado, de prazo indeterminado, com a vigência ainda
+        valendo ou de fornecedor inativo ou documento removido. Cada contrato é regravado pelo cadastro só com a situação
+        Encerrado, mantendo o fim e o valor mensal (auditoria update do formulário e close por contrato). monthly_cents
+        soma o valor mensal dos encerrados; recurring_to_review conta os lançamentos fixos vigentes com o mesmo fornecedor,
+        que não são tocados. Nada é apagado e nenhum aviso é enviado. Sem objeto, fornecedor, documento ou observação na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, contract_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, skipped_inactive_link, monthly_cents, recurring_to_review, count, changed, contracts[{ id, ends_on, days_since_end, monthly_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou contrato recusado (errors com _form ou os erros do formulário, e _contract); nada é gravado' }
+  /reports/insurance-coverage:
+    get:
+      operationId: insuranceCoverage
+      summary: Cobertura de seguros do condomínio numa data (apólices por faixa de vigência, prêmio, cobertura e sem PDF; coberto ou não e até quando sem interrupção), somente leitura (erp.access e erp.insurances.view, ADR 0244)
+      description: >-
+        Uma linha por faixa, sempre as cinco (vencida e ainda vigente no cadastro; em vigor terminando em até 30, 31 a 90 ou
+        depois de 90 dias; começando depois da data), com policies, premium_cents, coverage_cents e without_pdf (sem a
+        apólice no Disco Virtual do condomínio); totals é a soma das linhas. covered diz se há apólice em vigor na data on
+        (padrão hoje); covered_until é o último dia coberto sem interrupção, emendando as apólices que começam até o dia
+        seguinte ao fim da anterior (null = descoberto); cancelled conta as canceladas. Sem seguradora, apólice, corretora
+        ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, policies, premium_cents, coverage_cents, without_pdf }], totals { policies, premium_cents, coverage_cents, without_pdf }, covered, covered_until, cancelled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /board-members/expire-terms:
+    post:
+      operationId: expireBoardTerms
+      summary: Encerramento em lote dos mandatos vencidos do síndico, do subsíndico e do conselho (situação inativa pelo cadastro, mantendo o fim do mandato), tudo ou nada e com prévia (erp.access, erp.board.view e erp.board.manage, ADR 0243)
+      description: >-
+        Sem member_ids, entram os membros ativos do condomínio com o fim do mandato anterior a before (padrão hoje, nunca
+        depois de hoje), dos cargos em roles (padrão todos); os de unidade inativa (skipped_inactive_unit) e os sem e-mail
+        ou telefone (skipped_incomplete) ficam de fora. Com member_ids, recusa membro não encontrado no condomínio, já
+        inativo, sem fim de mandato, com o mandato ainda valendo, de unidade inativa ou sem e-mail ou telefone. Cada membro
+        é regravado pelo cadastro só com a situação inativa, mantendo o fim do mandato (auditoria update do formulário e
+        expire por membro). sindico_active_after conta os síndicos ativos que restam. Nada é apagado e nenhum aviso é
+        enviado. Sem nome, documento, contato ou unidade na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, roles: { type: array, items: { type: string, enum: [sindico, subsindico, fiscal, consultivo, suplente] } }, member_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, roles, reason, skipped_inactive_unit, skipped_incomplete, sindico_active_after, count, changed, members[{ id, role, term_ends_on, days_since_end }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou membro recusado (errors com _form ou os erros do formulário, e _member); nada é gravado' }
+  /reports/resident-link-endings:
+    get:
+      operationId: residentLinkEndings
+      summary: Vínculos de proprietários, inquilinos e moradores perto do fim ou vencidos sem baixa, por faixa de prazo e tipo de vínculo, somente leitura (erp.access e erp.residents.view, ADR 0242)
+      description: >-
+        Uma linha por faixa, sempre as seis (vencido há mais de 90, 31 a 90 e até 30 dias; termina em até 30, 31 a 60 e 61
+        a 90 dias), com os vínculos ativos, by_relationship (os tipos do cadastro) e inactive_unit (unidade inativa ou
+        excluída); totals é a soma das linhas. Vencido = fim anterior à data on (padrão hoje); o próprio dia ainda vale.
+        closable conta os vencidos com unidade ativa, o que o encerramento em lote (0241) pegaria com before = on;
+        open_ended conta os sem fim e later os com fim depois de 90 dias. Sem nome, documento, contato, unidade ou data
+        individual. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, links, by_relationship{ owner, tenant, resident, financial }, inactive_unit }], totals { links, by_relationship, inactive_unit }, closable, open_ended, later } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /residents/expire-ended:
+    post:
+      operationId: expireEndedResidentLinks
+      summary: Encerramento em lote dos vínculos de proprietários, inquilinos e moradores cujo fim já passou e que seguem ativos (situação inativa pelo cadastro, mantendo o fim), tudo ou nada e com prévia (erp.access, erp.residents.view e erp.residents.manage, ADR 0241)
+      description: >-
+        Sem resident_ids, entram os vínculos ativos do condomínio com fim anterior a before (padrão hoje, nunca depois de
+        hoje), dos tipos em relationships (padrão todos); os de unidade inativa ficam de fora (skipped_inactive_unit). Com
+        resident_ids, recusa vínculo não encontrado no condomínio, já encerrado, sem fim informado (use a saída de
+        moradores), cujo fim ainda não passou ou de unidade inativa. Cada vínculo é regravado pelo cadastro só com a
+        situação inativa, mantendo o próprio fim (auditoria update do formulário e expire por vínculo), e os convites
+        pendentes do portal dessas pessoas são revogados. Nada é apagado e nenhum aviso é enviado. Sem nome, documento,
+        contato ou unidade na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, relationships: { type: array, items: { type: string, enum: [owner, tenant, resident, financial] } }, resident_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, relationships, reason, skipped_inactive_unit, invitations_revoked, count, changed, links[{ id, relationship, ends_on, days_since_end }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou vínculo recusado (errors com _form ou os erros do formulário, e _resident); nada é gravado' }
+  /reports/unit-occupancy:
+    get:
+      operationId: unitOccupancy
+      summary: Perfil de ocupação das unidades do condomínio numa data (alugadas, com morador, só proprietário, só responsável financeiro e sem vínculo, por tipo de unidade) e os vínculos por tipo, somente leitura (erp.access, erp.units.view e erp.residents.view, ADR 0240)
+      description: >-
+        Uma linha por situação, sempre as cinco, com as unidades ativas e by_type (os tipos do cadastro); totals é a soma
+        das linhas. Um vínculo vale na data on (padrão hoje) quando está ativo, já começou (ou não tem início) e não
+        terminou antes de on. links conta os vínculos valendo por tipo; unlinked conta os que não apontam para uma
+        unidade ativa. Sem nome, documento, contato, rótulo de unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ situation, situation_label, units, by_type{ apartamento, casa, sala, loja, garagem, outro } }], totals { units, by_type }, links { rows[{ relationship, relationship_label, links }], linked, unlinked } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /commitments/cancel-stale:
+    post:
+      operationId: cancelStaleCommitments
+      summary: Cancelamento em lote dos empenhos em aberto há muito tempo (situação Cancelado pelo cadastro), tudo ou nada e com prévia (erp.access, erp.commitments.view e erp.commitments.manage, ADR 0239)
+      description: >-
+        Sem commitment_ids, entram os empenhos em aberto do condomínio feitos há mais de older_than_days dias (padrão 90,
+        mínimo 30); os com lançamento ligado (skipped_with_entry) e os de fornecedor inativo ou documento removido
+        (skipped_inactive_link) ficam de fora. Com commitment_ids, recusa empenho não encontrado no condomínio, liquidado ou
+        cancelado, com lançamento ligado, dentro do prazo, ou de fornecedor inativo ou documento removido. Cada empenho é
+        regravado pelo cadastro só com a situação Cancelado (auditoria update do formulário e cancel por empenho). Nada é
+        apagado e nenhum aviso é enviado. Sem descrição, fornecedor, documento ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, older_than_days: { type: integer, minimum: 30, maximum: 3650, default: 90 }, commitment_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, committed_until, reason, skipped_with_entry, skipped_inactive_link, count, amount_cents, changed, commitments[{ id, committed_on, days_open, amount_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou empenho recusado (errors com _form ou os erros do formulário, e _commitment); nada é gravado' }
+  /reports/commitments:
+    get:
+      operationId: commitmentsPosition
+      summary: Posição dos empenhos do condomínio (empenhados, liquidados e cancelados no período, tempo de liquidação, liquidações sem lançamento e idade dos em aberto), somente leitura (erp.access e erp.commitments.view, ADR 0238)
+      description: >-
+        rows traz uma linha por situação do cadastro (Empenhado, Liquidado, Cancelado) com os empenhos feitos no período
+        (quantidade e valor), e totals é a soma das linhas. settlement resume os liquidados do período: com e sem o
+        lançamento que pagou, e o tempo entre empenho e liquidação (dias somados, média e máximo). open conta os
+        empenhados ainda em aberto feitos até "to", pela idade (até 30 dias, 31 a 60, 61 a 90, mais de 90), e total é a
+        soma das faixas. Sem descrição, fornecedor, documento ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ status, status_label, commitments, amount_cents }], totals { commitments, amount_cents }, settlement { count, with_entry, without_entry, dated, days_total, avg_days, max_days }, open { by_age{ ate_30, de_31_a_60, de_61_a_90, mais_de_90 }, total } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /waitlist/expire:
+    post:
+      operationId: expireWaitlistEntries
+      summary: Baixa em lote das inscrições da lista de espera das áreas comuns cuja data desejada passou (situação Desistiu pelo cadastro), tudo ou nada e com prévia (erp.access, erp.reservations.view e erp.reservations.manage, ADR 0237)
+      description: >-
+        Sem entry_ids, entram as inscrições aguardando do condomínio com data desejada anterior a before (padrão hoje;
+        nunca depois de hoje); as de área comum ou unidade inativa ficam de fora (skipped_inactive_link). Com entry_ids,
+        recusa inscrição não encontrada no condomínio, atendida ou desistente, com a data ainda por vir, ou de área ou
+        unidade inativa. Cada inscrição é regravada pelo cadastro só com a situação Desistiu (auditoria update do
+        formulário e expire por inscrição). Nenhum aviso é enviado. Sem morador, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, entry_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, skipped_inactive_link, count, changed, entries[{ id, common_area_id, desired_on, called }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou inscrição recusada (errors com _form ou os erros do formulário, e _entry); nada é gravado' }
+  /reports/pets-vehicles:
+    get:
+      operationId: petsVehiclesSummary
+      summary: Resumo dos animais de estimação (espécie, porte, vacinação) e dos veículos (tipo, vaga) cadastrados no condomínio e das unidades com um, dois ou três ou mais, somente leitura (erp.access, erp.pets.view e erp.vehicles.view, ADR 0236)
+      description: >-
+        Só os registros ativos dos cadastros, sem os excluídos. pets.rows traz uma linha por espécie e vehicles.rows uma
+        linha por tipo, sempre as opções do cadastro; os totais são a soma das linhas. units traz as unidades ativas e,
+        para animais e veículos, quantas unidades têm um, dois ou três ou mais (a unidade é a vinculada ou, sem vínculo, o
+        texto da unidade, só para contar). Sem nome, raça, placa, modelo, cor, vaga, dono, tutor, unidade ou observação.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, pets { rows[{ species, species_label, pets, by_size{ pequeno, medio, grande, sem_porte }, vaccinated, not_vaccinated }], totals }, vehicles { rows[{ kind, kind_label, vehicles, with_spot, without_spot }], totals }, units { active_units, with_pets{ um, dois, tres_ou_mais, units }, with_vehicles{ um, dois, tres_ou_mais, units } } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /visitors/expire:
+    post:
+      operationId: expireVisitorAuthorizations
+      summary: Bloqueio em lote das autorizações de visitantes vencidas e ainda liberadas (situação Bloqueado pelo cadastro), tudo ou nada e com prévia (erp.access, erp.visitors.view e erp.visitors.manage, ADR 0235)
+      description: >-
+        Sem visitor_ids, entram os visitantes liberados do condomínio, sem acesso permanente, com "autorizado até"
+        anterior a before (padrão hoje; nunca depois de hoje). Com visitor_ids, recusa visitante não encontrado no
+        condomínio, já bloqueado, com acesso permanente, sem data ou ainda não vencido. Cada visitante é regravado pelo
+        cadastro só com a situação Bloqueado (auditoria update do formulário e expire por visitante). Nenhum aviso é
+        enviado. Sem nome, documento, telefone, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, visitor_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, count, changed, visitors[{ id, valid_until, days_expired }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou visitante recusado (errors com _form ou os erros do formulário, e _visitor); nada é gravado' }
+  /reports/visitor-authorizations:
+    get:
+      operationId: visitorAuthorizations
+      summary: Situação das autorizações de visitantes do condomínio numa data (permanentes, válidas, vencendo, vencidas e ainda liberadas, sem data e bloqueadas), somente leitura (erp.access e erp.visitors.view, ADR 0234)
+      description: >-
+        Uma linha por situação, sempre as seis, com os visitantes do cadastro (sem os excluídos) na data on (padrão hoje)
+        e a janela de within_days dias (padrão 30). totals.visitors é a soma das linhas; attention = vencidos e ainda
+        liberados + liberados sem data nem acesso permanente. expired_by_age separa os vencidos e liberados pelos dias
+        desde o vencimento. Sem nome, documento, telefone, unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+        - { name: within_days, in: query, schema: { type: integer, minimum: 1, maximum: 365, default: 30 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, within_days, window_until, rows[{ situation, situation_label, status_label, visitors }], totals { visitors, active, attention }, expired_by_age { ate_30, de_31_a_90, mais_de_90 } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /lost-found/dispose:
+    post:
+      operationId: disposeLostFound
+      summary: Destino em lote (doação ou descarte) dos achados e perdidos guardados além do prazo de guarda, pelo cadastro (situação Descartado), tudo ou nada e com prévia (erp.access, erp.lost_found.view e erp.lost_found.manage, ADR 0233)
+      description: >-
+        Sem item_ids, entram os itens guardados do condomínio achados há mais de older_than_days dias (padrão 90, mínimo
+        30). Com item_ids, recusa item não encontrado no condomínio, devolvido ou descartado, ou ainda dentro do prazo.
+        Cada item é regravado pelo cadastro só com a situação Descartado; o destino (doacao ou descarte) e o motivo ficam
+        na auditoria dispose, além da update do formulário. Nenhum aviso é enviado. Sem item, local, quem achou ou
+        observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, destination, reason], properties: { condominium_id: { type: integer }, destination: { type: string, enum: [doacao, descarte] }, older_than_days: { type: integer, minimum: 30, maximum: 3650, default: 90 }, item_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, found_until, destination, destination_label, reason, count, changed, items[{ id, found_on, days_kept }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou item recusado (errors com _form ou os erros do formulário, e _item); nada é gravado' }
+  /reports/lost-found:
+    get:
+      operationId: lostFoundSummary
+      summary: Resumo dos achados e perdidos do condomínio (itens achados no período por situação, tempo de devolução e idade dos guardados), somente leitura (erp.access e erp.lost_found.view, ADR 0232)
+      description: >-
+        rows traz uma linha por situação do cadastro (Guardado, Devolvido, Descartado) com os itens achados no período, e
+        totals.items é a soma das linhas. returns resume os devolvidos do período (com data: dias somados, média e
+        máximo). custody conta os guardados hoje achados até "to", pela idade (até 30 dias, 31 a 90, 91 a 180, mais de
+        180), e total é a soma das faixas. Sem item, local, quem achou, a quem foi devolvido ou observação. Não grava nem
+        envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ status, status_label, items }], totals { items }, returns { count, dated, days_total, avg_days, max_days }, custody { ate_30, de_31_a_90, de_91_a_180, mais_de_180, total } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /visit-forecasts/expire:
+    post:
+      operationId: expireVisitForecasts
+      summary: Baixa em lote das visitas previstas que passaram sem acontecer (situação Cancelada pelo cadastro), tudo ou nada e com prévia (erp.access, erp.visit_forecasts.view e erp.visit_forecasts.manage, ADR 0231)
+      description: >-
+        Sem forecast_ids, entram as visitas previstas em aberto do condomínio cuja data (ou o fim, expected_until) é
+        anterior a before (padrão hoje; nunca depois de hoje). Com forecast_ids, recusa visita não encontrada no
+        condomínio, realizada ou cancelada, cuja data ainda não passou ou com acesso registrado na portaria (essa
+        aconteceu: marque como realizada). Sem forecast_ids, as visitas com acesso ficam de fora e a contagem sai em
+        skipped_with_access. Cada visita é regravada pelo cadastro só com a
+        situação Cancelada (auditoria update do formulário e expire por visita). Nenhum aviso é enviado. Sem visitante,
+        documento, unidade, autorizador ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, forecast_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, skipped_with_access, count, changed, forecasts[{ id, expected_on, expected_until }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou visita recusada (errors com _form ou os erros do formulário, e _forecast); nada é gravado' }
+  /reports/gatehouse-traffic:
+    get:
+      operationId: gatehouseTraffic
+      summary: Movimento da portaria do condomínio por tipo de acesso no período (entradas, com veículo, com unidade, de visita prevista, saídas sem registro, permanência e faixa do dia) e as visitas previstas, somente leitura (erp.access, erp.access_logs.view e erp.visit_forecasts.view, ADR 0230)
+      description: >-
+        Uma linha por tipo do registro de acessos (visitante, prestador, entregador, morador), sem os excluídos e sem os
+        cancelados. Permanência = saída menos entrada no mesmo dia; faixas madrugada (0–6 h), manhã, tarde e noite. Os
+        totais são a soma das linhas. As visitas previstas no período saem à parte (total = realizadas + canceladas + em
+        aberto; overdue = em aberto com a data já passada). Sem nome, documento, placa, unidade, portaria ou observação.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ kind, kind_label, entries, with_vehicle, with_unit, from_forecast, exited, no_exit, timed, stay_minutes_total, avg_stay_minutes, by_band{ madrugada, manha, tarde, noite } }], totals { entries, with_vehicle, with_unit, from_forecast, exited, no_exit, timed, stay_minutes_total, avg_stay_minutes, by_band }, forecasts { total, done, cancelled, open, overdue } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reports/common-area-usage:
+    get:
+      operationId: commonAreaUsage
+      summary: Uso dos espaços comuns do condomínio por área no período (reservas confirmadas, aguardando e canceladas, taxa, dias usados, ocupação, unidades distintas e dia da semana), somente leitura (erp.access e erp.reservations.view, ADR 0228)
+      description: >-
+        Uma linha por área comum (as ativas, mesmo sem reserva, e as inativas com reserva no período), com os rótulos do
+        cadastro. Taxa só das confirmadas; days_used = dias distintos com reserva confirmada; occupancy_pct = days_used ÷
+        dias do período; units = unidades distintas (só a contagem). Os totais são a soma das linhas. Sem morador, unidade,
+        horário ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = primeiro dia do mês de "to"' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje; período de até 366 dias' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, period_days, rows[{ area_id, name, booking_mode, booking_mode_label, area_active, reservations, confirmed, pending, cancelled, fee_cents, days_used, occupancy_pct, units, cancel_pct, by_weekday{ mon..sun } }], totals { areas, reservations, confirmed, pending, cancelled, fee_cents, days_used, cancel_pct, by_weekday } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/agreement-watch:
     get:
       operationId: agreementWatch
@@ -3223,6 +3735,46 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /employees/terminate:
+    post:
+      operationId: terminateEmployees
+      summary: Desligamento em lote de funcionários (data e motivo), pelo formulário, tudo ou nada e com prévia (erp.employees.view e erp.employees.manage, ADR 0225)
+      description: >-
+        Grava só a data de desligamento pelo RegistryService::save do cadastro (a situação do cadastro não muda). Recusa
+        funcionário não encontrado, inativo, já desligado (a data não é trocada aqui) ou admitido depois da data. Data até
+        30 dias à frente. Auditoria terminate por funcionário. Nada é enviado (rescisão e eSocial ficam fora). Sem nome, CPF,
+        contato ou salário na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, employee_ids, terminated_on, reason], properties: { condominium_id: { type: integer }, employee_ids: { type: array, items: { type: integer }, maxItems: 300 }, terminated_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, terminated_on, reason, count, changed, employees[{ id, job, shift, hired_on, terminated_on }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou funcionário recusado (errors com _form e _employee, ou os erros do formulário); nada é gravado' }
+  /employees/readjust-salaries:
+    post:
+      operationId: readjustEmployeeSalaries
+      summary: Reajuste salarial em lote dos funcionários do condomínio (percentual sobre o salário, mesma regra da 0204), pelo formulário, tudo ou nada e com prévia (erp.employees.view e erp.employees.manage, ADR 0223)
+      description: >-
+        Sem employee_ids, entram os funcionários ativos com salário e sem desligamento até effective_on (opcionalmente só
+        de uma função). Com employee_ids, recusa funcionário não encontrado, inativo, desligado até a data ou sem
+        salário. Auditoria readjust por funcionário. Nada é enviado; os lançamentos fixos de salário não mudam (reajuste da
+        0204). Sem nome, CPF, telefone ou e-mail na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, percent, effective_on, reason], properties: { condominium_id: { type: integer }, percent: { type: string, example: '5,5' }, effective_on: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, job: { type: string }, employee_ids: { type: array, items: { type: integer }, maxItems: 300 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, percent, effective_on, job, reason, before_cents, after_cents, count, changed, employees[{ id, job, shift, salary_before_cents, salary_after_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou funcionário recusado (errors com _form e _employee, ou os erros do formulário); nada é gravado' }
   /reservations/expire-pending:
     post:
       operationId: expirePendingReservations
@@ -4877,6 +5429,27 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '419': { description: CSRF inválido }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /tickets/reassign:
+    post:
+      operationId: reassignTickets
+      summary: Reatribuição em lote dos chamados em aberto de um responsável para outro, no condomínio, tudo ou nada e com prévia (studio.access e support.manage, ADR 0227)
+      description: >-
+        Sem ticket_ids, entram os chamados em aberto (aberto, em atendimento, aguardando cliente) do condomínio atribuídos
+        a from_user_id. Com ticket_ids, recusa chamado não encontrado no condomínio, concluído ou de outro responsável. O
+        novo responsável precisa ser da equipe do Help Desk. Só o responsável muda; o histórico do chamado ganha o evento
+        assigned_to, e a auditoria um registro reassign por chamado. Nenhum aviso é enviado. Sem protocolo, assunto,
+        solicitante ou nome de responsável na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, from_user_id, to_user_id, reason], properties: { condominium_id: { type: integer }, from_user_id: { type: integer }, to_user_id: { type: integer }, reason: { type: string, minLength: 5, maxLength: 255 }, ticket_ids: { type: array, items: { type: integer }, maxItems: 500 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, from_user_id, to_user_id, reason, count, changed, tickets[{ id, priority, status, due_at }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou chamado recusado (errors com _form e _ticket); nada é gravado' }
   /tickets/{id}:
     get:
       operationId: showTicket

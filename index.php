@@ -162,6 +162,10 @@ $route->get("/reports/obligation-calendar", "ObligationCalendar:show", null, \So
 $route->get("/reports/meter-reading-review", "MeterReadingReview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inadimplência por bloco ou andar (ADR 0222), somente leitura.
 $route->get("/reports/delinquency-by-location", "DelinquencyByLocation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Quadro de funcionários e folha por função e turno (ADR 0224), somente leitura.
+$route->get("/reports/employee-headcount", "EmployeeHeadcount:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Tempo de atendimento dos chamados do condomínio (ADR 0226), somente leitura.
+$route->get("/reports/ticket-service-times", "TicketServiceTimes:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/agreement-fees", "CollectionReports:agreementFees", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/delinquents", "CollectionReports:delinquents", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/receipts", "CollectionReports:receipts", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -255,6 +259,56 @@ $route->post("/document-transit/settle", "DocumentTransitSettlement:store", null
 $route->post("/contracts/renew", "ContractRenewal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote das reservas que passaram sem aprovação (ADR 0221). Antes do laço dos cadastros (/reservations/{id}).
 $route->post("/reservations/expire-pending", "ReservationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reajuste salarial em lote dos funcionários (ADR 0223). Antes do laço dos cadastros (/employees/{id}).
+$route->post("/employees/readjust-salaries", "EmployeeSalaryReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Desligamento em lote de funcionários (ADR 0225). Antes do laço dos cadastros (/employees/{id}).
+$route->post("/employees/terminate", "EmployeeTermination:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reatribuição em lote dos chamados de um responsável para outro (ADR 0227). Antes do laço dos cadastros.
+$route->post("/tickets/reassign", "TicketReassignment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Uso dos espaços comuns do condomínio no período, somente leitura (ADR 0228). Antes do laço dos cadastros.
+$route->get("/reports/common-area-usage", "CommonAreaUsage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Bloqueio e liberação em lote das áreas comuns (ADR 0229). Antes do laço dos cadastros.
+$route->post("/common-areas/booking-mode", "CommonAreaBookingMode:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Movimento da portaria do condomínio no período, somente leitura (ADR 0230). Antes do laço dos cadastros.
+$route->get("/reports/gatehouse-traffic", "GatehouseTraffic:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote das visitas previstas vencidas em aberto (ADR 0231). Antes do laço dos cadastros.
+$route->post("/visit-forecasts/expire", "VisitForecastExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Resumo dos achados e perdidos do condomínio, somente leitura (ADR 0232). Antes do laço dos cadastros.
+$route->get("/reports/lost-found", "LostFoundSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Destino em lote dos achados e perdidos fora do prazo de guarda (ADR 0233). Antes do laço dos cadastros.
+$route->post("/lost-found/dispose", "LostFoundDisposal:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação das autorizações de visitantes numa data, somente leitura (ADR 0234). Antes do laço dos cadastros.
+$route->get("/reports/visitor-authorizations", "VisitorAuthorizations:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Bloqueio em lote das autorizações de visitantes vencidas e ainda liberadas (ADR 0235). Antes do laço dos cadastros.
+$route->post("/visitors/expire", "VisitorAuthorizationExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Resumo dos animais de estimação e dos veículos cadastrados, somente leitura (ADR 0236). Antes do laço dos cadastros.
+$route->get("/reports/pets-vehicles", "PetsVehiclesSummary:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote das inscrições vencidas da lista de espera (ADR 0237). Antes do laço dos cadastros.
+$route->post("/waitlist/expire", "WaitlistExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Posição dos empenhos do condomínio, somente leitura (ADR 0238). Antes do laço dos cadastros.
+$route->get("/reports/commitments", "CommitmentsPosition:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cancelamento em lote dos empenhos em aberto há muito tempo (ADR 0239). Antes do laço dos cadastros.
+$route->post("/commitments/cancel-stale", "CommitmentCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Perfil de ocupação das unidades numa data, somente leitura (ADR 0240). Antes do laço dos cadastros.
+$route->get("/reports/unit-occupancy", "UnitOccupancy:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos vínculos com o fim já passado, pelo cadastro (ADR 0241). Antes do laço dos cadastros.
+$route->post("/residents/expire-ended", "ResidentLinkExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Vínculos perto do fim ou vencidos, por faixa de prazo, somente leitura (ADR 0242). Antes do laço dos cadastros.
+$route->get("/reports/resident-link-endings", "ResidentLinkEndings:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos mandatos vencidos do síndico e do conselho, pelo cadastro (ADR 0243). Antes do laço dos cadastros.
+$route->post("/board-members/expire-terms", "BoardTermExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobertura de seguros do condomínio numa data, somente leitura (ADR 0244). Antes do laço dos cadastros.
+$route->get("/reports/insurance-coverage", "InsuranceCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos contratos com a vigência terminada, pelo cadastro (ADR 0245). Antes do laço dos cadastros.
+$route->post("/contracts/close-ended", "ContractClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Carteira de contratos do condomínio numa data, somente leitura (ADR 0246). Antes do laço dos cadastros.
+$route->get("/reports/contract-portfolio", "ContractPortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote dos agendamentos de mudança com a data já passada, pelo cadastro (ADR 0247). Antes do laço dos cadastros.
+$route->post("/moves/settle-past", "MoveSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cumprimento do plano de manutenções num período, somente leitura (ADR 0248). Antes do laço dos cadastros.
+$route->get("/reports/maintenance-compliance", "MaintenanceCompliance:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Vínculo em lote das cópias de cheques aos lançamentos pagos, pelo cadastro (ADR 0249). Antes do laço dos cadastros.
+$route->post("/check-copies/link-entries", "CheckCopyMatching:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
