@@ -115,6 +115,20 @@ final class LafayetteSample
             throw new DomainException('O condomínio Lafayette já existe. Use --conferir para checar os números.');
         }
         $months = self::competences($this->today);
+        try {
+            return $this->build($months);
+        } catch (\Throwable $error) {
+            // Os services abrem as próprias transações; se algo falhar no meio, apaga o que já entrou.
+            if ($this->condominiumId() !== null) {
+                $this->remove();
+            }
+            throw $error;
+        }
+    }
+
+    /** @return array<string,int> */
+    private function build(array $months): array
+    {
         $this->condominium($months[0]);
         $this->unitsAndPeople();
         $this->registers();
@@ -267,17 +281,25 @@ final class LafayetteSample
         // Plano de contas: reaproveita a conta do plano padrão com o mesmo código e natureza; o que faltar
         // entra no plano próprio do Lafayette (não mexe no padrão dos outros condomínios).
         foreach ([
-            ['1', 'receita', 'sintetica', 'Receitas'], ['1.01', 'receita', 'analitica', 'Taxa condominial'], ['1.02', 'receita', 'analitica', 'Fundo de reserva'],
-            ['1.03', 'receita', 'analitica', 'Consumo de água'], ['1.04', 'receita', 'analitica', 'Multas e juros'], ['1.05', 'receita', 'analitica', 'Rendimentos de aplicação'],
-            ['1.06', 'receita', 'analitica', 'Acordos'], ['1.07', 'receita', 'analitica', 'Cobranças extras'], ['1.08', 'receita', 'analitica', 'Reserva de áreas comuns'],
-            ['2', 'despesa', 'sintetica', 'Despesas'], ['2.01', 'despesa', 'analitica', 'Salários e encargos'], ['2.02', 'despesa', 'analitica', 'Água e esgoto'],
-            ['2.03', 'despesa', 'analitica', 'Energia elétrica'], ['2.04', 'despesa', 'analitica', 'Manutenção'], ['2.05', 'despesa', 'analitica', 'Limpeza e jardinagem'],
-            ['2.06', 'despesa', 'analitica', 'Seguro'], ['2.07', 'despesa', 'analitica', 'Administração'], ['2.08', 'despesa', 'analitica', 'Tarifas bancárias e IR'],
-            ['7', 'asset', 'sintetica', 'Ativo'], ['7.1', 'asset', 'sintetica', 'Disponível'], ['7.2', 'asset', 'analitica', 'Contas a receber'],
-            ['8', 'liability', 'sintetica', 'Passivo'], ['8.1', 'liability', 'analitica', 'Contas a pagar'], ['8.2', 'liability', 'analitica', 'Fundo de reserva'],
-            ['9', 'equity', 'sintetica', 'Patrimônio Líquido'], ['9.1', 'equity', 'analitica', 'Resultados acumulados'], ['9.2', 'equity', 'analitica', 'Resultado do exercício'],
-        ] as [$code, $nature, $kind, $name]) {
-            $this->accounts[$code] = $this->account($code, $nature, $kind, $name);
+            // chave => [código, natureza, tipo, nome]. Os códigos seguem o plano padrão da Connect (migrations 0704 e 0709);
+            // água e acordos não existem no padrão e ficam no plano próprio do Lafayette (1.91 e 1.92).
+            'receitas' => ['1', 'receita', 'sintetica', 'Receitas'], 'taxa' => ['1.01', 'receita', 'analitica', 'Taxa condominial'],
+            'fundo' => ['1.02', 'receita', 'analitica', 'Fundo de reserva'], 'multas' => ['1.03', 'receita', 'analitica', 'Multas e juros'],
+            'extras' => ['1.04', 'receita', 'analitica', 'Rateios e cotas extras'], 'rendimentos' => ['1.05', 'receita', 'analitica', 'Rendimentos de aplicação'],
+            'reservas' => ['1.06', 'receita', 'analitica', 'Locação de áreas comuns'], 'agua_receita' => ['1.91', 'receita', 'analitica', 'Consumo de água'],
+            'acordos' => ['1.92', 'receita', 'analitica', 'Acordos'],
+            'despesas' => ['2', 'despesa', 'sintetica', 'Despesas'], 'pessoal' => ['2.01', 'despesa', 'analitica', 'Pessoal e encargos'],
+            'agua' => ['2.02', 'despesa', 'analitica', 'Água e esgoto'], 'energia' => ['2.03', 'despesa', 'analitica', 'Energia elétrica'],
+            'manutencao' => ['2.04', 'despesa', 'sintetica', 'Manutenção e conservação'], 'bomba' => ['2.04.02', 'despesa', 'analitica', 'Manutenção hidráulica'],
+            'elevadores' => ['2.04.03', 'despesa', 'analitica', 'Elevadores'], 'jardinagem' => ['2.04.04', 'despesa', 'analitica', 'Jardinagem'],
+            'limpeza' => ['2.05', 'despesa', 'analitica', 'Limpeza e material de consumo'], 'seguro' => ['2.06', 'despesa', 'analitica', 'Seguros'],
+            'adm' => ['2.07', 'despesa', 'analitica', 'Administração e honorários'], 'tarifas' => ['2.08', 'despesa', 'analitica', 'Tarifas bancárias'],
+            'impostos' => ['2.09', 'despesa', 'analitica', 'Impostos e taxas'],
+            '7' => ['7', 'asset', 'sintetica', 'Ativo'], '7.1' => ['7.1', 'asset', 'sintetica', 'Disponível'], '7.2' => ['7.2', 'asset', 'analitica', 'Contas a receber'],
+            '8' => ['8', 'liability', 'sintetica', 'Passivo'], '8.1' => ['8.1', 'liability', 'analitica', 'Contas a pagar'], '8.2' => ['8.2', 'liability', 'analitica', 'Fundo de reserva'],
+            '9' => ['9', 'equity', 'sintetica', 'Patrimônio Líquido'], '9.1' => ['9.1', 'equity', 'analitica', 'Resultados acumulados'], '9.2' => ['9.2', 'equity', 'analitica', 'Resultado do exercício'],
+        ] as $key => [$code, $nature, $kind, $name]) {
+            $this->accounts[$key] = $this->account($code, $nature, $kind, $name);
         }
         $center = $this->save('cost_centers', ['condominium_id' => $this->condo, 'code' => 'LAF-01', 'name' => 'Lafayette ordinário']);
         $this->banks['movimento'] = $this->save('bank_accounts', ['condominium_id' => $this->condo, 'name' => 'Conta movimento', 'bank_code' => '001', 'branch' => '4410',
@@ -290,13 +312,13 @@ final class LafayetteSample
         $openings = new ChartOpenings($this->pdo, $this->scope);
         $openings->set($this->user, $this->condo, $this->accounts['8.2'], $opened, '40.000,00', 'Saldo do fundo na implantação');
         $openings->set($this->user, $this->condo, $this->accounts['9.1'], $opened, '25.000,00', 'Saldo do caixa na implantação');
-        $this->save('invoice_types', ['condominium_id' => $this->condo, 'name' => 'Taxa condominial Lafayette', 'chart_account_id' => $this->accounts['1.01'], 'recurrence' => 'mensal']);
-        $this->save('invoice_types', ['condominium_id' => $this->condo, 'name' => 'Fundo de reserva Lafayette', 'chart_account_id' => $this->accounts['1.02'], 'recurrence' => 'mensal']);
+        $this->save('invoice_types', ['condominium_id' => $this->condo, 'name' => 'Taxa condominial Lafayette', 'chart_account_id' => $this->accounts['taxa'], 'recurrence' => 'mensal']);
+        $this->save('invoice_types', ['condominium_id' => $this->condo, 'name' => 'Fundo de reserva Lafayette', 'chart_account_id' => $this->accounts['fundo'], 'recurrence' => 'mensal']);
         // Lançamentos fixos (AP-021): limpeza terceirizada e honorários da administradora todo mês.
         $this->save('recurring_entries', ['condominium_id' => $this->condo, 'nature' => 'despesa', 'description' => 'Limpeza terceirizada (contrato)', 'amount_cents' => '3.200,00',
-            'chart_account_id' => $this->accounts['2.05'], 'supplier_id' => $this->suppliers['limpeza'], 'bank_account_id' => $this->banks['movimento'], 'day_of_month' => '15', 'starts_competence' => $firstMonth]);
+            'chart_account_id' => $this->accounts['limpeza'], 'supplier_id' => $this->suppliers['limpeza'], 'bank_account_id' => $this->banks['movimento'], 'day_of_month' => '15', 'starts_competence' => $firstMonth]);
         $this->save('recurring_entries', ['condominium_id' => $this->condo, 'nature' => 'despesa', 'description' => 'Honorários da administradora', 'amount_cents' => '1.500,00',
-            'chart_account_id' => $this->accounts['2.07'], 'bank_account_id' => $this->banks['movimento'], 'day_of_month' => '5', 'starts_competence' => $firstMonth]);
+            'chart_account_id' => $this->accounts['adm'], 'bank_account_id' => $this->banks['movimento'], 'day_of_month' => '5', 'starts_competence' => $firstMonth]);
         (new BillingRules($this->pdo, $this->scope))->save($this->user, $this->condo, ['fine_bp' => 200, 'monthly_interest_bp' => 100, 'price_index' => 'none',
             'breach_days_late' => 30, 'breach_open_installments' => 2]);
         $this->save('contracts', ['condominium_id' => $this->condo, 'supplier_id' => $this->suppliers['limpeza'], 'object' => 'Limpeza das áreas comuns',
@@ -346,11 +368,11 @@ final class LafayetteSample
             $this->count('faturas');
         }
         $water = (new MeterReadings($this->pdo, $this->scope))->bill($this->user, ['condominium_id' => $this->condo, 'competence' => $competence, 'kind' => 'agua',
-            'due_on' => $due, 'chart_account_id' => $this->accounts['1.03']]);
+            'due_on' => $due, 'chart_account_id' => $this->accounts['agua_receita']]);
         $receivables = array_merge($receivables, $water['created']);
         if ($index === 3) {
             // Troca da bomba de recalque: despesa paga agora; o rateio entre as unidades é cobrado no mês corrente (operations()).
-            $this->payable($competence, 'Troca da bomba de recalque', 4_800_00, '2.04', 'bomba', 18, 'NF 8812');
+            $this->payable($competence, 'Troca da bomba de recalque', 4_800_00, 'bomba', 'bomba', 18, 'NF 8812');
         }
 
         // Boletos (sandbox) e retorno: todos pagam no vencimento, menos os casos de inadimplência e o Pix.
@@ -386,15 +408,15 @@ final class LafayetteSample
         // Despesas do mês (pagas no mês seguinte; as do último mês ficam a pagar).
         $pay = !$last;
         $energy = 1_380_00 + ($index * 7_311) % 25_000;
-        $this->payable($competence, 'Folha de pagamento', 6_800_00, '2.01', null, 5, null, $pay);
-        $this->payable($competence, 'INSS e FGTS', 1_904_00, '2.01', null, 20, null, $pay);
-        $this->payable($competence, 'Conta de água e esgoto (concessionária)', $this->waterBill($competence), '2.02', 'agua', 22, 'FAT-' . str_replace('-', '', $competence), $pay);
-        $this->payable($competence, 'Energia elétrica das áreas comuns', $energy, '2.03', 'energia', 25, 'NF ' . (5100 + $index), $pay);
-        $this->payable($competence, 'Manutenção dos elevadores', 980_00, '2.04', 'elevador', 12, 'NF ' . (9300 + $index), $pay);
-        $this->payable($competence, 'Jardinagem', 650_00, '2.05', 'jardim', 15, 'RPA ' . (77 + $index), $pay);
-        $this->payable($competence, 'Tarifas bancárias', 45_90, '2.08', null, 28, null, true);
+        $this->payable($competence, 'Folha de pagamento', 6_800_00, 'pessoal', null, 5, null, $pay);
+        $this->payable($competence, 'INSS e FGTS', 1_904_00, 'pessoal', null, 20, null, $pay);
+        $this->payable($competence, 'Conta de água e esgoto (concessionária)', $this->waterBill($competence), 'agua', 'agua', 22, 'FAT-' . str_replace('-', '', $competence), $pay);
+        $this->payable($competence, 'Energia elétrica das áreas comuns', $energy, 'energia', 'energia', 25, 'NF ' . (5100 + $index), $pay);
+        $this->payable($competence, 'Manutenção dos elevadores', 980_00, 'elevadores', 'elevador', 12, 'NF ' . (9300 + $index), $pay);
+        $this->payable($competence, 'Jardinagem', 650_00, 'jardinagem', 'jardim', 15, 'RPA ' . (77 + $index), $pay);
+        $this->payable($competence, 'Tarifas bancárias', 45_90, 'tarifas', null, 28, null, true);
         if ($index === 0) {
-            $this->payable($competence, 'Seguro predial (apólice anual)', 4_800_00, '2.06', 'seguro', 20, 'APL LAF-2026-001');
+            $this->payable($competence, 'Seguro predial (apólice anual)', 4_800_00, 'seguro', 'seguro', 20, 'APL LAF-2026-001');
         }
         $generated = (new RecurringEntries($this->pdo, $this->scope))->generate($this->user, $competence, $this->condo);
         foreach ($generated['created'] ?? [] as $entry) {
@@ -421,8 +443,8 @@ final class LafayetteSample
         // Rendimento (receita) e IR (despesa) no último dia do mês, na conta da aplicação.
         $income = 120_00 + $index * 3_17;
         $end = $this->monthDate($competence, 0, 31);
-        $this->entry('receita', $competence, 'Rendimento do CDB', $income, '1.05', $end, $end, $this->banks['aplicacao']);
-        $this->entry('despesa', $competence, 'IR sobre rendimento do CDB', intdiv($income * 15, 100), '2.08', $end, $end, $this->banks['aplicacao']);
+        $this->entry('receita', $competence, 'Rendimento do CDB', $income, 'rendimentos', $end, $end, $this->banks['aplicacao']);
+        $this->entry('despesa', $competence, 'IR sobre rendimento do CDB', intdiv($income * 15, 100), 'impostos', $end, $end, $this->banks['aplicacao']);
     }
 
     /** Água da concessionária = consumo das unidades no mês + 12% de área comum, a R$ 9,10 o m³. */
@@ -447,7 +469,7 @@ final class LafayetteSample
         }
         $fine = (int)round($principal * 0.02) + (int)round($principal * 0.01 * 18 / 30);
         // Multa e juros cobrados junto com o Pix: receita de multas, paga no mesmo dia.
-        $this->entry('receita', $pixMonth, 'Multa e juros por atraso — ' . self::PIX_UNIT, $fine, '1.04', $this->monthDate($pixMonth, 0, 28),
+        $this->entry('receita', $pixMonth, 'Multa e juros por atraso — ' . self::PIX_UNIT, $fine, 'multas', $this->monthDate($pixMonth, 0, 28),
             $this->monthDate($pixMonth, 0, 28), $this->banks['movimento'], $u[self::PIX_UNIT], null, 'PIX-MULTA');
         $this->count('multas');
 
@@ -458,7 +480,7 @@ final class LafayetteSample
         if ($ids !== []) {
             $firstDue = (new \DateTimeImmutable($this->today))->modify('first day of next month')->modify('+9 days')->format('Y-m-d');
             (new Agreements($this->pdo, $this->scope))->create($this->user, ['unit_id' => $u[self::AGREEMENT_UNIT], 'entry_ids' => $ids, 'installments' => 4,
-                'first_due_on' => $firstDue, 'chart_account_id' => $this->accounts['1.06'], 'fees_cents' => '150,00', 'notes' => 'Acordo do Lafayette (dados de teste)']);
+                'first_due_on' => $firstDue, 'chart_account_id' => $this->accounts['acordos'], 'fees_cents' => '150,00', 'notes' => 'Acordo do Lafayette (dados de teste)']);
             $this->count('acordos');
         }
         // A-201: dois meses em aberto, contato de cobrança com promessa.
@@ -484,7 +506,7 @@ final class LafayetteSample
             'reserved_on' => $future(4), 'starts_time' => '12:00', 'ends_time' => '17:00']);
         // Taxa de reserva do salão já usada no mês passado: receita paga.
         $lastMonth = end($months);
-        $this->entry('receita', $lastMonth, 'Reserva do salão de festas — B-201', 180_00, '1.08', $this->monthDate($lastMonth, 0, 12), $this->monthDate($lastMonth, 0, 12), $this->banks['movimento'], $u['B-201']);
+        $this->entry('receita', $lastMonth, 'Reserva do salão de festas — B-201', 180_00, 'reservas', $this->monthDate($lastMonth, 0, 12), $this->monthDate($lastMonth, 0, 12), $this->banks['movimento'], $u['B-201']);
         $noise = $this->save('occurrences', ['condominium_id' => $this->condo, 'unit_id' => $u['B-301'], 'subject' => 'Som alto após as 22h', 'priority' => 'media', 'occurred_on' => $past(12),
             'description' => 'Reclamação de barulho na B-301 em dia de semana, depois das 22h.']);
         $this->save('occurrences', ['condominium_id' => $this->condo, 'subject' => 'Infiltração na garagem', 'priority' => 'alta', 'occurred_on' => $past(5),
@@ -493,10 +515,10 @@ final class LafayetteSample
         $current = (new \DateTimeImmutable($this->today))->format('Y-m');
         $shortcuts = new EntryShortcuts($this->pdo, $this->scope);
         $shortcuts->createCharge($this->user, ['condominium_id' => $this->condo, 'kind' => 'extra', 'method' => 'fraction', 'unit_ids' => array_values($u), 'description' => 'Rateio da troca da bomba de recalque',
-            'amount_cents' => '4.800,00', 'competence' => $current, 'due_on' => $future(15), 'chart_account_id' => $this->accounts['1.07']]);
+            'amount_cents' => '4.800,00', 'competence' => $current, 'due_on' => $future(15), 'chart_account_id' => $this->accounts['extras']]);
         $this->count('cobrancas_extras');
         $shortcuts->createCharge($this->user, ['condominium_id' => $this->condo, 'kind' => 'fine', 'unit_ids' => [$u['B-301']], 'description' => 'Multa por barulho após as 22h',
-            'amount_cents' => '250,00', 'competence' => $current, 'due_on' => $future(15), 'chart_account_id' => $this->accounts['1.04'],
+            'amount_cents' => '250,00', 'competence' => $current, 'due_on' => $future(15), 'chart_account_id' => $this->accounts['multas'],
             'reason' => 'Regulamento interno, art. 8 (silêncio após as 22h)', 'occurrence_id' => $noise]);
         $this->count('multas');
         $this->save('moves', ['condominium_id' => $this->condo, 'unit_id' => $u['B-401'], 'resident_name' => 'Inquilino da B-401', 'kind' => 'entrada', 'scheduled_on' => $future(6), 'period' => 'manha']);
@@ -846,6 +868,9 @@ final class LafayetteSample
         if ($row !== false && $row['nature'] === $nature && $row['kind'] === $kind) {
             return (int)$row['id'];
         }
+        if ($row !== false) {
+            throw new DomainException("A conta {$code} do plano de contas existe com outra natureza ou tipo ({$row['nature']}, {$row['kind']}); esperado {$nature}, {$kind}.");
+        }
         return $this->save('chart', ['condominium_id' => $this->condo, 'code' => $code, 'nature' => $nature, 'kind' => $kind, 'name' => $name]);
     }
 
@@ -883,7 +908,7 @@ final class LafayetteSample
     private function payable(string $competence, string $description, int $cents, string $code, ?string $supplier, int $day, ?string $document = null, bool $paid = true): void
     {
         $due = $this->monthDate($competence, 1, $day);
-        if ($code === '2.04' && $description === 'Troca da bomba de recalque') {
+        if ($code === 'bomba') {
             $due = $this->monthDate($competence, 0, $day);
         }
         $this->entry('despesa', $competence, $description, $cents, $code, $due, $paid ? $due : null, $paid ? $this->banks['movimento'] : null, null,
