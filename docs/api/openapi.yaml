@@ -2179,6 +2179,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/occurrence-aging:
+    get:
+      operationId: occurrenceAging
+      summary: Idade das ocorrências em aberto do condomínio por prioridade (abertas, em andamento, 0 a 30, 31 a 90 e mais de 90 dias, com chamado, antigas sem chamado, resolvidas), somente leitura (erp.access e erp.occurrences.view, ADR 0256)
+      description: >-
+        Uma linha por prioridade do cadastro, sempre todas, com as ocorrências até a data on: open, running, age_0_30,
+        age_31_90 e age_over_90 (as em aberto pelos dias desde a ocorrência; somam open + running), with_ticket (em aberto
+        com chamado no Help Desk), stale_without_ticket (em aberto sem chamado há mais de 90 dias, o padrão do
+        encerramento em lote) e done; totals soma as linhas; oldest_open_on é a data da aberta mais antiga (null sem
+        nenhuma). Sem assunto, descrição, unidade, documento ou chamado. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, required: false, schema: { type: string, format: date }, description: 'Data de referência; padrão hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ priority, priority_label, open, running, age_0_30, age_31_90, age_over_90, with_ticket, stale_without_ticket, done }], totals, oldest_open_on } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /occurrences/close-stale:
     post:
       operationId: closeStaleOccurrences
