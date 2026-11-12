@@ -2179,6 +2179,30 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /moves/settle-past:
+    post:
+      operationId: settlePastMoves
+      summary: Baixa em lote dos agendamentos de mudança com a data já passada (Realizada ou Cancelada pelo cadastro, mantendo a data), tudo ou nada e com prévia (erp.access, erp.moves.view e erp.moves.manage, ADR 0247)
+      description: >-
+        Sem move_ids, entram os agendamentos "Agendada" do condomínio com a data anterior a before (padrão hoje, nunca
+        depois de hoje), dos tipos em kinds (padrão entrada e saída); os de unidade inativa ficam de fora
+        (skipped_inactive_unit). Com move_ids, recusa agendamento não encontrado no condomínio, já realizado ou cancelado,
+        com a data ainda por vir ou de unidade inativa. outcome done (padrão) marca Realizada; inactive marca Cancelada (não
+        compareceu). Cada agendamento é regravado pelo cadastro só com a situação, mantendo a data e o período (auditoria
+        update do formulário e settle por agendamento). move_outs_to_review conta as unidades de uma saída realizada que
+        ainda têm inquilino ou morador ativo, que não são tocadas. Nada é apagado e nenhum aviso é enviado. Sem morador,
+        unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, outcome: { type: string, enum: [done, inactive], default: done }, kinds: { type: array, items: { type: string, enum: [entrada, saida] } }, move_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, outcome, kinds, reason, skipped_inactive_unit, move_outs_to_review, count, changed, moves[{ id, kind, scheduled_on, period, days_since }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou agendamento recusado (errors com _form ou os erros do formulário, e _move); nada é gravado' }
   /reports/contract-portfolio:
     get:
       operationId: contractPortfolio
