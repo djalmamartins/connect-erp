@@ -2179,6 +2179,31 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /check-copies/link-entries:
+    post:
+      operationId: linkCheckCopiesToEntries
+      summary: Vínculo em lote das cópias de cheques sem lançamento ao único lançamento pago que confere (mesma conta, mesmo valor, pago no prazo), pelo cadastro, tudo ou nada e com prévia (erp.access, erp.check_copies.view, erp.check_copies.manage e erp.entries.view, ADR 0249)
+      description: >-
+        Sem check_copy_ids, entram os cheques emitidos e sem lançamento do condomínio; os de conta bancária inativa ou
+        imagem removida ficam de fora (skipped_inactive_link). Confere a despesa ativa paga pela mesma conta, com o mesmo
+        valor, paga do dia do cheque até window_days depois (padrão 30, de 0 a 120) e ainda não ligada a outra cópia de
+        cheque. Só entra o par sem dúvida; os sem lançamento que confira (skipped_no_match) e os com mais de um, ou com o
+        mesmo lançamento de outro cheque (skipped_ambiguous), ficam como estão. Com check_copy_ids, recusa cheque não
+        encontrado no condomínio, cancelado, já ligado, de conta inativa ou imagem removida, sem par ou com dúvida. Cada
+        cheque é regravado pelo cadastro só com o lançamento (auditoria update do formulário e link_entry por cheque); o
+        lançamento não é tocado. Nada é apagado e nenhum aviso é enviado. Sem favorecido, descrição ou documento na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, window_days: { type: integer, minimum: 0, maximum: 120, default: 30 }, check_copy_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, window_days, reason, skipped_inactive_link, skipped_no_match, skipped_ambiguous, count, changed, checks[{ id, check_number, issued_on, amount_cents, entry_id, paid_on, days_to_payment }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou cheque recusado (errors com _form ou os erros do formulário, e _check); nada é gravado' }
   /reports/maintenance-compliance:
     get:
       operationId: maintenanceCompliance
