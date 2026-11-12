@@ -2179,6 +2179,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/maintenance-compliance:
+    get:
+      operationId: maintenanceCompliance
+      summary: Cumprimento do plano de manutenções num período, por periodicidade (no prazo, com atraso e a média de dias, atrasadas sem baixa, a vencer, canceladas, taxa no prazo e concluídas sem laudo), somente leitura (erp.access e erp.maintenances.view, ADR 0248)
+      description: >-
+        Entram as manutenções com a data prevista de from a to (padrão os últimos 12 meses até hoje; até 3 anos). Uma
+        linha por periodicidade do cadastro, sempre todas, com planned (menos as canceladas), done_on_time (concluída até
+        a data prevista), done_late (depois, com avg_delay_days), overdue (agendada ou em execução com a data prevista antes
+        de reference_on, o fim do período ou hoje), upcoming, cancelled, on_time_rate (no prazo sobre as que venceram, em
+        %) e done_without_document (concluída sem o laudo no Disco Virtual do condomínio); totals soma as linhas e recalcula
+        as médias. Sem serviço, fornecedor, descrição ou documento. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: 'Vazio = 12 meses antes do fim' }
+        - { name: to, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, reference_on, rows[{ frequency, frequency_label, planned, done_on_time, done_late, overdue, upcoming, cancelled, done_without_document, avg_delay_days, on_time_rate }], totals { planned, done_on_time, done_late, overdue, upcoming, cancelled, done_without_document, avg_delay_days, on_time_rate } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /moves/settle-past:
     post:
       operationId: settlePastMoves
