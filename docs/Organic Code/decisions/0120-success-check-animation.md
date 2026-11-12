@@ -12,10 +12,14 @@ um cadastro der certo apareça um aviso com a animação da marca virando check 
 
 ## Decisão
 
-- `erp.js` ganhou `ErpUI.done(mensagem)`: um cartão no canto superior direito, logo abaixo da barra superior (pedido do Djalma em 11/11), com o
-  ícone animado à esquerda e a mensagem. Fecha sozinho
-  em 3,2 s, com clique ou com Esc. Ele entra na região `[data-erp-toasts]` (`aria-live`), então o leitor de tela lê o
-  texto.
+- Todos os avisos do ERP viraram cartões no canto superior direito, logo abaixo da barra superior (pedido do Djalma
+  em 11/11, com uma imagem de referência de estilo): fundo claro na cor do tipo (sucesso verde, alerta amarelo, erro
+  vermelho, informação azul), ícone redondo à esquerda, título em negrito ("Sucesso!", "Atenção!", "Erro!",
+  "Informação"), a mensagem embaixo e um X para fechar. Somem sozinhos (sucesso 4,5 s, informação 6 s, alerta 8 s,
+  erro 9 s), e o tempo para enquanto o mouse está em cima. Esc fecha o mais recente. No máximo três ficam abertos ao
+  mesmo tempo. A região `[data-erp-toasts]` (`aria-live`) faz o leitor de tela ler o texto, e erro e alerta usam
+  `role="alert"`.
+- O ícone de sucesso é a animação da marca, em branco sobre o círculo verde.
 - O ícone é um SVG embutido no próprio `erp.js` (cerca de 3 KB), animado com SMIL (`fill="freeze"`, cerca de 1,9 s),
   no desenho que o Djalma descreveu em 11/11: a própria marca, cheia e com o formato dela, se apaga a partir da haste
   (ponta esquerda), contornando a gota até o corte do braço direito no alto. O apagamento é uma máscara com um traço
@@ -23,11 +27,12 @@ um cadastro der certo apareça um aviso com a animação da marca virando check 
   começo do check, e o check é desenhado a partir dali, com um pulso suave no fim. Começa 0,2 s depois de o aviso aparecer, para o carregamento da
   página não engolir os primeiros quadros.
   SMIL funciona em todos os navegadores atuais e não depende de CSS `d: path()`, que o Safari não anima.
-- A mensagem de sucesso do servidor (`Message::success()->flash()`), que já é usada por todos os cadastros, vira esse
-  aviso: o `erp.js` acha `.erp-flash .message.success` ao carregar, tira a faixa e mostra o cartão. Sem JavaScript, a
-  faixa continua aparecendo como antes. Avisos de erro, alerta e informação seguem na faixa.
-- `ErpUI.toast(mensagem, 'success')` também usa o cartão. Avisos curtos que não são gravação passam
-  `{ quiet: true }` e continuam no canto (hoje só o "Copiado").
+- Toda mensagem do servidor (`Message::success|warning|error|info()->flash()`) vira esse aviso: o `erp.js` acha
+  `.erp-flash .message` ao carregar, tira a faixa e mostra o cartão do tipo certo. Sem JavaScript, a faixa continua
+  aparecendo como antes.
+- `ErpUI.toast(mensagem, tom)` usa o mesmo cartão (`danger` vira erro; sem tom, informação). Avisos de sucesso que não
+  são gravação passam `{ quiet: true }` e mostram o check parado, sem a animação (hoje só o "Copiado").
+  `ErpUI.done(mensagem)` é o atalho do sucesso. Cada aviso de sucesso tem a própria máscara (`erp-done-mask-N`).
 - Com "reduzir movimento" ligado no sistema, o ícone já aparece parado no check.
 
 ## Consequências
