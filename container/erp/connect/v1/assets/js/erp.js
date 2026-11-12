@@ -100,12 +100,13 @@
   function done(message) { notify(message, 'success'); }
   // Mensagens do servidor (flash depois de salvar, de excluir ou de um erro) viram avisos no canto.
   // Sem JavaScript, a faixa no topo da página continua aparecendo.
-  $$('.erp-flash .message').forEach(function (flash) {
+  // Vale também para páginas que imprimem o flash no próprio conteúdo (Message::render marca com data-notice).
+  $$('.erp-flash .message, .erp-main .message[data-notice]').forEach(function (flash) {
     var box = flash.parentNode;
     var kind = ['success', 'warning', 'error', 'info'].filter(function (name) { return flash.classList.contains(name); })[0] || 'info';
-    var flashText = flash.textContent.trim();
+    var flashText = flash.textContent.replace(/\s+/g, ' ').trim();
     box.removeChild(flash);
-    if (!box.textContent.trim() && box.parentNode) box.parentNode.removeChild(box);
+    if (box.classList.contains('erp-flash') && !box.textContent.trim() && box.parentNode) box.parentNode.removeChild(box);
     notify(flashText, kind);
   });
   window.ErpUI = { toast: toast, done: done };

@@ -56,7 +56,7 @@ final class ErpSuccessCheckTest extends TestCase
     public function testEveryFlashAndToastBecomesATopRightNotice(): void
     {
         $js = $this->file(self::ASSETS . 'js/erp.js');
-        self::assertStringContainsString("$$('.erp-flash .message').forEach(", $js, 'todo flash do servidor vira aviso no canto');
+        self::assertStringContainsString("$$('.erp-flash .message, .erp-main .message[data-notice]').forEach(", $js, 'todo flash do servidor vira aviso no canto');
         self::assertStringContainsString("var NOTICE_TITLES = { success: 'Sucesso!', warning: 'Atenção!', error: 'Erro!', info: 'Informação' };", $js);
         self::assertStringContainsString("if (tone === 'danger' || tone === 'error') return 'error';", $js, 'o tom danger dos toasts vira erro');
         self::assertStringContainsString("var animated = kind === 'success' && !(options && options.quiet);", $js, 'só o sucesso anima; o Copiado fica com o check parado');

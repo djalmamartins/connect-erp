@@ -35,6 +35,14 @@ um cadastro der certo apareça um aviso com a animação da marca virando check 
   `ErpUI.done(mensagem)` é o atalho do sucesso. Cada aviso de sucesso tem a própria máscara (`erp-done-mask-N`).
 - Com "reduzir movimento" ligado no sistema, o ícone já aparece parado no check.
 
+- **Todo o sistema (12/11):** `Message::render()` passou a marcar a mensagem com `data-notice`. O componente
+  compartilhado `container/shared/assets/js/connect-notice.js` (sem dependências, com o próprio CSS) transforma
+  toda `.message[data-notice]` em aviso no canto, inclusive as que chegam depois por AJAX (MutationObserver), e
+  expõe `ConnectNotice.show(mensagem, tipo)`. Ele entra nos bundles do Studio (`studio.min.js`) e do site
+  (`site.min.js`) e na tela de login do Studio. Os `div.message` escritos à mão, como os estados vazios, não têm
+  `data-notice` e continuam como estão. O ERP mantém a mesma interface no próprio `erp.js`, porque o bundle do ERP
+  só usa arquivos do tema. Ele também converte o flash que algumas páginas imprimem no conteúdo.
+
 ## Consequências
 
 - Nenhum controller mudou: as mensagens de sucesso existentes passam a usar o aviso.
