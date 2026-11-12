@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /occurrences/close-stale:
+    post:
+      operationId: closeStaleOccurrences
+      summary: Encerramento em lote das ocorrências abertas ou em andamento, sem chamado, há mais de N dias, como Resolvida pelo cadastro, tudo ou nada e com prévia (erp.access, erp.occurrences.view e erp.occurrences.manage, ADR 0255)
+      description: >-
+        Sem occurrence_ids, entram as ocorrências abertas ou em andamento do condomínio, sem chamado, com a data há mais
+        de older_than_days dias (padrão 90, de 30 a 3650), das prioridades escolhidas (padrão todas); ficam de fora as
+        com chamado no Help Desk (skipped_with_ticket, acertadas pela sincronização) e as de unidade inativa ou documento
+        removido (skipped_inactive_link). Com occurrence_ids, recusa ocorrência não encontrada no condomínio, já resolvida,
+        com chamado, dentro do prazo ou nesses casos. Cada ocorrência é regravada pelo cadastro como Resolvida; auditoria
+        close_stale por ocorrência, com o motivo. Nada muda no Help Desk, nada é apagado e nenhum aviso é enviado. Sem
+        assunto, descrição, unidade ou documento na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, older_than_days: { type: integer, minimum: 30, maximum: 3650, default: 90 }, priorities: { type: array, items: { type: string, enum: [baixa, media, alta] } }, occurrence_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, occurred_until, priorities, reason, skipped_with_ticket, skipped_inactive_link, count, changed, occurrences[{ id, priority, from_status, occurred_on, days_open }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou ocorrência recusada (errors com _form e _occurrence); nada é gravado' }
   /reports/board-composition:
     get:
       operationId: boardComposition
