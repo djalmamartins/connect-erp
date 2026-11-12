@@ -2179,6 +2179,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/contract-portfolio:
+    get:
+      operationId: contractPortfolio
+      summary: Carteira de contratos do condomínio numa data (contratos e valor mensal por faixa de vigência e por índice de reajuste, sem documento, encerráveis e reajustes nos próximos 90 dias), somente leitura (erp.access e erp.contracts.view, ADR 0246)
+      description: >-
+        Uma linha por faixa, sempre as seis (vencido e ainda vigente no cadastro; em vigor terminando em até 30, 31 a 90 ou
+        depois de 90 dias; prazo indeterminado; começando depois da data), com contracts, monthly_cents, by_readjustment
+        (os índices do cadastro, somando monthly_cents) e without_document (sem o contrato assinado no Disco Virtual do
+        condomínio); totals é a soma das linhas. closable conta os vencidos com fornecedor ativo e documento, o que o
+        encerramento em lote (0245) pegaria; readjustment_due conta os contratos em vigor com índice cujo aniversário do
+        início cai nos próximos 90 dias, com a soma mensal; ended e cancelled contam os encerrados e os cancelados. Sem
+        objeto, fornecedor, documento ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, schema: { type: string, format: date }, description: 'Vazio = hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ bucket, bucket_label, contracts, monthly_cents, by_readjustment{ ipca, igpm, nenhum }, without_document }], totals { contracts, monthly_cents, by_readjustment, without_document }, closable, readjustment_due { contracts, monthly_cents }, ended, cancelled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /contracts/close-ended:
     post:
       operationId: closeEndedContracts
