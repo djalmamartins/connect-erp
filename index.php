@@ -317,6 +317,8 @@ $route->post("/legal-cases/close-settled", "LegalCaseSettlement:store", null, \S
 $route->get("/reports/contact-coverage", "ContactCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Liquidação em lote dos empenhos com o lançamento já pago, tudo ou nada e com prévia (ADR 0253). Antes do laço dos cadastros.
 $route->post("/commitments/settle-paid", "CommitmentSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Composição do síndico e do conselho numa data, somente leitura (ADR 0254). Antes do laço dos cadastros.
+$route->get("/reports/board-composition", "BoardComposition:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

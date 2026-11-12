@@ -2179,6 +2179,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/board-composition:
+    get:
+      operationId: boardComposition
+      summary: Composição do síndico e do conselho do condomínio numa data por cargo (em vigor, terminando em 30 e 90 dias, vencidos, a começar, inativos, sem contato), síndico em vigor e cargos vagos, somente leitura (erp.access e erp.board.view, ADR 0254)
+      description: >-
+        Uma linha por cargo do cadastro, sempre todos, com in_force (mandato valendo em on), ending_0_30 e ending_31_90
+        (dos em vigor), expired (ativos com o mandato vencido), not_started (eleitos para depois de on), inactive e
+        incomplete (ativos sem e-mail ou telefone); totals soma as linhas. sindico_in_force, sindico_term_ends_on (null sem
+        síndico em vigor) e vacant_roles (cargos sem ninguém em vigor). Sem nome, documento, contato, unidade ou
+        observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, required: false, schema: { type: string, format: date }, description: 'Data de referência; padrão hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ role, role_label, in_force, ending_0_30, ending_31_90, expired, not_started, inactive, incomplete }], totals, sindico_in_force, sindico_term_ends_on, vacant_roles[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /commitments/settle-paid:
     post:
       operationId: settlePaidCommitments
