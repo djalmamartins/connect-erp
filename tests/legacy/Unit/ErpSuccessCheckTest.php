@@ -22,7 +22,7 @@ final class ErpSuccessCheckTest extends TestCase
     private function icon(): string
     {
         $js = $this->file(self::ASSETS . 'js/erp.js');
-        self::assertSame(1, preg_match("/var DONE_ICON = '(<svg.*?<\\/svg>)';/", $js, $match), 'ícone do aviso embutido no erp.js');
+        self::assertSame(1, preg_match("/    success: '(<svg.*?<\\/svg>)',/", $js, $match), 'ícone animado do aviso de sucesso embutido no erp.js');
 
         return $match[1];
     }
@@ -53,21 +53,29 @@ final class ErpSuccessCheckTest extends TestCase
         }
     }
 
-    public function testServerSuccessFlashAndSuccessToastsUseTheNotice(): void
+    public function testEveryFlashAndToastBecomesATopRightNotice(): void
     {
         $js = $this->file(self::ASSETS . 'js/erp.js');
-        self::assertStringContainsString("$('.erp-flash .message.success')", $js, 'flash de sucesso do servidor vira o aviso');
-        self::assertStringContainsString("if (tone === 'success' && !(options && options.quiet)) { done(message); return; }", $js);
-        self::assertStringContainsString("toast('Copiado: ' + label + '.', 'success', { quiet: true })", $js, 'cópia não é gravação');
-        self::assertStringContainsString('window.ErpUI = { toast: toast, done: done };', $js);
+        self::assertStringContainsString("$$('.erp-flash .message').forEach(", $js, 'todo flash do servidor vira aviso no canto');
+        self::assertStringContainsString("var NOTICE_TITLES = { success: 'Sucesso!', warning: 'Atenção!', error: 'Erro!', info: 'Informação' };", $js);
+        self::assertStringContainsString("if (tone === 'danger' || tone === 'error') return 'error';", $js, 'o tom danger dos toasts vira erro');
+        self::assertStringContainsString("var animated = kind === 'success' && !(options && options.quiet);", $js, 'só o sucesso anima; o Copiado fica com o check parado');
+        self::assertStringContainsString("toast('Copiado: ' + label + '.', 'success', { quiet: true })", $js);
+        self::assertStringContainsString("close.setAttribute('aria-label', 'Fechar aviso');", $js, 'todo aviso tem o X');
+        self::assertStringContainsString('timer = window.setTimeout(dismiss,', $js, 'o aviso some sozinho');
+        self::assertStringContainsString("'erp-done-mask-' + (++noticeSeq)", $js, 'máscara única por aviso');
         self::assertStringContainsString("matchMedia('(prefers-reduced-motion: reduce)')", $js, 'movimento reduzido mostra o check parado');
+        self::assertStringContainsString('window.ErpUI = { toast: toast, done: done };', $js);
 
         $layout = $this->file('container/erp/connect/v1/default.php');
-        self::assertStringContainsString('data-erp-toasts role="status" aria-live="polite"', $layout, 'o aviso entra numa região lida pelo leitor de tela');
+        self::assertStringContainsString('data-erp-toasts role="status" aria-live="polite"', $layout);
         self::assertStringContainsString('<div class="erp-flash" role="status">', $layout, 'sem JavaScript a faixa continua');
 
         $css = $this->file(self::ASSETS . 'css/erp.css');
-        self::assertStringContainsString('.erp-done {', $css);
-        self::assertStringContainsString('.erp-done--leaving {', $css);
+        self::assertStringContainsString('.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px;', $css, 'canto superior direito');
+        foreach (['success', 'warning', 'error'] as $kind) {
+            self::assertStringContainsString('.erp-notice--' . $kind . ' {', $css);
+        }
+        self::assertStringNotContainsString('.erp-done {', $css, 'o cartão antigo do centro saiu');
     }
 }
