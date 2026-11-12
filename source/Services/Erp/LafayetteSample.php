@@ -837,14 +837,45 @@ final class LafayetteSample
         return min($date, $this->today);
     }
 
+    /**
+     * Conta do plano para o Lafayette. Ordem: (1) a conta do plano padrão com a mesma natureza, tipo e nome
+     * (qualquer código, para "Multas e juros" ser a do padrão mesmo com outro código); (2) a sintética do
+     * padrão com o mesmo código, natureza e tipo; (3) uma conta própria do Lafayette no código pedido, se
+     * ele estiver livre; (4) se o código já for do plano padrão com outro nome ou tipo (o motor de cadastros
+     * não deixa o condomínio repetir código do padrão, ADR 0018/0152), uma conta própria num código livre
+     * da mesma mãe (mãe.51, mãe.52...). O índice em $this->accounts continua sendo o código pedido.
+     */
     private function account(string $code, string $nature, string $kind, string $name): int
     {
-        $stmt = $this->pdo->prepare("SELECT id, nature, kind, condominium_id FROM erp_chart_accounts WHERE code = ? AND (condominium_id IS NULL OR condominium_id = ?)
-            AND status = 'active' AND deleted_at IS NULL ORDER BY condominium_id IS NULL, id LIMIT 1");
-        $stmt->execute([$code, $this->condo]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row !== false && $row['nature'] === $nature && $row['kind'] === $kind) {
-            return (int)$row['id'];
+        $rows = $this->pdo->prepare("SELECT id, code, name, nature, kind, status, condominium_id FROM erp_chart_accounts
+            WHERE (condominium_id IS NULL OR condominium_id = ?) AND deleted_at IS NULL ORDER BY condominium_id IS NULL, id");
+        $rows->execute([$this->condo]);
+        $byCode = [];
+        foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $usable = $row['status'] === 'active' && $row['nature'] === $nature && $row['kind'] === $kind;
+            if ($usable && $kind === 'analitica' && mb_strtolower(trim((string)$row['name'])) === mb_strtolower($name)) {
+                return (int)$row['id'];
+            }
+            $byCode[(string)$row['code']] ??= $row + ['usable' => $usable];
+        }
+        $existing = $byCode[$code] ?? null;
+        if ($existing !== null && $existing['usable'] && ($kind === 'sintetica' || $existing['condominium_id'] !== null)) {
+            return (int)$existing['id'];
+        }
+        if ($existing !== null && $kind === 'sintetica') {
+            throw new DomainException("A conta {$code} do plano não é sintética de {$nature}; o Lafayette precisa dela assim.");
+        }
+        if ($existing !== null) {
+            $parent = implode('.', array_slice(explode('.', $code), 0, -1));
+            $free = null;
+            for ($n = 51; $n <= 99 && $free === null; $n++) {
+                $candidate = ($parent === '' ? '' : $parent . '.') . $n;
+                $free = isset($byCode[$candidate]) ? null : $candidate;
+            }
+            if ($free === null) {
+                throw new DomainException("Sem código livre para a conta {$name} sob {$parent}.");
+            }
+            $code = $free;
         }
         return $this->save('chart', ['condominium_id' => $this->condo, 'code' => $code, 'nature' => $nature, 'kind' => $kind, 'name' => $name]);
     }

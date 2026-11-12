@@ -39,8 +39,11 @@ telas (mesmas validações, escopo e auditoria), em `Source\Services\Erp\Lafayet
 | Operação | assembleia ordinária com presença e votação, comunicado, 2 ocorrências, 2 reservas, mudança, 2 manutenções, entrega, achado, previsão de visita, chamado, quitação e certidão de débitos |
 | Fechamento | abertura do balanço (fundo 8.2 = 40.000, resultados acumulados 9.1 = 25.000); os 4 meses mais antigos fechados, os 2 últimos abertos |
 
-Contas do plano: reaproveita a conta do plano padrão com o mesmo código, natureza e tipo; o que faltar entra no
-plano próprio do Lafayette (o padrão dos outros condomínios não muda). E-mails em `example.com` (ninguém recebe).
+Contas do plano: reaproveita a conta do plano padrão com a mesma natureza, tipo e nome (por exemplo, "Multas e
+juros" é a 1.03 do padrão) ou a sintética com o mesmo código. O que faltar entra no plano próprio do Lafayette, no
+código pedido se ele estiver livre; se o código já for do padrão com outro nome ou tipo (2.04 é sintética no
+padrão), usa um código livre da mesma mãe (2.51, 2.52...), porque o condomínio não pode repetir código do padrão.
+O padrão dos outros condomínios não muda. E-mails em `example.com` (ninguém recebe).
 
 ## O que é conferido
 

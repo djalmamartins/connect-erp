@@ -57,6 +57,41 @@ final class LafayetteSampleIntegrationTest extends TestCase
         self::assertTrue($sample->verify()['ok']);
     }
 
+    /**
+     * No banco do lab o plano padrão (migrations 0704 e 0709) já tem 2.04 sintética e 1.03/1.04/2.01 com
+     * outros nomes. O Lafayette não pode repetir código do padrão: reaproveita pelo nome ou usa código livre.
+     */
+    public function testCreatesAndClosesWithTheDefaultChartOfAccounts(): void
+    {
+        $root = dirname(__DIR__, 3) . '/database/migrations/';
+        foreach (['20261109_0704_chart_patrimonial_natures.sql', '20261110_0709_chart_default_income_expense.sql'] as $file) {
+            $sql = preg_replace('/^--.*$/m', '', (string)file_get_contents($root . $file));
+            foreach (array_filter(array_map('trim', explode(';', (string)$sql))) as $statement) {
+                if (str_starts_with($statement, 'INSERT')) {
+                    $this->pdo->exec($statement);
+                }
+            }
+        }
+        $default = static fn (\PDO $pdo, string $code): int => (int)$pdo->query("SELECT id FROM erp_chart_accounts WHERE condominium_id IS NULL AND code = '{$code}'")->fetchColumn();
+        self::assertGreaterThan(0, $default($this->pdo, '2.04'));
+        $defaults = (int)$this->pdo->query('SELECT COUNT(*) FROM erp_chart_accounts WHERE condominium_id IS NULL')->fetchColumn();
+
+        $sample = new LafayetteSample($this->pdo, $this->admin());
+        $sample->create();
+        $report = $sample->verify();
+        $failed = array_filter($report['checks'], static fn (array $check): bool => !$check['ok']);
+        self::assertSame([], array_values($failed), 'Conferências que não fecharam.');
+
+        $condo = (int)$sample->condominiumId();
+        self::assertSame($defaults, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_chart_accounts WHERE condominium_id IS NULL')->fetchColumn(), 'Plano padrão intacto.');
+        $own = $this->pdo->query("SELECT code FROM erp_chart_accounts WHERE condominium_id = {$condo}")->fetchAll(\PDO::FETCH_COLUMN);
+        $clash = $this->pdo->query("SELECT COUNT(*) FROM erp_chart_accounts c JOIN erp_chart_accounts d ON d.code = c.code AND d.condominium_id IS NULL WHERE c.condominium_id = {$condo}")->fetchColumn();
+        self::assertSame(0, (int)$clash, 'Conta do Lafayette repete código do padrão: ' . implode(', ', $own));
+        // "Multas e juros" é 1.03 no padrão: o Lafayette usa a do padrão em vez de criar outra.
+        $fine = $this->pdo->query("SELECT a.code FROM erp_entries e JOIN erp_chart_accounts a ON a.id = e.chart_account_id WHERE e.condominium_id = {$condo} AND e.description LIKE 'Multa e juros%' LIMIT 1")->fetchColumn();
+        self::assertSame('1.03', $fine);
+    }
+
     public function testCompetencesAreTheSixFullMonthsBeforeToday(): void
     {
         self::assertSame(['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'], LafayetteSample::competences('2026-11-11'));
