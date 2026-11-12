@@ -7,8 +7,8 @@ referências. Este arquivo é o índice único das duas (issue #9).
 ## Regra para novas decisões
 
 - Toda decisão nova vai em `docs/Organic Code/decisions/` com o próximo número de 4 dígitos
-  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0253.**
-  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0253, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
+  (`NNNN-titulo-em-kebab-case.md`). **Próximo número livre: 0254.**
+  Faixas reservadas por frente: Preparar 0060–0069, layout 0070–0079 e depois 0120–0139, Avançar 0080–0099 (0055–0059 já usados pelo Avançar). Dentro da faixa, use o próximo número livre da sua frente (layout: 0121; Avançar: 0254, na faixa nova 0200–0299, porque 0160–0199 acabou; Preparar: 0116, porque 0060–0069 já foram usados). Quando as faixas atuais acabarem: Preparar 0100–0119, layout 0120–0139. Threads avulsas (fora dessas frentes): 0140–0159. Avançar, depois de 0099: 0160–0199; depois de 0199: 0200–0299.
 - Antes de criar, confira este índice e o diretório: duas threads já usaram o mesmo número
   em paralelo (0010). Ao criar, acrescente a linha na tabela abaixo no mesmo commit.
 - A série `ADR-00N` de `docs/decisions/` fica congelada: são as decisões de fundação do
@@ -255,3 +255,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0250](../Organic%20Code/decisions/0250-legal-case-portfolio.md) | Carteira da cobrança judicial do condomínio por fase: processos, valor cobrado, recuperado e ainda em aberto, parados sem andamento, sem advogado, idade média e abertos e encerrados em 12 meses, somente leitura e sem dado do processo | Aceita |
 | [0251](../Organic%20Code/decisions/0251-legal-case-settlement.md) | Encerramento em lote dos processos de cobrança cujas contas cobradas foram todas pagas, como no andamento (data do último pagamento, motivo e andamento de encerramento), sem tocar as contas, tudo ou nada, prévia e auditoria, sem dado do processo | Aceita |
 | [0252](../Organic%20Code/decisions/0252-contact-coverage.md) | Cobertura dos contatos úteis do condomínio por serviço: próprios, compartilhados, inativos, com e-mail, serviços cobertos e essenciais sem contato, somente leitura e sem dado do contato | Aceita |
+| [0253](../Organic%20Code/decisions/0253-commitment-settlement.md) | Liquidação em lote dos empenhos cujo lançamento ligado já foi pago, na data do pagamento, pelo cadastro, tudo ou nada, com prévia, auditoria e sem descrição nem fornecedor | Aceita |
