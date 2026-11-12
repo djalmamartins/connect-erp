@@ -912,9 +912,11 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-dash-buckets dt { color: var(--erp-muted); }
 .erp-dash-buckets dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* Aviso de sucesso com a marca virando check (ADR 0120). Toca uma vez; fecha sozinho, com clique ou Esc. */
-.erp-done { position: fixed; top: 50%; left: 50%; z-index: 210; display: grid; justify-items: center; gap: 12px; width: min(320px, calc(100vw - 32px)); padding: 24px 22px 20px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); box-shadow: var(--erp-shadow-raised); text-align: center; cursor: pointer; transform: translate(-50%, -50%); animation: erp-done-in .22s var(--erp-ease) both; }
+/* Aviso de sucesso com a marca virando check (ADR 0120), no canto superior direito. Toca uma vez; fecha sozinho, com clique ou Esc. */
+.erp-done { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 210; display: flex; align-items: center; gap: 12px; width: min(360px, calc(100vw - 32px)); padding: 12px 18px 12px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); box-shadow: var(--erp-shadow-raised); cursor: pointer; animation: erp-done-in .25s var(--erp-ease) both; }
+.erp-done svg { flex: 0 0 48px; width: 48px; height: 48px; }
 .erp-done p { margin: 0; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .erp-done--leaving { animation: erp-done-out .25s var(--erp-ease) both; }
-@keyframes erp-done-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%); } }
-@keyframes erp-done-out { to { opacity: 0; transform: translate(-50%, -50%) scale(.97); } }
+@keyframes erp-done-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes erp-done-out { to { opacity: 0; transform: translateX(24px); } }
+@media (max-width: 600px) { .erp-done { top: 12px; right: 16px; } }

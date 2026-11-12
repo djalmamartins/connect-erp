@@ -12,7 +12,8 @@ um cadastro der certo apareça um aviso com a animação da marca virando check 
 
 ## Decisão
 
-- `erp.js` ganhou `ErpUI.done(mensagem)`: um cartão no centro da tela com o ícone animado e a mensagem. Fecha sozinho
+- `erp.js` ganhou `ErpUI.done(mensagem)`: um cartão no canto superior direito, logo abaixo da barra superior (pedido do Djalma em 11/11), com o
+  ícone animado à esquerda e a mensagem. Fecha sozinho
   em 3,2 s, com clique ou com Esc. Ele entra na região `[data-erp-toasts]` (`aria-live`), então o leitor de tela lê o
   texto.
 - O ícone é um SVG embutido no próprio `erp.js` (cerca de 3 KB), animado com SMIL (`fill="freeze"`, cerca de 1,9 s),
