@@ -309,6 +309,8 @@ $route->post("/moves/settle-past", "MoveSettlement:store", null, \Source\Support
 $route->get("/reports/maintenance-compliance", "MaintenanceCompliance:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Vínculo em lote das cópias de cheques aos lançamentos pagos, pelo cadastro (ADR 0249). Antes do laço dos cadastros.
 $route->post("/check-copies/link-entries", "CheckCopyMatching:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Carteira da cobrança judicial do condomínio, somente leitura (ADR 0250). Antes do laço dos cadastros.
+$route->get("/reports/legal-cases", "LegalCasePortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
