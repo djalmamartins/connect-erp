@@ -2179,6 +2179,30 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /contracts/close-ended:
+    post:
+      operationId: closeEndedContracts
+      summary: Encerramento em lote dos contratos com a vigência terminada (situação Encerrado pelo cadastro, mantendo o fim e o valor), tudo ou nada e com prévia (erp.access, erp.contracts.view e erp.contracts.manage, ADR 0245)
+      description: >-
+        Sem contract_ids, entram os contratos vigentes do condomínio com fim anterior a before (padrão hoje, nunca depois
+        de hoje); os de fornecedor inativo ou documento removido ficam de fora (skipped_inactive_link). Com contract_ids,
+        recusa contrato não encontrado no condomínio, encerrado ou cancelado, de prazo indeterminado, com a vigência ainda
+        valendo ou de fornecedor inativo ou documento removido. Cada contrato é regravado pelo cadastro só com a situação
+        Encerrado, mantendo o fim e o valor mensal (auditoria update do formulário e close por contrato). monthly_cents
+        soma o valor mensal dos encerrados; recurring_to_review conta os lançamentos fixos vigentes com o mesmo fornecedor,
+        que não são tocados. Nada é apagado e nenhum aviso é enviado. Sem objeto, fornecedor, documento ou observação na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, before: { type: string, format: date }, contract_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before, reason, skipped_inactive_link, monthly_cents, recurring_to_review, count, changed, contracts[{ id, ends_on, days_since_end, monthly_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou contrato recusado (errors com _form ou os erros do formulário, e _contract); nada é gravado' }
   /reports/insurance-coverage:
     get:
       operationId: insuranceCoverage

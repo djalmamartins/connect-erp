@@ -299,6 +299,8 @@ $route->get("/reports/resident-link-endings", "ResidentLinkEndings:show", null, 
 $route->post("/board-members/expire-terms", "BoardTermExpiry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobertura de seguros do condomínio numa data, somente leitura (ADR 0244). Antes do laço dos cadastros.
 $route->get("/reports/insurance-coverage", "InsuranceCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos contratos com a vigência terminada, pelo cadastro (ADR 0245). Antes do laço dos cadastros.
+$route->post("/contracts/close-ended", "ContractClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
