@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /legal-cases/close-settled:
+    post:
+      operationId: closeSettledLegalCases
+      summary: Encerramento em lote dos processos de cobrança cujas contas cobradas foram todas pagas, como no andamento do processo, tudo ou nada e com prévia (erp.access, erp.collections.view e erp.collections.manage, ADR 0251)
+      description: >-
+        Sem case_ids, entram os processos não encerrados do condomínio; ficam de fora os com conta em aberto
+        (skipped_open), com conta cancelada ou excluída, por exemplo trocada por acordo (skipped_cancelled), e os sem
+        contas (skipped_no_entries). Com case_ids, recusa processo não encontrado no condomínio, já encerrado, sem contas,
+        com conta em aberto ou cancelada. Cada processo vai para Encerrado como no andamento (Collections::addEvent): data
+        do encerramento no último pagamento (entre a abertura e hoje), motivo gravado e andamento closed registrado;
+        auditoria close_settled por processo. As contas não são tocadas, nada é apagado e nenhum aviso é enviado. Sem
+        unidade, devedor, advogado, número do processo ou vara na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, case_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_open, skipped_cancelled, skipped_no_entries, recovered_cents, count, changed, cases[{ id, from_status, closed_on, recovered_cents, entries }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou processo recusado (errors com _form e _case); nada é gravado' }
   /reports/legal-cases:
     get:
       operationId: legalCasePortfolio
