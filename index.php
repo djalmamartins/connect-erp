@@ -305,6 +305,8 @@ $route->post("/contracts/close-ended", "ContractClosing:store", null, \Source\Su
 $route->get("/reports/contract-portfolio", "ContractPortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Baixa em lote dos agendamentos de mudança com a data já passada, pelo cadastro (ADR 0247). Antes do laço dos cadastros.
 $route->post("/moves/settle-past", "MoveSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cumprimento do plano de manutenções num período, somente leitura (ADR 0248). Antes do laço dos cadastros.
+$route->get("/reports/maintenance-compliance", "MaintenanceCompliance:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
