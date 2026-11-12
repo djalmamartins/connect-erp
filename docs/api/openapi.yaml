@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /commitments/settle-paid:
+    post:
+      operationId: settlePaidCommitments
+      summary: Liquidação em lote dos empenhos cujo lançamento ligado já foi pago, na data do pagamento, tudo ou nada e com prévia (erp.access, erp.commitments.view, erp.commitments.manage e erp.entries.view, ADR 0253)
+      description: >-
+        Sem commitment_ids, entram os empenhos em aberto do condomínio com lançamento ligado e pago; ficam de fora os de
+        lançamento em aberto (awaiting_payment), os de lançamento cancelado, removido, de outro condomínio ou pago antes
+        da data do empenho (skipped_entry) e os de fornecedor inativo ou documento removido (skipped_inactive_link). Com
+        commitment_ids, recusa empenho não encontrado no condomínio, que não está em aberto, sem lançamento ligado ou em
+        qualquer desses casos. Cada empenho é regravado pelo cadastro como Liquidado, com settled_on igual à data do
+        pagamento; auditoria settle por empenho. O lançamento não é alterado, nada é apagado e nenhum aviso é enviado.
+        Sem descrição, fornecedor, documento ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer }, commitment_ids: { type: array, items: { type: integer }, maxItems: 500 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, awaiting_payment, skipped_entry, skipped_inactive_link, count, changed, amount_cents, entry_amount_cents, difference_cents, commitments[{ id, committed_on, settled_on, entry_id, amount_cents, entry_amount_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou empenho recusado (errors com _form e _commitment); nada é gravado' }
   /reports/contact-coverage:
     get:
       operationId: contactCoverage
