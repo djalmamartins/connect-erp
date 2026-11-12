@@ -2179,6 +2179,24 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/contact-coverage:
+    get:
+      operationId: contactCoverage
+      summary: Cobertura dos contatos úteis do condomínio por serviço (próprios, compartilhados, inativos, com e-mail, serviços cobertos e essenciais sem contato), somente leitura (erp.access e erp.contacts.view, ADR 0252)
+      description: >-
+        Uma linha por serviço do cadastro, sempre todos, com own (ativos do condomínio), shared (ativos compartilhados com
+        todos os condomínios), inactive_own, with_email e covered; totals soma as linhas; covered_services conta os
+        serviços cobertos e missing_essential lista os essenciais (emergência, encanador, eletricista e gás) sem nenhum
+        contato ativo. Sem nome, telefone, e-mail ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, rows[{ service, service_label, own, shared, inactive_own, with_email, covered }], totals { own, shared, inactive_own, with_email }, covered_services, services, missing_essential[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /legal-cases/close-settled:
     post:
       operationId: closeSettledLegalCases
