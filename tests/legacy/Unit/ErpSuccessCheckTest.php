@@ -32,7 +32,7 @@ final class ErpSuccessCheckTest extends TestCase
         $icon = $this->icon();
         self::assertStringNotContainsString('repeatCount', $icon, 'a animação não repete');
         self::assertStringNotContainsString('indefinite', $icon);
-        $animations = preg_match_all('/<animate(Transform)? /', $icon);
+        $animations = preg_match_all('/<(animate|animateTransform|animateMotion|set) /', $icon);
         self::assertSame($animations, substr_count($icon, 'fill="freeze"'), 'toda animação para no último quadro (o check)');
         self::assertStringContainsString('aria-hidden="true"', $icon, 'o texto do aviso é que é lido, não o ícone');
 

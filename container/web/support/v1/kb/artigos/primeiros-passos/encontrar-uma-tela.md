@@ -73,6 +73,6 @@ antes: esperar 300
 
 ## Quando você salva
 
-Sempre que um cadastro ou uma alteração dá certo, aparece no meio da tela um aviso com a marca da Connect: ela gira uma vez, vira um check e o texto diz o que foi feito, por exemplo "Fornecedor cadastrado com sucesso.". O aviso some sozinho em alguns segundos. Se quiser fechar antes, clique nele ou aperte **Esc**.
+Sempre que um cadastro ou uma alteração dá certo, aparece no canto superior direito um aviso com a marca da Connect: ela se apaga, vira uma bolinha que desenha um check e o texto diz o que foi feito, por exemplo "Fornecedor cadastrado com sucesso.". O aviso some sozinho em alguns segundos. Se quiser fechar antes, clique nele ou aperte **Esc**.
 
 Se algo der errado, o aviso continua na faixa colorida do topo da página, explicando o que precisa ser corrigido.
