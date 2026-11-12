@@ -303,6 +303,8 @@ $route->get("/reports/insurance-coverage", "InsuranceCoverage:show", null, \Sour
 $route->post("/contracts/close-ended", "ContractClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Carteira de contratos do condomínio numa data, somente leitura (ADR 0246). Antes do laço dos cadastros.
 $route->get("/reports/contract-portfolio", "ContractPortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Baixa em lote dos agendamentos de mudança com a data já passada, pelo cadastro (ADR 0247). Antes do laço dos cadastros.
+$route->post("/moves/settle-past", "MoveSettlement:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
