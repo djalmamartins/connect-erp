@@ -2393,6 +2393,75 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /visitors/block-unattached:
+    post:
+      operationId: blockUnattachedVisitors
+      summary: Bloqueio em lote dos visitantes liberados (inclusive com acesso permanente) de unidades sem nenhum morador ativo, como Bloqueado pelo cadastro, tudo ou nada e com prévia (erp.access, erp.visitors.view, erp.visitors.manage e erp.residents.view, ADR 0265)
+      description: >-
+        Morador ativo é o vínculo ativo, sem excluído e sem fim de vínculo passado. Sem visitor_ids, entram os visitantes
+        liberados do condomínio vinculados a uma unidade sem morador ativo; ficam de fora os só com o texto da unidade
+        (skipped_unlinked), os de unidade inativa (skipped_inactive_unit) e os sem data nem acesso permanente
+        (skipped_incomplete). Com visitor_ids, recusa visitante não encontrado no condomínio, já bloqueado, cuja unidade
+        ainda tem morador ativo ou nesses casos. Cada um é regravado pelo cadastro como Bloqueado; auditoria
+        block_unattached por visitante, com o motivo. permanent conta os de acesso permanente. Nada é apagado e nenhum aviso
+        é enviado. Sem nome, documento, telefone, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, visitor_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_unlinked, skipped_inactive_unit, skipped_incomplete, count, permanent, changed, visitors[{ id, permanent_access, valid_until }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou visitante recusado (errors com _form e _visitor); nada é gravado' }
+  /reports/assembly-history:
+    get:
+      operationId: assemblyHistory
+      summary: Histórico das assembleias do condomínio num período por tipo (encerradas, canceladas e em andamento, unidades presentes e média, procurações, sem direito a voto, itens aprovados e não aprovados), somente leitura (erp.access e erp.assemblies.view, ADR 0264)
+      description: >-
+        Uma linha por tipo (ordinária e extraordinária), sempre os dois, com as assembleias de primeira convocação entre
+        from e to (padrão: de dois anos antes a um ano depois de hoje, até 3660 dias): assemblies, closed, cancelled,
+        pending, attended_units e avg_attended_units (das encerradas), proxies e ineligible (das encerradas),
+        items_decided, items_approved e items_rejected (pelo resultado gravado na apuração, das não canceladas); totals
+        soma as contagens; last_closed_on é a última encerrada. Sem título, local, pauta, ata, presente, unidade ou voto.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ kind, kind_label, assemblies, closed, cancelled, pending, attended_units, avg_attended_units, proxies, ineligible, items_decided, items_approved, items_rejected }], totals, last_closed_on } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /reservations/cancel-for-closure:
+    post:
+      operationId: cancelReservationsForClosure
+      summary: Cancelamento em lote das reservas aguardando aprovação ou confirmadas de uma área comum interditada num período, como Cancelada pelo cadastro, tudo ou nada e com prévia (erp.access, erp.reservations.view e erp.reservations.manage, ADR 0263)
+      description: >-
+        A área precisa ser do condomínio e estar ativa; o período vai de hoje em diante, até 366 dias. Sem reservation_ids,
+        entram as reservas aguardando aprovação ou confirmadas da área no período; ficam de fora as com a taxa já cobrada
+        (skipped_billed, cancele a cobrança extra antes) e as de unidade inativa (skipped_inactive_unit). Com
+        reservation_ids, recusa reserva não encontrada na área do condomínio, já cancelada, fora do período ou nesses casos.
+        Cada uma é regravada pelo cadastro como Cancelada; auditoria closure_cancel por reserva, com o motivo.
+        waitlist_to_review conta as inscrições aguardando na lista de espera da área no período (não são tocadas). Nada é
+        apagado e nenhum aviso é enviado (o comunicado aos moradores é à parte). Sem morador, unidade ou observação na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, common_area_id, from, to, reason], properties: { condominium_id: { type: integer }, common_area_id: { type: integer }, from: { type: string, format: date }, to: { type: string, format: date }, reservation_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, common_area_id, dry_run, from, to, reason, skipped_billed, skipped_inactive_unit, waitlist_to_review, count, confirmed, changed, reservations[{ id, reserved_on, from_status, fee_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, área inativa ou reserva recusada (errors com _form e _reservation); nada é gravado' }
   /reports/tax-coverage:
     get:
       operationId: taxCoverage
