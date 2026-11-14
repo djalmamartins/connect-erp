@@ -409,6 +409,8 @@ $route->get("/reports/unit-documents", "UnitDocumentOverview:show", null, \Sourc
 $route->post("/taxes/deactivate-redundant", "TaxOverrideCleanup:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Situação das portarias (ativas por tipo, acessos no período, encomendas aguardando e portarias sem registro), somente leitura (ADR 0294).
 $route->get("/reports/gatehouses", "GatehouseOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Portarias paradas (sem acesso no período e sem encomenda aguardando) inativadas em lote, tudo ou nada e com prévia (ADR 0295).
+$route->post("/gatehouses/deactivate-idle", "GatehouseDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
