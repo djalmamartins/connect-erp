@@ -415,6 +415,8 @@ $route->post("/gatehouses/deactivate-idle", "GatehouseDeactivation:store", null,
 $route->get("/reports/invoice-types", "InvoiceTypeOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Tipos de faturas próprios sem uso (sem fatura no período, sem fatura em preparação e sem encobrir um padrão ativo) inativados em lote, tudo ou nada e com prévia (ADR 0297).
 $route->post("/invoice-types/deactivate-unused", "InvoiceTypeDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação das contas bancárias (ativas por tipo, conta principal, contas paradas no período e aplicações sem conta corrente), somente leitura (ADR 0298).
+$route->get("/reports/bank-accounts", "BankAccountOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
