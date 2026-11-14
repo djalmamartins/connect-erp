@@ -1,81 +1,37 @@
-import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
+import { useState, type ComponentProps } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
+import type { CommonArea, Reservation } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
+import { areaIcon } from '../../src/lib/areas';
 import { confirm } from '../../src/lib/confirm';
-import { date, money, parseDate, parseTime, today } from '../../src/lib/format';
+import { date, money, today } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
-import { space } from '../../src/theme';
-import { Body, Button, Card, CardTitle, Choice, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../../src/ui/kit';
+import { colors, fonts, radius, space } from '../../src/theme';
+import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+type Tab = 'new' | 'mine';
+type Filter = 'all' | 'free' | 'paid';
+
+const STATUS: Record<string, { label: string; color: string }> = {
+  active: { label: 'Aguardando aprovação', color: '#e0a100' },
+  confirmed: { label: 'Confirmada', color: colors.success },
+  inactive: { label: 'Cancelada', color: colors.danger },
+};
 
 export default function Reservas() {
   const { api, residentId } = useAuth();
   const areas = useResource(() => api.commonAreas(), [residentId]);
   const list = useResource(() => api.reservations(), [residentId]);
+  const [tab, setTab] = useState<Tab>('new');
+  const [filter, setFilter] = useState<Filter>('all');
   const mine = list.data?.reservations ?? [];
   const waiting = list.data?.waitlist ?? [];
-  const [areaId, setAreaId] = useState<number | null>(null);
-  const [day, setDay] = useState('');
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [waitlistOffer, setWaitlistOffer] = useState<{ areaId: number; date: string } | null>(null);
-
-  const area = areas.data?.find((a) => a.id === areaId) ?? null;
-
-  async function book() {
-    const e: Record<string, string> = {};
-    const isoDate = parseDate(day);
-    const startTime = start ? parseTime(start) : null;
-    const endTime = end ? parseTime(end) : null;
-    if (!areaId) e.common_area_id = 'Escolha o espaço.';
-    if (!isoDate) e.reserved_on = 'Use o formato DD/MM/AAAA.';
-    if (start && !startTime) e.starts_time = 'Use HH:MM.';
-    if (end && !endTime) e.ends_time = 'Use HH:MM.';
-    setErrors(e);
-    setWaitlistOffer(null);
-    if (Object.keys(e).length > 0 || !areaId || !isoDate) return;
-    setBusy(true);
-    try {
-      await api.createReservation({
-        common_area_id: areaId,
-        reserved_on: isoDate,
-        ...(startTime ? { starts_time: startTime } : {}),
-        ...(endTime ? { ends_time: endTime } : {}),
-      });
-      setDay('');
-      setStart('');
-      setEnd('');
-      Alert.alert('Reserva enviada', 'A administração vai confirmar a sua reserva. Acompanhe em Minhas reservas.');
-      await list.reload();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setErrors(err.fields);
-        if (err.status === 409 || err.fields.reserved_on) {
-          setWaitlistOffer({ areaId, date: isoDate });
-        }
-        Alert.alert('Reserva', err.message);
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function joinWaitlist() {
-    if (!waitlistOffer) return;
-    setBusy(true);
-    try {
-      await api.joinWaitlist({ common_area_id: waitlistOffer.areaId, desired_on: waitlistOffer.date });
-      await list.reload();
-      setWaitlistOffer(null);
-      Alert.alert('Lista de espera', 'Pronto! Avisamos se a data ficar livre.');
-    } catch (err) {
-      Alert.alert('Lista de espera', err instanceof ApiError ? err.message : 'Não foi possível entrar na lista.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  const upcoming = mine.filter((r) => r.status !== 'inactive' && r.reserved_on >= today()).length;
+  const shown = (areas.data ?? []).filter((a) => filter === 'all' || (filter === 'paid' ? (a.fee_cents ?? 0) > 0 : !a.fee_cents));
 
   async function cancel(id: number) {
     if (!(await confirm('Cancelar reserva', 'Quer mesmo cancelar esta reserva?', 'Cancelar reserva'))) return;
@@ -93,65 +49,164 @@ export default function Reservas() {
 
   return (
     <Screen title="Reservas" tab refreshing={areas.refreshing || list.refreshing} onRefresh={reload}>
-      {areas.loading ? <Loading /> : null}
-      {areas.error ? <ErrorBox error={areas.error} onRetry={areas.reload} /> : null}
-      {areas.data ? (
-        <Card>
-          <CardTitle>Nova reserva</CardTitle>
-          {areas.data.length === 0 ? (
-            <Body muted>Nenhum espaço disponível para reserva no momento.</Body>
-          ) : (
-            <View style={{ gap: space[3] }}>
-              <Choice label="Espaço" options={areas.data.map((a) => ({ value: a.id, label: a.name }))} value={areaId} onChange={setAreaId} />
-              {errors.common_area_id ? <Body style={{ color: '#d92d36' }}>{errors.common_area_id}</Body> : null}
-              {area?.rules ? <Body muted>{area.rules}</Body> : null}
-              {area?.opening_time && area?.closing_time ? <Body muted>Horário: {area.opening_time} às {area.closing_time}</Body> : null}
-              {area?.fee_cents ? <Body muted>Taxa de uso: {money(area.fee_cents)} (vem no seu boleto).</Body> : null}
-              <Field label="Data" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.reserved_on} />
-              <Row>
-                <View style={{ flex: 1 }}>
-                  <Field label="Início" placeholder="HH:MM" value={start} onChangeText={setStart} keyboardType="numbers-and-punctuation" error={errors.starts_time} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Field label="Fim" placeholder="HH:MM" value={end} onChangeText={setEnd} keyboardType="numbers-and-punctuation" error={errors.ends_time} />
-                </View>
-              </Row>
-              <Button title="Reservar" onPress={book} busy={busy} />
-              {waitlistOffer ? (
-                <Button title="Entrar na lista de espera desta data" variant="secondary" onPress={joinWaitlist} busy={busy} />
-              ) : null}
-            </View>
-          )}
-        </Card>
-      ) : null}
+      <View style={styles.segment} accessibilityRole="tablist">
+        {(
+          [
+            ['new', 'Nova reserva'],
+            ['mine', upcoming > 0 ? `Minhas reservas (${upcoming})` : 'Minhas reservas'],
+          ] as [Tab, string][]
+        ).map(([key, label]) => (
+          <Pressable
+            key={key}
+            onPress={() => setTab(key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === key }}
+            style={[styles.segmentItem, tab === key && styles.segmentActive]}
+          >
+            <Text style={[styles.segmentText, tab === key && styles.segmentTextActive]}>{label}</Text>
+          </Pressable>
+        ))}
+      </View>
 
-      <SectionTitle>Minhas reservas</SectionTitle>
-      {list.error && !areas.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : null}
-      {list.data && mine.length === 0 ? <Empty text="Você ainda não tem reservas." /> : null}
-      {mine.map((r) => (
-        <Card key={r.id}>
-          <Row>
-            <CardTitle>{r.area}</CardTitle>
-            <StatusBadge kind="reservation" status={r.status} />
-          </Row>
-          <Body muted>
-            {date(r.reserved_on)}
-            {r.starts_time ? ` · ${r.starts_time}` : ''}
-            {r.ends_time ? ` às ${r.ends_time}` : ''}
-            {r.fee_cents ? ` · taxa ${money(r.fee_cents)}` : ''}
-          </Body>
-          {['active', 'confirmed'].includes(r.status) && r.reserved_on >= today() ? (
-            <Button title="Cancelar" variant="danger" onPress={() => cancel(r.id)} />
-          ) : null}
-        </Card>
-      ))}
-      {waiting.length > 0 ? <SectionTitle>Lista de espera</SectionTitle> : null}
-      {waiting.map((w) => (
-        <Card key={`w${w.id}`}>
-          <CardTitle>{w.area}</CardTitle>
-          <Body muted>Esperando {date(w.desired_on)}. Avisamos se a data ficar livre.</Body>
-        </Card>
-      ))}
+      {tab === 'new' ? (
+        <>
+          <View style={styles.chips}>
+            {(
+              [
+                ['all', 'Todos', 'apps'],
+                ['free', 'Gratuitos', 'gift-outline'],
+                ['paid', 'Com taxa', 'cash-outline'],
+              ] as [Filter, string, IconName][]
+            ).map(([key, label, icon]) => (
+              <Pressable
+                key={key}
+                onPress={() => setFilter(key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: filter === key }}
+                style={[styles.chip, filter === key && styles.chipActive]}
+              >
+                <Ionicons name={icon} size={14} color={filter === key ? colors.onBrand : colors.muted} />
+                <Text style={[styles.chipText, filter === key && { color: colors.onBrand }]}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {areas.loading ? <Loading /> : null}
+          {areas.error ? <ErrorBox error={areas.error} onRetry={areas.reload} /> : null}
+          {areas.data && areas.data.length === 0 ? <Empty text="Nenhum espaço disponível para reserva no momento." /> : null}
+          {areas.data && areas.data.length > 0 && shown.length === 0 ? <Empty text="Nenhum espaço com esse filtro." /> : null}
+          {shown.map((a) => (
+            <AreaCard key={a.id} area={a} onPress={() => router.push({ pathname: '/reservar/[id]', params: { id: String(a.id) } })} />
+          ))}
+        </>
+      ) : (
+        <>
+          <View style={styles.legend}>
+            {['confirmed', 'active', 'inactive'].map((k) => (
+              <View key={k} style={styles.legendItem}>
+                <View style={[styles.dot, { backgroundColor: STATUS[k].color }]} />
+                <Text style={styles.legendText}>{STATUS[k].label}</Text>
+              </View>
+            ))}
+          </View>
+          {list.loading ? <Loading /> : null}
+          {list.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : null}
+          {list.data && mine.length === 0 ? <Empty text="Você ainda não tem reservas. Escolha um espaço em Nova reserva." /> : null}
+          {mine.map((r) => (
+            <BookingCard key={r.id} reservation={r} onCancel={() => cancel(r.id)} />
+          ))}
+          {waiting.length > 0 ? <SectionTitle>Lista de espera</SectionTitle> : null}
+          {waiting.map((w) => (
+            <Card key={`w${w.id}`}>
+              <Text style={styles.areaName}>{w.area}</Text>
+              <Body muted>Esperando {date(w.desired_on)}. Avisamos se a data ficar livre.</Body>
+            </Card>
+          ))}
+        </>
+      )}
     </Screen>
   );
 }
+
+function AreaCard({ area, onPress }: { area: CommonArea; onPress: () => void }) {
+  const paid = (area.fee_cents ?? 0) > 0;
+  return (
+    <Card onPress={onPress} accessibilityLabel={`Reservar ${area.name}`} style={styles.areaCard}>
+      <View style={styles.areaIcon}>
+        <Ionicons name={areaIcon(area.name)} size={26} color={colors.brandStrong} />
+      </View>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={styles.areaName}>{area.name}</Text>
+        <Text style={[styles.price, { color: paid ? colors.text : colors.success }]}>{paid ? `${money(area.fee_cents)} · vem no boleto` : 'Gratuito'}</Text>
+        <View style={styles.metaRow}>
+          {area.capacity ? <Meta icon="people-outline" text={`Até ${area.capacity} pessoas`} /> : null}
+          {area.opening_time && area.closing_time ? <Meta icon="time-outline" text={`${area.opening_time} às ${area.closing_time}`} /> : null}
+          {area.booking_mode === 'approval' ? <Meta icon="shield-checkmark-outline" text="Com aprovação" /> : null}
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+    </Card>
+  );
+}
+
+function Meta({ icon, text }: { icon: IconName; text: string }) {
+  return (
+    <View style={styles.meta}>
+      <Ionicons name={icon} size={13} color={colors.muted} />
+      <Text style={styles.metaText}>{text}</Text>
+    </View>
+  );
+}
+
+function BookingCard({ reservation: r, onCancel }: { reservation: Reservation; onCancel: () => void }) {
+  const st = STATUS[r.status] ?? { label: r.status, color: colors.faint };
+  const canCancel = ['active', 'confirmed'].includes(r.status) && r.reserved_on >= today();
+  return (
+    <View style={styles.booking}>
+      <View style={styles.bookingHead}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.areaName}>{r.area}</Text>
+          <Text style={styles.bookingWhen}>
+            {date(r.reserved_on)}
+            {r.starts_time ? ` · ${r.starts_time}` : ''}
+            {r.ends_time ? ` às ${r.ends_time}` : ''}
+          </Text>
+        </View>
+        <View style={[styles.dot, { backgroundColor: st.color, marginTop: 6 }]} accessibilityLabel={st.label} />
+      </View>
+      <View style={styles.bookingBody}>
+        <Body muted>
+          {st.label}
+          {r.fee_cents ? ` · taxa ${money(r.fee_cents)} no boleto` : ''}
+        </Body>
+        {canCancel ? <Button title="Cancelar reserva" variant="secondary" onPress={onCancel} /> : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  segment: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radius.pill, padding: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  segmentItem: { flex: 1, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  segmentActive: { backgroundColor: colors.surface, shadowColor: '#0d2e27', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  segmentText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.muted },
+  segmentTextActive: { color: colors.text },
+  chips: { flexDirection: 'row', gap: space[2], flexWrap: 'wrap' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipText: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  areaCard: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  areaIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  areaName: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
+  price: { fontFamily: fonts.semibold, fontSize: 14 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3], marginTop: 2 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: space[4] },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendText: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  booking: { backgroundColor: colors.surface, borderRadius: radius.xl, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  bookingHead: { flexDirection: 'row', gap: space[2], padding: space[4], backgroundColor: colors.surfaceMuted },
+  bookingWhen: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text, marginTop: 2 },
+  bookingBody: { padding: space[4], gap: space[3] },
+});
