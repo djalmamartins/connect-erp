@@ -395,6 +395,8 @@ $route->post("/imports/discard-stale", "ImportDiscard:store", null, \Source\Supp
 $route->get("/reports/banners", "BannerOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Banners encerrados ainda ativos inativados em lote, sem apagar, tudo ou nada e com prévia (ADR 0287).
 $route->post("/banners/deactivate-ended", "BannerDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação das cobranças extras e multas avulsas (lançado, recebido, em aberto, vencido e em acordo por tipo), somente leitura (ADR 0288).
+$route->get("/reports/extra-charges", "ExtraChargeOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
