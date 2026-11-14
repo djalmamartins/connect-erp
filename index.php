@@ -405,6 +405,8 @@ $route->get("/reports/discounts", "DiscountOverview:show", null, \Source\Support
 $route->post("/assemblies/cancel-stale-drafts", "AssemblyDraftCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Documentos emitidos para as unidades, por tipo e mês a mês (com débito, cancelados), somente leitura (ADR 0292).
 $route->get("/reports/unit-documents", "UnitDocumentOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Alíquotas próprias que só repetem o padrão inativadas em lote, por imposto, tudo ou nada e com prévia (ADR 0293).
+$route->post("/taxes/deactivate-redundant", "TaxOverrideCleanup:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
