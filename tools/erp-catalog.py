@@ -197,6 +197,11 @@ CONNECT_PAGES = [
      "route": "/configuracoes/fila-de-avisos", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-005-fila-de-avisos.md", "reference": "",
      "note": "Avisos do ERP enviados pela fila (e-mail), com situação, trilha de entrega mascarada e reenvio manual"},
+    # Honorários da Connect por condomínio e pedido da nota fiscal (ADR 0402).
+    {"id": "CN-008", "name": "Honorários", "group": "condominios", "section": "", "order": 100,
+     "route": "/condominios/honorarios", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-008-honorarios.md", "reference": "",
+     "note": "Contrato de administração da Connect com cada condomínio, total mensal e pedido da nota fiscal (pedido do proprietário, 14/11/2026)"},
 ]
 for p in CONNECT_PAGES:
     pages.append(p)
