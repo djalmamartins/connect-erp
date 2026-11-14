@@ -24,6 +24,10 @@ components:
       type: apiKey
       in: header
       name: X-CSRF-Token
+    residentApp:
+      type: http
+      scheme: bearer
+      description: Token do app nativo do morador (ADR 0303), devolvido por POST /resident/app-sessions. Sem cookie e sem CSRF.
   schemas:
     UnitBatchInput:
       type: object
@@ -464,6 +468,19 @@ components:
     ValidationFailed:
       description: Dados inválidos; error.fields traz campo → mensagem
       content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ResidentAppToken:
+      description: Sessão do aparelho criada; guardar o token no cofre do aparelho
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  token: { type: string, pattern: '^[0-9a-f]{64}$' }
+                  expires_at: { type: string, format: date }
+                  idle_days: { type: integer, example: 30 }
 paths:
   /health:
     get:
@@ -508,6 +525,95 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
         '429':
           description: Muitas tentativas
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /resident/app-sessions:
+    post:
+      operationId: createResidentAppSession
+      summary: Entra no app nativo do morador e recebe o token Bearer
+      description: >-
+        Mesma conta, senha e limite de tentativas do login web (6 por conta e 30 por IP em 15 minutos). Só entra quem
+        tem vínculo de morador ativo. Com 2FA ativo devolve 202 com um desafio de uso único (5 minutos, 5 tentativas);
+        o token sai em /resident/app-sessions/verify. O token vale 90 dias e cai com 30 dias sem uso ou no logout
+        global (ADR 0303). Só o sha256 fica no servidor.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login: { type: string, maxLength: 191, description: E-mail ou CPF }
+                password: { type: string, maxLength: 1024 }
+                device_name: { type: string, maxLength: 80 }
+      responses:
+        '201': { $ref: '#/components/responses/ResidentAppToken' }
+        '202':
+          description: Falta o segundo fator
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { two_factor_required: { const: true }, challenge: { type: string, pattern: '^[0-9a-f]{64}$' } } }
+        '401':
+          description: E-mail, CPF ou senha não conferem
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: A conta não tem vínculo de morador ativo (not_resident)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: 2FA obrigatório e ainda não configurado (two_factor_setup_required); configurar pela web
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: Faltou o login ou a senha
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '429':
+          description: Muitas tentativas
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /resident/app-sessions/verify:
+    post:
+      operationId: verifyResidentAppSession
+      summary: Conclui o login do app com o código do autenticador ou de recuperação
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge, code]
+              properties:
+                challenge: { type: string, pattern: '^[0-9a-f]{64}$' }
+                code: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/ResidentAppToken' }
+        '401':
+          description: Desafio inexistente, usado, vencido ou com tentativas esgotadas (challenge_expired)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: Código inválido
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '429':
+          description: Muitas tentativas
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /resident/app-sessions/current:
+    delete:
+      operationId: deleteResidentAppSession
+      summary: Sai do app neste aparelho (revoga o token)
+      security: [{ residentApp: [] }]
+      responses:
+        '200':
+          description: Sessão encerrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { revoked: { const: true } } }
+        '401':
+          description: Token ausente, inválido ou já revogado
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
   /users/{id}/2fa:
     delete:

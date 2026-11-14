@@ -35,6 +35,11 @@ $route->get("/health", static function (): void {
  */
 $route->namespace("Source\\Controllers\\Api\\V1");
 $route->post("/auth/2fa/verify", "TwoFactor:verify");
+// Sessão do app nativo do morador (ADR 0303): token Bearer, sem cookie nem CSRF; login com o mesmo limite de
+// tentativas e o mesmo 2FA do login web.
+$route->post("/resident/app-sessions", "ResidentAppSessions:store");
+$route->post("/resident/app-sessions/verify", "ResidentAppSessions:verify");
+$route->delete("/resident/app-sessions/current", "ResidentAppSessions:destroy");
 // Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
 // consulta de cada título no banco antes de mudar qualquer estado.
 $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
