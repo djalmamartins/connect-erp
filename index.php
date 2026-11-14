@@ -125,6 +125,9 @@ $route->get("/accountability-links", "AccountabilityLinks:index", null, \Source\
 $route->post("/accountability-links", "AccountabilityLinks:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-links/{id}/send", "AccountabilityLinks:send", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-links/{id}/revoke", "AccountabilityLinks:revoke", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/local-holidays", "LocalHolidays:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/local-holidays", "LocalHolidays:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/local-holidays/{id}", "LocalHolidays:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/deliveries", "DeliveryLog:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/delivery-pickups", "DeliveryLog:pickUp", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -639,6 +642,7 @@ $route->post("/verificar", "DocumentVerify:verify");
 // Link público da prestação de contas para os moradores (ADR 0301): sem login, em qualquer host, token no caminho.
 $route->get("/prestacao/{token}", "AccountabilityLinkPublic:show");
 $route->get("/prestacao/{token}/documento/{attachment}", "AccountabilityLinkPublic:file");
+$route->get("/prestacao/{token}/pdf", "AccountabilityLinkPublic:pdf");
 $route->namespace(null);
 
 $moduleRole = Access::role(Auth::user());

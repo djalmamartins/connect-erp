@@ -17,8 +17,8 @@ type Tab = 'new' | 'mine';
 type Filter = 'all' | 'free' | 'paid';
 
 const STATUS: Record<string, { label: string; color: string }> = {
-  active: { label: 'Aguardando aprovação', color: '#e0a100' },
-  confirmed: { label: 'Confirmada', color: colors.success },
+  active: { label: 'Aguardando o síndico', color: '#e0a100' },
+  confirmed: { label: 'Aprovada', color: colors.success },
   inactive: { label: 'Cancelada', color: colors.danger },
 };
 
@@ -140,7 +140,7 @@ function AreaCard({ area, onPress }: { area: CommonArea; onPress: () => void }) 
         <View style={styles.metaRow}>
           {area.capacity ? <Meta icon="people-outline" text={`Até ${area.capacity} pessoas`} /> : null}
           {area.opening_time && area.closing_time ? <Meta icon="time-outline" text={`${area.opening_time} às ${area.closing_time}`} /> : null}
-          {area.booking_mode === 'approval' ? <Meta icon="shield-checkmark-outline" text="Com aprovação" /> : null}
+          <Meta icon="shield-checkmark-outline" text="Com aprovação do síndico" />
         </View>
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.faint} />

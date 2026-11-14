@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
 import { useEffect, useState, type ComponentProps } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { isFeatureOn, type Feature } from '../../src/api/resident';
+import { isFeatureOn, type Feature, type Reservation } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
 import { tokenStorage } from '../../src/auth/storage';
 import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
@@ -12,6 +12,7 @@ import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Card, CardTitle, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
 import { areaIcon } from '../../src/lib/areas';
+import { trackApprovals } from '../../src/lib/approvals';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type Shortcut = { label: string; icon: IconName; href: Href; feature: Feature };
@@ -31,6 +32,10 @@ export default function Home() {
   // Segunda via de cara: a próxima conta com boleto já fica com os botões no cartão verde.
   const charges = useResource(() => (billing ? api.charges() : Promise.resolve(null)), [residentId, billing]);
   const boleto = nextBoleto(charges.data?.lines ?? []);
+  // Aviso de reserva aprovada: compara com as que estavam aguardando o síndico na última visita.
+  const booking = isFeatureOn(me, 'reservations');
+  const bookings = useResource(() => (booking ? api.reservations() : Promise.resolve(null)), [residentId, booking]);
+  const [approved, setApproved] = useState<Reservation[]>([]);
   const [opening, setOpening] = useState(false);
   const [hidden, setHidden] = useState(false);
   const many = (me?.links.length ?? 0) > 1;
@@ -38,6 +43,27 @@ export default function Home() {
   useEffect(() => {
     void tokenStorage.getHideValues().then(setHidden);
   }, []);
+
+  useEffect(() => {
+    const list = bookings.data?.reservations;
+    if (!list || residentId === null) return;
+    let alive = true;
+    void tokenStorage.getApprovals(residentId).then(async (before) => {
+      const next = trackApprovals(list, before.pending, before.unseen);
+      await tokenStorage.setApprovals(residentId, next);
+      if (alive) setApproved(list.filter((r) => next.unseen.includes(r.id)));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [bookings.data, residentId]);
+
+  async function dismissApprovals() {
+    setApproved([]);
+    if (residentId === null) return;
+    const before = await tokenStorage.getApprovals(residentId);
+    await tokenStorage.setApprovals(residentId, { pending: before.pending, unseen: [] });
+  }
 
   function toggleHidden() {
     setHidden((v) => {
@@ -57,7 +83,7 @@ export default function Home() {
   }
 
   async function refresh() {
-    await Promise.all([summary.reload(), charges.reload()]);
+    await Promise.all([summary.reload(), charges.reload(), bookings.reload()]);
   }
   const current = me?.current ?? null;
   const s = summary.data;
@@ -165,6 +191,25 @@ export default function Home() {
         </LinearGradient>
       </Pressable>
 
+      {approved.length > 0 ? (
+        <View style={styles.approved} accessibilityRole="alert">
+          <View style={styles.approvedIcon}>
+            <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+          </View>
+          <Pressable style={{ flex: 1, gap: 2 }} onPress={() => router.push('/reservas')} accessibilityRole="button">
+            <Text style={styles.approvedTitle}>{approved.length > 1 ? 'Reservas aprovadas' : 'Reserva aprovada'}</Text>
+            {approved.map((r) => (
+              <Text key={r.id} style={styles.approvedText}>
+                {r.area} · {date(r.reserved_on)}
+                {r.starts_time ? ` às ${r.starts_time}` : ''}
+              </Text>
+            ))}
+          </Pressable>
+          <Pressable onPress={dismissApprovals} hitSlop={10} accessibilityRole="button" accessibilityLabel="Fechar aviso">
+            <Ionicons name="close" size={20} color={colors.muted} />
+          </Pressable>
+        </View>
+      ) : null}
       {shortcuts.length > 0 ? (
         <View style={styles.shortcuts}>
           {shortcuts.map((c) => (
@@ -211,7 +256,7 @@ export default function Home() {
               key={r.id}
               icon={areaIcon(r.area)}
               title={r.area}
-              subtitle={`${date(r.reserved_on)}${r.starts_time ? ` · ${r.starts_time}` : ''}${r.ends_time ? ` às ${r.ends_time}` : ''}`}
+              subtitle={`${date(r.reserved_on)}${r.starts_time ? ` · ${r.starts_time}` : ''}${r.ends_time ? ` às ${r.ends_time}` : ''}${r.status === 'active' ? ' · aguardando o síndico' : ''}`}
               onPress={() => router.push('/reservas')}
             />
           ))}
@@ -267,6 +312,10 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
   heroWrap: { borderRadius: 24, overflow: 'hidden' },
+  approved: { flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: '#e6f6ee', borderRadius: radius.xl, padding: space[4], borderWidth: 1, borderColor: '#bfe6d0' },
+  approvedIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  approvedTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
+  approvedText: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   hero: { borderRadius: 24, padding: space[5], gap: space[4], overflow: 'hidden' },
   // Ícone da Connect como marca d'água no canto do cartão (pedido do Djalma, 14/11).
   heroMark: {

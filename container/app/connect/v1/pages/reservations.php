@@ -70,7 +70,7 @@ $bookable = array_values(array_filter($areas, static fn (array $a): bool => in_a
     <?php if ($areas === []): ?><?php $this->insert('partials/empty', ['icon' => 'calendar', 'text' => 'O condomínio ainda não cadastrou áreas para reserva.']) ?><?php endif; ?>
     <ul class="app-items">
     <?php foreach ($areas as $a):
-        $facts = [$a['booking_mode'] === 'free' ? 'Reserva confirmada na hora' : ($a['booking_mode'] === 'approval' ? 'Reserva com aprovação da administração' : 'Reservas suspensas no momento')];
+        $facts = [$a['booking_mode'] === 'blocked' ? 'Reservas suspensas no momento' : 'Reserva com aprovação do síndico'];
         if ($a['opening_time']) { $facts[] = 'Funciona das ' . $a['opening_time'] . ' às ' . $a['closing_time']; }
         if ($a['min_advance_days']) { $facts[] = 'Antecedência mínima de ' . (int)$a['min_advance_days'] . ' dia(s)'; }
         if ($a['max_advance_days']) { $facts[] = 'Até ' . (int)$a['max_advance_days'] . ' dia(s) antes'; }
