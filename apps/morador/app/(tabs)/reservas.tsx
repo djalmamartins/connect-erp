@@ -92,7 +92,7 @@ export default function Reservas() {
   };
 
   return (
-    <Screen refreshing={areas.refreshing || list.refreshing} onRefresh={reload}>
+    <Screen title="Reservas" tab refreshing={areas.refreshing || list.refreshing} onRefresh={reload}>
       {areas.loading ? <Loading /> : null}
       {areas.error ? <ErrorBox error={areas.error} onRetry={areas.reload} /> : null}
       {areas.data ? (

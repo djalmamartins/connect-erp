@@ -103,3 +103,27 @@ export function periodLabel(period: string, kind?: string): string {
   }
   return `Ano de ${period.slice(0, 4)}`;
 }
+
+const WEEKDAYS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+/** Data do dia por extenso, para o topo do Início: "sábado, 14 de novembro". */
+export function longToday(now: Date = new Date()): string {
+  return `${WEEKDAYS[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}`;
+}
+
+/** Saudação pela hora do aparelho. */
+export function greeting(now: Date = new Date()): string {
+  const h = now.getHours();
+  return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+}
+
+/** Iniciais para o avatar: primeira letra do primeiro e do último nome. */
+export function initials(name: string | null | undefined): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '?';
+  }
+  const first = parts[0]!.charAt(0);
+  const last = parts.length > 1 ? parts[parts.length - 1]!.charAt(0) : '';
+  return (first + last).toUpperCase();
+}

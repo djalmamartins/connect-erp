@@ -63,7 +63,7 @@ export default function Visitantes() {
   }
 
   return (
-    <Screen refreshing={list.refreshing} onRefresh={list.reload}>
+    <Screen title="Visitantes" back refreshing={list.refreshing} onRefresh={list.reload}>
       {list.error?.isFeatureDisabled ? (
         <ErrorBox error={list.error} />
       ) : (

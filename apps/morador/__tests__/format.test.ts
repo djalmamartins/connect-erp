@@ -1,4 +1,4 @@
-import { date, money, parseDate, parseTime, periodLabel, statusLabel, statusTone, today } from '../src/lib/format';
+import { date, greeting, initials, longToday, money, parseDate, parseTime, periodLabel, statusLabel, statusTone, today } from '../src/lib/format';
 
 describe('format', () => {
   it('formata centavos em reais', () => {
@@ -45,5 +45,14 @@ describe('format', () => {
     expect(periodLabel('2026-03')).toBe('Março de 2026');
     expect(periodLabel('2026', 'annual')).toBe('Ano de 2026');
     expect(periodLabel('2026-12', 'annual')).toBe('Ano de 2026');
+  });
+  it('monta o topo do Início', () => {
+    expect(longToday(new Date(2026, 10, 14))).toBe('sábado, 14 de novembro');
+    expect(greeting(new Date(2026, 10, 14, 8))).toBe('Bom dia');
+    expect(greeting(new Date(2026, 10, 14, 13))).toBe('Boa tarde');
+    expect(greeting(new Date(2026, 10, 14, 21))).toBe('Boa noite');
+    expect(initials('Ana Paula Souza')).toBe('AS');
+    expect(initials('  ana ')).toBe('A');
+    expect(initials('')).toBe('?');
   });
 });

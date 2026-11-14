@@ -21,7 +21,9 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 
 ## O que o morador vê
 
-- **Início**: o que está em aberto, o próximo vencimento, encomendas para retirar, reservas, ocorrências e comunicados novos.
+As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira uma barra pequena quando a pessoa rola. Embaixo fica uma barra flutuante e translúcida com **Início**, **Financeiro**, **Reservas**, **Ocorrências** e **Mais**. Nas telas abertas pelo Mais, o botão redondo no canto de cima volta.
+
+- **Início**: a saudação com a data, um cartão com o condomínio, a unidade, o valor em aberto e o próximo vencimento, atalhos para reservar, registrar ocorrência, avisar visitante e abrir documentos (só os que o condomínio ligou), encomendas para retirar, reservas, ocorrências e comunicados novos.
 - **Financeiro**: as contas em aberto com {{Copiar linha digitável}}, {{Copiar Pix copia e cola}} e {{Abrir boleto (PDF)}}, o histórico de pagamentos e a prestação de contas de cada mês.
 - **Reservas**: os espaços liberados, com regras e taxa, a reserva de uma data e a lista de espera quando a data já está ocupada.
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
