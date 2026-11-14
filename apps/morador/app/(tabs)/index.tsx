@@ -10,7 +10,8 @@ import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
 import { date, greeting, initials, longToday, money } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
-import { Body, Card, CardTitle, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { Body, Card, CardTitle, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { areaIcon } from '../../src/lib/areas';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type Shortcut = { label: string; icon: IconName; href: Href; feature: Feature };
@@ -206,13 +207,13 @@ export default function Home() {
         <>
           <SectionTitle>Próximas reservas</SectionTitle>
           {s.next_reservations.map((r) => (
-            <Card key={r.id} onPress={() => router.push('/reservas')}>
-              <CardTitle>{r.area}</CardTitle>
-              <Body muted>
-                {date(r.reserved_on)}
-                {r.starts_time ? ` · ${r.starts_time}` : ''}
-              </Body>
-            </Card>
+            <IconRow
+              key={r.id}
+              icon={areaIcon(r.area)}
+              title={r.area}
+              subtitle={`${date(r.reserved_on)}${r.starts_time ? ` · ${r.starts_time}` : ''}${r.ends_time ? ` às ${r.ends_time}` : ''}`}
+              onPress={() => router.push('/reservas')}
+            />
           ))}
         </>
       ) : null}
@@ -220,10 +221,15 @@ export default function Home() {
         <>
           <SectionTitle>Assembleias</SectionTitle>
           {s.assemblies.map((a) => (
-            <Card key={a.id} onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })}>
-              <CardTitle>{a.title}</CardTitle>
-              <Body muted>{date(a.first_call_at)}</Body>
-            </Card>
+            <IconRow
+              key={a.id}
+              icon="podium"
+              tint="#07884c"
+              bg={colors.successSoft}
+              title={a.title}
+              subtitle={date(a.first_call_at)}
+              onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })}
+            />
           ))}
         </>
       ) : null}
@@ -231,10 +237,15 @@ export default function Home() {
         <>
           <SectionTitle>Comunicados</SectionTitle>
           {s.announcements.map((a) => (
-            <Card key={a.id} onPress={() => router.push('/comunicados')}>
-              <CardTitle>{a.subject}</CardTitle>
-              <Body muted>{date(a.published_at)}</Body>
-            </Card>
+            <IconRow
+              key={a.id}
+              icon="megaphone"
+              tint="#c2611f"
+              bg="#fdf0e6"
+              title={a.subject}
+              subtitle={date(a.published_at)}
+              onPress={() => router.push('/comunicados')}
+            />
           ))}
         </>
       ) : null}
