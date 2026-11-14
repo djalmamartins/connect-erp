@@ -120,7 +120,7 @@ final class ResidentAppIntegrationTest extends TestCase
 
         $confirmed = $portal->requestReservation($this->morador, $this->link($this->morador), ['common_area_id' => $free, 'reserved_on' => $date, 'starts_time' => '10:00', 'ends_time' => '14:00',
             'unit_id' => $this->unitB, 'condominium_id' => $this->beta]);
-        self::assertSame('confirmed', $confirmed['status'], 'Área de reserva livre confirma na hora.');
+        self::assertSame('active', $confirmed['status'], 'Pedido do morador espera o síndico aprovar, mesmo em área livre.');
         $row = $this->pdo->query('SELECT condominium_id, unit_id, resident_name, created_by FROM erp_reservations WHERE id = ' . (int)$confirmed['id'])->fetch(\PDO::FETCH_ASSOC);
         self::assertSame([$this->alpha, $this->unitA, 'Ana Moradora', (int)$this->morador->id], [(int)$row['condominium_id'], (int)$row['unit_id'], $row['resident_name'], (int)$row['created_by']],
             'Condomínio e unidade vêm do vínculo, não do pedido.');

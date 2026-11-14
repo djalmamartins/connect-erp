@@ -142,6 +142,24 @@ final class ResidentAppExtrasIntegrationTest extends TestCase
         self::assertSame([], $feed->search($this->link(), 'agua'), 'Função desligada não aparece na busca.');
     }
 
+    public function testBellShowsReservationApprovedByTheStaffOnly(): void
+    {
+        $this->pdo->prepare("INSERT INTO erp_common_areas (condominium_id, name, booking_mode) VALUES (?, 'Salão de festas', 'approval')")->execute([$this->condo]);
+        $area = (int)$this->pdo->lastInsertId();
+        $day = date('Y-m-d', strtotime('+20 days'));
+        $insert = $this->pdo->prepare("INSERT INTO erp_reservations (condominium_id, common_area_id, unit_id, resident_name, reserved_on, starts_time, status, created_by, updated_by)
+            VALUES (?, ?, ?, 'Ana Moradora', ?, ?, ?, ?, ?)");
+        $insert->execute([$this->condo, $area, $this->unit, $day, '10:00:00', 'confirmed', $this->resident->id, $this->admin->id]);
+        $insert->execute([$this->condo, $area, $this->unit, $day, '18:00:00', 'active', $this->resident->id, $this->resident->id]);
+        $insert->execute([$this->condo, $area, $this->otherUnit, $day, '14:00:00', 'confirmed', $this->resident->id, $this->admin->id]);
+
+        $approved = array_values(array_filter((new ResidentFeed($this->pdo))->notifications($this->link(), date('Y-m-d')),
+            static fn (array $i): bool => $i['kind'] === 'reservation_approved'));
+        self::assertCount(1, $approved, 'Só a reserva da unidade que a equipe confirmou vira aviso; a aguardando não.');
+        self::assertSame('Reserva aprovada', $approved[0]['title']);
+        self::assertStringContainsString('Salão de festas', $approved[0]['detail']);
+    }
+
     public function testLabExamplesAreCreatedOnceAndVisibleInTheApp(): void
     {
         $root = sys_get_temp_dir() . '/resident-examples-' . bin2hex(random_bytes(4));
