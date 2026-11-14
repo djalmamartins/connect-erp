@@ -11,6 +11,7 @@ use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\ResidentPortalAdoption;
+use Source\Services\Erp\ResidentPortalPermissions;
 
 /**
  * ADR 0268: adesão ao portal do morador, somente leitura. Unit com SQLite (Pdo\Sqlite quando existe; PDO no PHP 8.2) para
@@ -66,7 +67,7 @@ final class ResidentPortalAdoptionTest extends TestCase
         self::assertSame(['residents' => 5, 'with_access' => 1, 'to_invite' => 3], $summary['totals']);
         self::assertSame($summary['totals']['residents'], array_sum(array_column($summary['rows'], 'residents')));
         self::assertSame(['inhabited' => 3, 'with_access' => 1, 'without_access' => 2], $summary['units']);
-        self::assertSame([5, 2], [count($summary['features']), $summary['enabled']], 'Só as funções conhecidas.');
+        self::assertSame([count(ResidentPortalPermissions::FEATURES), 2], [count($summary['features']), $summary['enabled']], 'Só as funções conhecidas.');
         self::assertSame(1, $summary['rows'][4]['by_relationship']['tenant']);
         $empty = ResidentPortalAdoption::summarize([], []);
         self::assertSame([7, 0, 0, 0], [count($empty['rows']), $empty['totals']['residents'], $empty['units']['inhabited'], $empty['enabled']]);

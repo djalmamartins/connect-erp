@@ -60,7 +60,7 @@ Uma linha por situação, sempre as sete, com `residents` e `by_relationship` so
   `revoked`.
 - **`units`:** as unidades vinculadas com morador ativo (`inhabited`), separadas em `with_access` e `without_access`, que
   somam `inhabited`.
-- **`features`:** as cinco funções do portal, ligadas ou não; `enabled` conta as ligadas.
+- **`features`:** todas as funções do portal (as de `ResidentPortalPermissions::FEATURES`; nove desde a ADR 0302), ligadas ou não; `enabled` conta as ligadas.
 
 ### Acesso e dados
 
