@@ -2958,6 +2958,27 @@ paths:
         '409': { description: 'Uma importação mudou de situação durante o pedido; nada é descartado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou importação recusada (errors com _form e _import); nada é descartado' }
+  /reports/banners:
+    get:
+      operationId: bannerOverview
+      summary: Situação dos banners do aplicativo para o condomínio (no ar hoje, agendados, encerrados ainda ativos e acabando em breve), somente leitura (erp.access e erp.settings.view, ADR 0286)
+      description: >-
+        Entram os banners do condomínio e os de todos os condomínios (sem condomínio), sem os apagados. rows traz uma
+        linha por alcance (deste condomínio e de todos) com o total e a contagem por situação no dia do banco: no ar
+        (ativo e dentro do período), agendado (ainda não começou), encerrado (ativo, mas já acabou) e inativo; as situações
+        somam o total, e totals soma as linhas. showing_now é igual a totals.showing. showing_ids lista os banners no ar
+        pela ordem de exibição (posição e início), ending_soon_ids os no ar que acabam em até 7 dias (do que acaba antes) e
+        ended_active_ids os encerrados ainda ativos, para inativar, até 200 cada, com truncated. Sem título, texto nem quem
+        cadastrou. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ scope, scope_label, banners, showing, scheduled, ended, inactive }], totals { banners, showing, scheduled, ended, inactive }, showing_now, showing_ids[], showing_truncated, ending_soon_ids[], ending_soon_truncated, ended_active_ids[], ended_active_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
