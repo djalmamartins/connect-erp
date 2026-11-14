@@ -29,6 +29,12 @@
       "expo-secure-store",
       "expo-font",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "O Connect usa o Face ID para você entrar sem digitar a senha."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/intro-symbol.png",

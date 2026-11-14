@@ -24,6 +24,13 @@ if ! curl -fsS "http://127.0.0.1:${connect_port}/api/v1/health" >/dev/null 2>&1;
 fi
 curl -fsS "http://127.0.0.1:${connect_port}/api/v1/health" >/dev/null || stop "o Connect não respondeu em 127.0.0.1:${connect_port}."
 echo "Connect respondendo em 127.0.0.1:${connect_port}"
+# O login do app usa as tabelas de sessão do aparelho (migration 20261114_0902). Sem elas, o
+# site entra e o app não: por isso confere aqui antes de abrir o Expo.
+if ! pending="$(docker compose exec -T app php service/commands/database-migrate.php status 2>&1)"; then
+  printf '%s\n' "$pending" | grep '\[pendente\]' || printf '%s\n' "$pending"
+  stop "o banco do lab tem migrations pendentes, e o login do app depende delas. Rode antes: bash tools/lab-atualizar.sh"
+fi
+echo "Banco do lab em dia (sem migrations pendentes)"
 
 say "3/5 Endereço do Mac na rede"
 ip="${MAC_IP:-}"

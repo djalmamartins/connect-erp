@@ -385,6 +385,12 @@ $route->get("/reports/notification-queue", "NotificationQueueHealth:show", null,
 $route->post("/notifications/cancel-stale", "NotificationStaleCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Acessos dos usuários ao ERP (por papel, sem papel, sem acesso pela regra, exceções e situação da conta), somente leitura (ADR 0282).
 $route->get("/reports/user-access", "UserAccessReport:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Acesso ao condomínio tirado em lote de quem, pela regra, não entra no ERP, tudo ou nada e com prévia (ADR 0283).
+$route->post("/users/revoke-condominium-access", "UserAccessRevocation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação das importações (prévias paradas, aplicadas, linhas com erro e última aplicação por tipo), somente leitura (ADR 0284).
+$route->get("/reports/imports", "ImportsOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Prévias de importação paradas descartadas em lote, sem aplicar nem apagar arquivo, tudo ou nada e com prévia (ADR 0285). Antes de /imports/{id}.
+$route->post("/imports/discard-stale", "ImportDiscard:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
