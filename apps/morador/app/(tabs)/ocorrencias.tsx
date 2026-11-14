@@ -52,7 +52,7 @@ export default function Ocorrencias() {
   }
 
   return (
-    <Screen refreshing={list.refreshing} onRefresh={list.reload}>
+    <Screen title="Ocorrências" tab refreshing={list.refreshing} onRefresh={list.reload}>
       {list.error?.isFeatureDisabled ? (
         <ErrorBox error={list.error} />
       ) : (

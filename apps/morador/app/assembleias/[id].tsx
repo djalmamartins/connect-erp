@@ -10,7 +10,7 @@ export default function Assembleia() {
   const res = useResource(() => api.assembly(Number(id)), [id, residentId]);
   const a = res.data;
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {a ? (

@@ -37,5 +37,5 @@ export const fonts = {
 } as const;
 
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32 } as const;
-export const radius = { sm: 8, md: 11, lg: 15, pill: 999 } as const;
+export const radius = { sm: 8, md: 11, lg: 15, xl: 20, pill: 999 } as const;
 export const controlHeight = 44;

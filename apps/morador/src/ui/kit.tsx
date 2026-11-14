@@ -1,6 +1,10 @@
-import type { ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { BlurView } from 'expo-blur';
+import { router } from 'expo-router';
+import { useRef, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,30 +16,101 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ApiError } from '../api/client';
 import { statusLabel, statusTone, type StatusKind, type Tone } from '../lib/format';
 import { colors, controlHeight, fonts, radius, space } from '../theme';
+
+/** Espaço livre no fim das telas com a barra de baixo flutuante. */
+export const TAB_BAR_SPACE = 104;
 
 export function Screen({
   children,
   refreshing,
   onRefresh,
+  title,
+  subtitle,
+  eyebrow,
+  back,
+  tab,
+  right,
 }: {
   children: ReactNode;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** Título grande no topo, no estilo do iPhone; some e vira barra pequena ao rolar. */
+  title?: string;
+  subtitle?: string;
+  /** Linha pequena acima do título, como a data no Início. */
+  eyebrow?: string;
+  /** Mostra o botão de voltar (telas abertas a partir do Mais ou do Início). */
+  back?: boolean | 'close';
+  /** Tela de aba: deixa espaço para a barra flutuante. */
+  tab?: boolean;
+  /** Ação à direita do título, como o avatar no Início. */
+  right?: ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const compact = scrollY.interpolate({ inputRange: [24, 56], outputRange: [0, 1], extrapolate: 'clamp' });
+  const barHeight = insets.top + 48;
+
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.screenContent}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.brand} /> : undefined
-      }
+    <View style={styles.screen}>
+      <Animated.ScrollView
+        style={styles.screen}
+        contentContainerStyle={[
+          styles.screenContent,
+          { paddingTop: insets.top + (back ? space[2] : space[4]) },
+          tab && { paddingBottom: insets.bottom + TAB_BAR_SPACE },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        refreshControl={
+          onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.brand} progressViewOffset={insets.top} /> : undefined
+        }
+      >
+        {back ? <BackButton mode={back} /> : null}
+        {title ? (
+          <View style={styles.largeHeader}>
+            <View style={{ flex: 1 }}>
+              {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
+              <Text style={styles.largeTitle} accessibilityRole="header">
+                {title}
+              </Text>
+              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            </View>
+            {right}
+          </View>
+        ) : null}
+        {children}
+      </Animated.ScrollView>
+      {title ? (
+        <Animated.View pointerEvents="none" style={[styles.compactBar, { height: barHeight, paddingTop: insets.top, opacity: compact }]}>
+          <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, styles.compactTint]} />
+          <Text style={styles.compactTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+}
+
+function BackButton({ mode }: { mode: true | 'close' }) {
+  const close = mode === 'close';
+  return (
+    <Pressable
+      onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+      accessibilityRole="button"
+      accessibilityLabel={close ? 'Fechar' : 'Voltar'}
+      hitSlop={10}
+      style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
     >
-      {children}
-    </ScrollView>
+      <Ionicons name={close ? 'close' : 'chevron-back'} size={22} color={colors.text} />
+    </Pressable>
   );
 }
 
@@ -226,17 +301,50 @@ export function CardTitle({ children }: { children: ReactNode }) {
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   screenContent: { padding: space[4], gap: space[3], paddingBottom: space[7] },
-  title: { fontFamily: fonts.bold, fontSize: 22, color: colors.text, marginBottom: space[1] },
-  sectionTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text, marginTop: space[3] },
+  largeHeader: { flexDirection: 'row', alignItems: 'flex-end', gap: space[3], marginBottom: space[2] },
+  largeTitle: { fontFamily: fonts.bold, fontSize: 34, lineHeight: 41, letterSpacing: -0.6, color: colors.text },
+  eyebrow: { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.muted, marginBottom: 2 },
+  subtitle: { fontFamily: fonts.medium, fontSize: 15, color: colors.muted, marginTop: 2 },
+  compactBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(18,26,49,0.12)',
+    overflow: 'hidden',
+  },
+  compactTint: { backgroundColor: 'rgba(238,248,242,0.72)' },
+  compactTitle: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text, paddingHorizontal: 64 },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginBottom: space[1],
+  },
+  title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.4, color: colors.text, marginBottom: space[1] },
+  sectionTitle: { fontFamily: fonts.bold, fontSize: 20, letterSpacing: -0.3, color: colors.text, marginTop: space[4] },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.text },
   muted: { color: colors.muted },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: space[4],
     gap: space[2],
+    shadowColor: '#0d2e27',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text, flexShrink: 1 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[3] },

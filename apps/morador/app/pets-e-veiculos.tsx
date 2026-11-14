@@ -6,7 +6,7 @@ export default function PetsEVeiculos() {
   const { api, residentId } = useAuth();
   const res = useResource(() => api.petsVehicles(), [residentId]);
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen title="Pets e veículos" back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data ? (

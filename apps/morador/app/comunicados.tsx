@@ -7,7 +7,7 @@ export default function Comunicados() {
   const { api, residentId } = useAuth();
   const res = useResource(() => api.announcements(), [residentId]);
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen title="Comunicados" back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="Nenhum comunicado por enquanto." /> : null}
