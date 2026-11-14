@@ -3,6 +3,7 @@ import { nextBoleto, pendingLines } from '../src/lib/boleto';
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('../src/lib/openFile', () => ({ openProtectedFile: jest.fn() }));
+jest.mock('../src/ui/Dialog', () => ({ dialog: { toast: jest.fn(), notice: jest.fn(), confirm: jest.fn() } }));
 
 const charge = { id: 1, status: 'registered', digitable_line: '123', barcode: null, pix_copy_paste: null, pdf_available: true };
 const line = (id: number, due: string, situation: string, withCharge = true) =>

@@ -2,12 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
 import { useResource } from '../src/lib/useResource';
 import { colors, fonts, radius, space } from '../src/theme';
 import { Body, Button, Card, CardTitle, ErrorBox, Field, Loading, Screen, SectionTitle } from '../src/ui/kit';
+import { dialog } from '../src/ui/Dialog';
 
 /** Separa a chave em grupos de 4 para ler e digitar com menos erro. */
 function groups(secret: string): string {
@@ -39,7 +40,7 @@ export default function Seguranca() {
     try {
       if (action === 'disable') {
         await api.disableTwoFactor(clean);
-        Alert.alert('Verificação desligada', 'Você volta a entrar só com a senha.');
+        void dialog.notice({ title: 'Verificação desligada', message: 'Você volta a entrar só com a senha.', tone: 'info', icon: 'shield-outline' });
       } else {
         const result = action === 'confirm' ? await api.confirmTwoFactor(clean) : await api.newRecoveryCodes(clean);
         setCodes(result.recovery_codes ?? []);
@@ -55,14 +56,14 @@ export default function Seguranca() {
 
   async function copy(text: string, what: string) {
     await Clipboard.setStringAsync(text);
-    Alert.alert('Copiado', `${what} copiad${what.endsWith('s') ? 'os' : 'a'}.`);
+    dialog.toast(`${what} copiad${what.endsWith('s') ? 'os' : 'a'}.`);
   }
 
   async function openAuthenticator(uri: string) {
     try {
       await Linking.openURL(uri);
     } catch {
-      Alert.alert('Nenhum autenticador encontrado', 'Instale um aplicativo autenticador (como Google Authenticator ou Microsoft Authenticator) ou copie a chave e cole nele.');
+      void dialog.notice({ title: 'Nenhum autenticador encontrado', message: 'Instale um aplicativo autenticador (como Google Authenticator ou Microsoft Authenticator) ou copie a chave e cole nele.', tone: 'info', icon: 'key-outline' });
     }
   }
 

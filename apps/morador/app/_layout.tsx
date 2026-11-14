@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { colors } from '../src/theme';
+import { DialogHost } from '../src/ui/Dialog';
 import { IntroSplash } from '../src/ui/IntroSplash';
 import { Loading } from '../src/ui/kit';
 import { LockScreen } from '../src/ui/LockScreen';
@@ -63,6 +64,7 @@ export default function RootLayout() {
       <AuthProvider>
         <RootStack />
       </AuthProvider>
+      <DialogHost />
       {intro ? (
         <>
           <StatusBar style="light" />

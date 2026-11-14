@@ -167,7 +167,7 @@ function BoletoCard({ line, actions, onPdf, opening }: { line: StatementLine; ac
       {actions && charge ? (
         <View style={styles.actions}>
           {charge.pdf_available ? <Action icon="document-text-outline" label={opening ? 'Abrindo…' : '2ª via (PDF)'} primary onPress={onPdf} /> : null}
-          {charge.digitable_line ? <Action icon="copy-outline" label="Copiar código" onPress={() => copy(charge.digitable_line as string, 'Linha digitável')} /> : null}
+          {charge.digitable_line ? <Action icon="copy-outline" label="Copiar código" onPress={() => copy(charge.digitable_line as string, 'Código do boleto')} /> : null}
           {charge.pix_copy_paste ? <Action icon="qr-code-outline" label="Pix" onPress={() => copy(charge.pix_copy_paste as string, 'Código Pix')} /> : null}
         </View>
       ) : null}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { ApiError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
 import { confirm } from '../src/lib/confirm';
@@ -7,6 +7,7 @@ import { date, parseDate } from '../src/lib/format';
 import { useResource } from '../src/lib/useResource';
 import { space } from '../src/theme';
 import { Body, Button, Card, CardTitle, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../src/ui/kit';
+import { dialog } from '../src/ui/Dialog';
 
 export default function Visitantes() {
   const { api, residentId } = useAuth();
@@ -40,12 +41,12 @@ export default function Visitantes() {
       setDoc('');
       setDay('');
       setUntil('');
-      Alert.alert('Visita avisada', 'A portaria já sabe quem vem.');
+      void dialog.notice({ title: 'Visita avisada', message: 'A portaria já sabe quem vem.', tone: 'success', icon: 'person-add' });
       await list.reload();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fields);
-        Alert.alert('Visitante', err.message);
+        void dialog.notice({ title: 'Não deu para avisar', message: err.message, tone: 'error' });
       }
     } finally {
       setBusy(false);
@@ -58,7 +59,7 @@ export default function Visitantes() {
       await api.cancelVisit(id);
       await list.reload();
     } catch (err) {
-      Alert.alert('Visitante', err instanceof ApiError ? err.message : 'Não foi possível cancelar.');
+      void dialog.notice({ title: 'Não deu para cancelar', message: err instanceof ApiError ? err.message : 'Tente de novo em instantes.', tone: 'error' });
     }
   }
 
