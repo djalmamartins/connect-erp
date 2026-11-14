@@ -22,13 +22,14 @@ $t = $statement['totals'];
 </form>
 
 <?php if ($statement['lines'] === []): ?>
-    <div class="app-card app-empty"><p>Nenhuma conta neste período.</p></div>
+    <?php $this->insert('partials/empty', ['icon' => 'receipt', 'text' => 'Nenhuma conta neste período.']) ?>
 <?php endif; ?>
-<ul class="app-list">
+<ul class="app-items">
 <?php foreach ($statement['lines'] as $line): [$label, $tone] = F::badge(F::SITUATIONS, $line['situation']); $charge = $line['charge']; ?>
     <li class="app-card app-charge">
         <a class="app-charge__head app-charge__link" href="<?= app_url('/boletos/' . $line['entry_id']) ?>" title="<?= $line['situation'] === 'paid' ? 'Ver recibo' : 'Ver a conta' ?>">
-            <span><strong><?= $this->e($line['description']) ?></strong><small>Vence em <?= F::date($line['due_on']) ?><?= $line['paid_on'] ? ' · pago em ' . F::date($line['paid_on']) : '' ?></small></span>
+            <span class="app-item__icon app-item__icon--<?= $line['situation'] === 'overdue' ? 'danger' : ($line['situation'] === 'paid' ? 'success' : 'brand') ?>" aria-hidden="true"><svg><use href="#i-receipt"></use></svg></span>
+            <span class="app-item__text"><strong><?= $this->e($line['description']) ?></strong><small>Vence em <?= F::date($line['due_on']) ?><?= $line['paid_on'] ? ' · pago em ' . F::date($line['paid_on']) : '' ?></small></span>
             <span class="app-charge__amount"><?= F::money($line['amount_cents']) ?><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span></span>
             <svg class="app-charge__chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
         </a>

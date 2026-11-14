@@ -32,30 +32,25 @@ $bookable = array_values(array_filter($areas, static fn (array $a): bool => in_a
 
 <section class="app-section">
     <h2>Minhas reservas</h2>
-    <?php if ($mine['reservations'] === []): ?><p class="app-muted">Nenhuma reserva recente.</p><?php endif; ?>
-    <ul class="app-list">
-    <?php foreach ($mine['reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']); ?>
-        <li class="app-card app-row">
-            <span><strong><?= $this->e($r['area']) ?></strong><small><?= F::date($r['reserved_on']) ?><?= $r['starts_time'] ? ' · ' . $r['starts_time'] . ' às ' . $r['ends_time'] : '' ?><?= $r['fee_cents'] ? ' · taxa ' . F::money($r['fee_cents']) : '' ?></small></span>
-            <span class="app-row__end">
-                <span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span>
-                <?php if ($r['status'] !== 'inactive' && $r['reserved_on'] >= $today): ?>
-                    <form method="post" action="<?= app_url('/reservas/' . $r['id'] . '/cancelar') ?>" data-app-confirm="Cancelar esta reserva?">
-                        <?= csrf_input() ?><button class="app-link-button" type="submit">Cancelar</button>
-                    </form>
-                <?php endif; ?>
-            </span>
-        </li>
-    <?php endforeach; ?>
+    <?php if ($mine['reservations'] === []): ?><?php $this->insert('partials/empty', ['icon' => 'calendar', 'text' => 'Nenhuma reserva recente.']) ?><?php endif; ?>
+    <ul class="app-items">
+    <?php foreach ($mine['reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']);
+        $cancel = $r['status'] !== 'inactive' && $r['reserved_on'] >= $today ? '<form method="post" action="' . app_url('/reservas/' . $r['id'] . '/cancelar') . '" data-app-confirm="Cancelar esta reserva?">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
+        $this->insert('partials/item', ['date' => $r['reserved_on'], 'title' => $r['area'],
+            'lines' => [($r['starts_time'] ? $r['starts_time'] . ' às ' . $r['ends_time'] : 'Dia todo') . ($r['fee_cents'] ? ' · taxa ' . F::money($r['fee_cents']) : '')],
+            'badge' => [$label, $tone], 'actions' => $cancel]);
+    endforeach; ?>
     </ul>
 </section>
 
 <?php if ($bookable !== []): ?>
 <section class="app-section">
     <h2>Lista de espera</h2>
-    <?php foreach ($mine['waitlist'] as $w): ?>
-        <div class="app-card app-row"><span><strong><?= $this->e($w['area']) ?></strong><small>Data desejada <?= F::date($w['desired_on']) ?></small></span><span class="app-badge app-badge--info">Aguardando</span></div>
-    <?php endforeach; ?>
+    <?php if ($mine['waitlist'] !== []): ?><ul class="app-items">
+    <?php foreach ($mine['waitlist'] as $w):
+        $this->insert('partials/item', ['icon' => 'calendar', 'tone' => 'info', 'title' => $w['area'], 'lines' => ['Data desejada ' . F::date($w['desired_on'])], 'badge' => ['Aguardando', 'info']]);
+    endforeach; ?>
+    </ul><?php endif; ?>
     <details class="app-card app-form-card">
         <summary>Entrar na lista de espera</summary>
         <form method="post" action="<?= app_url('/reservas/lista-de-espera') ?>" class="app-form">
@@ -72,19 +67,19 @@ $bookable = array_values(array_filter($areas, static fn (array $a): bool => in_a
 
 <section class="app-section">
     <h2>Áreas e regras</h2>
-    <?php if ($areas === []): ?><p class="app-muted">O condomínio ainda não cadastrou áreas para reserva.</p><?php endif; ?>
-    <?php foreach ($areas as $a): ?>
-        <details class="app-card app-area">
-            <summary><strong><?= $this->e($a['name']) ?></strong><?php if ($a['booking_mode'] === 'blocked'): ?><span class="app-badge app-badge--neutral">Bloqueada</span><?php endif; ?></summary>
-            <ul class="app-facts">
-                <li><?= $a['booking_mode'] === 'free' ? 'Reserva confirmada na hora' : ($a['booking_mode'] === 'approval' ? 'Reserva com aprovação da administração' : 'Reservas suspensas no momento') ?></li>
-                <?php if ($a['opening_time']): ?><li>Funciona das <?= $a['opening_time'] ?> às <?= $a['closing_time'] ?></li><?php endif; ?>
-                <?php if ($a['min_advance_days']): ?><li>Antecedência mínima de <?= (int)$a['min_advance_days'] ?> dia(s)</li><?php endif; ?>
-                <?php if ($a['max_advance_days']): ?><li>Até <?= (int)$a['max_advance_days'] ?> dia(s) antes</li><?php endif; ?>
-                <?php if ($a['capacity']): ?><li>Capacidade: <?= (int)$a['capacity'] ?> pessoas</li><?php endif; ?>
-                <?php if ($a['fee_cents']): ?><li>Taxa: <?= F::money($a['fee_cents']) ?></li><?php endif; ?>
-            </ul>
-            <?php if ($a['rules'] !== ''): ?><p class="app-notice__body"><?= nl2br($this->e($a['rules'])) ?></p><?php endif; ?>
-        </details>
-    <?php endforeach; ?>
+    <?php if ($areas === []): ?><?php $this->insert('partials/empty', ['icon' => 'calendar', 'text' => 'O condomínio ainda não cadastrou áreas para reserva.']) ?><?php endif; ?>
+    <ul class="app-items">
+    <?php foreach ($areas as $a):
+        $facts = [$a['booking_mode'] === 'free' ? 'Reserva confirmada na hora' : ($a['booking_mode'] === 'approval' ? 'Reserva com aprovação da administração' : 'Reservas suspensas no momento')];
+        if ($a['opening_time']) { $facts[] = 'Funciona das ' . $a['opening_time'] . ' às ' . $a['closing_time']; }
+        if ($a['min_advance_days']) { $facts[] = 'Antecedência mínima de ' . (int)$a['min_advance_days'] . ' dia(s)'; }
+        if ($a['max_advance_days']) { $facts[] = 'Até ' . (int)$a['max_advance_days'] . ' dia(s) antes'; }
+        if ($a['capacity']) { $facts[] = 'Capacidade: ' . (int)$a['capacity'] . ' pessoas'; }
+        if ($a['fee_cents']) { $facts[] = 'Taxa: ' . F::money($a['fee_cents']); }
+        $body = '<ul class="app-facts">' . implode('', array_map(fn (string $f): string => '<li>' . $this->e($f) . '</li>', $facts)) . '</ul>'
+            . ($a['rules'] !== '' ? '<p class="app-notice__body">' . nl2br($this->e($a['rules'])) . '</p>' : '');
+        $this->insert('partials/item', ['icon' => 'calendar', 'tone' => $a['booking_mode'] === 'blocked' ? 'neutral' : 'brand', 'title' => $a['name'],
+            'lines' => [$facts[0]], 'badge' => $a['booking_mode'] === 'blocked' ? ['Bloqueada', 'neutral'] : ($a['fee_cents'] ? [F::money($a['fee_cents']), 'neutral'] : null), 'body' => $body]);
+    endforeach; ?>
+    </ul>
 </section>

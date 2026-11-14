@@ -389,3 +389,49 @@ a.app-hero:hover { box-shadow: 0 12px 28px #06513f40; }
 .app-feed a { min-width: 0; }
 .app-top__who form.app-unit { width: 100%; }
 .app-top__who .app-unit select { width: 100%; max-width: 100%; text-overflow: ellipsis; padding-right: 18px; }
+
+/* Padrão único das listas (ajustes de 14/11): partials/item.php e partials/empty.php */
+.app-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.app-item-wrap { min-width: 0; scroll-margin-top: 90px; }
+.app-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: inherit; text-decoration: none; min-width: 0; }
+a.app-item { transition: box-shadow .15s, transform .15s; }
+a.app-item:hover { box-shadow: 0 6px 18px #0b2a1a14; }
+a.app-item:hover .app-item__text strong { color: var(--app-brand-strong); }
+.app-item__icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--app-brand-tint); color: var(--app-brand-strong); }
+.app-item__icon svg { width: 20px; height: 20px; }
+.app-item__icon--success { background: var(--app-success-soft); color: var(--app-success); }
+.app-item__icon--warning { background: var(--app-warning-soft); color: var(--app-warning); }
+.app-item__icon--danger { background: var(--app-danger-soft); color: var(--app-danger); }
+.app-item__icon--info { background: var(--app-info-soft); color: var(--app-info); }
+.app-item__icon--neutral { background: var(--app-neutral-soft); color: var(--app-neutral); }
+.app-item .app-date { width: 40px; height: 44px; border-radius: 12px; font-size: 10px; }
+.app-item .app-date strong { font-size: 16px; line-height: 1.05; }
+.app-item__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.app-item__text strong { font-size: 15px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+.app-item__text small { color: var(--app-muted); font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.app-item__end { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.app-item__end form { margin: 0; }
+.app-item__go { width: 16px; height: 16px; flex: none; color: #a3b0a9; }
+.app-item-card { padding: 0; overflow: hidden; }
+.app-item-card > summary { list-style: none; cursor: pointer; }
+.app-item-card > summary::-webkit-details-marker { display: none; }
+.app-item__toggle { transform: rotate(90deg); transition: transform .15s; }
+.app-item-card[open] .app-item__toggle { transform: rotate(-90deg); }
+.app-item__body { padding: 0 16px 16px 70px; }
+.app-item__body .app-facts { margin-top: 0; }
+@media (max-width: 420px) { .app-item__body { padding-left: 16px; } }
+.app-section > .app-items + .app-form-card, .app-section > .app-items + .app-items { margin-top: 10px; }
+
+.app-empty--icon::before { display: none; }
+.app-empty--icon { padding: 28px 22px 30px; }
+.app-empty__icon { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 16px; background: var(--app-brand-tint); color: var(--app-brand-strong); }
+.app-empty__icon svg { width: 24px; height: 24px; }
+.app-empty--icon .app-button { margin-top: 14px; }
+
+/* Boletos no mesmo padrão */
+.app-items > .app-charge { padding: 14px 16px; }
+.app-charge__head { align-items: center; gap: 14px; }
+.app-charge__head > .app-item__text { flex: 1; min-width: 0; }
+.app-charge__receipt, .app-charge__pay, .app-charge__note { margin-left: 54px; }
+.app-notice__icon { width: 40px; height: 40px; }
+.app-items .app-charge__head > span.app-item__icon { flex: none; display: grid; }

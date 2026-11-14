@@ -185,7 +185,7 @@ final class AppScreens extends Controller
 
     public function accountability(): void
     {
-        $this->page('accountability', 'accountability', 'pages/accountability', 'Prestação de contas', fn (User $u, array $link): array => ['links' => $this->portal->accountability($link)]);
+        $this->page('accountability', 'accountability', 'pages/accountability', 'Prestação de contas', fn (User $u, array $link): array => ['publications' => $this->portal->accountability($link)]);
     }
 
     public function announcements(): void

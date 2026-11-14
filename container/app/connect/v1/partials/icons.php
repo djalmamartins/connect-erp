@@ -23,4 +23,6 @@
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
     <symbol id="i-phone" viewBox="0 0 24 24"><path d="M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2"/></symbol>
   </defs>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7l-2 5zM5 12h14M7.5 17v2M16.5 17v2"/><circle cx="8" cy="14.5" r=".8"/><circle cx="16" cy="14.5" r=".8"/></symbol>
+    <symbol id="i-paw" viewBox="0 0 24 24"><path d="M12 13c-3 0-5 3.5-5 5.5 0 1.5 1.5 2 2.5 1.6L12 19l2.5 1.1c1 .4 2.5-.1 2.5-1.6 0-2-2-5.5-5-5.5z"/><circle cx="7" cy="9" r="1.7"/><circle cx="17" cy="9" r="1.7"/><circle cx="10" cy="5.5" r="1.7"/><circle cx="14" cy="5.5" r="1.7"/></symbol>
 </svg>
