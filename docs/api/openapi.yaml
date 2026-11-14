@@ -2760,6 +2760,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /documents/restore-linked:
+    post:
+      operationId: restoreLinkedDocuments
+      summary: Arquivos do Disco Virtual que ainda têm vínculo com algum cadastro de volta da lixeira, em lote, tudo ou nada e com prévia (erp.access, erp.documents.view e erp.documents.manage, ADR 0277)
+      description: >-
+        Sem document_ids, entram os arquivos da lixeira do condomínio que algum cadastro ainda usa (a lista
+        VirtualDiskDeduplication::LINKS: contrato, seguro, manutenção, ocorrência, empenho, cópia de cheque, aviso de
+        entrega, malote, procuração ou anexo de lançamento); ficam de fora os que têm outro arquivo igual fora da lixeira
+        na mesma pasta, contados em skipped_duplicate. Com document_ids, recusa arquivo não encontrado no condomínio, fora
+        da lixeira, sem vínculo ou com outro igual na pasta. Restaurar volta deleted_at e deleted_by a vazio, com auditoria
+        restore e o motivo. Nenhum arquivo é apagado ou copiado e nenhum aviso é enviado. Sem título, nome de arquivo,
+        caminho ou hash na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, document_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_duplicate, count, links, bytes, changed, documents[{ id, folder, size_bytes, links }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou arquivo recusado (errors com _form e _document); nenhum arquivo sai da lixeira' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
