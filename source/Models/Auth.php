@@ -44,8 +44,28 @@ class Auth extends Model
     /**
      * @return User|null
      */
+    /**
+     * Usuário só desta requisição (ADR 0303): o app do morador autentica pelo token Bearer, sem sessão nem
+     * cookie. Quem chama é o ResidentApiAuthenticated, depois de validar o token. Nunca vai para a sessão.
+     */
+    private static ?User $actingUser = null;
+
+    public static function actingAs(?User $user): void
+    {
+        self::$actingUser = $user;
+    }
+
+    /** Id do usuário da requisição autenticada por token, para a auditoria (null fora do app). */
+    public static function actingUserId(): ?int
+    {
+        return self::$actingUser !== null ? (int)self::$actingUser->id : null;
+    }
+
     public static function user(): ?User
     {
+        if (self::$actingUser !== null) {
+            return self::$actingUser;
+        }
         $session = new Session();
         if (!$session->has("authUser")) {
             return null;
