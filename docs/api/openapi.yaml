@@ -3281,6 +3281,30 @@ paths:
         '409': { description: 'Um relógio mudou de situação durante o pedido; nada é inativado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou relógio recusado (errors com _form e _meter); nada é inativado' }
+  /reports/invoice-reconciliation:
+    get:
+      operationId: invoiceReconciliation
+      summary: Conferência entre as faturas e as contas a receber (item sem conta, conta inativa ou com outro valor, fatura cancelada com conta ativa, total que não bate e preparação vencida), somente leitura (erp.access, erp.invoices.view e erp.entries.view, ADR 0400)
+      description: >-
+        rows traz uma linha por situação de fatura (em preparação, emitida e cancelada), sempre todas, com as faturas das
+        competências dos últimos months meses (padrão 12, de 1 a 60, no mês do banco), os itens, a soma dos itens,
+        total_mismatch (faturas cujo total ou quantidade de unidades gravados não batem com os itens) e overdue_drafts
+        (preparações com vencimento já passado). Cada item da fatura emitida é classificado pela conta a receber gerada
+        nele: missing (sem conta, ou excluída), renegotiated (em acordo), inactive (inativa fora de acordo),
+        amount_mismatch (ativa com outro valor), paid ou open; na cancelada, still_active quando a conta segue ativa.
+        totals soma as linhas. attention_ids lista as faturas com total que não bate, preparação vencida ou item missing,
+        inactive, amount_mismatch ou still_active, até 200, com truncated. Sem unidade, morador, descrição nem conta
+        bancária. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: months, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 60, default: 12 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, months, from, to, rows[{ status, status_label, invoices, items, amount_cents, total_mismatch, overdue_drafts, missing, renegotiated, inactive, amount_mismatch, paid, open, still_active }], totals { invoices, items, amount_cents, total_mismatch, overdue_drafts, missing, renegotiated, inactive, amount_mismatch, paid, open, still_active }, attention_ids[], attention_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
