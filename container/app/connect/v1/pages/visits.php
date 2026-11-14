@@ -5,7 +5,7 @@ use Source\Controllers\App\Resident\Format as F;
 $this->layout('default');
 $today = date('Y-m-d');
 ?>
-<header class="app-page-head"><h1>Visitantes</h1><p>Avise a portaria de quem vem visitar você ou prestar um serviço.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Visitantes</h1><p>Avise a portaria de quem vem visitar você ou prestar um serviço.</p></header>
 <details class="app-card app-form-card" open>
     <summary><h2>Avisar visita</h2></summary>
     <form method="post" action="<?= app_url('/visitantes') ?>" class="app-form">

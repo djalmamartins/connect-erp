@@ -1,5 +1,5 @@
 <?php /** Códigos de recuperação do 2FA recém-configurado (ADR 0302). @var list<string> $codes */ $this->layout('default'); ?>
-<header class="app-page-head"><h1>Códigos de recuperação</h1></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Códigos de recuperação</h1></header>
 <div class="app-card">
 <?php if ($codes === []): ?>
     <p>Os códigos só aparecem uma vez, logo depois de configurar a verificação em duas etapas.</p>

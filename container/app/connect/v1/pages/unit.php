@@ -3,7 +3,7 @@
 $this->layout('default');
 $species = ['cao' => 'Cão', 'gato' => 'Gato', 'ave' => 'Ave', 'outro' => 'Outro'];
 ?>
-<header class="app-page-head"><h1>Minha unidade</h1><p><?= $this->e($link['unit_label']) ?> · <?= $this->e($link['condominium_name']) ?></p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Minha unidade</h1><p><?= $this->e($link['unit_label']) ?> · <?= $this->e($link['condominium_name']) ?></p></header>
 <div class="app-card">
     <ul class="app-facts">
         <li>Nome no cadastro: <?= $this->e($link['name']) ?></li>

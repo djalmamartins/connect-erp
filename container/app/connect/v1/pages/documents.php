@@ -8,7 +8,7 @@ foreach ($documents as $d) {
     $groups[$d['folder_label']][] = $d;
 }
 ?>
-<header class="app-page-head"><h1>Documentos</h1><p>Convenção, regimento interno, atas e outros documentos do condomínio.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Documentos</h1><p>Convenção, regimento interno, atas e outros documentos do condomínio.</p></header>
 <?php if ($documents === []): ?><div class="app-card app-empty"><p>A administração ainda não liberou documentos para os moradores.</p></div><?php endif; ?>
 <?php foreach ($groups as $folder => $items): ?>
     <section class="app-section">

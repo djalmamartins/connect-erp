@@ -6,7 +6,7 @@ $this->layout('default');
 $today = date('Y-m-d');
 $bookable = array_values(array_filter($areas, static fn (array $a): bool => in_array($a['booking_mode'], ['approval', 'free'], true)));
 ?>
-<header class="app-page-head"><h1>Reservas</h1><p>Salão, churrasqueira, quadra e outras áreas do condomínio.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Reservas</h1><p>Salão, churrasqueira, quadra e outras áreas do condomínio.</p></header>
 
 <?php if ($bookable !== []): ?>
 <details class="app-card app-form-card" open>
