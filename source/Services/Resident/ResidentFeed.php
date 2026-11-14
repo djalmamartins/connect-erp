@@ -91,6 +91,18 @@ final class ResidentFeed
                         'at' => $r['reserved_on'] . ' ' . ($r['starts_time'] ?? '00:00') . ':00', 'path' => '/reservas', 'tone' => 'success'];
                 }
             }
+            // Aprovada pelo síndico nos últimos 30 dias: o morador pediu (created_by) e a equipe confirmou (updated_by).
+            $stmt = $this->pdo->prepare("SELECT r.reserved_on, r.starts_time, r.updated_at, a.name AS area FROM erp_reservations r
+                JOIN erp_common_areas a ON a.id = r.common_area_id
+                WHERE r.unit_id = :u AND r.condominium_id = :c AND r.deleted_at IS NULL AND r.status = 'confirmed' AND r.reserved_on >= :t
+                  AND r.updated_by IS NOT NULL AND (r.created_by IS NULL OR r.updated_by <> r.created_by) AND r.updated_at >= :since
+                ORDER BY r.updated_at DESC LIMIT 5");
+            $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 't' => $today,
+                'since' => (new \DateTimeImmutable($today))->modify('-30 days')->format('Y-m-d')]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $items[] = ['kind' => 'reservation_approved', 'title' => 'Reserva aprovada', 'detail' => (string)$r['area'] . ' · ' . date('d/m/Y', strtotime((string)$r['reserved_on'])),
+                    'at' => (string)$r['updated_at'], 'path' => '/reservas', 'tone' => 'success'];
+            }
         }
         usort($items, static fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
         return array_slice($items, 0, self::MAX_ITEMS);
