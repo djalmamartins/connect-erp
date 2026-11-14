@@ -383,6 +383,8 @@ $route->post("/announcements/retry-failed", "AnnouncementRetry:store", null, \So
 $route->get("/reports/notification-queue", "NotificationQueueHealth:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Avisos pendentes parados há muito tempo cancelados em lote, tudo ou nada e com prévia (ADR 0281). Antes de /notifications/{id}.
 $route->post("/notifications/cancel-stale", "NotificationStaleCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Acessos dos usuários ao ERP (por papel, sem papel, sem acesso pela regra, exceções e situação da conta), somente leitura (ADR 0282).
+$route->get("/reports/user-access", "UserAccessReport:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
