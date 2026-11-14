@@ -86,3 +86,9 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - Todo estado vazio usa `partials/empty.php`: ícone da função, uma frase e, se fizer sentido, um botão.
 - Boletos, comunicados e assembleias seguem as mesmas medidas (ícone 40px, cantos 12px, espaço de 10px entre cartões).
 - Corrigido: a prestação de contas passava a variável `links` para a tela e apagava a lista de unidades do layout, por isso o seletor de unidade aparecia vazio nessa página. Agora a variável se chama `publications`.
+
+### Mesmas mudanças do app de celular (Djalma, 14/11/2026)
+- Início: cartão com marca d'água da Connect, olho para esconder valores (localStorage do aparelho), 2ª via do boleto (conta em aberto mais antiga, `summary.charges.next_entry_id`) e Copiar código (linha digitável ou Pix), troca de unidade pela setinha e atalhos.
+- Reservas: abas Nova reserva / Minhas reservas, filtro por taxa e calendário do mês em `/reservas/area/{id}` (`ResidentPortal::calendar`, regra pura: já passou, fora do prazo, suspensa, livre, parte do dia, ocupado). Mostra só os horários tomados, nunca a unidade.
+- Boletos: rolagem infinita de 6 em 6 meses (`ResidentPortal::previousWindow`, `/boletos?parcial=1`), sem o filtro de datas.
+- Chamados: a tela de Ocorrências vira Chamados pelo `ResidentTickets` (ADR 0305), com número, situação, conversa e resposta (`/ocorrencias/{id}`, `/ocorrencias/{id}/mensagens`).

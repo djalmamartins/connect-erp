@@ -71,6 +71,28 @@ final class ResidentAppExtrasIntegrationTest extends TestCase
         return $id;
     }
 
+    public function testHomeCardPointsToTheOldestOpenChargeOfTheOwnUnit(): void
+    {
+        $this->entry($this->otherUnit, '2026-08-10');
+        $this->entry($this->unit, '2026-09-10', '2026-09-09');
+        $oldest = $this->entry($this->unit, '2026-10-10');
+        $this->entry($this->unit, '2026-11-10');
+        $charges = (new ResidentPortal($this->pdo))->summary($this->link(), '2026-11-14')['charges'];
+        self::assertSame($oldest, $charges['next_entry_id']);
+        self::assertNull($charges['next_code'], 'sem boleto emitido não há código para copiar');
+    }
+
+    public function testInfiniteScrollStopsWhenThereIsNoOlderChargeOfTheUnit(): void
+    {
+        $portal = new ResidentPortal($this->pdo);
+        $this->entry($this->otherUnit, '2024-01-10');
+        self::assertFalse($portal->hasChargesBefore($this->link(), '2025-11-01'));
+        $this->entry($this->unit, '2025-06-10', '2025-06-09');
+        self::assertTrue($portal->hasChargesBefore($this->link(), '2025-11-01'));
+        [$de, $ate] = ResidentPortal::previousWindow('2025-11-01');
+        self::assertCount(1, $portal->charges($this->link(), $de, $ate, '2026-11-14')['lines']);
+    }
+
     public function testEntryShowsReceiptOnlyWhenPaidAndOnlyForTheOwnUnit(): void
     {
         $portal = new ResidentPortal($this->pdo);

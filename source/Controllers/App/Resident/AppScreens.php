@@ -17,6 +17,7 @@ use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentTickets;
 use Source\Services\Resident\ResidentTwoFactor;
 
 /**
@@ -35,7 +36,7 @@ final class AppScreens extends Controller
         ['reservations', 'Reservas', '/reservas', 'reservations', 'calendar'],
         ['deliveries', 'Encomendas', '/encomendas', 'deliveries', 'box'],
         ['visits', 'Visitantes', '/visitantes', 'visitors', 'user-check'],
-        ['occurrences', 'Ocorrências', '/ocorrencias', 'occurrences', 'alert'],
+        ['occurrences', 'Chamados', '/ocorrencias', 'occurrences', 'alert'],
         ['assemblies', 'Assembleias', '/assembleias', 'assemblies', 'users'],
         ['documents', 'Documentos', '/documentos', 'documents', 'file'],
         ['unit', 'Minha unidade', '/minha-unidade', null, 'key'],
@@ -71,7 +72,42 @@ final class AppScreens extends Controller
 
     public function charges(): void
     {
-        $this->page('charges', 'boletos', 'pages/charges', 'Boletos', fn (User $u, array $link): array => ['statement' => $this->portal->charges($link, $_GET['de'] ?? null, $_GET['ate'] ?? null)]);
+        if (isset($_GET['parcial'])) {
+            $this->chargesPage();
+            return;
+        }
+        $this->page('charges', 'boletos', 'pages/charges', 'Boletos', function (User $u, array $link): array {
+            $statement = $this->portal->charges($link);
+            return ['statement' => $statement, 'more' => $this->moreCharges($link, $statement['from'])];
+        });
+    }
+
+    /** GET /boletos?parcial=1&de=&ate= — próximas contas da rolagem infinita (só as linhas, sem o layout). */
+    private function chargesPage(): void
+    {
+        $context = $this->context('boletos');
+        if ($context === null) {
+            return;
+        }
+        [, $link] = $context;
+        try {
+            $statement = $this->portal->charges($link, $_GET['de'] ?? null, $_GET['ate'] ?? null);
+        } catch (\Throwable) {
+            http_response_code(400);
+            return;
+        }
+        header('Content-Type: text/html; charset=utf-8');
+        echo $this->view->render('partials/charge-lines', ['lines' => $statement['lines'], 'more' => $this->moreCharges($link, $statement['from'])]);
+    }
+
+    /** Endereço da próxima janela (6 meses antes) ou null quando não há conta mais antiga. */
+    private function moreCharges(array $link, string $from): ?string
+    {
+        if (!$this->portal->hasChargesBefore($link, $from)) {
+            return null;
+        }
+        [$de, $ate] = ResidentPortal::previousWindow($from);
+        return app_url('/boletos') . '?parcial=1&de=' . $de . '&ate=' . $ate;
     }
 
     /** GET /boletos/{id} — uma conta: pagar (boleto, linha, Pix) ou ver o recibo. */
@@ -196,15 +232,53 @@ final class AppScreens extends Controller
     public function reservations(): void
     {
         $this->page('reservations', 'reservations', 'pages/reservations', 'Reservas', fn (User $u, array $link): array => [
-            'areas' => $this->portal->commonAreas($link), 'mine' => $this->portal->reservations($link)]);
+            'areas' => $this->portal->commonAreas($link), 'mine' => $this->portal->reservations($link),
+            'tab' => ($_GET['aba'] ?? '') === 'minhas' ? 'minhas' : 'nova',
+            'filter' => in_array($_GET['filtro'] ?? '', ['gratuitos', 'taxa'], true) ? $_GET['filtro'] : 'todos']);
+    }
+
+    /** Volta para o calendário da área quando o pedido falha (só id e data validados). */
+    private static function areaBack(array $data): ?string
+    {
+        $area = filter_var($data['common_area_id'] ?? null, FILTER_VALIDATE_INT);
+        if (empty($data['from_calendar']) || $area === false || $area === null) {
+            return null;
+        }
+        $day = ResidentPortal::date($data['reserved_on'] ?? $data['desired_on'] ?? null);
+        return '/reservas/area/' . (int)$area . ($day !== null ? '?dia=' . $day : '');
+    }
+
+    /** GET /reservas/area/{id}?mes=AAAA-MM&dia=AAAA-MM-DD — calendário do mês da área, horários tomados do dia e o pedido. */
+    public function reservationArea(array $data): void
+    {
+        $this->page('reservations', 'reservations', 'pages/reservation-area', 'Reservas', function (User $u, array $link) use ($data): array {
+            $id = (int)($data['id'] ?? 0);
+            $area = null;
+            foreach ($this->portal->commonAreas($link) as $a) {
+                if ($a['id'] === $id) {
+                    $area = $a;
+                }
+            }
+            if ($area === null) {
+                throw new RegistryNotFound();
+            }
+            $today = date('Y-m-d');
+            $day = ResidentPortal::date($_GET['dia'] ?? null);
+            $month = is_string($_GET['mes'] ?? null) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $_GET['mes']) === 1 ? $_GET['mes'] : ($day !== null ? substr($day, 0, 7) : substr($today, 0, 7));
+            $availability = $this->portal->areaAvailability($link, $id, $month);
+            $calendar = ResidentPortal::calendar($area, $availability['busy'], $month, $today);
+            return ['area' => $area, 'month' => $month, 'calendar' => $calendar, 'today' => $today,
+                'day' => $day !== null && isset($calendar[$day]) ? $day : null,
+                'taken' => array_values(array_filter($availability['busy'], static fn (array $b): bool => $b['date'] === $day))];
+        });
     }
 
     public function reserve(array $data): void
     {
-        $this->action('reservations', '/reservas', $data, function (User $u, array $link) use ($data): string {
+        $this->action('reservations', '/reservas?aba=minhas', $data, function (User $u, array $link) use ($data): string {
             $saved = $this->portal->requestReservation($u, $link, self::only($data, ['common_area_id', 'reserved_on', 'starts_time', 'ends_time', 'notes']));
             return ($saved['status'] ?? '') === 'confirmed' ? 'Reserva confirmada.' : 'Pedido de reserva enviado. Você recebe a resposta da administração.';
-        });
+        }, self::areaBack($data));
     }
 
     public function cancelReservation(array $data): void
@@ -217,22 +291,40 @@ final class AppScreens extends Controller
 
     public function waitlist(array $data): void
     {
-        $this->action('reservations', '/reservas', $data, function (User $u, array $link) use ($data): string {
+        $this->action('reservations', '/reservas?aba=minhas', $data, function (User $u, array $link) use ($data): string {
             $this->portal->joinWaitlist($u, $link, self::only($data, ['common_area_id', 'desired_on', 'notes']));
             return 'Você entrou na lista de espera. Avisamos se a data liberar.';
-        });
+        }, self::areaBack($data));
     }
 
     public function occurrences(): void
     {
-        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Ocorrências', fn (User $u, array $link): array => ['occurrences' => $this->portal->occurrences($link)]);
+        $page = max(1, (int)($_GET['pagina'] ?? 1));
+        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Chamados', fn (User $u, array $link): array => ['tickets' => (new ResidentTickets())->list($u, $link, $page)]);
     }
 
+    /** POST /ocorrencias — abre o chamado (a ocorrência da unidade vira chamado do Help Desk, ADR 0305). */
     public function reportOccurrence(array $data): void
     {
         $this->action('occurrences', '/ocorrencias', $data, function (User $u, array $link) use ($data): string {
-            $this->portal->reportOccurrence($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on']));
-            return 'Ocorrência registrada. Ela já virou um chamado para a administração.';
+            $ticket = (new ResidentTickets())->open($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on']));
+            return 'Chamado ' . $ticket['number'] . ' aberto. Acompanhe a resposta da administração por aqui.';
+        });
+    }
+
+    /** GET /ocorrencias/{id} — o chamado com a conversa. */
+    public function ticket(array $data): void
+    {
+        $this->page('occurrences', 'occurrences', 'pages/ticket', 'Chamado', fn (User $u, array $link): array => ['ticket' => (new ResidentTickets())->show($u, $link, (int)($data['id'] ?? 0))]);
+    }
+
+    /** POST /ocorrencias/{id}/mensagens — o morador responde no chamado. */
+    public function replyTicket(array $data): void
+    {
+        $id = (int)($data['id'] ?? 0);
+        $this->action('occurrences', '/ocorrencias/' . $id, $data, function (User $u, array $link) use ($data, $id): string {
+            (new ResidentTickets())->reply($u, $link, $id, is_string($data['body'] ?? null) ? trim($data['body']) : '');
+            return 'Mensagem enviada.';
         });
     }
 
@@ -481,7 +573,7 @@ final class AppScreens extends Controller
         $this->render($template, $title, $active, $user, $all, $link, $extra);
     }
 
-    private function action(string $feature, string $back, array $data, callable $run): void
+    private function action(string $feature, string $back, array $data, callable $run, ?string $failBack = null): void
     {
         $context = $this->context($feature);
         if ($context === null) {
@@ -499,6 +591,7 @@ final class AppScreens extends Controller
         }
         try {
             $this->message->success($run($context[0], $context[1]))->flash();
+            $failBack = null;
         } catch (RegistryValidationException $error) {
             $this->message->warning(implode(' ', array_unique(array_values($error->errors))))->flash();
         } catch (RegistryNotFound) {
@@ -508,7 +601,7 @@ final class AppScreens extends Controller
         } catch (ResidentFeatureDisabled $error) {
             $this->message->warning($error->getMessage())->flash();
         }
-        redirect(app_url($back));
+        redirect(app_url($failBack ?? $back));
     }
 
     private function render(string $template, string $title, string $active, User $user, array $all, ?array $link, array $data): void

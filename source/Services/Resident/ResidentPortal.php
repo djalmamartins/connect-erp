@@ -79,7 +79,17 @@ final class ResidentPortal
             $stmt->execute(['t' => $today, 'u' => $link['unit_id'], 'c' => $link['condominium_id']]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $out['charges'] = ['open_count' => (int)($row['n'] ?? 0), 'open_cents' => (int)($row['total'] ?? 0),
-                'overdue_cents' => (int)($row['overdue'] ?? 0), 'next_due_on' => $row['next_due'] ?? null];
+                'overdue_cents' => (int)($row['overdue'] ?? 0), 'next_due_on' => $row['next_due'] ?? null, 'next_entry_id' => null, 'next_code' => null];
+            // A conta em aberto mais antiga: é dela a "2ª via" e o "Copiar código" do cartão do Início.
+            $next = $this->pdo->prepare("SELECT e.id, b.digitable_line, b.pix_copy_paste FROM erp_entries e
+                LEFT JOIN erp_bank_charges b ON b.entry_id = e.id AND b.active_key = 1
+                WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.status = 'active'
+                  AND e.deleted_at IS NULL AND e.paid_on IS NULL ORDER BY e.due_on, e.id LIMIT 1");
+            $next->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id']]);
+            if (is_array($n = $next->fetch(PDO::FETCH_ASSOC))) {
+                $out['charges']['next_entry_id'] = (int)$n['id'];
+                $out['charges']['next_code'] = ($n['digitable_line'] ?? '') !== '' ? (string)$n['digitable_line'] : (($n['pix_copy_paste'] ?? '') !== '' ? (string)$n['pix_copy_paste'] : null);
+            }
         }
         if (in_array('deliveries', $features, true)) {
             $out['deliveries_waiting'] = $this->count("SELECT COUNT(*) FROM erp_deliveries WHERE unit_id = :u AND condominium_id = :c AND status = 'active' AND deleted_at IS NULL", $link);
@@ -142,6 +152,82 @@ final class ResidentPortal
                 'due_on' => (string)$row['due_on'], 'paid_on' => $row['paid_on'], 'amount_cents' => $amount, 'situation' => $situation, 'charge' => $charge];
         }
         return ['unit_label' => $link['unit_label'], 'from' => $from, 'to' => $to, 'as_of' => $today, 'totals' => $totals, 'lines' => $lines];
+    }
+
+    /** Há contas da unidade com vencimento antes desta data? (fim da rolagem infinita dos boletos) */
+    public function hasChargesBefore(array $link, string $date): bool
+    {
+        self::assertFeature($link, 'boletos');
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_entries WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND deleted_at IS NULL
+            AND (status = 'active' OR (status = 'inactive' AND agreement_role = 'original')) AND due_on < :d LIMIT 1");
+        $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 'd' => $date]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Janela anterior da rolagem infinita dos boletos (regra pura): os 6 meses que terminam no dia antes de $from.
+     *
+     * @return array{0:string,1:string}
+     */
+    public static function previousWindow(string $from, int $months = 6): array
+    {
+        $end = (new \DateTimeImmutable($from))->modify('-1 day');
+        return [$end->modify('first day of this month')->modify('-' . ($months - 1) . ' months')->format('Y-m-d'), $end->format('Y-m-d')];
+    }
+
+    /**
+     * Situação de cada dia do mês no calendário de uma área (regra pura). past = já passou; out = fora do prazo da
+     * área (antecedência mínima/máxima); blocked = reservas suspensas; busy = dia todo tomado; partial = há horários
+     * tomados; free = livre.
+     *
+     * @param array{booking_mode:string, min_advance_days:?int, max_advance_days:?int, opening_time:?string, closing_time:?string} $area
+     * @param list<array{date:string, starts_time:?string, ends_time:?string}> $busy
+     * @return array<string, string> data => situação
+     */
+    public static function calendar(array $area, array $busy, string $month, string $today): array
+    {
+        $byDay = [];
+        foreach ($busy as $b) {
+            $byDay[$b['date']][] = $b;
+        }
+        $first = new \DateTimeImmutable($month . '-01');
+        $min = (new \DateTimeImmutable($today))->modify('+' . (int)($area['min_advance_days'] ?? 0) . ' days')->format('Y-m-d');
+        $max = $area['max_advance_days'] !== null ? (new \DateTimeImmutable($today))->modify('+' . (int)$area['max_advance_days'] . ' days')->format('Y-m-d') : null;
+        $open = $area['opening_time'] ?? '00:00';
+        $close = $area['closing_time'] ?? '23:59';
+        $out = [];
+        for ($d = $first; $d->format('Y-m') === $month; $d = $d->modify('+1 day')) {
+            $day = $d->format('Y-m-d');
+            if ($day < $today) {
+                $out[$day] = 'past';
+            } elseif ($area['booking_mode'] === 'blocked') {
+                $out[$day] = 'blocked';
+            } elseif ($day < $min || ($max !== null && $day > $max)) {
+                $out[$day] = 'out';
+            } elseif (!isset($byDay[$day])) {
+                $out[$day] = 'free';
+            } else {
+                $out[$day] = self::coversDay($byDay[$day], $open, $close) ? 'busy' : 'partial';
+            }
+        }
+        return $out;
+    }
+
+    /** Os horários tomados cobrem o funcionamento inteiro da área? Reserva sem horário = dia todo (regra pura). */
+    private static function coversDay(array $taken, string $open, string $close): bool
+    {
+        usort($taken, static fn (array $a, array $b): int => strcmp((string)$a['starts_time'], (string)$b['starts_time']));
+        $cursor = $open;
+        foreach ($taken as $t) {
+            if ($t['starts_time'] === null || $t['ends_time'] === null) {
+                return true;
+            }
+            if ($t['starts_time'] > $cursor) {
+                return false;
+            }
+            $cursor = max($cursor, $t['ends_time']);
+        }
+        return $cursor >= $close;
     }
 
     /**

@@ -1,12 +1,20 @@
 <?php
-/** Ocorrências da unidade (ADR 0302). @var list<array> $occurrences */
+/**
+ * Chamados do morador (ADR 0302 e 0305): toda ocorrência é um chamado do Help Desk, com número, situação e conversa.
+ *
+ * @var array{data:list<array>, meta:array{page:int, per_page:int, total:int}} $tickets ResidentTickets::list()
+ */
 use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
+$tones = ['open' => 'warning', 'in_progress' => 'info', 'waiting_customer' => 'danger', 'resolved' => 'success', 'closed' => 'neutral'];
+$items = $tickets['data'];
+$meta = $tickets['meta'];
+$pages = max(1, (int)ceil($meta['total'] / max(1, $meta['per_page'])));
 ?>
-<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Ocorrências</h1><p>Barulho, vazamento, dano ou qualquer problema no condomínio.</p></header>
-<details class="app-card app-form-card"<?= $occurrences === [] ? ' open' : '' ?>>
-    <summary><h2>Registrar ocorrência</h2></summary>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Chamados</h1><p>Barulho, vazamento, dano ou qualquer problema no condomínio. Acompanhe a resposta e converse com a administração.</p></header>
+<details class="app-card app-form-card"<?= $items === [] ? ' open' : '' ?>>
+    <summary><h2>Abrir chamado</h2></summary>
     <form method="post" action="<?= app_url('/ocorrencias') ?>" class="app-form">
         <?= csrf_input() ?>
         <label class="app-field">Assunto <input type="text" name="subject" maxlength="160" required></label>
@@ -17,18 +25,25 @@ $this->layout('default');
                 <select name="priority"><?php foreach (F::PRIORITIES as $key => $label): ?><option value="<?= $key ?>"<?= $key === 'media' ? ' selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select>
             </label>
         </div>
-        <button class="app-button" type="submit">Registrar</button>
+        <button class="app-button" type="submit">Abrir chamado</button>
     </form>
 </details>
 <section class="app-section">
-    <h2>Da minha unidade</h2>
-    <?php if ($occurrences === []): ?><?php $this->insert('partials/empty', ['icon' => 'alert', 'text' => 'Nenhuma ocorrência registrada.']) ?><?php endif; ?>
+    <h2>Meus chamados</h2>
+    <?php if ($items === []): ?><?php $this->insert('partials/empty', ['icon' => 'alert', 'text' => 'Nenhum chamado aberto por você neste condomínio.']) ?><?php endif; ?>
     <ul class="app-items">
-    <?php foreach ($occurrences as $o): [$label, $tone] = F::badge(F::OCCURRENCE, $o['status']);
-        $this->insert('partials/item', ['icon' => 'alert', 'tone' => $o['priority'] === 'alta' ? 'danger' : 'warning', 'title' => $o['subject'],
-            'lines' => [F::date($o['occurred_on']) . ' · urgência ' . mb_strtolower(F::PRIORITIES[$o['priority']] ?? $o['priority'])],
-            'badge' => [$label, $tone],
-            'body' => '<p class="app-notice__body">' . nl2br($this->e($o['description'])) . '</p>' . (!empty($o['protocol']) ? '<p class="app-hint">' . $this->e('Chamado ' . $o['protocol'] . ': a administração acompanha por aqui, e a situação muda conforme o atendimento.') . '</p>' : '')]);
+    <?php foreach ($items as $t):
+        $this->insert('partials/item', ['icon' => 'alert', 'tone' => $tones[$t['status']] ?? 'neutral', 'title' => $t['subject'],
+            'lines' => ['Nº ' . $t['number'] . ' · aberto em ' . F::date(substr($t['created_at'], 0, 10)),
+                $t['last_message_at'] ? 'Última mensagem em ' . F::dateTime($t['last_message_at']) : ''],
+            'badge' => [$t['status_label'], $tones[$t['status']] ?? 'neutral'], 'href' => app_url('/ocorrencias/' . $t['id'])]);
     endforeach; ?>
     </ul>
+    <?php if ($pages > 1): ?>
+        <nav class="app-pager" aria-label="Páginas">
+            <?php if ($meta['page'] > 1): ?><a class="app-button app-button--ghost" href="<?= app_url('/ocorrencias') ?>?pagina=<?= $meta['page'] - 1 ?>">Mais recentes</a><?php endif; ?>
+            <span><?= $meta['page'] ?> de <?= $pages ?></span>
+            <?php if ($meta['page'] < $pages): ?><a class="app-button app-button--ghost" href="<?= app_url('/ocorrencias') ?>?pagina=<?= $meta['page'] + 1 ?>">Mais antigos</a><?php endif; ?>
+        </nav>
+    <?php endif; ?>
 </section>
