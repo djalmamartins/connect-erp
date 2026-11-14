@@ -14,6 +14,16 @@ function fakeFetch(status: number, body: unknown, calls: Call[]) {
   }) as unknown as typeof fetch;
 }
 
+/** Espera que a promessa falhe e devolve o ApiError. */
+function failure(promise: Promise<unknown>): Promise<ApiError> {
+  return promise.then(
+    () => {
+      throw new Error('Esperava erro.');
+    },
+    (e: unknown) => e as ApiError,
+  );
+}
+
 describe('buildUrl', () => {
   it('monta /api/v1, tira barras e ignora vazios', () => {
     expect(buildUrl('https://app.connect.lab/', '/resident/me')).toBe('https://app.connect.lab/api/v1/resident/me');
@@ -51,7 +61,7 @@ describe('createClient', () => {
       getToken: () => 't',
       fetchImpl: fakeFetch(422, { error: { code: 'validation', message: 'Confira os campos.', fields: { date: 'Data no passado.' } } }, []),
     });
-    const error = await client.post('/resident/reservations', {}).catch((e) => e);
+    const error = await failure(client.post('/resident/reservations', {}));
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(422);
     expect(error.fields).toEqual({ date: 'Data no passado.' });
@@ -61,7 +71,7 @@ describe('createClient', () => {
   it('reconhece função desligada e avisa quando a sessão cai', async () => {
     const onUnauthenticated = jest.fn();
     const disabled = createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: fakeFetch(403, { error: { code: 'feature_disabled', message: 'x' } }, []) });
-    const e403 = await disabled.get('/resident/deliveries').catch((e) => e);
+    const e403 = await failure(disabled.get('/resident/deliveries'));
     expect(e403.isFeatureDisabled).toBe(true);
 
     const expired = createClient({ baseUrl: 'https://x', getToken: () => 't', onUnauthenticated, fetchImpl: fakeFetch(401, { error: { code: 'unauthenticated', message: 'x' } }, []) });
@@ -71,14 +81,14 @@ describe('createClient', () => {
 
   it('erro de rede e resposta sem JSON viram mensagens claras', async () => {
     const offline = createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: (async () => { throw new TypeError('Network request failed'); }) as unknown as typeof fetch });
-    const e = await offline.get('/resident/me').catch((err) => err);
+    const e = await failure(offline.get('/resident/me'));
     expect(e.code).toBe('network');
     const html = createClient({
       baseUrl: 'https://x',
       getToken: () => 't',
       fetchImpl: (async () => ({ ok: false, status: 502, text: async () => '<html>' })) as unknown as typeof fetch,
     });
-    const e502 = await html.get('/resident/me').catch((err) => err);
+    const e502 = await failure(html.get('/resident/me'));
     expect(e502.code).toBe('http_502');
   });
 });
