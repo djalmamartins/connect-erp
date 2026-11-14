@@ -3024,6 +3024,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /extra-charges/cancel-batch:
+    post:
+      operationId: cancelExtraChargesBatch
+      summary: Cobranças extras e multas avulsas canceladas em lote, com as regras do cancelamento de uma e as travas do banco, tudo ou nada e com prévia (erp.access, erp.invoices.view e erp.invoices.manage, ADR 0289)
+      description: >-
+        charge_ids é obrigatório (de 1 a 500): não há cancelamento de todas de uma vez. Cada cobrança segue as regras de
+        POST /extra-charges/{id}/cancel: ativa, competência aberta, nenhuma conta paga, nenhuma em acordo e nenhum boleto
+        ativo; e cada conta, as travas do banco do ADR 0194 (conciliada com o extrato ou com boleto pago pelo banco não
+        é cancelada). Uma recusada desfaz todas. Cancelar inativa as contas da cobrança e marca a cobrança como cancelled,
+        com quem cancelou, quando e o motivo, e um registro update por cobrança; nada é apagado. amount_cents soma só as
+        contas que estavam ativas. Sem descrição, motivo, unidade nem quem lançou na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, charge_ids, reason], properties: { condominium_id: { type: integer }, charge_ids: { type: array, items: { type: integer }, minItems: 1, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, charges[{ id, kind, entries, amount_cents }], by_kind[{ kind, kind_label, charges, amount_cents }], count, entries, amount_cents, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Uma cobrança mudou de situação durante o pedido; nada é cancelado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou cobrança recusada (errors com _form e _charge); nada é cancelado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
