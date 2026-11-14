@@ -336,6 +336,10 @@ $route->get("/reports/tariff-coverage", "TariffCoverage:show", null, \Source\Sup
 $route->post("/tariffs/readjust", "TariffReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Procura pelas áreas comuns na lista de espera, somente leitura (ADR 0260). Antes do laço dos cadastros.
 $route->get("/reports/waitlist-demand", "WaitlistDemand:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cancelamento em lote das manutenções agendadas e esquecidas, tudo ou nada e com prévia (ADR 0261). Antes do laço dos cadastros.
+$route->post("/maintenances/cancel-overdue", "MaintenanceCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cobertura das alíquotas de retenção do condomínio, somente leitura (ADR 0262). Antes do laço dos cadastros.
+$route->get("/reports/tax-coverage", "TaxCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
