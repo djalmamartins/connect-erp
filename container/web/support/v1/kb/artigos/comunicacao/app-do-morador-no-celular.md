@@ -15,7 +15,7 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 
 1. A administração convida o morador pelo cadastro de moradores. O convite chega por e-mail e vale 7 dias.
 2. O morador cria a senha pelo link do convite.
-3. No app, ele entra com o e-mail (ou CPF) e a senha. Se tiver a verificação em duas etapas ativa, o app pede o código do autenticador.
+3. No app, ele entra com o e-mail (ou CPF) e a senha. A verificação em duas etapas é opcional para o morador: só se ele tiver ligado, o app pede o código do autenticador.
 
 > Quem deixa de ser morador (vínculo encerrado) perde o acesso ao app na hora, sem precisar fazer nada no celular.
 
@@ -27,7 +27,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Financeiro**: as contas em aberto com {{Copiar linha digitável}}, {{Copiar Pix copia e cola}} e {{Abrir boleto (PDF)}}, o histórico de pagamentos e a prestação de contas de cada mês.
 - **Reservas**: os espaços liberados, com regras e taxa, a reserva de uma data e a lista de espera quando a data já está ocupada.
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
-- **Mais**: comunicados, encomendas, visitantes (avisar a portaria de quem vem), documentos do condomínio, assembleias com a pauta, pets e veículos da unidade, trocar de unidade e sair.
+- **Mais**: comunicados, encomendas, visitantes (avisar a portaria de quem vem), documentos do condomínio, assembleias com a pauta, pets e veículos da unidade, trocar de unidade e sair. Em **Conta > Verificação em duas etapas** o morador liga, se quiser, o código do aplicativo autenticador (é opcional para morador; quem também é da equipe da administração não pode desligar).
 
 ## Ligar e desligar funções
 

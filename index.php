@@ -379,6 +379,8 @@ $route->post("/documents/restore-linked", "VirtualDiskRestore:store", null, \Sou
 $route->get("/reports/notice-board", "AnnouncementBoard:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Envios com falha dos comunicados publicados de volta à fila, em lote, tudo ou nada e com prévia (ADR 0279). Antes de /announcements/{id}.
 $route->post("/announcements/retry-failed", "AnnouncementRetry:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Saúde da fila de avisos (situações, tipos, espera dos pendentes, tentativas, origens e entregas por modo), somente leitura (ADR 0280).
+$route->get("/reports/notification-queue", "NotificationQueueHealth:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
