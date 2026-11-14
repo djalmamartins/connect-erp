@@ -2542,6 +2542,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /vehicles/deactivate-unattached:
+    post:
+      operationId: deactivateUnattachedVehicles
+      summary: Inativação em lote dos veículos ativos de unidades sem nenhum morador ativo, como Inativo pelo cadastro, tudo ou nada e com prévia (erp.access, erp.vehicles.view, erp.vehicles.manage e erp.residents.view, ADR 0267)
+      description: >-
+        Morador ativo é o vínculo ativo, sem excluído e sem fim de vínculo passado (como no bloqueio em lote dos visitantes,
+        ADR 0265). Sem vehicle_ids, entram os veículos ativos do condomínio vinculados a uma unidade sem morador ativo;
+        ficam de fora os só com o texto da unidade (skipped_unlinked), os de unidade inativa (skipped_inactive_unit) e os
+        que o formulário não regrava, como placa fora do padrão (skipped_invalid). Com vehicle_ids, recusa veículo não
+        encontrado no condomínio, já inativo, cuja unidade ainda tem morador ativo ou nesses casos. Cada um é regravado pelo
+        cadastro como Inativo; auditoria deactivate_unattached por veículo, com o motivo. by_kind conta por tipo. Nada é
+        apagado e nenhum aviso é enviado. Sem placa, modelo, cor, vaga, responsável, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, vehicle_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_unlinked, skipped_inactive_unit, skipped_invalid, count, by_kind { carro, moto, utilitario, outro }, changed, vehicles[{ id, kind }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou veículo recusado (errors com _form e _vehicle); nada é gravado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
