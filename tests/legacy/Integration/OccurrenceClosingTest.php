@@ -93,9 +93,16 @@ final class OccurrenceClosingTest extends TestCase
 
     private function occurrence(int $days, ?string $unit, string $priority): int
     {
-        return (int)$this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'unit_id' => $unit !== null ? $this->units[$unit] : null,
+        return $this->legacyOccurrence((int)$this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'unit_id' => $unit !== null ? $this->units[$unit] : null,
             'subject' => 'Vazamento de teste', 'priority' => $priority, 'occurred_on' => (new \DateTimeImmutable("{$days} days"))->format('Y-m-d'),
-            'description' => 'Relato de teste'])['id'];
+            'description' => 'Relato de teste'])['id']);
+    }
+
+    /** Ocorrência de antes do ADR 0305 (sem chamado): toda ocorrência nova nasce com chamado, então o teste solta o vínculo. */
+    private function legacyOccurrence(int $id): int
+    {
+        $this->pdo->prepare('UPDATE erp_occurrences SET ticket_id = NULL WHERE id = ?')->execute([$id]);
+        return $id;
     }
 
     private function state(int $id): string

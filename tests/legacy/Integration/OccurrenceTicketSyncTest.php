@@ -39,6 +39,7 @@ final class OccurrenceTicketSyncTest extends TestCase
         $working = $this->occurrenceWithTicket('Interfone mudo', 'in_progress');
         $plain = $this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'unit_id' => $this->unit, 'subject' => 'Barulho',
             'priority' => 'baixa', 'occurred_on' => '2026-11-09', 'description' => 'Sem chamado.'])['id'];
+        $this->pdo->prepare('UPDATE erp_occurrences SET ticket_id = NULL WHERE id = ?')->execute([$plain]);   // ocorrência de antes do ADR 0305
 
         $preview = (new OccurrenceTicketSync($this->pdo))->sync($this->admin, ['condominium_id' => $this->condominium, 'dry_run' => true]);
         self::assertSame([true, 0, 3, 1, ['in_progress' => 1, 'resolved' => 1], 0, [$closed]], [$preview['dry_run'], $preview['changed'], $preview['checked'],
@@ -75,8 +76,10 @@ final class OccurrenceTicketSyncTest extends TestCase
     {
         $id = $this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'unit_id' => $this->unit, 'subject' => $subject,
             'priority' => 'media', 'occurred_on' => '2026-11-09', 'description' => 'Relato.'])['id'];
-        $ticket = (new Occurrences($this->pdo))->openTicket($this->admin, $id);
-        $this->pdo->prepare('UPDATE studio_support_tickets SET status = ? WHERE id = ?')->execute([$ticketStatus, $ticket['ticket_id']]);   // o Help Desk mudou o chamado
+        // A ocorrência nasce com o chamado (ADR 0305); o teste simula a situação de antes do acompanhamento automático.
+        $ticket = (int)$this->pdo->query("SELECT ticket_id FROM erp_occurrences WHERE id = {$id}")->fetchColumn();
+        $this->pdo->prepare("UPDATE erp_occurrences SET status = 'running' WHERE id = ?")->execute([$id]);
+        $this->pdo->prepare('UPDATE studio_support_tickets SET status = ? WHERE id = ?')->execute([$ticketStatus, $ticket]);   // o Help Desk mudou o chamado
         return $id;
     }
 

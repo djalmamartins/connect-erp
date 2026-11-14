@@ -78,19 +78,37 @@ final class OperationalRegistriesIntegrationTest extends TestCase
     {
         $occurrence = $this->service->save($this->admin, 'occurrences', ['condominium_id' => $this->alpha, 'unit_id' => $this->unit, 'subject' => 'Vazamento na garagem',
             'priority' => 'alta', 'occurred_on' => '2026-11-09', 'description' => 'Água pingando do teto da vaga 12.']);
-        $result = (new Occurrences($this->pdo))->openTicket($this->admin, $occurrence['id']);
-        $ticket = $this->pdo->query('SELECT origin, priority, condominium_id, unit_id FROM studio_support_tickets WHERE id = ' . (int)$result['ticket_id'])->fetch(\PDO::FETCH_ASSOC);
-        self::assertSame(['erp', 'high', $this->alpha, $this->unit], [$ticket['origin'], $ticket['priority'], (int)$ticket['condominium_id'], (int)$ticket['unit_id']]);
-        $after = $this->service->find($this->admin, 'occurrences', $occurrence['id']);
-        self::assertSame(['running', (string)$result['ticket_id']], [$after['status'], $after['ticket_id']]);
+        // ADR 0305: a ocorrência nasce com o chamado, na mesma gravação.
+        $ticketId = (int)$this->pdo->query('SELECT ticket_id FROM erp_occurrences WHERE id = ' . (int)$occurrence['id'])->fetchColumn();
+        self::assertGreaterThan(0, $ticketId);
+        $ticket = $this->pdo->query('SELECT origin, priority, condominium_id, unit_id, status FROM studio_support_tickets WHERE id = ' . $ticketId)->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['erp', 'high', $this->alpha, $this->unit, 'open'], [$ticket['origin'], $ticket['priority'], (int)$ticket['condominium_id'], (int)$ticket['unit_id'], $ticket['status']]);
+        self::assertSame('active', $this->service->find($this->admin, 'occurrences', $occurrence['id'])['status']);
+
+        // A situação segue o chamado: o Help Desk atende e resolve; o formulário não muda a situação por fora.
+        $this->pdo->prepare("UPDATE studio_support_tickets SET status = 'in_progress' WHERE id = ?")->execute([$ticketId]);
+        self::assertSame(1, (new Occurrences($this->pdo))->followTickets([$ticketId], (int)$this->admin->id));
+        self::assertSame('running', $this->service->find($this->admin, 'occurrences', $occurrence['id'])['status']);
+        $this->assertInvalid('occurrences', ['condominium_id' => $this->alpha, 'unit_id' => $this->unit, 'subject' => 'Vazamento na garagem', 'priority' => 'alta',
+            'occurred_on' => '2026-11-09', 'description' => 'Água pingando do teto da vaga 12.', 'status' => 'done'], 'status', $occurrence['id']);
+        $this->pdo->prepare("UPDATE studio_support_tickets SET status = 'closed' WHERE id = ?")->execute([$ticketId]);
+        (new Occurrences($this->pdo))->followTickets([$ticketId]);
+        self::assertSame('done', $this->service->find($this->admin, 'occurrences', $occurrence['id'])['status']);
+        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_occurrences' AND action = 'ticket_follow'")->fetchColumn());
+
+        // Chamado em Operacional › Chamados com o filtro de ocorrências.
+        $listed = (new \Source\Services\Support\TicketService($this->pdo))->listFor($this->admin, ['kind' => 'occurrence']);
+        self::assertSame([[$ticketId], [(int)$occurrence['id']]], [array_column($listed, 'id'), array_column($listed, 'occurrence_id')]);
+        self::assertSame([], (new \Source\Services\Support\TicketService($this->pdo))->listFor($this->admin, ['kind' => 'other']));
+
         $this->expectException(DomainException::class);
         (new Occurrences($this->pdo))->openTicket($this->admin, $occurrence['id']);
     }
 
-    private function assertInvalid(string $slug, array $input, string $field): void
+    private function assertInvalid(string $slug, array $input, string $field, ?int $id = null): void
     {
         try {
-            $this->service->save($this->admin, $slug, $input);
+            $this->service->save($this->admin, $slug, $input, $id);
             self::fail("{$slug} aceitou entrada inválida.");
         } catch (RegistryValidationException $exception) {
             self::assertArrayHasKey($field, $exception->errors, json_encode($exception->errors));

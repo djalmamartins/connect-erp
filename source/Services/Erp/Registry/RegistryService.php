@@ -347,15 +347,24 @@ final class RegistryService
                 $errors['_form'] = $lock['message'];
             }
         }
+        // Ocorrência com chamado (ADR 0305): a situação segue o chamado do Help Desk, não o formulário.
+        if ($errors === [] && $before !== null && !empty($definition['helpdesk_ticket'])) {
+            $lock = (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->statusLockMessage($before, $values);
+            if ($lock !== null) {
+                $errors['status'] = $lock;
+            }
+        }
         if ($errors !== []) {
             throw new RegistryValidationException($errors);
         }
 
         $columns = array_keys($values);
         $notify = self::notification($definition, $before, $values);
+        // Toda ocorrência nasce com o chamado (ADR 0305), na mesma transação: sem chamado, sem ocorrência.
+        $ticket = $id === null && !empty($definition['helpdesk_ticket']);
         // Competência fechada (ADR 0031) é conferida na mesma transação da gravação, com leitura travada
         // (ADR 0100): quem fecha o mês ao mesmo tempo espera esta gravação, ou esta vê o mês já fechado.
-        $own = ($notify !== null || isset($definition['closing_lock'])) && !$this->pdo->inTransaction();
+        $own = ($notify !== null || $ticket || isset($definition['closing_lock'])) && !$this->pdo->inTransaction();
         if ($own) {
             $this->pdo->beginTransaction();   // gravação e aviso juntos: se um falhar, nenhum fica
         }
@@ -386,6 +395,14 @@ final class RegistryService
                 $sets = implode(', ', array_map(static fn (string $c): string => "`{$c}` = :{$c}", array_keys($values)));
                 $this->pdo->prepare("UPDATE `{$definition['table']}` SET {$sets} WHERE id = :id AND deleted_at IS NULL")
                     ->execute($values + ['id' => $id]);
+            }
+            if ($ticket) {
+                try {
+                    (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->openForNew($user, $id, $values, $resident !== null);
+                } catch (\Source\Services\Support\TicketError $error) {
+                    $field = ['subject' => 'subject', 'message' => 'description', 'unit_id' => 'unit_id', 'condominium_id' => 'condominium_id'][$error->field] ?? '_form';
+                    throw new RegistryValidationException([$field => 'O chamado da ocorrência não abriu: ' . $error->getMessage()]);
+                }
             }
             if ($notify !== null) {
                 (new NotificationOutbox($this->pdo))->record($notify['event'], $notify['event'] . ':' . $id, (int)$values['condominium_id'],

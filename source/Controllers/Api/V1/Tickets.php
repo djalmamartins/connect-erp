@@ -30,6 +30,7 @@ final class Tickets
             'condominium_id' => (int)($_GET['condominium_id'] ?? 0),
             'status' => (string)($_GET['status'] ?? ''),
             'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
+            'kind' => in_array($_GET['kind'] ?? '', ['occurrence', 'other'], true) ? (string)$_GET['kind'] : '',
         ], (int)($_GET['limit'] ?? 100))]);
     }
 

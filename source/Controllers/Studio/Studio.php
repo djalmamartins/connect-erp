@@ -1390,6 +1390,8 @@ class Studio extends Controller
                 $stmt = $pdo->prepare("UPDATE studio_support_tickets SET status=?,resolved_at=" . (in_array($status,['resolved','closed'],true) ? 'NOW()' : 'NULL') . " WHERE id IN ({$placeholders})");
                 $stmt->execute(array_merge([$status], $ticketIds));
                 foreach ($ticketIds as $id) { $event=$pdo->prepare("INSERT INTO studio_support_ticket_events(ticket_id,user_id,event_type,new_value) VALUES(?,?,?,?)"); $event->execute([$id,$user->id,'status',$status]); }
+                // A ocorrência do ERP acompanha o chamado (ADR 0305).
+                (new \Source\Services\Erp\Occurrences($pdo))->followTickets($ticketIds, (int)$user->id);
                 echo json_encode(['reload'=>true,'affected'=>$stmt->rowCount()]); return;
             }
             if ($data["action"] === "update" && $ticketId) {
@@ -1403,6 +1405,7 @@ class Studio extends Controller
                 foreach(['status','priority','assigned_to','team','category','tags'] as $field){$new=$field==='assigned_to'?(($id=(int)($data['assigned_to']??$before->$field))?:null):($field==='status'?$status:($field==='priority'?$priority:mb_substr(trim(strip_tags((string)($data[$field]??$before->$field))),0,$field==='tags'?500:100)));if((string)$before->$field!==(string)$new){$event=$pdo->prepare("INSERT INTO studio_support_ticket_events(ticket_id,user_id,event_type,old_value,new_value) VALUES(?,?,?,?,?)");$event->execute([$ticketId,$user->id,$field,(string)$before->$field,(string)$new]);}}
                 // Quem pediu fica sabendo quando a equipe precisa dele ou encerra o chamado (ADR 0142).
                 if ((string)$before->status !== $status && in_array($status, ['waiting_customer', 'resolved', 'closed'], true)) { $this->notifyTicketRequester($ticketId, 'status', (int)$user->id); }
+                if ((string)$before->status !== $status) { (new \Source\Services\Erp\Occurrences($pdo))->followTickets([$ticketId], (int)$user->id); }
                 echo json_encode(["redirect" => url("/helpdesk/tickets?ticket=".$ticketId)]); return;
             }
             if ($data["action"] === "reply" && $ticketId) {
@@ -1415,6 +1418,7 @@ class Studio extends Controller
                 $messageId=(int)$pdo->lastInsertId();
                 $timeSpent=max(0,min(86400,(int)($data['time_spent']??0)));$nextStatus=!empty($data['resolve_after'])?'resolved':null;
                 $pdo->prepare("UPDATE studio_support_tickets SET status=".($nextStatus?"'resolved'":"IF(status='open','in_progress',status)").",first_response_at=COALESCE(first_response_at,NOW()),work_seconds=work_seconds+:seconds,resolved_at=".($nextStatus?'NOW()':'resolved_at')." WHERE id=:id")->execute(["seconds"=>$timeSpent,"id" => $ticketId]);
+                (new \Source\Services\Erp\Occurrences($pdo))->followTickets([$ticketId], (int)$user->id);
                 $files=$_FILES['attachments']??null;if($files&&!empty($files['tmp_name'])&&is_array($files['tmp_name'])){foreach($files['tmp_name'] as $index=>$temporary){if(!$temporary)continue;$file=['name'=>$files['name'][$index]??'arquivo','type'=>$files['type'][$index]??'','tmp_name'=>$temporary,'error'=>$files['error'][$index]??UPLOAD_ERR_NO_FILE,'size'=>$files['size'][$index]??0];$upload=new Upload();$path=$upload->file($file,'ticket-'.$ticketId.'-'.bin2hex(random_bytes(4)));if(!$path){$this->jsonMessage('Um dos anexos não é válido.','warning');return;}$attachment=$pdo->prepare("INSERT INTO studio_support_ticket_attachments(ticket_id,message_id,user_id,file_path,original_name,mime_type,file_size) VALUES(?,?,?,?,?,?,?)");$attachment->execute([$ticketId,$messageId,$user->id,$path,mb_substr(basename((string)$file['name']),0,255),$file['type']?:null,(int)$file['size']]);}}
                 // Resposta ao cliente (não a nota interna) avisa quem pediu, no sino do ERP e por e-mail (ADR 0142).
                 if (empty($data["is_internal"])) { $this->notifyTicketRequester($ticketId, 'reply', (int)$user->id, $reply); }

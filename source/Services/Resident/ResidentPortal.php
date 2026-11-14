@@ -365,12 +365,14 @@ final class ResidentPortal
     public function occurrences(array $link): array
     {
         self::assertFeature($link, 'occurrences');
-        $stmt = $this->pdo->prepare("SELECT id, subject, priority, occurred_on, description, status, ticket_id, created_at FROM erp_occurrences
-            WHERE unit_id = :u AND condominium_id = :c AND deleted_at IS NULL ORDER BY occurred_on DESC, id DESC LIMIT 100");
+        // Toda ocorrência é um chamado (ADR 0305): o protocolo identifica o atendimento; a situação segue o chamado.
+        $stmt = $this->pdo->prepare("SELECT o.id, o.subject, o.priority, o.occurred_on, o.description, o.status, o.ticket_id, o.created_at, t.protocol
+            FROM erp_occurrences o LEFT JOIN studio_support_tickets t ON t.id = o.ticket_id
+            WHERE o.unit_id = :u AND o.condominium_id = :c AND o.deleted_at IS NULL ORDER BY o.occurred_on DESC, o.id DESC LIMIT 100");
         $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id']]);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'subject' => (string)$r['subject'], 'priority' => (string)$r['priority'],
             'occurred_on' => (string)$r['occurred_on'], 'description' => (string)$r['description'], 'status' => (string)$r['status'],
-            'has_ticket' => $r['ticket_id'] !== null], $stmt->fetchAll(PDO::FETCH_ASSOC));
+            'has_ticket' => $r['ticket_id'] !== null, 'protocol' => $r['protocol'] !== null ? (string)$r['protocol'] : null], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function reportOccurrence(User $user, array $link, array $input, ?string $today = null, ?RegistryService $registry = null): array

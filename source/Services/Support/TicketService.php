@@ -36,6 +36,8 @@ final class TicketService
     public const AREAS = ['general', 'technical', 'financial'];
     public const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
     public const STATUSES = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
+    /** Filtro "tipo" da lista de chamados (ADR 0305): só as ocorrências, ou os outros chamados. */
+    public const KIND_LABELS = ['occurrence' => 'Ocorrências', 'other' => 'Outros chamados'];
 
     public const ORIGIN_LABELS = ['helpdesk' => 'Help Desk', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
@@ -157,8 +159,13 @@ final class TicketService
         // Solicitante de fora (sem conta) acompanha o chamado pelo código de acesso.
         $accessToken = $data['requester_id'] === null ? hash('sha256', random_bytes(32)) : null;
 
+        // Dentro da transação de quem chama (ex.: a ocorrência que nasce com o chamado, ADR 0305), o chamado
+        // entra nela: se a gravação de quem chama falhar, nenhum dos dois fica.
+        $owns = !$pdo->inTransaction();
         try {
-            $pdo->beginTransaction();
+            if ($owns) {
+                $pdo->beginTransaction();
+            }
             $stmt = $pdo->prepare('INSERT INTO studio_support_tickets
                 (protocol, subject, message, area, origin, condominium_id, unit_id, category, priority, requester_id, requester_name, requester_email, requester_phone, access_token, assigned_to, created_by, due_at)
                 VALUES (:protocol, :subject, :message, :area, :origin, :condominium, :unit, :category, :priority, :requester, :name, :email, :phone, :token, :assigned, :creator, :due)');
@@ -176,9 +183,11 @@ final class TicketService
             if ($afterInsert !== null) {
                 $afterInsert($pdo, $ticketId);
             }
-            $pdo->commit();
+            if ($owns) {
+                $pdo->commit();
+            }
         } catch (\Throwable $error) {
-            if ($pdo->inTransaction()) {
+            if ($owns && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             throw $error;
@@ -225,6 +234,12 @@ final class TicketService
         if (in_array($filters['status'] ?? '', self::STATUSES, true)) {
             $terms[] = 't.status = :status';
             $params['status'] = $filters['status'];
+        }
+        // Só as ocorrências (ADR 0305): toda ocorrência é um chamado, e esta lista é o lugar único de acompanhar.
+        if (($filters['kind'] ?? '') === 'occurrence') {
+            $terms[] = 'o.id IS NOT NULL';
+        } elseif (($filters['kind'] ?? '') === 'other') {
+            $terms[] = 'o.id IS NULL';
         }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
@@ -342,6 +357,9 @@ final class TicketService
             throw $error;
         }
         Audit::record('reply', 'studio_support_tickets', $ticketId, ['status' => $ticket['status']], ['status' => $status, 'message_id' => $messageId]);
+        if ($status !== $ticket['status']) {
+            (new \Source\Services\Erp\Occurrences($pdo, $this->scope()))->followTickets([$ticketId], (int)$user->id);
+        }
         try {
             $this->notifyTeam($ticket, (int)$user->id, $message, $status !== $ticket['status'] && $status === 'open');
         } catch (\Throwable $error) {
@@ -564,8 +582,9 @@ final class TicketService
             t.requester_id, COALESCE(NULLIF(TRIM(CONCAT(r.first_name, ' ', r.last_name)), ''), t.requester_name) AS requester_name,
             COALESCE(r.email, t.requester_email) AS requester_email, t.requester_phone,
             t.created_by, t.assigned_to, NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), '') AS assigned_name,
-            t.due_at, t.resolved_at, t.created_at
+            t.due_at, t.resolved_at, t.created_at, o.id AS occurrence_id
         FROM studio_support_tickets t
+        LEFT JOIN erp_occurrences o ON o.ticket_id = t.id AND o.deleted_at IS NULL
         LEFT JOIN condominiums c ON c.id = t.condominium_id
         LEFT JOIN erp_units u ON u.id = t.unit_id
         LEFT JOIN users r ON r.id = t.requester_id
@@ -596,6 +615,8 @@ final class TicketService
             'due_at' => (string)$row['due_at'],
             'resolved_at' => $row['resolved_at'] !== null ? (string)$row['resolved_at'] : null,
             'created_at' => (string)$row['created_at'],
+            // Ocorrência do ERP ligada a este chamado (ADR 0305), ou null.
+            'occurrence_id' => isset($row['occurrence_id']) && $row['occurrence_id'] !== null ? (int)$row['occurrence_id'] : null,
         ];
     }
 
