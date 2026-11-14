@@ -2979,6 +2979,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /banners/deactivate-ended:
+    post:
+      operationId: deactivateEndedBanners
+      summary: Banners encerrados ainda ativos inativados em lote, sem apagar, tudo ou nada e com prévia (erp.access, erp.settings.view e erp.settings.manage, ADR 0287)
+      description: >-
+        Sem banner_ids, entram os banners do condomínio já encerrados (o fim é antes de hoje, no dia do banco) e ainda
+        ativos, e os de todos os condomínios (sem condomínio) na mesma situação, mas estes só para quem acessa todos os
+        condomínios; para os outros, ficam de fora e são contados em skipped_global. Com banner_ids, recusa banner não
+        encontrado no condomínio nem entre os de todos, já inativo, que ainda não acabou (no ar ou agendado) ou de todos os
+        condomínios sem acesso a todos. Inativar só muda o status para inactive (e quem alterou), com um registro
+        deactivate por banner; nada é apagado e as datas, o título e o texto ficam. Sem título, texto nem quem cadastrou na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, banner_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, on, banners[{ id, scope }], skipped_global, by_scope[{ scope, scope_label, banners }], count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um banner mudou de situação durante o pedido; nada é inativado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou banner recusado (errors com _form e _banner); nada é inativado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
