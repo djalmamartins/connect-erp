@@ -365,6 +365,8 @@ $route->get("/reports/vacant-units", "VacantUnits:show", null, \Source\Support\M
 $route->post("/recurring-entries/close-ended", "RecurringClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Carteira de lançamentos fixos numa competência (vigentes, terminando, já acabados, futuros, geração do mês), somente leitura (ADR 0272).
 $route->get("/reports/recurring-portfolio", "RecurringPortfolio:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inativação em lote dos centros de custo parados, tudo ou nada e com prévia (ADR 0273). Antes do laço dos cadastros (/cost-centers/{id}).
+$route->post("/cost-centers/deactivate-idle", "CostCenterDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
