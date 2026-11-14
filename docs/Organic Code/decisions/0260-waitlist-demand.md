@@ -4,14 +4,14 @@
 - **Status:** aceito
 - **Data:** 2026-11-14
 - **Relacionados:**
-  - 0229 (baixa em lote da lista de espera);
+  - 0237 (baixa em lote da lista de espera);
   - uso das áreas comuns (`CommonAreaUsage`);
   - lista de espera (AP-115), só como cadastro reusado.
 
 ## Contexto
 
 A lista de espera (AP-115) guarda quem quer uma área comum numa data já reservada. O painel operacional chama o próximo
-quando a reserva cai, e a baixa em lote (ADR 0229) encerra as inscrições de datas que passaram.
+quando a reserva cai, e a baixa em lote (ADR 0237) encerra as inscrições de datas que passaram.
 
 Ninguém responde, porém, quais áreas têm mais procura do que comportam:
 
@@ -41,7 +41,7 @@ A regra pura `summarize()` monta uma linha por área do condomínio, com as insc
 houver inscrições de área excluída, entra também uma linha "Área excluída". Cada linha traz:
 
 - `waiting_upcoming` e `waiting_past`: aguardando com a data de hoje em diante, e antes de hoje (a encerrar pelo ADR
-  0229);
+  0237);
 - `called`: das aguardando, as já chamadas;
 - `served` e `gave_up`: atendidas e desistências;
 - `entries`: todas as inscrições;

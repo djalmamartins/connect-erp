@@ -13,7 +13,7 @@ use Source\Services\CondominiumScope;
 
 /**
  * Procura pelas áreas comuns na lista de espera (ADR 0260), somente leitura. A lista de espera (AP-115) guarda quem quer
- * uma área numa data já reservada; o painel operacional chama o próximo quando a reserva cai e a baixa em lote (ADR 0229)
+ * uma área numa data já reservada; o painel operacional chama o próximo quando a reserva cai e a baixa em lote (ADR 0237)
  * encerra as inscrições de datas que passaram. Ninguém responde, porém, quais áreas têm mais procura do que comportam:
  * quantas inscrições esperam por área, em quantas datas, quantas unidades diferentes, quantas já foram chamadas e
  * quantas foram atendidas ou desistiram. O síndico usa isso para decidir horário estendido, um segundo turno ou a
@@ -24,7 +24,7 @@ use Source\Services\CondominiumScope;
  *
  * Regra pura summarize(), uma linha por área do condomínio (e, se houver, uma linha "Área excluída" para as inscrições de
  * área excluída), com as inscrições de data desejada entre from e to:
- * - waiting_upcoming e waiting_past: aguardando com a data em today ou depois, e antes de today (a encerrar pelo ADR 0229);
+ * - waiting_upcoming e waiting_past: aguardando com a data em today ou depois, e antes de today (a encerrar pelo ADR 0237);
  * - called: das aguardando, as já chamadas;
  * - served e gave_up: atendidas e desistências;
  * - entries: todas; units: unidades diferentes; dates_upcoming: datas diferentes com alguém aguardando de today em diante;
