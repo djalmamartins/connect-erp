@@ -5,14 +5,21 @@ App iOS/Android do morador, em React Native com Expo (ADR 0303). Usa as mesmas r
 
 ## Rodar no celular (desenvolvimento)
 
+No Mac do laboratório, com o Docker Desktop aberto e o celular no mesmo Wi-Fi:
+
 ```bash
-cd apps/morador
-npm install
-EXPO_PUBLIC_API_URL=https://app.connect.lab npx expo start
+bash tools/app-morador/celular.sh
 ```
 
-Abra o app **Expo Go** no celular e leia o QR code. O celular precisa alcançar o endereço do servidor (no laboratório,
-o mesmo Wi-Fi do Mac e o `app.connect.lab` resolvendo para o Mac).
+O script confere o Node, sobe o Connect no Docker se precisar, acha o IP do Mac, abre uma ponte na porta 8090
+(`tools/app-morador/ponte.mjs`, que repassa só `/api/v1/resident/*` e `/api/v1/health`, porque o container só escuta
+em 127.0.0.1) e roda `npx expo start --lan` com `EXPO_PUBLIC_API_URL=http://IP-do-Mac:8090`. No celular, abra o
+**Expo Go** e leia o QR code (no iPhone, pela Câmera).
+
+Para ter um morador de teste: ligue as funções em Permissões de Moradores, convide o morador em Criação de usuários
+para moradores e, como o e-mail não sai no laboratório, pegue o link com
+`docker compose exec app php tools/app-morador/link-convite.php`. Abra o link no navegador do Mac, crie a senha e
+entre no app com o e-mail (ou CPF) e essa senha.
 
 ## Testes
 
