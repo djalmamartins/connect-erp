@@ -572,6 +572,7 @@ $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Midd
 $route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/announcements", "ResidentApp:announcements", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/common-areas", "ResidentApp:commonAreas", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/common-areas/{id}/availability", "ResidentApp:areaAvailability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/reservations", "ResidentApp:reservations", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/reservations", "ResidentApp:requestReservation", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/reservations/{id}/cancel", "ResidentApp:cancelReservation", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

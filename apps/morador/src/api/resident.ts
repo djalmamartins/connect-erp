@@ -120,6 +120,8 @@ export type CommonArea = {
   rules: string;
 };
 
+export type AreaAvailability = { area_id: number; month: string; busy: { date: string; starts_time: string | null; ends_time: string | null }[] };
+
 export type WaitlistEntry = { id: number; area: string; desired_on: string };
 
 export type Priority = 'baixa' | 'media' | 'alta';
@@ -215,6 +217,7 @@ export function residentApi(api: ApiClient) {
     accountability: () => api.get<AccountabilityLink[]>('/resident/accountability'),
     announcements: () => api.get<Announcement[]>('/resident/announcements'),
     commonAreas: () => api.get<CommonArea[]>('/resident/common-areas'),
+    areaAvailability: (id: number, month: string) => api.get<AreaAvailability>(`/resident/common-areas/${id}/availability`, { month }),
     reservations: () => api.get<{ reservations: Reservation[]; waitlist: WaitlistEntry[] }>('/resident/reservations'),
     createReservation: (body: { common_area_id: number; reserved_on: string; starts_time?: string; ends_time?: string; notes?: string }) =>
       api.post<unknown>('/resident/reservations', body),

@@ -92,7 +92,7 @@ export function statusTone(kind: StatusKind, status: string | null | undefined):
   return (status && STATUS[kind][status]?.[1]) || 'info';
 }
 
-const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+export const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
 /** "2026-10" → "Outubro de 2026"; "2026" → "Ano de 2026". */
 export function periodLabel(period: string, kind?: string): string {

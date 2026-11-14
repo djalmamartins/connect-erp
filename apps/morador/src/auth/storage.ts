@@ -9,6 +9,7 @@ const TOKEN_KEY = 'connect.morador.token';
 const RESIDENT_KEY = 'connect.morador.resident_id';
 const BIOMETRIC_KEY = 'connect.morador.biometric';
 const LOGIN_KEY = 'connect.morador.last_login';
+const HIDE_KEY = 'connect.morador.hide_values';
 const memory = new Map<string, string>();
 
 async function read(key: string): Promise<string | null> {
@@ -51,4 +52,9 @@ export const tokenStorage = {
   /** Último e-mail ou CPF usado, para já vir preenchido no login. A senha nunca é guardada. */
   getLastLogin: () => read(LOGIN_KEY),
   setLastLogin: (login: string | null) => write(LOGIN_KEY, login),
+  /** Esconder os valores no Início (o olho do cartão verde). */
+  async getHideValues(): Promise<boolean> {
+    return (await read(HIDE_KEY)) === '1';
+  },
+  setHideValues: (on: boolean) => write(HIDE_KEY, on ? '1' : null),
 };

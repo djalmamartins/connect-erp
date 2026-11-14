@@ -29,6 +29,7 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  GET  /api/v1/resident/accountability           links da prestação de contas
  *  GET  /api/v1/resident/announcements            comunicados
  *  GET  /api/v1/resident/common-areas             áreas comuns e regras
+ *  GET  /api/v1/resident/common-areas/{id}/availability?month=AAAA-MM  horários já tomados no mês (sem dizer quem)
  *  GET  /api/v1/resident/reservations             reservas e lista de espera da unidade
  *  POST /api/v1/resident/reservations             pedir reserva {common_area_id, reserved_on, starts_time?, ends_time?, notes?}
  *  POST /api/v1/resident/reservations/{id}/cancel cancelar a própria reserva
@@ -139,6 +140,13 @@ final class ResidentApp
     public function commonAreas(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->commonAreas($link));
+    }
+
+    public function areaAvailability(array $data): void
+    {
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        $month = is_string($_GET['month'] ?? null) ? (string)$_GET['month'] : null;
+        $this->read(fn (User $u, array $link): array => (new ResidentPortal())->areaAvailability($link, $id, $month));
     }
 
     public function reservations(): void
