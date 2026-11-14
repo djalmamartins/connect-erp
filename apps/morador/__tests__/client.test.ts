@@ -117,6 +117,21 @@ describe('residentApi', () => {
     expect(api.chargePdfUrl(8)).toBe('https://x/api/v1/resident/charges/8/pdf?resident_id=2');
   });
 
+  it('liga a verificação em duas etapas pelas rotas do perfil', async () => {
+    const calls: Call[] = [];
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: fakeFetch(200, { data: { enabled: true, recovery_codes: ['a1'] } }, calls) }));
+    const confirmed = await api.confirmTwoFactor('123456');
+    expect(confirmed.recovery_codes).toEqual(['a1']);
+    await api.disableTwoFactor('654321');
+    expect(calls.map((c) => [c.url, c.init.method, c.init.body])).toEqual([
+      ['https://x/api/v1/resident/2fa/confirm', 'POST', JSON.stringify({ code: '123456' })],
+      ['https://x/api/v1/resident/2fa/disable', 'POST', JSON.stringify({ code: '654321' })],
+    ]);
+    const wrong = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: fakeFetch(422, { error: { code: 'invalid_code', message: 'Código inválido.' } }, []) }));
+    const error = await failure(wrong.newRecoveryCodes('000000'));
+    expect([error.status, error.code]).toEqual([422, 'invalid_code']);
+  });
+
   it('lê as funções ligadas do vínculo atual', () => {
     const link = { resident_id: 1, name: 'Ana', relationship: 'owner', relationship_label: 'Proprietário', condominium_id: 1, condominium_name: 'C', unit_id: 1, unit_label: '101' };
     const me: Me = { user: { id: 1, name: 'Ana', email: 'a@b.c' }, current: { ...link, features: ['boletos'] }, links: [] };

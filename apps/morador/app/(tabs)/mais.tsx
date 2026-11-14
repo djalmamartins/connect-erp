@@ -20,6 +20,37 @@ const ITEMS: Item[] = [
   { label: 'Pets e veículos', color: '#c2477a', hint: 'Cadastro da sua unidade', href: '/pets-e-veiculos', icon: 'paw-outline' },
 ];
 
+const ACCOUNT: Item[] = [
+  { label: 'Verificação em duas etapas', color: '#0d2e27', hint: 'Opcional: um código além da senha', href: '/seguranca', icon: 'shield-checkmark-outline' },
+];
+
+function Group({ items }: { items: Item[] }) {
+  return (
+    <View style={styles.group}>
+      {items.map((item, i) => (
+        <Pressable
+          key={item.label}
+          onPress={() => router.push(item.href)}
+          accessibilityRole="button"
+          accessibilityLabel={item.label}
+          style={({ pressed }) => [styles.item, pressed && { backgroundColor: colors.surfaceMuted }]}
+        >
+          <View style={[styles.icon, { backgroundColor: item.color }]}>
+            <Ionicons name={item.icon} size={18} color="#ffffff" />
+          </View>
+          <View style={[styles.itemBody, i < items.length - 1 && styles.separator]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemLabel}>{item.label}</Text>
+              <Text style={styles.itemHint}>{item.hint}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function Mais() {
   const { me, logout } = useAuth();
   const items = ITEMS.filter((i) => !i.feature || isFeatureOn(me, i.feature));
@@ -46,30 +77,9 @@ export default function Mais() {
           </View>
         </Card>
       ) : null}
-      {items.length > 0 ? (
-        <View style={styles.group}>
-          {items.map((item, i) => (
-            <Pressable
-              key={item.label}
-              onPress={() => router.push(item.href)}
-              accessibilityRole="button"
-              accessibilityLabel={item.label}
-              style={({ pressed }) => [styles.item, pressed && { backgroundColor: colors.surfaceMuted }]}
-            >
-              <View style={[styles.icon, { backgroundColor: item.color }]}>
-                <Ionicons name={item.icon} size={18} color="#ffffff" />
-              </View>
-              <View style={[styles.itemBody, i < items.length - 1 && styles.separator]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.itemLabel}>{item.label}</Text>
-                  <Text style={styles.itemHint}>{item.hint}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      {items.length > 0 ? <Group items={items} /> : null}
+      <Text style={styles.groupTitle}>Conta</Text>
+      <Group items={ACCOUNT} />
       <View style={{ gap: space[2], marginTop: space[3] }}>
         {many ? <Button title="Trocar de unidade" variant="secondary" onPress={() => router.push('/unidade')} /> : null}
         <Button title="Sair" variant="danger" onPress={sair} />
@@ -92,6 +102,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontFamily: fonts.bold, fontSize: 17, color: colors.accent },
   name: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text },
+  groupTitle: { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.muted, marginTop: space[3], marginLeft: space[1] },
   group: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,

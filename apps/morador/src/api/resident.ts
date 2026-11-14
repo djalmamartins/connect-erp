@@ -180,6 +180,16 @@ export type LoginResult = { kind: 'ok'; session: AppSession } | { kind: 'two_fac
 
 type LoginPayload = Partial<AppSession> & { two_factor_required?: boolean; challenge?: string };
 
+/** Verificação em duas etapas da conta (opcional para morador; obrigatória para quem também é da equipe). */
+export type TwoFactorStatus = {
+  enabled: boolean;
+  configured: boolean;
+  /** true quando a conta não pode desligar (conta de equipe que também é moradora). */
+  required: boolean;
+  recovery_remaining: number;
+  setup?: { secret: string; uri: string };
+};
+
 export function isFeatureOn(me: Me | null, feature: Feature): boolean {
   return !!me?.current?.features?.includes(feature);
 }
@@ -223,6 +233,10 @@ export function residentApi(api: ApiClient) {
     documentFileUrl: (id: number) => api.url(`/resident/documents/${id}/file`),
     assemblies: () => api.get<AssemblyItem[]>('/resident/assemblies'),
     assembly: (id: number) => api.get<AssemblyDetail>(`/resident/assemblies/${id}`),
+    twoFactor: () => api.get<TwoFactorStatus>('/resident/2fa'),
+    confirmTwoFactor: (code: string) => api.post<{ enabled: true; recovery_codes: string[] }>('/resident/2fa/confirm', { code }),
+    disableTwoFactor: (code: string) => api.post<{ enabled: false }>('/resident/2fa/disable', { code }),
+    newRecoveryCodes: (code: string) => api.post<{ enabled: true; recovery_codes: string[] }>('/resident/2fa/recovery', { code }),
     petsVehicles: () => api.get<{ pets: Pet[]; vehicles: Vehicle[] }>('/resident/pets-vehicles'),
   };
 }
