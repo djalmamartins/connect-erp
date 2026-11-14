@@ -266,6 +266,30 @@ final class ResidentPortal
             'rules' => (string)($r['rules'] ?? '')], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /**
+     * Horários já tomados de uma área comum num mês, para o calendário do app. Mostra só data e horário
+     * (aguardando aprovação ou confirmada): nunca a unidade nem o nome de quem reservou.
+     *
+     * @return array{area_id:int, month:string, busy:list<array{date:string, starts_time:?string, ends_time:?string}>}
+     */
+    public function areaAvailability(array $link, int $areaId, ?string $month = null): array
+    {
+        self::assertFeature($link, 'reservations');
+        $this->assertAreaOf($link, $areaId);
+        $month = is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1 ? $month : date('Y-m');
+        $first = $month . '-01';
+        $last = (new \DateTimeImmutable($first))->modify('last day of this month')->format('Y-m-d');
+        $stmt = $this->pdo->prepare("SELECT reserved_on, starts_time, ends_time FROM erp_reservations
+            WHERE common_area_id = :a AND condominium_id = :c AND deleted_at IS NULL AND status IN ('active','confirmed')
+              AND reserved_on BETWEEN :f AND :l ORDER BY reserved_on, starts_time");
+        $stmt->execute(['a' => $areaId, 'c' => $link['condominium_id'], 'f' => $first, 'l' => $last]);
+        return ['area_id' => $areaId, 'month' => $month, 'busy' => array_map(static fn (array $r): array => [
+            'date' => (string)$r['reserved_on'],
+            'starts_time' => $r['starts_time'] !== null ? substr((string)$r['starts_time'], 0, 5) : null,
+            'ends_time' => $r['ends_time'] !== null ? substr((string)$r['ends_time'], 0, 5) : null,
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
+    }
+
     /** Reservas e inscrições na lista de espera da unidade, de 30 dias atrás em diante. */
     public function reservations(array $link, ?string $today = null): array
     {
