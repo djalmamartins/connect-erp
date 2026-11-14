@@ -417,6 +417,8 @@ $route->get("/reports/invoice-types", "InvoiceTypeOverview:show", null, \Source\
 $route->post("/invoice-types/deactivate-unused", "InvoiceTypeDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Situação das contas bancárias (ativas por tipo, conta principal, contas paradas no período e aplicações sem conta corrente), somente leitura (ADR 0298).
 $route->get("/reports/bank-accounts", "BankAccountOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relógios parados (sem leitura no período e sem leitura por cobrar) inativados em lote, tudo ou nada e com prévia (ADR 0299).
+$route->post("/meters/deactivate-idle", "MeterDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
