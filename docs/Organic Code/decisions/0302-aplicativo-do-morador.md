@@ -47,7 +47,7 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
   cancelar; documento mascarado), assembleias (pauta, resultado e ata só depois de encerrada), documentos e animais e
   veículos.
 - Documentos: só os arquivos que a equipe marcou como **visíveis aos moradores** no Disco Virtual
-  (`erp_documents.shared_with_residents`, botão "Mostrar aos moradores", `POST /api/v1/documents/{id}/share` com
+  (`erp_documents.shared_with_residents`, botões "Mostrar" e "Esconder" com a etiqueta "Visível aos moradores", `POST /api/v1/documents/{id}/share` com
   `erp.documents.manage`, auditado). O download pelo morador respeita o antivírus (ADR 0160).
 
 ### API e aplicativo instalável

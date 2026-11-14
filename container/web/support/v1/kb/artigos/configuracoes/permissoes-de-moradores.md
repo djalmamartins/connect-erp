@@ -1,13 +1,13 @@
 ---
 codigo: AP-153
 titulo: Configurar permissões de Moradores
-resumo: Ligar ou desligar cada função do portal do morador no condomínio: boletos, reservas, ocorrências, comunicados e documentos.
+resumo: Ligar ou desligar cada função do aplicativo do morador no condomínio: boletos, reservas, ocorrências, comunicados, documentos, encomendas, visitantes e mais.
 categoria: configuracoes
 rota: /configuracoes/permissoes-de-moradores
 menu: Configurações > Acesso > Permissões de Moradores
 icone: options-outline
 situacao: funciona
-relacionados: criacao-de-usuarios-para-moradores
+relacionados: criacao-de-usuarios-para-moradores, aplicativo-do-morador
 palavras: permissões de moradores, portal do morador, funções, AP-153
 rascunho: nao
 ---
@@ -35,7 +35,9 @@ legenda: Tela Permissões de Moradores
 1. Marque a caixa da função para **ligar** ou desmarque para **desligar**. A mudança vale na hora.
 2. A coluna **Alterado em** mostra a última mudança.
 
-As funções são: Boletos e segunda via, Reservas de áreas comuns, Ocorrências, Comunicados e Documentos do condomínio.
+As funções são: Boletos e segunda via, Reservas de áreas comuns, Ocorrências, Comunicados, Documentos do condomínio, Prestação de contas, Encomendas, Visitantes e Assembleias. Elas aparecem no aplicativo do morador (app.connect.lab).
+
+>> Tudo sobre o [Aplicativo do morador](artigo:aplicativo-do-morador)
 
 ## Quem pode usar
 
