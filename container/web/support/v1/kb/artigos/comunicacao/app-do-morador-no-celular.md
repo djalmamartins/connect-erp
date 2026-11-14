@@ -22,7 +22,7 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 
 ## O que o morador vê
 
-As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira uma barra pequena quando a pessoa rola. Embaixo fica uma barra flutuante e translúcida com **Início**, **Boletos**, **Reservas**, **Ocorrências** e **Mais**. Nas telas abertas pelo Mais, o botão redondo no canto de cima volta.
+As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira uma barra pequena quando a pessoa rola. Embaixo fica uma barra flutuante e translúcida com **Início**, **Boletos**, **Reservas**, **Ocorrências** e **Mais**. Nas telas abertas pelo Mais, o botão redondo no canto de cima volta. Para atualizar uma tela, basta puxá-la para baixo: no iPhone aparece a logo da Connect, que estica conforme a pessoa puxa e fica quicando enquanto carrega.
 
 - **Início**: a saudação com a data, um cartão com o ícone da Connect, o condomínio, a unidade, o valor em aberto, o próximo vencimento e, quando a próxima conta já tem boleto, os botões {{2ª via do boleto}} e {{Copiar código}}. O olho ao lado de "Em aberto" esconde os valores, e quem tem mais de uma unidade troca tocando no nome do condomínio, atalhos para reservar, registrar ocorrência, avisar visitante e abrir documentos (só os que o condomínio ligou), encomendas para retirar, reservas, ocorrências e comunicados novos.
 - **Boletos**: o total em aberto e os boletos a pagar, cada um com o ícone da situação e os botões {{2ª via (PDF)}}, {{Copiar código}} e {{Pix}}. Embaixo fica o histórico: o app mostra os meses mais recentes e busca os anteriores conforme a pessoa rola a tela, sem baixar tudo de uma vez.
