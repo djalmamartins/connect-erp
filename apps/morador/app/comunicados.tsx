@@ -13,8 +13,8 @@ export default function Comunicados() {
       {res.data && res.data.length === 0 ? <Empty text="Nenhum comunicado por enquanto." /> : null}
       {res.data?.map((a) => (
         <Card key={a.id}>
-          <CardTitle>{a.title}</CardTitle>
-          <Body muted>{date(a.published_at ?? null)}</Body>
+          <CardTitle>{a.subject}</CardTitle>
+          <Body muted>{date(a.published_at)}</Body>
           {a.body ? <Body>{a.body}</Body> : null}
         </Card>
       ))}

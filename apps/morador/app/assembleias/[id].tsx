@@ -16,21 +16,31 @@ export default function Assembleia() {
       {a ? (
         <>
           <Title>{a.title}</Title>
-          <StatusBadge status={a.status} />
+          <StatusBadge kind="assembly" status={a.status} />
           <Body muted>
-            {date(a.date ?? null)}
-            {a.location ? ` · ${a.location}` : ''}
+            1ª chamada: {date(a.first_call_at)}
+            {a.second_call_at ? `\n2ª chamada: ${date(a.second_call_at)}` : ''}
+            {a.location ? `\n${a.location}` : ''}
           </Body>
           <SectionTitle>Pauta</SectionTitle>
-          {(a.agenda ?? []).length === 0 ? <Body muted>Pauta ainda não publicada.</Body> : null}
-          {(a.agenda ?? []).map((item, index) => (
-            <Card key={`${item.order ?? index}-${item.title}`}>
+          {a.items.length === 0 ? <Body muted>Pauta ainda não publicada.</Body> : null}
+          {a.items.map((item) => (
+            <Card key={item.position}>
               <CardTitle>
-                {item.order ?? index + 1}. {item.title}
+                {item.position}. {item.title}
               </CardTitle>
-              {item.result ? <Body muted>Resultado: {item.result}</Body> : null}
+              {item.description ? <Body muted>{item.description}</Body> : null}
+              {item.approved !== null ? <Body>{item.approved ? 'Aprovado' : 'Não aprovado'}</Body> : null}
             </Card>
           ))}
+          {a.minutes ? (
+            <>
+              <SectionTitle>Ata</SectionTitle>
+              <Card>
+                <Body>{a.minutes}</Body>
+              </Card>
+            </>
+          ) : null}
         </>
       ) : null}
     </Screen>

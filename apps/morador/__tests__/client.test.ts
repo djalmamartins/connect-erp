@@ -1,5 +1,5 @@
 import { ApiError, buildUrl, createClient } from '../src/api/client';
-import { isFeatureOn, residentApi, statementLines, type Me } from '../src/api/resident';
+import { isFeatureOn, residentApi, type Me } from '../src/api/resident';
 
 type Call = { url: string; init: RequestInit };
 
@@ -109,24 +109,19 @@ describe('residentApi', () => {
     const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 2, fetchImpl: fakeFetch(201, { data: {} }, calls) }));
     await api.createOccurrence({ subject: 'Vazamento', description: 'Teto da garagem', priority: 'alta', occurred_on: '2026-11-14' });
     await api.cancelVisit(5);
+    await api.createReservation({ common_area_id: 3, reserved_on: '2026-12-01', starts_time: '18:00' });
     expect(calls[0].url).toBe('https://x/api/v1/resident/occurrences?resident_id=2');
     expect(JSON.parse(String(calls[0].init.body)).priority).toBe('alta');
     expect(calls[1].url).toBe('https://x/api/v1/resident/visits/5/cancel?resident_id=2');
+    expect(JSON.parse(String(calls[2].init.body))).toEqual({ common_area_id: 3, reserved_on: '2026-12-01', starts_time: '18:00' });
     expect(api.chargePdfUrl(8)).toBe('https://x/api/v1/resident/charges/8/pdf?resident_id=2');
   });
 
-  it('lê as funções ligadas em lista ou mapa', () => {
-    const base = { person: { name: 'Ana' }, links: [], current: null };
-    expect(isFeatureOn({ ...base, features: ['charges'] } as Me, 'charges')).toBe(true);
-    expect(isFeatureOn({ ...base, features: { charges: true, deliveries: false } } as Me, 'deliveries')).toBe(false);
-    expect(isFeatureOn(null, 'charges')).toBe(false);
-  });
-
-  it('aceita o extrato como lista ou objeto', () => {
-    const line = { id: 1, description: 'Taxa', due_date: '2026-11-10', amount_cents: 50000, status: 'open' };
-    expect(statementLines([line])).toHaveLength(1);
-    expect(statementLines({ lines: [line] })).toHaveLength(1);
-    expect(statementLines({ items: [line] })).toHaveLength(1);
-    expect(statementLines(null)).toEqual([]);
+  it('lê as funções ligadas do vínculo atual', () => {
+    const link = { resident_id: 1, name: 'Ana', relationship: 'owner', relationship_label: 'Proprietário', condominium_id: 1, condominium_name: 'C', unit_id: 1, unit_label: '101' };
+    const me: Me = { user: { id: 1, name: 'Ana', email: 'a@b.c' }, current: { ...link, features: ['boletos'] }, links: [] };
+    expect(isFeatureOn(me, 'boletos')).toBe(true);
+    expect(isFeatureOn(me, 'deliveries')).toBe(false);
+    expect(isFeatureOn(null, 'boletos')).toBe(false);
   });
 });

@@ -74,11 +74,14 @@ export default function Ocorrencias() {
       {list.data?.map((o) => (
         <Card key={o.id}>
           <Row>
-            <CardTitle>{o.subject ?? 'Ocorrência'}</CardTitle>
-            <StatusBadge status={o.status} />
+            <CardTitle>{o.subject}</CardTitle>
+            <StatusBadge kind="occurrence" status={o.status} />
           </Row>
           <Body>{o.description}</Body>
-          <Body muted>{date(o.occurred_on ?? o.created_at ?? null)}</Body>
+          <Body muted>
+            {date(o.occurred_on)}
+            {o.has_ticket ? ' · em atendimento pela administração' : ''}
+          </Body>
         </Card>
       ))}
     </Screen>

@@ -13,7 +13,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import type { ApiError } from '../api/client';
-import { statusLabel, statusTone, type Tone } from '../lib/format';
+import { statusLabel, statusTone, type StatusKind, type Tone } from '../lib/format';
 import { colors, controlHeight, fonts, radius, space } from '../theme';
 
 export function Screen({
@@ -79,11 +79,11 @@ const TONES: Record<Tone, { bg: string; fg: string }> = {
   neutral: { bg: colors.surfaceMuted, fg: colors.muted },
 };
 
-export function StatusBadge({ status, label }: { status: string; label?: string }) {
-  const tone = TONES[statusTone(status)];
+export function StatusBadge({ kind, status }: { kind: StatusKind; status: string }) {
+  const tone = TONES[statusTone(kind, status)];
   return (
     <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.badgeText, { color: tone.fg }]}>{label ?? statusLabel(status)}</Text>
+      <Text style={[styles.badgeText, { color: tone.fg }]}>{statusLabel(kind, status)}</Text>
     </View>
   );
 }

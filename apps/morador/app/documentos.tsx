@@ -30,10 +30,10 @@ export default function Documentos() {
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="A administração ainda não publicou documentos." /> : null}
       {res.data?.map((d) => (
-        <Card key={d.id} onPress={() => open(d.id, d.file_name ?? `${d.title}.pdf`, d.mime_type)} accessibilityLabel={`Abrir ${d.title}`}>
+        <Card key={d.id} onPress={() => open(d.id, d.title, d.mime)} accessibilityLabel={`Abrir ${d.title}`}>
           <CardTitle>{d.title}</CardTitle>
           <Body muted>
-            {[d.category, date(d.created_at ?? null)].filter(Boolean).join(' · ')}
+            {[d.folder_label, date(d.uploaded_at.slice(0, 10))].filter(Boolean).join(' · ')}
             {opening === d.id ? ' · abrindo…' : ''}
           </Body>
         </Card>

@@ -16,9 +16,12 @@ export default function Assembleias() {
         <Card key={a.id} onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })} accessibilityLabel={a.title}>
           <Row>
             <CardTitle>{a.title}</CardTitle>
-            <StatusBadge status={a.status} />
+            <StatusBadge kind="assembly" status={a.status} />
           </Row>
-          <Body muted>{date(a.date ?? null)}</Body>
+          <Body muted>
+            {date(a.first_call_at)}
+            {a.location ? ` · ${a.location}` : ''}
+          </Body>
         </Card>
       ))}
     </Screen>

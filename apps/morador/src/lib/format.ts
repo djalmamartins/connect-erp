@@ -67,65 +67,29 @@ export function parseTime(input: string): string | null {
   return `${String(h).padStart(2, '0')}:${m[2]}`;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Em aberto',
-  pending: 'Pendente',
-  paid: 'Pago',
-  settled: 'Pago',
-  overdue: 'Vencido',
-  cancelled: 'Cancelado',
-  canceled: 'Cancelado',
-  registered: 'Registrado',
-  approved: 'Aprovada',
-  rejected: 'Recusada',
-  confirmed: 'Confirmada',
-  received: 'Recebida',
-  delivered: 'Entregue',
-  waiting: 'Aguardando retirada',
-  in_progress: 'Em andamento',
-  closed: 'Encerrada',
-  scheduled: 'Agendada',
-  expected: 'Prevista',
-  expired: 'Vencida',
-  done: 'Concluída',
+export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+
+export type StatusKind = 'situation' | 'reservation' | 'occurrence' | 'delivery' | 'visit' | 'assembly';
+
+/** Rótulos e cores das situações, iguais aos cadastros do ERP (Registry\Definitions) e ao extrato (UnitStatement). */
+const STATUS: Record<StatusKind, Record<string, [string, Tone]>> = {
+  situation: { open: ['Em aberto', 'warning'], overdue: ['Vencido', 'danger'], paid: ['Pago', 'success'], renegotiated: ['Renegociado', 'neutral'] },
+  reservation: { active: ['Aguardando aprovação', 'warning'], confirmed: ['Confirmada', 'success'], inactive: ['Cancelada', 'neutral'] },
+  occurrence: { active: ['Aberta', 'warning'], running: ['Em andamento', 'info'], done: ['Resolvida', 'success'] },
+  delivery: { active: ['Aguardando retirada', 'warning'], picked_up: ['Retirada', 'success'], inactive: ['Cancelada', 'neutral'] },
+  visit: { active: ['Prevista', 'info'], done: ['Realizada', 'success'], inactive: ['Cancelada', 'neutral'] },
+  assembly: { convened: ['Convocada', 'info'], open: ['Aberta', 'warning'], closed: ['Encerrada', 'neutral'] },
 };
 
-export function statusLabel(status: string | null | undefined): string {
+export function statusLabel(kind: StatusKind, status: string | null | undefined): string {
   if (!status) {
     return '—';
   }
-  return STATUS_LABELS[status] ?? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+  return STATUS[kind][status]?.[0] ?? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
 }
 
-export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-
-export function statusTone(status: string | null | undefined): Tone {
-  switch (status) {
-    case 'paid':
-    case 'settled':
-    case 'approved':
-    case 'confirmed':
-    case 'delivered':
-    case 'done':
-      return 'success';
-    case 'overdue':
-    case 'rejected':
-    case 'expired':
-      return 'danger';
-    case 'open':
-    case 'pending':
-    case 'waiting':
-    case 'expected':
-    case 'scheduled':
-    case 'in_progress':
-      return 'warning';
-    case 'cancelled':
-    case 'canceled':
-    case 'closed':
-      return 'neutral';
-    default:
-      return 'info';
-  }
+export function statusTone(kind: StatusKind, status: string | null | undefined): Tone {
+  return (status && STATUS[kind][status]?.[1]) || 'info';
 }
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];

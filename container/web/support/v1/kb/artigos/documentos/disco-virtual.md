@@ -7,7 +7,7 @@ rota: /documentos/disco-virtual
 menu: Documentos > Disco Virtual
 icone: list-outline
 situacao: funciona
-relacionados: certidao-de-debitos, declaracao-de-inadimplencia, comprovante-de-quitacao, avisos-de-recebimento
+relacionados: aplicativo-do-morador, certidao-de-debitos, declaracao-de-inadimplencia, comprovante-de-quitacao, avisos-de-recebimento
 palavras: disco virtual, documentos, AP-122
 rascunho: nao
 ---
@@ -59,6 +59,14 @@ Depois clique em {{Buscar}}. Para voltar à lista completa, limpe os filtros.
 > Cada arquivo enviado passa pelo antivírus quando ele está ligado. Arquivo bloqueado não pode ser baixado.
 
 > Na tela: *Pasta vazia Envie o primeiro arquivo ao lado.*
+
+## Mostrar aos moradores
+
+Na linha do arquivo, clique em {{Mostrar}} para que ele apareça em **Documentos** no aplicativo do morador. O arquivo ganha a etiqueta **Visível aos moradores**; para tirar, clique em {{Esconder}}. Só os moradores do mesmo condomínio veem o arquivo, e a função **Documentos** precisa estar ligada em [[Configurações > Acesso > Permissões de Moradores]].
+
+>! Antes de mostrar, confira se o arquivo pode ser lido por todos os moradores (atas, regimento, convenção). Não mostre documentos com dados pessoais.
+
+>> Tudo sobre o [Aplicativo do morador](artigo:aplicativo-do-morador)
 
 ## Quem pode usar
 

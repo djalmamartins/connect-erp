@@ -37,7 +37,7 @@ final class Environments
         'studio' => ['label' => 'Studio', 'description' => 'Gestão de conteúdo e operação', 'icon' => 'grid-outline', 'host' => 'studio', 'path' => '/studio/dash', 'permission' => 'studio.access', 'auth' => true],
         'erp' => ['label' => 'ERP', 'description' => 'Gestão administrativa', 'icon' => 'business-outline', 'host' => 'erp', 'path' => '/dashboard', 'permission' => 'erp.access', 'auth' => true],
         'helpdesk' => ['label' => 'Help Desk', 'description' => 'Atendimento e chamados', 'icon' => 'headset-outline', 'host' => 'studio', 'path' => '/helpdesk/tickets', 'permission' => 'support.manage', 'auth' => true],
-        'residents' => ['label' => 'Moradores', 'description' => 'Portal de moradores', 'icon' => 'home-outline', 'host' => 'site', 'path' => '/app', 'permission' => 'app.access', 'auth' => true],
+        'residents' => ['label' => 'Moradores', 'description' => 'Aplicativo do morador', 'icon' => 'home-outline', 'host' => 'app', 'path' => '/', 'permission' => 'app.access', 'auth' => true],
         'site' => ['label' => 'Site', 'description' => 'Site institucional', 'icon' => 'globe-outline', 'host' => 'site', 'path' => '/', 'permission' => 'site.access', 'auth' => false],
     ];
 
@@ -108,7 +108,7 @@ final class Environments
             && is_file(moves_container_path('residents', CONF_VIEW_APP) . '/default.php');
     }
 
-    /** Papel do host: 'erp', 'studio' ou 'main' (host único: localhost, www, domínio puro). */
+    /** Papel do host: 'erp', 'studio', 'app' ou 'main' (host único: localhost, www, domínio puro). */
     public static function hostRole(?string $host = null): string
     {
         $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
@@ -117,6 +117,9 @@ final class Environments
         }
         if (preg_match('/^studio\.[a-z0-9.-]+(?::\d+)?$/', $host)) {
             return 'studio';
+        }
+        if (preg_match('/^app\.[a-z0-9.-]+(?::\d+)?$/', $host)) {
+            return 'app';
         }
         return 'main';
     }
@@ -138,14 +141,19 @@ final class Environments
         $path ??= $environment['path'];
 
         if ($role === 'main') {
-            // Host único: tudo no mesmo host; o ERP fica em /erp.
-            return ['host' => $host, 'path' => $key === 'erp' ? '/erp' . $path : $path];
+            // Host único: tudo no mesmo host; o ERP fica em /erp e o app do morador em /app (ADR 0302).
+            return ['host' => $host, 'path' => match ($key) {
+                'erp' => '/erp' . $path,
+                'residents' => '/app' . ($path === '/' ? '' : $path),
+                default => $path,
+            }];
         }
 
-        $base = (string)preg_replace('/^(?:erp|studio)\./', '', $host);
+        $base = (string)preg_replace('/^(?:erp|studio|app)\./', '', $host);
         $targetHost = match ($environment['host']) {
             'erp' => 'erp.' . $base,
             'studio' => 'studio.' . $base,
+            'app' => 'app.' . $base,
             default => 'www.' . $base,
         };
         return ['host' => $targetHost, 'path' => $path];
@@ -242,7 +250,7 @@ final class Environments
         if ($linkHostPort === $host || $linkHost === $host) {
             return $link;
         }
-        $base = static fn (string $value): string => (string)preg_replace('/^(?:erp|studio|www)\./', '', $value);
+        $base = static fn (string $value): string => (string)preg_replace('/^(?:erp|studio|app|www)\./', '', $value);
         if ($base($linkHostPort) !== $base($host) && $base($linkHost) !== $base($host)) {
             return null;
         }
@@ -253,6 +261,9 @@ final class Environments
         }
         if ($role === 'studio') {
             return self::link(str_starts_with($path, '/helpdesk') ? 'helpdesk' : 'studio', $path, $host);
+        }
+        if ($role === 'app') {
+            return self::link('residents', $path, $host);
         }
         return $link;
     }

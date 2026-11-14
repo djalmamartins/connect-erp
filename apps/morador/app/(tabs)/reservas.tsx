@@ -3,7 +3,7 @@ import { Alert, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { confirm } from '../../src/lib/confirm';
-import { date, money, parseDate, parseTime } from '../../src/lib/format';
+import { date, money, parseDate, parseTime, today } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { space } from '../../src/theme';
 import { Body, Button, Card, CardTitle, Choice, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../../src/ui/kit';
@@ -12,6 +12,8 @@ export default function Reservas() {
   const { api, residentId } = useAuth();
   const areas = useResource(() => api.commonAreas(), [residentId]);
   const list = useResource(() => api.reservations(), [residentId]);
+  const mine = list.data?.reservations ?? [];
+  const waiting = list.data?.waitlist ?? [];
   const [areaId, setAreaId] = useState<number | null>(null);
   const [day, setDay] = useState('');
   const [start, setStart] = useState('');
@@ -28,9 +30,9 @@ export default function Reservas() {
     const startTime = start ? parseTime(start) : null;
     const endTime = end ? parseTime(end) : null;
     if (!areaId) e.common_area_id = 'Escolha o espaço.';
-    if (!isoDate) e.date = 'Use o formato DD/MM/AAAA.';
-    if (start && !startTime) e.start_time = 'Use HH:MM.';
-    if (end && !endTime) e.end_time = 'Use HH:MM.';
+    if (!isoDate) e.reserved_on = 'Use o formato DD/MM/AAAA.';
+    if (start && !startTime) e.starts_time = 'Use HH:MM.';
+    if (end && !endTime) e.ends_time = 'Use HH:MM.';
     setErrors(e);
     setWaitlistOffer(null);
     if (Object.keys(e).length > 0 || !areaId || !isoDate) return;
@@ -38,19 +40,19 @@ export default function Reservas() {
     try {
       await api.createReservation({
         common_area_id: areaId,
-        date: isoDate,
-        ...(startTime ? { start_time: startTime } : {}),
-        ...(endTime ? { end_time: endTime } : {}),
+        reserved_on: isoDate,
+        ...(startTime ? { starts_time: startTime } : {}),
+        ...(endTime ? { ends_time: endTime } : {}),
       });
       setDay('');
       setStart('');
       setEnd('');
-      Alert.alert('Reserva enviada', area?.requires_approval ? 'A administração vai confirmar a sua reserva.' : 'A sua reserva está feita.');
+      Alert.alert('Reserva enviada', 'A administração vai confirmar a sua reserva. Acompanhe em Minhas reservas.');
       await list.reload();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fields);
-        if (err.status === 409) {
+        if (err.status === 409 || err.fields.reserved_on) {
           setWaitlistOffer({ areaId, date: isoDate });
         }
         Alert.alert('Reserva', err.message);
@@ -64,7 +66,8 @@ export default function Reservas() {
     if (!waitlistOffer) return;
     setBusy(true);
     try {
-      await api.joinWaitlist({ common_area_id: waitlistOffer.areaId, date: waitlistOffer.date });
+      await api.joinWaitlist({ common_area_id: waitlistOffer.areaId, desired_on: waitlistOffer.date });
+      await list.reload();
       setWaitlistOffer(null);
       Alert.alert('Lista de espera', 'Pronto! Avisamos se a data ficar livre.');
     } catch (err) {
@@ -102,14 +105,15 @@ export default function Reservas() {
               <Choice label="Espaço" options={areas.data.map((a) => ({ value: a.id, label: a.name }))} value={areaId} onChange={setAreaId} />
               {errors.common_area_id ? <Body style={{ color: '#d92d36' }}>{errors.common_area_id}</Body> : null}
               {area?.rules ? <Body muted>{area.rules}</Body> : null}
+              {area?.opening_time && area?.closing_time ? <Body muted>Horário: {area.opening_time} às {area.closing_time}</Body> : null}
               {area?.fee_cents ? <Body muted>Taxa de uso: {money(area.fee_cents)} (vem no seu boleto).</Body> : null}
-              <Field label="Data" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.date} />
+              <Field label="Data" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.reserved_on} />
               <Row>
                 <View style={{ flex: 1 }}>
-                  <Field label="Início" placeholder="HH:MM" value={start} onChangeText={setStart} keyboardType="numbers-and-punctuation" error={errors.start_time} />
+                  <Field label="Início" placeholder="HH:MM" value={start} onChangeText={setStart} keyboardType="numbers-and-punctuation" error={errors.starts_time} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Field label="Fim" placeholder="HH:MM" value={end} onChangeText={setEnd} keyboardType="numbers-and-punctuation" error={errors.end_time} />
+                  <Field label="Fim" placeholder="HH:MM" value={end} onChangeText={setEnd} keyboardType="numbers-and-punctuation" error={errors.ends_time} />
                 </View>
               </Row>
               <Button title="Reservar" onPress={book} busy={busy} />
@@ -123,21 +127,29 @@ export default function Reservas() {
 
       <SectionTitle>Minhas reservas</SectionTitle>
       {list.error && !areas.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : null}
-      {list.data && list.data.length === 0 ? <Empty text="Você ainda não tem reservas." /> : null}
-      {list.data?.map((r) => (
+      {list.data && mine.length === 0 ? <Empty text="Você ainda não tem reservas." /> : null}
+      {mine.map((r) => (
         <Card key={r.id}>
           <Row>
-            <CardTitle>{r.common_area_name ?? 'Espaço'}</CardTitle>
-            <StatusBadge status={r.status} />
+            <CardTitle>{r.area}</CardTitle>
+            <StatusBadge kind="reservation" status={r.status} />
           </Row>
           <Body muted>
-            {date(r.date)}
-            {r.start_time ? ` · ${r.start_time.slice(0, 5)}` : ''}
-            {r.end_time ? ` às ${r.end_time.slice(0, 5)}` : ''}
+            {date(r.reserved_on)}
+            {r.starts_time ? ` · ${r.starts_time}` : ''}
+            {r.ends_time ? ` às ${r.ends_time}` : ''}
+            {r.fee_cents ? ` · taxa ${money(r.fee_cents)}` : ''}
           </Body>
-          {['pending', 'approved', 'confirmed', 'scheduled'].includes(r.status) ? (
+          {['active', 'confirmed'].includes(r.status) && r.reserved_on >= today() ? (
             <Button title="Cancelar" variant="danger" onPress={() => cancel(r.id)} />
           ) : null}
+        </Card>
+      ))}
+      {waiting.length > 0 ? <SectionTitle>Lista de espera</SectionTitle> : null}
+      {waiting.map((w) => (
+        <Card key={`w${w.id}`}>
+          <CardTitle>{w.area}</CardTitle>
+          <Body muted>Esperando {date(w.desired_on)}. Avisamos se a data ficar livre.</Body>
         </Card>
       ))}
     </Screen>

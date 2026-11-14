@@ -1,12 +1,13 @@
 /**
- * Rotas do morador (/api/v1/resident, ADR 0302) e da sessão do aparelho (ADR 0303).
- * Valores em centavos (amount_cents), datas AAAA-MM-DD. Todas as rotas do morador aceitam
+ * Rotas do morador (/api/v1/resident, ADR 0302, ResidentPortal) e da sessão do aparelho (ADR 0303).
+ * Valores em centavos (amount_cents), datas AAAA-MM-DD, horas HH:MM. Todas as rotas do morador aceitam
  * ?resident_id= para escolher o vínculo; o cliente acrescenta o vínculo escolhido no app.
  */
 import type { ApiClient } from './client';
 
+/** Funções da matriz do portal (ResidentPortalPermissions::FEATURES). */
 export type Feature =
-  | 'charges'
+  | 'boletos'
   | 'accountability'
   | 'announcements'
   | 'reservations'
@@ -18,169 +19,169 @@ export type Feature =
 
 export type ResidentLink = {
   resident_id: number;
+  name: string;
+  relationship: string;
+  relationship_label: string;
   condominium_id: number;
   condominium_name: string;
   unit_id: number;
   unit_label: string;
-  role?: string;
+  features: Feature[];
 };
 
 export type Me = {
-  person: { id?: number; name: string; email?: string | null };
+  user: { id: number; name: string; email: string };
+  current: ResidentLink;
   links: ResidentLink[];
-  current: ResidentLink | null;
-  features: Feature[] | Record<string, boolean>;
+};
+
+export type Reservation = {
+  id: number;
+  area: string;
+  reserved_on: string;
+  starts_time: string | null;
+  ends_time: string | null;
+  fee_cents: number | null;
+  status: string;
+};
+
+export type Announcement = { id: number; subject: string; body: string; published_at: string };
+
+export type AssemblyItem = {
+  id: number;
+  kind: string;
+  mode: string;
+  title: string;
+  location: string;
+  first_call_at: string;
+  second_call_at: string | null;
+  status: string;
 };
 
 export type Summary = {
-  open_charges_count?: number;
-  open_charges_cents?: number;
-  overdue_charges_count?: number;
-  next_due_date?: string | null;
-  pending_deliveries?: number;
-  upcoming_reservations?: number;
-  open_occurrences?: number;
-  unread_announcements?: number;
-  [key: string]: unknown;
+  features: Feature[];
+  charges?: { open_count: number; open_cents: number; overdue_cents: number; next_due_on: string | null };
+  deliveries_waiting?: number;
+  next_reservations?: Reservation[];
+  visits_today?: number;
+  announcements?: Announcement[];
+  assemblies?: AssemblyItem[];
 };
 
 export type Charge = {
   id: number;
   status: string;
-  digitable_line?: string | null;
-  barcode?: string | null;
-  pix_copy_paste?: string | null;
-  pdf_available?: boolean;
+  digitable_line: string | null;
+  barcode: string | null;
+  pix_copy_paste: string | null;
+  pdf_available: boolean;
 };
 
+/** situation: open, overdue, paid, renegotiated (UnitStatement::situation). */
 export type StatementLine = {
-  id: number;
+  entry_id: number;
   description: string;
-  due_date: string | null;
-  paid_at?: string | null;
+  competence: string;
+  due_on: string;
+  paid_on: string | null;
   amount_cents: number;
-  status: string;
-  charge?: Charge | null;
+  situation: string;
+  charge: Charge | null;
 };
 
 export type ChargesResponse = {
-  lines?: StatementLine[];
-  items?: StatementLine[];
-  balance_cents?: number;
-  open_cents?: number;
+  unit_label: string;
+  from: string;
+  to: string;
+  as_of: string;
+  totals: { open_cents: number; overdue_cents: number; paid_cents: number };
+  lines: StatementLine[];
 };
 
 export type AccountabilityLink = {
-  id?: number;
-  period: string;
-  kind?: string;
-  url: string;
-  published_at?: string | null;
-};
-
-export type Announcement = {
   id: number;
-  title: string;
-  body?: string | null;
-  published_at?: string | null;
-  audience?: string | null;
+  kind: 'monthly' | 'annual' | string;
+  competence: string;
+  version: number;
+  generated_at: string;
+  url: string;
 };
 
 export type CommonArea = {
   id: number;
   name: string;
-  rules?: string | null;
-  fee_cents?: number | null;
-  booking_mode?: string | null;
-  requires_approval?: boolean;
+  booking_mode: string;
+  capacity: number | null;
+  fee_cents: number | null;
+  min_advance_days: number | null;
+  max_advance_days: number | null;
+  opening_time: string | null;
+  closing_time: string | null;
+  rules: string;
 };
 
-export type Reservation = {
-  id: number;
-  common_area_id: number;
-  common_area_name?: string;
-  date: string;
-  start_time?: string | null;
-  end_time?: string | null;
-  status: string;
-  fee_cents?: number | null;
-};
+export type WaitlistEntry = { id: number; area: string; desired_on: string };
 
 export type Priority = 'baixa' | 'media' | 'alta';
 
 export type Occurrence = {
   id: number;
-  subject?: string;
-  priority?: Priority;
-  occurred_on?: string | null;
+  subject: string;
+  priority: Priority | string;
+  occurred_on: string;
   description: string;
   status: string;
-  created_at?: string | null;
-  photos_count?: number;
+  has_ticket: boolean;
 };
 
 export type Delivery = {
   id: number;
-  description?: string | null;
-  carrier?: string | null;
-  received_at?: string | null;
-  delivered_at?: string | null;
+  recipient: string;
+  carrier: string;
+  tracking_code: string | null;
+  received_on: string;
+  received_time: string | null;
+  picked_up_on: string | null;
+  picked_up_by: string | null;
   status: string;
 };
 
 export type Visit = {
   id: number;
   visitor_name: string;
-  date: string;
-  start_time?: string | null;
-  end_time?: string | null;
-  kind?: string | null;
+  visitor_document: string | null;
+  expected_on: string;
+  expected_until: string | null;
+  notes: string;
   status: string;
 };
 
 export type DocumentItem = {
   id: number;
+  folder: string;
+  folder_label: string;
   title: string;
-  category?: string | null;
-  created_at?: string | null;
-  file_name?: string | null;
-  mime_type?: string | null;
-};
-
-export type AssemblyItem = {
-  id: number;
-  title: string;
-  date?: string | null;
-  kind?: string | null;
-  status: string;
+  mime: string;
+  size_bytes: number;
+  uploaded_at: string;
 };
 
 export type AssemblyDetail = AssemblyItem & {
-  location?: string | null;
-  agenda?: { order?: number; title: string; result?: string | null }[];
-  minutes_available?: boolean;
-  [key: string]: unknown;
+  minutes: string | null;
+  items: { position: number; title: string; description: string; status: string; approved: boolean | null }[];
 };
 
-export type Pet = { id: number; name: string; species?: string | null; breed?: string | null };
-export type Vehicle = { id: number; plate: string; model?: string | null; color?: string | null; kind?: string | null };
+export type Pet = { name: string; species: string; size: string | null; breed: string | null; vaccinated: boolean };
+export type Vehicle = { plate: string; kind: string; model: string | null; color: string | null; parking_spot: string | null };
 
 /** Sessão do aparelho (ADR 0303). */
 export type AppSession = { token: string; expires_at?: string | null };
-export type LoginResult =
-  | { kind: 'ok'; session: AppSession }
-  | { kind: 'two_factor'; challenge: string };
+export type LoginResult = { kind: 'ok'; session: AppSession } | { kind: 'two_factor'; challenge: string };
 
 type LoginPayload = Partial<AppSession> & { two_factor_required?: boolean; challenge?: string };
 
 export function isFeatureOn(me: Me | null, feature: Feature): boolean {
-  if (!me) {
-    return false;
-  }
-  if (Array.isArray(me.features)) {
-    return me.features.includes(feature);
-  }
-  return me.features[feature] === true;
+  return !!me?.current?.features?.includes(feature);
 }
 
 export function residentApi(api: ApiClient) {
@@ -196,30 +197,28 @@ export function residentApi(api: ApiClient) {
       const data = await api.post<LoginPayload>('/resident/app-sessions/verify', { challenge, code });
       return { token: String(data?.token ?? ''), expires_at: data?.expires_at ?? null };
     },
-    logout(): Promise<unknown> {
-      return api.delete('/resident/app-sessions/current');
-    },
+    logout: () => api.delete('/resident/app-sessions/current'),
     me: () => api.get<Me>('/resident/me'),
     summary: () => api.get<Summary>('/resident/summary'),
-    charges: (from?: string, to?: string) => api.get<ChargesResponse | StatementLine[]>('/resident/charges', { from, to }),
+    charges: (from?: string, to?: string) => api.get<ChargesResponse>('/resident/charges', { from, to }),
     chargePdfUrl: (id: number) => api.url(`/resident/charges/${id}/pdf`),
     accountability: () => api.get<AccountabilityLink[]>('/resident/accountability'),
     announcements: () => api.get<Announcement[]>('/resident/announcements'),
     commonAreas: () => api.get<CommonArea[]>('/resident/common-areas'),
-    reservations: () => api.get<Reservation[]>('/resident/reservations'),
-    createReservation: (body: { common_area_id: number; date: string; start_time?: string; end_time?: string }) =>
-      api.post<Reservation>('/resident/reservations', body),
-    cancelReservation: (id: number) => api.post<Reservation>(`/resident/reservations/${id}/cancel`),
-    joinWaitlist: (body: { common_area_id: number; date: string }) => api.post<unknown>('/resident/waitlist', body),
+    reservations: () => api.get<{ reservations: Reservation[]; waitlist: WaitlistEntry[] }>('/resident/reservations'),
+    createReservation: (body: { common_area_id: number; reserved_on: string; starts_time?: string; ends_time?: string; notes?: string }) =>
+      api.post<unknown>('/resident/reservations', body),
+    cancelReservation: (id: number) => api.post<unknown>(`/resident/reservations/${id}/cancel`),
+    joinWaitlist: (body: { common_area_id: number; desired_on: string; notes?: string }) => api.post<unknown>('/resident/waitlist', body),
     occurrences: () => api.get<Occurrence[]>('/resident/occurrences'),
     /** Primeira versão sem foto (a foto vem depois, pelo Disco Virtual com antivírus). */
     createOccurrence: (body: { subject: string; description: string; priority: Priority; occurred_on: string }) =>
-      api.post<Occurrence>('/resident/occurrences', body),
+      api.post<unknown>('/resident/occurrences', body),
     deliveries: () => api.get<Delivery[]>('/resident/deliveries'),
     visits: () => api.get<Visit[]>('/resident/visits'),
-    createVisit: (body: { visitor_name: string; document?: string; date: string; start_time?: string; end_time?: string }) =>
-      api.post<Visit>('/resident/visits', body),
-    cancelVisit: (id: number) => api.post<Visit>(`/resident/visits/${id}/cancel`),
+    createVisit: (body: { visitor_name: string; visitor_document?: string; expected_on: string; expected_until?: string; notes?: string }) =>
+      api.post<unknown>('/resident/visits', body),
+    cancelVisit: (id: number) => api.post<unknown>(`/resident/visits/${id}/cancel`),
     documents: () => api.get<DocumentItem[]>('/resident/documents'),
     documentFileUrl: (id: number) => api.url(`/resident/documents/${id}/file`),
     assemblies: () => api.get<AssemblyItem[]>('/resident/assemblies'),
@@ -229,14 +228,3 @@ export function residentApi(api: ApiClient) {
 }
 
 export type ResidentApi = ReturnType<typeof residentApi>;
-
-/** O extrato pode vir como lista ou como objeto com as linhas. */
-export function statementLines(data: ChargesResponse | StatementLine[] | null): StatementLine[] {
-  if (!data) {
-    return [];
-  }
-  if (Array.isArray(data)) {
-    return data;
-  }
-  return data.lines ?? data.items ?? [];
-}

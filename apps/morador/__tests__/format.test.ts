@@ -31,12 +31,14 @@ describe('format', () => {
     expect(parseTime('12:60')).toBeNull();
   });
 
-  it('traduz situações e tons', () => {
-    expect(statusLabel('overdue')).toBe('Vencido');
-    expect(statusLabel('em_analise')).toBe('Em analise');
-    expect(statusTone('paid')).toBe('success');
-    expect(statusTone('overdue')).toBe('danger');
-    expect(statusTone('qualquer')).toBe('info');
+  it('traduz situações e tons como os cadastros do ERP', () => {
+    expect(statusLabel('situation', 'overdue')).toBe('Vencido');
+    expect(statusLabel('delivery', 'active')).toBe('Aguardando retirada');
+    expect(statusLabel('reservation', 'active')).toBe('Aguardando aprovação');
+    expect(statusLabel('occurrence', 'em_analise')).toBe('Em analise');
+    expect(statusTone('situation', 'paid')).toBe('success');
+    expect(statusTone('situation', 'overdue')).toBe('danger');
+    expect(statusTone('visit', 'qualquer')).toBe('info');
   });
 
   it('nomeia o período da prestação de contas', () => {

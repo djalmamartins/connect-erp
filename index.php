@@ -345,6 +345,12 @@ $route->get("/reports/waitlist-demand", "WaitlistDemand:show", null, \Source\Sup
 $route->post("/maintenances/cancel-overdue", "MaintenanceCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobertura das alíquotas de retenção do condomínio, somente leitura (ADR 0262). Antes do laço dos cadastros.
 $route->get("/reports/tax-coverage", "TaxCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cancelamento em lote das reservas de uma área comum interditada, tudo ou nada e com prévia (ADR 0263). Antes do laço dos cadastros (/reservations/{id}).
+$route->post("/reservations/cancel-for-closure", "ReservationClosure:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Histórico das assembleias do condomínio num período, somente leitura (ADR 0264). Antes do laço dos cadastros.
+$route->get("/reports/assembly-history", "AssemblyHistory:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Bloqueio em lote dos visitantes de unidades sem morador ativo, tudo ou nada e com prévia (ADR 0265). Antes do laço dos cadastros (/visitors/{id}).
+$route->post("/visitors/block-unattached", "VisitorUnitBlock:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -353,6 +359,7 @@ $route->get("/documents", "VirtualDisk:index", null, \Source\Support\Middleware\
 $route->post("/documents", "VirtualDisk:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/documents/{id}", "VirtualDisk:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/documents/{id}/download", "VirtualDisk:download", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/documents/{id}/share", "VirtualDisk:share", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Anexos dos lançamentos (ADR 0174): nota fiscal, comprovante e recibo, guardados no Disco Virtual.
 $route->get("/entries/{id}/attachments", "EntryAttachments:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -486,6 +493,29 @@ $route->get("/tickets/{id}", "Tickets:show", null, \Source\Support\Middleware\Ap
 $route->get("/tickets/{id}/messages", "Tickets:messages", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/help/articles", "Help:articles", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets/{id}/messages", "Tickets:reply", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Aplicativo do morador (ADR 0302): tudo preso ao vínculo morador-unidade e à matriz do portal.
+$route->get("/resident/me", "ResidentApp:me", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/summary", "ResidentApp:summary", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/charges", "ResidentApp:charges", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/announcements", "ResidentApp:announcements", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/common-areas", "ResidentApp:commonAreas", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/reservations", "ResidentApp:reservations", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/reservations", "ResidentApp:requestReservation", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/reservations/{id}/cancel", "ResidentApp:cancelReservation", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/waitlist", "ResidentApp:joinWaitlist", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/occurrences", "ResidentApp:occurrences", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/occurrences", "ResidentApp:reportOccurrence", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/deliveries", "ResidentApp:deliveries", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/visits", "ResidentApp:visits", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/visits", "ResidentApp:authorizeVisit", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/visits/{id}/cancel", "ResidentApp:cancelVisit", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/assemblies", "ResidentApp:assemblies", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/assemblies/{id}", "ResidentApp:assembly", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/documents", "ResidentApp:documents", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/documents/{id}/file", "ResidentApp:documentFile", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/pets-vehicles", "ResidentApp:petsVehicles", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->namespace(null);
 
 /**
@@ -541,6 +571,27 @@ if (erp_host()) {
     $route->get("/convite", "ResidentInvite:form");
     $route->post("/convite", "ResidentInvite:accept");
     $route->namespace(null);
+} elseif (app_host()) {
+    /**
+     * Host próprio do aplicativo do morador (app.connect.lab, ADR 0302): só o app, o 2FA do login
+     * compartilhado, a recuperação de senha e o aceite do convite. ERP, Studio e site não respondem aqui.
+     */
+    $route->namespace("Source\\Controllers\\Studio");
+    $route->group("/studio");
+    $route->get("/login/2fa", "TwoFactor:challenge");
+    $route->post("/login/2fa", "TwoFactor:challenge");
+    $route->namespace("Source\\Controllers\\Web\\Connect");
+    $route->group(null);
+    $route->get("/forget", "Web:forget");
+    $route->post("/forget", "Web:forget");
+    $route->get("/forget/{code}", "Web:reset");
+    $route->post("/reset", "Web:reset");
+    $route->get("/convite/{token}", "ResidentInvite:open");
+    $route->post("/convite/abrir", "ResidentInvite:claim");
+    $route->get("/convite", "ResidentInvite:form");
+    $route->post("/convite", "ResidentInvite:accept");
+    $route->namespace(null);
+    require moves_container_path('residents', CONF_VIEW_APP) . "/routes.php";
 } elseif (studio_host()) {
     /**
      * Host próprio do Studio (studio.connect.lab, ADR 0026): só Studio, Help Desk e a
@@ -598,9 +649,9 @@ if (is_file($helpDeskRoutes)) {
 }
 
 /**
- * APP
+ * APP DO MORADOR (ADR 0302): no host único fica em /app.
  */
-$appRoutes = moves_container_path('residents', CONF_VIEW_APP) . "/default.php";
+$appRoutes = moves_container_path('residents', CONF_VIEW_APP) . "/routes.php";
 if (is_file($appRoutes)) {
     require $appRoutes;
 }
@@ -611,7 +662,7 @@ if (is_file($appRoutes)) {
  */
 // A1: default.php é a moldura do tema; as rotas ficam em routes.php.
 $erpRoutes = moves_container_path('erp', CONF_VIEW_ERP) . "/routes.php";
-if (is_file($erpRoutes)) {
+if (!app_host() && is_file($erpRoutes)) {
     require $erpRoutes;
 }
 
@@ -639,6 +690,9 @@ $route->dispatch();
 if ($route->error() && erp_host()) {
     AppLogger::log((int)$route->error() >= 500 ? 'error' : 'notice', 'Rota do ERP finalizada com erro HTTP', ['event_type' => 'http_error', 'code' => 'HTTP_' . $route->error(), 'http_status' => (int)$route->error(), 'status' => 'resolved'], 'http');
     (new \Source\Controllers\Erp\Connect\Panel())->routeError((int)$route->error());
+} elseif ($route->error() && app_host()) {
+    AppLogger::log((int)$route->error() >= 500 ? 'error' : 'notice', 'Rota do app do morador finalizada com erro HTTP', ['event_type' => 'http_error', 'code' => 'HTTP_' . $route->error(), 'http_status' => (int)$route->error(), 'status' => 'resolved'], 'http');
+    (new \Source\Controllers\App\Resident\AppScreens())->error(['errcode' => (int)$route->error()]);
 } elseif ($route->error()) {
     AppLogger::log((int)$route->error() >= 500 ? 'error' : 'notice', 'Rota finalizada com erro HTTP', ['event_type' => 'http_error', 'code' => 'HTTP_' . $route->error(), 'http_status' => (int)$route->error(), 'status' => (int)$route->error() >= 500 ? 'open' : 'resolved'], 'http');
     $requestPath = parse_url($_SERVER["REQUEST_URI"] ?? "", PHP_URL_PATH);

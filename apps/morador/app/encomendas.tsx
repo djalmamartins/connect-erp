@@ -14,13 +14,20 @@ export default function Encomendas() {
       {res.data?.map((d) => (
         <Card key={d.id}>
           <Row>
-            <CardTitle>{d.description || d.carrier || 'Encomenda'}</CardTitle>
-            <StatusBadge status={d.status} />
+            <CardTitle>{d.carrier || 'Encomenda'}</CardTitle>
+            <StatusBadge kind="delivery" status={d.status} />
           </Row>
           <Body muted>
-            Chegou em {date(d.received_at ?? null)}
-            {d.delivered_at ? ` · retirada em ${date(d.delivered_at)}` : ''}
+            Para {d.recipient} · chegou em {date(d.received_on)}
+            {d.received_time ? ` às ${d.received_time}` : ''}
           </Body>
+          {d.tracking_code ? <Body muted>Rastreio: {d.tracking_code}</Body> : null}
+          {d.picked_up_on ? (
+            <Body muted>
+              Retirada em {date(d.picked_up_on)}
+              {d.picked_up_by ? ` por ${d.picked_up_by}` : ''}
+            </Body>
+          ) : null}
         </Card>
       ))}
     </Screen>

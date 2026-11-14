@@ -3,7 +3,7 @@ import { Alert, View } from 'react-native';
 import { ApiError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
 import { confirm } from '../src/lib/confirm';
-import { date, parseDate, parseTime } from '../src/lib/format';
+import { date, parseDate } from '../src/lib/format';
 import { useResource } from '../src/lib/useResource';
 import { space } from '../src/theme';
 import { Body, Button, Card, CardTitle, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../src/ui/kit';
@@ -12,35 +12,34 @@ export default function Visitantes() {
   const { api, residentId } = useAuth();
   const list = useResource(() => api.visits(), [residentId]);
   const [name, setName] = useState('');
+  const [doc, setDoc] = useState('');
   const [day, setDay] = useState('');
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
+  const [until, setUntil] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
   async function save() {
     const e: Record<string, string> = {};
     const isoDate = parseDate(day);
-    const startTime = start ? parseTime(start) : null;
-    const endTime = end ? parseTime(end) : null;
+    const untilDate = until.trim() ? parseDate(until) : null;
     if (name.trim().length < 3) e.visitor_name = 'Informe o nome do visitante.';
-    if (!isoDate) e.date = 'Use o formato DD/MM/AAAA.';
-    if (start && !startTime) e.start_time = 'Use HH:MM.';
-    if (end && !endTime) e.end_time = 'Use HH:MM.';
+    if (!isoDate) e.expected_on = 'Use o formato DD/MM/AAAA.';
+    if (until.trim() && !untilDate) e.expected_until = 'Use o formato DD/MM/AAAA.';
+    else if (isoDate && untilDate && untilDate < isoDate) e.expected_until = 'Precisa ser depois do primeiro dia.';
     setErrors(e);
     if (Object.keys(e).length > 0 || !isoDate) return;
     setBusy(true);
     try {
       await api.createVisit({
         visitor_name: name.trim(),
-        date: isoDate,
-        ...(startTime ? { start_time: startTime } : {}),
-        ...(endTime ? { end_time: endTime } : {}),
+        expected_on: isoDate,
+        ...(doc.trim() ? { visitor_document: doc.trim() } : {}),
+        ...(untilDate ? { expected_until: untilDate } : {}),
       });
       setName('');
+      setDoc('');
       setDay('');
-      setStart('');
-      setEnd('');
+      setUntil('');
       Alert.alert('Visita avisada', 'A portaria já sabe quem vem.');
       await list.reload();
     } catch (err) {
@@ -72,13 +71,13 @@ export default function Visitantes() {
           <CardTitle>Avisar visita</CardTitle>
           <View style={{ gap: space[3] }}>
             <Field label="Nome do visitante" value={name} onChangeText={setName} maxLength={120} error={errors.visitor_name} autoCapitalize="words" />
-            <Field label="Data" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.date} />
+            <Field label="Documento (opcional)" value={doc} onChangeText={setDoc} maxLength={30} error={errors.visitor_document} hint="RG ou CPF, para a portaria conferir." />
             <Row>
               <View style={{ flex: 1 }}>
-                <Field label="Das" placeholder="HH:MM" value={start} onChangeText={setStart} keyboardType="numbers-and-punctuation" error={errors.start_time} />
+                <Field label="Dia" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.expected_on} />
               </View>
               <View style={{ flex: 1 }}>
-                <Field label="Até" placeholder="HH:MM" value={end} onChangeText={setEnd} keyboardType="numbers-and-punctuation" error={errors.end_time} />
+                <Field label="Até (opcional)" placeholder="DD/MM/AAAA" value={until} onChangeText={setUntil} keyboardType="numbers-and-punctuation" error={errors.expected_until} />
               </View>
             </Row>
             <Button title="Avisar a portaria" onPress={save} busy={busy} />
@@ -93,14 +92,14 @@ export default function Visitantes() {
         <Card key={v.id}>
           <Row>
             <CardTitle>{v.visitor_name}</CardTitle>
-            <StatusBadge status={v.status} />
+            <StatusBadge kind="visit" status={v.status} />
           </Row>
           <Body muted>
-            {date(v.date)}
-            {v.start_time ? ` · ${v.start_time.slice(0, 5)}` : ''}
-            {v.end_time ? ` às ${v.end_time.slice(0, 5)}` : ''}
+            {date(v.expected_on)}
+            {v.expected_until && v.expected_until !== v.expected_on ? ` até ${date(v.expected_until)}` : ''}
+            {v.visitor_document ? ` · doc. ${v.visitor_document}` : ''}
           </Body>
-          {['expected', 'pending', 'scheduled'].includes(v.status) ? <Button title="Cancelar" variant="danger" onPress={() => cancel(v.id)} /> : null}
+          {v.status === 'active' ? <Button title="Cancelar" variant="danger" onPress={() => cancel(v.id)} /> : null}
         </Card>
       ))}
     </Screen>

@@ -13,9 +13,9 @@ export default function PrestacaoDeContas() {
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="Nenhuma prestação de contas publicada ainda." /> : null}
       {res.data?.map((link) => (
-        <Card key={`${link.period}-${link.kind ?? ''}`} onPress={() => Linking.openURL(link.url)} accessibilityLabel={`Abrir ${periodLabel(link.period, link.kind)}`}>
-          <CardTitle>{periodLabel(link.period, link.kind)}</CardTitle>
-          <Body muted>{link.published_at ? `Publicada em ${date(link.published_at)}` : 'Toque para abrir'}</Body>
+        <Card key={link.id} onPress={() => Linking.openURL(link.url)} accessibilityLabel={`Abrir ${periodLabel(link.competence, link.kind)}`}>
+          <CardTitle>{periodLabel(link.competence, link.kind)}</CardTitle>
+          <Body muted>{`Publicada em ${date(link.generated_at.slice(0, 10))}${link.version > 1 ? ` · versão ${link.version}` : ''}`}</Body>
         </Card>
       ))}
     </Screen>

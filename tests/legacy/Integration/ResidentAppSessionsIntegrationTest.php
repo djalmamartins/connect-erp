@@ -11,6 +11,8 @@ use Source\Services\LoginThrottle;
 use Source\Services\Resident\ResidentAppSessions as Sessions;
 use Source\Services\SessionRevocation;
 use Source\Services\TwoFactorService;
+use Source\Models\Auth;
+use Source\Support\Middleware\ResidentApiAuthenticated;
 use Source\Support\Totp;
 
 /** Sessão do app do morador (ADR 0303) no MariaDB: login, 2FA, token, expiração, logout e logout global. */
@@ -125,5 +127,46 @@ final class ResidentAppSessionsIntegrationTest extends TestCase
         self::assertSame(Sessions::MAX_DEVICES, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_resident_app_tokens WHERE user_id = {$id} AND revoked_at IS NULL")->fetchColumn());
         self::assertNull($this->sessions()->authenticate($tokens[0]));
         self::assertNotNull($this->sessions()->authenticate(end($tokens)));
+    }
+
+    /** Middleware das rotas do morador com o token real: vínculo de verdade (ResidentLinks), sem CSRF e sem sessão. */
+    public function testBearerOpensResidentRoutesWithoutSessionOrCsrf(): void
+    {
+        $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Alpha', 'active']);
+        $condominium = (int)$this->pdo->lastInsertId();
+        $this->pdo->prepare("INSERT INTO erp_units (condominium_id, number, type) VALUES (?, '101', 'apartamento')")->execute([$condominium]);
+        $unit = (int)$this->pdo->lastInsertId();
+        [$id, $email] = $this->user();
+        $this->pdo->prepare("INSERT INTO erp_residents (condominium_id, unit_id, unit_label, relationship, name, email, user_id) VALUES (?, ?, '101', 'owner', 'Ana', ?, ?)")
+            ->execute([$condominium, $unit, $email, $id]);
+
+        $real = new Sessions($this->pdo);
+        $token = $real->login($email, 'Senha@123', 'Celular')['body']['data']['token'];
+        $middleware = new ResidentApiAuthenticated();
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        try {
+            $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token;
+            ob_start();
+            self::assertTrue($middleware->handle(null), 'POST com Bearer passa sem X-CSRF-Token.');
+            ob_end_clean();
+            self::assertSame($id, (int)Auth::user()?->id);
+            self::assertArrayNotHasKey('authUser', $_SESSION, 'O token nunca vira sessão.');
+            Auth::actingAs(null);
+
+            $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Sessions::newToken();
+            ob_start();
+            self::assertFalse($middleware->handle(null), 'Token desconhecido = 401.');
+            ob_end_clean();
+            self::assertNull(Auth::user());
+
+            $this->pdo->prepare('UPDATE erp_residents SET ends_on = ? WHERE user_id = ?')->execute([date('Y-m-d', strtotime('-1 day')), $id]);
+            $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token;
+            ob_start();
+            self::assertFalse($middleware->handle(null), 'Vínculo encerrado derruba o app.');
+            ob_end_clean();
+        } finally {
+            unset($_SERVER['HTTP_AUTHORIZATION']);
+            Auth::actingAs(null);
+        }
     }
 }
