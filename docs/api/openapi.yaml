@@ -3208,6 +3208,31 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /invoice-types/deactivate-unused:
+    post:
+      operationId: deactivateUnusedInvoiceTypes
+      summary: Tipos de faturas próprios sem uso (sem fatura no período, sem fatura em preparação e sem encobrir um padrão ativo) inativados em lote, tudo ou nada e com prévia (erp.access, erp.invoice_types.view, erp.invoice_types.manage e erp.invoices.view, ADR 0297)
+      description: >-
+        Só tipos do próprio condomínio: os padrões da Connect nunca entram, e nenhuma fatura é tocada. Sem
+        invoice_type_ids, entram os tipos próprios ativos sem fatura não cancelada nos últimos months meses (padrão 24, de
+        6 a 120, pela competência e no mês do banco) e criados antes do período; os sem uso com fatura em preparação ou
+        que encobrem um padrão ativo de mesmo nome (ADR 0163) ficam de fora e são contados em skipped_draft e
+        skipped_overriding. Com invoice_type_ids, recusa tipo não encontrado entre os do condomínio, já inativo, com
+        fatura em preparação, encobrindo um padrão ativo, com fatura no período ou criado no período, e uma recusa desfaz
+        todos. Inativar só muda o status para inactive (e quem alterou), com um registro update por tipo; nada é apagado,
+        e as faturas já preparadas continuam apontando o tipo. Sem nome de tipo, conta, valor nem observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, months: { type: integer, minimum: 6, maximum: 120, default: 24 }, invoice_type_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, months, from, to, invoice_types[{ id, recurrence, last_competence }], skipped_draft, skipped_overriding, by_recurrence[{ recurrence, recurrence_label, invoice_types }], count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um tipo de fatura mudou de situação durante o pedido; nada é inativado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou tipo recusado (errors com _form e _invoice_type); nada é inativado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
