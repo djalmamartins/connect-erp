@@ -3305,6 +3305,31 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /invoices/deactivate-cancelled-entries:
+    post:
+      operationId: deactivateCancelledInvoiceEntries
+      summary: Contas a receber ainda ativas de faturas canceladas (sem pagamento, acordo, boleto, cobrança judicial, documento, extrato, cheque nem competência fechada) inativadas em lote, tudo ou nada e com prévia (erp.access, erp.invoices.view, erp.invoices.manage, erp.entries.view e erp.entries.manage, ADR 0401)
+      description: >-
+        Sem entry_ids, entram as contas ativas, não excluídas, ligadas a itens de faturas canceladas do condomínio (o
+        still_active da conferência da ADR 0400); ficam de fora e são contadas a paga (skipped_paid), a em acordo ou ligada
+        a boleto, cobrança judicial, documento da unidade, linha de extrato ou cópia de cheque (skipped_linked) e a de
+        competência fechada (skipped_closed). Com entry_ids, recusa conta não encontrada entre as de faturas canceladas do
+        condomínio, já inativa, paga, em acordo ou ligada, ou de competência fechada, e uma recusa desfaz todas. Inativar
+        é a mesma gravação do cancelamento da fatura (status inactive e quem alterou), com um registro update por conta;
+        nada é apagado, nenhuma fatura muda, e nenhum boleto, extrato ou integração bancária é gravado ou chamado. Sem
+        unidade, morador, descrição, valor nem dado bancário na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, entry_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, entries[{ id, invoice_id, competence }], skipped_paid, skipped_linked, skipped_closed, invoices, count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Uma conta mudou de situação durante o pedido; nada é inativado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou conta recusada (errors com _form e _entry); nada é inativado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
