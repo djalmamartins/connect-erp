@@ -118,17 +118,27 @@ final class VirtualDiskLinks
         if (count($rows) > self::MAX_ROWS) {
             throw new InvalidArgumentException(sprintf('Mais de %d arquivos no Disco Virtual: fale com o suporte.', self::MAX_ROWS));
         }
+        return ['condominium_id' => (int)$id] + self::summarize(array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'folder' => (string)$r['folder'],
+            'deleted' => $r['deleted_at'] !== null], $rows), $this->linkCounts((int)$id));
+    }
+
+    /**
+     * Vínculos que apontam para arquivos do condomínio, inclusive os da lixeira (o escopo vem do arquivo). Não confere o
+     * escopo: quem chama já passou pelo CondominiumScope::assertAccess (o build acima e o lote de restauração, ADR 0277).
+     *
+     * @return array<string, array<int, int>> cadastro (tabela de LINKS) => id do arquivo => vínculos
+     */
+    public function linkCounts(int $condominiumId): array
+    {
         $links = [];
         foreach (VirtualDiskDeduplication::LINKS as $table => $column) {
-            // Os vínculos que apontam para arquivos deste condomínio (o escopo vem do arquivo).
             $stmt = $this->pdo->prepare("SELECT l.{$column} AS document_id, COUNT(*) AS n FROM {$table} l JOIN erp_documents d ON d.id = l.{$column}
                 WHERE d.condominium_id = ? GROUP BY l.{$column}");
-            $stmt->execute([(int)$id]);
+            $stmt->execute([$condominiumId]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $links[$table][(int)$r['document_id']] = (int)$r['n'];
             }
         }
-        return ['condominium_id' => (int)$id] + self::summarize(array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'folder' => (string)$r['folder'],
-            'deleted' => $r['deleted_at'] !== null], $rows), $links);
+        return $links;
     }
 }
