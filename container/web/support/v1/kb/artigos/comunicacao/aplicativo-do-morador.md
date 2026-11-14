@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: criacao-de-usuarios-para-moradores, permissoes-de-moradores, disco-virtual
-palavras: aplicativo, app, morador, portal, celular, instalar, segunda via, reserva, encomenda, visitante, duas etapas, 2fa, segurança
+palavras: aplicativo, app, morador, portal, celular, instalar, segunda via, reserva, encomenda, visitante, duas etapas, 2fa, segurança, recibo, edital, sininho, avisos, busca
 rascunho: nao
 ---
 
@@ -40,14 +40,15 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 
 ## O que o morador pode fazer
 
-- **Boletos**: ver a situação de cada conta da unidade e baixar o PDF do boleto.
+- **Barra de cima**: o nome da pessoa e a unidade, a **busca** (comunicados, assembleias, documentos, encomendas e páginas) e o **sininho** com os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada e reserva da semana. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
+- **Boletos**: ver a situação de cada conta da unidade. Tocando na conta: se estiver paga, abre o **recibo** para imprimir ou salvar em PDF; se estiver em aberto, oferece **baixar o boleto**, copiar a linha digitável ou o Pix.
 - **Prestação de contas**: abrir os links publicados no fechamento do mês.
 - **Comunicados**: ler os avisos gerais e os enviados para a unidade dele.
 - **Reservas**: pedir reserva de uma área comum, entrar na lista de espera e cancelar uma reserva futura. Valem as mesmas regras da tela de Reservas do ERP (horário, conflito, aprovação). Reserva com taxa já lançada não pode ser cancelada pelo aplicativo.
 - **Encomendas**: ver o que chegou na portaria e o que já foi retirado.
 - **Visitantes**: avisar a portaria de uma visita e cancelar o aviso. O documento do visitante aparece mascarado.
 - **Ocorrências**: registrar uma ocorrência para a administração.
-- **Assembleias**: ver a pauta, o resultado de cada item e a ata depois de encerrada.
+- **Assembleias**: ver a pauta, **baixar o edital de convocação** (para imprimir ou salvar em PDF), o resultado de cada item e a ata depois de encerrada.
 - **Documentos**: baixar os arquivos que a administração marcou como visíveis no Disco Virtual.
 
 ## Mostrar documentos aos moradores
@@ -55,6 +56,10 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 No [[Documentos > Disco Virtual]], clique em {{Mostrar}} na linha do arquivo. O arquivo ganha a etiqueta **Visível aos moradores**; para tirar, clique em {{Esconder}}. Arquivo bloqueado pelo antivírus não pode ser baixado pelo morador.
 
 >> Tudo sobre o [Disco Virtual](artigo:disco-virtual)
+
+> O recibo é montado com a baixa que a administração registrou no ERP. Conta sem baixa não tem recibo.
+
+- **Minha unidade**: os dados da pessoa no cadastro (nome, e-mail, telefone e CPF mascarado), veículos, pets, a segurança da conta e como instalar no celular.
 
 ## Segurança e privacidade
 

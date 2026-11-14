@@ -5,10 +5,12 @@ declare(strict_types=1);
 /**
  * Conta de morador para testar o aplicativo do morador (ADR 0302) no lab.
  *
- *   php tools/lab-morador-teste.php [--email=morador.teste@connect.lab] [--condominio=ID] [--usuario=ID]
+ *   php tools/lab-morador-teste.php [--email=morador.teste@connect.lab] [--condominio=ID] [--usuario=ID] [--sem-exemplos]
  *
  * Liga a conta ao primeiro proprietário ativo do condomínio de teste Lafayette (dados fictícios; ou --condominio=ID)
  * e liga todas as funções do aplicativo nesse condomínio. Rodar de novo gera uma senha nova para a mesma conta.
+ * Também cria exemplos para ver tudo funcionando (ResidentLabExamples: comunicados, encomendas, pet, documento
+ * visível aos moradores e prestação de contas dos meses fechados), sem duplicar; --sem-exemplos pula essa parte.
  * Mesma trava dos dados de exemplo (ADR 0162): ERP_DEMO_DATA=true, MOVESOS_ENV lab ou dev e banco de laboratório
  * (ou o nome exato em ERP_DEMO_DB). A senha aparece só na tela; nada é enviado por e-mail.
  */
@@ -26,6 +28,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\LabSampleData;
 use Source\Services\Erp\LafayetteSample;
 use Source\Services\Erp\ResidentPortalPermissions;
+use Source\Services\Resident\ResidentLabExamples;
 
 $environment = getenv('MOVESOS_ENV') ?: (getenv('APP_ENV') ?: '');
 try {
@@ -100,6 +103,16 @@ if (!is_array($resident)) {
     exit(1);
 }
 
+if ($userId > 0) {
+    // Uma conta fica ligada a um cadastro de morador só (uq_erp_residents_user).
+    $other = $pdo->prepare('SELECT r.id, r.condominium_id, u.label FROM erp_residents r JOIN erp_units u ON u.id = r.unit_id WHERE r.user_id = ? AND r.id <> ?');
+    $other->execute([$userId, (int)$resident['id']]);
+    $taken = $other->fetch(PDO::FETCH_ASSOC);
+    if (is_array($taken)) {
+        fwrite(STDERR, "A conta {$email} já está ligada à unidade {$taken['label']} do condomínio {$taken['condominium_id']}. Use --condominio={$taken['condominium_id']} ou outro --email." . PHP_EOL);
+        exit(1);
+    }
+}
 $password = 'Morador@' . random_int(1000, 9999);
 $pdo->beginTransaction();
 try {
@@ -125,6 +138,15 @@ try {
     exit(1);
 }
 
+$examples = [];
+if (!in_array('--sem-exemplos', $argv, true)) {
+    try {
+        $examples = (new ResidentLabExamples($pdo, $admin))->create(['condominium_id' => $condominiumId, 'unit_id' => (int)$resident['unit_id'], 'name' => (string)$resident['name']]);
+    } catch (\Throwable $error) {
+        $examples = ['Exemplos' => 'não foi possível criar: ' . $error->getMessage()];
+    }
+}
+
 $condominium = $pdo->prepare('SELECT name FROM condominiums WHERE id = ?');
 $condominium->execute([$condominiumId]);
 fwrite(STDOUT, implode(PHP_EOL, [
@@ -135,6 +157,9 @@ fwrite(STDOUT, implode(PHP_EOL, [
     '  Endereço:    https://www.connect.lab/app (ou https://app.connect.lab quando o host estiver ligado)',
     '  Funções do aplicativo ligadas nesse condomínio.',
 ]) . PHP_EOL);
+foreach ($examples as $what => $result) {
+    fwrite(STDOUT, '  Exemplo · ' . $what . ':' . str_repeat(' ', max(1, 21 - mb_strlen($what))) . $result . PHP_EOL);
+}
 
 /** CPF fictício com dígitos verificadores válidos. */
 function testCpf(int $seed): string
