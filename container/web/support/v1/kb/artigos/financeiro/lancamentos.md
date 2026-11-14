@@ -71,7 +71,7 @@ recorte: main form:not([method=get])
 Depois de salvar, o lançamento mostra o quadro **Notas e comprovantes**, ao lado do formulário.
 
 1. Abra o lançamento (clique no nome dele na lista).
-2. No quadro **Notas e comprovantes**, escolha o **Tipo**: Nota fiscal, Comprovante de pagamento, Recibo ou Outro documento.
+2. No quadro **Notas e comprovantes**, escolha o **Tipo**: Nota fiscal, Conta ou fatura (a conta de água, luz, internet), Comprovante de pagamento, Recibo ou Outro documento. Tudo o que for anexado às despesas aparece no [link da prestação de contas para os moradores](artigo:livro-caixa).
 3. Escolha o **Arquivo** (PDF, foto JPG/PNG/WebP ou o XML da NF-e, até 20 MB) e clique em {{Anexar}}.
 4. O anexo aparece na lista do quadro. Clique no nome para abrir ou no ícone de download para baixar.
 

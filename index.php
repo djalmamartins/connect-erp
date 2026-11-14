@@ -115,6 +115,11 @@ $route->get("/accountability-publications", "AccountabilityPublications:index", 
 $route->get("/accountability-publications/{id}", "AccountabilityPublications:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-publications", "AccountabilityPublications:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-publications/{id}/withdraw", "AccountabilityPublications:withdraw", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Link público da prestação de contas (ADR 0301): gerar, enviar aos moradores e revogar.
+$route->get("/accountability-links", "AccountabilityLinks:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/accountability-links", "AccountabilityLinks:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/accountability-links/{id}/send", "AccountabilityLinks:send", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/accountability-links/{id}/revoke", "AccountabilityLinks:revoke", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/reports/deliveries", "DeliveryLog:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/delivery-pickups", "DeliveryLog:pickUp", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/chart-account-openings", "ChartOpenings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -329,6 +334,8 @@ $route->post("/useful-contacts/deactivate-duplicates", "ContactDeduplication:sto
 $route->get("/reports/tariff-coverage", "TariffCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Reajuste em lote das tarifas de consumo do condomínio, tudo ou nada e com prévia (ADR 0259). Antes do laço dos cadastros (/tariffs/{id}).
 $route->post("/tariffs/readjust", "TariffReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Procura pelas áreas comuns na lista de espera, somente leitura (ADR 0260). Antes do laço dos cadastros.
+$route->get("/reports/waitlist-demand", "WaitlistDemand:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -500,6 +507,9 @@ $route->get("/verificar-certidao-debitos", "DocumentVerify:form");
 $route->post("/verificar-certidao-debitos", "DocumentVerify:verify");
 $route->get("/verificar", "DocumentVerify:legacy");
 $route->post("/verificar", "DocumentVerify:verify");
+// Link público da prestação de contas para os moradores (ADR 0301): sem login, em qualquer host, token no caminho.
+$route->get("/prestacao/{token}", "AccountabilityLinkPublic:show");
+$route->get("/prestacao/{token}/documento/{attachment}", "AccountabilityLinkPublic:file");
 $route->namespace(null);
 
 $moduleRole = Access::role(Auth::user());

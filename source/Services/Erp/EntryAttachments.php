@@ -27,9 +27,9 @@ use Source\Support\Audit;
  */
 final class EntryAttachments
 {
-    public const KINDS = ['nota_fiscal' => 'Nota fiscal', 'comprovante' => 'Comprovante de pagamento', 'recibo' => 'Recibo', 'outro' => 'Outro documento'];
+    public const KINDS = ['nota_fiscal' => 'Nota fiscal', 'conta' => 'Conta ou fatura', 'comprovante' => 'Comprovante de pagamento', 'recibo' => 'Recibo', 'outro' => 'Outro documento'];
     /** Pasta do Disco Virtual de cada tipo. */
-    public const FOLDER = ['nota_fiscal' => 'notas_fiscais', 'comprovante' => 'comprovantes', 'recibo' => 'comprovantes', 'outro' => 'outros'];
+    public const FOLDER = ['nota_fiscal' => 'notas_fiscais', 'conta' => 'comprovantes', 'comprovante' => 'comprovantes', 'recibo' => 'comprovantes', 'outro' => 'outros'];
     public const MAX_PER_ENTRY = 20;
 
     private PDO $pdo;
@@ -78,7 +78,7 @@ final class EntryAttachments
                     d.scan_status, d.path
                 FROM erp_entry_attachments a JOIN erp_documents d ON d.id = a.document_id
                 WHERE a.condominium_id = :c AND a.deleted_at IS NULL AND d.deleted_at IS NULL AND a.entry_id IN (' . implode(',', $chunk) . ')
-                ORDER BY a.entry_id, FIELD(a.kind, \'nota_fiscal\', \'comprovante\', \'recibo\', \'outro\'), a.id');
+                ORDER BY a.entry_id, FIELD(a.kind, \'nota_fiscal\', \'conta\', \'comprovante\', \'recibo\', \'outro\'), a.id');
             $stmt->execute(['c' => $condominiumId]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $out[(int)$row['entry_id']][] = self::present($row, $withPath);
