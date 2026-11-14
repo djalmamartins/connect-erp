@@ -371,6 +371,8 @@ $route->post("/cost-centers/deactivate-idle", "CostCenterDeactivation:store", nu
 $route->get("/reports/virtual-disk", "VirtualDiskInventory:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cópias repetidas do Disco Virtual para a lixeira (exclusão lógica; o arquivo fica), tudo ou nada e com prévia (ADR 0275). Antes de /documents/{id}.
 $route->post("/documents/trash-duplicates", "VirtualDiskDeduplication:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Vínculos dos arquivos do Disco Virtual (ligados e soltos por pasta, por cadastro, vínculos para a lixeira), somente leitura (ADR 0276).
+$route->get("/reports/document-links", "VirtualDiskLinks:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

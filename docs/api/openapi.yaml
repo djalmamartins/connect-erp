@@ -2741,6 +2741,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou arquivo recusado (errors com _form e _document); nada vai para a lixeira' }
+  /reports/document-links:
+    get:
+      operationId: virtualDiskLinks
+      summary: Vínculos dos arquivos do Disco Virtual do condomínio (ligados e soltos por pasta, arquivos e vínculos por cadastro e vínculos que apontam para arquivo na lixeira), somente leitura (erp.access e erp.documents.view, ADR 0276)
+      description: >-
+        folders traz uma linha por pasta do Disco Virtual com os arquivos não excluídos, os ligados a algum cadastro e os
+        soltos; totals é a soma. registries traz uma linha por cadastro que guarda arquivo do Disco Virtual (a lista
+        VirtualDiskDeduplication::LINKS), com os arquivos que ele usa, os vínculos e os vínculos para arquivos na lixeira.
+        broken soma os vínculos para a lixeira e lista os ids desses arquivos (até 200, com truncated), para corrigir no
+        cadastro. Sem título, nome de arquivo, caminho ou hash. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, folders[{ folder, folder_label, documents, linked, loose }], totals { documents, linked, loose }, registries[{ registry, documents, links, broken_links }], broken { links, documents, document_ids[], truncated } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
