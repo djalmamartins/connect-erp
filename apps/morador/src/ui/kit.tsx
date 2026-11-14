@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { useRef, type ReactNode } from 'react';
+import { useRef, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -12,6 +12,8 @@ import {
   Text,
   TextInput,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type TextInputProps,
   type StyleProp,
   type ViewStyle,
@@ -34,6 +36,7 @@ export function Screen({
   back,
   tab,
   right,
+  onEndReached,
 }: {
   children: ReactNode;
   refreshing?: boolean;
@@ -49,6 +52,8 @@ export function Screen({
   tab?: boolean;
   /** Ação à direita do título, como o avatar no Início. */
   right?: ReactNode;
+  /** Chamado perto do fim da rolagem (rolagem infinita, como o histórico de boletos). */
+  onEndReached?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -66,7 +71,15 @@ export function Screen({
         ]}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: onEndReached
+            ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+                const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+                if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 400) onEndReached();
+              }
+            : undefined,
+        })}
         refreshControl={
           onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.brand} progressViewOffset={insets.top} /> : undefined
         }
@@ -394,4 +407,55 @@ export const styles = StyleSheet.create({
   chipTextActive: { color: colors.onBrand },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[7], backgroundColor: colors.canvas },
   emptyCard: { alignItems: 'flex-start' },
+});
+
+/**
+ * Linha de lista com ícone na frente (padrão das listas do app: comunicados, reservas, assembleias,
+ * boletos, chamados). O ícone fica num quadrado de cor suave; à direita, um valor opcional ou a seta.
+ */
+export function IconRow({
+  icon,
+  tint = colors.brandStrong,
+  bg = colors.brandSoft,
+  title,
+  subtitle,
+  right,
+  onPress,
+  accessibilityLabel,
+  children,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  tint?: string;
+  bg?: string;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Card onPress={onPress} accessibilityLabel={accessibilityLabel ?? title}>
+      <View style={iconRowStyles.row}>
+        <View style={[iconRowStyles.icon, { backgroundColor: bg }]}>
+          <Ionicons name={icon} size={20} color={tint} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={iconRowStyles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle ? <Text style={iconRowStyles.subtitle}>{subtitle}</Text> : null}
+        </View>
+        {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={colors.faint} /> : null)}
+      </View>
+      {children}
+    </Card>
+  );
+}
+
+const iconRowStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  icon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
 });
