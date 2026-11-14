@@ -2266,6 +2266,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/assembly-history:
+    get:
+      operationId: assemblyHistory
+      summary: Histórico das assembleias do condomínio num período por tipo (encerradas, canceladas e em andamento, unidades presentes e média, procurações, sem direito a voto, itens aprovados e não aprovados), somente leitura (erp.access e erp.assemblies.view, ADR 0264)
+      description: >-
+        Uma linha por tipo (ordinária e extraordinária), sempre os dois, com as assembleias de primeira convocação entre
+        from e to (padrão: de dois anos antes a um ano depois de hoje, até 3660 dias): assemblies, closed, cancelled,
+        pending, attended_units e avg_attended_units (das encerradas), proxies e ineligible (das encerradas),
+        items_decided, items_approved e items_rejected (pelo resultado gravado na apuração, das não canceladas); totals
+        soma as contagens; last_closed_on é a última encerrada. Sem título, local, pauta, ata, presente, unidade ou voto.
+        Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, rows[{ kind, kind_label, assemblies, closed, cancelled, pending, attended_units, avg_attended_units, proxies, ineligible, items_decided, items_approved, items_rejected }], totals, last_closed_on } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reservations/cancel-for-closure:
     post:
       operationId: cancelReservationsForClosure
