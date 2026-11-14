@@ -375,6 +375,8 @@ $route->post("/documents/trash-duplicates", "VirtualDiskDeduplication:store", nu
 $route->get("/reports/document-links", "VirtualDiskLinks:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Arquivos do Disco Virtual que ainda têm vínculo, de volta da lixeira, em lote, tudo ou nada e com prévia (ADR 0277).
 $route->post("/documents/restore-linked", "VirtualDiskRestore:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação dos comunicados (publicados, agendados, cancelados, idade e envios com falha), somente leitura (ADR 0278).
+$route->get("/reports/notice-board", "AnnouncementBoard:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
