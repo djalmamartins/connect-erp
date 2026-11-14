@@ -361,6 +361,8 @@ $route->get("/reports/resident-portal", "ResidentPortalAdoption:show", null, \So
 $route->post("/pets/deactivate-unattached", "PetUnitRelease:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Unidades vagas e o que ficou nelas (há quanto tempo, visitantes, veículos, animais e dívida vencida), somente leitura (ADR 0270).
 $route->get("/reports/vacant-units", "VacantUnits:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Encerramento em lote dos lançamentos fixos que já passaram da última competência, tudo ou nada e com prévia (ADR 0271). Antes do laço dos cadastros (/recurring-entries/{id}).
+$route->post("/recurring-entries/close-ended", "RecurringClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
