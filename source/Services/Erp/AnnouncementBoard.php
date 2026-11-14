@@ -66,6 +66,20 @@ final class AnnouncementBoard
     }
 
     /**
+     * Situação de um comunicado (regra pura): published (ativo e já saiu), scheduled (ativo e ainda vai sair), cancelled,
+     * ou null para um estado desconhecido. Também usada pelo reenvio em lote (ADR 0279).
+     */
+    public static function state(string $status, string $sendAt, \DateTimeImmutable $now): ?string
+    {
+        return match (true) {
+            $status === 'cancelled' => 'cancelled',
+            $status !== 'active' => null,
+            new \DateTimeImmutable($sendAt) > $now => 'scheduled',
+            default => 'published',
+        };
+    }
+
+    /**
      * Resumo (regra pura).
      *
      * @param list<array{id:int, kind:string, status:string, send_at:string}> $announcements
@@ -85,12 +99,7 @@ final class AnnouncementBoard
                 continue;
             }
             $sendAt = new \DateTimeImmutable($a['send_at']);
-            $state = match (true) {
-                $a['status'] === 'cancelled' => 'cancelled',
-                $a['status'] !== 'active' => null,
-                $sendAt > $now => 'scheduled',
-                default => 'published',
-            };
+            $state = self::state($a['status'], $a['send_at'], $now);
             if ($state === null) {
                 continue;
             }

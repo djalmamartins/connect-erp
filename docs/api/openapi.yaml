@@ -2803,6 +2803,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /announcements/retry-failed:
+    post:
+      operationId: retryFailedAnnouncements
+      summary: Envios com falha dos comunicados publicados de volta à fila, em lote, pelo reenvio da fila de avisos, tudo ou nada e com prévia (erp.access, erp.announcements.view, erp.announcements.manage e erp.notifications.manage, ADR 0279)
+      description: >-
+        Sem announcement_ids, entram os comunicados publicados (ativos e já saídos) do condomínio com algum evento com
+        falha na fila de avisos. Com announcement_ids, recusa comunicado não encontrado no condomínio, cancelado, agendado
+        ou sem envio com falha. Cada evento com falha volta a pendente pelo reenvio da fila (tentativas zeradas, erro
+        apagado), com a auditoria dele, e cada comunicado ganha um registro retry_failed com o motivo. Nada é enviado aqui:
+        o envio é do worker da fila, com as travas de ambiente de sempre, e o lote não cria e-mail. Sem assunto, texto,
+        unidade, destinatário ou e-mail na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, announcement_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, count, events, changed, announcements[{ id, kind, events }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um envio mudou de situação durante o pedido; nada volta à fila' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou comunicado recusado (errors com _form e _announcement); nada volta à fila' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
