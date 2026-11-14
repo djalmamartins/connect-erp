@@ -101,4 +101,14 @@ final class ResidentAppSessionsTest extends TestCase
         self::assertDoesNotMatchRegularExpression('/Audit::record\([^;]*\$(token|challenge|password)\b/', $source);
         self::assertStringContainsString("hash('sha256', \$token)", $source);
     }
+
+    public function testAuthorizationHeaderReadsApacheHeadersWhenServerLacksIt(): void
+    {
+        // Apache com mod_php não põe Authorization em $_SERVER; o app do celular perdia o token.
+        self::assertSame('Bearer abc', Sessions::authorizationHeader([], ['authorization' => 'Bearer abc']));
+        self::assertSame('Bearer x', Sessions::authorizationHeader(['HTTP_AUTHORIZATION' => 'Bearer x'], ['Authorization' => 'Bearer y']));
+        self::assertSame('Bearer r', Sessions::authorizationHeader(['REDIRECT_HTTP_AUTHORIZATION' => 'Bearer r'], []));
+        self::assertNull(Sessions::authorizationHeader(['HTTP_AUTHORIZATION' => '  '], []));
+        self::assertNull(Sessions::authorizationHeader([], []));
+    }
 }

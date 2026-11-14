@@ -20,7 +20,7 @@ final class ResidentApiAuthenticated
     {
         // App nativo (ADR 0303): "Authorization: Bearer <token>" vale no lugar da sessão. Sem cookie, sem CSRF; o
         // usuário fica só nesta requisição (Auth::actingAs). Token presente e inválido = 401, sem cair na sessão.
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+        $header = ResidentAppSessions::authorizationHeader();
         if (is_string($header) && preg_match('/^\s*Bearer\s/i', $header) === 1) {
             $user = (new ResidentAppSessions())->authenticate(ResidentAppSessions::bearerFrom($header));
             if ($user === null) {
