@@ -22,12 +22,13 @@ $this->layout('default');
 </details>
 <section class="app-section">
     <h2>Da minha unidade</h2>
-    <?php if ($occurrences === []): ?><p class="app-muted">Nenhuma ocorrência registrada.</p><?php endif; ?>
-    <?php foreach ($occurrences as $o): [$label, $tone] = F::badge(F::OCCURRENCE, $o['status']); ?>
-        <details class="app-card app-area">
-            <summary><span><strong><?= $this->e($o['subject']) ?></strong><small><?= F::date($o['occurred_on']) ?> · urgência <?= strtolower(F::PRIORITIES[$o['priority']] ?? $o['priority']) ?></small></span><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span></summary>
-            <p class="app-notice__body"><?= nl2br($this->e($o['description'])) ?></p>
-            <?php if ($o['has_ticket']): ?><p class="app-hint">A administração abriu um atendimento para esta ocorrência.</p><?php endif; ?>
-        </details>
-    <?php endforeach; ?>
+    <?php if ($occurrences === []): ?><?php $this->insert('partials/empty', ['icon' => 'alert', 'text' => 'Nenhuma ocorrência registrada.']) ?><?php endif; ?>
+    <ul class="app-items">
+    <?php foreach ($occurrences as $o): [$label, $tone] = F::badge(F::OCCURRENCE, $o['status']);
+        $this->insert('partials/item', ['icon' => 'alert', 'tone' => $o['priority'] === 'alta' ? 'danger' : 'warning', 'title' => $o['subject'],
+            'lines' => [F::date($o['occurred_on']) . ' · urgência ' . mb_strtolower(F::PRIORITIES[$o['priority']] ?? $o['priority'])],
+            'badge' => [$label, $tone],
+            'body' => '<p class="app-notice__body">' . nl2br($this->e($o['description'])) . '</p>' . ($o['has_ticket'] ? '<p class="app-hint">A administração abriu um atendimento para esta ocorrência.</p>' : '')]);
+    endforeach; ?>
+    </ul>
 </section>

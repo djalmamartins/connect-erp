@@ -80,3 +80,9 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
   abre em `/app` no host principal.
 - Pendências: pagamento dentro do app (Pix, depois do Banco Inter), notificações push, foto na ocorrência,
   portão/interfone/câmeras.
+
+### Padrão único das telas (Djalma, 14/11/2026: "precisa padronizar todo app")
+- Toda lista do app usa a mesma peça `partials/item.php`: cartão com ícone da função (ou caixa de data), título, linhas de detalhe, selo à direita e seta (ou download). Quando há detalhe para abrir (ocorrência, regras da área), a mesma linha vira um item que abre e fecha.
+- Todo estado vazio usa `partials/empty.php`: ícone da função, uma frase e, se fizer sentido, um botão.
+- Boletos, comunicados e assembleias seguem as mesmas medidas (ícone 40px, cantos 12px, espaço de 10px entre cartões).
+- Corrigido: a prestação de contas passava a variável `links` para a tela e apagava a lista de unidades do layout, por isso o seletor de unidade aparecia vazio nessa página. Agora a variável se chama `publications`.
