@@ -3092,6 +3092,28 @@ paths:
         '409': { description: 'Uma assembleia mudou de situação durante o pedido; nada é cancelado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou assembleia recusada (errors com _form e _assembly); nada é cancelado' }
+  /reports/unit-documents:
+    get:
+      operationId: unitDocumentOverview
+      summary: Documentos emitidos para as unidades do condomínio, por tipo e mês a mês (com débito, cancelados), somente leitura (erp.access e erp.unit_documents.view, ADR 0292)
+      description: >-
+        Nos últimos months meses (padrão 12, de 1 a 36) pelo relógio do banco. rows traz uma linha por tipo (certidão de
+        débitos, declaração de inadimplência, comprovante de quitação, carta de anuência e recibo), sempre todos, com os
+        emitidos válidos, os cancelados, os emitidos nada consta e com débito (que somam os emitidos), o total apontado nos
+        com débito e as unidades distintas; totals soma as linhas. by_month conta os emitidos por mês e soma
+        totals.issued. cancelled_ids lista os cancelados, do mais recente para o mais antigo, até 200, com truncated.
+        Documento de outro condomínio ou de unidade de outro condomínio fica de fora. Sem código de verificação, conteúdo,
+        finalidade, unidade, motivo nem quem emitiu. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: months, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 36, default: 12 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, months, from, to, rows[{ kind, kind_label, issued, cancelled, clear, debts, debts_cents, units }], totals { issued, cancelled, clear, debts, debts_cents, units }, by_month[{ month, issued }], unknown, cancelled_ids[], cancelled_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
