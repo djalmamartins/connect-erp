@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/tariff-coverage:
+    get:
+      operationId: tariffCoverage
+      summary: Cobertura das tarifas de consumo do condomínio numa data por tipo de relógio (origem e vigência da tarifa, faixas, início em zero, sem limite, buracos, próxima vigência, tipos sem tarifa), somente leitura (erp.access, erp.tariffs.view e erp.meters.view, ADR 0258)
+      description: >-
+        Uma linha por tipo do cadastro, sempre todos, pela mesma regra das leituras (a tarifa do condomínio com a vigência
+        mais recente até on; sem ela, a padrão da Connect; só as ativas): meters (relógios ativos do tipo), source
+        (condominium, default ou null), valid_from, bands, starts_at_zero, open_ended (alguma faixa sem limite), gaps
+        (buracos entre faixas seguidas), next_valid_from (a próxima vigência já cadastrada da mesma origem) e missing (há
+        relógio e nenhuma tarifa vigente); totals soma meters e bands; missing_kinds lista os tipos em falta. Sem número
+        do relógio, unidade, nome da faixa, preço ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, required: false, schema: { type: string, format: date }, description: 'Data de referência; padrão hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ kind, kind_label, meters, source, valid_from, bands, starts_at_zero, open_ended, gaps, next_valid_from, missing }], totals { meters, bands }, missing_kinds[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /useful-contacts/deactivate-duplicates:
     post:
       operationId: deactivateDuplicateUsefulContacts
