@@ -255,7 +255,7 @@ final class AppScreens extends Controller
             'name' => 'Connect Morador', 'short_name' => 'Connect', 'lang' => 'pt-BR',
             'description' => 'Boletos, reservas, encomendas, visitantes e avisos do seu condomínio.',
             'start_url' => app_url('/'), 'scope' => app_url('/'), 'display' => 'standalone',
-            'background_color' => '#0d2e27', 'theme_color' => '#0d2e27',
+            'background_color' => '#0d2e27', 'theme_color' => '#f8faf9',
             'icons' => [
                 ['src' => themeApp('/assets/images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png'],
                 ['src' => themeApp('/assets/images/icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png'],

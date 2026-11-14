@@ -11,7 +11,7 @@ $asset = static function (string $path): string {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0d2e27">
+    <meta name="theme-color" content="#f8faf9">
     <?= $head ?? '' ?>
     <link rel="manifest" href="<?= app_url('/manifest.webmanifest') ?>">
     <link rel="icon" href="<?= themeApp('/assets/images/icon-192.png') ?>">

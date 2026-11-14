@@ -55,7 +55,7 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - Rotas `/api/v1/resident/*` documentadas no OpenAPI (tag Morador), com sessão e CSRF
   (`ResidentApiAuthenticated`, onde o aplicativo nativo do ADR 0303 acrescenta o token).
 - O site é instalável (manifest, ícones com o símbolo dourado sobre o verde do ERP, service worker que guarda só a
-  página "sem conexão" e os arquivos estáticos; dados nunca ficam em cache). Celular primeiro: barra inferior com
+  página "sem conexão" e os arquivos estáticos; dados nunca ficam em cache). Visual do Realizze Pessoa Física (canvas claro, menu lateral branco, cartões e selos do Realizze PF, pedido do Djalma em 14/11). Celular primeiro: barra inferior flutuante com
   Início, Boletos, Reservas, Encomendas e "Mais"; no computador, menu lateral.
 - Segurança: CSRF e limite de envios em toda ação, `Cache-Control: no-store`, `X-Frame-Options: DENY`, escrita
   auditada.

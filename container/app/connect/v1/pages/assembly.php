@@ -9,7 +9,7 @@ $modes = ['presencial' => 'Presencial', 'virtual' => 'Virtual', 'hibrida' => 'Pr
 $isLink = (bool)preg_match('~^https://~i', $a['location']);
 ?>
 <p><a href="<?= app_url('/assembleias') ?>" class="app-back">‹ Assembleias</a></p>
-<header class="app-page-head">
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?>
     <h1><?= $this->e($a['title']) ?></h1>
     <p><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span> <?= $a['kind'] === 'ordinaria' ? 'Assembleia ordinária' : 'Assembleia extraordinária' ?> · <?= $modes[$a['mode']] ?? $a['mode'] ?></p>
 </header>

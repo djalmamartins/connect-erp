@@ -4,7 +4,7 @@ use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
 ?>
-<header class="app-page-head"><h1>Ocorrências</h1><p>Barulho, vazamento, dano ou qualquer problema no condomínio.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Ocorrências</h1><p>Barulho, vazamento, dano ou qualquer problema no condomínio.</p></header>
 <details class="app-card app-form-card"<?= $occurrences === [] ? ' open' : '' ?>>
     <summary><h2>Registrar ocorrência</h2></summary>
     <form method="post" action="<?= app_url('/ocorrencias') ?>" class="app-form">

@@ -5,7 +5,7 @@ use Source\Controllers\App\Resident\Format as F;
 $this->layout('default');
 $t = $statement['totals'];
 ?>
-<header class="app-page-head">
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?>
     <h1>Boletos</h1>
     <p>Contas da unidade <?= $this->e($statement['unit_label']) ?> de <?= F::date($statement['from']) ?> a <?= F::date($statement['to']) ?>.</p>
 </header>

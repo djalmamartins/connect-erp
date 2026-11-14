@@ -4,7 +4,7 @@ use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
 ?>
-<header class="app-page-head"><h1>Comunicados</h1><p>Avisos da administração e do síndico.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Comunicados</h1><p>Avisos da administração e do síndico.</p></header>
 <?php if ($announcements === []): ?>
     <div class="app-card app-empty"><p>Nenhum comunicado por enquanto.</p></div>
 <?php endif; ?>
