@@ -182,9 +182,9 @@ final class AccountabilityLinksTest extends TestCase
         }
         $controller = $this->file('source/Controllers/Erp/Connect/CashBookScreens.php');
         self::assertStringContainsString("Access::can('erp.closing.manage', \$user)", $controller);
-        self::assertSame(1, substr_count($controller, 'csrf_verify($data)'), 'As três ações passam pelo mesmo guarda com CSRF.');
+        self::assertSame(1, substr_count($controller, 'csrf_verify($data)'), 'As ações de escrita passam pelo mesmo guarda com CSRF.');
         $page = $this->file('container/erp/connect/v1/pages/reports/cash-book.php');
-        self::assertSame(3, substr_count($page, '<?= csrf_input() ?>'), 'Gerar, enviar e desativar levam o CSRF.');
+        self::assertSame(5, substr_count($page, '<?= csrf_input() ?>'), 'Gerar, enviar, desativar e os feriados (incluir e remover) levam o CSRF.');
         self::assertStringContainsString('<?php if ($cashCanPublish): ?>', $page, 'Só quem fecha o mês vê os botões.');
         $api = $this->file('source/Controllers/Api/V1/AccountabilityLinks.php');
         self::assertStringContainsString("(\$manage && !Access::can('erp.closing.manage', \$user))", $api);

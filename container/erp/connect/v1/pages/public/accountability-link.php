@@ -99,7 +99,7 @@ $renderMonth = function (array $month) use ($brl, $date, $docUrl): void { ?>
         .pill { display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--gold-soft); color: var(--gold-ink); }
         .notice { margin: 0 0 16px; padding: 12px 14px; border-radius: 10px; background: #fff8e8; color: var(--warn); border: 1px solid #f1dfb2; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-        .btn { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--green); border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+        .btn { display: inline-block; text-decoration: none; appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--green); border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
         .btn--primary { background: var(--green); color: #fff; border-color: var(--green); box-shadow: inset 0 -3px 0 var(--gold); }
         .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
         .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
@@ -179,7 +179,7 @@ $renderMonth = function (array $month) use ($brl, $date, $docUrl): void { ?>
         <?php if (!empty($condo['address'])): ?><p><?= $this->e((string)$condo['address']) ?></p><?php endif; ?>
         <p class="small"><?= $annual ? 'Os doze meses do ano' : 'De ' . $this->e($date((string)$book['from'])) . ' a ' . $this->e($date((string)$book['to'])) ?> · regime de caixa (vale a data do pagamento) · <?= (int)$book['documents'] ?> documento(s) anexado(s)</p>
         <span class="pill">Versão <?= (int)$view['version'] ?> · gerada em <?= $this->e($date(substr((string)$view['generated_at'], 0, 10))) ?></span>
-        <div class="actions"><button type="button" class="btn btn--primary" id="print">Imprimir ou salvar em PDF</button></div>
+        <div class="actions"><a class="btn btn--primary" href="<?= $this->e($base . '/pdf') ?>" rel="noopener noreferrer">Baixar PDF</a><button type="button" class="btn" id="print">Imprimir</button></div>
     </section>
     <?php if ($view['under_review']): ?>
         <p class="notice" role="note"><?= $annual ? 'Algum mês deste ano foi reaberto para correção.' : 'Este mês foi reaberto para correção.' ?> Os valores abaixo são os da versão <?= (int)$view['version'] ?>. Quando a correção terminar, este mesmo link mostra a versão nova.</p>
