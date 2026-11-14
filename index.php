@@ -323,6 +323,8 @@ $route->get("/reports/board-composition", "BoardComposition:show", null, \Source
 $route->post("/occurrences/close-stale", "OccurrenceClosing:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Idade das ocorrências em aberto por prioridade, somente leitura (ADR 0256). Antes do laço dos cadastros.
 $route->get("/reports/occurrence-aging", "OccurrenceAging:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inativação em lote dos contatos úteis duplicados, tudo ou nada e com prévia (ADR 0257). Antes do laço dos cadastros (/useful-contacts/{id}).
+$route->post("/useful-contacts/deactivate-duplicates", "ContactDeduplication:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
