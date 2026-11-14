@@ -5,7 +5,7 @@ resumo: O app Connect Morador (iPhone e Android) mostra ao morador os boletos, a
 categoria: comunicacao
 icone: phone-portrait-outline
 situacao: guia
-palavras: aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes
+palavras: aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
 rascunho: nao
 ---
 
@@ -16,6 +16,7 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 1. A administração convida o morador pelo cadastro de moradores. O convite chega por e-mail e vale 7 dias.
 2. O morador cria a senha pelo link do convite.
 3. No app, ele entra com o e-mail (ou CPF) e a senha. A verificação em duas etapas é opcional para o morador: só se ele tiver ligado, o app pede o código do autenticador.
+4. Se o celular tiver Face ID, Touch ID ou digital cadastrada, aparece a opção **Nas próximas vezes, entrar com Face ID** (ou digital). Marcada, o app pede a biometria logo depois de entrar e, nas próximas vezes, abre só com ela, sem digitar a senha. O e-mail usado fica preenchido no login.
 
 > Quem deixa de ser morador (vínculo encerrado) perde o acesso ao app na hora, sem precisar fazer nada no celular.
 
@@ -27,7 +28,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Financeiro**: as contas em aberto com {{Copiar linha digitável}}, {{Copiar Pix copia e cola}} e {{Abrir boleto (PDF)}}, o histórico de pagamentos e a prestação de contas de cada mês.
 - **Reservas**: os espaços liberados, com regras e taxa, a reserva de uma data e a lista de espera quando a data já está ocupada.
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
-- **Mais**: comunicados, encomendas, visitantes (avisar a portaria de quem vem), documentos do condomínio, assembleias com a pauta, pets e veículos da unidade, trocar de unidade e sair. Em **Conta > Verificação em duas etapas** o morador liga, se quiser, o código do aplicativo autenticador (é opcional para morador; quem também é da equipe da administração não pode desligar).
+- **Mais**: comunicados, encomendas, visitantes (avisar a portaria de quem vem), documentos do condomínio, assembleias com a pauta, pets e veículos da unidade, trocar de unidade e sair. Em **Conta > Verificação em duas etapas** o morador liga, se quiser, o código do aplicativo autenticador (é opcional para morador; quem também é da equipe da administração não pode desligar). Logo abaixo, a chave **Entrar com Face ID** (ou digital) liga e desliga a entrada por biometria neste celular.
 
 ## Ligar e desligar funções
 
@@ -37,6 +38,8 @@ Cada função é ligada por condomínio na matriz do portal do morador. Tudo com
 
 - A senha e o limite de tentativas são os mesmos do login na web.
 - O app guarda só um código de acesso no cofre do celular (Keychain no iPhone, Keystore no Android). Ele vale 90 dias e cai com 30 dias sem uso.
+- A biometria é a do próprio celular: o app não vê nem guarda a digital ou o rosto, só recebe do sistema se é o dono do aparelho. Ela só destrava o código de acesso que já está no cofre; a senha nunca fica guardada no celular.
+- Com a biometria ligada, o app pede de novo ao abrir e quando volta depois de 5 minutos fora. Na tela de entrada rápida, {{Entrar com e-mail e senha}} sai do aparelho e volta para o login normal.
 - Quando o morador escolhe "sair de todos os aparelhos" na web, o app também sai.
 - Cada entrada e saída pelo app fica na auditoria, com o nome do aparelho.
 

@@ -36,7 +36,8 @@ $leads = [
     'delinquents' => 'Carga do histórico de débitos: receitas em aberto das unidades, com vencimento no passado.',
     'readings' => 'Leituras de água, gás ou energia por relógio e competência. Leitura já lançada da mesma competência é substituída, se ainda não foi cobrada.',
 ];
-$statusLabel = static fn (array $r): array => $r['status'] === 'applied' ? ['Aplicada', 'success'] : ($r['error_count'] > 0 ? ['Prévia com erros', 'danger'] : ['Em prévia', 'info']);
+$statusLabel = static fn (array $r): array => $r['status'] === 'applied' ? ['Aplicada', 'success'] : ($r['status'] === 'discarded' ? ['Descartada', 'plain']   // ADR 0285
+    : ($r['error_count'] > 0 ? ['Prévia com erros', 'danger'] : ['Em prévia', 'info']));
 
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

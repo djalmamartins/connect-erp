@@ -20,19 +20,19 @@ const server = http.createServer((req, res) => {
   const upstream = http.request(
     { host: '127.0.0.1', port: targetPort, method: req.method, path: path + parsed.search, headers: { ...req.headers, host: 'localhost' } },
     (up) => {
+      console.log(`${new Date().toLocaleTimeString('pt-BR')} ${req.method} ${path} -> ${up.statusCode}`);
       res.writeHead(up.statusCode || 502, up.headers);
       up.pipe(res);
     },
   );
   upstream.on('error', () => {
+    console.log(`${new Date().toLocaleTimeString('pt-BR')} ${req.method} ${path} -> sem resposta do Connect`);
     if (!res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
     }
     res.end(JSON.stringify({ error: { code: 'bad_gateway', message: 'O Connect não respondeu no Docker do Mac.' } }));
   });
   req.pipe(upstream);
-  const when = new Date().toLocaleTimeString('pt-BR');
-  console.log(`${when} ${req.method} ${path}`);
 });
 
 server.listen(listenPort, '0.0.0.0', () => {

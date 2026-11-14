@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, type Href } from 'expo-router';
-import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState, type ComponentProps } from 'react';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { isFeatureOn, type Feature } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
 import { confirm } from '../../src/lib/confirm';
@@ -23,6 +23,43 @@ const ITEMS: Item[] = [
 const ACCOUNT: Item[] = [
   { label: 'Verificação em duas etapas', color: '#0d2e27', hint: 'Opcional: um código além da senha', href: '/seguranca', icon: 'shield-checkmark-outline' },
 ];
+
+/** Liga ou desliga a entrada por Face ID / digital neste aparelho. */
+function BiometricRow() {
+  const { biometric, setBiometric } = useAuth();
+  const [busy, setBusy] = useState(false);
+  if (!biometric.available) {
+    return null;
+  }
+  async function toggle(on: boolean) {
+    setBusy(true);
+    await setBiometric(on);
+    setBusy(false);
+  }
+  const label = `Entrar com ${biometric.label}`;
+  return (
+    <View style={[styles.group, { marginTop: space[3] }]}>
+      <View style={styles.item}>
+        <View style={[styles.icon, { backgroundColor: '#07884c' }]}>
+          <Ionicons name="finger-print" size={18} color="#ffffff" />
+        </View>
+        <View style={styles.itemBody}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.itemLabel}>{label}</Text>
+            <Text style={styles.itemHint}>Pede ao abrir o app, no lugar da senha</Text>
+          </View>
+          <Switch
+            value={biometric.enabled}
+            onValueChange={toggle}
+            disabled={busy}
+            accessibilityLabel={label}
+            trackColor={{ true: colors.brand, false: colors.border }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function Group({ items }: { items: Item[] }) {
   return (
@@ -80,6 +117,7 @@ export default function Mais() {
       {items.length > 0 ? <Group items={items} /> : null}
       <Text style={styles.groupTitle}>Conta</Text>
       <Group items={ACCOUNT} />
+      <BiometricRow />
       <View style={{ gap: space[2], marginTop: space[3] }}>
         {many ? <Button title="Trocar de unidade" variant="secondary" onPress={() => router.push('/unidade')} /> : null}
         <Button title="Sair" variant="danger" onPress={sair} />

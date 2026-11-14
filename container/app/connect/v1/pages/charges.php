@@ -27,10 +27,14 @@ $t = $statement['totals'];
 <ul class="app-list">
 <?php foreach ($statement['lines'] as $line): [$label, $tone] = F::badge(F::SITUATIONS, $line['situation']); $charge = $line['charge']; ?>
     <li class="app-card app-charge">
-        <div class="app-charge__head">
+        <a class="app-charge__head app-charge__link" href="<?= app_url('/boletos/' . $line['entry_id']) ?>" title="<?= $line['situation'] === 'paid' ? 'Ver recibo' : 'Ver a conta' ?>">
             <span><strong><?= $this->e($line['description']) ?></strong><small>Vence em <?= F::date($line['due_on']) ?><?= $line['paid_on'] ? ' · pago em ' . F::date($line['paid_on']) : '' ?></small></span>
             <span class="app-charge__amount"><?= F::money($line['amount_cents']) ?><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span></span>
-        </div>
+            <svg class="app-charge__chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </a>
+        <?php if ($line['situation'] === 'paid'): ?>
+            <a class="app-charge__receipt" href="<?= app_url('/boletos/' . $line['entry_id'] . '/recibo') ?>"><svg aria-hidden="true"><use href="#i-print"></use></svg>Recibo</a>
+        <?php endif; ?>
         <?php if ($charge !== null && in_array($line['situation'], ['open', 'overdue'], true)): ?>
             <div class="app-charge__pay">
                 <?php if (!empty($charge['digitable_line'])): ?>

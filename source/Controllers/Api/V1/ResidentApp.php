@@ -12,6 +12,7 @@ use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Resident\ResidentFeatureDisabled;
+use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
 use Source\Services\Resident\ResidentTwoFactor;
@@ -43,6 +44,9 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  GET  /api/v1/resident/documents                documentos liberados ao morador
  *  GET  /api/v1/resident/documents/{id}/file      arquivo
  *  GET  /api/v1/resident/pets-vehicles            pets e veículos da unidade
+ *  GET  /api/v1/resident/entries/{id}             uma conta da unidade com o boleto e, se paga, o recibo
+ *  GET  /api/v1/resident/notifications            avisos do sininho (contas vencidas, encomendas, visitas, comunicados...)
+ *  GET  /api/v1/resident/search?q=                busca no que o morador pode ver
  *  GET  /api/v1/resident/2fa                      situação da verificação em duas etapas (opcional, ADR 0304)
  *  POST /api/v1/resident/2fa/confirm              ligar {code}; devolve os códigos de recuperação
  *  POST /api/v1/resident/2fa/disable              desligar {code}
@@ -66,6 +70,30 @@ final class ResidentApp
     public function charges(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->charges($link, $_GET['from'] ?? null, $_GET['to'] ?? null));
+    }
+
+    public function entry(array $data): void
+    {
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        $this->read(function (User $u, array $link) use ($id): array {
+            $entry = (new ResidentPortal())->entry($link, $id);
+            if ($entry['receipt'] !== null) {
+                \Source\Support\Audit::record('read', 'erp_entries', $id, null, ['channel' => 'resident_app', 'document' => 'receipt']);
+            }
+            return $entry;
+        });
+    }
+
+    public function notifications(): void
+    {
+        $this->read(fn (User $u, array $link): array => (new ResidentFeed())->notifications($link));
+    }
+
+    public function search(): void
+    {
+        $query = is_string($_GET['q'] ?? null) ? (string)$_GET['q'] : '';
+        $this->read(fn (User $u, array $link): array => (new ResidentFeed())->search($link, $query,
+            \Source\Controllers\App\Resident\AppScreens::menu($link['features'], '')));
     }
 
     public function chargePdf(array $data): void

@@ -144,6 +144,76 @@ final class ResidentPortal
         return ['unit_label' => $link['unit_label'], 'from' => $from, 'to' => $to, 'as_of' => $today, 'totals' => $totals, 'lines' => $lines];
     }
 
+    /**
+     * Uma conta da unidade (função boletos), com o boleto e, se paga, os dados do recibo. Conta de outra unidade ou
+     * condomínio = RegistryNotFound.
+     */
+    public function entry(array $link, int $entryId, ?string $today = null): array
+    {
+        self::assertFeature($link, 'boletos');
+        $today ??= date('Y-m-d');
+        $stmt = $this->pdo->prepare("SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.status, e.agreement_role,
+                b.id AS charge_id, b.status AS charge_status, b.adapter, b.external_id, b.digitable_line, b.barcode, b.pix_copy_paste,
+                c.name AS condominium_name, c.document AS condominium_document
+            FROM erp_entries e
+            JOIN condominiums c ON c.id = e.condominium_id
+            LEFT JOIN erp_bank_charges b ON b.entry_id = e.id AND b.active_key = 1
+            WHERE e.id = :id AND e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
+              AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original'))");
+        $stmt->execute(['id' => $entryId, 'u' => $link['unit_id'], 'c' => $link['condominium_id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            throw new RegistryNotFound();
+        }
+        $situation = UnitStatement::situation(['status' => (string)$row['status'], 'paid_on' => $row['paid_on'], 'due_on' => (string)$row['due_on'],
+            'agreement_role' => $row['agreement_role']], $today);
+        $charge = null;
+        if ($row['charge_id'] !== null && $situation !== 'renegotiated') {
+            $charge = ['id' => (int)$row['charge_id'], 'status' => (string)$row['charge_status'],
+                'digitable_line' => $row['digitable_line'], 'barcode' => $row['barcode'], 'pix_copy_paste' => $row['pix_copy_paste'],
+                'pdf_available' => $row['adapter'] === 'inter' && !empty($row['external_id']) && in_array($row['charge_status'], ['registered', 'paid'], true)];
+        }
+        $entry = ['entry_id' => (int)$row['id'], 'description' => (string)$row['description'], 'competence' => (string)$row['competence'],
+            'due_on' => (string)$row['due_on'], 'paid_on' => $row['paid_on'], 'amount_cents' => (int)$row['amount_cents'],
+            'situation' => $situation, 'charge' => $charge, 'receipt' => null];
+        if ($situation === 'paid') {
+            $entry['receipt'] = ['number' => self::receiptNumber((int)$row['id'], (string)$row['paid_on']),
+                'condominium_name' => (string)$row['condominium_name'], 'condominium_document' => $row['condominium_document'] !== null ? (string)$row['condominium_document'] : null,
+                'unit_label' => (string)$link['unit_label'], 'payer' => (string)$link['name'], 'paid_on' => (string)$row['paid_on'],
+                'amount_cents' => (int)$row['amount_cents'], 'description' => (string)$row['description'], 'competence' => (string)$row['competence'],
+                'issued_at' => date('Y-m-d H:i:s')];
+        }
+        return $entry;
+    }
+
+    /** Número do recibo (regra pura): ano do pagamento + id da conta, para a administração achar a conta. */
+    public static function receiptNumber(int $entryId, string $paidOn): string
+    {
+        return substr($paidOn, 0, 4) . '-' . str_pad((string)$entryId, 6, '0', STR_PAD_LEFT);
+    }
+
+    /** Recibo de uma conta paga da unidade (função boletos), auditado. Conta em aberto = DomainException. */
+    public function receipt(array $link, int $entryId, ?string $today = null): array
+    {
+        $entry = $this->entry($link, $entryId, $today);
+        if ($entry['receipt'] === null) {
+            throw new DomainException('Esta conta ainda não foi paga, então não tem recibo.');
+        }
+        Audit::record('read', 'erp_entries', $entryId, null, ['channel' => 'resident_app', 'document' => 'receipt']);
+        return $entry['receipt'];
+    }
+
+    /** Dados da pessoa no cadastro do morador (qualquer vínculo válido): documento mascarado. */
+    public function profile(array $link, User $user): array
+    {
+        $stmt = $this->pdo->prepare('SELECT name, document, email, phone, starts_on FROM erp_residents WHERE id = :id AND user_id = :u AND deleted_at IS NULL');
+        $stmt->execute(['id' => $link['resident_id'], 'u' => (int)$user->id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        return ['name' => (string)($row['name'] ?? $link['name']), 'document' => self::maskDocument($row['document'] ?? null),
+            'email' => (string)(($row['email'] ?? '') !== '' ? $row['email'] : ($user->email ?? '')), 'phone' => $row['phone'] ?? null,
+            'login_email' => (string)($user->email ?? ''), 'since' => $row['starts_on'] ?? null];
+    }
+
     /** PDF do boleto da unidade (função boletos). */
     public function chargePdf(array $link, int $chargeId, ?BankCharges $charges = null): string
     {
@@ -357,7 +427,7 @@ final class ResidentPortal
         if (!is_array($row)) {
             throw new RegistryNotFound();
         }
-        $items = $this->pdo->prepare('SELECT position, title, description, status, result_json FROM erp_assembly_items WHERE assembly_id = :a ORDER BY position');
+        $items = $this->pdo->prepare('SELECT position, title, description, status, result_json, vote_basis, quorum FROM erp_assembly_items WHERE assembly_id = :a ORDER BY position');
         $items->execute(['a' => $id]);
         return ['id' => (int)$row['id'], 'kind' => (string)$row['kind'], 'mode' => (string)$row['mode'], 'title' => (string)$row['title'],
             'location' => (string)$row['location'], 'first_call_at' => (string)$row['first_call_at'], 'second_call_at' => $row['second_call_at'],
@@ -365,7 +435,9 @@ final class ResidentPortal
             'items' => array_map(static function (array $r): array {
                 $result = $r['status'] === 'decided' ? json_decode((string)($r['result_json'] ?? ''), true) : null;
                 return ['position' => (int)$r['position'], 'title' => (string)$r['title'], 'description' => (string)($r['description'] ?? ''),
-                    'status' => (string)$r['status'], 'approved' => is_array($result) && array_key_exists('approved', $result) ? (bool)$result['approved'] : null];
+                    'status' => (string)$r['status'], 'approved' => is_array($result) && array_key_exists('approved', $result) ? (bool)$result['approved'] : null,
+                    'vote_basis' => (string)$r['vote_basis'], 'quorum' => (string)$r['quorum'],
+                    'quorum_label' => \Source\Services\Erp\Assemblies::QUORUM_LABELS[$r['quorum']] ?? (string)$r['quorum']];
             }, $items->fetchAll(PDO::FETCH_ASSOC))];
     }
 

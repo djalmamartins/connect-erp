@@ -60,6 +60,19 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - Segurança: CSRF e limite de envios em toda ação, `Cache-Control: no-store`, `X-Frame-Options: DENY`, escrita
   auditada.
 
+### Ajustes depois do primeiro teste (Djalma, 14/11/2026)
+
+- Barra superior com o nome da pessoa e a unidade, busca (`/buscar`, `GET /api/v1/resident/search`) e sininho (`/avisos`,
+  `GET /api/v1/resident/notifications`), montados pelo `ResidentFeed` só com o que o vínculo já vê. O "visto por
+  último" fica num cookie do navegador (`app_seen`); sem tabela nova.
+- Conta clicável (`/boletos/{id}`, `GET /api/v1/resident/entries/{id}`): paga mostra o recibo para imprimir
+  (`/boletos/{id}/recibo`, leitura auditada); em aberto oferece baixar o boleto. Edital da assembleia para imprimir
+  (`/assembleias/{id}/edital`), com base do voto e quórum de cada item. Recibo e edital são páginas HTML com
+  "Imprimir ou salvar em PDF", sem biblioteca de PDF nova.
+- Minha unidade com os dados da pessoa (documento mascarado). Comunicados e assembleias mais espaçados.
+- `tools/lab-morador-teste.php` cria exemplos fictícios (`ResidentLabExamples`): comunicados, encomendas, pet,
+  documento visível aos moradores e a prestação de contas dos meses fechados, sem duplicar e sem enviar e-mail.
+
 ## Consequências
 
 - O morador vê só a própria unidade e só o que o condomínio ligou; nada aparece enquanto a matriz estiver desligada.
