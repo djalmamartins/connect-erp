@@ -1,12 +1,10 @@
-import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
-import { ApiError } from '../../src/api/client';
+import { Text, View } from 'react-native';
 import { isFeatureOn, type StatementLine } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
 import { date, money } from '../../src/lib/format';
-import { openProtectedFile } from '../../src/lib/openFile';
+import { copyText as copy, openBoleto, pendingLines } from '../../src/lib/boleto';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, space } from '../../src/theme';
 import { Body, Button, Card, CardTitle, Empty, ErrorBox, Loading, Row, Screen, SectionTitle, StatusBadge } from '../../src/ui/kit';
@@ -16,22 +14,15 @@ export default function Financeiro() {
   const charges = useResource(() => api.charges(), [residentId]);
   const [opening, setOpening] = useState<number | null>(null);
   const lines = charges.data?.lines ?? [];
-  const pending = lines.filter((l) => l.situation === 'open' || l.situation === 'overdue').sort((a, b) => a.due_on.localeCompare(b.due_on));
+  const pending = pendingLines(lines);
   const history = lines.filter((l) => !pending.includes(l));
   const totals = charges.data?.totals;
-
-  async function copy(text: string, what: string) {
-    await Clipboard.setStringAsync(text);
-    Alert.alert('Copiado', `${what} copiado. Cole no app do seu banco.`);
-  }
 
   async function pdf(line: StatementLine) {
     if (!line.charge || opening !== null) return;
     setOpening(line.entry_id);
     try {
-      await openProtectedFile(api.chargePdfUrl(line.charge.id), client.authHeaders(), `boleto-${line.due_on}.pdf`);
-    } catch (e) {
-      Alert.alert('Boleto', e instanceof ApiError ? e.message : 'Não foi possível abrir o boleto.');
+      await openBoleto(api, client, line);
     } finally {
       setOpening(null);
     }
