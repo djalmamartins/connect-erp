@@ -22,7 +22,8 @@ use Source\Services\Erp\Imports\Imports;
  * mesmo fuso).
  *
  * Regra pura summarize():
- * - rows: uma linha por tipo de Imports::KINDS, sempre todos, com imports, previewed, applied (que somam imports), rows
+ * - rows: uma linha por tipo de Imports::KINDS, sempre todos, com imports, previewed, applied e discarded (que somam
+ *   imports; descartada desde a ADR 0285), rows
  *   (linhas lidas), errors (linhas com erro), with_errors (importações com algum erro) e last_applied_on; totals soma
  *   as linhas (last_applied_on é a mais recente);
  * - pending_by_age: as prévias ainda não aplicadas por dias desde o envio, em AGES (até 7, de 8 a 30, mais de 30),
@@ -36,8 +37,8 @@ final class ImportsOverview
 {
     public const MAX_ROWS = 100000;
     public const MAX_IDS = 200;
-    /** Situações de uma importação (a enum status de erp_imports). */
-    public const STATUSES = ['previewed' => 'Prévia', 'applied' => 'Aplicada'];
+    /** Situações de uma importação (a enum status de erp_imports; descartada desde a ADR 0285). */
+    public const STATUSES = ['previewed' => 'Prévia', 'applied' => 'Aplicada', 'discarded' => 'Descartada'];
     /** Idade das prévias não aplicadas, em dias desde o envio: faixa => até quantos dias (null = sem limite). */
     public const AGES = ['ate_7' => 7, 'de_8_a_30' => 30, 'mais_de_30' => null];
 

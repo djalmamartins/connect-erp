@@ -65,7 +65,7 @@ final class ImportsOverviewTest extends TestCase
 
     public function testStatusesMatchTheMigrationEnum(): void
     {
-        $sql = (string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261108_0535_imports.sql');
+        $sql = (string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261114_0001_import_discard.sql');   // a última que muda a enum (ADR 0285)
         preg_match("/`status` enum\\(([^)]*)\\)/", $sql, $status);
         self::assertSame(array_keys(ImportsOverview::STATUSES), array_map('trim', explode(',', str_replace("'", '', $status[1]))));
     }
