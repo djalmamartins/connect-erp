@@ -2179,6 +2179,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /useful-contacts/deactivate-duplicates:
+    post:
+      operationId: deactivateDuplicateUsefulContacts
+      summary: Inativação em lote dos contatos úteis do condomínio que repetem o serviço e o telefone de um compartilhado ou de um próprio mais antigo, pelo cadastro, tudo ou nada e com prévia (erp.access, erp.contacts.view e erp.contacts.manage, ADR 0257)
+      description: >-
+        Entre os contatos ativos que o condomínio vê (os próprios e os compartilhados), mesmo serviço e mesmo telefone
+        (só os dígitos, sem o 55) formam um grupo; fica o compartilhado mais antigo ou, sem compartilhado, o próprio mais
+        antigo, e os demais próprios são cópias. Sem contact_ids, entram todas as cópias do condomínio; com contact_ids,
+        recusa contato não encontrado no condomínio (os compartilhados também), já inativo ou que não é cópia. Cada cópia é
+        regravada pelo cadastro como inativa; auditoria deduplicate por contato. O contato que fica não muda, nada é
+        apagado e nenhum aviso é enviado. Sem nome, telefone, e-mail ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id], properties: { condominium_id: { type: integer }, contact_ids: { type: array, items: { type: integer }, maxItems: 500 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, count, kept_shared, changed, contacts[{ id, service, kept_id, kept_shared }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou contato recusado (errors com _form e _contact); nada é gravado' }
   /reports/occurrence-aging:
     get:
       operationId: occurrenceAging
