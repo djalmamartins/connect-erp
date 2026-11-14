@@ -930,6 +930,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-break { word-break: break-all; }
 .erp-inline-details { display: inline-block; vertical-align: top; }
 .erp-inline-details > summary { list-style: none; cursor: pointer; }
+.erp-card > .erp-table-wrap + .erp-form, .erp-card > .erp-muted + .erp-form { margin-top: var(--erp-space-4); }
 .erp-inline-details > summary::-webkit-details-marker { display: none; }
 .erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
 .erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }

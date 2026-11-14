@@ -77,6 +77,9 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/prestacao-de-contas/livro-caixa/link", "CashBookScreens:generateLink");
     $route->post("/prestacao-de-contas/livro-caixa/link/{id}/enviar", "CashBookScreens:sendLink");
     $route->post("/prestacao-de-contas/livro-caixa/link/{id}/revogar", "CashBookScreens:revokeLink");
+    $route->get("/prestacao-de-contas/livro-caixa/link/{id}/pacote", "CashBookScreens:packageLink");
+    $route->post("/prestacao-de-contas/livro-caixa/feriados", "CashBookScreens:addHoliday");
+    $route->post("/prestacao-de-contas/livro-caixa/feriados/{id}/remover", "CashBookScreens:removeHoliday");
 
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.

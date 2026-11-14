@@ -88,9 +88,8 @@ mensal (ADR 0031), a publicação congelada mensal e anual (ADR 0179/0183) e a f
 - **Implantação.** Rodar a migration e incluir no cron do servidor `php tools/accountability-deadline.php` (uma vez
   por dia, de manhã) além do `tools/notifications-dispatch.php` que já existe.
 - **Riscos e lacunas (PENDENTE).**
-  - Feriados estaduais e municipais não entram no 5º dia útil.
+  - ~~Feriados estaduais e municipais não entram no 5º dia útil.~~ Resolvido no ADR 0306 (cadastro no Livro-caixa).
   - O link é público para quem o tiver; quem encaminhar o e-mail compartilha a prestação. Tudo o que estiver anexado
     às despesas aparece (o artigo pede para conferir antes de fechar).
-  - O livro anual não tem PDF próprio no servidor: sai pela impressão do navegador. O livro caixa mensal em PDF com
-    os anexos (ADR 0174) continua igual.
+  - ~~O livro anual não tem PDF próprio no servidor.~~ Resolvido no ADR 0306 (PDF do link e pacote com as notas).
   - O limite de acessos é por sessão; a proteção principal é o token de 128 bits.

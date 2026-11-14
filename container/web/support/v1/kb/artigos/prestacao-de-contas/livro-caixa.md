@@ -8,7 +8,7 @@ menu: Prestação de contas > Livro Caixa
 icone: document-text-outline
 situacao: funciona
 relacionados: lancamentos, extrato-conta, prestacao-de-contas, fechamento-mensal
-palavras: livro caixa, caixa, prestação de contas, nota fiscal, comprovante, recibo, conta, fatura, anexo, PDF, síndico, conselho fiscal, link, moradores, livro anual, 5º dia útil, CN-007
+palavras: livro caixa, caixa, prestação de contas, nota fiscal, comprovante, recibo, conta, fatura, anexo, PDF, síndico, conselho fiscal, link, moradores, livro anual, 5º dia útil, feriado, feriado municipal, feriado estadual, pacote, CN-007
 rascunho: nao
 manual: sim
 ---
@@ -68,6 +68,8 @@ No quadro **Link para os moradores** você vê o endereço, a versão, se já fo
 1. {{Gerar}} cria o link (o mês precisa estar fechado). Se você anexou um documento depois, {{Atualizar}} cria a versão nova **no mesmo endereço**: quem já recebeu o link vê a versão corrigida.
 2. {{Enviar aos moradores}} manda o e-mail da versão atual. A mesma versão não é enviada duas vezes.
 3. {{Desativar}} tira o link do ar, com um motivo. Se gerar de novo depois, o endereço muda.
+4. {{PDF}} baixa o livro em PDF, igual ao que o morador vê. Cada documento no PDF é um link: clique no nome para abrir a nota ou o comprovante. O morador também tem o botão **Baixar PDF** na página dele.
+5. {{Pacote com as notas}} baixa um arquivo ZIP com o PDF e **todos os documentos** do livro, numerados na mesma ordem. No livro anual vem uma pasta por mês. É o livro do ano com as notas para guardar ou mandar ao conselho.
 
 > Se o mês for reaberto para correção, o link continua no ar e avisa que a prestação está em revisão. Ao fechar de novo, ele é atualizado e reenviado.
 
@@ -76,6 +78,23 @@ No quadro **Link para os moradores** você vê o endereço, a versão, se já fo
 ### O prazo do 5º dia útil
 
 Todo dia o sistema confere o mês anterior de cada condomínio. Quando faltam 2 dias úteis para o 5º dia útil e o mês ainda está aberto, quem pode fechar o mês recebe um aviso no sino do sistema; se o prazo passar, recebe outro. Se o mês já estiver fechado e o link ainda não tiver saído, o sistema envia sozinho. Sábados, domingos, feriados nacionais, Carnaval, Sexta-feira Santa e Corpus Christi não contam como dia útil.
+
+### Feriados do estado e da cidade
+
+Os feriados do estado e da cidade do condomínio também empurram o prazo, mas precisam ser cadastrados uma vez, porque mudam de lugar para lugar. O sistema não traz uma lista pronta.
+
+```tela livro-caixa-feriados
+rota: /prestacao-de-contas/livro-caixa
+condominio: residencial-jardim-das-acacias
+legenda: Prazo e feriados locais
+1: main #feriados | Quadro {{Prazo e feriados locais}} com a data do prazo
+2: main #feriados button:has-text("Incluir feriado") | Botão {{Incluir feriado}}
+```
+
+1. No quadro **Prazo e feriados locais** aparece a data do prazo do livro do mês na cidade do condomínio.
+2. Preencha a **Data** e o **Nome**, escolha se vale para a **cidade** ou para o **estado** e se **repete todo ano**. Para um ponto facultativo decretado só neste ano, desmarque **Todo ano**. Depois clique em {{Incluir feriado}}.
+
+O feriado da cidade vale para todos os condomínios da mesma cidade, e o do estado para todos os condomínios da mesma UF. A cidade e o estado vêm do cadastro do condomínio: se o quadro avisar que falta a UF, complete o cadastro em [[Cadastros > Condomínios]].
 
 ## Notas fiscais e comprovantes
 
@@ -87,4 +106,4 @@ O livro lista, em **Documentos das despesas**, as despesas pagas sem nota fiscal
 
 ## Quem pode usar
 
-Quem tem acesso aos **Lançamentos** do condomínio pode ver e baixar o livro. Gerar, enviar e desativar o link para os moradores é só para quem pode **fechar o mês**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e cada download fica registrado na auditoria.
+Quem tem acesso aos **Lançamentos** do condomínio pode ver e baixar o livro. Gerar, enviar e desativar o link para os moradores e cadastrar feriados é só para quem pode **fechar o mês**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e cada download fica registrado na auditoria.
