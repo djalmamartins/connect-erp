@@ -357,6 +357,8 @@ $route->get("/reports/visitor-units", "VisitorUnitSituation:show", null, \Source
 $route->post("/vehicles/deactivate-unattached", "VehicleUnitRelease:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Adesão ao portal do morador (entrou, convite pendente, vencido ou revogado, o que falta para convidar), somente leitura (ADR 0268).
 $route->get("/reports/resident-portal", "ResidentPortalAdoption:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inativação em lote dos animais de unidades sem morador ativo, tudo ou nada e com prévia (ADR 0269). Antes do laço dos cadastros (/pets/{id}).
+$route->post("/pets/deactivate-unattached", "PetUnitRelease:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
