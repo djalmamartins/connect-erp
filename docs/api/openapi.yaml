@@ -2266,6 +2266,71 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/waitlist-demand:
+    get:
+      operationId: waitlistDemand
+      summary: Procura pelas áreas comuns na lista de espera por área (aguardando antes e depois de hoje, chamadas, atendidas, desistências, unidades e datas diferentes, próxima data), somente leitura (erp.access e erp.reservations.view, ADR 0260)
+      description: >-
+        Uma linha por área comum do condomínio (sem as excluídas) e, se houver, uma linha "Área excluída", com as
+        inscrições de data desejada entre from e to (padrão: de um ano antes a um ano depois de hoje, até 1100 dias):
+        waiting_upcoming e waiting_past (aguardando de hoje em diante e antes de hoje), called, served, gave_up, entries,
+        units (unidades diferentes), dates_upcoming (datas diferentes com alguém aguardando) e next_desired_on; totals soma
+        as contagens. Sem morador, unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, today, rows[{ area_id, area_name, area_status, waiting_upcoming, waiting_past, called, served, gave_up, entries, units, dates_upcoming, next_desired_on }], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /tariffs/readjust:
+    post:
+      operationId: readjustTariffs
+      summary: Reajuste em lote das tarifas próprias do condomínio por percentual, criando a nova vigência pelo cadastro e mantendo as faixas antigas, tudo ou nada e com prévia (erp.access, erp.tariffs.view e erp.tariffs.manage, ADR 0259)
+      description: >-
+        Para cada tipo escolhido (padrão todos), as faixas da tarifa própria do condomínio vigente antes de valid_from são
+        copiadas pelo cadastro com o preço reajustado (−50% a 100%, até 2 casas, o mesmo arredondamento dos outros
+        reajustes) e a nova vigência; as faixas antigas não mudam, e as leituras anteriores seguem com o preço antigo.
+        valid_from é hoje ou uma data futura. Sem kinds, ficam de fora os tipos sem tarifa própria (skipped_default, a
+        padrão da Connect não é reajustada aqui) e os com vigência própria na data ou depois (skipped_already); com kinds,
+        um recusado desfaz todos. Auditoria readjust por faixa nova, com o motivo. Nenhum aviso é enviado. Sem nome da
+        faixa ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, percent, valid_from, reason], properties: { condominium_id: { type: integer }, kinds: { type: array, items: { type: string, enum: [agua, gas, energia] } }, percent: { type: string, example: '5,5' }, valid_from: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, percent, valid_from, reason, skipped_default[], skipped_already[], count, changed, kinds[{ kind, from_valid_from, bands[{ from_amount, to_amount, price_before_cents, price_after_cents }] }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou tipo recusado (errors com _form e _kind); nada é gravado' }
+  /reports/tariff-coverage:
+    get:
+      operationId: tariffCoverage
+      summary: Cobertura das tarifas de consumo do condomínio numa data por tipo de relógio (origem e vigência da tarifa, faixas, início em zero, sem limite, buracos, próxima vigência, tipos sem tarifa), somente leitura (erp.access, erp.tariffs.view e erp.meters.view, ADR 0258)
+      description: >-
+        Uma linha por tipo do cadastro, sempre todos, pela mesma regra das leituras (a tarifa do condomínio com a vigência
+        mais recente até on; sem ela, a padrão da Connect; só as ativas): meters (relógios ativos do tipo), source
+        (condominium, default ou null), valid_from, bands, starts_at_zero, open_ended (alguma faixa sem limite), gaps
+        (buracos entre faixas seguidas), next_valid_from (a próxima vigência já cadastrada da mesma origem) e missing (há
+        relógio e nenhuma tarifa vigente); totals soma meters e bands; missing_kinds lista os tipos em falta. Sem número
+        do relógio, unidade, nome da faixa, preço ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: on, in: query, required: false, schema: { type: string, format: date }, description: 'Data de referência; padrão hoje' }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ kind, kind_label, meters, source, valid_from, bands, starts_at_zero, open_ended, gaps, next_valid_from, missing }], totals { meters, bands }, missing_kinds[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /useful-contacts/deactivate-duplicates:
     post:
       operationId: deactivateDuplicateUsefulContacts
