@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +13,8 @@ import {
   Text,
   TextInput,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type TextInputProps,
   type StyleProp,
   type ViewStyle,
@@ -34,6 +37,7 @@ export function Screen({
   back,
   tab,
   right,
+  onEndReached,
 }: {
   children: ReactNode;
   refreshing?: boolean;
@@ -49,6 +53,8 @@ export function Screen({
   tab?: boolean;
   /** Ação à direita do título, como o avatar no Início. */
   right?: ReactNode;
+  /** Chamado perto do fim da rolagem (rolagem infinita, como o histórico de boletos). */
+  onEndReached?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -66,9 +72,27 @@ export function Screen({
         ]}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: onEndReached
+            ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+                const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+                if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 400) onEndReached();
+              }
+            : undefined,
+        })}
         refreshControl={
-          onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.brand} progressViewOffset={insets.top} /> : undefined
+          onRefresh ? (
+            <RefreshControl
+              refreshing={!!refreshing}
+              onRefresh={onRefresh}
+              // No iPhone a roda nativa fica invisível e quem aparece é a logo (PullLogo). O Android
+              // não deixa a tela passar do topo, então lá fica a roda nativa na cor da marca.
+              tintColor={Platform.OS === 'ios' ? 'transparent' : colors.brand}
+              colors={[colors.brand]}
+              progressViewOffset={insets.top}
+            />
+          ) : undefined
         }
       >
         {back ? <BackButton mode={back} /> : null}
@@ -86,6 +110,7 @@ export function Screen({
         ) : null}
         {children}
       </Animated.ScrollView>
+      {onRefresh && Platform.OS !== 'android' ? <PullLogo scrollY={scrollY} refreshing={!!refreshing} top={insets.top + 6} /> : null}
       {title ? (
         <Animated.View pointerEvents="none" style={[styles.compactBar, { height: barHeight, paddingTop: insets.top, opacity: compact }]}>
           <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
@@ -98,6 +123,57 @@ export function Screen({
     </View>
   );
 }
+
+const SYMBOL = require('../../assets/intro-symbol.png');
+/** Quanto puxar para a logo ficar inteira (o iPhone dispara a atualização perto disso). */
+const PULL = 70;
+
+/**
+ * Puxar para atualizar com a logo da Connect: ao puxar, o símbolo aparece e cresce; puxando além
+ * do ponto, ele estica como elástico. Ao soltar, enquanto carrega, ele quica e pulsa (o carregando).
+ */
+function PullLogo({ scrollY, refreshing, top }: { scrollY: Animated.Value; refreshing: boolean; top: number }) {
+  const spin = useRef(new Animated.Value(0)).current;
+  const shown = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!refreshing) {
+      Animated.timing(shown, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => spin.setValue(0));
+      return;
+    }
+    shown.setValue(1);
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1100, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [refreshing, shown, spin]);
+
+  const pullOpacity = scrollY.interpolate({ inputRange: [-PULL * 0.8, -12, 0], outputRange: [1, 0, 0], extrapolate: 'clamp' });
+  const opacity = Animated.add(pullOpacity, shown).interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 1], extrapolate: 'clamp' });
+  const grow = scrollY.interpolate({ inputRange: [-PULL, 0], outputRange: [1, 0.35], extrapolate: 'clamp' });
+  const stretchY = scrollY.interpolate({ inputRange: [-PULL * 2, -PULL, 0], outputRange: [1.35, 1, 1], extrapolate: 'clamp' });
+  const stretchX = scrollY.interpolate({ inputRange: [-PULL * 2, -PULL, 0], outputRange: [0.85, 1, 1], extrapolate: 'clamp' });
+  const bounce = spin.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, -7, 0] });
+  const pulse = spin.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.86, 1] });
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      accessibilityLabel={refreshing ? 'Atualizando' : undefined}
+      style={[pullStyles.wrap, { top, opacity }]}
+    >
+      <Animated.Image
+        source={SYMBOL}
+        resizeMode="contain"
+        style={[pullStyles.symbol, { transform: [{ scale: refreshing ? 1 : grow }, { scaleX: stretchX }, { scaleY: stretchY }, { translateY: bounce }, { scale: pulse }] }]}
+      />
+    </Animated.View>
+  );
+}
+
+const pullStyles = StyleSheet.create({
+  wrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 5 },
+  symbol: { width: 30, height: 39 },
+});
 
 function BackButton({ mode }: { mode: true | 'close' }) {
   const close = mode === 'close';
@@ -394,4 +470,55 @@ export const styles = StyleSheet.create({
   chipTextActive: { color: colors.onBrand },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[7], backgroundColor: colors.canvas },
   emptyCard: { alignItems: 'flex-start' },
+});
+
+/**
+ * Linha de lista com ícone na frente (padrão das listas do app: comunicados, reservas, assembleias,
+ * boletos, chamados). O ícone fica num quadrado de cor suave; à direita, um valor opcional ou a seta.
+ */
+export function IconRow({
+  icon,
+  tint = colors.brandStrong,
+  bg = colors.brandSoft,
+  title,
+  subtitle,
+  right,
+  onPress,
+  accessibilityLabel,
+  children,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  tint?: string;
+  bg?: string;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Card onPress={onPress} accessibilityLabel={accessibilityLabel ?? title}>
+      <View style={iconRowStyles.row}>
+        <View style={[iconRowStyles.icon, { backgroundColor: bg }]}>
+          <Ionicons name={icon} size={20} color={tint} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={iconRowStyles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle ? <Text style={iconRowStyles.subtitle}>{subtitle}</Text> : null}
+        </View>
+        {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={colors.faint} /> : null)}
+      </View>
+      {children}
+    </Card>
+  );
+}
+
+const iconRowStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  icon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
 });
