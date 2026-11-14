@@ -34,6 +34,7 @@ npm run typecheck   # TypeScript estrito
 - `src/api/`: cliente da API (`client.ts`) e as rotas do morador com os tipos (`resident.ts`).
 - `src/auth/`: sessão do aparelho (token no cofre, vínculo escolhido, 2FA).
 - `src/ui/kit.tsx`: componentes com as cores do ERP (`src/theme.ts`). Sem barra de navegação nativa: `Screen` desenha o título grande no topo (estilo iPhone), a barra pequena com desfoque ao rolar e o botão de voltar (`back`). Telas de aba usam `tab` para deixar espaço à barra de baixo.
+- `src/ui/IntroSplash.tsx`: abertura animada (símbolo dourado com brilho, o nome CONNECT entra ao lado, depois esmaece). A tela nativa do expo-splash-screen mostra o mesmo símbolo e some quando a abertura desenha o primeiro quadro. Com "Reduzir movimento" vira só um esmaecer.
 - `src/ui/FloatingTabBar.tsx`: barra de baixo flutuante e translúcida (expo-blur), com `accessibilityRole="tab"` em cada item.
 
 ## O que fica para depois

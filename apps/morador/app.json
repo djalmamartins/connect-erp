@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0d2e27"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "br.com.connectcondominios.morador"
@@ -32,7 +27,16 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/intro-symbol.png",
+          "imageWidth": 58,
+          "resizeMode": "contain",
+          "backgroundColor": "#0d2e27"
+        }
+      ]
     ],
     "extra": {
       "apiBaseUrl": "https://app.connect.lab"
