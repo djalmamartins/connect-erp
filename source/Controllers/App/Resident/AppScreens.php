@@ -16,6 +16,7 @@ use Source\Services\Erp\ResidentPortalPermissions;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentTwoFactor;
 
 /**
  * Telas do aplicativo do morador (ADR 0302), em app.<domínio> (ou /app no host único). Mesmos serviços da
@@ -232,6 +233,48 @@ final class AppScreens extends Controller
         redirect(app_url('/'));
     }
 
+    /** GET /seguranca — verificação em duas etapas opcional (ADR 0304). */
+    public function security(): void
+    {
+        $this->page('unit', null, 'pages/security', 'Segurança da conta', function (User $u): array {
+            $status = (new ResidentTwoFactor())->status($u);
+            if (isset($status['setup'])) {
+                $status['setup']['qr'] = \Source\Support\QrCode::svg($status['setup']['uri'], 196, 'QR code para o aplicativo autenticador');
+            }
+            return ['twoFactor' => $status];
+        });
+    }
+
+    /** POST /seguranca — action: confirm (ligar), disable (desligar) ou recovery (novos códigos). */
+    public function updateSecurity(array $data): void
+    {
+        $context = $this->context(null);
+        if ($context === null) {
+            return;
+        }
+        $back = app_url('/seguranca');
+        if (!csrf_verify($data)) {
+            $this->message->error('Sessão expirada. Atualize a página e tente de novo.')->flash();
+            redirect($back);
+            return;
+        }
+        $action = (string)($data['action'] ?? '');
+        $result = (new ResidentTwoFactor())->act($context[0], $action, $data['code'] ?? null);
+        if (!$result['ok']) {
+            $this->message->warning($result['message'])->flash();
+            redirect($back);
+            return;
+        }
+        if (isset($result['recovery_codes'])) {
+            (new \Source\Core\Session())->set('auth2faRecoveryCodes', $result['recovery_codes']);
+            $this->message->success($action === 'confirm' ? 'Verificação em duas etapas ligada.' : 'Novos códigos gerados. Os anteriores deixaram de valer.')->flash();
+            redirect(app_url('/seguranca/codigos'));
+            return;
+        }
+        $this->message->success('Verificação em duas etapas desligada. Você entra só com e-mail e senha.')->flash();
+        redirect($back);
+    }
+
     /** GET /seguranca/codigos — códigos de recuperação do 2FA recém-configurado, uma vez só. */
     public function recoveryCodes(): void
     {
@@ -244,7 +287,7 @@ final class AppScreens extends Controller
         $codes = $session->auth2faRecoveryCodes ?? null;
         $session->unset('auth2faRecoveryCodes');
         [$all, $link] = ResidentSession::resolve($user);
-        $this->render('pages/codes', 'Códigos de recuperação', 'unit', $user, $all, $link, ['codes' => is_array($codes) ? $codes : []]);
+        $this->render('pages/codes', 'Códigos de recuperação', 'unit', $user, $all, $link, ['codes' => $codes === null ? [] : array_values(array_map('strval', (array)$codes))]);
     }
 
     public function manifest(): void

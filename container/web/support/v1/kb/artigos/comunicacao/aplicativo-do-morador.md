@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: criacao-de-usuarios-para-moradores, permissoes-de-moradores, disco-virtual
-palavras: aplicativo, app, morador, portal, celular, instalar, segunda via, reserva, encomenda, visitante
+palavras: aplicativo, app, morador, portal, celular, instalar, segunda via, reserva, encomenda, visitante, duas etapas, 2fa, segurança
 rascunho: nao
 ---
 
@@ -19,10 +19,16 @@ O aplicativo do morador é o site **app.connect.lab**, feito para o celular. O m
 ## Como o morador entra
 
 1. A administração manda o convite em [[Configurações > Acesso > Criação de usuários para moradores]].
-2. O morador abre o e-mail, cria a senha e entra em **app.connect.lab** com o e-mail e a senha. Se a conta tiver verificação em duas etapas, o código é pedido logo depois.
+2. O morador abre o e-mail, cria a senha e entra em **app.connect.lab** com o e-mail e a senha. A verificação em duas etapas **não é obrigatória** para o morador: ele entra só com e-mail e senha.
 3. Quem tem mais de uma unidade troca de unidade no alto da tela.
 
 >! Só entra quem tem **vínculo ativo** com uma unidade: cadastro de morador ativo, unidade e condomínio ativos e dentro das datas de início e fim. Funcionário da administradora sem vínculo recebe a mensagem e não vê nada.
+
+## Verificação em duas etapas (opcional)
+
+O morador não mexe com o dinheiro do condomínio, por isso a verificação em duas etapas é **opcional** para ele, mesmo quando é obrigatória para a equipe. Se quiser mais proteção, ele liga em **Minha unidade > Segurança da conta**: lê o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro), digita o código de 6 números e guarda os códigos de recuperação. Daí em diante o código é pedido ao entrar, no site e no aplicativo do celular. Para desligar, ele digita o código atual na mesma tela.
+
+>! Quem é da equipe e também mora no condomínio continua com a verificação obrigatória, porque a mesma conta entra no ERP.
 
 ## Ligar as funções no condomínio
 

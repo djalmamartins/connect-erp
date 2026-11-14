@@ -273,3 +273,12 @@ a.app-hero:hover { box-shadow: 0 12px 28px #06513f40; }
 .app-grid--3 .app-stat__label { font-size: 12px; line-height: 1.3; }
 .app-filter input, .app-field input { min-width: 0; max-width: 100%; display: block; }
 @media (min-width: 600px) { .app-grid--3 .app-stat__value { font-size: 19px; } }
+
+/* Segurança da conta (ADR 0304) */
+.app-steps { margin: 8px 0 12px; padding-left: 20px; color: var(--app-text); }
+.app-steps li { margin: 4px 0; }
+.app-qr { display: flex; justify-content: center; padding: 12px; margin: 8px 0; background: #fff; border: 1px solid var(--app-border); border-radius: 12px; }
+.app-qr svg { width: 196px; height: 196px; max-width: 100%; stroke: none; stroke-width: 0; }
+.app-qr svg * { stroke: none; }
+.app-card .app-form-card { margin-top: 14px; }
+.app-card .app-form-card > summary { cursor: pointer; font-weight: 600; color: var(--app-brand); }

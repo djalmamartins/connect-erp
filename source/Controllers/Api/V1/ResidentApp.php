@@ -14,6 +14,7 @@ use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentTwoFactor;
 
 /**
  * API do aplicativo do morador (ADR 0302), a mesma do app web em app.<domínio> e do app nativo.
@@ -42,6 +43,10 @@ use Source\Services\Resident\ResidentSession;
  *  GET  /api/v1/resident/documents                documentos liberados ao morador
  *  GET  /api/v1/resident/documents/{id}/file      arquivo
  *  GET  /api/v1/resident/pets-vehicles            pets e veículos da unidade
+ *  GET  /api/v1/resident/2fa                      situação da verificação em duas etapas (opcional, ADR 0304)
+ *  POST /api/v1/resident/2fa/confirm              ligar {code}; devolve os códigos de recuperação
+ *  POST /api/v1/resident/2fa/disable              desligar {code}
+ *  POST /api/v1/resident/2fa/recovery             novos códigos de recuperação {code}
  */
 final class ResidentApp
 {
@@ -203,6 +208,52 @@ final class ResidentApp
     public function petsVehicles(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->petsVehicles($link));
+    }
+
+    public function twoFactor(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            header('Cache-Control: no-store, private');
+            JsonResponse::send(200, ['data' => (new ResidentTwoFactor())->status($user)]);
+        }
+    }
+
+    public function twoFactorConfirm(): void
+    {
+        $this->twoFactorAct('confirm');
+    }
+
+    public function twoFactorDisable(): void
+    {
+        $this->twoFactorAct('disable');
+    }
+
+    public function twoFactorRecovery(): void
+    {
+        $this->twoFactorAct('recovery');
+    }
+
+    private function twoFactorAct(string $action): void
+    {
+        [$user, $link] = $this->context();
+        if ($link === null) {
+            return;
+        }
+        $raw = (string)file_get_contents('php://input');
+        $body = $raw === '' ? [] : json_decode($raw, true);
+        if (!is_array($body)) {
+            JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
+            return;
+        }
+        $result = (new ResidentTwoFactor())->act($user, $action, $body['code'] ?? null);
+        header('Cache-Control: no-store, private');
+        if (!$result['ok']) {
+            JsonResponse::send($result['status'], ['error' => ['code' => $result['code'], 'message' => $result['message']]]);
+            return;
+        }
+        unset($result['ok']);
+        JsonResponse::send(200, ['data' => $result + ['enabled' => $action !== 'disable']]);
     }
 
     /** @param array{path:string, mime:string, name:string, size:int} $file */
