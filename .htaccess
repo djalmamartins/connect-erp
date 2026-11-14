@@ -3,6 +3,11 @@ Options -Indexes
 
 RewriteEngine On
 
+# O app do morador (ADR 0303) manda "Authorization: Bearer". O Apache não repassa esse cabeçalho
+# ao PHP sozinho; esta regra o copia para a variável que o PHP lê.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Arquivos de configuração, código interno e dados operacionais nunca são públicos.
 <FilesMatch "^(\.env(?:\..*)?|composer\.(json|lock)|phpunit\.xml|README(?:\..*)?)$">
     Require all denied

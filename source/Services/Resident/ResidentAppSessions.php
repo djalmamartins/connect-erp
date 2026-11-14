@@ -81,8 +81,30 @@ final class ResidentAppSessions
     /** Cabeçalho Authorization da requisição atual (o Apache às vezes só repassa REDIRECT_HTTP_AUTHORIZATION). */
     public static function requestBearer(): ?string
     {
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
-        return self::bearerFrom(is_string($header) ? $header : null);
+        return self::bearerFrom(self::authorizationHeader());
+    }
+
+    /**
+     * Cabeçalho Authorization da requisição. O Apache com mod_php não põe esse cabeçalho em
+     * $_SERVER (só com CGIPassAuth ou a regra do .htaccess); por isso também lê apache_request_headers().
+     */
+    public static function authorizationHeader(?array $server = null, ?array $headers = null): ?string
+    {
+        $server ??= $_SERVER;
+        foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+            if (is_string($server[$key] ?? null) && trim($server[$key]) !== '') {
+                return $server[$key];
+            }
+        }
+        if ($headers === null && function_exists('apache_request_headers')) {
+            $headers = apache_request_headers() ?: [];
+        }
+        foreach ($headers ?? [] as $name => $value) {
+            if (is_string($name) && strcasecmp($name, 'Authorization') === 0 && is_string($value)) {
+                return $value;
+            }
+        }
+        return null;
     }
 
     /** Nome do aparelho limpo (regra pura): só texto visível, até 80 caracteres. */
