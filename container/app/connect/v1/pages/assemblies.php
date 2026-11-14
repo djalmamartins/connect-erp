@@ -4,7 +4,7 @@ use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
 ?>
-<header class="app-page-head"><h1>Assembleias</h1><p>Editais, pauta, resultado de cada item e a ata.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Assembleias</h1><p>Editais, pauta, resultado de cada item e a ata.</p></header>
 <?php if ($assemblies === []): ?><div class="app-card app-empty"><p>Nenhuma assembleia convocada.</p></div><?php endif; ?>
 <ul class="app-list">
 <?php foreach ($assemblies as $a): [$label, $tone] = F::badge(F::ASSEMBLY, $a['status']); ?>

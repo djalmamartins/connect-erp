@@ -4,7 +4,7 @@ use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
 ?>
-<header class="app-page-head">
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?>
     <h1>Prestação de contas</h1>
     <p>As contas de cada mês fechado, com pagamentos, contas e notas fiscais.</p>
 </header>

@@ -4,7 +4,7 @@ use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
 ?>
-<header class="app-page-head"><h1>Encomendas</h1><p>O que chegou na portaria para a sua unidade.</p></header>
+<header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Encomendas</h1><p>O que chegou na portaria para a sua unidade.</p></header>
 <?php if ($deliveries === []): ?><div class="app-card app-empty"><p>Nenhuma encomenda nos últimos 90 dias.</p></div><?php endif; ?>
 <ul class="app-list">
 <?php foreach ($deliveries as $d): [$label, $tone] = F::badge(F::DELIVERY, $d['status']); ?>
