@@ -82,7 +82,7 @@ final class EntryAttachmentScreens
         try {
             $upload = is_array($_FILES['file'] ?? null) ? $_FILES['file'] : [];
             $item = (new EntryAttachments())->attach($user, $id, $upload, $data['kind'] ?? null);
-            (new Message())->success($item['kind_label'] . ' anexad' . ($item['kind'] === 'nota_fiscal' ? 'a' : 'o') . ' ao lançamento.')->flash();
+            (new Message())->success($item['kind_label'] . ' anexad' . (in_array($item['kind'], ['nota_fiscal', 'conta'], true) ? 'a' : 'o') . ' ao lançamento.')->flash();
         } catch (InvalidArgumentException | DomainException $error) {
             (new Message())->error($error->getMessage())->flash();
         } catch (RegistryNotFound) {

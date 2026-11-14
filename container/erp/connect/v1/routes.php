@@ -73,6 +73,10 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/prestacao-de-contas/livro-caixa/pdf", "CashBookScreens:pdf");
     $route->get("/prestacao-de-contas/livro-caixa/pacote", "CashBookScreens:package");
     $route->get("/prestacao-de-contas/livro-caixa/imprimir", "CashBookScreens:printView");
+    // Link público da prestação de contas para os moradores (ADR 0301): gerar, enviar e revogar pelo livro caixa.
+    $route->post("/prestacao-de-contas/livro-caixa/link", "CashBookScreens:generateLink");
+    $route->post("/prestacao-de-contas/livro-caixa/link/{id}/enviar", "CashBookScreens:sendLink");
+    $route->post("/prestacao-de-contas/livro-caixa/link/{id}/revogar", "CashBookScreens:revokeLink");
 
     // Cadastros com dados reais (motor único RegistryService, ADR 0014): listagem,
     // novo, detalhe/edição e exclusão. "novo" vem antes de {id}.

@@ -3,7 +3,7 @@
  * Livro caixa mensal (CN-007, ADR 0174) do condomínio da barra superior: saldo anterior, cada pagamento e
  * recebimento do mês com o saldo corrido, os anexos (notas e comprovantes) numerados, a conferência com as contas
  * bancárias e as despesas sem comprovante. Baixa em PDF pronto ou em pacote (PDF + anexos).
- * @var array $currentPage @var string $cashMonth @var bool $cashNeedsCondo @var ?string $cashError @var ?array $cashBook @var bool $cashCanManage
+ * @var array $currentPage @var string $cashMonth @var bool $cashNeedsCondo @var ?string $cashError @var ?array $cashBook @var bool $cashCanManage @var array $cashLinks @var bool $cashCanPublish
  */
 use Source\Controllers\Erp\Connect\CashBookScreens as Screens;
 use Source\Controllers\Erp\Connect\ReportScreens as RS;
@@ -50,6 +50,55 @@ $this->insert('components/layout/page-head', [
         <?php if ($b['missing_proof'] !== []): ?>
             <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><strong><?= count($b['missing_proof']) ?> despesa(s) paga(s) sem nota fiscal ou comprovante.</strong> Anexe na tela do lançamento para o livro sair completo.</div></div>
         <?php endif; ?>
+    </section>
+
+    <?php // Link público para os moradores (ADR 0301): o do mês e o livro do ano. ?>
+    <section class="erp-card" id="link-moradores" aria-labelledby="cb-link">
+        <div class="erp-card__head"><div><h2 id="cb-link">Link para os moradores</h2><p>Página pública com as contas do mês por categoria e fornecedor e os documentos de cada pagamento. Ela é gerada e enviada sozinha quando o mês é fechado; o prazo é o 5º dia útil.</p></div></div>
+        <div class="erp-table-wrap" role="region" aria-labelledby="cb-link" tabindex="0"><table class="erp-table">
+            <thead><tr><th scope="col">Livro</th><th scope="col">Situação</th><th scope="col">Endereço</th><th scope="col">Ações</th></tr></thead>
+            <tbody>
+            <?php foreach (['monthly' => 'Mês de ' . $month, 'annual' => 'Ano de ' . substr($b['competence'], 0, 4)] as $kind => $label): $link = $cashLinks[$kind] ?? null; ?>
+                <tr>
+                    <td><?= $this->e($label) ?></td>
+                    <td>
+                        <?php if ($link === null): ?><span class="erp-badge">Ainda não gerado</span>
+                        <?php elseif ($link['status'] !== 'active'): ?><span class="erp-badge erp-badge--danger">Desativado</span>
+                        <?php else: ?>
+                            <span class="erp-badge erp-badge--success">Versão <?= (int)$link['version'] ?></span>
+                            <?php if ($link['sent_version'] === $link['version']): ?><span class="erp-badge">Enviado em <?= $this->e(RS::brDate(substr((string)$link['sent_at'], 0, 10))) ?></span><?php else: ?><span class="erp-badge erp-badge--warning">Não enviado</span><?php endif; ?>
+                            <br><small class="erp-muted"><?= (int)$link['view_count'] ?> visita(s)</small>
+                        <?php endif; ?>
+                    </td>
+                    <td><?php if ($link !== null && $link['url'] !== null): ?><a href="<?= $this->e($link['url']) ?>" target="_blank" rel="noopener noreferrer" class="erp-break"><?= $this->e($link['url']) ?></a><?php else: ?><span class="erp-muted"><?= $kind === 'annual' ? 'Sai quando todos os meses do ano estiverem fechados.' : 'Sai quando o mês é fechado.' ?></span><?php endif; ?></td>
+                    <td class="erp-nowrap">
+                        <?php if ($cashCanPublish): ?>
+                            <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/link')) ?>" class="erp-inline-form">
+                                <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>"><input type="hidden" name="kind" value="<?= $kind ?>">
+                                <button type="submit" class="erp-btn erp-btn--sm"><?= $link === null || $link['status'] !== 'active' ? 'Gerar' : 'Atualizar' ?></button>
+                            </form>
+                            <?php if ($link !== null && $link['status'] === 'active'): ?>
+                                <?php if ($link['sent_version'] !== $link['version']): ?>
+                                <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/link/' . (int)$link['id'] . '/enviar')) ?>" class="erp-inline-form">
+                                    <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>">
+                                    <button type="submit" class="erp-btn erp-btn--sm erp-btn--primary">Enviar aos moradores</button>
+                                </form>
+                                <?php endif; ?>
+                                <details class="erp-inline-details"><summary class="erp-btn erp-btn--sm">Desativar</summary>
+                                    <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/link/' . (int)$link['id'] . '/revogar')) ?>">
+                                        <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>">
+                                        <label class="erp-sr-only" for="revoke-<?= $kind ?>">Motivo</label>
+                                        <input class="erp-input" id="revoke-<?= $kind ?>" name="reason" minlength="3" maxlength="255" required placeholder="Motivo">
+                                        <button type="submit" class="erp-btn erp-btn--sm">Confirmar</button>
+                                    </form>
+                                </details>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
     </section>
 
     <section class="erp-grid erp-grid--kpi" aria-label="Totais do mês">

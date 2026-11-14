@@ -925,3 +925,11 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 @keyframes erp-notice-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes erp-notice-out { to { opacity: 0; transform: translateX(28px); } }
 @media (max-width: 600px) { .erp-toasts { top: 12px; right: 16px; } }
+
+/* Link público da prestação de contas no livro caixa (ADR 0301): endereço longo quebra a linha; "Desativar" abre o motivo. */
+.erp-break { word-break: break-all; }
+.erp-inline-details { display: inline-block; vertical-align: top; }
+.erp-inline-details > summary { list-style: none; cursor: pointer; }
+.erp-inline-details > summary::-webkit-details-marker { display: none; }
+.erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+.erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }

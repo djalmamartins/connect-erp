@@ -16,7 +16,7 @@ final class NotificationOutbox
 {
     /** Tipos de aviso (ADR 0054, 0056 e 0059); cada um tem modelo e regra de destinatários no NotificationDispatcher. */
     public const EVENTS = ['waitlist.called', 'invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached', 'reservation.approved',
-        'announcement.published', 'collection.reminder', 'resident.invitation'];
+        'announcement.published', 'collection.reminder', 'resident.invitation', 'accountability.published'];
 
     public function __construct(private PDO $pdo)
     {
