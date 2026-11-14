@@ -3,6 +3,7 @@
 use Source\Services\Resident\ResidentFeed;
 
 $this->layout('default');
+$icons = ['page' => 'grid', 'announcement' => 'megaphone', 'assembly' => 'users', 'document' => 'file', 'delivery' => 'box'];
 ?>
 <header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?><h1>Buscar</h1></header>
 <form class="app-search" method="get" action="<?= app_url('/buscar') ?>" role="search">
@@ -11,17 +12,14 @@ $this->layout('default');
     <input id="app-q" type="search" name="q" value="<?= $this->e($query) ?>" maxlength="80" placeholder="Comunicados, documentos, encomendas, páginas…" autofocus>
 </form>
 <?php if (mb_strlen(ResidentFeed::fold($query)) < ResidentFeed::MIN_QUERY): ?>
-    <p class="app-muted">Escreva pelo menos <?= ResidentFeed::MIN_QUERY ?> letras.</p>
+    <?php $this->insert('partials/empty', ['icon' => 'search', 'text' => 'Escreva pelo menos ' . ResidentFeed::MIN_QUERY . ' letras para buscar.']) ?>
 <?php elseif ($results === []): ?>
-    <div class="app-card app-empty"><p>Nada encontrado para “<?= $this->e($query) ?>”.</p></div>
+    <?php $this->insert('partials/empty', ['icon' => 'search', 'text' => 'Nada encontrado para “' . $query . '”.']) ?>
 <?php else: ?>
-    <ul class="app-feed">
-    <?php foreach ($results as $r): ?>
-        <li class="app-card"><a href="<?= app_url($r['path']) ?>">
-            <span class="app-feed__text"><strong><?= $this->e($r['title']) ?></strong><span><?= $this->e($r['detail']) ?></span></span>
-            <span class="app-badge app-badge--neutral"><?= $this->e($r['kind_label']) ?></span>
-            <svg aria-hidden="true"><use href="#i-chevron"></use></svg>
-        </a></li>
-    <?php endforeach; ?>
+    <ul class="app-items">
+    <?php foreach ($results as $r):
+        $this->insert('partials/item', ['icon' => $icons[$r['kind']] ?? 'search', 'title' => $r['title'], 'lines' => [$r['kind_label'] . ($r['detail'] !== '' ? ' · ' . $r['detail'] : '')],
+            'href' => app_url($r['path'])]);
+    endforeach; ?>
     </ul>
 <?php endif; ?>

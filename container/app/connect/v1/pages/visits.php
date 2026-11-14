@@ -22,21 +22,13 @@ $today = date('Y-m-d');
 </details>
 <section class="app-section">
     <h2>Avisadas</h2>
-    <?php if ($visits === []): ?><p class="app-muted">Nenhuma visita avisada nos últimos 30 dias.</p><?php endif; ?>
-    <ul class="app-list">
-    <?php foreach ($visits as $v): [$label, $tone] = F::badge(F::VISIT, $v['status']); ?>
-        <li class="app-card app-row">
-            <span><strong><?= $this->e($v['visitor_name']) ?></strong>
-                <small><?= F::date($v['expected_on']) ?><?= $v['expected_until'] && $v['expected_until'] !== $v['expected_on'] ? ' a ' . F::date($v['expected_until']) : '' ?><?= $v['visitor_document'] ? ' · doc. ' . $this->e($v['visitor_document']) : '' ?><?= $v['notes'] !== '' ? ' · ' . $this->e($v['notes']) : '' ?></small></span>
-            <span class="app-row__end">
-                <span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span>
-                <?php if ($v['status'] === 'active'): ?>
-                    <form method="post" action="<?= app_url('/visitantes/' . $v['id'] . '/cancelar') ?>" data-app-confirm="Cancelar o aviso desta visita?">
-                        <?= csrf_input() ?><button class="app-link-button" type="submit">Cancelar</button>
-                    </form>
-                <?php endif; ?>
-            </span>
-        </li>
-    <?php endforeach; ?>
+    <?php if ($visits === []): ?><?php $this->insert('partials/empty', ['icon' => 'user-check', 'text' => 'Nenhuma visita avisada nos últimos 30 dias.']) ?><?php endif; ?>
+    <ul class="app-items">
+    <?php foreach ($visits as $v): [$label, $tone] = F::badge(F::VISIT, $v['status']);
+        $cancel = $v['status'] === 'active' ? '<form method="post" action="' . app_url('/visitantes/' . $v['id'] . '/cancelar') . '" data-app-confirm="Cancelar o aviso desta visita?">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
+        $this->insert('partials/item', ['icon' => 'user-check', 'tone' => $v['status'] === 'active' ? 'brand' : 'neutral', 'title' => $v['visitor_name'],
+            'lines' => [F::date($v['expected_on']) . ($v['expected_until'] && $v['expected_until'] !== $v['expected_on'] ? ' a ' . F::date($v['expected_until']) : '') . ($v['visitor_document'] ? ' · doc. ' . $v['visitor_document'] : ''), (string)$v['notes']],
+            'badge' => [$label, $tone], 'actions' => $cancel]);
+    endforeach; ?>
     </ul>
 </section>

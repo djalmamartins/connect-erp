@@ -45,14 +45,12 @@ $first = explode(' ', trim((string)$link['name']))[0] ?? '';
 <?php if (!empty($summary['assemblies'])): ?>
     <section class="app-section">
         <div class="app-section__head"><h2>Assembleias</h2><a href="<?= app_url('/assembleias') ?>">Ver todas</a></div>
-        <div class="app-card app-card--list"><ul class="app-list">
-        <?php foreach ($summary['assemblies'] as $a): [$label, $tone] = F::badge(F::ASSEMBLY, $a['status']); ?>
-            <li><a class="app-row" href="<?= app_url('/assembleias/' . $a['id']) ?>">
-                <span class="app-row__lead"><span class="app-mini-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span><span><strong><?= $this->e($a['title']) ?></strong><small><?= F::dateTime($a['first_call_at']) ?></small></span></span>
-                <span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span>
-            </a></li>
-        <?php endforeach; ?>
-        </ul></div>
+        <ul class="app-items">
+        <?php foreach ($summary['assemblies'] as $a): [$label, $tone] = F::badge(F::ASSEMBLY, $a['status']);
+            $this->insert('partials/item', ['date' => $a['first_call_at'], 'title' => $a['title'], 'lines' => [F::dateTime($a['first_call_at'])],
+                'href' => app_url('/assembleias/' . $a['id']), 'badge' => [$label, $tone]]);
+        endforeach; ?>
+        </ul>
     </section>
 <?php endif; ?>
 
@@ -60,16 +58,14 @@ $first = explode(' ', trim((string)$link['name']))[0] ?? '';
     <section class="app-section">
         <div class="app-section__head"><h2>Próximas reservas</h2><a href="<?= app_url('/reservas') ?>">Reservar</a></div>
         <?php if ($summary['next_reservations'] === []): ?>
-            <div class="app-card app-empty"><p>Nenhuma reserva marcada. <a href="<?= app_url('/reservas') ?>">Reservar uma área</a></p></div>
+            <?php $this->insert('partials/empty', ['icon' => 'calendar', 'text' => 'Nenhuma reserva marcada.', 'action' => ['Reservar uma área', app_url('/reservas')]]) ?>
         <?php else: ?>
-        <div class="app-card app-card--list"><ul class="app-list">
-        <?php foreach ($summary['next_reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']); ?>
-            <li><div class="app-row">
-                <span class="app-row__lead"><span class="app-mini-icon"><svg aria-hidden="true"><use href="#i-calendar"></use></svg></span><span><strong><?= $this->e($r['area']) ?></strong><small><?= F::date($r['reserved_on']) ?><?= $r['starts_time'] ? ' · ' . $r['starts_time'] . ' às ' . $r['ends_time'] : '' ?></small></span></span>
-                <span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span>
-            </div></li>
-        <?php endforeach; ?>
-        </ul></div>
+        <ul class="app-items">
+        <?php foreach ($summary['next_reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']);
+            $this->insert('partials/item', ['date' => $r['reserved_on'], 'title' => $r['area'], 'lines' => [$r['starts_time'] ? $r['starts_time'] . ' às ' . $r['ends_time'] : 'Dia todo'],
+                'href' => app_url('/reservas'), 'badge' => [$label, $tone]]);
+        endforeach; ?>
+        </ul>
         <?php endif; ?>
     </section>
 <?php endif; ?>
@@ -78,16 +74,13 @@ $first = explode(' ', trim((string)$link['name']))[0] ?? '';
     <section class="app-section">
         <div class="app-section__head"><h2>Comunicados recentes</h2><a href="<?= app_url('/comunicados') ?>">Ver todos</a></div>
         <?php if ($summary['announcements'] === []): ?>
-            <div class="app-card app-empty"><p>Nenhum comunicado por enquanto.</p></div>
+            <?php $this->insert('partials/empty', ['icon' => 'megaphone', 'text' => 'Nenhum comunicado por enquanto.']) ?>
         <?php else: ?>
-        <div class="app-card app-card--list"><ul class="app-list">
-        <?php foreach ($summary['announcements'] as $n): ?>
-            <li><a class="app-row" href="<?= app_url('/comunicados#c' . $n['id']) ?>">
-                <span class="app-row__lead"><span class="app-mini-icon"><svg aria-hidden="true"><use href="#i-megaphone"></use></svg></span><span><strong><?= $this->e($n['subject']) ?></strong><small><?= F::date($n['published_at']) ?></small></span></span>
-                <span class="app-row__go" aria-hidden="true">›</span>
-            </a></li>
-        <?php endforeach; ?>
-        </ul></div>
+        <ul class="app-items">
+        <?php foreach ($summary['announcements'] as $n):
+            $this->insert('partials/item', ['icon' => 'megaphone', 'title' => $n['subject'], 'lines' => [F::date($n['published_at'])], 'href' => app_url('/comunicados#c' . $n['id'])]);
+        endforeach; ?>
+        </ul>
         <?php endif; ?>
     </section>
 <?php endif; ?>

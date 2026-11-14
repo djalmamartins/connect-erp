@@ -3257,6 +3257,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /meters/deactivate-idle:
+    post:
+      operationId: deactivateIdleMeters
+      summary: Relógios parados (sem leitura no período e sem leitura por cobrar) inativados em lote, tudo ou nada e com prévia (erp.access, erp.meters.view, erp.meters.manage e erp.meter_readings.view, ADR 0299)
+      description: >-
+        Sem meter_ids, entram os relógios ativos do condomínio sem leitura nos últimos months meses (padrão 12, de 3 a 120,
+        pela competência e no mês do banco) e cadastrados e instalados antes do período; os parados com leitura ainda não
+        cobrada (valor acima de zero e sem lançamento) ficam de fora e são contados em skipped_unbilled. Com meter_ids,
+        recusa relógio não encontrado no condomínio, já inativo, com leitura não cobrada, com leitura no período ou
+        cadastrado ou instalado no período, e uma recusa desfaz todos. Inativar só muda o status para inactive (e quem
+        alterou), com um registro update por relógio; nada é apagado, e as leituras e as cobranças já feitas continuam
+        apontando o relógio. Sem número de relógio, unidade, leitura, consumo nem valor na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, months: { type: integer, minimum: 3, maximum: 120, default: 12 }, meter_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, months, from, to, meters[{ id, kind, last_competence }], skipped_unbilled, by_kind[{ kind, kind_label, meters }], count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um relógio mudou de situação durante o pedido; nada é inativado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou relógio recusado (errors com _form e _meter); nada é inativado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
