@@ -14,6 +14,7 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Erp\ResidentPortalPermissions;
 use Source\Services\Resident\ResidentFeatureDisabled;
+use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
 use Source\Services\Resident\ResidentTwoFactor;
@@ -71,6 +72,90 @@ final class AppScreens extends Controller
     public function charges(): void
     {
         $this->page('charges', 'boletos', 'pages/charges', 'Boletos', fn (User $u, array $link): array => ['statement' => $this->portal->charges($link, $_GET['de'] ?? null, $_GET['ate'] ?? null)]);
+    }
+
+    /** GET /boletos/{id} — uma conta: pagar (boleto, linha, Pix) ou ver o recibo. */
+    public function charge(array $data): void
+    {
+        $this->page('charges', 'boletos', 'pages/charge', 'Conta', fn (User $u, array $link): array => ['entry' => $this->portal->entry($link, (int)($data['id'] ?? 0))]);
+    }
+
+    /** GET /boletos/{id}/recibo — recibo para imprimir ou salvar em PDF (conta paga). */
+    public function receipt(array $data): void
+    {
+        $this->printable('boletos', function (array $link) use ($data): array {
+            try {
+                return ['template' => 'pages/receipt', 'title' => 'Recibo', 'data' => ['receipt' => $this->portal->receipt($link, (int)($data['id'] ?? 0))]];
+            } catch (DomainException $error) {
+                $this->message->warning($error->getMessage())->flash();
+                redirect(app_url('/boletos/' . (int)($data['id'] ?? 0)));
+                return [];
+            }
+        });
+    }
+
+    /** GET /assembleias/{id}/edital — edital de convocação para imprimir ou salvar em PDF. */
+    public function notice(array $data): void
+    {
+        $this->printable('assemblies', fn (array $link): array => ['template' => 'pages/notice', 'title' => 'Edital de convocação',
+            'data' => ['assembly' => $this->portal->assembly($link, (int)($data['id'] ?? 0))]]);
+    }
+
+    /** GET /avisos — sininho: o que pede atenção; ao abrir, tudo passa a contar como visto. */
+    public function notifications(): void
+    {
+        $seen = self::seenAt();
+        $this->page('notifications', null, 'pages/notifications', 'Avisos', function (User $u, array $link) use ($seen): array {
+            $items = (new ResidentFeed())->notifications($link);
+            self::markSeen();
+            return ['items' => $items, 'seenAt' => $seen];
+        });
+    }
+
+    /** GET /buscar?q= — busca no que o morador pode ver. */
+    public function search(): void
+    {
+        $query = is_string($_GET['q'] ?? null) ? trim((string)$_GET['q']) : '';
+        $this->page('search', null, 'pages/search', 'Buscar', fn (User $u, array $link): array => ['query' => $query,
+            'results' => (new ResidentFeed())->search($link, $query, self::menu($link['features'], ''))]);
+    }
+
+    /** Última vez que o morador abriu os avisos (cookie do navegador, só uma data). */
+    public static function seenAt(): ?string
+    {
+        $value = $_COOKIE['app_seen'] ?? '';
+        return is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $value) ? $value : null;
+    }
+
+    private static function markSeen(): void
+    {
+        if (!headers_sent()) {
+            setcookie('app_seen', date('Y-m-d H:i:s'), ['expires' => time() + 31536000, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax',
+                'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')]);
+        }
+    }
+
+    /** Página para imprimir (recibo, edital): sem menu, com o botão de imprimir. */
+    private function printable(string $feature, callable $build): void
+    {
+        $context = $this->context($feature);
+        if ($context === null) {
+            return;
+        }
+        try {
+            $page = $build($context[1]);
+        } catch (RegistryNotFound) {
+            $this->message->warning('Não encontrado.')->flash();
+            redirect(app_url('/'));
+            return;
+        }
+        if ($page === []) {
+            return;
+        }
+        echo $this->view->render($page['template'], $page['data'] + [
+            'head' => $this->seo->render($page['title'] . ' · Connect Morador', 'Aplicativo do morador da Connect.', app_url('/'), themeApp('/assets/images/icon-512.png'), false),
+            'title' => $page['title'], 'user' => $context[0], 'link' => $context[1],
+        ]);
     }
 
     public function chargePdf(array $data): void
@@ -210,7 +295,8 @@ final class AppScreens extends Controller
 
     public function unit(): void
     {
-        $this->page('unit', null, 'pages/unit', 'Minha unidade', fn (User $u, array $link): array => ['petsVehicles' => $this->portal->petsVehicles($link)]);
+        $this->page('unit', null, 'pages/unit', 'Minha unidade', fn (User $u, array $link): array => ['petsVehicles' => $this->portal->petsVehicles($link),
+            'profile' => $this->portal->profile($link, $u)]);
     }
 
     /** POST /unidade — troca o vínculo que está vendo (só entre os da própria conta). */
@@ -434,7 +520,21 @@ final class AppScreens extends Controller
             'links' => $all,
             'link' => $link,
             'menu' => self::menu($link['features'] ?? [], $active),
+            'unseen' => $this->unseen($link, $active),
         ]);
+    }
+
+    /** Número no sininho; na própria página de avisos é zero. Erro aqui nunca derruba a página. */
+    private function unseen(?array $link, string $active): int
+    {
+        if ($link === null || $active === 'notifications') {
+            return 0;
+        }
+        try {
+            return ResidentFeed::unseen((new ResidentFeed())->notifications($link), self::seenAt());
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     private function headers(): void

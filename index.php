@@ -532,6 +532,9 @@ $route->get("/resident/me", "ResidentApp:me", null, \Source\Support\Middleware\R
 $route->get("/resident/summary", "ResidentApp:summary", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/charges", "ResidentApp:charges", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/announcements", "ResidentApp:announcements", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/common-areas", "ResidentApp:commonAreas", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

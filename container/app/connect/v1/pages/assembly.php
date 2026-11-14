@@ -14,6 +14,10 @@ $isLink = (bool)preg_match('~^https://~i', $a['location']);
     <p><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span> <?= $a['kind'] === 'ordinaria' ? 'Assembleia ordinária' : 'Assembleia extraordinária' ?> · <?= $modes[$a['mode']] ?? $a['mode'] ?></p>
 </header>
 <div class="app-card">
+    <div class="app-doc-actions">
+        <a class="app-button" href="<?= app_url('/assembleias/' . $a['id'] . '/edital') ?>"><svg aria-hidden="true"><use href="#i-download"></use></svg>Baixar edital</a>
+        <?php if ($a['minutes'] !== null && $a['minutes'] !== ''): ?><a class="app-button app-button--ghost" href="#ata">Ver ata</a><?php endif; ?>
+    </div>
     <ul class="app-facts">
         <li>1ª convocação: <?= F::dateTime($a['first_call_at']) ?></li>
         <?php if ($a['second_call_at']): ?><li>2ª convocação: <?= F::dateTime($a['second_call_at']) ?></li><?php endif; ?>
@@ -33,7 +37,7 @@ $isLink = (bool)preg_match('~^https://~i', $a['location']);
     </ol>
 </section>
 <?php if ($a['minutes'] !== null && $a['minutes'] !== ''): ?>
-    <section class="app-section">
+    <section class="app-section" id="ata">
         <h2>Ata</h2>
         <pre class="app-card app-minutes"><?= $this->e($a['minutes']) ?></pre>
     </section>

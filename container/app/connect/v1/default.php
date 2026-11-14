@@ -7,6 +7,7 @@
  * @var string $head @var string $title @var \Source\Models\User $user
  * @var list<array> $links vínculos válidos @var ?array $link vínculo atual
  * @var list<array{key:string,label:string,path:string,icon:string,active:bool,tab:bool}> $menu
+ * @var int $unseen avisos novos no sininho
  */
 $asset = static function (string $path): string {
     $file = __DIR__ . $path;
@@ -16,6 +17,13 @@ $tabs = array_values(array_filter($menu, static fn (array $item): bool => $item[
 $more = array_values(array_filter($menu, static fn (array $item): bool => !$item['tab']));
 $moreActive = (bool)array_filter($more, static fn (array $item): bool => $item['active']);
 $personName = trim((string)($link['name'] ?? ''));
+$nameParts = $personName !== '' ? (preg_split('/\s+/u', $personName) ?: []) : [];
+$shortName = $nameParts === [] ? 'Morador' : $nameParts[0] . (count($nameParts) > 1 ? ' ' . end($nameParts) : '');
+$unseen = (int)($unseen ?? 0);
+$bell = function (string $class = '') use ($unseen): string {
+    return '<a class="app-icon-button app-bell ' . $class . '" href="' . app_url('/avisos') . '" aria-label="Avisos' . ($unseen > 0 ? ' (' . $unseen . ' novos)' : '') . '" title="Avisos">'
+        . '<svg aria-hidden="true"><use href="#i-bell"></use></svg>' . ($unseen > 0 ? '<span class="app-bell__count">' . ($unseen > 9 ? '9+' : $unseen) . '</span>' : '') . '</a>';
+};
 $initials = static function (string $text): string {
     $parts = preg_split('/[\s\-·]+/u', trim($text)) ?: [];
     $out = '';
@@ -62,13 +70,22 @@ $unit = function (string $id) use ($link, $links): string {
 <a class="app-skip" href="#app-main">Ir para o conteúdo</a>
 <?php $this->insert('partials/icons'); ?>
 <header class="app-top">
-    <a class="app-top__brand" href="<?= app_url('/') ?>" aria-label="Início">
-        <img src="<?= $this->e(site_logo_url()) ?>" alt="Connect Condomínios" width="128" height="34">
-    </a>
-    <?= $unit('app-unit') ?>
+    <?php if ($link !== null): ?>
+        <a class="app-top__avatar" href="<?= app_url('/minha-unidade') ?>" aria-label="Minha unidade"><?= $this->e($initials($personName)) ?></a>
+        <div class="app-top__who">
+            <strong><?= $this->e($shortName) ?></strong>
+            <?= $unit('app-unit') ?>
+        </div>
+        <a class="app-icon-button" href="<?= app_url('/buscar') ?>" aria-label="Buscar" title="Buscar"><svg aria-hidden="true"><use href="#i-search"></use></svg></a>
+        <?= $bell() ?>
+    <?php else: ?>
+        <a class="app-top__brand" href="<?= app_url('/') ?>" aria-label="Início">
+            <img src="<?= $this->e(site_logo_url()) ?>" alt="Connect Condomínios" width="128" height="34">
+        </a>
+    <?php endif; ?>
     <form method="post" action="<?= app_url('/sair') ?>" class="app-top__out">
         <?= csrf_input() ?>
-        <button type="submit" class="app-icon-button" aria-label="Sair"><svg aria-hidden="true"><use href="#i-logout"></use></svg></button>
+        <button type="submit" class="app-icon-button" aria-label="Sair" title="Sair"><svg aria-hidden="true"><use href="#i-logout"></use></svg></button>
     </form>
 </header>
 
@@ -102,6 +119,18 @@ $unit = function (string $id) use ($link, $links): string {
     </aside>
     <?php endif; ?>
     <main id="app-main" class="app-main" tabindex="-1">
+        <?php if ($link !== null): ?>
+        <div class="app-bar">
+            <div class="app-bar__hello"><strong><?= $this->e($shortName) ?></strong><span><?= $this->e($link['unit_label'] . ' · ' . $link['condominium_name']) ?></span></div>
+            <form class="app-bar__search" method="get" action="<?= app_url('/buscar') ?>" role="search">
+                <svg aria-hidden="true"><use href="#i-search"></use></svg>
+                <label class="app-sr" for="app-bar-q">Buscar</label>
+                <input id="app-bar-q" type="search" name="q" placeholder="Buscar comunicados, documentos, encomendas…" maxlength="80" value="<?= $this->e(is_string($_GET['q'] ?? null) ? (string)$_GET['q'] : '') ?>">
+            </form>
+            <?= $bell() ?>
+            <a class="app-bar__avatar" href="<?= app_url('/minha-unidade') ?>" title="Minha unidade" aria-label="Minha unidade"><?= $this->e($initials($personName)) ?></a>
+        </div>
+        <?php endif; ?>
         <?php if ($appFlash = flash()): ?><div class="app-flash" role="status"><?= $appFlash ?></div><?php endif; ?>
         <?= $this->section('content') ?>
     </main>

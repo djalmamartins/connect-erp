@@ -8,10 +8,19 @@ $this->layout('default');
 <?php if ($announcements === []): ?>
     <div class="app-card app-empty"><p>Nenhum comunicado por enquanto.</p></div>
 <?php endif; ?>
-<?php foreach ($announcements as $n): ?>
+<div class="app-notices">
+<?php foreach ($announcements as $n): $long = mb_strlen($n['body']) > 360; ?>
     <article class="app-card app-notice" id="c<?= (int)$n['id'] ?>">
-        <small><?= F::dateTime($n['published_at']) ?></small>
-        <h2><?= $this->e($n['subject']) ?></h2>
-        <div class="app-notice__body"><?= nl2br($this->e($n['body'])) ?></div>
+        <div class="app-notice__head">
+            <span class="app-notice__icon" aria-hidden="true"><svg><use href="#i-megaphone"></use></svg></span>
+            <div><h2><?= $this->e($n['subject']) ?></h2><small><?= F::dateTime($n['published_at']) ?></small></div>
+        </div>
+        <?php if ($long): ?>
+            <details class="app-notice__more"><summary><span class="app-notice__body app-notice__body--clip"><?= nl2br($this->e(mb_substr($n['body'], 0, 320))) ?>…</span><span class="app-link-button">Ler tudo</span></summary>
+                <div class="app-notice__body"><?= nl2br($this->e($n['body'])) ?></div></details>
+        <?php else: ?>
+            <div class="app-notice__body"><?= nl2br($this->e($n['body'])) ?></div>
+        <?php endif; ?>
     </article>
 <?php endforeach; ?>
+</div>

@@ -26,6 +26,8 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
 
     $route->get("/boletos", "AppScreens:charges");
     $route->get("/boletos/{id}/pdf", "AppScreens:chargePdf");
+    $route->get("/boletos/{id}/recibo", "AppScreens:receipt");
+    $route->get("/boletos/{id}", "AppScreens:charge");
     $route->get("/prestacao-de-contas", "AppScreens:accountability");
     $route->get("/comunicados", "AppScreens:announcements");
     $route->get("/reservas", "AppScreens:reservations");
@@ -39,10 +41,13 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
     $route->post("/visitantes", "AppScreens:authorizeVisit");
     $route->post("/visitantes/{id}/cancelar", "AppScreens:cancelVisit");
     $route->get("/assembleias", "AppScreens:assemblies");
+    $route->get("/assembleias/{id}/edital", "AppScreens:notice");
     $route->get("/assembleias/{id}", "AppScreens:assembly");
     $route->get("/documentos", "AppScreens:documents");
     $route->get("/documentos/{id}", "AppScreens:documentFile");
     $route->get("/minha-unidade", "AppScreens:unit");
+    $route->get("/avisos", "AppScreens:notifications");
+    $route->get("/buscar", "AppScreens:search");
     $route->get("/ops/{errcode}", "AppScreens:error");
 }
 unset($appBase);
