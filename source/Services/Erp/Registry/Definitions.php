@@ -936,7 +936,7 @@ final class Definitions
             'page' => 'AP-112', 'table' => 'erp_occurrences', 'route' => '/operacional/ocorrencias',
             'api' => 'occurrences', 'permission' => 'erp.occurrences', 'label' => 'Ocorrências',
             'entity' => 'ocorrência', 'gender' => 'a', 'scope' => 'required', 'group' => 'operacional',
-            'lead' => 'Ocorrências do condomínio (barulho, vazamento, dano). Quando precisa da administradora, abra o chamado no Help Desk.',
+            'lead' => 'Ocorrências do condomínio (barulho, vazamento, dano). Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Chamados.',
             'status' => ['active' => 'Aberta', 'running' => 'Em andamento', 'done' => 'Resolvida'],
             'fields' => [
                 'condominium_id' => $condo,
@@ -948,8 +948,9 @@ final class Definitions
                 'document_id' => $attachment('Foto ou documento'),
                 'description' => ['label' => 'Descrição', 'type' => 'longtext', 'required' => true, 'max' => 4000, 'span' => 12],
             ],
-            // Chamado do Help Desk gravado por Occurrences::openTicket (ADR 0034/0051), só leitura aqui.
+            // Chamado do Help Desk gravado por Occurrences::openForNew ao criar (ADR 0305) ou openTicket (ADR 0034/0051), só leitura aqui.
             'computed' => ['ticket_id'],
+            'helpdesk_ticket' => true,
             'attachment' => 'document_id',
             'title' => 'subject',
             'order' => 'occurred_on',

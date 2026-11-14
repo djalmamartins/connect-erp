@@ -28,7 +28,7 @@ $this->layout('default');
         $this->insert('partials/item', ['icon' => 'alert', 'tone' => $o['priority'] === 'alta' ? 'danger' : 'warning', 'title' => $o['subject'],
             'lines' => [F::date($o['occurred_on']) . ' · urgência ' . mb_strtolower(F::PRIORITIES[$o['priority']] ?? $o['priority'])],
             'badge' => [$label, $tone],
-            'body' => '<p class="app-notice__body">' . nl2br($this->e($o['description'])) . '</p>' . ($o['has_ticket'] ? '<p class="app-hint">A administração abriu um atendimento para esta ocorrência.</p>' : '')]);
+            'body' => '<p class="app-notice__body">' . nl2br($this->e($o['description'])) . '</p>' . (!empty($o['protocol']) ? '<p class="app-hint">' . $this->e('Chamado ' . $o['protocol'] . ': a administração acompanha por aqui, e a situação muda conforme o atendimento.') . '</p>' : '')]);
     endforeach; ?>
     </ul>
 </section>

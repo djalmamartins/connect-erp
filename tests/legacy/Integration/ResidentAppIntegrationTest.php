@@ -14,6 +14,8 @@ use Source\Services\Erp\ResidentPortalPermissions;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentLinks;
 use Source\Services\Resident\ResidentPortal;
+use Source\Services\Resident\ResidentTicketClosed;
+use Source\Services\Resident\ResidentTickets;
 
 /**
  * Aplicativo do morador (ADR 0302): vínculo válido, matriz desligada por padrão, isolamento por unidade e
@@ -206,6 +208,51 @@ final class ResidentAppIntegrationTest extends TestCase
         self::assertFalse($disk->find($this->admin, $id)['shared_with_residents']);
         self::assertTrue($disk->share($this->admin, $id, true)['shared_with_residents']);
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_documents' AND action = 'update'")->fetchColumn());
+    }
+
+    /** ADR 0305: a ocorrência do morador é um chamado; ele vê só os dele, conversa e não responde chamado fechado. */
+    public function testResidentOccurrenceIsATicketWithConversation(): void
+    {
+        $tickets = new ResidentTickets($this->pdo);
+        $link = $this->link($this->morador, ['occurrences']);
+        $opened = $tickets->open($this->morador, $link, ['subject' => 'Vazamento no banheiro', 'description' => 'Água descendo pela parede do banheiro.', 'priority' => 'alta']);
+        $row = $this->pdo->query('SELECT origin, requester_id, condominium_id, unit_id, priority FROM studio_support_tickets WHERE id = ' . (int)$opened['id'])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['residents', (int)$this->morador->id, $this->alpha, $this->unitA, 'high'],
+            [$row['origin'], (int)$row['requester_id'], (int)$row['condominium_id'], (int)$row['unit_id'], $row['priority']]);
+        self::assertSame(['open', 'alta', 1], [$opened['status'], $opened['priority'], count($opened['messages'])]);
+        self::assertStringStartsWith('CH', $opened['number']);
+        $occurrence = (new ResidentPortal($this->pdo))->occurrences($link)[0];
+        self::assertSame([$opened['occurrence_id'], $opened['number']], [$occurrence['id'], $occurrence['protocol']]);
+
+        // A equipe responde (pública e nota interna); o morador vê só a pública.
+        $team = $this->createUser(['level' => 5]);
+        $insert = $this->pdo->prepare('INSERT INTO studio_support_ticket_messages (ticket_id, user_id, message, is_internal) VALUES (?, ?, ?, ?)');
+        $insert->execute([$opened['id'], $team, 'Vamos enviar o encanador amanhã.', 0]);
+        $insert->execute([$opened['id'], $team, 'Nota interna: cobrar do 201.', 1]);
+        $detail = $tickets->show($this->morador, $link, (int)$opened['id']);
+        self::assertSame(['morador', 'equipe'], array_column($detail['messages'], 'author'));
+        self::assertStringNotContainsString('Nota interna', (string)json_encode($detail, JSON_UNESCAPED_UNICODE));
+
+        $reply = $tickets->reply($this->morador, $link, (int)$opened['id'], 'Obrigada, estarei em casa.');
+        self::assertSame('open', $reply['status']);
+        self::assertSame(1, $tickets->list($this->morador, $link)['meta']['total']);
+
+        // Vizinho não vê nem responde.
+        $other = $this->link($this->vizinho, ['occurrences']);
+        self::assertSame(0, $tickets->list($this->vizinho, $other)['meta']['total']);
+        try {
+            $tickets->show($this->vizinho, $other, (int)$opened['id']);
+            self::fail('Chamado de outro morador.');
+        } catch (RegistryNotFound) {
+            self::assertTrue(true);
+        }
+
+        // Fechado no Help Desk: a ocorrência acompanha e o morador não responde mais.
+        $this->pdo->prepare("UPDATE studio_support_tickets SET status = 'closed' WHERE id = ?")->execute([$opened['id']]);
+        (new \Source\Services\Erp\Occurrences($this->pdo))->followTickets([(int)$opened['id']], $team);
+        self::assertSame('done', (new ResidentPortal($this->pdo))->occurrences($link)[0]['status']);
+        $this->expectException(ResidentTicketClosed::class);
+        $tickets->reply($this->morador, $link, (int)$opened['id'], 'Ainda pingando.');
     }
 
     private function link(User $user, array $extraFeatures = []): array

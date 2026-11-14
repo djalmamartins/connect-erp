@@ -66,6 +66,7 @@ components:
         due_at: { type: string }
         resolved_at: { type: string, nullable: true }
         created_at: { type: string }
+        occurrence_id: { type: integer, nullable: true, description: Ocorrência do ERP ligada ao chamado (ADR 0305) }
     Error:
       type: object
       required: [error]
@@ -396,8 +397,40 @@ components:
         priority: { type: string, enum: [baixa, media, alta] }
         occurred_on: { type: string, format: date }
         description: { type: string }
-        status: { type: string, enum: [active, running, done], description: 'active = aberta' }
+        status: { type: string, enum: [active, running, done], description: 'active = aberta; segue a situação do chamado (ADR 0305)' }
         has_ticket: { type: boolean }
+        protocol: { type: string, nullable: true, description: Protocolo do chamado da ocorrência no Help Desk (ADR 0305) }
+    ResidentTicket:
+      type: object
+      description: Chamado do morador (ADR 0305)
+      properties:
+        id: { type: integer }
+        number: { type: string, description: Protocolo do chamado, example: CH261114A1B2 }
+        subject: { type: string }
+        status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
+        status_label: { type: string }
+        priority: { type: string, enum: [baixa, media, alta] }
+        priority_label: { type: string }
+        created_at: { type: string }
+        updated_at: { type: string }
+        last_message_at: { type: string, nullable: true }
+        occurrence_id: { type: integer, nullable: true }
+    ResidentTicketDetail:
+      allOf:
+        - { $ref: '#/components/schemas/ResidentTicket' }
+        - type: object
+          properties:
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: integer, description: '0 = a descrição da abertura' }
+                  author: { type: string, enum: [morador, equipe] }
+                  author_name: { type: string }
+                  body: { type: string }
+                  created_at: { type: string }
+                  attachments: { type: array, items: { type: object, properties: { name: { type: string }, url: { type: string } } } }
     ResidentDelivery:
       type: object
       properties:
@@ -6860,6 +6893,7 @@ paths:
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: status, in: query, schema: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] } }
         - { name: q, in: query, schema: { type: string, maxLength: 80 }, description: Protocolo ou assunto }
+        - { name: kind, in: query, schema: { type: string, enum: [occurrence, other] }, description: "occurrence = só os chamados das ocorrências; other = sem eles (ADR 0305)" }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
       responses:
         '200': { description: Lista, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Ticket' } } } } } } }
@@ -7330,6 +7364,96 @@ paths:
                   data: { type: object }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/tickets:
+    get:
+      operationId: getResidentTickets
+      tags: [Morador]
+      summary: 'Chamados do morador'
+      description: 'Aplicativo do morador (ADR 0305): toda ocorrência é um chamado. Só os chamados que o próprio morador abriu, no condomínio do vínculo; exige a função occurrences do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200':
+          description: OK (20 por página)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentTicket' } }
+                  meta: { type: object, properties: { page: { type: integer }, per_page: { type: integer }, total: { type: integer } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: openResidentTicket
+      tags: [Morador]
+      summary: 'Abrir chamado (registra a ocorrência da unidade)'
+      description: 'Aplicativo do morador (ADR 0305): toda ocorrência é um chamado. Só os chamados que o próprio morador abriu, no condomínio do vínculo; exige a função occurrences do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, description]
+              properties:
+                subject: { type: string, maxLength: 160 }
+                description: { type: string, maxLength: 4000 }
+                priority: { type: string, enum: [baixa, media, alta], default: media }
+                occurred_on: { type: string, format: date, description: 'Padrão: hoje' }
+      responses:
+        '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentTicketDetail' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/tickets/{id}:
+    get:
+      operationId: getResidentTicket
+      tags: [Morador]
+      summary: 'Chamado com a conversa pública'
+      description: 'Aplicativo do morador (ADR 0305): toda ocorrência é um chamado. Só os chamados que o próprio morador abriu, no condomínio do vínculo; exige a função occurrences do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentTicketDetail' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /resident/tickets/{id}/messages:
+    post:
+      operationId: replyResidentTicket
+      tags: [Morador]
+      summary: 'Responder o chamado (resolvido reabre; fechado = 409)'
+      description: 'Aplicativo do morador (ADR 0305): toda ocorrência é um chamado. Só os chamados que o próprio morador abriu, no condomínio do vínculo; exige a função occurrences do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 2, maxLength: 10000 }
+      responses:
+        '201': { description: Resposta enviada, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { message_id: { type: integer }, status: { type: string } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'ticket_closed: chamado fechado', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
   /resident/deliveries:

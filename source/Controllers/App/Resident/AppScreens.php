@@ -232,7 +232,7 @@ final class AppScreens extends Controller
     {
         $this->action('occurrences', '/ocorrencias', $data, function (User $u, array $link) use ($data): string {
             $this->portal->reportOccurrence($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on']));
-            return 'Ocorrência registrada. A administração vai acompanhar.';
+            return 'Ocorrência registrada. Ela já virou um chamado para a administração.';
         });
     }
 

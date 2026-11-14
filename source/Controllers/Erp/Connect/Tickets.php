@@ -53,6 +53,8 @@ final class Tickets extends Controller
             'condominium_id' => (int)($_GET['condominio'] ?? 0),
             'status' => (string)($_GET['situacao'] ?? ''),
             'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
+            // ?tipo=ocorrencias: só as ocorrências (ADR 0305), que também são chamados.
+            'kind' => ['ocorrencias' => 'occurrence', 'outros' => 'other'][(string)($_GET['tipo'] ?? '')] ?? '',
         ];
         $panel = new Panel();
         $layout = $panel->layoutData($user, self::PAGE_ID, [], null);

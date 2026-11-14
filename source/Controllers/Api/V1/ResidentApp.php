@@ -15,6 +15,8 @@ use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentTicketClosed;
+use Source\Services\Resident\ResidentTickets;
 use Source\Services\Resident\ResidentTwoFactor;
 
 /**
@@ -35,6 +37,10 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  POST /api/v1/resident/waitlist                 entrar na lista de espera {common_area_id, desired_on, notes?}
  *  GET  /api/v1/resident/occurrences              ocorrências da unidade
  *  POST /api/v1/resident/occurrences              registrar {subject, description, priority?, occurred_on?}
+ *  GET  /api/v1/resident/tickets?page=           chamados que o morador abriu (ADR 0305), 20 por página
+ *  POST /api/v1/resident/tickets                  abrir {subject, description, priority?, occurred_on?}: registra a ocorrência e o chamado
+ *  GET  /api/v1/resident/tickets/{id}             chamado com a conversa pública
+ *  POST /api/v1/resident/tickets/{id}/messages    responder {body}; fechado = 409 ticket_closed
  *  GET  /api/v1/resident/deliveries               encomendas
  *  GET  /api/v1/resident/visits                   visitas avisadas
  *  POST /api/v1/resident/visits                   avisar visita {visitor_name, visitor_document?, expected_on, expected_until?, notes?}
@@ -173,6 +179,32 @@ final class ResidentApp
     public function reportOccurrence(): void
     {
         $this->write(201, fn (User $u, array $link, array $body): array => (new ResidentPortal())->reportOccurrence($u, $link, $body));
+    }
+
+    public function tickets(): void
+    {
+        $page = $this->int($_GET['page'] ?? null) ?? 1;
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            $this->run(200, fn () => (new ResidentTickets())->list($user, $link, $page), true);
+        }
+    }
+
+    public function ticket(array $data): void
+    {
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        $this->read(fn (User $u, array $link): array => (new ResidentTickets())->show($u, $link, $id));
+    }
+
+    public function openTicket(): void
+    {
+        $this->write(201, fn (User $u, array $link, array $body): array => (new ResidentTickets())->open($u, $link, $body));
+    }
+
+    public function replyTicket(array $data): void
+    {
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        $this->write(201, fn (User $u, array $link, array $body): array => (new ResidentTickets())->reply($u, $link, $id, is_string($body['body'] ?? null) ? $body['body'] : ''));
     }
 
     public function deliveries(): void
@@ -335,12 +367,15 @@ final class ResidentApp
         $this->run($status, fn () => $action($user, $link, $body));
     }
 
-    private function run(int $status, callable $action): void
+    /** @param bool $paged a ação já devolve {data, meta} (lista paginada) */
+    private function run(int $status, callable $action, bool $paged = false): void
     {
         try {
             $result = $action();
             header('Cache-Control: no-store, private');
-            JsonResponse::send($status, ['data' => $result]);
+            JsonResponse::send($status, $paged ? $result : ['data' => $result]);
+        } catch (ResidentTicketClosed $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'ticket_closed', 'message' => $exception->getMessage()]]);
         } catch (ResidentFeatureDisabled $error) {
             $this->disabled($error);
         } catch (RegistryNotFound) {

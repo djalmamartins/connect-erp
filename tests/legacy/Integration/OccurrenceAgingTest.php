@@ -60,7 +60,14 @@ final class OccurrenceAgingTest extends TestCase
 
     private function occurrence(int $days, string $priority): int
     {
-        return (int)$this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'subject' => 'Ocorrência de teste',
-            'priority' => $priority, 'occurred_on' => (new \DateTimeImmutable("{$days} days"))->format('Y-m-d'), 'description' => 'Relato de teste'])['id'];
+        return $this->legacyOccurrence((int)$this->registry->save($this->admin, 'occurrences', ['condominium_id' => $this->condominium, 'subject' => 'Ocorrência de teste',
+            'priority' => $priority, 'occurred_on' => (new \DateTimeImmutable("{$days} days"))->format('Y-m-d'), 'description' => 'Relato de teste'])['id']);
+    }
+
+    /** Ocorrência de antes do ADR 0305 (sem chamado): toda ocorrência nova nasce com chamado, então o teste solta o vínculo. */
+    private function legacyOccurrence(int $id): int
+    {
+        $this->pdo->prepare('UPDATE erp_occurrences SET ticket_id = NULL WHERE id = ?')->execute([$id]);
+        return $id;
     }
 }
