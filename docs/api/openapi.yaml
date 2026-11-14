@@ -2826,6 +2826,27 @@ paths:
         '409': { description: 'Um envio mudou de situação durante o pedido; nada volta à fila' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou comunicado recusado (errors com _form e _announcement); nada volta à fila' }
+  /reports/notification-queue:
+    get:
+      operationId: notificationQueueHealth
+      summary: Saúde da fila de avisos do condomínio (eventos por tipo e situação, espera dos pendentes, tentativas dos com falha, origens e entregas por modo), somente leitura (erp.access e erp.notifications.view, ADR 0280)
+      description: >-
+        rows traz uma linha por tipo de aviso da outbox com o total e uma contagem por situação (pendente, processando,
+        enviado, falhou, cancelado); totals é a soma, e unknown_events conta os de tipo ou situação fora da lista.
+        pending_by_age conta os pendentes e em processamento por tempo desde a criação (até 1 hora, até 1 dia, mais de 1
+        dia). attempts traz a média e o máximo de tentativas dos com falha. failed_ids e oldest_pending_ids listam até 200
+        ids cada, com failed_truncated e pending_truncated. subjects conta os eventos por cadastro de origem, e deliveries,
+        as entregas registradas por modo (log, sandbox, production). Sem destinatário, e-mail, telefone, assunto, texto,
+        conteúdo do evento ou mensagem de erro. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ event_type, event_label, events, pending, processing, sent, failed, cancelled }], totals { events, pending, processing, sent, failed, cancelled }, unknown_events, pending_by_age { ate_1_hora, ate_1_dia, mais_de_1_dia }, attempts { failed, average, max }, failed_ids[], failed_truncated, oldest_pending_ids[], pending_truncated, subjects[{ subject_table, events }], deliveries { rows[{ mode, mode_label, deliveries }], total } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
