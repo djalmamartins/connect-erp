@@ -140,7 +140,7 @@ final class LabSampleYearRemovalTest extends TestCase
 
         $removed = $this->remove();
         self::assertSame([1, 1, 1], [$removed['accountability_publications'], $removed['month_closings'], $removed['budget_lines']]);
-        self::assertSame([1, 0], [$removed['accountability_links'], $removed['accountability_alerts']], 'Links da prestação de contas (ADR 0300) saem antes do condomínio.');
+        self::assertSame([1, 0], [$removed['accountability_links'], $removed['accountability_alerts']], 'Links da prestação de contas (ADR 0301) saem antes do condomínio.');
         self::assertSame([1, 1, 2, 2], [$removed['agreements'], $removed['patrimonial_imports'], $removed['transfers'], $removed['openings']]);
         self::assertSame(1, $removed['investment_links']);
         self::assertSame(3, $removed['agreement_installments']);

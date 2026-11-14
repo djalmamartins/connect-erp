@@ -52,7 +52,7 @@ $this->insert('components/layout/page-head', [
         <?php endif; ?>
     </section>
 
-    <?php // Link público para os moradores (ADR 0300): o do mês e o livro do ano. ?>
+    <?php // Link público para os moradores (ADR 0301): o do mês e o livro do ano. ?>
     <section class="erp-card" id="link-moradores" aria-labelledby="cb-link">
         <div class="erp-card__head"><div><h2 id="cb-link">Link para os moradores</h2><p>Página pública com as contas do mês por categoria e fornecedor e os documentos de cada pagamento. Ela é gerada e enviada sozinha quando o mês é fechado; o prazo é o 5º dia útil.</p></div></div>
         <div class="erp-table-wrap" role="region" aria-labelledby="cb-link" tabindex="0"><table class="erp-table">

@@ -19,7 +19,7 @@ use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\VirtualDisk;
 
-/** Link público da prestação de contas, livro anual e prazo do 5º dia útil (ADR 0300), no MariaDB. */
+/** Link público da prestação de contas, livro anual e prazo do 5º dia útil (ADR 0301), no MariaDB. */
 final class AccountabilityLinksIntegrationTest extends TestCase
 {
     private int $alpha;

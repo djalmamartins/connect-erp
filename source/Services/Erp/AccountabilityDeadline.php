@@ -12,7 +12,7 @@ use Source\Services\CondominiumScope;
 use Source\Support\AppLogger;
 
 /**
- * Prazo da prestação de contas (ADR 0300): o livro do mês anterior precisa estar fechado e enviado aos moradores até o
+ * Prazo da prestação de contas (ADR 0301): o livro do mês anterior precisa estar fechado e enviado aos moradores até o
  * 5º dia útil de cada mês (pedido do Djalma, 14/11/2026).
  *
  * Roda uma vez por dia (tools/accountability-deadline.php, pelo cron). Para cada condomínio ativo:

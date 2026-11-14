@@ -1,6 +1,6 @@
 <?php
 /**
- * Prestação de contas do condomínio (ADR 0300): o link do livro do mês ou do ano.
+ * Prestação de contas do condomínio (ADR 0301): o link do livro do mês ou do ano.
  * Variáveis: $first_name, $condominium, $period_label, $annual ('1' no livro anual), $accountability_link.
  */
 $isAnnual = ($annual ?? '') === '1';

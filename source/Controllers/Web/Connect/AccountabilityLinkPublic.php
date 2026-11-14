@@ -10,7 +10,7 @@ use Source\Services\Erp\AccountabilityLinks;
 use Source\Support\AppLogger;
 
 /**
- * Link público da prestação de contas (ADR 0300), sem login, em qualquer host:
+ * Link público da prestação de contas (ADR 0301), sem login, em qualquer host:
  *  GET /prestacao/{token}                        o livro do mês ou do ano, com a identidade da Connect
  *  GET /prestacao/{token}/documento/{attachment} um documento do livro (comprovante, conta, nota fiscal...)
  *

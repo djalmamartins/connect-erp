@@ -33,7 +33,7 @@ final class MonthClosings
         $this->handle($data, static function (MonthClosing $service, $user, int $condominium, string $competence): string {
             $service->close($user, $condominium, $competence);
             $message = "Competência {$competence} fechada. Os lançamentos dela ficam travados até a reabertura.";
-            // Link da prestação de contas aos moradores (ADR 0300); falha aqui não desfaz o fechamento.
+            // Link da prestação de contas aos moradores (ADR 0301); falha aqui não desfaz o fechamento.
             $links = (new \Source\Services\Erp\AccountabilityLinks())->afterClose($user, $condominium, $competence);
             return $message . ' ' . \Source\Services\Erp\AccountabilityLinks::closeMessage($links);
         });

@@ -1,4 +1,4 @@
--- Link público da prestação de contas para os moradores (ADR 0300).
+-- Link público da prestação de contas para os moradores (ADR 0301).
 -- 1) erp_accountability_links: um link por condomínio, tipo (mensal ou anual) e competência (AAAA-MM ou AAAA), com o
 --    livro agrupado congelado em JSON (sha256 e versão). O token (32 caracteres hexadecimais aleatórios) é o que vai no
 --    link; corrigir e gerar de novo mantém o token e sobe a versão. Revogar desliga o token; gerar de novo depois cria

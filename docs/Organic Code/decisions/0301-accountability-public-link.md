@@ -1,10 +1,10 @@
-# 0300 — Link público da prestação de contas para os moradores, livro anual e prazo do 5º dia útil
+# 0301 — Link público da prestação de contas para os moradores, livro anual e prazo do 5º dia útil
 
 - **Status:** aceito
 - **Data:** 2026-11-14
 - **Relacionados:** ADR 0031 (fechamento mensal), 0054/0055/0059 (fila de avisos), 0098 (verificação pública), 0160
   (antivírus no download), 0174 (anexos e livro caixa CN-007), 0179/0183 (publicação congelada)
-- **Numeração:** primeira da faixa avulsa nova 0300–0319 (a 0140–0159 acabou; 0200–0299 é do Avançar).
+- **Numeração:** faixa avulsa 0300–0319 (a 0140–0159 acabou; 0200–0299 é do Avançar). Saiu como 0300 em paralelo com o ADR 0300 dos logs (thread "Corrigir logs de permissão negada") e foi renumerado para 0301 antes da main.
 
 ## Contexto
 

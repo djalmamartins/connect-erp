@@ -125,7 +125,9 @@ final class AppLogger
             $agent = self::cleanText((string)($_SERVER['HTTP_USER_AGENT'] ?? 'CLI'), 500);
             $pdo = self::pdo();
 
-            $recent = $pdo->prepare("SELECT id,incident_id FROM app_log WHERE fingerprint=:fingerprint AND status='open' AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) ORDER BY id DESC LIMIT 1");
+            // O mesmo erro ainda aberto soma ocorrências no incidente do último dia, em vez de abrir
+            // um registro novo a cada 5 minutos e encher a página de logs (ADR 0258).
+            $recent = $pdo->prepare("SELECT id,incident_id FROM app_log WHERE fingerprint=:fingerprint AND status='open' AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) ORDER BY id DESC LIMIT 1");
             $recent->execute(['fingerprint' => $fingerprint]);
             $existing = $recent->fetch(PDO::FETCH_OBJ);
             $logId = null;

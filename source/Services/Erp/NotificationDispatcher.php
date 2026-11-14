@@ -53,7 +53,7 @@ final class NotificationDispatcher
         'collection.reminder' => ['template' => 'collection-reminder', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'billing'],
         // Convite de morador (ADR 0090): só o morador convidado; o link leva o token emitido na hora do envio.
         'resident.invitation' => ['template' => 'resident-invitation', 'subject' => 'Convite para o portal do condomínio', 'audience' => 'resident'],
-        // Prestação de contas (ADR 0300): o link do mês ou do ano, para as pessoas da unidade que aceitam comunicado.
+        // Prestação de contas (ADR 0301): o link do mês ou do ano, para as pessoas da unidade que aceitam comunicado.
         'accountability.published' => ['template' => 'accountability-link', 'subject' => 'Prestação de contas do condomínio', 'audience' => 'notices'],
     ];
 
@@ -347,7 +347,7 @@ final class NotificationDispatcher
             $context['subject'] = (string)$announcement['subject'];
             $context['body'] = (string)($announcement['body'] ?? '');
         }
-        // Prestação de contas (ADR 0300): o endereço vem do link na hora do envio; revogado não sai.
+        // Prestação de contas (ADR 0301): o endereço vem do link na hora do envio; revogado não sai.
         if (isset($payload['accountability_link_id'])) {
             $stmt = $this->pdo->prepare('SELECT kind, competence, token, status FROM erp_accountability_links WHERE id = :id AND condominium_id = :c');
             $stmt->execute(['id' => (int)$payload['accountability_link_id'], 'c' => (int)$event['condominium_id']]);
