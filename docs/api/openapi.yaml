@@ -2870,6 +2870,27 @@ paths:
         '409': { description: 'Um aviso mudou de situação durante o pedido; nada é cancelado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou aviso recusado (errors com _form e _event); nada é cancelado' }
+  /reports/user-access:
+    get:
+      operationId: userAccessReport
+      summary: Acessos dos usuários ao ERP no condomínio (por papel, sem papel, sem acesso pela regra, exceções de permissão e situação da conta), somente leitura (erp.access e erp.users.view, ADR 0282)
+      description: >-
+        rows traz uma linha por papel cadastrado, do maior nível para o menor, com os usuários que têm acesso ao
+        condomínio (cada um no papel de maior nível); totals soma, com without_role à parte. erp_access conta quem entra e
+        quem não entra no ERP pela regra fail-closed (sem papel não entra; exceção deny vence; allow concede). overrides
+        conta os usuários com exceção de permissão e, por efeito, as exceções e os usuários. by_status conta por situação
+        da conta. Os ids sem papel, sem acesso ao ERP e com exceção vêm até 200 cada, com truncated. O cadastro não guarda
+        o último login, então não há contagem por inatividade. Sem nome, e-mail, telefone ou documento. Não grava nem envia
+        nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, rows[{ role, role_name, level, users }], totals { users, with_role, without_role }, erp_access { with, without }, overrides { users, by_effect[{ effect, overrides, users }] }, by_status[{ status, users }], without_role_ids[], without_role_truncated, without_erp_access_ids[], without_erp_access_truncated, with_overrides_ids[], with_overrides_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
@@ -7094,3 +7115,90 @@ paths:
                   data: { type: object, properties: { pets: { type: array, items: { type: object, properties: { name: { type: string }, species: { type: string }, size: { type: [string, 'null'] }, breed: { type: [string, 'null'] }, vaccinated: { type: boolean } } } }, vehicles: { type: array, items: { type: object, properties: { plate: { type: string }, kind: { type: string }, model: { type: [string, 'null'] }, color: { type: [string, 'null'] }, parking_spot: { type: [string, 'null'] } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa:
+    get:
+      operationId: getResidentTwoFactor
+      tags: [Morador]
+      summary: 'Situação da verificação em duas etapas da conta (opcional para o morador)'
+      description: 'ADR 0304. Conta só de morador não tem 2FA obrigatório; desligado e com a chave de cifra configurada, devolve setup com o segredo e a URI otpauth para o aplicativo autenticador.'
+      security: [{ session: [] }, { residentApp: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { enabled: { type: boolean }, configured: { type: boolean }, required: { type: boolean }, recovery_remaining: { type: integer }, setup: { type: object, properties: { secret: { type: string }, uri: { type: string } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/confirm:
+    post:
+      operationId: confirmResidentTwoFactor
+      tags: [Morador]
+      summary: 'Ligar a verificação em duas etapas'
+      description: 'ADR 0304. Confirma o código do segredo de setup; devolve os códigos de recuperação (só desta vez) e manda aviso por e-mail.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean }, recovery_codes: { type: array, items: { type: string } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/disable:
+    post:
+      operationId: disableResidentTwoFactor
+      tags: [Morador]
+      summary: 'Desligar a verificação em duas etapas'
+      description: 'ADR 0304. Pede o código atual; conta da equipe com 2FA obrigatório recebe 409 two_factor_required. Manda aviso por e-mail.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/recovery:
+    post:
+      operationId: regenerateResidentTwoFactorRecovery
+      tags: [Morador]
+      summary: 'Novos códigos de recuperação'
+      description: 'ADR 0304. Pede o código atual; os códigos anteriores deixam de valer.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean }, recovery_codes: { type: array, items: { type: string } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }

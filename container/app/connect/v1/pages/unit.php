@@ -28,6 +28,10 @@ $species = ['cao' => 'Cão', 'gato' => 'Gato', 'ave' => 'Ave', 'outro' => 'Outro
     <?php endforeach; ?>
 </section>
 <section class="app-section">
+    <h2>Segurança da conta</h2>
+    <a class="app-card app-row" href="<?= app_url('/seguranca') ?>"><span><strong>Verificação em duas etapas</strong><small>Opcional. Ligue se quiser mais proteção ao entrar.</small></span><span aria-hidden="true">›</span></a>
+</section>
+<section class="app-section">
     <h2>Instalar no celular</h2>
     <div class="app-card"><p>No Android, toque em <strong>Instalar</strong> quando o navegador oferecer, ou no menu ⋮ › Adicionar à tela inicial. No iPhone, toque em Compartilhar › Adicionar à Tela de Início.</p>
         <button type="button" class="app-button app-button--ghost" data-app-install hidden>Instalar o aplicativo</button></div>
