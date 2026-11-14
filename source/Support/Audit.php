@@ -19,7 +19,7 @@ final class Audit
 
         try {
             $pdo = Connect::getInstance();
-            $userId = isset($_SESSION["authUser"]) ? (int)$_SESSION["authUser"] : null;
+            $userId = isset($_SESSION["authUser"]) ? (int)$_SESSION["authUser"] : \Source\Models\Auth::actingUserId();
             $context = self::changes($before ?? [], $after ?? []);
             $severity = $action === "delete" ? "warning" : "info";
             $labels = ["create" => "criou", "update" => "alterou", "delete" => "excluiu"];

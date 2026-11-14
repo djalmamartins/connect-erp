@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Revisão de cobertura de 10/11/2026 (ADR 0150): a matriz do ADR 0094 cobre só os controllers listados nela.
  * Esta varredura estática vale para todos os controllers de /api/v1, inclusive os que vierem depois:
- *  - toda rota de /api/v1 passa pelo middleware ApiAuthenticated, menos o /health, a confirmação do 2FA e o webhook do banco (ADR 0156),
+ *  - toda rota de /api/v1 passa pelo middleware ApiAuthenticated, menos o /health, a confirmação do 2FA, a sessão do app do morador (ADR 0303) e o webhook do banco (ADR 0156),
  *    que acontece antes da sessão completa;
  *  - toda ação pública de instância chama Auth::user() ou Access::can, direto ou por um método do próprio
  *    controller (authorize, write, guard...).
@@ -17,7 +17,9 @@ use PHPUnit\Framework\TestCase;
 final class ApiGuardCoverageTest extends TestCase
 {
     private const ROOT = __DIR__ . '/../../..';
-    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify', 'POST /webhooks/bank/{adapter}/{secret}'];
+    // Sessão do app do morador (ADR 0303): entrar e sair usam o token Bearer próprio, sem sessão; o DELETE só revoga o token
+    // que veio no cabeçalho.
+    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify', 'POST /resident/app-sessions', 'POST /resident/app-sessions/verify', 'DELETE /resident/app-sessions/current', 'POST /webhooks/bank/{adapter}/{secret}'];
 
     public function testEveryApiRouteUsesTheAuthenticatedMiddleware(): void
     {
@@ -57,7 +59,7 @@ final class ApiGuardCoverageTest extends TestCase
                 }
             }
             foreach ($actions as $action) {
-                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify', 'BankWebhook::receive'], true)) {
+                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify', 'BankWebhook::receive', 'ResidentAppSessions::store', 'ResidentAppSessions::verify', 'ResidentAppSessions::destroy'], true)) {
                     $unguarded[] = $controller . '::' . $action;
                 }
             }

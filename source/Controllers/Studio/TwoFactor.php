@@ -32,10 +32,10 @@ final class TwoFactor extends Controller
         $pending = Auth::twoFactorPending();
         if (!$pending) {
             if (!empty($data["csrf"])) {
-                echo json_encode(["redirect" => url($next . "/login")]);
+                echo json_encode(["redirect" => $next === "/app" ? app_url("/login") : url($next . "/login")]);
                 return;
             }
-            redirect($next . "/login");
+            redirect($next === "/app" ? app_url("/login") : $next . "/login");
         }
 
         $twoFactor = new TwoFactorService();
@@ -58,19 +58,22 @@ final class TwoFactor extends Controller
                 }
                 (new \Source\Core\Session())->set("auth2faRecoveryCodes", $codes);
                 // O ERP mostra os códigos na própria moldura: quem só tem erp.access não abre o Studio.
-                echo json_encode(["redirect" => ($next === "/erp" ? erp_url("/seguranca/codigos") : url("/studio/seguranca/2fa?novo=1"))]);
+                echo json_encode(["redirect" => match ($next) { "/erp" => erp_url("/seguranca/codigos"), "/app" => app_url("/seguranca/codigos"), default => url("/studio/seguranca/2fa?novo=1") }]);
                 return;
             }
             if (!$auth->completeTwoFactor($code, $twoFactor)) {
                 echo json_encode(["message" => $auth->message()->render()]);
                 return;
             }
-            if (!AccessControl::can($next === "/erp" ? "erp.access" : "studio.access", Auth::user())) {
+            // App do morador (ADR 0302): a permissão é ter vínculo de morador válido, não um papel.
+            $allowed = $next === "/app" ? (new \Source\Services\Resident\ResidentLinks())->forUser(Auth::user()) !== []
+                : AccessControl::can($next === "/erp" ? "erp.access" : "studio.access", Auth::user());
+            if (!$allowed) {
                 Auth::logout();
                 echo json_encode(["message" => $this->message->warning("Sua conta não possui acesso a este ambiente.")->render()]);
                 return;
             }
-            echo json_encode(["redirect" => $next === "/erp" ? erp_url("/dashboard") : url(match ($next) { "/helpdesk" => "/helpdesk/tickets", default => "/studio/dash" })]);
+            echo json_encode(["redirect" => match ($next) { "/erp" => erp_url("/dashboard"), "/app" => app_url("/"), "/helpdesk" => url("/helpdesk/tickets"), default => url("/studio/dash") }]);
             return;
         }
 
@@ -79,7 +82,7 @@ final class TwoFactor extends Controller
             if (!SecretBox::isConfigured()) {
                 Auth::cancelTwoFactor();
                 $this->message->error("A autenticação em dois fatores é obrigatória, mas não está configurada no servidor. Avise o administrador.")->flash();
-                redirect($next . "/login");
+                redirect($next === "/app" ? app_url("/login") : $next . "/login");
             }
             $user = (new User())->findById((int)$pending->user);
             $secret = $twoFactor->beginSetup((int)$pending->user);
@@ -184,6 +187,7 @@ final class TwoFactor extends Controller
         return match ($value) {
             "helpdesk", "/helpdesk" => "/helpdesk",
             "erp", "/erp" => "/erp",
+            "app", "/app" => "/app",
             default => "/studio",
         };
     }

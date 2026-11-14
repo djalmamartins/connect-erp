@@ -31,7 +31,7 @@
                 <label><span>Código</span><span class="connect-login__field"><input name="code" inputmode="<?= $mode === 'setup' ? 'numeric' : 'text' ?>" autocomplete="one-time-code" maxlength="16" placeholder="000000" required autofocus></span></label>
                 <button class="connect-login__submit" type="submit"><span>Verificar</span><strong>→</strong></button>
             </form>
-            <footer><a href="<?= url($next . '/login') ?>">Voltar e entrar com outra conta</a></footer>
+            <footer><a href="<?= $next === '/app' ? app_url('/login') : url($next . '/login') ?>">Voltar e entrar com outra conta</a></footer>
         </div>
     </section>
 </main>

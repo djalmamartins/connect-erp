@@ -273,6 +273,7 @@ else
     "https://erp.connect.lab/convite|200|Convite de morador /convite"
     "https://www.connect.lab/studio/login|200|Studio login"
     "https://www.connect.lab/helpdesk/login|200|Help Desk login"
+    "https://www.connect.lab/app/login|200|Aplicativo do morador /app/login"
     "https://www.connect.lab/|200 302 503|Site público"
   )
   : >"$logs/http.log"

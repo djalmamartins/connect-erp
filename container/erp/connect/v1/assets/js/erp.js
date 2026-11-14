@@ -1978,6 +1978,16 @@
           .catch(function (error) { busy(button, false); progress.hidden = true; toast(error.message, 'danger'); });
       });
     }
+    /* Mostrar ou esconder no aplicativo do morador (ADR 0302). */
+    $$('[data-disk-share]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var shared = button.getAttribute('data-shared') !== '1';
+        busy(button, true);
+        call('POST', api + '/' + button.getAttribute('data-disk-share') + '/share', { shared: shared })
+          .then(function () { toast(shared ? 'Arquivo visível aos moradores.' : 'Arquivo escondido dos moradores.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
     var dialog = $('#disk-delete', root);
     var deleteForm = dialog && $('[data-disk-delete-form]', dialog);
     $$('[data-disk-delete]', root).forEach(function (button) {
