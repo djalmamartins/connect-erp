@@ -13,7 +13,10 @@
 #
 # Ordem e travas:
 #   0. confere a pasta: precisa estar na main e sem alteração local em arquivo versionado;
-#   1. git pull --ff-only da main (nunca faz merge nem reescreve nada);
+#   0b. merge pela metade (MERGE_HEAD) sem conflito é concluído com `git commit --no-edit`; com conflito, para;
+#   1. git pull --ff-only da main. Se a main local tiver commits só dela (ex.: o trabalho de rede local), faz
+#      `git merge --no-edit origin/main`, que guarda esses commits; conflito = `git merge --abort` e para.
+#      Nada abre o editor (GIT_MERGE_AUTOEDIT=no) e nada reescreve o histórico;
 #   2. sobe o banco (legacy-db) e o app pelo compose;
 #   3. backup do banco (tools/backup-database.sh) e dos arquivos privados (tools/backup-files.sh).
 #      Sem backup, para aqui;
@@ -28,6 +31,8 @@
 #
 # O script não apaga nada, não roda `docker compose down -v` e não envia e-mail nem boleto real.
 set -uo pipefail
+# Merge nunca abre o vim: a mensagem padrão do git basta (o vim aberto deixava o merge pela metade).
+export GIT_MERGE_AUTOEDIT=no
 
 project=$(cd "$(dirname "$0")/.." && pwd)
 cd "$project" || exit 1
@@ -85,6 +90,19 @@ if [ "$branch" != "main" ]; then
   add "Pasta" FALHOU "está no branch $branch; rode: git checkout main"
   stop "o script só roda na main."
 fi
+if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then
+  if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+    git diff --name-only --diff-filter=U >"$logs/merge-conflitos.txt"
+    add "Pasta" FALHOU "merge pela metade com conflito (ver merge-conflitos.txt)"
+    stop "há um merge com conflito; mande a lista de arquivos para o Claude resolver."
+  fi
+  if git commit --no-edit 2>&1 | tee "$logs/merge-concluido.log"; then
+    add "Merge pendente" OK "concluído com git commit --no-edit ($(git rev-parse --short HEAD))"
+  else
+    add "Merge pendente" FALHOU "ver merge-concluido.log"
+    stop "não foi possível concluir o merge que estava pela metade."
+  fi
+fi
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git status --short | grep -v '^??' >"$logs/alteracoes-locais.txt"
   add "Pasta" FALHOU "há arquivos versionados alterados (ver alteracoes-locais.txt)"
@@ -109,9 +127,20 @@ else
     else
       add "git pull" OK "$before -> $after ($(git rev-list --count "$before..$after") commits)"
     fi
+  elif git fetch origin main >>"$logs/git-pull.log" 2>&1 && [ -n "$(git rev-list origin/main..HEAD)" ]; then
+    # A main local tem commits só dela: junta a origin/main sem perder esses commits e sem abrir editor.
+    local_only=$(git rev-list --count origin/main..HEAD)
+    if git merge --no-edit origin/main 2>&1 | tee -a "$logs/git-pull.log"; then
+      add "git pull" OK "$before -> $(git rev-parse --short HEAD) (merge da origin/main; $local_only commits locais mantidos)"
+    else
+      git diff --name-only --diff-filter=U >"$logs/merge-conflitos.txt"
+      git merge --abort 2>/dev/null
+      add "git pull" FALHOU "conflito ao juntar a origin/main; merge desfeito (ver merge-conflitos.txt)"
+      stop "a main local e a origin/main mexem nos mesmos arquivos; mande merge-conflitos.txt para o Claude."
+    fi
   else
-    add "git pull" FALHOU "ver git-pull.log (a main local divergiu da origin?)"
-    stop "não foi possível atualizar a main por fast-forward."
+    add "git pull" FALHOU "ver git-pull.log"
+    stop "não foi possível atualizar a main."
   fi
 fi
 echo "main em $(git log -1 --format='%h %s')"
