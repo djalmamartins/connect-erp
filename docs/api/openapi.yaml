@@ -2585,6 +2585,50 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /pets/deactivate-unattached:
+    post:
+      operationId: deactivateUnattachedPets
+      summary: Inativação em lote dos animais de estimação ativos de unidades sem nenhum morador ativo, como Inativo pelo cadastro, tudo ou nada e com prévia (erp.access, erp.pets.view, erp.pets.manage e erp.residents.view, ADR 0269)
+      description: >-
+        Mesmo desenho da inativação em lote dos veículos (ADR 0267). Morador ativo é o vínculo ativo, sem excluído e sem
+        fim de vínculo passado. Sem pet_ids, entram os animais ativos do condomínio vinculados a uma unidade sem morador
+        ativo; ficam de fora os só com o texto da unidade (skipped_unlinked), os de unidade inativa (skipped_inactive_unit)
+        e os que o formulário não regrava, como espécie fora da lista (skipped_invalid). Com pet_ids, recusa animal não
+        encontrado no condomínio, já inativo, cuja unidade ainda tem morador ativo ou nesses casos. Cada um é regravado
+        pelo cadastro como Inativo; auditoria deactivate_unattached por animal, com o motivo. by_species conta por espécie
+        do cadastro. Nada é apagado e nenhum aviso é enviado. Sem nome, raça, porte, tutor, vacinação, unidade ou
+        observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, pet_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_unlinked, skipped_inactive_unit, skipped_invalid, count, by_species (espécies do cadastro), changed, pets[{ id, species }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou animal recusado (errors com _form e _pet); nada é gravado' }
+  /reports/vacant-units:
+    get:
+      operationId: vacantUnits
+      summary: Unidades ativas sem morador ativo, há quanto tempo, quantas ainda têm visitante liberado, veículo ou animal ativo e a dívida vencida em aberto das vagas, somente leitura (erp.access, erp.units.view, erp.residents.view, erp.visitors.view, erp.vehicles.view, erp.pets.view e erp.entries.view, ADR 0270)
+      description: >-
+        Morador ativo é o vínculo ativo, sem excluído e sem fim de vínculo passado, como nos lotes (ADR 0265, 0267 e 0269).
+        units separa as unidades ativas em ocupadas e vagas, e as vagas em with_leftovers e clean. vacancy conta as vagas
+        pelo fim de vínculo mais recente (nunca teve vínculo, sem data, até 30, de 31 a 180 e mais de 180 dias), somando
+        units.vacant. rows traz uma linha por cadastro (visitantes liberados, veículos e animais ativos), com as vagas e os
+        registros; totals.records é a soma. debt soma as contas de receita vencidas e em aberto das vagas (a regra da saída
+        da unidade). Sem nome, documento, placa, rótulo ou id de unidade. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, units { active, occupied, vacant, with_leftovers, clean }, vacancy[{ bucket, bucket_label, units }], rows[{ registry, registry_label, units, records }], totals { records }, debt { units, entries, amount_cents } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
