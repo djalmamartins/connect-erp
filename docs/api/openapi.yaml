@@ -2699,6 +2699,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou centro de custo recusado (errors com _form e _cost_center); nada é gravado' }
+  /reports/virtual-disk:
+    get:
+      operationId: virtualDiskInventory
+      summary: Inventário do Disco Virtual do condomínio (arquivos e espaço por pasta, antivírus, idade dos envios, cópias do mesmo arquivo em pastas diferentes e lixeira), somente leitura (erp.access e erp.documents.view, ADR 0274)
+      description: >-
+        Uma linha por pasta do Disco Virtual, sempre todas (VirtualDisk::FOLDERS), com os arquivos não excluídos, os bytes e as situações do
+        antivírus (clean, infected, unscanned, error); totals é a soma. by_age conta os arquivos pelo envio (até 90, de 91
+        a 365 e mais de 365 dias). duplicates conta os conteúdos (sha256) com mais de um arquivo, as cópias além da
+        primeira e os bytes delas. trash conta os excluídos (a exclusão é lógica). Sem título, nome de arquivo, caminho, hash
+        ou quem enviou. Não grava, não lê arquivo e não envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ folder, folder_label, documents, bytes, clean, infected, unscanned, error }], totals { documents, bytes, clean, infected, unscanned, error }, by_age { ate_90, de_91_a_365, mais_de_365 }, duplicates { groups, extra_copies, extra_bytes }, trash { documents, bytes } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
