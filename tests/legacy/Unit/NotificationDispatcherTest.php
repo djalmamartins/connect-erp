@@ -69,13 +69,14 @@ final class NotificationDispatcherTest extends TestCase
             'agreement-breached' => ['number' => '12', 'total' => 'R$ 1.030,00', 'overdue_installments' => '2'],
             'reservation-approved' => ['area' => 'Salão', 'date' => '20/11/2026', 'starts' => '18:00', 'ends' => '22:00', 'fee' => 'R$ 80,00'],
             'resident-invitation' => ['invitation_link' => 'https://connect.test/convite/abc', 'expires_days' => '7'],
+            'accountability-link' => ['accountability_link' => 'https://connect.test/prestacao/0123456789abcdef0123456789abcdef', 'period_label' => 'de outubro de 2026', 'annual' => ''],
         ];
         $mail = new MailTemplate();
         foreach ($cases as $template => $vars) {
             $html = $mail->render($template, $vars + $base);
             self::assertStringNotContainsString($xss, $html, "{$template} escapa as variáveis.");
             self::assertStringContainsString('&lt;script&gt;', $html);
-            foreach (['amount', 'total', 'date', 'digitable_line', 'invitation_link'] as $key) {
+            foreach (['amount', 'total', 'date', 'digitable_line', 'invitation_link', 'accountability_link', 'period_label'] as $key) {
                 if (isset($vars[$key])) {
                     self::assertStringContainsString($vars[$key], $html, "{$template} mostra {$key}.");
                 }

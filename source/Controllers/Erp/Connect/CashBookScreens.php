@@ -9,6 +9,8 @@ use Source\Core\Connect;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
+use DomainException;
+use Source\Services\Erp\AccountabilityLinks;
 use Source\Services\Erp\CashBook;
 use Source\Services\Erp\CashBookDocument;
 use Source\Services\Erp\RecurringEntries;
@@ -24,6 +26,10 @@ use Source\Support\Message;
  *  GET /prestacao-de-contas/livro-caixa/pdf?mes=AAAA-MM       PDF pronto (com as imagens anexadas)
  *  GET /prestacao-de-contas/livro-caixa/pacote?mes=AAAA-MM    ZIP com o PDF e todos os anexos numerados
  *  GET /prestacao-de-contas/livro-caixa/imprimir?mes=AAAA-MM  o mesmo documento para imprimir no navegador
+ *  POST /prestacao-de-contas/livro-caixa/link                 gera ou atualiza o link público do mês ou do ano (ADR 0300)
+ *  POST /prestacao-de-contas/livro-caixa/link/{id}/enviar     envia o link aos moradores do condomínio
+ *  POST /prestacao-de-contas/livro-caixa/link/{id}/revogar    desliga o link (motivo)
+ * O cartão do link aparece para quem vê o livro; gerar, enviar e revogar exigem erp.closing.manage, como fechar o mês.
  *
  * Exige erp.entries.view (como a API). Sem banco ou sem permissão, cashReady false = demonstração.
  */
@@ -59,11 +65,15 @@ final class CashBookScreens
         $context = CondominiumContext::id();
         $month = self::month($_GET['mes'] ?? null, date('Y-m'));
         $data = ['cashReady' => false, 'cashMonth' => $month, 'cashNeedsCondo' => $context === null, 'cashError' => null, 'cashBook' => null,
-            'cashCanManage' => Access::can('erp.entries.manage', $user)];
+            'cashCanManage' => Access::can('erp.entries.manage', $user), 'cashLinks' => ['monthly' => null, 'annual' => null], 'cashCanPublish' => false];
         try {
             if ($context !== null) {
                 try {
                     $data['cashBook'] = (new CashBook())->build($user, $context, $month);
+                    $links = new AccountabilityLinks();
+                    $data['cashLinks'] = ['monthly' => $links->forPeriod($user, $context, 'monthly', $month),
+                        'annual' => $links->forPeriod($user, $context, 'annual', substr($month, 0, 4))];
+                    $data['cashCanPublish'] = Access::can('erp.closing.manage', $user);
                 } catch (InvalidArgumentException $error) {
                     $data['cashError'] = $error->getMessage();
                 } catch (CondominiumAccessDenied) {
@@ -114,6 +124,83 @@ final class CashBookScreens
             header('X-Frame-Options: DENY');
             echo $document->html($book, false, erp_url(self::ROUTE . '?mes=' . $book['competence']));
         }, 'cash_book_print');
+    }
+
+    public function generateLink(array $data): void
+    {
+        $this->linkAction($data, static function (AccountabilityLinks $links, User $user, int $condominium, string $month) use ($data): string {
+            $kind = ($data['kind'] ?? '') === 'annual' ? 'annual' : 'monthly';
+            $link = $links->generate($user, $condominium, $kind, $kind === 'annual' ? substr($month, 0, 4) : $month);
+            $what = $kind === 'annual' ? 'O livro anual' : 'O link do mês';
+            return match (true) {
+                $link['created'] => "{$what} foi criado. Copie o endereço ou envie aos moradores.",
+                $link['changed'] => "{$what} foi atualizado para a versão {$link['version']}. O endereço continua o mesmo.",
+                default => "{$what} já estava atualizado.",
+            };
+        });
+    }
+
+    public function sendLink(array $data): void
+    {
+        $this->linkAction($data, function (AccountabilityLinks $links, User $user) use ($data): string {
+            $sent = $links->notifyResidents($user, $this->id($data));
+            return $sent['already_sent'] ? 'Esta versão já foi enviada aos moradores.'
+                : sprintf('Link enviado para a fila de e-mails de %d unidade%s do condomínio.', $sent['units'], $sent['units'] === 1 ? '' : 's');
+        });
+    }
+
+    public function revokeLink(array $data): void
+    {
+        $this->linkAction($data, function (AccountabilityLinks $links, User $user) use ($data): string {
+            $links->revoke($user, $this->id($data), $data['reason'] ?? null);
+            return 'Link desativado. Quem abrir o endereço antigo verá que ele não existe mais.';
+        });
+    }
+
+    /** @param callable(AccountabilityLinks, User, int, string): string $action */
+    private function linkAction(array $data, callable $action): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect(erp_url('/login'));
+            return;
+        }
+        $month = self::month($data['mes'] ?? null, date('Y-m'));
+        $back = erp_url(self::ROUTE . '?mes=' . $month) . '#link-moradores';
+        if (!Access::can('erp.access', $user) || !Access::can('erp.entries.view', $user) || !Access::can('erp.closing.manage', $user)) {
+            http_response_code(403);
+            (new Message())->error('Só quem pode fechar o mês gera, envia ou desativa o link da prestação de contas.')->flash();
+            redirect($back);
+            return;
+        }
+        if (!csrf_verify($data)) {
+            (new Message())->error('Sua sessão expirou. Tente de novo.')->flash();
+            redirect($back);
+            return;
+        }
+        $condominium = CondominiumContext::id();
+        if ($condominium === null) {
+            (new Message())->warning('Escolha um condomínio na barra superior.')->flash();
+            redirect($back);
+            return;
+        }
+        try {
+            (new Message())->success($action(new AccountabilityLinks(), $user, $condominium, $month))->flash();
+        } catch (InvalidArgumentException | DomainException $error) {
+            (new Message())->error($error->getMessage())->flash();
+        } catch (CondominiumAccessDenied) {
+            (new Message())->error('Link fora do seu escopo de acesso.')->flash();
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'accountability_link_screen_failed', 'condominium_id' => $condominium]);
+            (new Message())->error('Não foi possível concluir agora. Tente de novo.')->flash();
+        }
+        redirect($back);
+    }
+
+    private function id(array $data): int
+    {
+        $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        return $id === false ? 0 : (int)$id;
     }
 
     /** @param callable(array, CashBookDocument): void $send */

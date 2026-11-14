@@ -76,7 +76,7 @@ final class ErpCashBookTest extends TestCase
 
     public function testAttachmentKindsFoldersAndUploadTypes(): void
     {
-        self::assertSame(['nota_fiscal', 'comprovante', 'recibo', 'outro'], array_keys(EntryAttachments::KINDS));
+        self::assertSame(['nota_fiscal', 'conta', 'comprovante', 'recibo', 'outro'], array_keys(EntryAttachments::KINDS), 'Conta ou fatura entrou no ADR 0300.');
         foreach (EntryAttachments::FOLDER as $kind => $folder) {
             self::assertArrayHasKey($kind, EntryAttachments::KINDS);
             self::assertArrayHasKey($folder, VirtualDisk::FOLDERS, 'Cada tipo cai numa pasta do Disco Virtual.');

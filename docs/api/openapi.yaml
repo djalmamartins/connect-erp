@@ -1501,6 +1501,93 @@ paths:
         '409': { description: A versão não é a atual }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /accountability-links:
+    get:
+      operationId: accountabilityLinksList
+      summary: Links públicos da prestação de contas de um condomínio, sem o conteúdo (erp.closing.view + erp.entries.view, ADR 0300)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: kind, in: query, schema: { type: string, enum: [monthly, annual] } }
+        - { name: period, in: query, schema: { type: string }, description: 'AAAA-MM no mensal, AAAA no anual (junto com kind)' }
+      responses:
+        '200': { description: '{ data: { rows[{ id, kind, period, status, version, url, sent_version, sent_at, view_count, generated_at }] } } (url null quando revogado)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: accountabilityLinksGenerate
+      summary: Gera ou atualiza o link público do mês (mês fechado) ou do ano (doze meses fechados) (erp.closing.manage, ADR 0300)
+      description: >-
+        O livro do mês (regime de caixa) agrupado por categoria e fornecedor, com os documentos de cada pagamento
+        (comprovante, conta, nota fiscal, recibo, outros), congelado em JSON com sha256. O mesmo conteúdo não muda nada
+        (200, created e changed false); conteúdo diferente sobe a versão e mantém o endereço. Link revogado ganha
+        endereço novo. Recebimentos das unidades saem só somados. O fechamento do mês já gera e envia sozinho.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, period]
+              properties:
+                condominium_id: { type: integer }
+                kind: { type: string, enum: [monthly, annual], default: monthly }
+                period: { type: string, description: 'AAAA-MM no mensal, AAAA no anual' }
+      responses:
+        '200': { description: 'Nada mudou: { data: { created: false, changed: false, id, url, version, ... } }' }
+        '201': { description: '{ data: { created, changed, id, kind, period, status, version, url, sha256, ... } }' }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Mês (ou algum mês do ano) ainda aberto }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /accountability-links/{id}/send:
+    post:
+      operationId: accountabilityLinksSend
+      summary: Envia o link aos moradores do condomínio, um aviso por unidade na fila do ERP (erp.closing.manage, ADR 0300)
+      description: >-
+        Público "notices" (pessoas ativas da unidade com e-mail que não recusaram comunicado). A mesma versão não sai
+        duas vezes (already_sent). Fora de produção nada é enviado a morador (NotificationDispatcher, ADR 0055).
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { units, version, already_sent } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Link revogado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /accountability-links/{id}/revoke:
+    post:
+      operationId: accountabilityLinksRevoke
+      summary: Desativa o endereço público com motivo; nada é apagado (erp.closing.manage, ADR 0300)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3, maxLength: 255 }
+      responses:
+        '200': { description: '{ data: { id, status: revoked, url: null, revoke_reason, revoked_at } }' }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Já revogado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/deliveries:
     get:
       operationId: deliveriesReport
@@ -4196,7 +4283,7 @@ paths:
               type: object
               required: [kind, file]
               properties:
-                kind: { type: string, enum: [nota_fiscal, comprovante, recibo, outro] }
+                kind: { type: string, enum: [nota_fiscal, conta, comprovante, recibo, outro] }
                 title: { type: string, maxLength: 160 }
                 file: { type: string, format: binary }
       responses:
