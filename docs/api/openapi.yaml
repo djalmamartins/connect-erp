@@ -321,6 +321,133 @@ components:
             code: { const: validation_failed }
             message: { type: string }
             fields: { type: object, additionalProperties: { type: string } }
+    ResidentLink:
+      type: object
+      description: Vínculo do morador com uma unidade (ADR 0302). features lista as funções ligadas na matriz do portal para este vínculo.
+      properties:
+        resident_id: { type: integer }
+        name: { type: string }
+        relationship: { type: string, enum: [owner, tenant, resident, financial] }
+        relationship_label: { type: string }
+        condominium_id: { type: integer }
+        condominium_name: { type: string }
+        unit_id: { type: integer }
+        unit_label: { type: string }
+        features: { type: array, items: { type: string, enum: [boletos, reservations, occurrences, announcements, documents, accountability, deliveries, visitors, assemblies] } }
+    ResidentCharge:
+      type: object
+      properties:
+        entry_id: { type: integer }
+        description: { type: string }
+        competence: { type: string, example: '2026-11' }
+        due_on: { type: string, format: date }
+        paid_on: { type: [string, 'null'], format: date }
+        amount_cents: { type: integer }
+        situation: { type: string, enum: [open, overdue, paid, renegotiated] }
+        charge:
+          type: [object, 'null']
+          description: Boleto ativo da conta (null quando não emitido ou renegociado)
+          properties:
+            id: { type: integer }
+            status: { type: string, enum: [pending, registered, paid] }
+            digitable_line: { type: [string, 'null'] }
+            barcode: { type: [string, 'null'] }
+            pix_copy_paste: { type: [string, 'null'] }
+            pdf_available: { type: boolean, description: 'GET /resident/charges/{id}/pdf' }
+    ResidentReservation:
+      type: object
+      properties:
+        id: { type: integer }
+        area: { type: string }
+        reserved_on: { type: string, format: date }
+        starts_time: { type: [string, 'null'], example: '14:00' }
+        ends_time: { type: [string, 'null'], example: '18:00' }
+        fee_cents: { type: [integer, 'null'] }
+        status: { type: string, enum: [active, confirmed, inactive], description: 'active = aguardando aprovação' }
+    ResidentCommonArea:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        booking_mode: { type: string, enum: [approval, free, blocked] }
+        capacity: { type: [integer, 'null'] }
+        fee_cents: { type: [integer, 'null'] }
+        min_advance_days: { type: [integer, 'null'] }
+        max_advance_days: { type: [integer, 'null'] }
+        opening_time: { type: [string, 'null'] }
+        closing_time: { type: [string, 'null'] }
+        rules: { type: string }
+    ResidentAnnouncement:
+      type: object
+      properties:
+        id: { type: integer }
+        subject: { type: string }
+        body: { type: string }
+        published_at: { type: string, example: '2026-11-14 09:00:00' }
+    ResidentOccurrence:
+      type: object
+      properties:
+        id: { type: integer }
+        subject: { type: string }
+        priority: { type: string, enum: [baixa, media, alta] }
+        occurred_on: { type: string, format: date }
+        description: { type: string }
+        status: { type: string, enum: [active, running, done], description: 'active = aberta' }
+        has_ticket: { type: boolean }
+    ResidentDelivery:
+      type: object
+      properties:
+        id: { type: integer }
+        recipient: { type: string }
+        carrier: { type: string, enum: [correios, mercado_livre, amazon, outra] }
+        tracking_code: { type: [string, 'null'] }
+        received_on: { type: string, format: date }
+        received_time: { type: [string, 'null'] }
+        picked_up_on: { type: [string, 'null'], format: date }
+        picked_up_by: { type: [string, 'null'] }
+        status: { type: string, enum: [active, picked_up], description: 'active = aguardando retirada' }
+    ResidentVisit:
+      type: object
+      properties:
+        id: { type: integer }
+        visitor_name: { type: string }
+        visitor_document: { type: [string, 'null'], description: 'Mascarado: só os 3 últimos caracteres' }
+        expected_on: { type: string, format: date }
+        expected_until: { type: [string, 'null'], format: date }
+        notes: { type: string }
+        status: { type: string, enum: [active, done, inactive], description: 'active = prevista' }
+    ResidentAssembly:
+      type: object
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [ordinaria, extraordinaria] }
+        mode: { type: string, enum: [presencial, virtual, hibrida] }
+        title: { type: string }
+        location: { type: string, description: Endereço ou link da sala virtual }
+        first_call_at: { type: string }
+        second_call_at: { type: [string, 'null'] }
+        status: { type: string, enum: [convened, open, closed] }
+    ResidentDocument:
+      type: object
+      properties:
+        id: { type: integer }
+        folder: { type: string, enum: [atas, contratos, plantas, notas_fiscais, outros] }
+        folder_label: { type: string }
+        title: { type: string }
+        mime: { type: string }
+        size_bytes: { type: integer }
+        uploaded_at: { type: string }
+    ResidentError:
+      type: object
+      description: 'Erros do app do morador: 401 unauthenticated, 403 not_resident ou feature_disabled (com feature), 404 not_found, 409 conflict, 422 validation_failed (com fields)'
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, enum: [unauthenticated, not_resident, feature_disabled, not_found, conflict, validation_failed, invalid_json, csrf_invalid, bank_unavailable] }
+            message: { type: string }
+            feature: { type: string }
+            fields: { type: object, additionalProperties: { type: string } }
   responses:
     Unauthenticated:
       description: Sessão ausente ou ainda sem o segundo fator
@@ -4362,6 +4489,23 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /documents/{id}/share:
+    post:
+      operationId: shareVirtualDiskFile
+      summary: 'Mostra ou esconde o arquivo no aplicativo do morador (erp.documents.manage, ADR 0302)'
+      description: 'Corpo { shared: true|false }. Só arquivos liberados pelo antivírus podem ser baixados pelo morador. Auditado.'
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [shared], properties: { shared: { type: boolean } } } } }
+      responses:
+        '200': { description: '{ data: arquivo com shared_with_residents }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: shared ausente ou inválido }
   /entries/{id}/attachments:
     get:
       operationId: listEntryAttachments
@@ -5923,3 +6067,507 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '429': { description: Muitas buscas em pouco tempo }
+  /resident/me:
+    get:
+      operationId: getResidentMe
+      tags: [Morador]
+      summary: 'Pessoa, vínculos e vínculo atual'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { user: { type: object, properties: { id: { type: integer }, name: { type: string }, email: { type: string } } }, current: { $ref: '#/components/schemas/ResidentLink' }, links: { type: array, items: { $ref: '#/components/schemas/ResidentLink' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/summary:
+    get:
+      operationId: getResidentSummary
+      tags: [Morador]
+      summary: 'Resumo da tela inicial (só funções ligadas)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { features: { type: array, items: { type: string } }, charges: { type: object, properties: { open_count: { type: integer }, open_cents: { type: integer }, overdue_cents: { type: integer }, next_due_on: { type: [string, 'null'] } } }, deliveries_waiting: { type: integer }, visits_today: { type: integer }, next_reservations: { type: array, items: { $ref: '#/components/schemas/ResidentReservation' } }, announcements: { type: array, items: { $ref: '#/components/schemas/ResidentAnnouncement' } }, assemblies: { type: array, items: { $ref: '#/components/schemas/ResidentAssembly' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/charges:
+    get:
+      operationId: getResidentCharges
+      tags: [Morador]
+      summary: 'Extrato da unidade com o boleto de cada conta (função boletos; proprietário, inquilino ou responsável financeiro)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date }, description: 'Padrão: 1º dia de 12 meses atrás' }
+        - { name: to, in: query, required: false, schema: { type: string, format: date }, description: 'Padrão: último dia de daqui a 3 meses' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { unit_label: { type: string }, from: { type: string, format: date }, to: { type: string, format: date }, as_of: { type: string, format: date }, totals: { type: object, properties: { open_cents: { type: integer }, overdue_cents: { type: integer }, paid_cents: { type: integer } } }, lines: { type: array, items: { $ref: '#/components/schemas/ResidentCharge' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /resident/charges/{id}/pdf:
+    get:
+      operationId: getResidentChargePdf
+      tags: [Morador]
+      summary: 'PDF do boleto (só boleto registrado do Inter, da unidade do vínculo)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não pode mais ser feito pelo app, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '502': { description: O banco não devolveu o PDF }
+  /resident/accountability:
+    get:
+      operationId: getResidentAccountability
+      tags: [Morador]
+      summary: 'Links publicados da prestação de contas (ADR 0301)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { type: object, properties: { id: { type: integer }, kind: { type: string, enum: [monthly, annual] }, competence: { type: string }, version: { type: integer }, generated_at: { type: string }, url: { type: string } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/announcements:
+    get:
+      operationId: getResidentAnnouncements
+      tags: [Morador]
+      summary: 'Comunicados para todos e para a unidade, já liberados'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentAnnouncement' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/common-areas:
+    get:
+      operationId: getResidentCommonAreas
+      tags: [Morador]
+      summary: 'Áreas comuns reserváveis e regras'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentCommonArea' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/reservations:
+    get:
+      operationId: getResidentReservations
+      tags: [Morador]
+      summary: 'Reservas (de 30 dias atrás em diante) e lista de espera da unidade'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { reservations: { type: array, items: { $ref: '#/components/schemas/ResidentReservation' } }, waitlist: { type: array, items: { type: object, properties: { id: { type: integer }, area: { type: string }, desired_on: { type: string, format: date } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: requestResidentReservation
+      tags: [Morador]
+      summary: 'Pedir reserva (mesmas regras do ERP: antecedência, horário, sobreposição; área livre já confirma)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [common_area_id, reserved_on]
+              properties:
+                common_area_id: { type: integer }
+                reserved_on: { type: string, format: date }
+                starts_time: { type: string, example: '14:00' }
+                ends_time: { type: string, example: '18:00' }
+                notes: { type: string, maxLength: 1000 }
+      responses:
+        '201':
+          description: Reserva criada (status active = aguardando, confirmed = confirmada)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/reservations/{id}/cancel:
+    post:
+      operationId: cancelResidentReservation
+      tags: [Morador]
+      summary: 'Cancelar a própria reserva (de hoje em diante; confirmada só sem taxa cobrada)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { id: { type: integer }, status: { const: inactive } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Não pode mais ser feito pelo app, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/waitlist:
+    post:
+      operationId: joinResidentWaitlist
+      tags: [Morador]
+      summary: 'Entrar na lista de espera de uma área'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [common_area_id, desired_on]
+              properties:
+                common_area_id: { type: integer }
+                desired_on: { type: string, format: date }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Inscrição criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/occurrences:
+    get:
+      operationId: getResidentOccurrences
+      tags: [Morador]
+      summary: 'Ocorrências da unidade'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentOccurrence' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: reportResidentOccurrence
+      tags: [Morador]
+      summary: 'Registrar ocorrência'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, description]
+              properties:
+                subject: { type: string, maxLength: 160 }
+                description: { type: string, maxLength: 4000 }
+                priority: { type: string, enum: [baixa, media, alta], default: media }
+                occurred_on: { type: string, format: date, description: 'Padrão: hoje' }
+      responses:
+        '201':
+          description: Ocorrência registrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/deliveries:
+    get:
+      operationId: getResidentDeliveries
+      tags: [Morador]
+      summary: 'Encomendas aguardando e dos últimos 90 dias'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentDelivery' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/visits:
+    get:
+      operationId: getResidentVisits
+      tags: [Morador]
+      summary: 'Visitas avisadas pela unidade'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentVisit' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: authorizeResidentVisit
+      tags: [Morador]
+      summary: 'Avisar visita à portaria'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visitor_name, expected_on]
+              properties:
+                visitor_name: { type: string, maxLength: 160 }
+                visitor_document: { type: string, maxLength: 30 }
+                expected_on: { type: string, format: date }
+                expected_until: { type: string, format: date }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Visita avisada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/visits/{id}/cancel:
+    post:
+      operationId: cancelResidentVisit
+      tags: [Morador]
+      summary: 'Cancelar visita prevista'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { id: { type: integer }, status: { const: inactive } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/assemblies:
+    get:
+      operationId: getResidentAssemblies
+      tags: [Morador]
+      summary: 'Assembleias convocadas, abertas e encerradas'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentAssembly' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/assemblies/{id}:
+    get:
+      operationId: getResidentAssembly
+      tags: [Morador]
+      summary: 'Assembleia com pauta, resultado e ata'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { allOf: [{ $ref: '#/components/schemas/ResidentAssembly' }, { type: object, properties: { minutes: { type: [string, 'null'] }, items: { type: array, items: { type: object, properties: { position: { type: integer }, title: { type: string }, description: { type: string }, status: { type: string, enum: [pending, voting, decided] }, approved: { type: [boolean, 'null'] } } } } } }] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /resident/documents:
+    get:
+      operationId: getResidentDocuments
+      tags: [Morador]
+      summary: 'Documentos que a administração liberou aos moradores'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentDocument' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/documents/{id}/file:
+    get:
+      operationId: getResidentDocumentFile
+      tags: [Morador]
+      summary: 'Arquivo do documento liberado'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /resident/pets-vehicles:
+    get:
+      operationId: getResidentPetsVehicles
+      tags: [Morador]
+      summary: 'Pets e veículos da unidade (qualquer vínculo válido)'
+      description: 'Aplicativo do morador (ADR 0302). Preso ao vínculo morador-unidade e à matriz do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { pets: { type: array, items: { type: object, properties: { name: { type: string }, species: { type: string }, size: { type: [string, 'null'] }, breed: { type: [string, 'null'] }, vaccinated: { type: boolean } } } }, vehicles: { type: array, items: { type: object, properties: { plate: { type: string }, kind: { type: string }, model: { type: [string, 'null'] }, color: { type: [string, 'null'] }, parking_spot: { type: [string, 'null'] } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }

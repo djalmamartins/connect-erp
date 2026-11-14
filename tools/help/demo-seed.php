@@ -214,8 +214,36 @@ $tickets = new TicketService($pdo);
 $tickets->open(['subject' => 'Dúvida sobre a segunda via do boleto', 'message' => 'Não recebi o boleto deste mês por e-mail. Como faço para emitir a segunda via?', 'requester_name' => 'Mariana Albuquerque', 'requester_email' => 'morador1@exemplo.com.br', 'condominium_id' => $alpha], 'site', null);
 $tickets->open(['subject' => 'Portão da garagem fazendo barulho', 'message' => 'O portão da garagem está rangendo ao abrir. Podem verificar com a manutenção?', 'condominium_id' => $alpha], 'erp', $admin);
 
+// Aplicativo do morador (ADR 0302): conta de morador ligada à 1ª unidade do primeiro condomínio, todas as funções
+// ligadas na matriz do portal e alguns comunicados, encomendas, visitas e uma assembleia convocada.
+$residentRow = $pdo->query('SELECT id, name, unit_id FROM erp_residents WHERE condominium_id = ' . $alpha . " AND relationship = 'owner' ORDER BY id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$pdo->prepare("INSERT INTO users (first_name, last_name, email, document, password, level, status) VALUES (?, ?, 'morador@connect.demo', ?, ?, 1, 'confirmed')")
+    ->execute([explode(' ', (string)$residentRow['name'])[0], explode(' ', (string)$residentRow['name'], 2)[1] ?? '', cpf(2), password_hash($password, PASSWORD_DEFAULT)]);
+$residentUser = (int)$pdo->lastInsertId();
+$pdo->exec("INSERT IGNORE INTO access_roles (name, slug, level) VALUES ('Usuário', 'user', 1)");
+$pdo->prepare("INSERT IGNORE INTO access_user_roles (user_id, role_id) SELECT ?, id FROM access_roles WHERE slug = 'user'")->execute([$residentUser]);
+$pdo->prepare('UPDATE erp_residents SET user_id = ? WHERE id = ?')->execute([$residentUser, (int)$residentRow['id']]);
+$portal = new \Source\Services\Erp\ResidentPortalPermissions($pdo);
+foreach (array_keys(\Source\Services\Erp\ResidentPortalPermissions::FEATURES) as $feature) {
+    $portal->set($admin, $alpha, $feature, true);
+}
+$residentUnit = (int)$residentRow['unit_id'];
+$announcements = new \Source\Services\Erp\Announcements($pdo);
+$announcements->announce($admin, ['condominium_id' => $alpha, 'subject' => 'Manutenção da caixa d\'água', 'body' => "Na próxima terça-feira, das 8h às 12h, a água será interrompida para a limpeza semestral da caixa d'água.\nObrigado pela compreensão.", 'audience' => 'all']);
+$announcements->announce($admin, ['condominium_id' => $alpha, 'subject' => 'Novo horário da academia', 'body' => 'A partir deste mês a academia funciona das 6h às 22h, todos os dias.', 'audience' => 'all']);
+$pdo->exec("UPDATE erp_announcements SET send_at = send_at - INTERVAL 1 DAY WHERE condominium_id = {$alpha}");
+$save('deliveries', ['condominium_id' => $alpha, 'unit_id' => $residentUnit, 'recipient' => (string)$residentRow['name'], 'carrier' => 'mercado_livre', 'tracking_code' => 'MEL123456789BR', 'received_on' => $date(0), 'received_time' => '10:42']);
+$save('deliveries', ['condominium_id' => $alpha, 'unit_id' => $residentUnit, 'recipient' => (string)$residentRow['name'], 'carrier' => 'correios', 'tracking_code' => 'QB123456789BR', 'received_on' => $date(-6), 'received_time' => '15:10', 'picked_up_on' => $date(-6), 'picked_up_by' => (string)$residentRow['name'], 'status' => 'picked_up']);
+$save('visit_forecasts', ['condominium_id' => $alpha, 'unit_id' => $residentUnit, 'visitor_name' => 'Técnico da internet', 'expected_on' => $date(0), 'authorized_by' => (string)$residentRow['name'], 'notes' => 'Chega à tarde']);
+$assemblies = new \Source\Services\Erp\Assemblies($pdo);
+$assembly = $assemblies->create($admin, ['condominium_id' => $alpha, 'kind' => 'ordinaria', 'mode' => 'hibrida', 'title' => 'Assembleia geral ordinária ' . $today->format('Y'),
+    'location' => 'Salão de festas e sala virtual', 'first_call_at' => $date(15) . ' 19:00', 'second_call_at' => $date(15) . ' 19:30',
+    'items' => [['title' => 'Prestação de contas do ano', 'vote_basis' => 'fraction', 'quorum' => 'simple'], ['title' => 'Previsão orçamentária', 'vote_basis' => 'fraction', 'quorum' => 'simple'],
+        ['title' => 'Eleição do síndico', 'vote_basis' => 'unit', 'quorum' => 'simple']]]);
+$pdo->prepare("UPDATE erp_assemblies SET status = 'convened', convened_at = NOW() WHERE id = ?")->execute([(int)$assembly['id']]);
+
 echo "Base de demonstração pronta em {$database}: " . count($ids) . " condomínios fictícios.\n";
-echo "HELP_USER=ajuda@connect.demo\nHELP_PASSWORD={$password}\n";
+echo "HELP_USER=ajuda@connect.demo\nHELP_PASSWORD={$password}\nHELP_RESIDENT=morador@connect.demo\n";
 
 /** CPF fictício com dígitos verificadores válidos (o cadastro confere o documento). */
 function cpf(int $seed): string

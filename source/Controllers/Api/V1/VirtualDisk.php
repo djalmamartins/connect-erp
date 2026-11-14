@@ -65,6 +65,21 @@ final class VirtualDisk
         }
     }
 
+    /** POST /documents/{id}/share {shared: bool} — mostra ou esconde o arquivo no aplicativo do morador (ADR 0302). */
+    public function share(array $data): void
+    {
+        $user = $this->authorize('manage');
+        if ($user === null) {
+            return;
+        }
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        if (!is_array($body) || !is_bool($body['shared'] ?? null)) {
+            JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Informe shared como verdadeiro ou falso.']]);
+            return;
+        }
+        $this->run(200, fn () => (new Service())->share($user, $this->id($data), $body['shared']));
+    }
+
     public function download(array $data): void
     {
         $user = $this->authorize('view');

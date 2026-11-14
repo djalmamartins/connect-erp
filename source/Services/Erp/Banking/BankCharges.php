@@ -236,6 +236,30 @@ final class BankCharges
     }
 
     /**
+     * PDF do boleto para o aplicativo do morador (ADR 0302): o boleto precisa ser de uma conta da unidade
+     * do vínculo, no condomínio do vínculo. Mesmas regras do pdf() da equipe; qualquer dúvida = não encontrado.
+     */
+    public function residentPdf(int $chargeId, int $condominiumId, int $unitId): string
+    {
+        $stmt = $this->pdo->prepare("SELECT b.* FROM erp_bank_charges b JOIN erp_entries e ON e.id = b.entry_id
+            WHERE b.id = :id AND b.condominium_id = :c AND e.condominium_id = :c2 AND e.unit_id = :u AND e.nature = 'receita' AND e.deleted_at IS NULL");
+        $stmt->execute(['id' => $chargeId, 'c' => $condominiumId, 'c2' => $condominiumId, 'u' => $unitId]);
+        $charge = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($charge)) {
+            throw new RegistryNotFound();
+        }
+        if (!in_array($charge['status'], ['registered', 'paid'], true)) {
+            throw new DomainException('O PDF só existe para boleto registrado.');
+        }
+        $adapter = $this->adapterOf($charge);
+        if (!$adapter instanceof BankChargeExtras) {
+            throw new DomainException('Este banco não fornece o PDF do boleto.');
+        }
+        Audit::record('read', 'erp_bank_charges', $chargeId, null, ['pdf' => true, 'channel' => 'resident_app']);
+        return $adapter->downloadBoleto((string)$charge['our_number'], $charge['external_id']);
+    }
+
+    /**
      * Pagador do boleto: responsável financeiro da unidade, senão o proprietário (ativos, com
      * documento primeiro). Endereço de cobrança = endereço do condomínio, com a unidade no complemento.
      */

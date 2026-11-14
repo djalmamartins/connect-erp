@@ -238,6 +238,41 @@ final class RegistryService
      */
     public function save(User $user, string $slug, array $input, ?int $id = null): array
     {
+        return $this->persist($user, $slug, $input, $id, null);
+    }
+
+    /**
+     * Cadastro feito pelo morador no aplicativo (ADR 0302): só os cadastros e campos da lista, sempre um
+     * registro novo, com o condomínio e a unidade do vínculo do morador (nunca os do pedido). Passa pelas
+     * mesmas validações e regras do ERP (antecedência e horário da área, sobreposição, unidade ativa,
+     * duplicidade) e pela mesma auditoria. O escopo de condomínio da equipe não se aplica: quem chama já
+     * conferiu o vínculo (ResidentLinks) e a matriz do portal.
+     *
+     * @param array<string, mixed> $input
+     */
+    public function createForResident(User $user, string $slug, array $input, int $condominiumId, int $unitId): array
+    {
+        $fields = self::RESIDENT_FIELDS[$slug] ?? null;
+        if ($fields === null || $condominiumId < 1 || $unitId < 1) {
+            throw new \InvalidArgumentException('Cadastro não disponível no aplicativo do morador.');
+        }
+        $input = array_intersect_key($input, array_flip($fields));
+        $input['condominium_id'] = $condominiumId;
+        $input['unit_id'] = $unitId;
+        return $this->persist($user, $slug, $input, null, ['condominium_id' => $condominiumId, 'unit_id' => $unitId]);
+    }
+
+    /** Campos que o morador preenche em cada cadastro do aplicativo (ADR 0302). */
+    public const RESIDENT_FIELDS = [
+        'reservations' => ['common_area_id', 'reserved_on', 'starts_time', 'ends_time', 'notes', 'resident_name'],
+        'waitlist' => ['common_area_id', 'desired_on', 'notes', 'resident_name'],
+        'occurrences' => ['subject', 'priority', 'occurred_on', 'description'],
+        'visit_forecasts' => ['visitor_name', 'visitor_document', 'expected_on', 'expected_until', 'notes', 'authorized_by'],
+    ];
+
+    /** @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident) */
+    private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident): array
+    {
         $definition = self::definition($slug);
         $before = null;
         if ($id !== null) {
@@ -252,7 +287,11 @@ final class RegistryService
         // 'fixed' (ADR 0024): colunas que a visão grava sempre com o mesmo valor (ex.: natureza
         // despesa em contas a pagar). Não vêm do formulário e não podem ser trocadas pela entrada.
         $values = array_merge($values, $definition['fixed'] ?? []);
-        if ($definition['scope'] !== 'none' && !isset($errors['condominium_id'])) {
+        if ($resident !== null) {
+            // O vínculo manda: condomínio e unidade nunca vêm do pedido do morador.
+            $values = array_merge($values, $resident);
+            unset($errors['condominium_id'], $errors['unit_id']);
+        } elseif ($definition['scope'] !== 'none' && !isset($errors['condominium_id'])) {
             $condominium = $values['condominium_id'] ?? null;
             if ($condominium !== null && !$this->scope->canAccess($user, (int)$condominium)) {
                 $errors['condominium_id'] = 'Condomínio fora do seu escopo de acesso.';

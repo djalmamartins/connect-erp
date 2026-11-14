@@ -18,8 +18,10 @@ use Source\Support\Audit;
  */
 final class ResidentPortalPermissions
 {
+    // ADR 0302: o aplicativo do morador ganhou prestação de contas, encomendas, visitantes e assembleias.
     public const FEATURES = ['boletos' => 'Boletos e segunda via', 'reservations' => 'Reservas de áreas comuns', 'occurrences' => 'Ocorrências',
-        'announcements' => 'Comunicados', 'documents' => 'Documentos do condomínio'];
+        'announcements' => 'Comunicados', 'documents' => 'Documentos do condomínio', 'accountability' => 'Prestação de contas',
+        'deliveries' => 'Encomendas', 'visitors' => 'Visitantes', 'assemblies' => 'Assembleias'];
 
     private PDO $pdo;
     private CondominiumScope $scope;
