@@ -123,7 +123,7 @@ $this->insert('components/layout/page-head', [
 </form>
 
 <?php
-// Fila como no Help Desk (ADR 0306): contadores por situação e de prazo, filtros, SLA e situação em lote.
+// Fila como no Help Desk (ADR 0307): contadores por situação e de prazo, filtros, SLA e situação em lote.
 $query = static function (array $change) use ($filters): string {
     $map = ['q' => 'q', 'condominium_id' => 'condominio', 'status' => 'situacao', 'kind' => 'tipo', 'priority' => 'prioridade', 'assigned' => 'responsavel', 'due' => 'prazo', 'origin' => 'origem'];
     $kind = ['occurrence' => 'ocorrencias', 'other' => 'outros'];

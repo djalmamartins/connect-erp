@@ -8,7 +8,7 @@
  * @var ?array{type:string,text:string} $flash
  * @var array<string,string> $errors @var array<string,mixed> $old
  * @var ?string $helpdeskUrl o chamado no Help Desk (só para quem atende)
- * @var bool $canAttend quem atende (support.manage): triagem, cronômetro, notas internas e histórico (ADR 0306)
+ * @var bool $canAttend quem atende (support.manage): triagem, cronômetro, notas internas e histórico (ADR 0307)
  * @var array $facts TicketDesk::facts() @var list<array> $events TicketDesk::events()
  * @var list<array{id:int,title:string,body:string}> $templates @var list<array{id:int,name:string}> $agents
  */

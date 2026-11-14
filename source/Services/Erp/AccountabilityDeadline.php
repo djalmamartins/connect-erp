@@ -23,8 +23,9 @@ use Source\Support\AppLogger;
  * Cada situação é avisada uma vez por condomínio e mês (erp_accountability_alerts). O aviso vai para o sino do
  * sistema (notifications) de quem pode fechar o mês (erp.closing.manage) e alcança o condomínio.
  *
- * Dia útil: segunda a sexta, menos os feriados nacionais e os dias sem expediente bancário (Carnaval, Sexta-feira
- * Santa e Corpus Christi). Feriados estaduais e municipais não entram (PENDENTE no ADR).
+ * Dia útil: segunda a sexta, menos os feriados nacionais, os dias sem expediente bancário (Carnaval, Sexta-feira
+ * Santa e Corpus Christi) e os feriados do estado e da cidade do condomínio cadastrados no Livro-caixa (ADR 0306,
+ * LocalHolidays). Cada condomínio tem o seu prazo.
  */
 final class AccountabilityDeadline
 {
@@ -74,18 +75,20 @@ final class AccountabilityDeadline
         return $days;
     }
 
-    public static function isBusinessDay(DateTimeImmutable $day): bool
+    /** @param list<string> $local feriados do estado e da cidade (AAAA-MM-DD) */
+    public static function isBusinessDay(DateTimeImmutable $day, array $local = []): bool
     {
-        return (int)$day->format('N') <= 5 && !in_array($day->format('Y-m-d'), self::holidays((int)$day->format('Y')), true);
+        $date = $day->format('Y-m-d');
+        return (int)$day->format('N') <= 5 && !in_array($date, $local, true) && !in_array($date, self::holidays((int)$day->format('Y')), true);
     }
 
-    /** N-ésimo dia útil do mês AAAA-MM (regra pura). */
-    public static function businessDay(string $month, int $n = self::BUSINESS_DAY): DateTimeImmutable
+    /** N-ésimo dia útil do mês AAAA-MM (regra pura). @param list<string> $local feriados locais (AAAA-MM-DD) */
+    public static function businessDay(string $month, int $n = self::BUSINESS_DAY, array $local = []): DateTimeImmutable
     {
         $day = new DateTimeImmutable($month . '-01');
         $count = 0;
         while (true) {
-            if (self::isBusinessDay($day) && ++$count === $n) {
+            if (self::isBusinessDay($day, $local) && ++$count === $n) {
                 return $day;
             }
             $day = $day->modify('+1 day');
@@ -93,11 +96,11 @@ final class AccountabilityDeadline
     }
 
     /** Dias úteis de $from (exclusive) até $to (inclusive); 0 se $to não for depois (regra pura). */
-    public static function businessDaysUntil(DateTimeImmutable $from, DateTimeImmutable $to): int
+    public static function businessDaysUntil(DateTimeImmutable $from, DateTimeImmutable $to, array $local = []): int
     {
         $count = 0;
         for ($day = $from->modify('+1 day'); $day <= $to; $day = $day->modify('+1 day')) {
-            $count += self::isBusinessDay($day) ? 1 : 0;
+            $count += self::isBusinessDay($day, $local) ? 1 : 0;
         }
         return $count;
     }
@@ -105,7 +108,7 @@ final class AccountabilityDeadline
     /**
      * Situação do livro (regra pura): sent, send (pronto e não enviado), due_soon, overdue ou waiting.
      */
-    public static function situation(DateTimeImmutable $today, DateTimeImmutable $deadline, bool $closed, bool $sent): string
+    public static function situation(DateTimeImmutable $today, DateTimeImmutable $deadline, bool $closed, bool $sent, array $local = []): string
     {
         if ($sent) {
             return 'sent';
@@ -116,10 +119,10 @@ final class AccountabilityDeadline
         if ($today > $deadline) {
             return 'overdue';
         }
-        return self::businessDaysUntil($today, $deadline) <= self::WARN_BUSINESS_DAYS ? 'due_soon' : 'waiting';
+        return self::businessDaysUntil($today, $deadline, $local) <= self::WARN_BUSINESS_DAYS ? 'due_soon' : 'waiting';
     }
 
-    /** Mês do livro que vence neste mês (o anterior) e o prazo. @return array{competence:string, deadline:DateTimeImmutable} */
+    /** Mês do livro que vence neste mês (o anterior) e o prazo nacional. @return array{competence:string, deadline:DateTimeImmutable} */
     public function current(): array
     {
         return [
@@ -128,12 +131,15 @@ final class AccountabilityDeadline
         ];
     }
 
-    /** @return array{competence:string, deadline:string, condominiums:int, sent:int, sent_now:int, alerts:int, notified:int} */
+    /** @return array{competence:string, deadline:string, condominiums:int, sent:int, sent_now:int, alerts:int, notified:int, local_deadlines:int} */
     public function run(): array
     {
-        ['competence' => $competence, 'deadline' => $deadline] = $this->current();
-        $result = ['competence' => $competence, 'deadline' => $deadline->format('Y-m-d'), 'condominiums' => 0, 'sent' => 0, 'sent_now' => 0, 'alerts' => 0, 'notified' => 0];
-        $stmt = $this->pdo->prepare("SELECT c.id, c.name, mc.status AS closing_status, l.id AS link_id, l.status AS link_status, l.version, l.sent_version
+        ['competence' => $competence, 'deadline' => $national] = $this->current();
+        $result = ['competence' => $competence, 'deadline' => $national->format('Y-m-d'), 'condominiums' => 0, 'sent' => 0, 'sent_now' => 0, 'alerts' => 0,
+            'notified' => 0, 'local_deadlines' => 0];
+        $holidays = new LocalHolidays($this->pdo);
+        $places = [];
+        $stmt = $this->pdo->prepare("SELECT c.id, c.name, c.city, c.state, mc.status AS closing_status, l.id AS link_id, l.status AS link_status, l.version, l.sent_version
             FROM condominiums c
             LEFT JOIN erp_month_closings mc ON mc.condominium_id = c.id AND mc.competence = :m
             LEFT JOIN erp_accountability_links l ON l.condominium_id = c.id AND l.kind = 'monthly' AND l.competence = :m2
@@ -145,8 +151,19 @@ final class AccountabilityDeadline
             if ($row['link_status'] === 'revoked' && $row['closing_status'] === 'closed') {
                 continue;   // a equipe revogou o link de propósito: não gera de novo sozinho
             }
+            // Prazo do lugar do condomínio (feriados do estado e da cidade, ADR 0306), calculado uma vez por lugar.
+            $placeKey = (LocalHolidays::state($row['state'] ?? null) ?? '') . '|' . LocalHolidays::cityKey($row['city'] ?? null);
+            if (!isset($places[$placeKey])) {
+                $rows = $holidays->forPlace($row['state'] ?? null, $row['city'] ?? null);
+                $local = LocalHolidays::datesFor($rows, (int)$this->today->format('Y'));
+                $places[$placeKey] = ['local' => $local, 'deadline' => $local === [] ? $national : self::businessDay($this->today->format('Y-m'), self::BUSINESS_DAY, $local)];
+            }
+            ['local' => $local, 'deadline' => $deadline] = $places[$placeKey];
+            if ($deadline != $national) {
+                $result['local_deadlines']++;
+            }
             $sent = $row['link_status'] === 'active' && $row['sent_version'] !== null && (int)$row['sent_version'] === (int)$row['version'];
-            $situation = self::situation($this->today, $deadline, $row['closing_status'] === 'closed', $sent);
+            $situation = self::situation($this->today, $deadline, $row['closing_status'] === 'closed', $sent, $local);
             if ($situation === 'sent') {
                 $result['sent']++;
                 continue;

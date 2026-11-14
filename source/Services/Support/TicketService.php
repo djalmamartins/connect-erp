@@ -235,7 +235,7 @@ final class TicketService
             $terms[] = 't.status = :status';
             $params['status'] = $filters['status'];
         }
-        // Filtros da fila do Help Desk (ADR 0306): prioridade, responsável, prazo e origem.
+        // Filtros da fila do Help Desk (ADR 0307): prioridade, responsável, prazo e origem.
         if (in_array($filters['priority'] ?? '', self::PRIORITIES, true)) {
             $terms[] = 't.priority = :priority';
             $params['priority'] = $filters['priority'];

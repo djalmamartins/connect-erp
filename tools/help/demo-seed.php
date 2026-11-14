@@ -243,6 +243,11 @@ $assembly = $assemblies->create($admin, ['condominium_id' => $alpha, 'kind' => '
 $pdo->prepare("UPDATE erp_assemblies SET status = 'convened', convened_at = NOW() WHERE id = ?")->execute([(int)$assembly['id']]);
 
 echo "Base de demonstração pronta em {$database}: " . count($ids) . " condomínios fictícios.\n";
+// Feriados locais de exemplo no prazo da prestação de contas (ADR 0306): o estadual de SP e um municipal fictício.
+$holiday = $pdo->prepare('INSERT IGNORE INTO erp_local_holidays (state, city, city_key, month, day, year, name, created_by) VALUES (?, ?, ?, ?, ?, 0, ?, ?)');
+$holiday->execute(['SP', null, '', 7, 9, 'Revolução Constitucionalista', $userId]);
+$holiday->execute(['SP', 'Ribeirão Preto', 'ribeirao preto', 12, 4, 'Feriado municipal (exemplo)', $userId]);
+
 echo "HELP_USER=ajuda@connect.demo\nHELP_PASSWORD={$password}\nHELP_RESIDENT=morador@connect.demo\n";
 
 /** CPF fictício com dígitos verificadores válidos (o cadastro confere o documento). */

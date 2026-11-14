@@ -764,7 +764,7 @@ p { margin: 0; }
 .erp-ticket-wait { display: flex; gap: 8px; align-items: center; margin: var(--erp-space-4) 0 0; color: var(--erp-muted); font-size: 13px; }
 .erp-table a.erp-ticket-link { font-weight: 700; }
 .erp-ticket-msg--internal { margin-left: auto; border-color: var(--erp-warning-soft); background: var(--erp-warning-soft); border-style: dashed; }
-/* Fila e atendimento como no Help Desk (ADR 0306), com as cores do ERP. */
+/* Fila e atendimento como no Help Desk (ADR 0307), com as cores do ERP. */
 .erp-ticket-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); }
 .erp-ticket-counter { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; }
 .erp-ticket-counter span { color: var(--erp-muted); font-size: 12.5px; }
@@ -954,6 +954,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-break { word-break: break-all; }
 .erp-inline-details { display: inline-block; vertical-align: top; }
 .erp-inline-details > summary { list-style: none; cursor: pointer; }
+.erp-card > .erp-table-wrap + .erp-form, .erp-card > .erp-muted + .erp-form { margin-top: var(--erp-space-4); }
 .erp-inline-details > summary::-webkit-details-marker { display: none; }
 .erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
 .erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }

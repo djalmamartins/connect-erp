@@ -223,7 +223,7 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, 'SLA vencido') && str_contains($html, 'Vencido') && str_contains($html, '/operacional/chamados/lote') && str_contains($html, 'Ana &lt;Equipe&gt;')
             && str_contains($html, 'Ocorrência #4'), 'CN-004: fila como no Help Desk (contadores, SLA, lote, responsável)');
         $save('cn-004', $html);
-        // Atendimento (ADR 0306): cronômetro, nota interna, triagem e histórico para quem atende.
+        // Atendimento (ADR 0307): cronômetro, nota interna, triagem e histórico para quem atende.
         $showData = ['base' => '/operacional/chamados', 'ticket' => $ticket, 'messages' => [['id' => 1, 'author' => 'Ana', 'from_team' => true, 'message' => 'Nota <x>', 'internal' => true,
             'created_at' => '2026-11-09 10:30:00', 'attachments' => []]], 'flash' => null, 'errors' => [], 'old' => [], 'helpdeskUrl' => null, 'canAttend' => true,
             'facts' => ['first_response_at' => '2026-11-09 10:30:00', 'work_seconds' => 3725, 'team' => null, 'tags' => null, 'updated_at' => '2026-11-09 11:00:00', 'replies' => 1, 'internal_notes' => 1],

@@ -12,7 +12,7 @@ use Source\Services\Support\TicketDesk;
 use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
 
-/** ADR 0306: o atendimento do chamado é o mesmo no Help Desk e no ERP (triagem, cronômetro, nota interna, lote, números da fila). */
+/** ADR 0307: o atendimento do chamado é o mesmo no Help Desk e no ERP (triagem, cronômetro, nota interna, lote, números da fila). */
 final class TicketDeskTest extends TestCase
 {
     private int $alpha;

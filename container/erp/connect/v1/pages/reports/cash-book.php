@@ -72,6 +72,10 @@ $this->insert('components/layout/page-head', [
                     </td>
                     <td><?php if ($link !== null && $link['url'] !== null): ?><a href="<?= $this->e($link['url']) ?>" target="_blank" rel="noopener noreferrer" class="erp-break"><?= $this->e($link['url']) ?></a><?php else: ?><span class="erp-muted"><?= $kind === 'annual' ? 'Sai quando todos os meses do ano estiverem fechados.' : 'Sai quando o mês é fechado.' ?></span><?php endif; ?></td>
                     <td class="erp-nowrap">
+                        <?php if ($link !== null && $link['status'] === 'active'): ?>
+                            <a class="erp-btn erp-btn--sm" href="<?= $this->e($link['url'] . '/pdf') ?>" rel="noopener noreferrer">PDF</a>
+                            <a class="erp-btn erp-btn--sm" href="<?= $this->e(erp_url(Screens::ROUTE . '/link/' . (int)$link['id'] . '/pacote?mes=' . $b['competence'])) ?>" title="PDF e todos os documentos do livro num arquivo ZIP">Pacote com as notas</a>
+                        <?php endif; ?>
                         <?php if ($cashCanPublish): ?>
                             <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/link')) ?>" class="erp-inline-form">
                                 <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>"><input type="hidden" name="kind" value="<?= $kind ?>">
@@ -100,6 +104,57 @@ $this->insert('components/layout/page-head', [
             </tbody>
         </table></div>
     </section>
+
+    <?php // Feriados do estado e da cidade no prazo do 5º dia útil (ADR 0306). ?>
+    <?php if (is_array($cashHolidays ?? null)): $h = $cashHolidays; $place = trim(($h['city'] ?? '') . ($h['state'] !== null ? '/' . $h['state'] : ''), '/'); ?>
+    <section class="erp-card" id="feriados" aria-labelledby="cb-holidays">
+        <div class="erp-card__head"><div><h2 id="cb-holidays">Prazo e feriados locais</h2>
+            <p>O livro de <?= $this->e($month) ?> precisa ir aos moradores até o 5º dia útil do mês seguinte.
+            <?php if ($h['deadline'] !== null): ?>Prazo<?= $place !== '' ? ' em ' . $this->e($place) : '' ?>: <strong><?= $this->e(RS::brDate($h['deadline']['date'])) ?></strong><?php if ($h['deadline']['moved_by_local']): ?> (sem os feriados locais seria <?= $this->e(RS::brDate($h['deadline']['national_date'])) ?>)<?php endif; ?>.<?php endif; ?>
+            Os feriados nacionais já entram sozinhos; cadastre aqui os do estado e da cidade do condomínio.</p></div></div>
+        <?php if ($h['state'] === null): ?>
+            <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div>O cadastro do condomínio está sem UF. Preencha a cidade e o estado para incluir feriados locais.</div></div>
+        <?php endif; ?>
+        <?php if ($h['holidays'] === []): ?>
+            <p class="erp-muted">Nenhum feriado local cadastrado<?= $place !== '' ? ' para ' . $this->e($place) : '' ?>.</p>
+        <?php else: ?>
+            <div class="erp-table-wrap" role="region" aria-labelledby="cb-holidays" tabindex="0"><table class="erp-table">
+                <thead><tr><th scope="col">Data</th><th scope="col">Feriado</th><th scope="col">Vale para</th><?php if ($cashCanPublish): ?><th scope="col">Ações</th><?php endif; ?></tr></thead>
+                <tbody>
+                <?php foreach ($h['holidays'] as $holiday): ?>
+                    <tr>
+                        <td><?= $this->e($holiday['label']) ?><?php if ($holiday['every_year']): ?> <small class="erp-muted">todo ano</small><?php endif; ?></td>
+                        <td><?= $this->e($holiday['name']) ?></td>
+                        <td><?= $holiday['scope'] === 'state' ? 'Estado (' . $this->e($holiday['state']) . ')' : 'Cidade (' . $this->e((string)$holiday['city']) . ')' ?></td>
+                        <?php if ($cashCanPublish): ?><td>
+                            <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/feriados/' . (int)$holiday['id'] . '/remover')) ?>" class="erp-inline-form">
+                                <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>">
+                                <button type="submit" class="erp-btn erp-btn--sm">Remover</button>
+                            </form>
+                        </td><?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table></div>
+        <?php endif; ?>
+        <?php if ($cashCanPublish && $h['state'] !== null): ?>
+            <form method="post" action="<?= $this->e(erp_url(Screens::ROUTE . '/feriados')) ?>" class="erp-form">
+                <?= csrf_input() ?><input type="hidden" name="mes" value="<?= $this->e($b['competence']) ?>">
+                <div class="erp-form__grid">
+                    <div class="erp-field erp-col-3"><label for="holiday-date">Data</label><input class="erp-input" type="date" id="holiday-date" name="date" required></div>
+                    <div class="erp-field erp-col-3"><label for="holiday-name">Nome</label><input class="erp-input" id="holiday-name" name="name" minlength="3" maxlength="120" required placeholder="Ex.: Aniversário da cidade"></div>
+                    <div class="erp-field erp-col-3"><label for="holiday-scope">Vale para</label>
+                        <select class="erp-select" id="holiday-scope" name="scope">
+                            <?php if (($h['city'] ?? null) !== null): ?><option value="city">Cidade (<?= $this->e((string)$h['city']) ?>)</option><?php endif; ?>
+                            <option value="state">Estado (<?= $this->e($h['state']) ?>)</option>
+                        </select></div>
+                    <div class="erp-field erp-col-3"><span class="erp-field__label">Repetição</span><label class="erp-check"><input type="checkbox" name="every_year" value="1" checked> Todo ano</label></div>
+                </div>
+                <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary">Incluir feriado</button></div>
+            </form>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
 
     <section class="erp-grid erp-grid--kpi" aria-label="Totais do mês">
         <?php foreach ([

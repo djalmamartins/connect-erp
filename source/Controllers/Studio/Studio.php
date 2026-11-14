@@ -1382,7 +1382,7 @@ class Studio extends Controller
                 $templateId=(int)($data['template_id']??0);$stmt=$pdo->prepare('DELETE FROM studio_support_templates WHERE id=?');$stmt->execute([$templateId]);
                 if(!$stmt->rowCount()){$this->jsonMessage('Resposta rápida não encontrada.','warning');return;}\Source\Support\Audit::record('delete','studio_support_templates',$templateId);echo json_encode(['reload'=>true]);return;
             }
-            // Atendimento pelo serviço único (ADR 0306): as mesmas ações em Operacional › Chamados do ERP.
+            // Atendimento pelo serviço único (ADR 0307): as mesmas ações em Operacional › Chamados do ERP.
             $desk = new \Source\Services\Support\TicketDesk($pdo);
             if ($data["action"] === "bulk") {
                 $ticketIds = array_values(array_unique(array_filter(array_map('intval', (array)($data['ticket_ids'] ?? [])))));

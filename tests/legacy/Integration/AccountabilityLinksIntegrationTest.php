@@ -11,10 +11,12 @@ use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\AccountabilityBookDocument;
 use Source\Services\Erp\AccountabilityDeadline;
 use Source\Services\Erp\AccountabilityLinks;
 use Source\Services\Erp\CashBook;
 use Source\Services\Erp\EntryAttachments;
+use Source\Services\Erp\LocalHolidays;
 use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\VirtualDisk;
@@ -226,6 +228,85 @@ final class AccountabilityLinksIntegrationTest extends TestCase
         $final = $run('2026-11-11', $this->pdo);
         self::assertSame([1, 0, 0], [$final['sent'], $final['sent_now'], $final['alerts']]);
         self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'accountability.published'")->fetchColumn());
+    }
+
+    public function testLocalHolidaysMoveTheDeadlineOnlyWhereTheyApply(): void
+    {
+        $this->pdo->exec("INSERT IGNORE INTO notifications_categories (title, uri) VALUES ('Studio', 'studio')");
+        $this->pdo->prepare('UPDATE condominiums SET city = ?, state = ? WHERE id = ?')->execute(['Belo Horizonte', 'MG', $this->alpha]);
+        $this->pdo->prepare('UPDATE condominiums SET city = ?, state = ? WHERE id = ?')->execute(['Contagem', 'mg', $this->beta]);
+        $holidays = new LocalHolidays($this->pdo);
+
+        $city = $holidays->add($this->admin, $this->alpha, ['scope' => 'city', 'date' => '06/11/2026', 'name' => 'Feriado municipal de teste', 'every_year' => true]);
+        self::assertSame(['city', 'Belo Horizonte', '06/11', true], [$city['scope'], $city['city'], $city['label'], $city['every_year']]);
+        $this->expectExceptionSafely(fn () => $holidays->add($this->admin, $this->alpha, ['scope' => 'city', 'date' => '2026-11-06', 'name' => 'De novo']), DomainException::class);
+        $this->expectExceptionSafely(fn () => $holidays->add($this->admin, $this->alpha, ['scope' => 'city', 'date' => '29/02/2028', 'name' => 'Bissexto', 'every_year' => true]), InvalidArgumentException::class);
+        $state = $holidays->add($this->admin, $this->alpha, ['scope' => 'state', 'date' => '2026-12-21', 'name' => 'Estadual de teste', 'every_year' => false]);
+        self::assertSame(['state', null, 2026], [$state['scope'], $state['city'], $state['year']]);
+
+        $alpha = $holidays->list($this->admin, $this->alpha, '2026-10');
+        self::assertSame(['Feriado municipal de teste', 'Estadual de teste'], array_column($alpha['holidays'], 'name'));
+        self::assertSame(['2026-11-10', '2026-11-09', true], [$alpha['deadline']['date'], $alpha['deadline']['national_date'], $alpha['deadline']['moved_by_local']]);
+        $beta = $holidays->list($this->admin, $this->beta, '2026-10');
+        self::assertSame(['Estadual de teste'], array_column($beta['holidays'], 'name'), 'O municipal de BH não vale em Contagem; o estadual vale.');
+        self::assertSame('2026-11-09', $beta['deadline']['date']);
+
+        $outsider = $this->user([$this->beta]);
+        $this->expectExceptionSafely(fn () => $holidays->list($outsider, $this->alpha), CondominiumAccessDenied::class);
+        $this->expectExceptionSafely(fn () => $holidays->add($outsider, $this->alpha, ['scope' => 'city', 'date' => '2026-11-12', 'name' => 'Intruso']), CondominiumAccessDenied::class);
+        $this->expectExceptionSafely(fn () => $holidays->remove($this->admin, $this->beta, $city['id']), CondominiumAccessDenied::class);
+
+        $this->manager([$this->alpha, $this->beta]);
+        $result = (new AccountabilityDeadline($this->pdo, new DateTimeImmutable('2026-11-10')))->run();
+        self::assertSame(1, $result['local_deadlines'], 'Só Alpha tem prazo diferente do nacional.');
+        $situations = $this->pdo->query('SELECT condominium_id, situation FROM erp_accountability_alerts ORDER BY condominium_id')->fetchAll(\PDO::FETCH_KEY_PAIR);
+        self::assertSame(['due_soon', 'overdue'], [$situations[$this->alpha], $situations[$this->beta]], 'Em BH o prazo é 10/11; em Contagem venceu em 09/11.');
+        self::assertStringContainsString('10/11/2026', (string)$this->pdo->query("SELECT body FROM notifications WHERE body LIKE '%Residencial Alpha%' LIMIT 1")->fetchColumn());
+
+        self::assertSame(['id' => $city['id'], 'removed' => true], $holidays->remove($this->admin, $this->alpha, $city['id']));
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_local_holidays' AND action = 'delete'")->fetchColumn());
+    }
+
+    public function testPackageAndPdfComeFromTheFrozenBook(): void
+    {
+        $water = $this->entry('despesa', $this->water, '320,00', '2026-10-12', 'Conta de água', ['supplier_id' => $this->copasa]);
+        $pdf = "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n";
+        $this->attachments->attach($this->admin, $water, $this->file('NF 778.pdf', $pdf . 'nf'), 'nota_fiscal');
+        $this->attachments->attach($this->admin, $water, $this->file('comprovante.pdf', $pdf . 'pg'), 'comprovante');
+        (new MonthClosing($this->pdo))->close($this->admin, $this->alpha, '2026-10');
+        $link = $this->links->afterClose($this->admin, $this->alpha, '2026-10')['monthly'];
+        $token = substr($link['url'], -32);
+
+        $book = $this->links->publicBook($token);
+        self::assertSame(['monthly', '2026-10', 1], [$book['kind'], $book['period'], $book['version']]);
+        self::assertSame(64, strlen($book['sha256']));
+        self::assertSame(0, (int)$this->pdo->query('SELECT view_count FROM erp_accountability_links WHERE id = ' . $link['id'])->fetchColumn(), 'O PDF não conta visita.');
+        $theme = dirname(__DIR__, 3) . '/container/erp/connect/v1';
+        self::assertStringStartsWith('%PDF-', (new AccountabilityBookDocument($theme))->pdf($book, $link['url']));
+
+        $package = $this->links->package($this->admin, $link['id'], new AccountabilityBookDocument($theme), $this->disk);
+        try {
+            self::assertSame('prestacao-de-contas-residencial-alpha-2026-10.zip', $package['filename']);
+            $zip = new \ZipArchive();
+            self::assertTrue($zip->open($package['path']));
+            $names = [];
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $names[] = $zip->getNameIndex($i);
+            }
+            self::assertSame(['prestacao-de-contas-residencial-alpha-2026-10.pdf', 'documentos/001-comprovante-comprovante.pdf', 'documentos/002-nota-fiscal-nf-778.pdf'], $names,
+                'Comprovante antes da nota, como no link.');
+            self::assertSame($pdf . 'nf', $zip->getFromName('documentos/002-nota-fiscal-nf-778.pdf'));
+            $zip->close();
+        } finally {
+            @unlink($package['path']);
+        }
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_accountability_links' AND action = 'export'")->fetchColumn());
+
+        $outsider = $this->user([$this->beta]);
+        $this->expectExceptionSafely(fn () => $this->links->package($outsider, $link['id']), CondominiumAccessDenied::class);
+        $this->links->revoke($this->admin, $link['id'], 'Teste do pacote');
+        self::assertNull($this->links->publicBook($token), 'Link desativado não gera PDF.');
+        $this->expectExceptionSafely(fn () => $this->links->package($this->admin, $link['id']), DomainException::class);
     }
 
     private function expectExceptionSafely(callable $call, string $class): void

@@ -3058,7 +3058,7 @@
     refresh();
   });
 
-  // Atendimento do chamado como no Help Desk (ADR 0306): resposta ou nota interna, cronômetro do tempo dedicado,
+  // Atendimento do chamado como no Help Desk (ADR 0307): resposta ou nota interna, cronômetro do tempo dedicado,
   // respostas rápidas e "selecionar todos" da fila.
   $$('[data-erp-ticket-composer]').forEach(function (form) {
     var internal = $('[data-erp-ticket-internal]', form), time = $('[data-erp-ticket-time]', form), clock = $('[data-erp-ticket-timer]', form);

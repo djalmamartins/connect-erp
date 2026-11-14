@@ -13,7 +13,7 @@ use Source\Support\Audit;
 use Source\Support\Upload;
 
 /**
- * Atendimento do chamado (ADR 0306): as ações de quem atende, iguais no Help Desk (Studio) e em Operacional ›
+ * Atendimento do chamado (ADR 0307): as ações de quem atende, iguais no Help Desk (Studio) e em Operacional ›
  * Chamados do ERP. Triagem (situação, prioridade, responsável, equipe, categoria, tags), resposta ao cliente ou
  * nota interna com o tempo dedicado (cronômetro), anexos e "resolver após enviar", situação em lote, o histórico
  * de alterações e os números da fila (por situação, SLA vencido, vence hoje, sem responsável).

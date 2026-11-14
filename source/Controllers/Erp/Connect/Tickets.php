@@ -56,7 +56,7 @@ final class Tickets extends Controller
             'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
             // ?tipo=ocorrencias: só as ocorrências (ADR 0305), que também são chamados.
             'kind' => ['ocorrencias' => 'occurrence', 'outros' => 'other'][(string)($_GET['tipo'] ?? '')] ?? '',
-            // Filtros da fila do Help Desk (ADR 0306).
+            // Filtros da fila do Help Desk (ADR 0307).
             'priority' => (string)($_GET['prioridade'] ?? ''),
             'assigned' => (string)($_GET['responsavel'] ?? ''),
             'due' => in_array($_GET['prazo'] ?? '', ['today', 'overdue'], true) ? (string)$_GET['prazo'] : '',
@@ -140,7 +140,7 @@ final class Tickets extends Controller
         echo $this->view->render('pages/tickets/show', (new Panel())->layoutData($user, self::PAGE_ID, [
             'base' => self::BASE,
             'ticket' => $ticket,
-            // Quem atende vê também as notas internas, como no Help Desk (ADR 0306).
+            // Quem atende vê também as notas internas, como no Help Desk (ADR 0307).
             'messages' => $this->service->conversation($ticket, $canAttend),
             'canAttend' => $canAttend,
             'facts' => $desk->facts((int)$ticket['id']),
@@ -193,7 +193,7 @@ final class Tickets extends Controller
         redirect($back . '#conversa');
     }
 
-    /** POST /operacional/chamados/{id}/atender — triagem de quem atende (ADR 0306). */
+    /** POST /operacional/chamados/{id}/atender — triagem de quem atende (ADR 0307). */
     public function triage(array $data): void
     {
         $this->attend($data, function (User $user, int $id): string {
