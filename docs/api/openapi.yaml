@@ -2847,6 +2847,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /notifications/cancel-stale:
+    post:
+      operationId: cancelStaleNotifications
+      summary: Avisos pendentes parados há muito tempo na fila cancelados em lote, tudo ou nada e com prévia (erp.access, erp.notifications.view e erp.notifications.manage, ADR 0281)
+      description: >-
+        Sem event_ids, entram os avisos pendentes do condomínio parados há mais de days dias (padrão 7, de 1 a 365), pelo
+        mais recente entre a criação e o available_at. Com event_ids, recusa aviso não encontrado no condomínio, não
+        pendente ou mais novo que o limite. Cancelar é o mesmo que o cancelamento de comunicado faz na fila (status
+        cancelado, só para quem ainda está pendente), com um registro cancel_stale por aviso e o motivo. Nada é enviado nem
+        apagado; o reenvio da fila pode voltar um cancelado. Sem destinatário, e-mail, conteúdo do evento ou mensagem de
+        erro na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, days: { type: integer, minimum: 1, maximum: 365, default: 7 }, event_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, days, cutoff, count, changed, events[{ id, event_type }], by_type[{ event_type, events }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um aviso mudou de situação durante o pedido; nada é cancelado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou aviso recusado (errors com _form e _event); nada é cancelado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
