@@ -3069,6 +3069,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /assemblies/cancel-stale-drafts:
+    post:
+      operationId: cancelStaleAssemblyDrafts
+      summary: Rascunhos de assembleia com a primeira convocação já passada cancelados em lote, tudo ou nada e com prévia (erp.access, erp.assemblies.view e erp.assemblies.manage, ADR 0291)
+      description: >-
+        Sem assembly_ids, entram os rascunhos (nunca convocados) do condomínio com a primeira convocação antes de agora,
+        no relógio do banco. Com assembly_ids, recusa assembleia não encontrada no condomínio, que não é rascunho (a
+        convocada tem edital e segue sendo cancelada por POST /assemblies/{id}/cancel) ou com a primeira convocação ainda
+        por vir. Uma recusada desfaz todas. Cancelar grava o mesmo do cancelamento de uma (situação cancelled, o motivo e
+        quem cancelou) e um registro update por assembleia; nada é apagado. Sem título, local, pauta nem quem criou na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, assembly_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, now, assemblies[{ id, kind, first_call_on, days_past }], by_kind[{ kind, kind_label, assemblies }], count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Uma assembleia mudou de situação durante o pedido; nada é cancelado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou assembleia recusada (errors com _form e _assembly); nada é cancelado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
