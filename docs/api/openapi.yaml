@@ -3138,6 +3138,28 @@ paths:
         '409': { description: 'Uma alíquota mudou durante o pedido; nada é inativado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou imposto recusado (errors com _form e _kind); nada é inativado' }
+  /reports/gatehouses:
+    get:
+      operationId: gatehouseOverview
+      summary: Situação das portarias do condomínio (ativas por tipo, acessos no período, encomendas aguardando retirada e portarias sem registro), somente leitura (erp.access, erp.gatehouses.view, erp.access_logs.view e erp.deliveries.view, ADR 0294)
+      description: >-
+        rows traz uma linha por tipo de portaria (presencial, remota e híbrida), sempre todos, com as portarias ativas, as
+        inativas, os acessos registrados nelas nos últimos days dias (padrão 30, de 1 a 365, no dia do banco; acesso
+        cancelado ou excluído fica de fora), as encomendas aguardando retirada nelas e a mais antiga; totals soma as
+        linhas. elsewhere conta à parte os acessos e as encomendas sem portaria ou numa portaria inativa ou removida;
+        all_entries e all_pending somam as linhas e o elsewhere. idle_ids lista as portarias ativas sem acesso no período,
+        até 200, com truncated. Sem nome de portaria, responsável, telefone, pessoa nem documento. Não grava nem envia
+        nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: days, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 365, default: 30 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, days, from, to, rows[{ kind, kind_label, gatehouses, inactive, entries, pending_deliveries, oldest_pending_on }], totals { gatehouses, inactive, entries, pending_deliveries, oldest_pending_on }, elsewhere { entries, pending_deliveries, oldest_pending_on }, all_entries, all_pending, idle_ids[], idle_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory

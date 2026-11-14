@@ -407,6 +407,8 @@ $route->post("/assemblies/cancel-stale-drafts", "AssemblyDraftCancellation:store
 $route->get("/reports/unit-documents", "UnitDocumentOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Alíquotas próprias que só repetem o padrão inativadas em lote, por imposto, tudo ou nada e com prévia (ADR 0293).
 $route->post("/taxes/deactivate-redundant", "TaxOverrideCleanup:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação das portarias (ativas por tipo, acessos no período, encomendas aguardando e portarias sem registro), somente leitura (ADR 0294).
+$route->get("/reports/gatehouses", "GatehouseOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
