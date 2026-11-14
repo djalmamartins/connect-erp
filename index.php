@@ -369,6 +369,8 @@ $route->get("/reports/recurring-portfolio", "RecurringPortfolio:show", null, \So
 $route->post("/cost-centers/deactivate-idle", "CostCenterDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Inventário do Disco Virtual (pastas, espaço, antivírus, idade, cópias entre pastas e lixeira), somente leitura (ADR 0274).
 $route->get("/reports/virtual-disk", "VirtualDiskInventory:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Cópias repetidas do Disco Virtual para a lixeira (exclusão lógica; o arquivo fica), tudo ou nada e com prévia (ADR 0275). Antes de /documents/{id}.
+$route->post("/documents/trash-duplicates", "VirtualDiskDeduplication:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
