@@ -30,7 +30,7 @@ $labels = ['free' => 'Livre', 'partial' => 'Parte do dia', 'busy' => 'Ocupado', 
         <small><?= $this->e(implode(' · ', array_filter([
             $area['capacity'] ? 'Até ' . (int)$area['capacity'] . ' pessoas' : '',
             $area['opening_time'] ? $area['opening_time'] . ' às ' . $area['closing_time'] : '',
-            $area['booking_mode'] === 'approval' ? 'precisa de aprovação' : ($area['booking_mode'] === 'free' ? 'confirmada na hora' : 'reservas suspensas'),
+            $area['booking_mode'] === 'blocked' ? 'reservas suspensas' : 'precisa de aprovação do síndico',
         ]))) ?></small>
     </span>
 </div>

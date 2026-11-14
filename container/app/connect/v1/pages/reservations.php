@@ -39,7 +39,7 @@ $dot = ['confirmed' => 'success', 'active' => 'warning', 'inactive' => 'danger']
         $lines = [$a['fee_cents'] ? F::money($a['fee_cents']) . ' · vem no boleto' : 'Gratuito'];
         $details = array_filter([$a['capacity'] ? 'Até ' . (int)$a['capacity'] . ' pessoas' : '', $a['opening_time'] ? $a['opening_time'] . ' às ' . $a['closing_time'] : '']);
         if ($details !== []) { $lines[] = implode(' · ', $details); }
-        $lines[] = $a['booking_mode'] === 'approval' ? 'Com aprovação da administração' : ($a['booking_mode'] === 'free' ? 'Confirmada na hora' : 'Reservas suspensas');
+        $lines[] = $a['booking_mode'] === 'blocked' ? 'Reservas suspensas' : 'Com aprovação do síndico';
         $this->insert('partials/item', ['icon' => 'calendar', 'tone' => $a['booking_mode'] === 'blocked' ? 'neutral' : 'brand', 'title' => $a['name'], 'lines' => $lines,
             'href' => app_url('/reservas/area/' . $a['id']), 'badge' => $a['booking_mode'] === 'blocked' ? ['Bloqueada', 'neutral'] : null]);
     endforeach; ?>

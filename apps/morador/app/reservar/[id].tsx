@@ -59,8 +59,8 @@ export default function Reservar() {
     try {
       await api.createReservation({ common_area_id: area.id, reserved_on: day, ...(s ? { starts_time: s } : {}), ...(f ? { ends_time: f } : {}) });
       Alert.alert(
-        area.booking_mode === 'approval' ? 'Pedido enviado' : 'Reserva feita',
-        area.booking_mode === 'approval' ? 'A administração vai confirmar. Acompanhe em Minhas reservas.' : `${area.name} reservado para ${date(day)}.`,
+        'Pedido enviado para o síndico',
+        `Seu pedido de ${area.name} para ${date(day)} foi enviado para avaliação do síndico. Avisamos aqui no app quando for aprovado.`,
       );
       router.back();
     } catch (err) {
@@ -101,7 +101,7 @@ export default function Reservar() {
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={styles.price}>{area.fee_cents ? `${money(area.fee_cents)} · vem no boleto` : 'Gratuito'}</Text>
             <Body muted>
-              {[area.capacity ? `Até ${area.capacity} pessoas` : null, area.opening_time && area.closing_time ? `${area.opening_time} às ${area.closing_time}` : null, area.booking_mode === 'approval' ? 'precisa de aprovação' : null]
+              {[area.capacity ? `Até ${area.capacity} pessoas` : null, area.opening_time && area.closing_time ? `${area.opening_time} às ${area.closing_time}` : null, 'com aprovação do síndico']
                 .filter(Boolean)
                 .join(' · ')}
             </Body>

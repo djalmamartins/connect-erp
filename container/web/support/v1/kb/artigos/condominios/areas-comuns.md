@@ -52,7 +52,7 @@ recorte: main form:not([method=get])
 
 - **Condomínio** (obrigatório).
 - **Nome da área** (obrigatório).
-- **Reserva** (obrigatório): Opções: Exige aprovação, Livre, Bloqueada e Não reservável.
+- **Reserva** (obrigatório): Opções: Exige aprovação, Livre, Bloqueada e Não reservável. "Livre" confirma na hora só as reservas lançadas pela equipe no ERP; o pedido feito pelo morador no app sempre espera a aprovação do síndico.
 - **Capacidade (pessoas)**.
 - **Taxa de reserva**.
 - **Antecedência mínima (dias)**.
