@@ -423,6 +423,12 @@ $route->post("/meters/deactivate-idle", "MeterDeactivation:store", null, \Source
 $route->get("/reports/invoice-reconciliation", "InvoiceReconciliation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Contas ainda ativas de faturas canceladas (sem pagamento, acordo, boleto, cobrança judicial, documento, extrato, cheque nem competência fechada) inativadas em lote, tudo ou nada e com prévia (ADR 0401).
 $route->post("/invoices/deactivate-cancelled-entries", "InvoiceEntryCleanup:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Honorários da administradora por condomínio e pedidos de NFS-e da competência, com a chave nfse.enabled desligada por padrão (ADR 0402).
+$route->get("/management-fees", "ManagementFees:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/condominiums/{id}/management-fee", "ManagementFees:save", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/condominiums/{id}/nfse-requests", "ManagementFees:requests", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/condominiums/{id}/nfse-requests", "ManagementFees:request", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/nfse-requests/{id}/cancel", "ManagementFees:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

@@ -3363,6 +3363,85 @@ paths:
         '409': { description: 'Uma conta mudou de situação durante o pedido; nada é inativado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou conta recusada (errors com _form e _entry); nada é inativado' }
+  /management-fees:
+    get:
+      operationId: listManagementFees
+      summary: Honorários da Connect por condomínio do escopo, total mensal dos contratos ativos e pedido de nota da competência (erp.access e erp.management_fees.view, ADR 0402)
+      security: [{ session: [] }]
+      parameters:
+        - { name: competence, in: query, required: false, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+      responses:
+        '200': { description: '{ data: { competence, nfse_enabled, monthly_total_cents, active_contracts, rows[{ condominium_id, condominium_name, contract, billable, request }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: 'Competência inválida' }
+  /condominiums/{id}/management-fee:
+    post:
+      operationId: saveManagementFee
+      summary: Cria ou altera o contrato de honorários do condomínio (erp.access, erp.management_fees.view e erp.management_fees.manage, ADR 0402)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [monthly_fee, start_date, due_day], properties: { monthly_fee: { type: string, example: '1.500,00' }, start_date: { type: string, format: date }, end_date: { type: string, format: date, nullable: true }, due_day: { type: integer, minimum: 1, maximum: 28 }, service_description: { type: string, maxLength: 255 }, status: { type: string, enum: [active, suspended, ended] }, notes: { type: string, maxLength: 500 } } } } }
+      responses:
+        '200': { description: '{ data: contrato }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida (errors por campo)' }
+  /condominiums/{id}/nfse-requests:
+    get:
+      operationId: listNfseRequests
+      summary: Pedidos de nota fiscal (NFS-e) dos honorários do condomínio, do mais novo ao mais antigo (erp.access e erp.management_fees.view, ADR 0402)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: [{ id, contract_id, condominium_id, competence, amount_cents, service_description, status, nfse_number, cancel_reason, requested_at, cancelled_at }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: requestNfse
+      summary: Pede a nota fiscal (NFS-e) dos honorários da competência; exige a chave nfse.enabled ligada, contrato ativo e competência dentro do contrato (erp.access, erp.management_fees.view e erp.management_fees.manage, ADR 0402)
+      description: >-
+        Só registra o pedido (status requested) com o valor e a descrição do contrato; nada é enviado à Receita nesta etapa.
+        Um pedido aberto por contrato e competência.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [competence], properties: { competence: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } } } } }
+      responses:
+        '201': { description: '{ data: pedido }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Notas fiscais desligadas ou nota da competência já pedida' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Sem contrato, contrato não ativo ou competência inválida ou fora do contrato' }
+  /nfse-requests/{id}/cancel:
+    post:
+      operationId: cancelNfseRequest
+      summary: Cancela pedido de nota ainda não emitido, com motivo; libera a competência (erp.access, erp.management_fees.view e erp.management_fees.manage, ADR 0402)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 3, maxLength: 255 } } } } }
+      responses:
+        '200': { description: '{ data: pedido }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Nota já emitida ou pedido mudou de situação' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Motivo inválido' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
