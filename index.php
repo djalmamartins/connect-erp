@@ -403,6 +403,8 @@ $route->post("/extra-charges/cancel-batch", "ExtraChargeCancellation:store", nul
 $route->get("/reports/discounts", "DiscountOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Rascunhos de assembleia com a primeira convocação já passada cancelados em lote, tudo ou nada e com prévia (ADR 0291). Antes de /assemblies/{id}.
 $route->post("/assemblies/cancel-stale-drafts", "AssemblyDraftCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Documentos emitidos para as unidades, por tipo e mês a mês (com débito, cancelados), somente leitura (ADR 0292).
+$route->get("/reports/unit-documents", "UnitDocumentOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
