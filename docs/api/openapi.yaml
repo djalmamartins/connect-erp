@@ -2653,6 +2653,28 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou lançamento fixo recusado (errors com _form e _recurring); nada é gravado' }
+  /reports/recurring-portfolio:
+    get:
+      operationId: recurringPortfolio
+      summary: Carteira de lançamentos fixos do condomínio numa competência (vigentes, terminando em breve, já acabados e ainda ativos, futuros e inativos), com o valor mensal por natureza, a geração do mês e os vínculos inativos, somente leitura (erp.access e erp.recurring_entries.view, ADR 0272)
+      description: >-
+        Uma linha por situação, sempre as cinco, com os modelos do cadastro (sem os excluídos) na competência (padrão o mês
+        atual) e a vigência da geração (início até fim). ending_soon são os vigentes com a última competência até dois meses
+        depois (soon_until); ended_active são os ativos com o fim antes da competência (o que o encerramento em lote pegaria).
+        templates, receita_cents e despesa_cents por linha; totals é a soma. generation conta, entre os vigentes, os que já
+        geraram o lançamento da competência e os que faltam. attention traz os ativos com conta, centro de custo, conta
+        bancária ou fornecedor inativo e os vigentes sem fim. Sem descrição, fornecedor, conta ou observação. Não grava nem
+        envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, schema: { type: string, pattern: '^\\d{4}-\\d{2}$' }, description: 'AAAA-MM; vazio = o mês atual' }
+      responses:
+        '200': { description: '{ data: { condominium_id, competence, soon_until, rows[{ situation, situation_label, templates, receita_cents, despesa_cents }], totals { templates, receita_cents, despesa_cents }, generation { in_force, generated, pending }, attention { inactive_link, without_end } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
