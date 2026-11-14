@@ -445,6 +445,73 @@ final class AccountabilityLinks
             return null;
         }
         $this->pdo->prepare('UPDATE erp_accountability_links SET view_count = view_count + 1, last_viewed_at = NOW() WHERE id = :id')->execute(['id' => (int)$link['id']]);
+        return $this->view($link);
+    }
+
+    /** O mesmo livro do link para o PDF (ADR 0306), sem contar visita. Token inválido ou revogado = null. */
+    public function publicBook(mixed $token): ?array
+    {
+        $link = $this->byToken($token);
+        return $link === null ? null : $this->view($link) + ['sha256' => (string)$link['sha256']];
+    }
+
+    /**
+     * Pacote da equipe (ADR 0306): ZIP com o PDF e todos os documentos do livro, na ordem do livro. Só link ativo e
+     * do escopo de quem pede. Devolve o caminho temporário (quem chama apaga) e o nome do arquivo.
+     *
+     * @return array{path:string, filename:string}
+     */
+    public function package(User $user, int $linkId, ?AccountabilityBookDocument $document = null, ?VirtualDisk $disk = null): array
+    {
+        $link = $this->scoped($user, $linkId);
+        if ($link['status'] !== 'active') {
+            throw new DomainException('Este link foi desativado. Gere de novo para baixar o pacote.');
+        }
+        $link = $this->byToken((string)$link['token']);
+        if ($link === null) {
+            throw new DomainException('O conteúdo deste link não confere. Gere o link de novo.');
+        }
+        $view = $this->view($link);
+        $payload = json_decode((string)$link['payload_json'], true);
+        $files = $this->files((int)$link['condominium_id'], self::documentIds($payload), $disk);
+        $document ??= new AccountabilityBookDocument();
+        $path = $document->package($view, self::url((string)$link['token']), $files);
+        Audit::record('export', 'erp_accountability_links', (int)$link['id'], null, ['version' => (int)$link['version'], 'documents' => count($files)]);
+        return ['path' => $path, 'filename' => AccountabilityBookDocument::filename($view, 'zip')];
+    }
+
+    /**
+     * Caminho no disco dos documentos liberados (do condomínio, não apagados e liberados pelo antivírus).
+     *
+     * @param list<int> $ids
+     * @return array<int, string>
+     */
+    private function files(int $condominiumId, array $ids, ?VirtualDisk $disk = null): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("SELECT a.id, d.path, d.scan_status FROM erp_entry_attachments a
+            JOIN erp_documents d ON d.id = a.document_id
+            WHERE a.id IN ({$marks}) AND a.condominium_id = ? AND a.deleted_at IS NULL AND d.deleted_at IS NULL AND d.condominium_id = ?");
+        $stmt->execute([...$ids, $condominiumId, $condominiumId]);
+        $disk ??= new VirtualDisk($this->pdo, $this->scope);
+        $files = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!VirtualDisk::downloadable((string)($row['scan_status'] ?? ScanStatus::UNSCANNED))) {
+                continue;
+            }
+            $path = $disk->absolute((string)$row['path']);
+            if ($path !== null) {
+                $files[(int)$row['id']] = $path;
+            }
+        }
+        return $files;
+    }
+
+    private function view(array $link): array
+    {
         $payload = json_decode((string)$link['payload_json'], true);
         return [
             'kind' => (string)$link['kind'], 'period' => (string)$link['competence'], 'version' => (int)$link['version'],
@@ -559,7 +626,7 @@ final class AccountabilityLinks
     {
         $row = $this->row($linkId, false);
         if ($row === null || !$this->scope->canAccess($user, (int)$row['condominium_id'])) {
-            throw new CondominiumAccessDenied();
+            throw new CondominiumAccessDenied((int)($row['condominium_id'] ?? 0));
         }
         return $row;
     }
@@ -571,7 +638,7 @@ final class AccountabilityLinks
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
             if ($required) {
-                throw new CondominiumAccessDenied();
+                throw new CondominiumAccessDenied(0);
             }
             return null;
         }

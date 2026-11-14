@@ -1854,6 +1854,61 @@ paths:
         '409': { description: Já revogado }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /local-holidays:
+    get:
+      operationId: localHolidaysList
+      summary: Feriados do estado e da cidade do condomínio e o prazo do 5º dia útil do livro (erp.closing.view, ADR 0306)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: competence, in: query, schema: { type: string, pattern: '^\d{4}-\d{2}$' }, description: 'Mês do livro (AAAA-MM); o prazo é o 5º dia útil do mês seguinte' }
+      responses:
+        '200': { description: '{ data: { condominium_id, city, state, holidays[{id, scope, state, city, day, month, year, every_year, name, label}], deadline{competence, date, national_date, moved_by_local}|null } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: localHolidaysCreate
+      summary: Cadastra feriado do estado ou da cidade do condomínio (erp.closing.manage, ADR 0306)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, scope, date, name]
+              properties:
+                condominium_id: { type: integer }
+                scope: { type: string, enum: [state, city] }
+                date: { type: string, description: 'AAAA-MM-DD ou DD/MM/AAAA' }
+                name: { type: string, minLength: 3, maxLength: 120 }
+                every_year: { type: boolean, default: true, description: 'false = vale só no ano da data' }
+      responses:
+        '201': { description: '{ data: { id, scope, state, city, day, month, year, every_year, name, label } }' }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Feriado já cadastrado para o lugar }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /local-holidays/{id}:
+    delete:
+      operationId: localHolidaysDelete
+      summary: Remove feriado do lugar do condomínio (erp.closing.manage, ADR 0306)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { id, removed: true } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/deliveries:
     get:
       operationId: deliveriesReport
@@ -2678,7 +2733,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, recurring_ids: { type: array, items: { type: integer }, maxItems: 500 }, before_competence: { type: string, pattern: '^\\d{4}-\\d{2}$' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, recurring_ids: { type: array, items: { type: integer }, maxItems: 500 }, before_competence: { type: string, pattern: '^\d{4}-\d{2}$' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
       responses:
         '200': { description: '{ data: { condominium_id, dry_run, before_competence, reason, skipped_inactive_link, skipped_invalid, count, monthly_cents { receita, despesa }, suppliers_freed, changed, recurring[{ id, nature, ends_competence, amount_cents }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -2701,7 +2756,7 @@ paths:
       security: [{ session: [] }]
       parameters:
         - { name: condominium_id, in: query, required: true, schema: { type: integer } }
-        - { name: competence, in: query, schema: { type: string, pattern: '^\\d{4}-\\d{2}$' }, description: 'AAAA-MM; vazio = o mês atual' }
+        - { name: competence, in: query, schema: { type: string, pattern: '^\d{4}-\d{2}$' }, description: 'AAAA-MM; vazio = o mês atual' }
       responses:
         '200': { description: '{ data: { condominium_id, competence, soon_until, rows[{ situation, situation_label, templates, receita_cents, despesa_cents }], totals { templates, receita_cents, despesa_cents }, generation { in_force, generated, pending }, attention { inactive_link, without_end } } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -7315,7 +7370,7 @@ paths:
       security: [{ session: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
-        - { name: month, in: query, required: false, description: 'AAAA-MM; padrão = mês atual', schema: { type: string, pattern: '^\\d{4}-\\d{2}$' } }
+        - { name: month, in: query, required: false, description: 'AAAA-MM; padrão = mês atual', schema: { type: string, pattern: '^\d{4}-\d{2}$' } }
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
       responses:
         '200':

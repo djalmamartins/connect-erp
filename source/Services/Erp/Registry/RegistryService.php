@@ -309,7 +309,7 @@ final class RegistryService
             $errors = $this->attachmentRules($definition, $values);
         }
         if ($errors === []) {
-            $errors = $this->reservationRules($definition, $values, $id);
+            $errors = $this->reservationRules($definition, $values, $id, $resident !== null);
         }
         if ($errors === []) {
             $errors = $this->businessRules($definition, $values, $id);
@@ -967,7 +967,7 @@ final class RegistryService
      *
      * @return array<string, string>
      */
-    private function reservationRules(array $definition, array &$values, ?int $id): array
+    private function reservationRules(array $definition, array &$values, ?int $id, bool $byResident = false): array
     {
         $rule = $definition['reservation'] ?? null;
         if ($rule === null || ($values[$rule['area']] ?? null) === null) {
@@ -1005,7 +1005,9 @@ final class RegistryService
         if (($values[$rule['fee']] ?? null) === null && $area['booking_fee_cents'] !== null) {
             $values[$rule['fee']] = (int)$area['booking_fee_cents'];
         }
-        if ($id === null && $area['booking_mode'] === 'free' && ($values['status'] ?? 'active') === 'active') {
+        // Pedido do morador (app ou portal) sempre espera o síndico aprovar, mesmo em área livre
+        // (pedido do Djalma, 14/11/2026); só a administradora confirma na hora em área livre.
+        if (!$byResident && $id === null && $area['booking_mode'] === 'free' && ($values['status'] ?? 'active') === 'active') {
             $values['status'] = 'confirmed';
         }
         return $errors;
