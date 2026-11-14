@@ -106,7 +106,9 @@ final class Imports
         $summary = json_encode($result['summary'], JSON_UNESCAPED_UNICODE);
         $optionsJson = $options === [] ? null : json_encode($options);
         if ($existing !== null) {
-            $this->pdo->prepare('UPDATE erp_imports SET rows_count = :r, error_count = :e, summary_json = :s, bank_account_id = :b, options_json = :o WHERE id = :id')
+            // Uma prévia descartada (ADR 0285) volta a ser prévia quando o mesmo arquivo é enviado de novo.
+            $this->pdo->prepare("UPDATE erp_imports SET status = 'previewed', discarded_by = NULL, discarded_at = NULL, discard_reason = NULL, rows_count = :r, error_count = :e,
+                summary_json = :s, bank_account_id = :b, options_json = :o WHERE id = :id")
                 ->execute(['r' => count($result['rows']), 'e' => $result['error_count'], 's' => $summary, 'b' => $bankAccount['id'] ?? null, 'o' => $optionsJson, 'id' => $existing['id']]);
             $id = (int)$existing['id'];
         } else {
@@ -134,6 +136,9 @@ final class Imports
         $import = $this->row($user, $importId);
         if ($import['status'] === 'applied') {
             throw new DomainException('Esta importação já foi aplicada.');
+        }
+        if ($import['status'] === 'discarded') {
+            throw new DomainException('Esta prévia foi descartada: envie o arquivo de novo para uma nova prévia.');   // ADR 0285
         }
         $content = $this->load((string)$import['storage_path']);
         if (!hash_equals((string)$import['sha256'], hash('sha256', $content))) {

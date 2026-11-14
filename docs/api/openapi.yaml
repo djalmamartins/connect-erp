@@ -2921,7 +2921,7 @@ paths:
       summary: Situação das importações do condomínio (prévias paradas sem aplicar, aplicadas, linhas com erro e última aplicação por tipo), somente leitura (erp.access e erp.imports.view, ADR 0284)
       description: >-
         rows traz uma linha por tipo de importação (extrato OFX, lançamentos, lançamentos por unidade, contas a pagar,
-        frações, inadimplentes, leituras e NF-e) com o total, as prévias, as aplicadas, as linhas lidas, as linhas com erro,
+        frações, inadimplentes, leituras e NF-e) com o total, as prévias, as aplicadas, as descartadas, as linhas lidas, as linhas com erro,
         as importações com algum erro e a data da última aplicação; totals soma as linhas. pending_by_age conta as prévias
         ainda não aplicadas por dias desde o envio (até 7, de 8 a 30, mais de 30). pending_ids lista as prévias da mais
         antiga para a mais nova, e with_errors_ids as importações com erro, até 200 cada, com truncated. Sem nome de arquivo,
@@ -2930,11 +2930,34 @@ paths:
       parameters:
         - { name: condominium_id, in: query, required: true, schema: { type: integer } }
       responses:
-        '200': { description: '{ data: { condominium_id, on, rows[{ kind, kind_label, imports, previewed, applied, rows, errors, with_errors, last_applied_on }], totals { imports, previewed, applied, rows, errors, with_errors, last_applied_on }, unknown, pending_by_age { ate_7, de_8_a_30, mais_de_30 }, pending_ids[], pending_truncated, with_errors_ids[], with_errors_truncated } }' }
+        '200': { description: '{ data: { condominium_id, on, rows[{ kind, kind_label, imports, previewed, applied, discarded, rows, errors, with_errors, last_applied_on }], totals { imports, previewed, applied, discarded, rows, errors, with_errors, last_applied_on }, unknown, pending_by_age { ate_7, de_8_a_30, mais_de_30 }, pending_ids[], pending_truncated, with_errors_ids[], with_errors_truncated } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /imports/discard-stale:
+    post:
+      operationId: discardStaleImports
+      summary: Prévias de importação paradas descartadas em lote, sem aplicar nada nem apagar o arquivo, tudo ou nada e com prévia (erp.access, erp.imports.view e erp.imports.manage, ADR 0285)
+      description: >-
+        Sem import_ids, entram as prévias do condomínio enviadas há mais de days dias (padrão 30, de 1 a 365). Com
+        import_ids, recusa importação não encontrada no condomínio, que não está em prévia (já aplicada ou descartada) ou
+        mais nova que o limite. Descartar muda a situação para discarded, com quem descartou, quando e o motivo, e um
+        registro discard por importação. O arquivo fica guardado e nada é aplicado; a prévia descartada não pode ser
+        aplicada, e enviar o mesmo arquivo de novo a volta para prévia. Sem nome de arquivo, caminho, hash, resumo nem quem
+        enviou na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, days: { type: integer, minimum: 1, maximum: 365, default: 30 }, import_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, days, cutoff, count, changed, imports[{ id, kind }], by_kind[{ kind, kind_label, imports }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Uma importação mudou de situação durante o pedido; nada é descartado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou importação recusada (errors com _form e _import); nada é descartado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
