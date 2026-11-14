@@ -73,6 +73,11 @@ antes: esperar 300
 
 ## Quando você salva
 
-Sempre que um cadastro ou uma alteração dá certo, aparece no meio da tela um aviso com a marca da Connect: ela gira uma vez, vira um check e o texto diz o que foi feito, por exemplo "Fornecedor cadastrado com sucesso.". O aviso some sozinho em alguns segundos. Se quiser fechar antes, clique nele ou aperte **Esc**.
+Os avisos do sistema aparecem no canto superior direito, cada um com a sua cor:
 
-Se algo der errado, o aviso continua na faixa colorida do topo da página, explicando o que precisa ser corrigido.
+- **Sucesso** (verde): o cadastro ou a alteração deu certo. A marca da Connect se apaga, vira uma bolinha que desenha um check, e o texto diz o que foi feito, por exemplo "Fornecedor cadastrado com sucesso.".
+- **Atenção** (amarelo): algo precisa da sua atenção, por exemplo a sessão que expirou.
+- **Erro** (vermelho): não deu certo. O texto explica o que precisa ser corrigido.
+- **Informação** (azul): um recado, sem nada para corrigir.
+
+Os avisos somem sozinhos em alguns segundos. Enquanto o mouse está em cima, o aviso não some. Para fechar antes, clique no **X** ou aperte **Esc**.

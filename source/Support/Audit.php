@@ -31,7 +31,10 @@ final class Audit
             $stmt = $pdo->prepare("INSERT INTO system_audit_logs (users_id, action, entity, entity_id, description, context_json, severity, ip, user_agent, url) VALUES (:user, :action, :entity, :entity_id, :description, :context, :severity, :ip, :agent, :url)");
             $stmt->execute(["user" => $userId, "action" => $action, "entity" => mb_substr($entity, 0, 100), "entity_id" => $entityId, "description" => $description, "context" => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "severity" => $severity, "ip" => $ip, "agent" => $agent, "url" => mb_substr((string)$url, 0, 255)]);
 
-            $master = $pdo->query("SELECT id FROM users WHERE level >= 5 ORDER BY (level >= 10) DESC, level DESC, id ASC LIMIT 1")->fetch();
+            // Só avisa o administrador quando uma pessoa fez a alteração. Rotinas sem usuário
+            // (agendador, fila de avisos, scripts) continuam na trilha de auditoria, mas não
+            // criam um aviso "Alteração no sistema" a cada registro processado (ADR 0258).
+            $master = $userId ? $pdo->query("SELECT id FROM users WHERE level >= 5 ORDER BY (level >= 10) DESC, level DESC, id ASC LIMIT 1")->fetch() : null;
             if ($master && (int)$master->id !== $userId) {
                 $category = $pdo->query("SELECT id FROM notifications_categories WHERE uri = 'studio' LIMIT 1")->fetch();
                 if ($category) {

@@ -38,7 +38,7 @@ document.addEventListener("keydown", function (event) {
 
 $(function () {
     var ajaxResponseBaseTime = 3;
-    var ajaxResponseRequestError = "<div class='message error icon-warning'>Desculpe mas não foi possível processar sua requisição...</div>";
+    var ajaxResponseRequestError = "<div class='message error icon-warning' data-notice>Desculpe mas não foi possível processar sua requisição...</div>";
 
     // MOBILE MENU
 

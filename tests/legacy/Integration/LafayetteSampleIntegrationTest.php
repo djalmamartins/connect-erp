@@ -20,6 +20,14 @@ final class LafayetteSampleIntegrationTest extends TestCase
 {
     public function testSixMonthsCloseOnEveryReport(): void
     {
+        // Como no lab: o plano padrão da Connect (migrations 0704 e 0709) já existe e o Lafayette usa os códigos dele.
+        $root = dirname(__DIR__, 3) . '/database/migrations/';
+        foreach (['20261109_0704_chart_patrimonial_natures.sql', '20261110_0709_chart_default_income_expense.sql'] as $file) {
+            foreach (array_filter(array_map('trim', explode(";\n", (string)file_get_contents($root . $file)))) as $sql) {
+                $this->pdo->exec($sql);
+            }
+        }
+        self::assertGreaterThan(20, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_chart_accounts WHERE condominium_id IS NULL')->fetchColumn());
         $admin = $this->admin();
         $sample = new LafayetteSample($this->pdo, $admin);
         $created = $sample->create();
@@ -55,6 +63,26 @@ final class LafayetteSampleIntegrationTest extends TestCase
         self::assertSame($other, $this->pdo->query("SELECT COUNT(*) FROM erp_suppliers")->fetchColumn(), 'Fornecedores da administradora ficam.');
         $sample->create();
         self::assertTrue($sample->verify()['ok']);
+    }
+
+    public function testWorksWithEmptyDefaultChartAndCleansUpOnFailure(): void
+    {
+        $admin = $this->admin();
+        $sample = new LafayetteSample($this->pdo, $admin);
+        $sample->create();
+        self::assertTrue($sample->verify()['ok'], 'Sem plano padrão, o Lafayette cria o próprio plano e fecha igual.');
+        $sample->remove();
+
+        // Conta do padrão com outra natureza: a criação para com mensagem clara e não deixa o condomínio pela metade.
+        $this->pdo->exec("INSERT INTO erp_chart_accounts (condominium_id, code, name, nature, kind) VALUES (NULL, '1.01', 'Conta trocada', 'despesa', 'analitica')");
+        try {
+            $sample->create();
+            self::fail('Criou com o plano incompatível.');
+        } catch (DomainException $error) {
+            self::assertStringContainsString('1.01', $error->getMessage());
+        }
+        self::assertNull($sample->condominiumId(), 'O que entrou antes do erro foi apagado.');
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_units')->fetchColumn());
     }
 
     public function testCompetencesAreTheSixFullMonthsBeforeToday(): void
