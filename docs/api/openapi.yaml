@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /tariffs/readjust:
+    post:
+      operationId: readjustTariffs
+      summary: Reajuste em lote das tarifas próprias do condomínio por percentual, criando a nova vigência pelo cadastro e mantendo as faixas antigas, tudo ou nada e com prévia (erp.access, erp.tariffs.view e erp.tariffs.manage, ADR 0259)
+      description: >-
+        Para cada tipo escolhido (padrão todos), as faixas da tarifa própria do condomínio vigente antes de valid_from são
+        copiadas pelo cadastro com o preço reajustado (−50% a 100%, até 2 casas, o mesmo arredondamento dos outros
+        reajustes) e a nova vigência; as faixas antigas não mudam, e as leituras anteriores seguem com o preço antigo.
+        valid_from é hoje ou uma data futura. Sem kinds, ficam de fora os tipos sem tarifa própria (skipped_default, a
+        padrão da Connect não é reajustada aqui) e os com vigência própria na data ou depois (skipped_already); com kinds,
+        um recusado desfaz todos. Auditoria readjust por faixa nova, com o motivo. Nenhum aviso é enviado. Sem nome da
+        faixa ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, percent, valid_from, reason], properties: { condominium_id: { type: integer }, kinds: { type: array, items: { type: string, enum: [agua, gas, energia] } }, percent: { type: string, example: '5,5' }, valid_from: { type: string, format: date }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, percent, valid_from, reason, skipped_default[], skipped_already[], count, changed, kinds[{ kind, from_valid_from, bands[{ from_amount, to_amount, price_before_cents, price_after_cents }] }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou tipo recusado (errors com _form e _kind); nada é gravado' }
   /reports/tariff-coverage:
     get:
       operationId: tariffCoverage
