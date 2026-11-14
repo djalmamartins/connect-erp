@@ -32,6 +32,41 @@
   document.addEventListener('change', function (event) {
     if (event.target.matches('[data-app-autosubmit]')) event.target.form.submit();
   });
+  // Rolagem infinita dos boletos: busca a janela anterior quando o fim da lista aparece.
+  function loadMore(more) {
+    if (more.dataset.loading) return;
+    more.dataset.loading = '1';
+    fetch(more.getAttribute('data-app-more'), { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { if (!r.ok) throw new Error(); return r.text(); })
+      .then(function (html) {
+        var tpl = document.createElement('template');
+        tpl.innerHTML = html;
+        more.replaceWith(tpl.content);
+        watchMore();
+      })
+      .catch(function () { delete more.dataset.loading; more.textContent = 'Não foi possível carregar. Toque para tentar de novo.'; more.onclick = function () { loadMore(more); }; });
+  }
+  function watchMore() {
+    var more = document.querySelector('[data-app-more]');
+    if (!more) return;
+    if (!('IntersectionObserver' in window)) { loadMore(more); return; }
+    var io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { io.disconnect(); loadMore(more); }
+    }, { rootMargin: '400px' });
+    io.observe(more);
+  }
+  watchMore();
+  // Olho do Início: esconde e mostra os valores; a escolha fica neste aparelho.
+  var HIDE = 'app-hide-values';
+  try { if (localStorage.getItem(HIDE) === '1') document.documentElement.classList.add(HIDE); } catch (e) {}
+  document.addEventListener('click', function (event) {
+    var eye = event.target.closest('[data-app-eye]');
+    if (!eye) return;
+    var on = document.documentElement.classList.toggle(HIDE);
+    eye.setAttribute('aria-pressed', on ? 'true' : 'false');
+    eye.setAttribute('aria-label', on ? 'Mostrar valores' : 'Esconder valores');
+    try { localStorage.setItem(HIDE, on ? '1' : '0'); } catch (e) {}
+  });
   var deferred = null;
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault();

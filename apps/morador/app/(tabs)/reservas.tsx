@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState, type ComponentProps } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import type { CommonArea, Reservation } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -11,6 +11,7 @@ import { date, money, today } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { dialog } from '../../src/ui/Dialog';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type Tab = 'new' | 'mine';
@@ -39,7 +40,7 @@ export default function Reservas() {
       await api.cancelReservation(id);
       await list.reload();
     } catch (err) {
-      Alert.alert('Reserva', err instanceof ApiError ? err.message : 'Não foi possível cancelar.');
+      void dialog.notice({ title: 'Não deu para cancelar', message: err instanceof ApiError ? err.message : 'Tente de novo em instantes.', tone: 'error' });
     }
   }
 

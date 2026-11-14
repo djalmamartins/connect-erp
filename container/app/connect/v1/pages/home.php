@@ -19,15 +19,58 @@ $first = explode(' ', trim((string)$link['name']))[0] ?? '';
     </div>
 <?php endif; ?>
 
-<div class="app-grid">
-<?php if (isset($summary['charges'])): $c = $summary['charges']; ?>
-    <a class="app-card app-stat app-hero" href="<?= app_url('/boletos') ?>">
-        <span class="app-stat__label">Boletos em aberto</span>
-        <strong class="app-stat__value"><?= F::money($c['open_cents']) ?></strong>
-        <span class="app-stat__hint"><?php if ($c['open_count'] === 0): ?>Nada em aberto. Obrigado!<?php elseif ($c['next_due_on']): ?>Próximo vencimento <?= F::date($c['next_due_on']) ?><?php else: ?><?= (int)$c['open_count'] ?> em aberto<?php endif; ?></span>
-        <?php if ($c['overdue_cents'] > 0): ?><span class="app-hero__badge"><?= F::money($c['overdue_cents']) ?> vencido</span><?php endif; ?>
-    </a>
+<?php $c = $summary['charges'] ?? null; ?>
+    <section class="app-card app-hero app-wallet">
+        <img class="app-wallet__mark" src="<?= themeApp('/assets/images/connect-symbol.png') ?>" alt="" aria-hidden="true" width="180" height="234">
+        <div class="app-wallet__top">
+            <?php if (count($links ?? []) > 1): ?>
+                <details class="app-switch">
+                    <summary><strong><?= $this->e($link['condominium_name']) ?></strong><svg aria-hidden="true"><use href="#i-chevron"></use></svg><span class="app-sr">Trocar de unidade</span></summary>
+                    <form class="app-switch__menu" method="post" action="<?= app_url('/unidade') ?>">
+                        <?= csrf_input() ?>
+                        <?php foreach ($links as $item): $current = $item['resident_id'] === $link['resident_id']; ?>
+                            <button type="submit" name="resident_id" value="<?= (int)$item['resident_id'] ?>"<?= $current ? ' aria-current="true"' : '' ?>>
+                                <strong><?= $this->e($item['condominium_name']) ?></strong><small><?= $this->e($item['unit_label'] . ' · ' . $item['relationship_label']) ?></small>
+                                <?php if ($current): ?><svg aria-hidden="true"><use href="#i-check"></use></svg><?php endif; ?>
+                            </button>
+                        <?php endforeach; ?>
+                    </form>
+                </details>
+            <?php else: ?>
+                <strong class="app-wallet__condo"><?= $this->e($link['condominium_name']) ?></strong>
+            <?php endif; ?>
+            <span class="app-wallet__pill"><svg aria-hidden="true"><use href="#i-home"></use></svg><?= $this->e($link['unit_label'] . ' · ' . $link['relationship_label']) ?></span>
+        </div>
+        <?php if ($c !== null): ?>
+            <div class="app-wallet__label">Em aberto
+                <button type="button" class="app-wallet__eye" data-app-eye aria-pressed="false" aria-label="Esconder valores"><svg class="app-eye-on" aria-hidden="true"><use href="#i-eye"></use></svg><svg class="app-eye-off" aria-hidden="true"><use href="#i-eye-off"></use></svg></button>
+            </div>
+            <a class="app-wallet__value" href="<?= app_url('/boletos') ?>"><span class="app-money"><?= F::money($c['open_cents']) ?></span><span class="app-money-hidden">R$ •••••</span></a>
+            <a class="app-wallet__next" href="<?= app_url('/boletos') ?>"><?php if ($c['open_count'] === 0): ?>Nada em aberto. Obrigado!<?php elseif ($c['next_due_on']): ?>Próximo vencimento <?= F::date($c['next_due_on']) ?><?php else: ?><?= (int)$c['open_count'] ?> em aberto<?php endif; ?><svg aria-hidden="true"><use href="#i-chevron"></use></svg></a>
+            <?php if ($c['overdue_cents'] > 0): ?><span class="app-hero__badge"><span class="app-money"><?= F::money($c['overdue_cents']) ?></span><span class="app-money-hidden">R$ •••</span> vencido</span><?php endif; ?>
+            <?php if ($c['next_entry_id'] !== null): ?>
+                <div class="app-wallet__actions">
+                    <a class="app-wallet__btn app-wallet__btn--gold" href="<?= app_url('/boletos/' . $c['next_entry_id']) ?>"><svg aria-hidden="true"><use href="#i-file"></use></svg>2ª via do boleto</a>
+                    <?php if ($c['next_code'] !== null): ?><button type="button" class="app-wallet__btn" data-app-copy="<?= $this->e($c['next_code']) ?>"><svg aria-hidden="true"><use href="#i-copy"></use></svg>Copiar código</button><?php endif; ?>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </section>
+<?php
+$quick = array_values(array_filter([
+    in_array('reservations', $features, true) ? ['Reservar', '/reservas', 'calendar'] : null,
+    in_array('occurrences', $features, true) ? ['Chamado', '/ocorrencias', 'alert'] : null,
+    in_array('visitors', $features, true) ? ['Visitante', '/visitantes', 'user-check'] : null,
+    in_array('documents', $features, true) ? ['Documentos', '/documentos', 'file'] : null,
+]));
+if ($quick !== []): ?>
+    <nav class="app-quick" aria-label="Atalhos">
+        <?php foreach ($quick as [$label, $path, $icon]): ?>
+            <a href="<?= app_url($path) ?>"><span class="app-quick__icon" aria-hidden="true"><svg><use href="#i-<?= $icon ?>"></use></svg></span><?= $label ?></a>
+        <?php endforeach; ?>
+    </nav>
 <?php endif; ?>
+<div class="app-grid">
 <?php if (isset($summary['deliveries_waiting'])): $w = (int)$summary['deliveries_waiting']; ?>
     <a class="app-card app-tile" href="<?= app_url('/encomendas') ?>">
         <span class="app-tile__icon<?= $w > 0 ? ' app-tile__icon--blue' : '' ?>"><svg aria-hidden="true"><use href="#i-box"></use></svg></span>

@@ -235,6 +235,26 @@ final class TicketService
             $terms[] = 't.status = :status';
             $params['status'] = $filters['status'];
         }
+        // Filtros da fila do Help Desk (ADR 0307): prioridade, responsável, prazo e origem.
+        if (in_array($filters['priority'] ?? '', self::PRIORITIES, true)) {
+            $terms[] = 't.priority = :priority';
+            $params['priority'] = $filters['priority'];
+        }
+        if (($filters['assigned'] ?? '') === 'unassigned') {
+            $terms[] = 't.assigned_to IS NULL';
+        } elseif (ctype_digit((string)($filters['assigned'] ?? '')) && (int)$filters['assigned'] > 0) {
+            $terms[] = 't.assigned_to = :assigned';
+            $params['assigned'] = (int)$filters['assigned'];
+        }
+        if (($filters['due'] ?? '') === 'today') {
+            $terms[] = "DATE(t.due_at) = CURDATE() AND t.status NOT IN ('resolved', 'closed')";
+        } elseif (($filters['due'] ?? '') === 'overdue') {
+            $terms[] = "t.due_at < NOW() AND t.status NOT IN ('resolved', 'closed')";
+        }
+        if (in_array($filters['origin'] ?? '', self::ORIGINS, true)) {
+            $terms[] = 't.origin = :origin';
+            $params['origin'] = $filters['origin'];
+        }
         // Só as ocorrências (ADR 0305): toda ocorrência é um chamado, e esta lista é o lugar único de acompanhar.
         if (($filters['kind'] ?? '') === 'occurrence') {
             $terms[] = 'o.id IS NOT NULL';
@@ -582,7 +602,7 @@ final class TicketService
             t.requester_id, COALESCE(NULLIF(TRIM(CONCAT(r.first_name, ' ', r.last_name)), ''), t.requester_name) AS requester_name,
             COALESCE(r.email, t.requester_email) AS requester_email, t.requester_phone,
             t.created_by, t.assigned_to, NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), '') AS assigned_name,
-            t.due_at, t.resolved_at, t.created_at, o.id AS occurrence_id
+            t.due_at, t.resolved_at, t.created_at, t.updated_at, t.first_response_at, t.work_seconds, t.team, t.tags, o.id AS occurrence_id
         FROM studio_support_tickets t
         LEFT JOIN erp_occurrences o ON o.ticket_id = t.id AND o.deleted_at IS NULL
         LEFT JOIN condominiums c ON c.id = t.condominium_id
@@ -615,6 +635,11 @@ final class TicketService
             'due_at' => (string)$row['due_at'],
             'resolved_at' => $row['resolved_at'] !== null ? (string)$row['resolved_at'] : null,
             'created_at' => (string)$row['created_at'],
+            'updated_at' => (string)($row['updated_at'] ?? '') ?: (string)$row['created_at'],
+            'first_response_at' => ($row['first_response_at'] ?? null) !== null ? (string)$row['first_response_at'] : null,
+            'work_seconds' => (int)($row['work_seconds'] ?? 0),
+            'team' => ($row['team'] ?? null) !== null ? (string)$row['team'] : null,
+            'tags' => ($row['tags'] ?? null) !== null ? (string)$row['tags'] : null,
             // Ocorrência do ERP ligada a este chamado (ADR 0305), ou null.
             'occurrence_id' => isset($row['occurrence_id']) && $row['occurrence_id'] !== null ? (int)$row['occurrence_id'] : null,
         ];

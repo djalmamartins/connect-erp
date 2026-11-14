@@ -76,12 +76,26 @@ Clique no protocolo na lista para abrir o chamado. Ali aparecem a conversa com a
 
 Toda ocorrência também é um chamado. No filtro de tipo, **Só ocorrências** mostra apenas elas, e **Sem as ocorrências** mostra os outros chamados. O selo "Ocorrência #" na lista leva à ocorrência.
 
-Use os filtros no alto da lista: **Buscar**, **Condomínio** e **Situação**.
+No alto da tela ficam os contadores da fila, como no Help Desk: um por situação, **SLA vencido**, **Vence hoje** e **Sem responsável**. Clique em um deles para filtrar.
+
+Use os filtros no alto da lista: **Buscar**, **Condomínio**, **Situação**, **Prioridade**, **Responsável**, **Prazo**, **Origem** e **Tipo**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
 ## O que a lista mostra
 
-Colunas: **Protocolo**, **Assunto**, **Condomínio / unidade**, **Solicitante**, **Origem**, **Prioridade**, **Situação** e **Aberto em**.
+Colunas: **Protocolo**, **Atualizado**, **Solicitante** (com condomínio, unidade e origem), **Assunto**, **Situação**, **Responsável**, **Prioridade** e **SLA** (o prazo, ou "Vencido" em vermelho).
+
+## Atender pelo ERP
+
+Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do Help Desk:
+
+- **Cronômetro**: ao abrir o chamado, ele começa a contar o tempo dedicado. Dá para pausar ou zerar. O tempo é somado ao chamado quando você envia a mensagem.
+- **Responder** ou **Nota interna**: a nota interna só a equipe vê.
+- **Resposta rápida**, **Anexos** e **Resolver após enviar**.
+- **Triagem**: situação, prioridade, responsável, categoria, equipe e tags, e o botão **Resolver chamado** (ou **Reabrir chamado**).
+- **Detalhes**: primeira resposta, prazo SLA, tempo dedicado e número de respostas.
+- **Histórico de alterações**: quem mudou o quê e quando.
+- Na lista, marque vários chamados e escolha a situação em **Com os selecionados**.
 
 > Se o pedido é de um morador, marque **Um morador ou outra pessoa** e informe nome, e-mail e telefone dele: a resposta vai para ele.
 

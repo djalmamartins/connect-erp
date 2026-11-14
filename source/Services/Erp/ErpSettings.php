@@ -43,6 +43,8 @@ final class ErpSettings
         'app.display_name' => ['page' => 'AP-154', 'group' => 'Layout da aplicação', 'label' => 'Nome exibido no aplicativo', 'type' => 'text', 'default' => 'Connect', 'scope' => 'global', 'min' => 2, 'max' => 80],
         'app.notices_enabled' => ['page' => 'AP-155', 'group' => 'Notificações do aplicativo', 'label' => 'Enviar comunicados por e-mail', 'type' => 'bool', 'default' => true, 'scope' => 'condominium'],
         'app.collection_cooldown_days' => ['page' => 'AP-155', 'group' => 'Notificações do aplicativo', 'label' => 'Dias entre avisos de cobrança da mesma unidade', 'type' => 'int', 'default' => 7, 'scope' => 'global', 'min' => 1, 'max' => 90],
+        // ADR 0402: chave geral das notas fiscais (NFS-e). Desligada, nenhum pedido de nota é aceito e nada é emitido.
+        'nfse.enabled' => ['page' => 'AP-157', 'group' => 'Financeiro', 'label' => 'Notas fiscais (NFS-e) ligadas: permitir solicitar e emitir notas', 'type' => 'bool', 'default' => false, 'scope' => 'global'],
         'finance.default_due_day' => ['page' => 'AP-157', 'group' => 'Financeiro', 'label' => 'Dia de vencimento padrão das faturas', 'type' => 'int', 'default' => 10, 'scope' => 'condominium', 'min' => 1, 'max' => 28],
         'statement.show_open_entries' => ['page' => 'AP-158', 'group' => 'Demonstrativo', 'label' => 'Mostrar contas em aberto no demonstrativo', 'type' => 'bool', 'default' => true, 'scope' => 'condominium'],
         'statement.group_by' => ['page' => 'AP-158', 'group' => 'Demonstrativo', 'label' => 'Agrupar o demonstrativo por', 'type' => 'enum', 'default' => 'chart', 'scope' => 'condominium',

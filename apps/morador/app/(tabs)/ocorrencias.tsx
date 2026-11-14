@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import type { Priority } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -7,6 +7,7 @@ import { date, parseDate, today } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { space } from '../../src/theme';
 import { Body, Button, Card, CardTitle, Choice, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../../src/ui/kit';
+import { dialog } from '../../src/ui/Dialog';
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: 'baixa', label: 'Baixa' },
@@ -39,12 +40,12 @@ export default function Ocorrencias() {
       setDescription('');
       setWhen('');
       setPriority('media');
-      Alert.alert('Ocorrência registrada', 'A administração vai analisar e responder por aqui.');
+      void dialog.notice({ title: 'Ocorrência registrada', message: 'A administração vai analisar e responder por aqui.', tone: 'success' });
       await list.reload();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fields);
-        Alert.alert('Ocorrência', err.message);
+        void dialog.notice({ title: 'Não deu para registrar', message: err.message, tone: 'error' });
       }
     } finally {
       setBusy(false);

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { areaIcon } from '../../src/lib/areas';
@@ -10,6 +10,7 @@ import { date, MONTHS, money, parseTime, today } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Button, Card, ErrorBox, Field, Loading, Row, Screen } from '../../src/ui/kit';
+import { dialog } from '../../src/ui/Dialog';
 
 const WEEK = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -58,15 +59,17 @@ export default function Reservar() {
     setBusyAction(true);
     try {
       await api.createReservation({ common_area_id: area.id, reserved_on: day, ...(s ? { starts_time: s } : {}), ...(f ? { ends_time: f } : {}) });
-      Alert.alert(
-        'Pedido enviado para o síndico',
-        `Seu pedido de ${area.name} para ${date(day)} foi enviado para avaliação do síndico. Avisamos aqui no app quando for aprovado.`,
-      );
+      await dialog.notice({
+        title: 'Pedido enviado para o síndico',
+        message: `Seu pedido de ${area.name} para ${date(day)} foi enviado para avaliação do síndico. Avisamos aqui no app quando for aprovado.`,
+        tone: 'success',
+        icon: 'paper-plane',
+      });
       router.back();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fields);
-        Alert.alert('Reserva', err.message);
+        void dialog.notice({ title: 'Não deu para reservar', message: err.message, tone: 'error' });
         await availability.reload();
       }
     } finally {
@@ -79,10 +82,10 @@ export default function Reservar() {
     setBusyAction(true);
     try {
       await api.joinWaitlist({ common_area_id: area.id, desired_on: day });
-      Alert.alert('Lista de espera', 'Pronto! Avisamos se a data ficar livre.');
+      await dialog.notice({ title: 'Você está na lista de espera', message: 'Avisamos se a data ficar livre.', tone: 'success', icon: 'hourglass' });
       router.back();
     } catch (err) {
-      Alert.alert('Lista de espera', err instanceof ApiError ? err.message : 'Não foi possível entrar na lista.');
+      void dialog.notice({ title: 'Não deu para entrar na lista', message: err instanceof ApiError ? err.message : 'Tente de novo em instantes.', tone: 'error' });
     } finally {
       setBusyAction(false);
     }
