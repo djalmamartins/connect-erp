@@ -13,6 +13,7 @@ use DomainException;
 use Source\Services\Erp\AccountabilityLinks;
 use Source\Services\Erp\CashBook;
 use Source\Services\Erp\CashBookDocument;
+use Source\Services\Erp\LocalHolidays;
 use Source\Services\Erp\RecurringEntries;
 use Source\Support\Access;
 use Source\Support\AppLogger;
@@ -29,7 +30,11 @@ use Source\Support\Message;
  *  POST /prestacao-de-contas/livro-caixa/link                 gera ou atualiza o link público do mês ou do ano (ADR 0301)
  *  POST /prestacao-de-contas/livro-caixa/link/{id}/enviar     envia o link aos moradores do condomínio
  *  POST /prestacao-de-contas/livro-caixa/link/{id}/revogar    desliga o link (motivo)
- * O cartão do link aparece para quem vê o livro; gerar, enviar e revogar exigem erp.closing.manage, como fechar o mês.
+ *  GET  /prestacao-de-contas/livro-caixa/link/{id}/pacote     ZIP com o PDF e todos os documentos do livro (ADR 0306)
+ *  POST /prestacao-de-contas/livro-caixa/feriados             cadastra feriado do estado ou da cidade (ADR 0306)
+ *  POST /prestacao-de-contas/livro-caixa/feriados/{id}/remover remove o feriado
+ * O cartão do link aparece para quem vê o livro; gerar, enviar, revogar e mexer nos feriados exigem
+ * erp.closing.manage, como fechar o mês. O pacote basta ver o livro (como o pacote do mês).
  *
  * Exige erp.entries.view (como a API). Sem banco ou sem permissão, cashReady false = demonstração.
  */
@@ -65,7 +70,7 @@ final class CashBookScreens
         $context = CondominiumContext::id();
         $month = self::month($_GET['mes'] ?? null, date('Y-m'));
         $data = ['cashReady' => false, 'cashMonth' => $month, 'cashNeedsCondo' => $context === null, 'cashError' => null, 'cashBook' => null,
-            'cashCanManage' => Access::can('erp.entries.manage', $user), 'cashLinks' => ['monthly' => null, 'annual' => null], 'cashCanPublish' => false];
+            'cashCanManage' => Access::can('erp.entries.manage', $user), 'cashLinks' => ['monthly' => null, 'annual' => null], 'cashCanPublish' => false, 'cashHolidays' => null];
         try {
             if ($context !== null) {
                 try {
@@ -74,6 +79,7 @@ final class CashBookScreens
                     $data['cashLinks'] = ['monthly' => $links->forPeriod($user, $context, 'monthly', $month),
                         'annual' => $links->forPeriod($user, $context, 'annual', substr($month, 0, 4))];
                     $data['cashCanPublish'] = Access::can('erp.closing.manage', $user);
+                    $data['cashHolidays'] = (new LocalHolidays())->list($user, $context, $month);
                 } catch (InvalidArgumentException $error) {
                     $data['cashError'] = $error->getMessage();
                 } catch (CondominiumAccessDenied) {
@@ -157,8 +163,73 @@ final class CashBookScreens
         });
     }
 
+    public function packageLink(array $data): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect(erp_url('/login'));
+            return;
+        }
+        $month = self::month($_GET['mes'] ?? null, date('Y-m'));
+        $back = erp_url(self::ROUTE . '?mes=' . $month) . '#link-moradores';
+        if (!Access::can('erp.access', $user) || !Access::can('erp.entries.view', $user)) {
+            http_response_code(403);
+            (new Message())->error('Você não tem permissão para ver o livro caixa.')->flash();
+            redirect($back);
+            return;
+        }
+        if (request_limit('erp_accountability_package', 10, 600)) {
+            (new Message())->error('Muitos downloads em pouco tempo. Aguarde alguns minutos.')->flash();
+            redirect($back);
+            return;
+        }
+        try {
+            @set_time_limit(300);
+            $package = (new AccountabilityLinks())->package($user, $this->id($data));
+            try {
+                header('Content-Type: application/zip');
+                header('Content-Disposition: attachment; filename="' . $package['filename'] . '"');
+                header('Content-Length: ' . (int)filesize($package['path']));
+                header('Cache-Control: private, no-store');
+                header('X-Content-Type-Options: nosniff');
+                readfile($package['path']);
+            } finally {
+                @unlink($package['path']);
+            }
+        } catch (InvalidArgumentException | DomainException $error) {
+            (new Message())->error($error->getMessage())->flash();
+            redirect($back);
+        } catch (CondominiumAccessDenied) {
+            (new Message())->error('Link fora do seu escopo de acesso.')->flash();
+            redirect($back);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'accountability_package_failed']);
+            (new Message())->error('Não foi possível montar o pacote agora. Tente de novo.')->flash();
+            redirect($back);
+        }
+    }
+
+    public function addHoliday(array $data): void
+    {
+        $this->linkAction($data, static function (AccountabilityLinks $links, User $user, int $condominium) use ($data): string {
+            $holiday = (new LocalHolidays())->add($user, $condominium, [
+                'scope' => $data['scope'] ?? null, 'date' => $data['date'] ?? null, 'name' => $data['name'] ?? null,
+                'every_year' => ($data['every_year'] ?? '') === '1',
+            ]);
+            return sprintf('Feriado %s (%s) incluído. O prazo do 5º dia útil já conta com ele.', $holiday['name'], $holiday['label']);
+        }, 'feriados');
+    }
+
+    public function removeHoliday(array $data): void
+    {
+        $this->linkAction($data, function (AccountabilityLinks $links, User $user, int $condominium) use ($data): string {
+            (new LocalHolidays())->remove($user, $condominium, $this->id($data));
+            return 'Feriado removido.';
+        }, 'feriados');
+    }
+
     /** @param callable(AccountabilityLinks, User, int, string): string $action */
-    private function linkAction(array $data, callable $action): void
+    private function linkAction(array $data, callable $action, string $anchor = 'link-moradores'): void
     {
         $user = Auth::user();
         if ($user === null) {
@@ -166,10 +237,10 @@ final class CashBookScreens
             return;
         }
         $month = self::month($data['mes'] ?? null, date('Y-m'));
-        $back = erp_url(self::ROUTE . '?mes=' . $month) . '#link-moradores';
+        $back = erp_url(self::ROUTE . '?mes=' . $month) . '#' . $anchor;
         if (!Access::can('erp.access', $user) || !Access::can('erp.entries.view', $user) || !Access::can('erp.closing.manage', $user)) {
             http_response_code(403);
-            (new Message())->error('Só quem pode fechar o mês gera, envia ou desativa o link da prestação de contas.')->flash();
+            (new Message())->error($anchor === 'feriados' ? 'Só quem pode fechar o mês cadastra feriados.' : 'Só quem pode fechar o mês gera, envia ou desativa o link da prestação de contas.')->flash();
             redirect($back);
             return;
         }
@@ -189,7 +260,7 @@ final class CashBookScreens
         } catch (InvalidArgumentException | DomainException $error) {
             (new Message())->error($error->getMessage())->flash();
         } catch (CondominiumAccessDenied) {
-            (new Message())->error('Link fora do seu escopo de acesso.')->flash();
+            (new Message())->error($anchor === 'feriados' ? 'Feriado não encontrado para este condomínio.' : 'Link fora do seu escopo de acesso.')->flash();
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'erp', ['event_type' => 'accountability_link_screen_failed', 'condominium_id' => $condominium]);
             (new Message())->error('Não foi possível concluir agora. Tente de novo.')->flash();
