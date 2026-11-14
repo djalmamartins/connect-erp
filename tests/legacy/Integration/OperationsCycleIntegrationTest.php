@@ -91,8 +91,8 @@ final class OperationsCycleIntegrationTest extends TestCase
         // 5. Ocorrência aberta vira chamado no Help Desk e segue contando até ser resolvida.
         $occurrence = $this->service->save($this->admin, 'occurrences', ['condominium_id' => $this->alpha, 'unit_id' => $units['102'], 'subject' => 'Vazamento',
             'priority' => 'alta', 'occurred_on' => $day(0), 'description' => 'Água pingando na garagem.'])['id'];
-        $ticket = (new Occurrences($this->pdo))->openTicket($this->admin, $occurrence);
-        self::assertSame($this->alpha, (int)$this->pdo->query('SELECT condominium_id FROM studio_support_tickets WHERE id = ' . (int)$ticket['ticket_id'])->fetchColumn());
+        $ticket = (int)$this->pdo->query("SELECT ticket_id FROM erp_occurrences WHERE id = {$occurrence}")->fetchColumn();   // nasce com o chamado (ADR 0305)
+        self::assertSame($this->alpha, (int)$this->pdo->query('SELECT condominium_id FROM studio_support_tickets WHERE id = ' . $ticket)->fetchColumn());
         self::assertSame(1, $cards()['occurrences_open']);
 
         // 6. Painel do condomínio traz os mesmos números do dashboard.

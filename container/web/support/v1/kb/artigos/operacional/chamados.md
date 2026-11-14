@@ -74,6 +74,8 @@ Clique no protocolo na lista para abrir o chamado. Ali aparecem a conversa com a
 
 ## Pesquisar e filtrar
 
+Toda ocorrência também é um chamado. No filtro de tipo, **Só ocorrências** mostra apenas elas, e **Sem as ocorrências** mostra os outros chamados. O selo "Ocorrência #" na lista leva à ocorrência.
+
 Use os filtros no alto da lista: **Buscar**, **Condomínio** e **Situação**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 

@@ -7,7 +7,7 @@
  * @var list<array{id:int,name:string}> $condominiums
  * @var array<int, list<array{id:int,label:string}>> $unitsByCondominium
  * @var list<array> $tickets TicketService::present()
- * @var array{condominium_id:int,status:string,q:string} $filters
+ * @var array{condominium_id:int,status:string,q:string,kind:string} $filters
  * @var ?string $helpdeskUrl link para a fila do Help Desk (quem atende)
  */
 use Source\Services\Support\TicketService;
@@ -123,7 +123,7 @@ $this->insert('components/layout/page-head', [
 
 <section class="erp-card erp-card--flush" aria-labelledby="tk-list-title">
     <div class="erp-card__head">
-        <div><h2 id="tk-list-title">Chamados</h2><p>Dos seus condomínios e os que você abriu, dos mais recentes para os mais antigos.</p></div>
+        <div><h2 id="tk-list-title">Chamados</h2><p>Dos seus condomínios e os que você abriu, dos mais recentes para os mais antigos. As ocorrências também estão aqui: toda ocorrência é um chamado.</p></div>
         <form class="erp-filters" method="get" action="<?= erp_url($base) ?>">
             <label class="erp-sr-only" for="tk-f-q">Buscar</label>
             <input class="erp-input" id="tk-f-q" name="q" value="<?= $this->e($filters['q']) ?>" placeholder="Protocolo ou assunto">
@@ -141,6 +141,12 @@ $this->insert('components/layout/page-head', [
                     <option value="<?= $key ?>"<?= $filters['status'] === $key ? ' selected' : '' ?>><?= $label ?></option>
                 <?php endforeach; ?>
             </select>
+            <label class="erp-sr-only" for="tk-f-kind">Tipo</label>
+            <select class="erp-select" id="tk-f-kind" name="tipo">
+                <option value="">Chamados e ocorrências</option>
+                <option value="ocorrencias"<?= ($filters['kind'] ?? '') === 'occurrence' ? ' selected' : '' ?>>Só ocorrências</option>
+                <option value="outros"<?= ($filters['kind'] ?? '') === 'other' ? ' selected' : '' ?>>Sem as ocorrências</option>
+            </select>
             <button class="erp-btn" type="submit"><?= $icon('filter', 'erp-icon--sm') ?>Filtrar</button>
         </form>
     </div>
@@ -156,7 +162,7 @@ $this->insert('components/layout/page-head', [
                 <?php foreach ($tickets as $ticket): ?>
                     <tr>
                         <td><a class="erp-ticket-link" href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['protocol']) ?></a></td>
-                        <td><a href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['subject']) ?></a></td>
+                        <td><a href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['subject']) ?></a><?php if (($ticket['occurrence_id'] ?? null) !== null): ?><br><a class="erp-badge erp-badge--plain" href="<?= erp_url('/operacional/ocorrencias/' . (int)$ticket['occurrence_id']) ?>"><?= $this->e('Ocorrência #' . (int)$ticket['occurrence_id']) ?></a><?php endif; ?></td>
                         <td><?= $this->e($ticket['condominium']['name'] ?? '—') ?><?php if ($ticket['unit'] !== null): ?><br><small><?= $this->e('Unid. ' . $ticket['unit']['label']) ?></small><?php endif; ?></td>
                         <td><?= $this->e($ticket['requester']['name'] ?? '—') ?></td>
                         <td><?= $this->e(TicketService::ORIGIN_LABELS[$ticket['origin']] ?? $ticket['origin']) ?></td>

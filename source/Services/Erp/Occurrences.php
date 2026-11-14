@@ -14,16 +14,24 @@ use Source\Services\Support\TicketService;
 use Source\Support\Audit;
 
 /**
- * Ocorrência → chamado na fila do Help Desk (ADR 0034 e 0051).
+ * Ocorrência = chamado do Help Desk (ADR 0034, 0051 e 0305).
  *
- * A ocorrência é cadastro do motor (AP-112). Quando precisa de ação da administradora, openTicket()
- * abre o chamado pelo TicketService (origem erp), com condomínio, unidade, assunto, descrição e
- * prioridade da ocorrência, e grava o ticket_id. Uma ocorrência abre no máximo um chamado (chave
- * única em erp_occurrences.ticket_id e trava da linha). Quem registra é o solicitante.
+ * A ocorrência é cadastro do motor (AP-112), mas toda ocorrência é também um chamado: openForNew() roda dentro
+ * da gravação do cadastro (RegistryService) e abre o chamado pelo TicketService, na mesma transação, com
+ * condomínio, unidade, assunto, descrição e prioridade da ocorrência (origem erp, ou residents quando vem do
+ * aplicativo do morador). O atendimento acontece num lugar só, o chamado; a situação da ocorrência segue a do
+ * chamado (followTickets, chamado pelo Help Desk e pela resposta do solicitante). openTicket() fica para a
+ * ocorrência que ainda estiver sem chamado. Uma ocorrência abre no máximo um chamado (chave única em
+ * erp_occurrences.ticket_id e trava da linha). Quem registra é o solicitante.
  */
 final class Occurrences
 {
     public const PRIORITY_MAP = ['baixa' => 'low', 'media' => 'medium', 'alta' => 'high'];
+
+    /** Situação da ocorrência pela situação do chamado (ADR 0305). */
+    public const STATUS_FROM_TICKET = [
+        'open' => 'active', 'in_progress' => 'running', 'waiting_customer' => 'running', 'resolved' => 'done', 'closed' => 'done',
+    ];
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -52,6 +60,87 @@ final class Occurrences
             'condominium_id' => (int)$occurrence['condominium_id'],
             'unit_id' => $occurrence['unit_id'] !== null ? (int)$occurrence['unit_id'] : null,
         ];
+    }
+
+    /** Situação que a ocorrência deve ter com o chamado nesta situação (regra pura). */
+    public static function statusForTicket(string $ticketStatus): string
+    {
+        return self::STATUS_FROM_TICKET[$ticketStatus] ?? 'running';
+    }
+
+    /**
+     * Chamado da ocorrência que acabou de ser gravada (ADR 0305). Roda dentro da transação do cadastro: se o
+     * chamado não abrir, a ocorrência também não fica. Do aplicativo do morador ($fromResident), a origem é
+     * residents e o morador é o solicitante (sem a regra de escopo do ERP, que o vínculo já resolveu).
+     *
+     * @param array<string, mixed> $values colunas gravadas (condominium_id, unit_id, subject, priority, occurred_on, description)
+     * @return array{id:int, protocol:string}
+     * @throws \Source\Services\Support\TicketError
+     */
+    public function openForNew(User $user, int $occurrenceId, array $values, bool $fromResident): array
+    {
+        $input = self::ticketInput(['id' => $occurrenceId] + $values + ['unit_id' => null, 'occurred_on' => date('Y-m-d')]);
+        if ($fromResident) {
+            $input['requester_id'] = (int)$user->id;
+        }
+        $ticket = $this->tickets->open($input, $fromResident ? 'residents' : 'erp', $fromResident ? null : $user,
+            static function (PDO $pdo, int $ticketId) use ($occurrenceId): void {
+                $pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t WHERE id = :id AND ticket_id IS NULL')->execute(['t' => $ticketId, 'id' => $occurrenceId]);
+            });
+        return ['id' => (int)$ticket['id'], 'protocol' => (string)$ticket['protocol']];
+    }
+
+    /**
+     * A ocorrência acompanha o chamado (ADR 0305): depois que o Help Desk (ou o solicitante) muda a situação dos
+     * chamados, as ocorrências ligadas a eles passam para a situação correspondente (STATUS_FROM_TICKET). Uma
+     * gravação de auditoria por ocorrência alterada. Chamado sem ocorrência: nada acontece.
+     *
+     * @param list<int> $ticketIds
+     * @return int ocorrências alteradas
+     */
+    public function followTickets(array $ticketIds, ?int $userId = null): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ticketIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("SELECT o.id, o.status, t.status AS ticket_status, t.protocol FROM erp_occurrences o
+            JOIN studio_support_tickets t ON t.id = o.ticket_id WHERE o.ticket_id IN ({$in}) AND o.deleted_at IS NULL");
+        $stmt->execute($ids);
+        $changed = 0;
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $target = self::statusForTicket((string)$row['ticket_status']);
+            if ($target === (string)$row['status']) {
+                continue;
+            }
+            $update = $this->pdo->prepare('UPDATE erp_occurrences SET status = :s, updated_by = COALESCE(:u, updated_by) WHERE id = :id AND status <> :s2');
+            $update->execute(['s' => $target, 's2' => $target, 'u' => $userId, 'id' => (int)$row['id']]);
+            if ($update->rowCount() > 0) {
+                $changed++;
+                Audit::record('ticket_follow', 'erp_occurrences', (int)$row['id'], ['status' => (string)$row['status']],
+                    ['status' => $target, 'protocol' => (string)$row['protocol'], 'ticket_status' => (string)$row['ticket_status']]);
+            }
+        }
+        return $changed;
+    }
+
+    /**
+     * A situação escolhida no formulário combina com o chamado da ocorrência? (ADR 0305) null = pode gravar; senão,
+     * a mensagem para o campo. Sem chamado, ou sem mudança de situação, sempre pode.
+     */
+    public function statusLockMessage(array $before, array $values): ?string
+    {
+        if (($before['ticket_id'] ?? null) === null || !array_key_exists('status', $values) || (string)$values['status'] === (string)($before['status'] ?? '')) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT status, protocol FROM studio_support_tickets WHERE id = ?');
+        $stmt->execute([(int)$before['ticket_id']]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($ticket) || self::statusForTicket((string)$ticket['status']) === (string)$values['status']) {
+            return null;
+        }
+        return sprintf('A situação desta ocorrência segue o chamado %s. Atualize o chamado, e a ocorrência acompanha.', (string)$ticket['protocol']);
     }
 
     /** @return array{occurrence_id:int, ticket_id:int, protocol:string} */

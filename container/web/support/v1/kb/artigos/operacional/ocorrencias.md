@@ -1,7 +1,7 @@
 ---
 codigo: AP-112
 titulo: Registrar ocorrências
-resumo: Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade, a prioridade e o que foi feito. Quando precisar da administradora, abra também um chamado no Help Desk.
+resumo: Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Operacional > Chamados.
 categoria: operacional
 rota: /operacional/ocorrencias
 menu: Operacional > Rotina > Ocorrências
@@ -12,7 +12,11 @@ palavras: ocorrências, operacional, AP-112
 rascunho: nao
 ---
 
-Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade, a prioridade e o que foi feito. Quando precisar da administradora, abra também um chamado no Help Desk.
+Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Operacional > Chamados.
+
+## A ocorrência é um chamado
+
+Ao salvar uma ocorrência nova, aqui ou pelo aplicativo do morador, o sistema abre o chamado no Help Desk na mesma hora, com o condomínio, a unidade, o assunto, a descrição e a prioridade. A situação da ocorrência acompanha o chamado: aberto = Aberta; em atendimento ou aguardando = Em andamento; resolvido ou fechado = Resolvida. Para mudar a situação, atualize o chamado. Para ver só as ocorrências na lista de chamados, use o filtro **Só ocorrências** em [[Operacional > Chamados]].
 
 ## Onde fica
 
