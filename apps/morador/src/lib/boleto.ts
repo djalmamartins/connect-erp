@@ -1,8 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
-import { Alert } from 'react-native';
 import { ApiError, type ApiClient } from '../api/client';
 import type { ResidentApi, StatementLine } from '../api/resident';
 import { openProtectedFile } from './openFile';
+import { dialog } from '../ui/Dialog';
 
 /** Contas em aberto ou vencidas, da mais antiga para a mais nova. */
 export function pendingLines(lines: StatementLine[]): StatementLine[] {
@@ -16,7 +16,7 @@ export function nextBoleto(lines: StatementLine[]): StatementLine | null {
 
 export async function copyText(text: string, what: string): Promise<void> {
   await Clipboard.setStringAsync(text);
-  Alert.alert('Copiado', `${what} copiado. Cole no app do seu banco.`);
+  dialog.toast(`${what}: copiado! Cole no app do banco.`);
 }
 
 export async function openBoleto(api: ResidentApi, client: ApiClient, line: StatementLine): Promise<void> {
@@ -24,6 +24,6 @@ export async function openBoleto(api: ResidentApi, client: ApiClient, line: Stat
   try {
     await openProtectedFile(api.chargePdfUrl(line.charge.id), client.authHeaders(), `boleto-${line.due_on}.pdf`);
   } catch (e) {
-    Alert.alert('Boleto', e instanceof ApiError ? e.message : 'Não foi possível abrir o boleto.');
+    void dialog.notice({ title: 'Não deu para abrir o boleto', message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.', tone: 'error' });
   }
 }
