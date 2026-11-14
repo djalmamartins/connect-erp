@@ -2783,6 +2783,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou arquivo recusado (errors com _form e _document); nenhum arquivo sai da lixeira' }
+  /reports/notice-board:
+    get:
+      operationId: announcementBoard
+      summary: Situação dos comunicados e avisos de cobrança do condomínio (publicados, agendados, cancelados, idade dos publicados e envios com falha), somente leitura (erp.access e erp.announcements.view, ADR 0278)
+      description: >-
+        rows traz uma linha por tipo (comunicado e aviso de cobrança) com o total, os publicados (ativos que já saíram), os
+        agendados (ativos que ainda vão sair) e os cancelados; totals é a soma. by_age conta os publicados por dias desde o
+        envio (até 30, de 31 a 90, mais de 90). delivery conta os eventos da outbox dos publicados por estado e lista os
+        comunicados com envio com falha (até 200, com failed_truncated); scheduled_ids lista os agendados do mais próximo ao
+        mais distante (até 200, com scheduled_truncated). O cadastro não tem data de fim nem arquivamento. Sem assunto,
+        texto, unidade, destinatário ou e-mail. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, rows[{ kind, kind_label, announcements, published, scheduled, cancelled }], totals { announcements, published, scheduled, cancelled }, by_age { ate_30, de_31_a_90, mais_de_90 }, delivery { pending, processing, sent, failed, cancelled, failed_ids[], failed_truncated }, scheduled_ids[], scheduled_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
