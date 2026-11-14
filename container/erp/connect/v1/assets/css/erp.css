@@ -763,6 +763,30 @@ p { margin: 0; }
 .erp-ticket-msg footer a { display: inline-flex; gap: 4px; align-items: center; }
 .erp-ticket-wait { display: flex; gap: 8px; align-items: center; margin: var(--erp-space-4) 0 0; color: var(--erp-muted); font-size: 13px; }
 .erp-table a.erp-ticket-link { font-weight: 700; }
+.erp-ticket-msg--internal { margin-left: auto; border-color: var(--erp-warning-soft); background: var(--erp-warning-soft); border-style: dashed; }
+/* Fila e atendimento como no Help Desk (ADR 0307), com as cores do ERP. */
+.erp-ticket-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); }
+.erp-ticket-counter { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; }
+.erp-ticket-counter span { color: var(--erp-muted); font-size: 12.5px; }
+.erp-ticket-counter strong { font-size: 22px; line-height: 1.1; }
+.erp-ticket-counter:hover, .erp-ticket-counter.is-active { border-color: var(--erp-brand); box-shadow: inset 0 -3px 0 var(--erp-brand); }
+.erp-ticket-counter--late strong { color: var(--erp-danger); }
+.erp-ticket-filters { flex-wrap: wrap; padding: 0 var(--erp-space-5) var(--erp-space-3); }
+.erp-ticket-bulk { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); padding: 0 var(--erp-space-5) var(--erp-space-3); }
+.erp-ticket-table tr.is-overdue td:first-child { box-shadow: inset 3px 0 0 var(--erp-danger); }
+.erp-ticket-composer .erp-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--erp-space-2); align-items: center; }
+.erp-ticket-modes { display: inline-flex; gap: 6px; }
+.erp-ticket-modes .is-active { border-color: var(--erp-brand); color: var(--erp-brand); font-weight: 700; }
+.erp-ticket-composer.is-internal { border-color: var(--erp-warning); background: var(--erp-warning-soft); }
+.erp-ticket-timer { display: inline-flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.erp-ticket-timer.is-paused strong { color: var(--erp-muted); }
+.erp-check { display: inline-flex; gap: 6px; align-items: center; margin-right: auto; font-size: 13.5px; }
+.erp-ticket-history summary { display: flex; gap: 8px; align-items: center; cursor: pointer; list-style: none; }
+.erp-ticket-history summary h2 { font-size: 16px; margin: 0; }
+.erp-ticket-history ol { list-style: none; margin: var(--erp-space-3) 0 0; padding: 0; display: grid; gap: var(--erp-space-2); max-height: 360px; overflow-y: auto; }
+.erp-ticket-history li { padding-left: 12px; border-left: 2px solid var(--erp-border); font-size: 13px; }
+.erp-ticket-history li small { color: var(--erp-muted); }
+.erp-ticket-history li p { margin: 2px 0 0; overflow-wrap: anywhere; }
 
 /* Sino do ERP com as notificações compartilhadas com Studio e Help Desk (ADR 0142). */
 .erp-icon-button__count { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--erp-radius-pill); background: var(--erp-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }

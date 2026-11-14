@@ -10,6 +10,7 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Environments;
+use Source\Services\Support\TicketDesk;
 use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
 use Source\Support\Access;
@@ -55,7 +56,14 @@ final class Tickets extends Controller
             'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
             // ?tipo=ocorrencias: só as ocorrências (ADR 0305), que também são chamados.
             'kind' => ['ocorrencias' => 'occurrence', 'outros' => 'other'][(string)($_GET['tipo'] ?? '')] ?? '',
+            // Filtros da fila do Help Desk (ADR 0307).
+            'priority' => (string)($_GET['prioridade'] ?? ''),
+            'assigned' => (string)($_GET['responsavel'] ?? ''),
+            'due' => in_array($_GET['prazo'] ?? '', ['today', 'overdue'], true) ? (string)$_GET['prazo'] : '',
+            'origin' => (string)($_GET['origem'] ?? ''),
         ];
+        $canAttend = Access::can('support.manage', $user);
+        $desk = new TicketDesk();
         $panel = new Panel();
         $layout = $panel->layoutData($user, self::PAGE_ID, [], null);
         $current = $layout['condoCurrent']['id'] ?? null;
@@ -68,7 +76,10 @@ final class Tickets extends Controller
             'unitsByCondominium' => $this->service->unitsByCondominium(array_column($condominiums, 'id')),
             'tickets' => $this->service->listFor($user, $filters),
             'filters' => $filters,
-            'helpdeskUrl' => Access::can('support.manage', $user) ? Environments::href('helpdesk') : null,
+            'helpdeskUrl' => $canAttend ? Environments::href('helpdesk') : null,
+            'metrics' => $desk->metrics(array_column($condominiums, 'id'), (int)$user->id),
+            'canAttend' => $canAttend,
+            'agents' => $desk->agents(),
         ]));
     }
 
@@ -125,10 +136,17 @@ final class Tickets extends Controller
         $flash = $session->has(self::FLASH) ? (array)$session->{self::FLASH} : null;
         $session->unset(self::FLASH);
         $canAttend = Access::can('support.manage', $user);
+        $desk = new TicketDesk();
         echo $this->view->render('pages/tickets/show', (new Panel())->layoutData($user, self::PAGE_ID, [
             'base' => self::BASE,
             'ticket' => $ticket,
-            'messages' => $this->service->conversation($ticket),
+            // Quem atende vê também as notas internas, como no Help Desk (ADR 0307).
+            'messages' => $this->service->conversation($ticket, $canAttend),
+            'canAttend' => $canAttend,
+            'facts' => $desk->facts((int)$ticket['id']),
+            'events' => $canAttend ? $desk->events((int)$ticket['id']) : [],
+            'templates' => $canAttend ? $desk->templates() : [],
+            'agents' => $canAttend ? $desk->agents() : [],
             'flash' => $flash !== null ? ['type' => $flash['type'], 'text' => $flash['text']] : null,
             'errors' => $flash['errors'] ?? [],
             'old' => $flash['old'] ?? [],
@@ -173,6 +191,92 @@ final class Tickets extends Controller
         }
         $this->flash(['type' => 'success', 'text' => $result['status'] === 'open' ? 'Mensagem enviada e chamado reaberto. A equipe foi avisada.' : 'Mensagem enviada. A equipe do Help Desk foi avisada.']);
         redirect($back . '#conversa');
+    }
+
+    /** POST /operacional/chamados/{id}/atender — triagem de quem atende (ADR 0307). */
+    public function triage(array $data): void
+    {
+        $this->attend($data, function (User $user, int $id): string {
+            $result = (new TicketDesk())->update($user, $id, array_intersect_key($_POST, array_flip(TicketDesk::FIELDS)));
+            return $result['changed'] === [] ? 'Nada mudou no chamado.' : 'Chamado atualizado.';
+        }, '#triagem');
+    }
+
+    /** POST /operacional/chamados/{id}/atendimento — resposta ao cliente ou nota interna, com o tempo do cronômetro. */
+    public function answer(array $data): void
+    {
+        $this->attend($data, function (User $user, int $id): string {
+            $result = (new TicketDesk())->reply($user, $id, (string)($_POST['message'] ?? ''), ($_POST['is_internal'] ?? '0') === '1',
+                (int)($_POST['time_spent'] ?? 0), !empty($_POST['resolve_after']), $_FILES['attachments'] ?? null);
+            return $result['status'] === 'resolved' ? 'Resposta enviada e chamado resolvido.' : (($_POST['is_internal'] ?? '0') === '1' ? 'Nota interna registrada.' : 'Resposta enviada para quem pediu.');
+        }, '#conversa');
+    }
+
+    /** POST /operacional/chamados/lote — situação em lote dos chamados do escopo. */
+    public function bulk(): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        if (!Access::can('support.manage', $user)) {
+            $this->flash(['type' => 'danger', 'text' => 'Só a equipe de atendimento muda chamados em lote.']);
+            redirect(erp_url(self::BASE));
+            return;
+        }
+        if (!csrf_verify($_POST)) {
+            $this->flash(['type' => 'danger', 'text' => 'Sua sessão expirou. Envie de novo.']);
+            redirect(erp_url(self::BASE));
+            return;
+        }
+        $ids = array_map('intval', (array)($_POST['ticket_ids'] ?? []));
+        $allowed = array_column($this->service->listFor($user, [], 200), 'id');
+        try {
+            $count = (new TicketDesk())->bulkStatus($user, $ids, (string)($_POST['status'] ?? ''), $allowed);
+            $this->flash(['type' => 'success', 'text' => $count === 1 ? '1 chamado atualizado.' : "{$count} chamados atualizados."]);
+        } catch (TicketError $error) {
+            $this->flash(['type' => 'danger', 'text' => $error->getMessage()]);
+        }
+        redirect(erp_url(self::BASE . '#fila'));
+    }
+
+    /** Ação de quem atende num chamado do escopo: permissão, CSRF, limite e PRG. */
+    private function attend(array $data, callable $action, string $anchor): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $id = (int)filter_var($data['id'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['default' => 0, 'min_range' => 1]]);
+        $back = erp_url(self::BASE . '/' . $id);
+        if (!Access::can('support.manage', $user)) {
+            $this->flash(['type' => 'danger', 'text' => 'Só a equipe de atendimento faz a triagem e as notas internas.']);
+            redirect($back);
+            return;
+        }
+        if ($this->service->findFor($user, $id) === null) {
+            $this->notFound($user);
+            return;
+        }
+        if (!csrf_verify($_POST)) {
+            $this->flash(['type' => 'danger', 'text' => 'Sua sessão expirou. Envie de novo.']);
+            redirect($back);
+            return;
+        }
+        if (request_limit('erp_ticket_attend', 60, 300)) {
+            $this->flash(['type' => 'danger', 'text' => 'Muitas ações em pouco tempo. Aguarde alguns minutos.']);
+            redirect($back);
+            return;
+        }
+        try {
+            $this->flash(['type' => 'success', 'text' => $action($user, $id)]);
+        } catch (TicketError $error) {
+            $this->flash(['type' => 'danger', 'text' => $error->getMessage(), 'errors' => [$error->field => $error->getMessage()], 'old' => $_POST]);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_attend_failed', 'users_id' => (int)$user->id, 'ticket_id' => $id]);
+            $this->flash(['type' => 'danger', 'text' => 'Não foi possível salvar agora. Tente novamente.', 'old' => $_POST]);
+        }
+        redirect($back . $anchor);
     }
 
     private function find(User $user, array $data): ?array
