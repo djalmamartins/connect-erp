@@ -2266,6 +2266,30 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reservations/cancel-for-closure:
+    post:
+      operationId: cancelReservationsForClosure
+      summary: Cancelamento em lote das reservas aguardando aprovação ou confirmadas de uma área comum interditada num período, como Cancelada pelo cadastro, tudo ou nada e com prévia (erp.access, erp.reservations.view e erp.reservations.manage, ADR 0263)
+      description: >-
+        A área precisa ser do condomínio e estar ativa; o período vai de hoje em diante, até 366 dias. Sem reservation_ids,
+        entram as reservas aguardando aprovação ou confirmadas da área no período; ficam de fora as com a taxa já cobrada
+        (skipped_billed, cancele a cobrança extra antes) e as de unidade inativa (skipped_inactive_unit). Com
+        reservation_ids, recusa reserva não encontrada na área do condomínio, já cancelada, fora do período ou nesses casos.
+        Cada uma é regravada pelo cadastro como Cancelada; auditoria closure_cancel por reserva, com o motivo.
+        waitlist_to_review conta as inscrições aguardando na lista de espera da área no período (não são tocadas). Nada é
+        apagado e nenhum aviso é enviado (o comunicado aos moradores é à parte). Sem morador, unidade ou observação na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, common_area_id, from, to, reason], properties: { condominium_id: { type: integer }, common_area_id: { type: integer }, from: { type: string, format: date }, to: { type: string, format: date }, reservation_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, common_area_id, dry_run, from, to, reason, skipped_billed, skipped_inactive_unit, waitlist_to_review, count, confirmed, changed, reservations[{ id, reserved_on, from_status, fee_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida, área inativa ou reserva recusada (errors com _form e _reservation); nada é gravado' }
   /reports/tax-coverage:
     get:
       operationId: taxCoverage
