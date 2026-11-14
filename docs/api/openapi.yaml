@@ -3047,6 +3047,28 @@ paths:
         '409': { description: 'Uma cobrança mudou de situação durante o pedido; nada é cancelado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou cobrança recusada (errors com _form e _charge); nada é cancelado' }
+  /reports/discounts:
+    get:
+      operationId: discountOverview
+      summary: Descontos concedidos em contas a receber do condomínio, mês a mês (faixas, contas zeradas e maiores descontos), somente leitura (erp.access e erp.entries.view, ADR 0290)
+      description: >-
+        Vem da trilha de descontos (a mesma de GET /entries/{id}/adjustments), nos últimos months meses (padrão 12, de 1 a
+        36) pelo relógio do banco. rows traz uma linha por mês, sempre todos, com os descontos, as contas distintas, o
+        valor descontado e o valor antes dos descontos; totals soma as linhas. by_band conta os descontos por faixa do
+        valor antes deles (até 10%, de 10% a 50%, mais de 50%) e soma totals.discounts. zeroed conta os descontos que
+        levaram a conta a zero; zeroed_entry_ids lista essas contas e largest_entry_ids as contas do maior desconto para o
+        menor, até 200 cada, com truncated. Conta apagada ou de outro condomínio fica de fora. Sem motivo, descrição,
+        unidade nem quem deu o desconto. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: months, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 36, default: 12 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, months, from, to, rows[{ month, discounts, entries, discount_cents, before_cents }], totals { discounts, entries, discount_cents, before_cents }, by_band { ate_10, de_10_a_50, mais_de_50 }, zeroed, zeroed_entry_ids[], zeroed_truncated, largest_entry_ids[], largest_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory

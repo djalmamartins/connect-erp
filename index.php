@@ -399,6 +399,8 @@ $route->post("/banners/deactivate-ended", "BannerDeactivation:store", null, \Sou
 $route->get("/reports/extra-charges", "ExtraChargeOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobranças extras e multas avulsas canceladas em lote, com as regras do cancelamento de uma e as travas do banco, tudo ou nada e com prévia (ADR 0289).
 $route->post("/extra-charges/cancel-batch", "ExtraChargeCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Descontos concedidos em contas a receber, mês a mês (faixas, contas zeradas e maiores descontos), somente leitura (ADR 0290).
+$route->get("/reports/discounts", "DiscountOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
