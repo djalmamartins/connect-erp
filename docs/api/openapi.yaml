@@ -2522,6 +2522,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou visitante recusado (errors com _form e _visitor); nada é gravado' }
+  /reports/visitor-units:
+    get:
+      operationId: visitorUnitSituation
+      summary: Visitantes do condomínio pela situação da unidade (com morador ativo, sem morador ativo, unidade inativa e sem vínculo), com liberados, permanentes e bloqueados, somente leitura (erp.access, erp.visitors.view e erp.residents.view, ADR 0266)
+      description: >-
+        Uma linha por grupo, sempre os quatro, com os visitantes do cadastro (sem os excluídos). Morador ativo é o do
+        bloqueio em lote (ADR 0265): vínculo ativo, sem excluído e sem fim de vínculo passado. units conta as unidades
+        distintas com visitante; visitors = active + blocked; totals é a soma das linhas. attention separa os liberados de
+        unidade sem morador em blockable (o que o bloqueio em lote pegaria) e incomplete (sem data nem acesso permanente).
+        concentration conta as unidades com visitante liberado por quantidade. Sem nome, documento, telefone, unidade ou
+        observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, status_labels { active, blocked }, rows[{ group, group_label, units, visitors, active, permanent, blocked }], totals { units, visitors, active, permanent, blocked }, attention { empty_active, blockable, incomplete }, concentration { um, de_2_a_5, mais_de_5, units_with_active } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory

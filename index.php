@@ -351,6 +351,8 @@ $route->post("/reservations/cancel-for-closure", "ReservationClosure:store", nul
 $route->get("/reports/assembly-history", "AssemblyHistory:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Bloqueio em lote dos visitantes de unidades sem morador ativo, tudo ou nada e com prévia (ADR 0265). Antes do laço dos cadastros (/visitors/{id}).
 $route->post("/visitors/block-unattached", "VisitorUnitBlock:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Visitantes pela situação da unidade (com morador, sem morador, inativa, sem vínculo), somente leitura (ADR 0266).
+$route->get("/reports/visitor-units", "VisitorUnitSituation:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
