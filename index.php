@@ -329,6 +329,8 @@ $route->post("/useful-contacts/deactivate-duplicates", "ContactDeduplication:sto
 $route->get("/reports/tariff-coverage", "TariffCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Reajuste em lote das tarifas de consumo do condomínio, tudo ou nada e com prévia (ADR 0259). Antes do laço dos cadastros (/tariffs/{id}).
 $route->post("/tariffs/readjust", "TariffReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Procura pelas áreas comuns na lista de espera, somente leitura (ADR 0260). Antes do laço dos cadastros.
+$route->get("/reports/waitlist-demand", "WaitlistDemand:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);

@@ -2179,6 +2179,27 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/waitlist-demand:
+    get:
+      operationId: waitlistDemand
+      summary: Procura pelas áreas comuns na lista de espera por área (aguardando antes e depois de hoje, chamadas, atendidas, desistências, unidades e datas diferentes, próxima data), somente leitura (erp.access e erp.reservations.view, ADR 0260)
+      description: >-
+        Uma linha por área comum do condomínio (sem as excluídas) e, se houver, uma linha "Área excluída", com as
+        inscrições de data desejada entre from e to (padrão: de um ano antes a um ano depois de hoje, até 1100 dias):
+        waiting_upcoming e waiting_past (aguardando de hoje em diante e antes de hoje), called, served, gave_up, entries,
+        units (unidades diferentes), dates_upcoming (datas diferentes com alguém aguardando) e next_desired_on; totals soma
+        as contagens. Sem morador, unidade ou observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ data: { condominium_id, from, to, today, rows[{ area_id, area_name, area_status, waiting_upcoming, waiting_past, called, served, gave_up, entries, units, dates_upcoming, next_desired_on }], totals } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /tariffs/readjust:
     post:
       operationId: readjustTariffs
