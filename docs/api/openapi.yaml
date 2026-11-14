@@ -2565,6 +2565,26 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou veículo recusado (errors com _form e _vehicle); nada é gravado' }
+  /reports/resident-portal:
+    get:
+      operationId: residentPortalAdoption
+      summary: Adesão ao portal do morador (moradores ativos que entraram, com convite pendente, vencido ou revogado, que podem ser convidados e o que falta para convidar), com as unidades e as funções ligadas, somente leitura (erp.access, erp.access_admin.view e erp.residents.view, ADR 0268)
+      description: >-
+        Uma linha por situação, sempre as sete, com os moradores ativos do cadastro (vínculo ativo, sem excluído e sem fim
+        de vínculo passado) e by_relationship pelos vínculos do cadastro. Vale o convite mais recente; quem já aceitou um
+        convite conta como accepted. Sem convite, no_document (sem CPF/CNPJ válido) vem antes de no_email. totals.residents
+        é a soma das linhas, with_access = accepted e to_invite = ready + expired + revoked. units separa as unidades
+        habitadas com e sem alguém que entrou. features traz as funções do portal (fail-closed) e enabled as ligadas. Sem
+        nome, documento, e-mail, telefone, unidade ou token. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, on, relationship_labels, rows[{ situation, situation_label, residents, by_relationship }], totals { residents, with_access, to_invite }, units { inhabited, with_access, without_access }, features[{ feature, label, enabled }], enabled } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
