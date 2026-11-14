@@ -23,7 +23,8 @@ use Source\Support\ClientIp;
  *
  * - login(): mesma conta, senha e limite de tentativas do login web (Auth::attempt, LoginThrottle). Só entra
  *   quem tem vínculo de morador ativo (ResidentLinks). Com 2FA ativo devolve um desafio de uso único e o token só
- *   sai em verify(). 2FA obrigatório e ainda não configurado = 409: configurar primeiro pela web.
+ *   sai em verify(). 2FA obrigatório e ainda não configurado = 409: configurar primeiro pela web
+ *   (conta só de morador não tem 2FA obrigatório, ADR 0304).
  * - authenticate(): token válido = usuário. Vale TTL_DAYS dias e cai com IDLE_DAYS dias sem uso, com o logout
  *   global (ADR 0036) ou se o usuário deixou de ser morador.
  * - revoke() / revokeAll(): sair deste aparelho / de todos.
@@ -44,13 +45,16 @@ final class ResidentAppSessions
     private LoginThrottle $throttle;
     /** @var callable(User):bool */
     private $isResident;
+    /** @var callable(int):bool 2FA obrigatório para a conta (ADR 0304: conta só de morador fica de fora) */
+    private $enforced;
 
-    public function __construct(?PDO $pdo = null, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null, ?callable $isResident = null)
+    public function __construct(?PDO $pdo = null, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null, ?callable $isResident = null, ?callable $enforced = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->twoFactor = $twoFactor ?? new TwoFactorService($this->pdo);
         $this->throttle = $throttle ?? new LoginThrottle($this->pdo);
         $this->isResident = $isResident ?? static fn (User $user): bool => (new ResidentLinks())->forUser($user) !== [];
+        $this->enforced = $enforced ?? fn (int $userId): bool => ResidentTwoFactor::enforcedFor($userId, $this->pdo);
     }
 
     /** Token novo (regra pura): 64 caracteres hexadecimais de random_bytes. */
@@ -144,7 +148,7 @@ final class ResidentAppSessions
                 ->execute(['user' => $userId, 'hash' => hash('sha256', $challenge), 'device' => self::deviceName($device), 'expires' => date('Y-m-d H:i:s', time() + self::CHALLENGE_TTL)]);
             return ['status' => 202, 'body' => ['data' => ['two_factor_required' => true, 'challenge' => $challenge]]];
         }
-        if (TwoFactorService::isEnforced()) {
+        if (($this->enforced)($userId)) {
             return self::error(409, 'two_factor_setup_required', 'Ative a verificação em duas etapas pelo site antes de usar o app.');
         }
         return ['status' => 201, 'body' => ['data' => $this->issue($user, self::deviceName($device))]];

@@ -542,6 +542,10 @@ $route->get("/resident/assemblies/{id}", "ResidentApp:assembly", null, \Source\S
 $route->get("/resident/documents", "ResidentApp:documents", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/documents/{id}/file", "ResidentApp:documentFile", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/pets-vehicles", "ResidentApp:petsVehicles", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/2fa", "ResidentApp:twoFactor", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/2fa/confirm", "ResidentApp:twoFactorConfirm", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/2fa/disable", "ResidentApp:twoFactorDisable", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/2fa/recovery", "ResidentApp:twoFactorRecovery", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->namespace(null);
 
 /**

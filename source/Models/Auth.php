@@ -366,7 +366,8 @@ class Auth extends Model
             AppLogger::log('error', 'Tabela de 2FA ausente: aplique as migrations', ['event_type' => 'two_factor', 'code' => 'TWO_FACTOR_SCHEMA_MISSING', 'status' => 'open'], 'authentication');
             return self::modeWhenTwoFactorSchemaMissing();
         }
-        return TwoFactorService::isEnforced() ? "setup" : null;
+        // Conta só de morador fica fora da obrigatoriedade; liga o 2FA no perfil se quiser (ADR 0304).
+        return \Source\Services\Resident\ResidentTwoFactor::enforcedFor($userId) ? "setup" : null;
     }
 
     /**

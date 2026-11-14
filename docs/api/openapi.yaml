@@ -7027,3 +7027,90 @@ paths:
                   data: { type: object, properties: { pets: { type: array, items: { type: object, properties: { name: { type: string }, species: { type: string }, size: { type: [string, 'null'] }, breed: { type: [string, 'null'] }, vaccinated: { type: boolean } } } }, vehicles: { type: array, items: { type: object, properties: { plate: { type: string }, kind: { type: string }, model: { type: [string, 'null'] }, color: { type: [string, 'null'] }, parking_spot: { type: [string, 'null'] } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa:
+    get:
+      operationId: getResidentTwoFactor
+      tags: [Morador]
+      summary: 'Situação da verificação em duas etapas da conta (opcional para o morador)'
+      description: 'ADR 0304. Conta só de morador não tem 2FA obrigatório; desligado e com a chave de cifra configurada, devolve setup com o segredo e a URI otpauth para o aplicativo autenticador.'
+      security: [{ session: [] }, { residentApp: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { enabled: { type: boolean }, configured: { type: boolean }, required: { type: boolean }, recovery_remaining: { type: integer }, setup: { type: object, properties: { secret: { type: string }, uri: { type: string } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/confirm:
+    post:
+      operationId: confirmResidentTwoFactor
+      tags: [Morador]
+      summary: 'Ligar a verificação em duas etapas'
+      description: 'ADR 0304. Confirma o código do segredo de setup; devolve os códigos de recuperação (só desta vez) e manda aviso por e-mail.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean }, recovery_codes: { type: array, items: { type: string } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/disable:
+    post:
+      operationId: disableResidentTwoFactor
+      tags: [Morador]
+      summary: 'Desligar a verificação em duas etapas'
+      description: 'ADR 0304. Pede o código atual; conta da equipe com 2FA obrigatório recebe 409 two_factor_required. Manda aviso por e-mail.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/2fa/recovery:
+    post:
+      operationId: regenerateResidentTwoFactorRecovery
+      tags: [Morador]
+      summary: 'Novos códigos de recuperação'
+      description: 'ADR 0304. Pede o código atual; os códigos anteriores deixam de valer.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [code], properties: { code: { type: string, description: 'Código de 6 dígitos do aplicativo autenticador' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { enabled: { type: boolean }, recovery_codes: { type: array, items: { type: string } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'already_enabled, not_enabled ou two_factor_required (conta da equipe com 2FA obrigatório)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
