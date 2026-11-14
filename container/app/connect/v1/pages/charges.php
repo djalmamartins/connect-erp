@@ -7,50 +7,19 @@ $t = $statement['totals'];
 ?>
 <header class="app-page-head"><?php if (!empty($link)): ?><span class="app-eyebrow"><?= $this->e($link["condominium_name"]) ?></span><?php endif; ?>
     <h1>Boletos</h1>
-    <p>Contas da unidade <?= $this->e($statement['unit_label']) ?> de <?= F::date($statement['from']) ?> a <?= F::date($statement['to']) ?>.</p>
+    <p>Contas da unidade <?= $this->e($statement['unit_label']) ?>. Role para ver as mais antigas.</p>
 </header>
 <div class="app-grid app-grid--3">
     <div class="app-card app-stat app-stat--danger"><span class="app-stat__label">Vencido</span><strong class="app-stat__value"><?= F::money($t['overdue_cents']) ?></strong></div>
     <div class="app-card app-stat"><span class="app-stat__label">A vencer</span><strong class="app-stat__value"><?= F::money($t['open_cents']) ?></strong></div>
-    <div class="app-card app-stat app-stat--success"><span class="app-stat__label">Pago no período</span><strong class="app-stat__value"><?= F::money($t['paid_cents']) ?></strong></div>
+    <div class="app-card app-stat app-stat--success"><span class="app-stat__label">Pago em 12 meses</span><strong class="app-stat__value"><?= F::money($t['paid_cents']) ?></strong></div>
 </div>
 
-<form class="app-card app-filter" method="get" action="<?= app_url('/boletos') ?>">
-    <label>De <input type="date" name="de" value="<?= $this->e($statement['from']) ?>"></label>
-    <label>Até <input type="date" name="ate" value="<?= $this->e($statement['to']) ?>"></label>
-    <button class="app-button app-button--ghost" type="submit">Ver período</button>
-</form>
-
-<?php if ($statement['lines'] === []): ?>
-    <?php $this->insert('partials/empty', ['icon' => 'receipt', 'text' => 'Nenhuma conta neste período.']) ?>
+<?php if ($statement['lines'] === [] && $more === null): ?>
+    <?php $this->insert('partials/empty', ['icon' => 'receipt', 'text' => 'Nenhuma conta por aqui ainda.']) ?>
 <?php endif; ?>
-<ul class="app-items">
-<?php foreach ($statement['lines'] as $line): [$label, $tone] = F::badge(F::SITUATIONS, $line['situation']); $charge = $line['charge']; ?>
-    <li class="app-card app-charge">
-        <a class="app-charge__head app-charge__link" href="<?= app_url('/boletos/' . $line['entry_id']) ?>" title="<?= $line['situation'] === 'paid' ? 'Ver recibo' : 'Ver a conta' ?>">
-            <span class="app-item__icon app-item__icon--<?= $line['situation'] === 'overdue' ? 'danger' : ($line['situation'] === 'paid' ? 'success' : 'brand') ?>" aria-hidden="true"><svg><use href="#i-receipt"></use></svg></span>
-            <span class="app-item__text"><strong><?= $this->e($line['description']) ?></strong><small>Vence em <?= F::date($line['due_on']) ?><?= $line['paid_on'] ? ' · pago em ' . F::date($line['paid_on']) : '' ?></small></span>
-            <span class="app-charge__amount"><?= F::money($line['amount_cents']) ?><span class="app-badge app-badge--<?= $tone ?>"><?= $label ?></span></span>
-            <svg class="app-charge__chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
-        </a>
-        <?php if ($line['situation'] === 'paid'): ?>
-            <a class="app-charge__receipt" href="<?= app_url('/boletos/' . $line['entry_id'] . '/recibo') ?>"><svg aria-hidden="true"><use href="#i-print"></use></svg>Recibo</a>
-        <?php endif; ?>
-        <?php if ($charge !== null && in_array($line['situation'], ['open', 'overdue'], true)): ?>
-            <div class="app-charge__pay">
-                <?php if (!empty($charge['digitable_line'])): ?>
-                    <button type="button" class="app-button app-button--ghost" data-app-copy="<?= $this->e((string)$charge['digitable_line']) ?>"><svg aria-hidden="true"><use href="#i-copy"></use></svg>Copiar linha digitável</button>
-                <?php endif; ?>
-                <?php if (!empty($charge['pix_copy_paste'])): ?>
-                    <button type="button" class="app-button app-button--ghost" data-app-copy="<?= $this->e((string)$charge['pix_copy_paste']) ?>"><svg aria-hidden="true"><use href="#i-copy"></use></svg>Copiar Pix</button>
-                <?php endif; ?>
-                <?php if ($charge['pdf_available']): ?>
-                    <a class="app-button" href="<?= app_url('/boletos/' . $charge['id'] . '/pdf') ?>" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-download"></use></svg>Abrir boleto</a>
-                <?php endif; ?>
-            </div>
-        <?php elseif (in_array($line['situation'], ['open', 'overdue'], true)): ?>
-            <p class="app-muted app-charge__note">O boleto desta conta ainda não foi emitido. Em caso de dúvida, fale com a administração.</p>
-        <?php endif; ?>
-    </li>
-<?php endforeach; ?>
+<ul class="app-items" data-app-feed>
+<?php $this->insert('partials/charge-lines', ['lines' => $statement['lines'], 'more' => $more]) ?>
 </ul>
+<noscript><?php if ($more !== null): ?><p><a class="app-button app-button--ghost" href="<?= $this->e(str_replace('parcial=1&', '', $more)) ?>">Ver contas mais antigas</a></p><?php endif; ?></noscript>
+

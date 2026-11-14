@@ -435,3 +435,99 @@ a.app-item:hover .app-item__text strong { color: var(--app-brand-strong); }
 .app-charge__receipt, .app-charge__pay, .app-charge__note { margin-left: 54px; }
 .app-notice__icon { width: 40px; height: 40px; }
 .app-items .app-charge__head > span.app-item__icon { flex: none; display: grid; }
+
+/* Início no padrão do app de celular: cartão com marca d'água, olho, 2ª via, copiar código e troca de unidade */
+.app-wallet { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 20px; margin-bottom: 14px; overflow: visible; z-index: 2; }
+.app-wallet::after { display: none; }
+.app-wallet__mark { position: absolute; right: -18px; top: 50%; transform: translateY(-50%); width: 150px; height: auto; opacity: .09; pointer-events: none; }
+.app-wallet__top { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; position: relative; z-index: 3; }
+.app-wallet__condo, .app-switch summary strong { font-size: 17px; font-weight: 750; color: #fff; }
+.app-wallet__pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background: #c9a24333; color: #f4dc9c; font-size: 12px; font-weight: 650; border: 1px solid #c9a24366; }
+.app-wallet__pill svg { width: 13px; height: 13px; }
+.app-switch { position: relative; }
+.app-switch summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.app-switch summary::-webkit-details-marker { display: none; }
+.app-switch summary svg { width: 16px; height: 16px; color: #fff; transform: rotate(90deg); transition: transform .15s; }
+.app-switch[open] summary svg { transform: rotate(-90deg); }
+.app-switch__menu { position: absolute; left: 0; top: calc(100% + 8px); min-width: 260px; max-width: calc(100vw - 48px); background: #fff; color: var(--app-text); border-radius: 14px; box-shadow: 0 16px 40px #0b2a1a33; padding: 6px; z-index: 20; display: grid; }
+.app-switch__menu button { display: grid; grid-template-columns: 1fr auto; text-align: left; gap: 0 10px; border: 0; background: none; padding: 10px 12px; border-radius: 10px; cursor: pointer; font: inherit; color: inherit; }
+.app-switch__menu button:hover, .app-switch__menu button[aria-current] { background: var(--app-brand-tint); }
+.app-switch__menu strong { font-size: 14px; } .app-switch__menu small { grid-column: 1; color: var(--app-muted); font-size: 12px; }
+.app-switch__menu svg { grid-row: 1 / 3; grid-column: 2; align-self: center; width: 18px; height: 18px; color: var(--app-brand-strong); }
+.app-wallet__label { display: flex; align-items: center; gap: 8px; color: #d9f2e4; font-size: 13px; position: relative; z-index: 1; }
+.app-wallet__eye { border: 0; background: none; color: #d9f2e4; padding: 2px; cursor: pointer; display: grid; }
+.app-wallet__eye svg { width: 18px; height: 18px; }
+.app-wallet__value { font-size: 32px; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: -.01em; position: relative; z-index: 1; }
+.app-wallet__next { display: flex; align-items: center; justify-content: space-between; color: #cfe9db; font-size: 13px; text-decoration: none; position: relative; z-index: 1; }
+.app-wallet__next svg { width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: #ffffff26; color: #fff; }
+.app-wallet__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; position: relative; z-index: 1; }
+.app-wallet__btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 12px; border: 1px solid #ffffff4d; background: #ffffff1a; color: #fff; font: 650 13px var(--app-font); text-decoration: none; cursor: pointer; }
+.app-wallet__btn svg { width: 16px; height: 16px; }
+.app-wallet__btn--gold { background: #d4a72c; border-color: #d4a72c; color: #2b2205; }
+.app-money-hidden, .app-eye-off { display: none; }
+.app-hide-values .app-money { display: none; }
+.app-hide-values .app-money-hidden { display: inline; }
+.app-hide-values .app-eye-on { display: none; }
+.app-hide-values .app-eye-off { display: block; }
+.app-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 14px; }
+.app-quick a { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--app-text); text-decoration: none; text-align: center; }
+.app-quick__icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: #fff; color: var(--app-brand-strong); box-shadow: 0 2px 10px #0b2a1a12; }
+.app-quick a:hover .app-quick__icon { background: var(--app-brand-tint); }
+.app-quick__icon svg { width: 22px; height: 22px; }
+@media (min-width: 900px) { .app-quick { grid-template-columns: repeat(4, 120px); } }
+
+/* Rolagem infinita dos boletos */
+.app-feed-more { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; color: var(--app-muted); font-size: 13px; cursor: default; }
+.app-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--app-line); border-top-color: var(--app-brand); animation: app-spin .8s linear infinite; }
+@keyframes app-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .app-spinner { animation: none; } }
+
+/* Reservas no padrão do app de celular: abas, filtros, calendário do mês */
+.app-segment { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 14px; border-radius: 14px; background: #eaf0ed; }
+.app-segment a { text-align: center; padding: 9px 8px; border-radius: 11px; font: 650 14px var(--app-font); color: var(--app-muted); text-decoration: none; }
+.app-segment a[aria-current] { background: #fff; color: var(--app-text); box-shadow: 0 1px 4px #0b2a1a1a; }
+.app-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.app-chip { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--app-line); background: #fff; font: 600 13px var(--app-font); color: var(--app-text); text-decoration: none; }
+.app-chip.is-active { background: var(--app-brand); border-color: var(--app-brand); color: #fff; }
+.app-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; font-size: 12px; color: var(--app-muted); }
+.app-legend__dot, .app-legend__ring { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: -6px; vertical-align: middle; }
+.app-legend__dot--success { background: var(--app-success); } .app-legend__dot--warning { background: var(--app-warning); } .app-legend__dot--danger { background: var(--app-danger); }
+.app-legend__ring { border: 1.5px solid #b8c4be; } .app-legend__ring--warning { border-color: #e0a526; } .app-legend__ring--danger { border-color: var(--app-danger); }
+.app-area-info { margin-bottom: 12px; }
+.app-calendar { padding: 16px; }
+.app-calendar__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.app-calendar__head strong { font-size: 16px; }
+.app-calendar__nav { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--app-text); }
+.app-calendar__nav:hover { background: var(--app-brand-tint); }
+.app-calendar__nav svg { width: 18px; height: 18px; }
+.app-calendar__nav--prev svg, .app-calendar__nav.is-off svg { transform: rotate(180deg); }
+.app-calendar__nav.is-off { color: #c9d2cd; }
+.app-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 12px; }
+.app-calendar__dow { text-align: center; font-size: 11px; font-weight: 700; color: var(--app-muted); padding-bottom: 4px; }
+.app-day { display: grid; place-items: center; aspect-ratio: 1; max-width: 46px; width: 100%; margin: 0 auto; border-radius: 50%; font: 650 14px var(--app-font); color: var(--app-text); text-decoration: none; border: 1.5px solid transparent; }
+.app-day--free { border-color: #d5ddd9; }
+.app-day--partial { border-color: #e0a526; background: #fdf6e3; }
+.app-day--busy { border-color: var(--app-danger); color: var(--app-danger); }
+.app-day--past, .app-day--out, .app-day--blocked { color: #c4ccc8; }
+a.app-day:hover { background: var(--app-brand-tint); }
+.app-day.is-picked { background: var(--app-brand); border-color: var(--app-brand); color: #fff; }
+.app-day-panel { margin-top: 12px; display: grid; gap: 12px; }
+.app-day-panel h2 { margin: 0; font-size: 18px; }
+.app-day-panel__taken { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; font-size: 13px; }
+.app-day-panel__taken strong { width: 100%; }
+.app-day-panel__taken span { padding: 3px 9px; border-radius: 8px; background: var(--app-danger-soft); color: var(--app-danger); font-weight: 600; }
+.app-day-panel form { margin: 0; }
+.app-wallet__mark { right: 12px; }
+.app-wallet .app-hero__badge { align-self: flex-start; }
+.app-page-head .app-back svg { transform: rotate(180deg); }
+
+/* Chamados: conversa com a administração */
+.app-chat { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 10px; }
+.app-chat__msg { max-width: 86%; justify-self: start; }
+.app-chat__msg--mine { justify-self: end; text-align: right; }
+.app-chat__who { display: block; font-size: 11.5px; color: var(--app-muted); margin: 0 4px 4px; }
+.app-chat__body { display: inline-block; text-align: left; padding: 11px 14px; border-radius: 16px 16px 16px 4px; background: #fff; box-shadow: 0 1px 4px #0b2a1a12; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.app-chat__msg--mine .app-chat__body { border-radius: 16px 16px 4px 16px; background: var(--app-brand); color: #fff; }
+.app-chat__reply { display: grid; gap: 10px; }
+.app-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; font-size: 13px; color: var(--app-muted); }
+@media (min-width: 900px) { .app-calendar, .app-day-panel, .app-area-info { max-width: 620px; } }

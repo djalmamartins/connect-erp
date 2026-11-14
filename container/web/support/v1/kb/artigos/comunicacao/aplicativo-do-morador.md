@@ -40,14 +40,15 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 
 ## O que o morador pode fazer
 
+- **Início**: o cartão verde mostra o valor em aberto, o próximo vencimento e os botões **2ª via do boleto** e **Copiar código**. O ícone de olho esconde os valores (a escolha fica no aparelho). Quem tem mais de uma unidade toca na setinha ao lado do nome do condomínio para trocar. Os atalhos levam a Reservar, Chamado, Visitante e Documentos.
 - **Barra de cima**: o nome da pessoa e a unidade, a **busca** (comunicados, assembleias, documentos, encomendas e páginas) e o **sininho** com os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada e reserva da semana. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
-- **Boletos**: ver a situação de cada conta da unidade. Tocando na conta: se estiver paga, abre o **recibo** para imprimir ou salvar em PDF; se estiver em aberto, oferece **baixar o boleto**, copiar a linha digitável ou o Pix.
+- **Boletos**: ver a situação de cada conta da unidade; ao rolar até o fim, as contas mais antigas carregam sozinhas, de 6 em 6 meses. Tocando na conta: se estiver paga, abre o **recibo** para imprimir ou salvar em PDF; se estiver em aberto, oferece **baixar o boleto**, copiar a linha digitável ou o Pix.
 - **Prestação de contas**: abrir os links publicados no fechamento do mês.
 - **Comunicados**: ler os avisos gerais e os enviados para a unidade dele.
-- **Reservas**: pedir reserva de uma área comum, entrar na lista de espera e cancelar uma reserva futura. Valem as mesmas regras da tela de Reservas do ERP (horário, conflito, aprovação). Reserva com taxa já lançada não pode ser cancelada pelo aplicativo.
+- **Reservas**: na aba **Nova reserva**, escolher o espaço (filtro Gratuitos ou Com taxa) e ver o **calendário do mês** com dias livres, de parte do dia e ocupados; tocando no dia aparecem os horários já tomados (sem dizer de quem), o pedido e a lista de espera. Na aba **Minhas reservas**, acompanhar e cancelar uma reserva futura. Valem as mesmas regras da tela de Reservas do ERP (horário, conflito, aprovação). Reserva com taxa já lançada não pode ser cancelada pelo aplicativo.
 - **Encomendas**: ver o que chegou na portaria e o que já foi retirado.
 - **Visitantes**: avisar a portaria de uma visita e cancelar o aviso. O documento do visitante aparece mascarado.
-- **Ocorrências**: registrar uma ocorrência para a administração.
+- **Chamados**: abrir um chamado (a ocorrência vira chamado do Help Desk), ver o **número**, a situação e **conversar** com a administração até ele ser fechado.
 - **Assembleias**: ver a pauta, **baixar o edital de convocação** (para imprimir ou salvar em PDF), o resultado de cada item e a ata depois de encerrada.
 - **Documentos**: baixar os arquivos que a administração marcou como visíveis no Disco Virtual.
 
