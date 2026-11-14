@@ -2675,6 +2675,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /cost-centers/deactivate-idle:
+    post:
+      operationId: deactivateIdleCostCenters
+      summary: Inativação em lote dos centros de custo do condomínio sem lançamento nos últimos meses, como Inativo pelo cadastro, tudo ou nada e com prévia (erp.access, erp.cost_centers.view, erp.cost_centers.manage e erp.entries.view, ADR 0273)
+      description: >-
+        Sem cost_center_ids, entram os centros de custo ativos do próprio condomínio (os padrão da Connect ficam de fora)
+        sem lançamento com competência a partir de since_competence (o mês atual menos idle_months - 1; padrão 12 meses);
+        ficam de fora os com conta em aberto (skipped_open), usados por lançamento fixo ativo (skipped_recurring), padrão
+        de conta bancária ativa (skipped_bank_default) ou que o formulário não regrava (skipped_invalid). Com
+        cost_center_ids, recusa centro de custo não encontrado no condomínio, já inativo, com lançamento recente ou nesses
+        casos. Cada um é regravado pelo cadastro como Inativo; auditoria deactivate_idle por centro de custo, com o motivo.
+        never_used conta os que nunca tiveram lançamento. Lançamentos não mudam. Nenhum aviso é enviado. Sem código, nome
+        ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, cost_center_ids: { type: array, items: { type: integer }, maxItems: 500 }, idle_months: { type: integer, minimum: 1, maximum: 120, default: 12 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, idle_months, since_competence, reason, skipped_open, skipped_recurring, skipped_bank_default, skipped_invalid, count, never_used, changed, cost_centers[{ id, last_competence }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou centro de custo recusado (errors com _form e _cost_center); nada é gravado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
