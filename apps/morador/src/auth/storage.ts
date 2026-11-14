@@ -7,6 +7,8 @@ import { Platform } from 'react-native';
  */
 const TOKEN_KEY = 'connect.morador.token';
 const RESIDENT_KEY = 'connect.morador.resident_id';
+const BIOMETRIC_KEY = 'connect.morador.biometric';
+const LOGIN_KEY = 'connect.morador.last_login';
 const memory = new Map<string, string>();
 
 async function read(key: string): Promise<string | null> {
@@ -41,4 +43,12 @@ export const tokenStorage = {
     return Number.isInteger(id) && id > 0 ? id : null;
   },
   setResidentId: (id: number | null) => write(RESIDENT_KEY, id === null ? null : String(id)),
+  /** Pedir Face ID / digital ao abrir o app (escolha do morador, só neste aparelho). */
+  async getBiometric(): Promise<boolean> {
+    return (await read(BIOMETRIC_KEY)) === '1';
+  },
+  setBiometric: (on: boolean) => write(BIOMETRIC_KEY, on ? '1' : null),
+  /** Último e-mail ou CPF usado, para já vir preenchido no login. A senha nunca é guardada. */
+  getLastLogin: () => read(LOGIN_KEY),
+  setLastLogin: (login: string | null) => write(LOGIN_KEY, login),
 };

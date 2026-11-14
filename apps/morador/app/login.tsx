@@ -1,6 +1,7 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
@@ -12,8 +13,9 @@ import { Body, Button, Field } from '../src/ui/kit';
  * (ADR 0090); aqui o morador só entra com e-mail ou CPF e senha, e o código do 2FA quando ativo.
  */
 export default function Login() {
-  const { login, verifyTwoFactor } = useAuth();
-  const [identity, setIdentity] = useState('');
+  const { login, verifyTwoFactor, biometric, lastLogin } = useAuth();
+  const [identity, setIdentity] = useState(lastLogin ?? '');
+  const [useBio, setUseBio] = useState(biometric.available);
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function Login() {
       if (challenge) {
         await verifyTwoFactor(challenge, code.trim());
       } else {
-        const result = await login(identity.trim(), password);
+        const result = await login(identity.trim(), password, biometric.available && useBio);
         if (result.kind === 'two_factor') {
           setChallenge(result.challenge);
         }
@@ -90,6 +92,18 @@ export default function Login() {
                   textContentType="password"
                   onSubmitEditing={submit}
                 />
+                {biometric.available ? (
+                  <Pressable
+                    onPress={() => setUseBio((v) => !v)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: useBio }}
+                    style={styles.check}
+                    hitSlop={8}
+                  >
+                    <Ionicons name={useBio ? 'checkbox' : 'square-outline'} size={24} color={useBio ? colors.brand : colors.muted} />
+                    <Text style={styles.checkText}>Nas próximas vezes, entrar com {biometric.label}</Text>
+                  </Pressable>
+                ) : null}
               </>
             )}
             {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
@@ -125,4 +139,6 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
   error: { fontFamily: fonts.medium, fontSize: 14, color: colors.danger },
   note: { fontSize: 13, lineHeight: 19 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  checkText: { flex: 1, fontFamily: fonts.medium, fontSize: 15, color: colors.text },
 });

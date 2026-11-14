@@ -8,11 +8,15 @@ import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { colors } from '../src/theme';
 import { IntroSplash } from '../src/ui/IntroSplash';
 import { Loading } from '../src/ui/kit';
+import { LockScreen } from '../src/ui/LockScreen';
 
 function RootStack() {
   const { status } = useAuth();
   if (status === 'loading') {
     return <Loading />;
+  }
+  if (status === 'locked') {
+    return <LockScreen />;
   }
   const signedIn = status === 'signedIn';
   return (
