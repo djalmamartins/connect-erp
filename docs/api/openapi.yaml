@@ -1504,7 +1504,7 @@ paths:
   /accountability-links:
     get:
       operationId: accountabilityLinksList
-      summary: Links públicos da prestação de contas de um condomínio, sem o conteúdo (erp.closing.view + erp.entries.view, ADR 0300)
+      summary: Links públicos da prestação de contas de um condomínio, sem o conteúdo (erp.closing.view + erp.entries.view, ADR 0301)
       security: [{ session: [] }]
       parameters:
         - { name: condominium_id, in: query, required: true, schema: { type: integer } }
@@ -1518,7 +1518,7 @@ paths:
         '422': { $ref: '#/components/responses/ValidationFailed' }
     post:
       operationId: accountabilityLinksGenerate
-      summary: Gera ou atualiza o link público do mês (mês fechado) ou do ano (doze meses fechados) (erp.closing.manage, ADR 0300)
+      summary: Gera ou atualiza o link público do mês (mês fechado) ou do ano (doze meses fechados) (erp.closing.manage, ADR 0301)
       description: >-
         O livro do mês (regime de caixa) agrupado por categoria e fornecedor, com os documentos de cada pagamento
         (comprovante, conta, nota fiscal, recibo, outros), congelado em JSON com sha256. O mesmo conteúdo não muda nada
@@ -1549,7 +1549,7 @@ paths:
   /accountability-links/{id}/send:
     post:
       operationId: accountabilityLinksSend
-      summary: Envia o link aos moradores do condomínio, um aviso por unidade na fila do ERP (erp.closing.manage, ADR 0300)
+      summary: Envia o link aos moradores do condomínio, um aviso por unidade na fila do ERP (erp.closing.manage, ADR 0301)
       description: >-
         Público "notices" (pessoas ativas da unidade com e-mail que não recusaram comunicado). A mesma versão não sai
         duas vezes (already_sent). Fora de produção nada é enviado a morador (NotificationDispatcher, ADR 0055).
@@ -1566,7 +1566,7 @@ paths:
   /accountability-links/{id}/revoke:
     post:
       operationId: accountabilityLinksRevoke
-      summary: Desativa o endereço público com motivo; nada é apagado (erp.closing.manage, ADR 0300)
+      summary: Desativa o endereço público com motivo; nada é apagado (erp.closing.manage, ADR 0301)
       security: [{ session: [], csrf: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }

@@ -115,7 +115,7 @@ $route->get("/accountability-publications", "AccountabilityPublications:index", 
 $route->get("/accountability-publications/{id}", "AccountabilityPublications:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-publications", "AccountabilityPublications:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-publications/{id}/withdraw", "AccountabilityPublications:withdraw", null, \Source\Support\Middleware\ApiAuthenticated::class);
-// Link público da prestação de contas (ADR 0300): gerar, enviar aos moradores e revogar.
+// Link público da prestação de contas (ADR 0301): gerar, enviar aos moradores e revogar.
 $route->get("/accountability-links", "AccountabilityLinks:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-links", "AccountabilityLinks:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/accountability-links/{id}/send", "AccountabilityLinks:send", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -507,7 +507,7 @@ $route->get("/verificar-certidao-debitos", "DocumentVerify:form");
 $route->post("/verificar-certidao-debitos", "DocumentVerify:verify");
 $route->get("/verificar", "DocumentVerify:legacy");
 $route->post("/verificar", "DocumentVerify:verify");
-// Link público da prestação de contas para os moradores (ADR 0300): sem login, em qualquer host, token no caminho.
+// Link público da prestação de contas para os moradores (ADR 0301): sem login, em qualquer host, token no caminho.
 $route->get("/prestacao/{token}", "AccountabilityLinkPublic:show");
 $route->get("/prestacao/{token}/documento/{attachment}", "AccountabilityLinkPublic:file");
 $route->namespace(null);

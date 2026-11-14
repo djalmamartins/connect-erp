@@ -16,7 +16,7 @@ use Source\Support\AppLogger;
 use Source\Support\Audit;
 
 /**
- * Link público da prestação de contas para os moradores (ADR 0300).
+ * Link público da prestação de contas para os moradores (ADR 0301).
  *
  * O livro caixa do mês (CN-007, CashBook) é agrupado por categoria (conta do plano) e por fornecedor, e cada
  * pagamento vem seguido dos documentos anexados, na ordem: comprovante, conta ou fatura, nota fiscal, recibo e outros

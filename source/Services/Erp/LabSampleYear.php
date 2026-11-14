@@ -236,7 +236,7 @@ final class LabSampleYear
         }
         // Publicações (ADR 0179) e fechamentos feitos no lab sobre o condomínio de exemplo: sem isso a FK das publicações trava a remoção.
         $removed['accountability_publications'] = $this->run('DELETE FROM erp_accountability_publications WHERE condominium_id = ?', $c);
-        // Links públicos da prestação de contas e avisos do prazo (ADR 0300), gerados ao fechar o mês no lab.
+        // Links públicos da prestação de contas e avisos do prazo (ADR 0301), gerados ao fechar o mês no lab.
         $removed['accountability_links'] = $this->run('DELETE FROM erp_accountability_links WHERE condominium_id = ?', $c);
         $removed['accountability_alerts'] = $this->run('DELETE FROM erp_accountability_alerts WHERE condominium_id = ?', $c);
         $removed['month_closings'] = $this->run('DELETE FROM erp_month_closings WHERE condominium_id = ?', $c);

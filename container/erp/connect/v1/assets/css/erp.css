@@ -926,7 +926,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 @keyframes erp-notice-out { to { opacity: 0; transform: translateX(28px); } }
 @media (max-width: 600px) { .erp-toasts { top: 12px; right: 16px; } }
 
-/* Link público da prestação de contas no livro caixa (ADR 0300): endereço longo quebra a linha; "Desativar" abre o motivo. */
+/* Link público da prestação de contas no livro caixa (ADR 0301): endereço longo quebra a linha; "Desativar" abre o motivo. */
 .erp-break { word-break: break-all; }
 .erp-inline-details { display: inline-block; vertical-align: top; }
 .erp-inline-details > summary { list-style: none; cursor: pointer; }

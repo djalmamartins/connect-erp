@@ -1,6 +1,6 @@
 <?php
 /**
- * Link público da prestação de contas (ADR 0300), sem login. Página própria (sem o layout do ERP), com a identidade da
+ * Link público da prestação de contas (ADR 0301), sem login. Página própria (sem o layout do ERP), com a identidade da
  * Connect: faixa verde-escura da barra lateral, logo dourada e detalhes em dourado. CSS inline e nenhum recurso de fora
  * (a CSP só permite imagens em data: e o script do botão de imprimir com nonce).
  *

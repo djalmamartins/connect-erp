@@ -14,7 +14,7 @@ use Source\Services\Erp\AccountabilityLinks as Service;
 use Source\Support\Access;
 
 /**
- * Link público da prestação de contas (ADR 0300). CSRF e sessão ficam no middleware ApiAuthenticated:
+ * Link público da prestação de contas (ADR 0301). CSRF e sessão ficam no middleware ApiAuthenticated:
  *  GET  /api/v1/accountability-links?condominium_id=&kind=&period=           links do condomínio (sem o conteúdo)
  *  POST /api/v1/accountability-links {condominium_id, kind?, period}          gera ou atualiza (mês fechado; anual: o ano todo)
  *  POST /api/v1/accountability-links/{id}/send                                envia aos moradores (uma vez por versão)

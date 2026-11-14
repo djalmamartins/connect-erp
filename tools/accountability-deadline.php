@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Prazo da prestação de contas (ADR 0300): uma vez por dia, pelo cron do servidor, por exemplo às 7h:
+ * Prazo da prestação de contas (ADR 0301): uma vez por dia, pelo cron do servidor, por exemplo às 7h:
  *   php tools/accountability-deadline.php
  *
  * Avisa a equipe (sino do sistema) quando o livro do mês anterior ainda não foi fechado perto do 5º dia útil ou

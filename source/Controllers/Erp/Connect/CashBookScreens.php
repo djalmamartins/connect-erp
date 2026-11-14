@@ -26,7 +26,7 @@ use Source\Support\Message;
  *  GET /prestacao-de-contas/livro-caixa/pdf?mes=AAAA-MM       PDF pronto (com as imagens anexadas)
  *  GET /prestacao-de-contas/livro-caixa/pacote?mes=AAAA-MM    ZIP com o PDF e todos os anexos numerados
  *  GET /prestacao-de-contas/livro-caixa/imprimir?mes=AAAA-MM  o mesmo documento para imprimir no navegador
- *  POST /prestacao-de-contas/livro-caixa/link                 gera ou atualiza o link público do mês ou do ano (ADR 0300)
+ *  POST /prestacao-de-contas/livro-caixa/link                 gera ou atualiza o link público do mês ou do ano (ADR 0301)
  *  POST /prestacao-de-contas/livro-caixa/link/{id}/enviar     envia o link aos moradores do condomínio
  *  POST /prestacao-de-contas/livro-caixa/link/{id}/revogar    desliga o link (motivo)
  * O cartão do link aparece para quem vê o livro; gerar, enviar e revogar exigem erp.closing.manage, como fechar o mês.

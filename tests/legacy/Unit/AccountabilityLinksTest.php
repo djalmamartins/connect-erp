@@ -14,7 +14,7 @@ use Source\Services\Erp\CashBook;
 use Source\Services\Erp\NotificationDispatcher;
 use Source\Services\Erp\NotificationOutbox;
 
-/** Link público da prestação de contas e prazo do 5º dia útil (ADR 0300): regras puras, rotas, telas e segurança. */
+/** Link público da prestação de contas e prazo do 5º dia útil (ADR 0301): regras puras, rotas, telas e segurança. */
 final class AccountabilityLinksTest extends TestCase
 {
     private function file(string $path): string
