@@ -12,6 +12,7 @@ import { Body, Button, Card, Screen } from '../../src/ui/kit';
 type Item = { label: string; hint: string; href: Href; icon: ComponentProps<typeof Ionicons>['name']; feature?: Feature; color: string };
 
 const ITEMS: Item[] = [
+  { label: 'Prestação de contas', color: '#0f7a6a', hint: 'Para onde foi o dinheiro, mês a mês', href: '/prestacao-de-contas', icon: 'pie-chart-outline', feature: 'accountability' },
   { label: 'Comunicados', color: '#e8833a', hint: 'Avisos da administração', href: '/comunicados', icon: 'megaphone-outline', feature: 'announcements' },
   { label: 'Encomendas', color: '#8a6d1f', hint: 'O que chegou na portaria', href: '/encomendas', icon: 'cube-outline', feature: 'deliveries' },
   { label: 'Visitantes', color: '#2f7bd8', hint: 'Avise a portaria de quem vem', href: '/visitantes', icon: 'people-outline', feature: 'visitors' },

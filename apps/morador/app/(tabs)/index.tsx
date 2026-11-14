@@ -1,15 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
-import { useState, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { isFeatureOn, type Feature } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
+import { tokenStorage } from '../../src/auth/storage';
 import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
 import { date, greeting, initials, longToday, money } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
-import { Body, Card, CardTitle, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { Body, Card, CardTitle, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { areaIcon } from '../../src/lib/areas';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type Shortcut = { label: string; icon: IconName; href: Href; feature: Feature };
@@ -30,6 +32,19 @@ export default function Home() {
   const charges = useResource(() => (billing ? api.charges() : Promise.resolve(null)), [residentId, billing]);
   const boleto = nextBoleto(charges.data?.lines ?? []);
   const [opening, setOpening] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const many = (me?.links.length ?? 0) > 1;
+
+  useEffect(() => {
+    void tokenStorage.getHideValues().then(setHidden);
+  }, []);
+
+  function toggleHidden() {
+    setHidden((v) => {
+      void tokenStorage.setHideValues(!v);
+      return !v;
+    });
+  }
 
   async function secondCopy() {
     if (!boleto || opening) return;
@@ -69,16 +84,25 @@ export default function Home() {
       <Pressable
         onPress={() => (s?.charges ? router.push('/financeiro') : undefined)}
         accessibilityRole={s?.charges ? 'button' : undefined}
-        accessibilityLabel={s?.charges ? `Em aberto: ${money(s.charges.open_cents)}` : undefined}
+        accessibilityLabel={s?.charges ? (hidden ? 'Ver o financeiro' : `Em aberto: ${money(s.charges.open_cents)}`) : undefined}
         style={({ pressed }) => [styles.heroWrap, pressed && s?.charges ? { transform: [{ scale: 0.985 }] } : null]}
       >
         <LinearGradient colors={[colors.sidebar, '#124c3c', colors.brandStrong]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <Image source={require('../../assets/intro-symbol.png')} style={styles.heroMark} resizeMode="contain" accessible={false} />
           <View style={styles.heroTop}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.condo} numberOfLines={2}>
-                {current?.condominium_name ?? 'Seu condomínio'}
-              </Text>
+              <Pressable
+                onPress={many ? () => router.push('/unidade') : undefined}
+                disabled={!many}
+                accessibilityRole={many ? 'button' : undefined}
+                accessibilityLabel={many ? 'Trocar de unidade' : undefined}
+                style={styles.condoRow}
+              >
+                <Text style={styles.condo} numberOfLines={2}>
+                  {current?.condominium_name ?? 'Seu condomínio'}
+                </Text>
+                {many ? <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.85)" /> : null}
+              </Pressable>
               {current ? (
                 <View style={styles.unitChip}>
                   <Ionicons name="home" size={12} color={colors.accent} />
@@ -92,13 +116,18 @@ export default function Home() {
           </View>
           {s?.charges ? (
             <View style={styles.heroMoney}>
-              <Text style={styles.heroLabel}>Em aberto</Text>
-              <Text style={styles.heroValue}>{money(s.charges.open_cents)}</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.heroLabel}>Em aberto</Text>
+                <Pressable onPress={toggleHidden} hitSlop={12} accessibilityRole="button" accessibilityLabel={hidden ? 'Mostrar valores' : 'Esconder valores'}>
+                  <Ionicons name={hidden ? 'eye-off-outline' : 'eye-outline'} size={18} color="rgba(255,255,255,0.8)" />
+                </Pressable>
+              </View>
+              <Text style={styles.heroValue}>{hidden ? 'R$ •••••' : money(s.charges.open_cents)}</Text>
               <View style={styles.heroFoot}>
                 <Text style={styles.heroHint}>Próximo vencimento {date(s.charges.next_due_on)}</Text>
                 {s.charges.overdue_cents > 0 ? (
                   <View style={styles.overdue}>
-                    <Text style={styles.overdueText}>{money(s.charges.overdue_cents)} vencido</Text>
+                    <Text style={styles.overdueText}>{hidden ? 'Há valor vencido' : `${money(s.charges.overdue_cents)} vencido`}</Text>
                   </View>
                 ) : (
                   <Ionicons name="arrow-forward-circle" size={26} color="rgba(255,255,255,0.85)" />
@@ -178,13 +207,13 @@ export default function Home() {
         <>
           <SectionTitle>Próximas reservas</SectionTitle>
           {s.next_reservations.map((r) => (
-            <Card key={r.id} onPress={() => router.push('/reservas')}>
-              <CardTitle>{r.area}</CardTitle>
-              <Body muted>
-                {date(r.reserved_on)}
-                {r.starts_time ? ` · ${r.starts_time}` : ''}
-              </Body>
-            </Card>
+            <IconRow
+              key={r.id}
+              icon={areaIcon(r.area)}
+              title={r.area}
+              subtitle={`${date(r.reserved_on)}${r.starts_time ? ` · ${r.starts_time}` : ''}${r.ends_time ? ` às ${r.ends_time}` : ''}`}
+              onPress={() => router.push('/reservas')}
+            />
           ))}
         </>
       ) : null}
@@ -192,10 +221,15 @@ export default function Home() {
         <>
           <SectionTitle>Assembleias</SectionTitle>
           {s.assemblies.map((a) => (
-            <Card key={a.id} onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })}>
-              <CardTitle>{a.title}</CardTitle>
-              <Body muted>{date(a.first_call_at)}</Body>
-            </Card>
+            <IconRow
+              key={a.id}
+              icon="podium"
+              tint="#07884c"
+              bg={colors.successSoft}
+              title={a.title}
+              subtitle={date(a.first_call_at)}
+              onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })}
+            />
           ))}
         </>
       ) : null}
@@ -203,10 +237,15 @@ export default function Home() {
         <>
           <SectionTitle>Comunicados</SectionTitle>
           {s.announcements.map((a) => (
-            <Card key={a.id} onPress={() => router.push('/comunicados')}>
-              <CardTitle>{a.subject}</CardTitle>
-              <Body muted>{date(a.published_at)}</Body>
-            </Card>
+            <IconRow
+              key={a.id}
+              icon="megaphone"
+              tint="#c2611f"
+              bg="#fdf0e6"
+              title={a.subject}
+              subtitle={date(a.published_at)}
+              onPress={() => router.push('/comunicados')}
+            />
           ))}
         </>
       ) : null}
@@ -253,8 +292,10 @@ const styles = StyleSheet.create({
   },
   heroButtonMain: { backgroundColor: colors.accent, borderColor: colors.accent },
   heroButtonText: { fontFamily: fonts.semibold, fontSize: 14, color: '#ffffff' },
+  condoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  condo: { fontFamily: fonts.semibold, fontSize: 17, color: '#ffffff' },
+  condo: { fontFamily: fonts.semibold, fontSize: 17, color: '#ffffff', flexShrink: 1 },
   unitChip: {
     flexDirection: 'row',
     alignItems: 'center',

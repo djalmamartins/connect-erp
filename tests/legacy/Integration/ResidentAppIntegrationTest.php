@@ -154,6 +154,27 @@ final class ResidentAppIntegrationTest extends TestCase
         $portal->cancelReservation($this->morador, $this->link($this->morador), (int)$confirmed['id']);
     }
 
+    public function testAreaAvailabilityShowsOnlyBusyTimes(): void
+    {
+        $this->enable($this->alpha, ['reservations']);
+        $free = $this->area($this->alpha, 'Churrasqueira', 'free');
+        $foreign = $this->area($this->beta, 'Quadra Beta', 'free');
+        $portal = new ResidentPortal($this->pdo);
+        $date = date('Y-m-d', strtotime('+5 days'));
+        $month = substr($date, 0, 7);
+        $portal->requestReservation($this->vizinho, $this->link($this->vizinho), ['common_area_id' => $free, 'reserved_on' => $date, 'starts_time' => '10:00', 'ends_time' => '14:00']);
+        $cancelled = $portal->requestReservation($this->vizinho, $this->link($this->vizinho), ['common_area_id' => $free, 'reserved_on' => $date, 'starts_time' => '18:00', 'ends_time' => '20:00']);
+        $portal->cancelReservation($this->vizinho, $this->link($this->vizinho), (int)$cancelled['id']);
+
+        $result = $portal->areaAvailability($this->link($this->morador), $free, $month);
+        self::assertSame($month, $result['month']);
+        self::assertSame([['date' => $date, 'starts_time' => '10:00', 'ends_time' => '14:00']], $result['busy'],
+            'O morador vê o horário tomado pelo vizinho, sem unidade nem nome; a cancelada não conta.');
+        self::assertSame(date('Y-m'), $portal->areaAvailability($this->link($this->morador), $free, 'abc')['month'], 'Mês inválido vira o mês atual.');
+        $this->expectException(RegistryValidationException::class);
+        $portal->areaAvailability($this->link($this->morador), $foreign, $month);
+    }
+
     public function testAnnouncementsDeliveriesVisitsAndDocuments(): void
     {
         $this->enable($this->alpha, ['announcements', 'deliveries', 'visitors', 'documents', 'occurrences']);
