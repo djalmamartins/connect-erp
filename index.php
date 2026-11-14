@@ -373,6 +373,8 @@ $route->get("/reports/virtual-disk", "VirtualDiskInventory:show", null, \Source\
 $route->post("/documents/trash-duplicates", "VirtualDiskDeduplication:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Vínculos dos arquivos do Disco Virtual (ligados e soltos por pasta, por cadastro, vínculos para a lixeira), somente leitura (ADR 0276).
 $route->get("/reports/document-links", "VirtualDiskLinks:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Arquivos do Disco Virtual que ainda têm vínculo, de volta da lixeira, em lote, tudo ou nada e com prévia (ADR 0277).
+$route->post("/documents/restore-linked", "VirtualDiskRestore:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
