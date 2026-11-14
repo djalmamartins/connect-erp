@@ -2266,6 +2266,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /reports/tax-coverage:
+    get:
+      operationId: taxCoverage
+      summary: Cobertura das alíquotas de retenção do condomínio por imposto (origem própria ou padrão, alíquotas, menor e maior, serviços e materiais, substituição do padrão, impostos sem alíquota), somente leitura (erp.access e erp.settings.view, ADR 0262)
+      description: >-
+        Uma linha por imposto do cadastro, sempre todos, com own (ativas do condomínio), default (ativas padrão da Connect),
+        inactive_own, source (condominium quando há própria; senão default; null sem nenhuma), rates, min_rate e max_rate
+        da origem, covers_services e covers_materials (todos vale para os dois), overrides_default e missing; totals soma
+        own, default, inactive_own e rates; missing_kinds lista os impostos sem alíquota ativa. Sem nome de alíquota ou
+        observação. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, rows[{ kind, kind_label, own, default, inactive_own, source, rates, min_rate, max_rate, covers_services, covers_materials, overrides_default, missing }], totals { own, default, inactive_own, rates }, missing_kinds[] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /maintenances/cancel-overdue:
     post:
       operationId: cancelOverdueMaintenances
