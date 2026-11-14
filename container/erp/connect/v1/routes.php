@@ -159,6 +159,12 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/operacional/agendamentos-pendentes/{id}/confirmar", "PendingReservations:confirm");
     $route->post("/operacional/agendamentos-pendentes/{id}/recusar", "PendingReservations:refuse");
 
+    // Honorários (CN-008, ADR 0402): contrato de administração por condomínio e pedido da nota (NFS-e), com CSRF.
+    $route->get(\Source\Controllers\Erp\Connect\ManagementFeeScreens::ROUTE, "ManagementFeeScreens:index");
+    $route->post("/condominios/honorarios/pedidos/{id}/cancelar", "ManagementFeeScreens:cancel");
+    $route->post("/condominios/honorarios/{id}", "ManagementFeeScreens:save");
+    $route->post("/condominios/honorarios/{id}/nota", "ManagementFeeScreens:request");
+
     // Fila de avisos (CN-005, ADR 0055 e 0072): lista com a trilha e reenvio manual com CSRF.
     $route->get("/configuracoes/fila-de-avisos", "NotificationQueue:index");
     $route->post("/configuracoes/fila-de-avisos/{id}/reenviar", "NotificationQueue:retry");
@@ -173,7 +179,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos'], true) || in_array($pageId, $erpRegistryPages, true)
+        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios'], true) || in_array($pageId, $erpRegistryPages, true)
             || isset(\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES[$page['route']])) {
             continue;
         }

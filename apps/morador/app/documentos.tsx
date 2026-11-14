@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { ApiError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
 import { date } from '../src/lib/format';
 import { openProtectedFile } from '../src/lib/openFile';
 import { useResource } from '../src/lib/useResource';
 import { Body, Card, CardTitle, Empty, ErrorBox, Loading, Screen } from '../src/ui/kit';
+import { dialog } from '../src/ui/Dialog';
 
 export default function Documentos() {
   const { api, client, residentId } = useAuth();
@@ -18,7 +18,7 @@ export default function Documentos() {
     try {
       await openProtectedFile(api.documentFileUrl(id), client.authHeaders(), name, mime ?? 'application/pdf');
     } catch (e) {
-      Alert.alert('Documento', e instanceof ApiError ? e.message : 'Não foi possível abrir o documento.');
+      void dialog.notice({ title: 'Não deu para abrir o documento', message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.', tone: 'error' });
     } finally {
       setOpening(null);
     }

@@ -259,6 +259,31 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, 'Fila indisponível'), 'CN-005: sem banco');
         continue;
     }
+    if ($id === 'CN-008') {
+        // Honorários (ADR 0402): total mensal, contrato, pedido da nota só com a chave ligada, escape e CSRF.
+        $contract = static fn (array $over = []): array => $over + ['id' => 3, 'condominium_id' => 7, 'monthly_fee_cents' => 250000, 'start_date' => '2026-01-01', 'end_date' => null,
+            'due_day' => 10, 'service_description' => 'Honorários <b>x</b>', 'status' => 'active', 'notes' => null, 'updated_at' => '2026-11-14 10:00:00'];
+        $feeRows = [['condominium_id' => 7, 'condominium_name' => '<b>Residencial</b>', 'contract' => $contract(), 'billable' => true, 'request' => null],
+            ['condominium_id' => 8, 'condominium_name' => 'Beta', 'contract' => null, 'billable' => false, 'request' => null],
+            ['condominium_id' => 9, 'condominium_name' => 'Gama', 'contract' => $contract(['id' => 4, 'condominium_id' => 9]), 'billable' => true,
+                'request' => ['id' => 5, 'status' => 'requested', 'amount_cents' => 250000, 'requested_at' => '2026-11-14 10:00:00']]];
+        $feesData = static fn (array $over = []): array => $over + ['fees' => ['competence' => '2026-11', 'nfse_enabled' => true, 'monthly_total_cents' => 500000, 'active_contracts' => 2, 'rows' => $feeRows],
+            'feesCompetence' => '2026-11', 'feesEditing' => null, 'feesRequests' => [], 'feesError' => null, 'canManage' => true, 'flash' => null];
+        $html = $render('pages/condominiums/management-fees', $layoutData->invoke($panel, $user, 'CN-008', $feesData()));
+        $common($html, $id, 'Honorários');
+        $save('cn-008', $html);
+        $assert(str_contains($html, 'R$ 5.000,00') && substr_count($html, '/condominios/honorarios/7/nota') === 1 && !str_contains($html, '/condominios/honorarios/9/nota')
+            && !str_contains($html, '<b>Residencial') && str_contains($html, 'Notas fiscais ligadas') && str_contains($html, 'Solicitada'), 'CN-008: total, nota só onde falta e escape');
+        $html = $render('pages/condominiums/management-fees', $layoutData->invoke($panel, $user, 'CN-008', $feesData(['fees' => ['nfse_enabled' => false] + $feesData()['fees']])));
+        $assert(!str_contains($html, '/nota"') && str_contains($html, 'Notas fiscais desligadas') && str_contains($html, '/configuracoes/financeiro'), 'CN-008: chave desligada esconde o pedido');
+        $html = $render('pages/condominiums/management-fees', $layoutData->invoke($panel, $user, 'CN-008', $feesData(['feesEditing' => $feeRows[0],
+            'feesRequests' => [['id' => 5, 'competence' => '2026-10', 'amount_cents' => 250000, 'status' => 'requested', 'cancel_reason' => null, 'requested_at' => '2026-10-02 10:00:00']]])));
+        $assert(str_contains($html, 'name="monthly_fee"') && str_contains($html, 'value="2.500,00"') && str_contains($html, '/condominios/honorarios/pedidos/5/cancelar')
+            && substr_count($html, "name='csrf'") >= substr_count($html, '<form method="post"') && !str_contains($html, 'Honorários <b>'), 'CN-008: contrato, pedidos e CSRF');
+        $html = $render('pages/condominiums/management-fees', $layoutData->invoke($panel, $user, 'CN-008', $feesData(['fees' => null])));
+        $assert(str_contains($html, 'Honorários indisponíveis'), 'CN-008: sem banco');
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';

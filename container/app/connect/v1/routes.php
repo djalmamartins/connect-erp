@@ -31,11 +31,14 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
     $route->get("/prestacao-de-contas", "AppScreens:accountability");
     $route->get("/comunicados", "AppScreens:announcements");
     $route->get("/reservas", "AppScreens:reservations");
+    $route->get("/reservas/area/{id}", "AppScreens:reservationArea");
     $route->post("/reservas", "AppScreens:reserve");
     $route->post("/reservas/lista-de-espera", "AppScreens:waitlist");
     $route->post("/reservas/{id}/cancelar", "AppScreens:cancelReservation");
     $route->get("/ocorrencias", "AppScreens:occurrences");
     $route->post("/ocorrencias", "AppScreens:reportOccurrence");
+    $route->get("/ocorrencias/{id}", "AppScreens:ticket");
+    $route->post("/ocorrencias/{id}/mensagens", "AppScreens:replyTicket");
     $route->get("/encomendas", "AppScreens:deliveries");
     $route->get("/visitantes", "AppScreens:visits");
     $route->post("/visitantes", "AppScreens:authorizeVisit");

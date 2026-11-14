@@ -1,11 +1,6 @@
-import { Alert } from 'react-native';
+import { dialog } from '../ui/Dialog';
 
-/** Pergunta antes de uma ação que o morador não desfaz sozinho (cancelar reserva ou visita). */
+/** Pergunta antes de uma ação que o morador não desfaz sozinho (cancelar reserva ou visita), na janela do app. */
 export function confirm(title: string, message: string, action: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: 'Voltar', style: 'cancel', onPress: () => resolve(false) },
-      { text: action, style: 'destructive', onPress: () => resolve(true) },
-    ]);
-  });
+  return dialog.confirm({ title, message, confirm: action, cancel: 'Voltar', tone: 'danger' });
 }
