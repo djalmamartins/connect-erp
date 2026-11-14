@@ -26,7 +26,8 @@ npm run typecheck   # TypeScript estrito
 - `app/`: telas (expo-router). `(tabs)/` tem Início, Financeiro, Reservas, Ocorrências e Mais.
 - `src/api/`: cliente da API (`client.ts`) e as rotas do morador com os tipos (`resident.ts`).
 - `src/auth/`: sessão do aparelho (token no cofre, vínculo escolhido, 2FA).
-- `src/ui/kit.tsx`: componentes com as cores do ERP (`src/theme.ts`).
+- `src/ui/kit.tsx`: componentes com as cores do ERP (`src/theme.ts`). Sem barra de navegação nativa: `Screen` desenha o título grande no topo (estilo iPhone), a barra pequena com desfoque ao rolar e o botão de voltar (`back`). Telas de aba usam `tab` para deixar espaço à barra de baixo.
+- `src/ui/FloatingTabBar.tsx`: barra de baixo flutuante e translúcida (expo-blur), com `accessibilityRole="tab"` em cada item.
 
 ## O que fica para depois
 

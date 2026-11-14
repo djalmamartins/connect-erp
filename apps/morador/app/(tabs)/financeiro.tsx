@@ -68,7 +68,7 @@ export default function Financeiro() {
   }
 
   return (
-    <Screen refreshing={charges.refreshing} onRefresh={charges.reload}>
+    <Screen title="Financeiro" tab refreshing={charges.refreshing} onRefresh={charges.reload}>
       {isFeatureOn(me, 'accountability') ? (
         <Card onPress={() => router.push('/prestacao-de-contas')} accessibilityLabel="Abrir prestação de contas">
           <CardTitle>Prestação de contas</CardTitle>

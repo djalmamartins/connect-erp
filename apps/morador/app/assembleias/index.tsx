@@ -8,7 +8,7 @@ export default function Assembleias() {
   const { api, residentId } = useAuth();
   const res = useResource(() => api.assemblies(), [residentId]);
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen title="Assembleias" back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="Nenhuma assembleia marcada." /> : null}

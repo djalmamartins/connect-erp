@@ -25,7 +25,7 @@ export default function Documentos() {
   }
 
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen title="Documentos" back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="A administração ainda não publicou documentos." /> : null}

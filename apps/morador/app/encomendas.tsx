@@ -7,7 +7,7 @@ export default function Encomendas() {
   const { api, residentId } = useAuth();
   const res = useResource(() => api.deliveries(), [residentId]);
   return (
-    <Screen refreshing={res.refreshing} onRefresh={res.reload}>
+    <Screen title="Encomendas" back refreshing={res.refreshing} onRefresh={res.reload}>
       {res.loading ? <Loading /> : null}
       {res.error ? <ErrorBox error={res.error} onRetry={res.reload} /> : null}
       {res.data && res.data.length === 0 ? <Empty text="Nenhuma encomenda registrada para a sua unidade." /> : null}

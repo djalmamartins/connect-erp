@@ -5,7 +5,7 @@ import { Body, Card, CardTitle, Screen } from '../src/ui/kit';
 export default function Unidade() {
   const { me, residentId, selectResident } = useAuth();
   return (
-    <Screen>
+    <Screen title="Trocar de unidade" back="close">
       {me?.links.map((link) => (
         <Card
           key={link.resident_id}
