@@ -58,6 +58,7 @@ if (is_local_host()) {
         $movesRoot . "/container/shared/assets/vendor/scripts/highcharts.js",
         $movesRoot . "/container/shared/assets/vendor/scripts/tracker.js",
         $movesRoot . "/container/shared/assets/vendor/scripts/validation.js",
+        $movesRoot . "/container/shared/assets/js/connect-notice.js",
     ];
     foreach (scandir($webThemePath . "/assets/js") as $js) {
         $jsFile = $webThemePath . "/assets/js/{$js}";

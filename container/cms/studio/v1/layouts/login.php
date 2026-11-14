@@ -14,6 +14,7 @@
 <main id="main-content" tabindex="-1"><?= $this->section('content') ?></main>
 <script src="<?= url('/container/shared/assets/vendor/scripts/jquery.min.js') ?>"></script>
 <script src="<?= url('/container/shared/assets/vendor/scripts/jquery-ui.js') ?>"></script>
+<script src="<?= url('/container/shared/assets/js/connect-notice.js') ?>"></script>
 <script src="<?= themeStudio('/assets/js/login.js', 'default') ?>"></script>
 <?= $this->section('scripts') ?>
 </body>

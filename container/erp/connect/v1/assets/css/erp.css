@@ -441,11 +441,6 @@ p { margin: 0; }
 .erp-modal__head h2 { font-size: 17px; }
 .erp-modal__body { padding: 20px; overflow-y: auto; max-height: calc(100vh - 220px); }
 .erp-modal__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--erp-border); background: var(--erp-surface-muted); }
-.erp-toasts { position: fixed; right: 20px; bottom: 20px; z-index: 200; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); }
-.erp-toast { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--erp-radius-md); background: var(--erp-sidebar); color: #fff; box-shadow: var(--erp-shadow-raised); animation: erp-rise .25s var(--erp-ease); }
-.erp-toast--warning { background: #5c4100; }
-.erp-toast--danger { background: #7a1810; }
-.erp-toast button { margin-left: auto; border: 0; background: none; color: inherit; opacity: .8; }
 
 /* 15. Gráficos (SVG/CSS, sem biblioteca) ------------------------------------- */
 .erp-chart { display: grid; gap: 12px; }
@@ -912,9 +907,29 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-dash-buckets dt { color: var(--erp-muted); }
 .erp-dash-buckets dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* Aviso de sucesso com a marca virando check (ADR 0120). Toca uma vez; fecha sozinho, com clique ou Esc. */
-.erp-done { position: fixed; top: 50%; left: 50%; z-index: 210; display: grid; justify-items: center; gap: 12px; width: min(320px, calc(100vw - 32px)); padding: 24px 22px 20px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); box-shadow: var(--erp-shadow-raised); text-align: center; cursor: pointer; transform: translate(-50%, -50%); animation: erp-done-in .22s var(--erp-ease) both; }
-.erp-done p { margin: 0; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
-.erp-done--leaving { animation: erp-done-out .25s var(--erp-ease) both; }
-@keyframes erp-done-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%); } }
-@keyframes erp-done-out { to { opacity: 0; transform: translate(-50%, -50%) scale(.97); } }
+/* Avisos no canto superior direito (ADR 0120): sucesso, alerta, erro e informação. */
+.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 210; display: grid; gap: 10px; width: min(400px, calc(100vw - 32px)); pointer-events: none; }
+.erp-notice { --tone: var(--erp-info); --tone-soft: var(--erp-info-soft); display: flex; align-items: center; gap: 14px; padding: 12px 10px 12px 12px; border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent); border-radius: var(--erp-radius-md); background: var(--tone-soft); color: var(--tone); box-shadow: var(--erp-shadow-raised); pointer-events: auto; animation: erp-notice-in .28s var(--erp-ease) both; }
+.erp-notice--success { --tone: var(--erp-success); --tone-soft: var(--erp-success-soft); }
+.erp-notice--warning { --tone: var(--erp-warning); --tone-soft: var(--erp-warning-soft); }
+.erp-notice--error { --tone: var(--erp-danger); --tone-soft: var(--erp-danger-soft); }
+.erp-notice__icon { flex: 0 0 40px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--tone); color: #fff; }
+.erp-notice--warning .erp-notice__icon { background: #e0a019; }
+.erp-notice__body { flex: 1; min-width: 0; }
+.erp-notice__body strong { display: block; font-size: 14.5px; font-weight: 700; line-height: 1.3; }
+.erp-notice__body p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.erp-notice__close { flex: 0 0 32px; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: inherit; opacity: .6; cursor: pointer; }
+.erp-notice__close:hover, .erp-notice__close:focus-visible { opacity: 1; background: color-mix(in srgb, var(--tone) 12%, transparent); }
+.erp-notice__close svg { width: 18px; height: 18px; }
+.erp-notice--leaving { animation: erp-notice-out .26s var(--erp-ease) both; }
+@keyframes erp-notice-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes erp-notice-out { to { opacity: 0; transform: translateX(28px); } }
+@media (max-width: 600px) { .erp-toasts { top: 12px; right: 16px; } }
+
+/* Link público da prestação de contas no livro caixa (ADR 0300): endereço longo quebra a linha; "Desativar" abre o motivo. */
+.erp-break { word-break: break-all; }
+.erp-inline-details { display: inline-block; vertical-align: top; }
+.erp-inline-details > summary { list-style: none; cursor: pointer; }
+.erp-inline-details > summary::-webkit-details-marker { display: none; }
+.erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+.erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }

@@ -21,7 +21,7 @@ $css->minify($cssTarget);
 chmod($cssTarget, 0664);
 
 $js = new JS();
-foreach ([$movesRoot . "/container/shared/assets/vendor/scripts/jquery.min.js", $movesRoot . "/container/shared/assets/vendor/scripts/jquery.form.js", $movesRoot . "/container/shared/assets/vendor/scripts/jquery-ui.js", $themeRoot . "/assets/js/scripts.js"] as $asset) {
+foreach ([$movesRoot . "/container/shared/assets/vendor/scripts/jquery.min.js", $movesRoot . "/container/shared/assets/vendor/scripts/jquery.form.js", $movesRoot . "/container/shared/assets/vendor/scripts/jquery-ui.js", $movesRoot . "/container/shared/assets/js/connect-notice.js", $themeRoot . "/assets/js/scripts.js"] as $asset) {
     if (is_file($asset)) $js->add($asset);
 }
 $jsTarget = $themeRoot . "/assets/studio.min.js";

@@ -99,6 +99,8 @@ final class LabSampleYearRemovalTest extends TestCase
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',
             'CREATE TABLE erp_budget_lines (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), year INTEGER, chart_account_id INTEGER REFERENCES erp_chart_accounts(id), month INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_accountability_publications (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), competence TEXT, version INTEGER, status TEXT)',
+            'CREATE TABLE erp_accountability_links (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), kind TEXT, competence TEXT, token TEXT)',
+            'CREATE TABLE erp_accountability_alerts (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), competence TEXT, situation TEXT)',
             'CREATE TABLE erp_billing_rules (id INTEGER PRIMARY KEY, condominium_id INTEGER)',
             'CREATE TABLE erp_price_indexes (id INTEGER PRIMARY KEY, code TEXT, competence TEXT, rate_percent REAL)',
         ] as $sql) {
@@ -132,11 +134,13 @@ final class LabSampleYearRemovalTest extends TestCase
         $aurora = (int)$this->pdo->query("SELECT id FROM condominiums WHERE name = 'EXEMPLO Residencial Aurora'")->fetchColumn();
         $this->pdo->exec("INSERT INTO erp_month_closings (condominium_id, competence, status) VALUES ({$aurora}, '2026-05', 'closed')");
         $this->pdo->exec("INSERT INTO erp_accountability_publications (condominium_id, competence, version, status) VALUES ({$aurora}, '2026-05', 1, 'current')");
+        $this->pdo->exec("INSERT INTO erp_accountability_links (condominium_id, kind, competence, token) VALUES ({$aurora}, 'monthly', '2026-05', 'abc')");
         $account = (int)$this->pdo->query("SELECT id FROM erp_chart_accounts WHERE condominium_id = {$aurora} AND name LIKE 'EXEMPLO %' LIMIT 1")->fetchColumn();
         $this->pdo->exec("INSERT INTO erp_budget_lines (condominium_id, year, chart_account_id, month, amount_cents) VALUES ({$aurora}, 2026, {$account}, 5, 30000)");
 
         $removed = $this->remove();
         self::assertSame([1, 1, 1], [$removed['accountability_publications'], $removed['month_closings'], $removed['budget_lines']]);
+        self::assertSame([1, 0], [$removed['accountability_links'], $removed['accountability_alerts']], 'Links da prestação de contas (ADR 0300) saem antes do condomínio.');
         self::assertSame([1, 1, 2, 2], [$removed['agreements'], $removed['patrimonial_imports'], $removed['transfers'], $removed['openings']]);
         self::assertSame(1, $removed['investment_links']);
         self::assertSame(3, $removed['agreement_installments']);

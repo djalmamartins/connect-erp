@@ -44,6 +44,8 @@ Colunas: **Condomínio**, **Situação**, **Receitas**, **Despesas**, **Resultad
 
 >! Feche só depois de conferir as baixas e os lançamentos do mês: o fechamento é a base da prestação de contas.
 
+> Ao fechar, o sistema gera sozinho o [link da prestação de contas para os moradores](artigo:livro-caixa) e manda o e-mail às unidades do condomínio. Ao fechar dezembro, sai também o livro anual. O prazo para os moradores receberem é o 5º dia útil do mês seguinte; perto dele, quem pode fechar o mês recebe um aviso no sistema.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Financeiro**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

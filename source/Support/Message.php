@@ -116,7 +116,8 @@ class Message
      */
     public function render(): string
     {
-        return "<div class='message {$this->getType()}'>{$this->getText()}</div>";
+        // data-notice: o JavaScript do ERP, do Studio e do site transforma a mensagem em aviso no canto (ADR 0120).
+        return "<div class='message {$this->getType()}' data-notice>{$this->getText()}</div>";
     }
 
     /**

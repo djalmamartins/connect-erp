@@ -38,6 +38,13 @@ final class MonthClosingBatch
         }
         try {
             $data = (new Service())->close($user, $body);
+            if (!$data['dry_run']) {
+                // Link da prestação de contas aos moradores (ADR 0300), depois de gravar o lote; falha não desfaz o fechamento.
+                $links = new \Source\Services\Erp\AccountabilityLinks();
+                foreach ($data['condominiums'] as $i => $closed) {
+                    $data['condominiums'][$i]['accountability_links'] = $links->afterClose($user, (int)$closed['condominium_id'], (string)$data['competence']);
+                }
+            }
             header('Cache-Control: no-store, private');
             JsonResponse::send(200, ['data' => $data]);
         } catch (MonthClosingBatchRefused $exception) {

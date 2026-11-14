@@ -38,7 +38,12 @@ final class MonthClosings
         if ($user === null || $body === null) {
             return;
         }
-        $this->run(fn () => (new MonthClosing())->close($user, $this->int($body['condominium_id'] ?? null), (string)($body['competence'] ?? '')));
+        $this->run(function () use ($user, $body): array {
+            $closed = (new MonthClosing())->close($user, $this->int($body['condominium_id'] ?? null), (string)($body['competence'] ?? ''));
+            // Link da prestação de contas aos moradores (ADR 0300); falha aqui não desfaz o fechamento.
+            $closed['accountability_links'] = (new \Source\Services\Erp\AccountabilityLinks())->afterClose($user, $closed['condominium_id'], $closed['competence']);
+            return $closed;
+        });
     }
 
     public function reopen(): void

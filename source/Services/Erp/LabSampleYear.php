@@ -190,7 +190,7 @@ final class LabSampleYear
     public function purge(): array
     {
         $removed = ['outbox' => 0, 'patrimonial_entries' => 0, 'patrimonial_imports' => 0, 'agreements' => 0, 'agreement_installments' => 0,
-            'transfers' => 0, 'openings' => 0, 'investment_links' => 0, 'accountability_publications' => 0, 'month_closings' => 0, 'budget_lines' => 0];
+            'transfers' => 0, 'openings' => 0, 'investment_links' => 0, 'accountability_publications' => 0, 'accountability_links' => 0, 'accountability_alerts' => 0, 'month_closings' => 0, 'budget_lines' => 0];
         $condominium = $this->id('SELECT id FROM condominiums WHERE name = ?', [self::CONDOMINIUM]);
         if ($condominium === null) {
             return $removed;
@@ -236,6 +236,9 @@ final class LabSampleYear
         }
         // Publicações (ADR 0179) e fechamentos feitos no lab sobre o condomínio de exemplo: sem isso a FK das publicações trava a remoção.
         $removed['accountability_publications'] = $this->run('DELETE FROM erp_accountability_publications WHERE condominium_id = ?', $c);
+        // Links públicos da prestação de contas e avisos do prazo (ADR 0300), gerados ao fechar o mês no lab.
+        $removed['accountability_links'] = $this->run('DELETE FROM erp_accountability_links WHERE condominium_id = ?', $c);
+        $removed['accountability_alerts'] = $this->run('DELETE FROM erp_accountability_alerts WHERE condominium_id = ?', $c);
         $removed['month_closings'] = $this->run('DELETE FROM erp_month_closings WHERE condominium_id = ?', $c);
         // Previsão orçamentária (AP-163) lançada no lab sobre as contas de exemplo: a FK para o plano trava a remoção.
         $removed['budget_lines'] = $this->run('DELETE FROM erp_budget_lines WHERE condominium_id = ?', $c);

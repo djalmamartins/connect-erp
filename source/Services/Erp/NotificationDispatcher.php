@@ -53,6 +53,8 @@ final class NotificationDispatcher
         'collection.reminder' => ['template' => 'collection-reminder', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'billing'],
         // Convite de morador (ADR 0090): só o morador convidado; o link leva o token emitido na hora do envio.
         'resident.invitation' => ['template' => 'resident-invitation', 'subject' => 'Convite para o portal do condomínio', 'audience' => 'resident'],
+        // Prestação de contas (ADR 0300): o link do mês ou do ano, para as pessoas da unidade que aceitam comunicado.
+        'accountability.published' => ['template' => 'accountability-link', 'subject' => 'Prestação de contas do condomínio', 'audience' => 'notices'],
     ];
 
     private PDO $pdo;
@@ -192,7 +194,7 @@ final class NotificationDispatcher
             $template = $notice['template'];
             $context = $this->context($event, $payload);
             if (($context['cancelled'] ?? false) === true) {
-                return $this->finish($id, 'cancelled', 0, 'Comunicado cancelado.');
+                return $this->finish($id, 'cancelled', 0, (string)($context['cancel_reason'] ?? 'Comunicado cancelado.'));
             }
             $recipients = $this->recipients($event, $payload, $notice['audience']);
             if ($recipients === []) {
@@ -344,6 +346,20 @@ final class NotificationDispatcher
             }
             $context['subject'] = (string)$announcement['subject'];
             $context['body'] = (string)($announcement['body'] ?? '');
+        }
+        // Prestação de contas (ADR 0300): o endereço vem do link na hora do envio; revogado não sai.
+        if (isset($payload['accountability_link_id'])) {
+            $stmt = $this->pdo->prepare('SELECT kind, competence, token, status FROM erp_accountability_links WHERE id = :id AND condominium_id = :c');
+            $stmt->execute(['id' => (int)$payload['accountability_link_id'], 'c' => (int)$event['condominium_id']]);
+            $link = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($link) || $link['status'] !== 'active') {
+                return $context + ['cancelled' => true, 'cancel_reason' => 'Link da prestação de contas revogado.'];
+            }
+            $period = $link['kind'] === 'annual' ? 'de ' . $link['competence'] : 'de ' . CashBookDocument::monthLabel((string)$link['competence']);
+            $context['period_label'] = $period;
+            $context['annual'] = $link['kind'] === 'annual' ? '1' : '';
+            $context['accountability_link'] = AccountabilityLinks::url((string)$link['token']);
+            $context['subject'] = ($link['kind'] === 'annual' ? 'Livro anual da prestação de contas ' : 'Prestação de contas ') . $period . ' · ' . $context['condominium'];
         }
         return $context;
     }
