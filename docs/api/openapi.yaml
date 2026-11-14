@@ -2266,6 +2266,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /visitors/block-unattached:
+    post:
+      operationId: blockUnattachedVisitors
+      summary: Bloqueio em lote dos visitantes liberados (inclusive com acesso permanente) de unidades sem nenhum morador ativo, como Bloqueado pelo cadastro, tudo ou nada e com prévia (erp.access, erp.visitors.view, erp.visitors.manage e erp.residents.view, ADR 0265)
+      description: >-
+        Morador ativo é o vínculo ativo, sem excluído e sem fim de vínculo passado. Sem visitor_ids, entram os visitantes
+        liberados do condomínio vinculados a uma unidade sem morador ativo; ficam de fora os só com o texto da unidade
+        (skipped_unlinked), os de unidade inativa (skipped_inactive_unit) e os sem data nem acesso permanente
+        (skipped_incomplete). Com visitor_ids, recusa visitante não encontrado no condomínio, já bloqueado, cuja unidade
+        ainda tem morador ativo ou nesses casos. Cada um é regravado pelo cadastro como Bloqueado; auditoria
+        block_unattached por visitante, com o motivo. permanent conta os de acesso permanente. Nada é apagado e nenhum aviso
+        é enviado. Sem nome, documento, telefone, unidade ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, visitor_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_unlinked, skipped_inactive_unit, skipped_incomplete, count, permanent, changed, visitors[{ id, permanent_access, valid_until }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou visitante recusado (errors com _form e _visitor); nada é gravado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory

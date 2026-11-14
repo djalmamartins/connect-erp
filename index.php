@@ -344,6 +344,8 @@ $route->get("/reports/tax-coverage", "TaxCoverage:show", null, \Source\Support\M
 $route->post("/reservations/cancel-for-closure", "ReservationClosure:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Histórico das assembleias do condomínio num período, somente leitura (ADR 0264). Antes do laço dos cadastros.
 $route->get("/reports/assembly-history", "AssemblyHistory:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Bloqueio em lote dos visitantes de unidades sem morador ativo, tudo ou nada e com prévia (ADR 0265). Antes do laço dos cadastros (/visitors/{id}).
+$route->post("/visitors/block-unattached", "VisitorUnitBlock:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
