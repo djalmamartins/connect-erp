@@ -3114,6 +3114,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /taxes/deactivate-redundant:
+    post:
+      operationId: deactivateRedundantTaxes
+      summary: Alíquotas próprias que só repetem o padrão inativadas em lote, por imposto, tudo ou nada e com prévia (erp.access, erp.settings.view e erp.settings.manage, ADR 0293)
+      description: >-
+        O lote é por imposto. Um imposto é redundante quando as alíquotas próprias ativas do condomínio são exatamente as
+        do padrão da Connect (mesmas taxas e mesma aplicação, contando as repetidas): a alíquota em vigor não muda, e o
+        condomínio volta a seguir o padrão. Entram todas as próprias ativas do imposto, porque inativar só parte delas
+        mudaria a alíquota em vigor. Sem kinds, entram todos os impostos redundantes; com kinds, recusa imposto
+        desconhecido, sem própria ativa, sem padrão ativo ou com as próprias diferentes do padrão, e uma recusa desfaz
+        todas. Inativar só muda o status para inactive (e quem alterou), com um registro update por alíquota; nada é
+        apagado e o padrão nunca é tocado. Sem nome de alíquota nem observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, kinds: { type: array, items: { type: string } }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, kinds[{ kind, kind_label, tax_ids[], rates[{ rate, applies_to }] }], count, changed } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Uma alíquota mudou durante o pedido; nada é inativado' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou imposto recusado (errors com _form e _kind); nada é inativado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
