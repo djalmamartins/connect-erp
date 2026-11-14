@@ -2179,6 +2179,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou área recusada (errors com _form ou os erros do formulário, e _area); nada é gravado' }
+  /maintenances/cancel-overdue:
+    post:
+      operationId: cancelOverdueMaintenances
+      summary: Cancelamento em lote das manutenções agendadas com a data prevista há mais de N dias, como Cancelada pelo cadastro e sem agendar a próxima, tudo ou nada e com prévia (erp.access, erp.maintenances.view e erp.maintenances.manage, ADR 0261)
+      description: >-
+        Sem maintenance_ids, entram as manutenções agendadas do condomínio com a data prevista há mais de older_than_days
+        dias (padrão 60, de 15 a 3650), das periodicidades escolhidas (padrão todas); ficam de fora as de fornecedor inativo
+        ou documento removido (skipped_inactive_link). Com maintenance_ids, recusa manutenção não encontrada no condomínio,
+        em execução, já concluída ou cancelada, dentro do prazo ou nesses casos. Cada uma é regravada pelo cadastro como
+        Cancelada; a próxima não é agendada (periodic conta as periódicas, para rever o calendário). Auditoria
+        cancel_overdue por manutenção, com o motivo. Nada é apagado e nenhum aviso é enviado. Sem serviço, fornecedor,
+        descrição ou documento na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, older_than_days: { type: integer, minimum: 15, maximum: 3650, default: 60 }, frequencies: { type: array, items: { type: string, enum: [unica, mensal, trimestral, semestral, anual] } }, maintenance_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, older_than_days, planned_until, frequencies, reason, skipped_inactive_link, count, periodic, changed, maintenances[{ id, frequency, planned_on, days_overdue }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou manutenção recusada (errors com _form e _maintenance); nada é gravado' }
   /reports/waitlist-demand:
     get:
       operationId: waitlistDemand
