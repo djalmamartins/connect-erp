@@ -2870,6 +2870,27 @@ paths:
         '409': { description: 'Um aviso mudou de situação durante o pedido; nada é cancelado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou aviso recusado (errors com _form e _event); nada é cancelado' }
+  /reports/user-access:
+    get:
+      operationId: userAccessReport
+      summary: Acessos dos usuários ao ERP no condomínio (por papel, sem papel, sem acesso pela regra, exceções de permissão e situação da conta), somente leitura (erp.access e erp.users.view, ADR 0282)
+      description: >-
+        rows traz uma linha por papel cadastrado, do maior nível para o menor, com os usuários que têm acesso ao
+        condomínio (cada um no papel de maior nível); totals soma, com without_role à parte. erp_access conta quem entra e
+        quem não entra no ERP pela regra fail-closed (sem papel não entra; exceção deny vence; allow concede). overrides
+        conta os usuários com exceção de permissão e, por efeito, as exceções e os usuários. by_status conta por situação
+        da conta. Os ids sem papel, sem acesso ao ERP e com exceção vêm até 200 cada, com truncated. O cadastro não guarda
+        o último login, então não há contagem por inatividade. Sem nome, e-mail, telefone ou documento. Não grava nem envia
+        nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, rows[{ role, role_name, level, users }], totals { users, with_role, without_role }, erp_access { with, without }, overrides { users, by_effect[{ effect, overrides, users }] }, by_status[{ status, users }], without_role_ids[], without_role_truncated, without_erp_access_ids[], without_erp_access_truncated, with_overrides_ids[], with_overrides_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
