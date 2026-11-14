@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
-import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState, type ComponentProps } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { isFeatureOn, type Feature } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
+import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
 import { date, greeting, initials, longToday, money } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
@@ -22,8 +23,27 @@ const SHORTCUTS: Shortcut[] = [
 ];
 
 export default function Home() {
-  const { api, me, residentId } = useAuth();
+  const { api, client, me, residentId } = useAuth();
   const summary = useResource(() => api.summary(), [residentId]);
+  const billing = isFeatureOn(me, 'boletos');
+  // Segunda via de cara: a próxima conta com boleto já fica com os botões no cartão verde.
+  const charges = useResource(() => (billing ? api.charges() : Promise.resolve(null)), [residentId, billing]);
+  const boleto = nextBoleto(charges.data?.lines ?? []);
+  const [opening, setOpening] = useState(false);
+
+  async function secondCopy() {
+    if (!boleto || opening) return;
+    setOpening(true);
+    try {
+      await openBoleto(api, client, boleto);
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  async function refresh() {
+    await Promise.all([summary.reload(), charges.reload()]);
+  }
   const current = me?.current ?? null;
   const s = summary.data;
   const name = current?.name ?? me?.user.name ?? '';
@@ -45,7 +65,7 @@ export default function Home() {
   );
 
   return (
-    <Screen tab eyebrow={longToday()} title={`${greeting()}, ${first}`} right={avatar} refreshing={summary.refreshing} onRefresh={summary.reload}>
+    <Screen tab eyebrow={longToday()} title={`${greeting()}, ${first}`} right={avatar} refreshing={summary.refreshing} onRefresh={refresh}>
       <Pressable
         onPress={() => (s?.charges ? router.push('/financeiro') : undefined)}
         accessibilityRole={s?.charges ? 'button' : undefined}
@@ -53,7 +73,7 @@ export default function Home() {
         style={({ pressed }) => [styles.heroWrap, pressed && s?.charges ? { transform: [{ scale: 0.985 }] } : null]}
       >
         <LinearGradient colors={[colors.sidebar, '#124c3c', colors.brandStrong]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.heroGlow} />
+          <Image source={require('../../assets/intro-symbol.png')} style={styles.heroMark} resizeMode="contain" accessible={false} />
           <View style={styles.heroTop}>
             <View style={{ flex: 1 }}>
               <Text style={styles.condo} numberOfLines={2}>
@@ -84,6 +104,33 @@ export default function Home() {
                   <Ionicons name="arrow-forward-circle" size={26} color="rgba(255,255,255,0.85)" />
                 )}
               </View>
+              {boleto?.charge ? (
+                <View style={styles.heroActions}>
+                  {boleto.charge.pdf_available ? (
+                    <Pressable
+                      onPress={secondCopy}
+                      disabled={opening}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Segunda via do boleto que vence em ${date(boleto.due_on)}`}
+                      style={({ pressed }) => [styles.heroButton, styles.heroButtonMain, (pressed || opening) && { opacity: 0.75 }]}
+                    >
+                      <Ionicons name="document-text" size={16} color={colors.sidebar} />
+                      <Text style={[styles.heroButtonText, { color: colors.sidebar }]}>{opening ? 'Abrindo…' : '2ª via do boleto'}</Text>
+                    </Pressable>
+                  ) : null}
+                  {boleto.charge.digitable_line ? (
+                    <Pressable
+                      onPress={() => copyText(boleto.charge?.digitable_line as string, 'Código do boleto')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Copiar o código do boleto"
+                      style={({ pressed }) => [styles.heroButton, pressed && { opacity: 0.75 }]}
+                    >
+                      <Ionicons name="copy-outline" size={16} color="#ffffff" />
+                      <Text style={styles.heroButtonText}>Copiar código</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           ) : null}
         </LinearGradient>
@@ -182,15 +229,30 @@ const styles = StyleSheet.create({
   avatarText: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
   heroWrap: { borderRadius: 24, overflow: 'hidden' },
   hero: { borderRadius: 24, padding: space[5], gap: space[4], overflow: 'hidden' },
-  heroGlow: {
+  // Ícone da Connect como marca d'água no canto do cartão (pedido do Djalma, 14/11).
+  heroMark: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    right: -70,
-    top: -90,
-    backgroundColor: 'rgba(197,161,49,0.12)',
+    width: 180,
+    height: 233,
+    right: -34,
+    top: -28,
+    opacity: 0.16,
+    transform: [{ rotate: '-12deg' }],
   },
+  heroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginTop: space[3] },
+  heroButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  heroButtonMain: { backgroundColor: colors.accent, borderColor: colors.accent },
+  heroButtonText: { fontFamily: fonts.semibold, fontSize: 14, color: '#ffffff' },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
   condo: { fontFamily: fonts.semibold, fontSize: 17, color: '#ffffff' },
   unitChip: {
