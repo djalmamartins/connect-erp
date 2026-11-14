@@ -140,8 +140,11 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     // Chamados (CN-004, ADR 0034): abertura para o Help Desk, mesmo serviço da API /api/v1/tickets.
     $route->get("/operacional/chamados", "Tickets:index");
     $route->post("/operacional/chamados", "Tickets:store");
+    $route->post("/operacional/chamados/lote", "Tickets:bulk");
     $route->get("/operacional/chamados/{id}", "Tickets:show");
     $route->post("/operacional/chamados/{id}/responder", "Tickets:reply");
+    $route->post("/operacional/chamados/{id}/atender", "Tickets:triage");
+    $route->post("/operacional/chamados/{id}/atendimento", "Tickets:answer");
 
     // Fechamento mensal (AP-030): a tela é a página do catálogo (dados reais em Panel); fechar e
     // reabrir valem para o condomínio da barra superior (ADR 0032), com CSRF.

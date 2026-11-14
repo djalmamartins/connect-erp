@@ -3057,4 +3057,49 @@
     });
     refresh();
   });
+
+  // Atendimento do chamado como no Help Desk (ADR 0306): resposta ou nota interna, cronômetro do tempo dedicado,
+  // respostas rápidas e "selecionar todos" da fila.
+  $$('[data-erp-ticket-composer]').forEach(function (form) {
+    var internal = $('[data-erp-ticket-internal]', form), time = $('[data-erp-ticket-time]', form), clock = $('[data-erp-ticket-timer]', form);
+    var label = $('[data-erp-ticket-label]', form), text = $('textarea', form), toggle = $('[data-erp-ticket-timer-toggle]', form);
+    var seconds = 0, running = true;
+    var show = function () {
+      var h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = seconds % 60;
+      clock.textContent = [h, m, s].map(function (n) { return (n < 10 ? '0' : '') + n; }).join(':');
+      time.value = String(seconds);
+    };
+    window.setInterval(function () { if (running && !document.hidden) { seconds += 1; show(); } }, 1000);
+    toggle.addEventListener('click', function () {
+      running = !running;
+      toggle.textContent = running ? 'Pausar' : 'Continuar';
+      toggle.setAttribute('aria-label', running ? 'Pausar cronômetro' : 'Continuar cronômetro');
+      clock.parentNode.classList.toggle('is-paused', !running);
+    });
+    $('[data-erp-ticket-timer-reset]', form).addEventListener('click', function () { seconds = 0; show(); });
+    $$('[data-erp-ticket-mode]', form).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var isInternal = button.getAttribute('data-erp-ticket-mode') === '1';
+        internal.value = isInternal ? '1' : '0';
+        form.classList.toggle('is-internal', isInternal);
+        label.textContent = isInternal ? 'Nota interna (só a equipe vê)' : 'Resposta para quem pediu';
+        $$('[data-erp-ticket-mode]', form).forEach(function (other) {
+          other.classList.toggle('is-active', other === button);
+          other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
+        });
+      });
+    });
+    var template = $('[data-erp-ticket-template]', form);
+    if (template) {
+      template.addEventListener('change', function () {
+        if (template.value) { text.value = (text.value ? text.value + '\n\n' : '') + template.value; template.value = ''; text.focus(); }
+      });
+    }
+    form.addEventListener('submit', function () { time.value = String(seconds); });
+  });
+  $$('[data-erp-ticket-all]').forEach(function (all) {
+    all.addEventListener('change', function () {
+      $$('input[name="ticket_ids[]"]').forEach(function (box) { box.checked = all.checked; });
+    });
+  });
 })();

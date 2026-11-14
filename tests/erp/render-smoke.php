@@ -206,18 +206,34 @@ foreach ($catalog['pages'] as $id => $page) {
         $evil = '<b>Residencial</b>';
         $ticket = ['id' => 3, 'protocol' => 'CH261109ABCD', 'subject' => 'Interfone <script>', 'message' => 'x', 'area' => 'general', 'origin' => 'erp', 'category' => null,
             'priority' => 'high', 'status' => 'open', 'condominium' => ['id' => 7, 'name' => $evil], 'unit' => ['id' => 2, 'label' => 'B - 101'],
-            'requester' => ['user_id' => null, 'name' => 'Maria', 'email' => 'm@example.com', 'phone' => null], 'assigned_to' => null, 'due_at' => '2026-11-10 10:00:00', 'resolved_at' => null, 'created_at' => '2026-11-09 10:00:00'];
+            'requester' => ['user_id' => null, 'name' => 'Maria', 'email' => 'm@example.com', 'phone' => null], 'assigned_to' => null, 'due_at' => '2026-11-10 10:00:00', 'resolved_at' => null, 'created_at' => '2026-11-09 10:00:00',
+            'updated_at' => '2026-11-09 11:00:00', 'first_response_at' => null, 'work_seconds' => 0, 'team' => null, 'tags' => null, 'occurrence_id' => 4];
+        $metrics = ['by_status' => ['open' => 1, 'in_progress' => 0, 'waiting_customer' => 0, 'resolved' => 0, 'closed' => 0], 'total' => 1, 'overdue' => 1, 'due_today' => 0, 'unassigned' => 1, 'open_total' => 1];
         $html = $render('pages/tickets/index', $layoutData->invoke($panel, $user, 'CN-004', [
             'base' => '/operacional/chamados', 'flash' => ['type' => 'success', 'text' => 'Ok <x>', 'protocol' => 'CH261109ABCD'], 'errors' => ['unit_id' => 'Unidade <i>'],
             'old' => ['condominium_id' => 7, 'unit_id' => 2], 'condominiums' => [['id' => 7, 'name' => $evil]], 'unitsByCondominium' => [7 => [['id' => 2, 'label' => 'B - 101']]],
-            'tickets' => [$ticket], 'filters' => ['condominium_id' => 0, 'status' => '', 'q' => ''], 'helpdeskUrl' => 'https://studio.connect.lab/ambiente/helpdesk',
+            'tickets' => [$ticket], 'filters' => ['condominium_id' => 0, 'status' => '', 'q' => '', 'kind' => '', 'priority' => '', 'assigned' => '', 'due' => '', 'origin' => ''],
+            'helpdeskUrl' => 'https://studio.connect.lab/ambiente/helpdesk', 'metrics' => $metrics, 'canAttend' => true, 'agents' => [['id' => 9, 'name' => 'Ana <Equipe>']],
         ]));
         $common($html, $id, 'Chamados');
         $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, 'Interfone <script>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Unidade <i>'), 'CN-004: escape');
         $assert(str_contains($html, 'name="condominium_id"') && str_contains($html, 'name="unit_id"') && str_contains($html, 'name="requester_name"') && str_contains($html, '<option value="2" selected>'), 'CN-004: condomínio, unidade e solicitante no formulário');
         $assert(str_contains($html, 'CH261109ABCD') && str_contains($html, 'Unid. B - 101') && str_contains($html, '/ambiente/helpdesk'), 'CN-004: lista com contexto e link do Help Desk');
         $assert(str_contains($html, 'erp-envswitch') && str_contains($html, 'Help Desk') && str_contains($html, 'Studio'), 'sidebar: alternador de ambientes');
+        $assert(str_contains($html, 'SLA vencido') && str_contains($html, 'Vencido') && str_contains($html, '/operacional/chamados/lote') && str_contains($html, 'Ana &lt;Equipe&gt;')
+            && str_contains($html, 'Ocorrência #4'), 'CN-004: fila como no Help Desk (contadores, SLA, lote, responsável)');
         $save('cn-004', $html);
+        // Atendimento (ADR 0306): cronômetro, nota interna, triagem e histórico para quem atende.
+        $showData = ['base' => '/operacional/chamados', 'ticket' => $ticket, 'messages' => [['id' => 1, 'author' => 'Ana', 'from_team' => true, 'message' => 'Nota <x>', 'internal' => true,
+            'created_at' => '2026-11-09 10:30:00', 'attachments' => []]], 'flash' => null, 'errors' => [], 'old' => [], 'helpdeskUrl' => null, 'canAttend' => true,
+            'facts' => ['first_response_at' => '2026-11-09 10:30:00', 'work_seconds' => 3725, 'team' => null, 'tags' => null, 'updated_at' => '2026-11-09 11:00:00', 'replies' => 1, 'internal_notes' => 1],
+            'events' => [['type' => 'status', 'label' => 'Situação', 'old' => 'Aberto', 'new' => 'Em atendimento', 'author' => 'Ana', 'created_at' => '2026-11-09 10:30:00']],
+            'templates' => [['id' => 1, 'title' => 'Bom dia', 'body' => 'Olá <b>']], 'agents' => [['id' => 9, 'name' => 'Ana']]];
+        $html = $render('pages/tickets/show', $layoutData->invoke($panel, $user, 'CN-004', $showData, 'Chamado'));
+        $assert(str_contains($html, 'data-erp-ticket-composer') && str_contains($html, '01:02:05') && str_contains($html, 'erp-ticket-msg--internal') && str_contains($html, '/atender')
+            && str_contains($html, 'Histórico de alterações') && !str_contains($html, 'Nota <x>') && !str_contains($html, 'Olá <b>'), 'CN-004: atendimento com cronômetro, nota interna, triagem e histórico');
+        $html = $render('pages/tickets/show', $layoutData->invoke($panel, $user, 'CN-004', ['canAttend' => false, 'messages' => [], 'events' => [], 'templates' => [], 'agents' => []] + $showData, 'Chamado'));
+        $assert(!str_contains($html, 'data-erp-ticket-composer') && !str_contains($html, '/atender') && str_contains($html, '/responder'), 'CN-004: quem pediu só responde');
         continue;
     }
     if ($id === 'CN-005') {
