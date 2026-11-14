@@ -411,6 +411,8 @@ $route->post("/taxes/deactivate-redundant", "TaxOverrideCleanup:store", null, \S
 $route->get("/reports/gatehouses", "GatehouseOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Portarias paradas (sem acesso no período e sem encomenda aguardando) inativadas em lote, tudo ou nada e com prévia (ADR 0295).
 $route->post("/gatehouses/deactivate-idle", "GatehouseDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Situação dos tipos de faturas (à mão por recorrência, padrões encobertos, sem fatura no período e conta que não vale), somente leitura (ADR 0296).
+$route->get("/reports/invoice-types", "InvoiceTypeOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
