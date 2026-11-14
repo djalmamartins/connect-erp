@@ -2891,6 +2891,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /users/revoke-condominium-access:
+    post:
+      operationId: revokeCondominiumAccessWithoutErp
+      summary: Acesso ao condomínio tirado em lote de quem, pela regra, não entra no ERP, pelo "desativar" de Usuários do Sistema, tudo ou nada e com prévia (erp.access, erp.users.view e erp.users.manage, ADR 0283)
+      description: >-
+        Sem user_ids, entram os usuários com acesso ao condomínio que não entram no ERP pela regra fail-closed (sem papel,
+        papel sem erp.access ou bloqueio por exceção) e que quem pede pode alterar; os que não podem ser alterados (o
+        próprio usuário, papel igual ou acima, papel protegido) ficam de fora em skipped_unmanageable. Com user_ids, recusa
+        sem acesso ao condomínio, o próprio usuário, quem entra no ERP pela regra ou quem não pode ser alterado. Cada acesso
+        sai pelo desativar da tela de usuários (só a linha de user_condominium_access, com auditoria) e ganha um registro
+        revoke_no_erp com o motivo. Papéis, exceções, situação da conta, senha e 2FA não mudam. Sem nome, e-mail, telefone
+        ou documento na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, user_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_unmanageable, count, changed, users[{ id, cause }], by_cause[{ cause, cause_label, users }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Um acesso mudou durante o pedido; nada sai' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou usuário recusado (errors com _form e _user); nada sai' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
