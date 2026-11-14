@@ -2629,6 +2629,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /recurring-entries/close-ended:
+    post:
+      operationId: closeEndedRecurringEntries
+      summary: Encerramento em lote dos lançamentos fixos ativos que já passaram da última competência, como Inativo pelo cadastro, tudo ou nada e com prévia (erp.access, erp.recurring_entries.view e erp.recurring_entries.manage, ADR 0271)
+      description: >-
+        Sem recurring_ids, entram os lançamentos fixos ativos do condomínio com a última competência antes de
+        before_competence (padrão o mês atual, nunca depois dele); ficam de fora os com conta, centro de custo, conta
+        bancária ou fornecedor inativo (skipped_inactive_link) e os que o formulário não regrava (skipped_invalid). Com
+        recurring_ids, recusa modelo não encontrado no condomínio, já inativo, sem última competência, com a última
+        competência ainda por vir ou nesses casos. Cada um é regravado pelo cadastro como Inativo (valor e demais campos
+        como estão); auditoria close_ended por modelo, com o motivo. monthly_cents soma o valor mensal por natureza;
+        suppliers_freed conta os fornecedores que ficam sem lançamento fixo ativo. Lançamentos já gerados não mudam.
+        Nenhum aviso é enviado. Sem descrição, fornecedor, conta ou observação na resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, recurring_ids: { type: array, items: { type: integer }, maxItems: 500 }, before_competence: { type: string, pattern: '^\\d{4}-\\d{2}$' }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, before_competence, reason, skipped_inactive_link, skipped_invalid, count, monthly_cents { receita, despesa }, suppliers_freed, changed, recurring[{ id, nature, ends_competence, amount_cents }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou lançamento fixo recusado (errors com _form e _recurring); nada é gravado' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
