@@ -3184,6 +3184,30 @@ paths:
         '409': { description: 'Uma portaria mudou de situação durante o pedido; nada é inativado' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou portaria recusada (errors com _form e _gatehouse); nada é inativado' }
+  /reports/invoice-types:
+    get:
+      operationId: invoiceTypeOverview
+      summary: Situação dos tipos de faturas do condomínio (à mão por recorrência, padrões encobertos, sem fatura no período, conta de receita que não vale e sem valor padrão), somente leitura (erp.access, erp.invoice_types.view, erp.chart.view e erp.invoices.view, ADR 0296)
+      description: >-
+        rows traz uma linha por recorrência do cadastro (mensal e avulsa), sempre todas: available soma own (tipos ativos
+        do condomínio) e standard (padrões ativos da Connect não encobertos); inactive_own conta os tipos inativos do
+        condomínio e overridden_standard os padrões ativos encobertos por um tipo não excluído do condomínio com o mesmo
+        nome (ADR 0163). Dos tipos à mão, unused conta os sem fatura não cancelada nos últimos months meses (padrão 12, de
+        1 a 60, pela competência e no mês do banco), account_issue os que apontam uma conta que não é analítica de receita,
+        ativa e do padrão ou do condomínio, e without_amount os sem valor padrão; invoices e amount_cents somam as faturas
+        não canceladas do período. totals soma as linhas; elsewhere conta à parte as faturas do período de tipos fora de
+        uso, e all_invoices e all_amount_cents somam as linhas e o elsewhere. unused_ids e account_issue_ids vão até 200,
+        com truncated. Sem nome de tipo, conta, observação nem unidade. Não grava nem envia nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+        - { name: months, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 60, default: 12 } }
+      responses:
+        '200': { description: '{ data: { condominium_id, months, from, to, rows[{ recurrence, recurrence_label, available, own, standard, inactive_own, overridden_standard, unused, account_issue, without_amount, invoices, amount_cents }], totals { available, own, standard, inactive_own, overridden_standard, unused, account_issue, without_amount, invoices, amount_cents }, elsewhere { invoices, amount_cents }, all_invoices, all_amount_cents, unused_ids[], unused_truncated, account_issue_ids[], account_issue_truncated } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
