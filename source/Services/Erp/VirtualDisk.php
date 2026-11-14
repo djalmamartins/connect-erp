@@ -233,6 +233,61 @@ final class VirtualDisk
         return ['path' => $path, 'mime' => (string)$row['mime'], 'name' => (string)$row['original_name'], 'size' => (int)$row['size_bytes'], 'sha256' => (string)$row['sha256']];
     }
 
+    /**
+     * Liga ou desliga a visibilidade do documento no aplicativo do morador (ADR 0302), com auditoria.
+     */
+    public function share(User $user, int $documentId, bool $shared): array
+    {
+        $row = $this->row($user, $documentId);
+        $before = (int)($row['shared_with_residents'] ?? 0) === 1;
+        if ($before !== $shared) {
+            $this->pdo->prepare('UPDATE erp_documents SET shared_with_residents = :s WHERE id = :id AND deleted_at IS NULL')
+                ->execute(['s' => $shared ? 1 : 0, 'id' => $documentId]);
+            Audit::record('update', 'erp_documents', $documentId, ['shared_with_residents' => $before], ['shared_with_residents' => $shared]);
+        }
+        return $this->find($user, $documentId);
+    }
+
+    /**
+     * Documentos liberados para os moradores de um condomínio (ADR 0302): marcados, não excluídos e sem
+     * vírus. Quem chama já conferiu o vínculo do morador e a matriz do portal.
+     *
+     * @return list<array{id:int, folder:string, folder_label:string, title:string, mime:string, size_bytes:int, uploaded_at:string}>
+     */
+    public function sharedWithResidents(int $condominiumId): array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, folder, title, mime, size_bytes, created_at, scan_status FROM erp_documents
+            WHERE condominium_id = :c AND shared_with_residents = 1 AND deleted_at IS NULL ORDER BY folder, title, id LIMIT 200");
+        $stmt->execute(['c' => $condominiumId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!self::downloadable((string)($row['scan_status'] ?? ScanStatus::UNSCANNED))) {
+                continue;
+            }
+            $out[] = ['id' => (int)$row['id'], 'folder' => (string)$row['folder'], 'folder_label' => self::FOLDERS[$row['folder']] ?? (string)$row['folder'],
+                'title' => (string)$row['title'], 'mime' => (string)$row['mime'], 'size_bytes' => (int)$row['size_bytes'], 'uploaded_at' => (string)$row['created_at']];
+        }
+        return $out;
+    }
+
+    /**
+     * Arquivo liberado para o morador, ou null (não marcado, de outro condomínio, excluído, bloqueado pelo antivírus).
+     *
+     * @return array{path:string, mime:string, name:string, size:int}|null
+     */
+    public function sharedFile(int $documentId, int $condominiumId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT path, mime, original_name, size_bytes, scan_status FROM erp_documents
+            WHERE id = :id AND condominium_id = :c AND shared_with_residents = 1 AND deleted_at IS NULL');
+        $stmt->execute(['id' => $documentId, 'c' => $condominiumId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row) || !self::downloadable((string)($row['scan_status'] ?? ScanStatus::UNSCANNED))) {
+            return null;
+        }
+        $path = $this->absolute((string)$row['path']);
+        return $path === null ? null : ['path' => $path, 'mime' => (string)$row['mime'], 'name' => (string)$row['original_name'], 'size' => (int)$row['size_bytes']];
+    }
+
     public function delete(User $user, int $documentId): void
     {
         $row = $this->row($user, $documentId);
@@ -282,6 +337,7 @@ final class VirtualDisk
             'title' => (string)$row['title'], 'original_name' => (string)$row['original_name'], 'mime' => (string)$row['mime'],
             'size_bytes' => (int)$row['size_bytes'], 'sha256' => (string)$row['sha256'], 'uploaded_at' => $row['created_at'],
             'scan_status' => (string)($row['scan_status'] ?? ScanStatus::UNSCANNED), 'scanned_at' => $row['scanned_at'] ?? null,
+            'shared_with_residents' => (int)($row['shared_with_residents'] ?? 0) === 1,
         ];
     }
 }

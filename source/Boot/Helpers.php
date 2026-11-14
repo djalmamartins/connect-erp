@@ -394,7 +394,9 @@ function moves_container_theme(string $area, string $theme): string
         // A1: o tema ERP real é container/erp/connect/v1; 'default' vem da migration
         // legada 20260829_canonical_container_paths.sql e continua aceito.
         'erp' => ['default' => 'connect'],
-        'residents' => ['app_connect' => 'default'],
+        // Aplicativo do morador (ADR 0302): container/app/connect/v1. 'default' e 'app_connect' vêm
+        // das configurações antigas (settings.view_app) e continuam aceitos.
+        'residents' => ['app_connect' => 'connect', 'default' => 'connect'],
         // A4: e-mails ficam no ambiente send (container/send/{tema}/v1); 'mail' é o nome legado.
         'send' => ['mail' => 'default', 'send' => 'default'],
     ];
@@ -419,6 +421,9 @@ function moves_container_path(string $area, string $theme): string
     if ($area === 'send' || $area === 'mail') {
         return dirname(__DIR__, 2) . "/container/send/" . moves_send_theme($theme) . "/v1";
     }
+    if ($area === 'residents') {
+        return dirname(__DIR__, 2) . "/container/app/" . moves_safe_theme('residents', $theme, 'connect') . "/v1";
+    }
     $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
         : $area;
@@ -442,6 +447,9 @@ function moves_container_url(string $area, string $theme, ?string $path = null):
     }
     if ($area === 'send' || $area === 'mail') {
         return url("container/send/" . moves_send_theme($theme) . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
+    }
+    if ($area === 'residents') {
+        return url("container/app/" . moves_safe_theme('residents', $theme, 'connect') . "/v1" . ($path ? "/" . ltrim($path, "/") : ""));
     }
     $section = in_array($area, ['studio', 'helpdesk', 'residents'], true)
         ? "apps/{$area}"
@@ -896,6 +904,28 @@ function site_home_url(): string
     $https = (($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off')
         || strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0])) === 'https';
     return ($https ? 'https' : 'http') . '://' . $host . '/';
+}
+
+/**
+ * Aplicativo do morador em host próprio (app.connect.lab, app.<domínio>, ADR 0302): no host do app
+ * as rotas ficam na raiz; nos demais hosts, em /app. Use app_url() em todo link do app.
+ */
+function app_host(): bool
+{
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    return (bool)preg_match('/^app\.[a-z0-9.-]+(?::\d+)?$/', $host);
+}
+
+function app_base(): string
+{
+    return app_host() ? '' : '/app';
+}
+
+function app_url(string $path = '/'): string
+{
+    $path = '/' . ltrim($path, '/');
+    $full = app_base() . ($path === '/' && app_base() !== '' ? '' : $path);
+    return url($full === '' ? '/' : $full);
 }
 
 function erp_base(): string

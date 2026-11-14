@@ -116,7 +116,7 @@ final class AccessAdminIntegrationTest extends TestCase
     public function testPortalMatrixStartsOffAndIsAudited(): void
     {
         $service = new ResidentPortalPermissions($this->pdo);
-        self::assertSame([false, false, false, false, false], array_column($service->matrix($this->admin, $this->alpha), 'enabled'));
+        self::assertSame(array_fill(0, count(ResidentPortalPermissions::FEATURES), false), array_column($service->matrix($this->admin, $this->alpha), 'enabled'));
         $service->set($this->admin, $this->alpha, 'reservations', true);
         self::assertTrue(ResidentPortalPermissions::enabled($this->pdo, $this->alpha, 'reservations'));
         self::assertFalse(ResidentPortalPermissions::enabled($this->pdo, $this->beta, 'reservations'), 'Cada condomínio tem a sua matriz.');
