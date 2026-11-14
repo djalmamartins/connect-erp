@@ -2718,6 +2718,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /documents/trash-duplicates:
+    post:
+      operationId: trashDuplicateDocuments
+      summary: Cópias repetidas do mesmo arquivo em pastas diferentes do Disco Virtual para a lixeira, em lote, pela exclusão lógica do Disco Virtual (fica a mais antiga; o arquivo físico continua guardado), tudo ou nada e com prévia (erp.access, erp.documents.view e erp.documents.manage, ADR 0275)
+      description: >-
+        Sem document_ids, entram as cópias não excluídas do condomínio além da mais antiga de cada conteúdo (sha256); ficam
+        de fora as ligadas a outro cadastro (contrato, seguro, manutenção, ocorrência, empenho, cópia de cheque, aviso de
+        entrega, malote ou procuração), contadas em skipped_linked. Com document_ids, recusa arquivo não encontrado no
+        condomínio ou já na lixeira, sem outra cópia, a cópia que fica ou ligado. Cada cópia vai para a lixeira pela
+        exclusão do Disco Virtual (auditoria delete) e ganha um registro trash_duplicate com a cópia que fica e o motivo.
+        Nenhum arquivo é apagado do disco e nenhum aviso é enviado. Sem título, nome de arquivo, caminho ou hash na
+        resposta.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, reason], properties: { condominium_id: { type: integer }, document_ids: { type: array, items: { type: integer }, maxItems: 500 }, reason: { type: string, minLength: 5, maxLength: 255 }, dry_run: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, dry_run, reason, skipped_linked, count, groups, bytes, changed, documents[{ id, folder, size_bytes, kept_id }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Entrada inválida ou arquivo recusado (errors com _form e _document); nada vai para a lixeira' }
   /reports/assembly-history:
     get:
       operationId: assemblyHistory
