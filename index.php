@@ -327,6 +327,8 @@ $route->get("/reports/occurrence-aging", "OccurrenceAging:show", null, \Source\S
 $route->post("/useful-contacts/deactivate-duplicates", "ContactDeduplication:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Cobertura das tarifas de consumo do condomínio numa data, somente leitura (ADR 0258). Antes do laço dos cadastros.
 $route->get("/reports/tariff-coverage", "TariffCoverage:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Reajuste em lote das tarifas de consumo do condomínio, tudo ou nada e com prévia (ADR 0259). Antes do laço dos cadastros (/tariffs/{id}).
+$route->post("/tariffs/readjust", "TariffReadjustment:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/meter-readings", "MeterReadings:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings", "MeterReadings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/meter-readings/bill", "MeterReadings:bill", null, \Source\Support\Middleware\ApiAuthenticated::class);
