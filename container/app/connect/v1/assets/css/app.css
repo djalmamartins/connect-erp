@@ -531,3 +531,7 @@ a.app-day:hover { background: var(--app-brand-tint); }
 .app-chat__reply { display: grid; gap: 10px; }
 .app-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; font-size: 13px; color: var(--app-muted); }
 @media (min-width: 900px) { .app-calendar, .app-day-panel, .app-area-info { max-width: 620px; } }
+
+/* Espaçamento das listas (15/11): o espaço entre cartões vem só do gap da lista, e a lista se afasta dos totais. */
+.app-items > .app-card { margin-bottom: 0; }
+.app-grid + .app-items, .app-grid + .app-empty, .app-grid + .app-card { margin-top: 14px; }
