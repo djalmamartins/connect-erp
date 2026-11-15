@@ -9,6 +9,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
 
@@ -26,6 +27,12 @@ final class ResidentTickets
 {
     public const PER_PAGE = 20;
     public const RESIDENT_PRIORITY = ['low' => 'baixa', 'medium' => 'media', 'high' => 'alta', 'urgent' => 'alta'];
+    /**
+     * Tipo escolhido pelo morador (revisão de 15/11, etapa 3), guardado como categoria do chamado no Help Desk:
+     * chamado = pedido ou dúvida à administração; ocorrência = problema ou fato no condomínio. Os dois abrem
+     * ocorrência + chamado (ADR 0305). Sem tipo, vale ocorrência, como era antes.
+     */
+    public const KINDS = ['chamado' => 'Chamado', 'ocorrencia' => 'Ocorrência'];
 
     private PDO $pdo;
     private TicketService $tickets;
@@ -37,14 +44,20 @@ final class ResidentTickets
     }
 
     /** @return array{data:list<array<string, mixed>>, meta:array{page:int, per_page:int, total:int}} */
-    public function list(User $user, array $link, int $page = 1): array
+    public function list(User $user, array $link, int $page = 1, ?string $kind = null): array
     {
         ResidentPortal::assertFeature($link, 'occurrences');
         $page = max(1, $page);
         $params = ['u' => (int)$user->id, 'c' => (int)$link['condominium_id']];
-        $count = $this->pdo->prepare('SELECT COUNT(*) FROM studio_support_tickets t WHERE t.requester_id = :u AND t.condominium_id = :c');
+        $where = 't.requester_id = :u AND t.condominium_id = :c';
+        if ($kind === 'chamado') {
+            $where .= " AND t.category = 'Chamado'";
+        } elseif ($kind === 'ocorrencia') {
+            $where .= " AND (t.category IS NULL OR t.category <> 'Chamado')";
+        }
+        $count = $this->pdo->prepare('SELECT COUNT(*) FROM studio_support_tickets t WHERE ' . $where);
         $count->execute($params);
-        $stmt = $this->pdo->prepare(self::SELECT . ' WHERE t.requester_id = :u AND t.condominium_id = :c
+        $stmt = $this->pdo->prepare(self::SELECT . ' WHERE ' . $where . '
             ORDER BY COALESCE(last_message_at, t.created_at) DESC, t.id DESC LIMIT ' . self::PER_PAGE . ' OFFSET ' . (($page - 1) * self::PER_PAGE));
         $stmt->execute($params);
         return ['data' => array_map([self::class, 'present'], $stmt->fetchAll(PDO::FETCH_ASSOC)),
@@ -71,10 +84,15 @@ final class ResidentTickets
     {
         $body = ['subject' => $input['subject'] ?? '', 'description' => $input['description'] ?? '', 'priority' => $input['priority'] ?? null,
             'occurred_on' => $input['occurred_on'] ?? ''];
+        $kind = self::kind($input['kind'] ?? null);
         $occurrence = (new ResidentPortal($this->pdo))->reportOccurrence($user, $link, $body, $today);
         $stmt = $this->pdo->prepare('SELECT ticket_id FROM erp_occurrences WHERE id = ?');
         $stmt->execute([(int)$occurrence['id']]);
-        return $this->show($user, $link, (int)$stmt->fetchColumn());
+        $ticketId = (int)$stmt->fetchColumn();
+        if ($kind === 'chamado') {
+            $this->pdo->prepare('UPDATE studio_support_tickets SET category = :c WHERE id = :id')->execute(['c' => self::KINDS['chamado'], 'id' => $ticketId]);
+        }
+        return $this->show($user, $link, $ticketId);
     }
 
     /** @return array{message_id:int, status:string} */
@@ -95,6 +113,22 @@ final class ResidentTickets
         }
     }
 
+    /**
+     * Tipo informado (regra pura): vazio vale ocorrência; outro valor é recusado.
+     *
+     * @throws RegistryValidationException
+     */
+    public static function kind(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'ocorrencia';
+        }
+        if (!is_string($value) || !isset(self::KINDS[$value])) {
+            throw new RegistryValidationException(['kind' => 'Escolha chamado ou ocorrência.']);
+        }
+        return $value;
+    }
+
     /** Linha do banco para o aplicativo (regra pura). */
     public static function present(array $row): array
     {
@@ -103,6 +137,7 @@ final class ResidentTickets
             'id' => (int)$row['id'],
             'number' => (string)$row['protocol'],
             'subject' => (string)$row['subject'],
+            'kind' => ($row['category'] ?? null) === self::KINDS['chamado'] ? 'chamado' : 'ocorrencia',
             'status' => (string)$row['status'],
             'status_label' => TicketService::STATUS_LABELS[$row['status']] ?? (string)$row['status'],
             'priority' => self::RESIDENT_PRIORITY[$priority] ?? 'media',
@@ -114,7 +149,7 @@ final class ResidentTickets
         ];
     }
 
-    private const SELECT = 'SELECT t.id, t.protocol, t.subject, t.message, t.status, t.priority, t.created_at, t.updated_at,
+    private const SELECT = 'SELECT t.id, t.protocol, t.subject, t.message, t.category, t.status, t.priority, t.created_at, t.updated_at,
             (SELECT MAX(m.created_at) FROM studio_support_ticket_messages m WHERE m.ticket_id = t.id AND m.is_internal = 0) AS last_message_at,
             o.id AS occurrence_id
         FROM studio_support_tickets t

@@ -17,7 +17,7 @@ const THINGS: MenuItem[] = [
   { label: 'Correspondências', hint: 'O que chegou na portaria', icon: 'mail', color: '#8a6d1f', href: '/encomendas', feature: 'deliveries' },
 ];
 const HELP: MenuItem[] = [
-  { label: 'Consultar chamados', hint: 'Acompanhe o que você pediu', icon: 'chatbubbles', color: '#c2611f', href: '/ocorrencias', feature: 'occurrences' },
+  { label: 'Consultar chamados', hint: 'Acompanhe o que você pediu', icon: 'chatbubbles', color: '#c2611f', href: '/chamados', feature: 'occurrences' },
 ];
 
 export default function Unidade() {

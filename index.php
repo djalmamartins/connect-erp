@@ -603,6 +603,9 @@ $route->get("/resident/tickets", "ResidentApp:tickets", null, \Source\Support\Mi
 $route->post("/resident/tickets", "ResidentApp:openTicket", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/tickets/{id}", "ResidentApp:ticket", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/tickets/{id}/messages", "ResidentApp:replyTicket", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/unit/residents", "ResidentApp:household", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/unit/residents", "ResidentApp:addHousehold", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/unit/residents/{id}/block", "ResidentApp:blockHousehold", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/deliveries", "ResidentApp:deliveries", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/visits", "ResidentApp:visits", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/visits", "ResidentApp:authorizeVisit", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

@@ -69,12 +69,19 @@ export function parseTime(input: string): string | null {
 
 export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
-export type StatusKind = 'situation' | 'reservation' | 'occurrence' | 'delivery' | 'visit' | 'assembly';
+export type StatusKind = 'situation' | 'reservation' | 'occurrence' | 'ticket' | 'delivery' | 'visit' | 'assembly';
 
 /** Rótulos e cores das situações, iguais aos cadastros do ERP (Registry\Definitions) e ao extrato (UnitStatement). */
 const STATUS: Record<StatusKind, Record<string, [string, Tone]>> = {
   situation: { open: ['Em aberto', 'warning'], overdue: ['Vencido', 'danger'], paid: ['Pago', 'success'], renegotiated: ['Renegociado', 'neutral'] },
   reservation: { active: ['Aguardando aprovação', 'warning'], confirmed: ['Confirmada', 'success'], inactive: ['Cancelada', 'neutral'] },
+  ticket: {
+    open: ['Aberto', 'warning'],
+    in_progress: ['Em atendimento', 'info'],
+    waiting_customer: ['Aguardando você', 'danger'],
+    resolved: ['Resolvido', 'success'],
+    closed: ['Fechado', 'neutral'],
+  },
   occurrence: { active: ['Aberta', 'warning'], running: ['Em andamento', 'info'], done: ['Resolvida', 'success'] },
   delivery: { active: ['Aguardando retirada', 'warning'], picked_up: ['Retirada', 'success'], inactive: ['Cancelada', 'neutral'] },
   visit: { active: ['Prevista', 'info'], done: ['Realizada', 'success'], inactive: ['Cancelada', 'neutral'] },

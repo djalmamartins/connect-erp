@@ -18,6 +18,8 @@ use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentProfile;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentHousehold;
+use Source\Services\Resident\ResidentNotAllowed;
 use Source\Services\Resident\ResidentTickets;
 use Source\Services\Resident\ResidentTwoFactor;
 
@@ -41,6 +43,7 @@ final class AppScreens extends Controller
         ['documents', 'Documentos', '/documentos', 'documents', 'file', 'resolve'],
         ['occurrences', 'Chamados', '/ocorrencias', 'occurrences', 'alert', 'resolve'],
         ['unit', 'Unidade', '/minha-unidade', null, 'key', 'unit'],
+        ['household', 'Moradores', '/minha-unidade/moradores', 'household', 'users', 'unit'],
         ['deliveries', 'Correspondências', '/encomendas', 'deliveries', 'box', 'unit'],
         ['visits', 'Autorizar entrada', '/visitantes', 'visitors', 'user-check', 'unit'],
         ['profile', 'Perfil', '/perfil', null, 'user', 'profile'],
@@ -398,15 +401,18 @@ final class AppScreens extends Controller
     public function occurrences(): void
     {
         $page = max(1, (int)($_GET['pagina'] ?? 1));
-        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Chamados', fn (User $u, array $link): array => ['tickets' => (new ResidentTickets())->list($u, $link, $page)]);
+        $kind = in_array($_GET['tipo'] ?? null, ['chamado', 'ocorrencia'], true) ? $_GET['tipo'] : null;
+        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Chamados', fn (User $u, array $link): array => [
+            'tickets' => (new ResidentTickets())->list($u, $link, $page, $kind), 'kind' => $kind, 'open' => ($_GET['abrir'] ?? '') === '1']);
     }
 
     /** POST /ocorrencias — abre o chamado (a ocorrência da unidade vira chamado do Help Desk, ADR 0305). */
     public function reportOccurrence(array $data): void
     {
         $this->action('occurrences', '/ocorrencias', $data, function (User $u, array $link) use ($data): string {
-            $ticket = (new ResidentTickets())->open($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on']));
-            return 'Chamado ' . $ticket['number'] . ' aberto. Acompanhe a resposta da administração por aqui.';
+            $ticket = (new ResidentTickets())->open($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on', 'kind']));
+            return ($ticket['kind'] === 'chamado' ? 'Chamado ' . $ticket['number'] . ' aberto.' : 'Ocorrência ' . $ticket['number'] . ' registrada.')
+                . ' Acompanhe a resposta da administração por aqui.';
         });
     }
 
@@ -429,6 +435,32 @@ final class AppScreens extends Controller
     public function deliveries(): void
     {
         $this->page('deliveries', 'deliveries', 'pages/deliveries', 'Encomendas', fn (User $u, array $link): array => ['deliveries' => $this->portal->deliveries($link)]);
+    }
+
+    /** GET /minha-unidade/moradores — quem está ligado à unidade (etapa 4 de 15/11). ?novo=inquilino|morador abre o cadastro. */
+    public function household(): void
+    {
+        $this->page('household', 'household', 'pages/household', 'Moradores', fn (User $u, array $link): array => [
+            'household' => (new ResidentHousehold())->list($link),
+            'chosen' => ['inquilino' => 'tenant', 'morador' => 'resident'][$_GET['novo'] ?? ''] ?? null]);
+    }
+
+    /** POST /minha-unidade/moradores — o proprietário cadastra inquilino ou morador; o inquilino, morador. */
+    public function addHousehold(array $data): void
+    {
+        $this->action('household', '/minha-unidade/moradores', $data, function (User $u, array $link) use ($data): string {
+            $person = (new ResidentHousehold())->add($u, $link, self::only($data, ['relationship', 'name', 'document', 'email', 'phone', 'starts_on']));
+            return 'Cadastro feito: ' . $person['name'] . ', ' . mb_strtolower($person['relationship_label']) . '. A administração vê o cadastro no ERP.';
+        });
+    }
+
+    /** POST /minha-unidade/moradores/{id}/bloquear — só o proprietário, só inquilino; depois oferece cadastrar o novo. */
+    public function blockHousehold(array $data): void
+    {
+        $this->action('household', '/minha-unidade/moradores?novo=inquilino', $data, function (User $u, array $link) use ($data): string {
+            $person = (new ResidentHousehold())->block($u, $link, (int)($data['id'] ?? 0));
+            return 'Inquilino bloqueado: ' . $person['name'] . ' não acessa mais o aplicativo. Se quiser, cadastre o novo inquilino abaixo.';
+        }, '/minha-unidade/moradores');
     }
 
     public function visits(): void
@@ -695,7 +727,7 @@ final class AppScreens extends Controller
             $this->message->warning('Não encontrado.')->flash();
         } catch (InvalidArgumentException | DomainException $error) {
             $this->message->warning($error->getMessage())->flash();
-        } catch (ResidentFeatureDisabled $error) {
+        } catch (ResidentFeatureDisabled | ResidentNotAllowed $error) {
             $this->message->warning($error->getMessage())->flash();
         }
         redirect(app_url($failBack ?? $back));

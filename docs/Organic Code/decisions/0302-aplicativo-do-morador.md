@@ -107,3 +107,24 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
   - **Foto:** confere o tipo pelo conteúdo, gira pelo EXIF, recorta em quadrado no centro, reduz a 512 px e grava em JPEG sem metadados em `storage/private/resident-photos`. A troca apaga a foto anterior, e tudo fica na auditoria.
   - **Primeiro acesso:** `GET /resident/onboarding`, `POST /resident/onboarding/complete` e `GET/POST/DELETE /resident/profile/photo`.
 - No web, `/` leva a `/boas-vindas` (foto e 3 dicas) até a pessoa concluir ou pular. A foto aparece no avatar da barra de cima e no Perfil (`/perfil/foto`, `Cache-Control: private`), sempre a da própria conta.
+
+### Revisão de 15/11, etapa 3 (chamado e ocorrência)
+- Um formulário só, com o tipo **Chamado** (pedido ou dúvida à administração) ou **Ocorrência** (problema ou fato no condomínio). Os dois seguem a ADR 0305: abrem a ocorrência da unidade e o chamado do Help Desk.
+- O tipo fica na categoria do chamado (`Chamado` ou `Ocorrência`, que já era a categoria de `Occurrences::ticketInput`). Assim a equipe filtra no Help Desk sem coluna nova.
+- `POST /resident/tickets` aceita `kind` (`chamado` ou `ocorrencia`, padrão `ocorrencia`, como antes). Valor fora disso dá 422 em `kind`, antes de gravar qualquer coisa. `GET /resident/tickets?kind=` filtra, e cada item traz `kind`.
+- No web, `/ocorrencias?tipo=` filtra, e `&abrir=1` abre o formulário com o tipo marcado. O Resolva fácil usa os dois atalhos.
+
+### Revisão de 15/11, etapa 4 (moradores da unidade)
+- Função nova do portal: `household` ("Moradores da unidade"), na migration 20261115_1000. Começa desligada, como as outras.
+- `ResidentHousehold` usa o cadastro do ERP (`erp_residents`, via `RegistryService::createForResident('residents')`), sem tabela nova. Condomínio, unidade e texto da unidade vêm sempre do vínculo.
+- Regras:
+  - o proprietário cadastra inquilino e morador;
+  - o inquilino cadastra morador;
+  - o morador e o responsável financeiro só veem;
+  - bloquear é só do proprietário, só para inquilino ativo, e nunca a si mesmo.
+  - Fora disso, `ResidentNotAllowed` (API 403 `not_allowed`).
+- Bloquear deixa o inquilino com `status = inactive` e `ends_on` = hoje, com auditoria. `ResidentLinks` já ignora vínculo inativo, então o acesso ao app acaba na hora. "Informar um novo" é cadastrar o novo inquilino; o web abre o formulário logo depois do bloqueio.
+- A lista não traz CPF, e-mail nem telefone (LGPD). Bloqueados há mais de 90 dias saem da lista do app, mas continuam no ERP.
+- API: `GET/POST /resident/unit/residents` (`meta.can_add`) e `POST /resident/unit/residents/{id}/block`. Web: `/minha-unidade/moradores`.
+- O acesso da pessoa cadastrada continua pelo convite da administração (decisão de 09/11).
+

@@ -338,7 +338,7 @@ components:
         condominium_name: { type: string }
         unit_id: { type: integer }
         unit_label: { type: string }
-        features: { type: array, items: { type: string, enum: [boletos, reservations, occurrences, announcements, documents, accountability, deliveries, visitors, assemblies] } }
+        features: { type: array, items: { type: string, enum: [boletos, reservations, occurrences, announcements, documents, accountability, deliveries, visitors, assemblies, household] } }
     ResidentCharge:
       type: object
       properties:
@@ -400,6 +400,20 @@ components:
         status: { type: string, enum: [active, running, done], description: 'active = aberta; segue a situação do chamado (ADR 0305)' }
         has_ticket: { type: boolean }
         protocol: { type: string, nullable: true, description: Protocolo do chamado da ocorrência no Help Desk (ADR 0305) }
+    ResidentHouseholdMember:
+      type: object
+      description: Pessoa ligada à unidade (etapa 4 de 15/11)
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        relationship: { type: string, enum: [owner, tenant, resident, financial] }
+        relationship_label: { type: string }
+        status: { type: string, enum: [active, blocked] }
+        status_label: { type: string }
+        starts_on: { type: string, format: date, nullable: true }
+        ends_on: { type: string, format: date, nullable: true }
+        is_me: { type: boolean }
+        can_block: { type: boolean }
     ResidentTicket:
       type: object
       description: Chamado do morador (ADR 0305)
@@ -407,6 +421,7 @@ components:
         id: { type: integer }
         number: { type: string, description: Protocolo do chamado, example: CH261114A1B2 }
         subject: { type: string }
+        kind: { type: string, enum: [chamado, ocorrencia], description: 'chamado = pedido ou dúvida à administração; ocorrência = problema no condomínio' }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
         status_label: { type: string }
         priority: { type: string, enum: [baixa, media, alta] }
@@ -476,7 +491,7 @@ components:
         uploaded_at: { type: string }
     ResidentError:
       type: object
-      description: 'Erros do app do morador: 401 unauthenticated, 403 not_resident ou feature_disabled (com feature), 404 not_found, 409 conflict, 422 validation_failed (com fields)'
+      description: 'Erros do app do morador: 401 unauthenticated, 403 not_resident, feature_disabled (com feature) ou not_allowed, 404 not_found, 409 conflict, 422 validation_failed (com fields)'
       properties:
         error:
           type: object
@@ -6748,7 +6763,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [condominium_id, feature, enabled], properties: { condominium_id: { type: integer }, feature: { type: string, enum: [boletos, reservations, occurrences, announcements, documents] }, enabled: { type: boolean } } } } }
+        content: { application/json: { schema: { type: object, required: [condominium_id, feature, enabled], properties: { condominium_id: { type: integer }, feature: { type: string, enum: [boletos, reservations, occurrences, announcements, documents, accountability, deliveries, visitors, assemblies, household] }, enabled: { type: boolean } } } } }
       responses:
         '200': { description: Matriz atualizada }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -7594,6 +7609,7 @@ paths:
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
         - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: kind, in: query, required: false, description: 'Só chamados ou só ocorrências; sem o filtro, os dois', schema: { type: string, enum: [chamado, ocorrencia] } }
       responses:
         '200':
           description: OK (20 por página)
@@ -7626,6 +7642,7 @@ paths:
                 description: { type: string, maxLength: 4000 }
                 priority: { type: string, enum: [baixa, media, alta], default: media }
                 occurred_on: { type: string, format: date, description: 'Padrão: hoje' }
+                kind: { type: string, enum: [chamado, ocorrencia], default: ocorrencia, description: 'chamado = pedido ou dúvida à administração; ocorrencia = problema ou fato no condomínio' }
       responses:
         '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentTicketDetail' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -7674,6 +7691,69 @@ paths:
         '409': { description: 'ticket_closed: chamado fechado', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /resident/unit/residents:
+    get:
+      operationId: getResidentHousehold
+      tags: [Morador]
+      summary: 'Moradores da unidade'
+      description: 'Revisão de 15/11, etapa 4 (ADR 0302). Pessoas ligadas à unidade do vínculo, sem CPF, e-mail ou telefone (LGPD). Bloqueados há mais de 90 dias não aparecem. meta.can_add diz o que este vínculo pode cadastrar. Exige a função household do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ResidentHouseholdMember' } }
+                  meta: { type: object, properties: { can_add: { type: array, items: { type: string, enum: [tenant, resident] }, description: 'Proprietário: tenant e resident; inquilino: resident; outros: vazio' } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident, feature_disabled (household) ou not_allowed (o vínculo não permite)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: addResidentHouseholdMember
+      tags: [Morador]
+      summary: 'Cadastrar inquilino ou morador na unidade'
+      description: 'O proprietário cadastra inquilino e morador; o inquilino cadastra morador. Grava no cadastro Proprietários e inquilinos do ERP, com auditoria.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [relationship, name]
+              properties:
+                relationship: { type: string, enum: [tenant, resident] }
+                name: { type: string, maxLength: 160 }
+                document: { type: string, description: 'CPF ou CNPJ' }
+                email: { type: string, format: email }
+                phone: { type: string }
+                starts_on: { type: string, format: date, description: 'Padrão: hoje' }
+      responses:
+        '201': { description: Cadastrado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentHouseholdMember' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident, feature_disabled (household) ou not_allowed (o vínculo não permite)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: validation_failed, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/unit/residents/{id}/block:
+    post:
+      operationId: blockResidentHouseholdMember
+      tags: [Morador]
+      summary: 'Bloquear o inquilino'
+      description: 'Só o proprietário, só inquilino ativo. Fica inativo com fim do vínculo hoje e perde o acesso ao aplicativo. Auditado.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: Bloqueado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentHouseholdMember' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident, feature_disabled (household) ou not_allowed (o vínculo não permite)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { description: 'not_found (outra unidade)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/deliveries:
     get:
       operationId: getResidentDeliveries

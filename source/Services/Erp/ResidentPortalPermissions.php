@@ -21,7 +21,9 @@ final class ResidentPortalPermissions
     // ADR 0302: o aplicativo do morador ganhou prestação de contas, encomendas, visitantes e assembleias.
     public const FEATURES = ['boletos' => 'Boletos e segunda via', 'reservations' => 'Reservas de áreas comuns', 'occurrences' => 'Ocorrências',
         'announcements' => 'Comunicados', 'documents' => 'Documentos do condomínio', 'accountability' => 'Prestação de contas',
-        'deliveries' => 'Encomendas', 'visitors' => 'Visitantes', 'assemblies' => 'Assembleias'];
+        'deliveries' => 'Encomendas', 'visitors' => 'Visitantes', 'assemblies' => 'Assembleias',
+        // Etapa 4 da revisão de 15/11: o proprietário cadastra inquilino e morador e bloqueia inquilino.
+        'household' => 'Moradores da unidade'];
 
     private PDO $pdo;
     private CondominiumScope $scope;

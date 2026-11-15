@@ -8,7 +8,9 @@ export function notificationRoute(path: string): string {
   const clean = path.split('#')[0];
   if (clean.startsWith('/boletos')) return '/financeiro';
   if (clean.startsWith('/assembleias/')) return clean;
-  const known = ['/encomendas', '/visitantes', '/comunicados', '/reservas', '/assembleias', '/documentos', '/ocorrencias', '/prestacao-de-contas'];
+  if (/^\/chamados\/\d+$/.test(clean)) return clean;
+  if (clean === '/ocorrencias' || clean === '/chamados') return '/chamados';
+  const known = ['/encomendas', '/visitantes', '/comunicados', '/reservas', '/assembleias', '/documentos', '/prestacao-de-contas'];
   return known.find((k) => clean === k) ?? '/avisos';
 }
 

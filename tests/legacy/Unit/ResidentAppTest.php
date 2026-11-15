@@ -109,6 +109,25 @@ final class ResidentAppTest extends TestCase
         self::assertStringStartsWith('Olá! ', AppLogin::notResidentNotice((object)[]));
     }
 
+    public function testHouseholdRulesByRelationship(): void
+    {
+        $h = \Source\Services\Resident\ResidentHousehold::class;
+        self::assertSame([['tenant', 'resident'], ['resident'], [], []], [$h::canAdd('owner'), $h::canAdd('tenant'), $h::canAdd('resident'), $h::canAdd('financial')]);
+        $tenant = ['id' => 7, 'relationship' => 'tenant', 'status' => 'active'];
+        self::assertTrue($h::canBlock('owner', $tenant, 1));
+        self::assertFalse($h::canBlock('tenant', $tenant, 1), 'Só o proprietário bloqueia.');
+        self::assertFalse($h::canBlock('owner', ['relationship' => 'resident'] + $tenant, 1), 'Só inquilino.');
+        self::assertFalse($h::canBlock('owner', ['status' => 'blocked'] + $tenant, 1), 'Já bloqueado.');
+        self::assertFalse($h::canBlock('owner', $tenant, 7), 'Nunca a si mesmo.');
+    }
+
+    public function testTicketKindDefaultsToOcorrenciaAndRefusesOthers(): void
+    {
+        self::assertSame(['ocorrencia', 'ocorrencia', 'chamado'], [\Source\Services\Resident\ResidentTickets::kind(null), \Source\Services\Resident\ResidentTickets::kind(''), \Source\Services\Resident\ResidentTickets::kind('chamado')]);
+        $this->expectException(\Source\Services\Erp\Registry\RegistryValidationException::class);
+        \Source\Services\Resident\ResidentTickets::kind('reclamacao');
+    }
+
     public function testPhotoCropIsTheCentralSquare(): void
     {
         self::assertSame([150, 0, 600], \Source\Services\Resident\ResidentProfile::squareCrop(900, 600));
