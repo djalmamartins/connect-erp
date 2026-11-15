@@ -89,6 +89,16 @@ export type StatementLine = {
   charge: Charge | null;
 };
 
+/** Aviso do sininho (ResidentFeed::notifications). path é o caminho da tela no app web. */
+export type ResidentNotification = {
+  kind: string;
+  title: string;
+  detail: string;
+  at: string;
+  path: string;
+  tone: 'danger' | 'warning' | 'info' | 'success' | string;
+};
+
 export type ChargesResponse = {
   unit_label: string;
   from: string;
@@ -212,6 +222,7 @@ export function residentApi(api: ApiClient) {
     logout: () => api.delete('/resident/app-sessions/current'),
     me: () => api.get<Me>('/resident/me'),
     summary: () => api.get<Summary>('/resident/summary'),
+    notifications: () => api.get<ResidentNotification[]>('/resident/notifications'),
     charges: (from?: string, to?: string) => api.get<ChargesResponse>('/resident/charges', { from, to }),
     chargePdfUrl: (id: number) => api.url(`/resident/charges/${id}/pdf`),
     accountability: () => api.get<AccountabilityLink[]>('/resident/accountability'),

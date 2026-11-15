@@ -1,27 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, type Href } from 'expo-router';
-import { useState, type ComponentProps } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { isFeatureOn, type Feature } from '../../src/api/resident';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useAuth } from '../../src/auth/AuthContext';
 import { confirm } from '../../src/lib/confirm';
 import { initials } from '../../src/lib/format';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Button, Card, Screen } from '../../src/ui/kit';
+import { MenuGroup, type MenuItem } from '../../src/ui/Menu';
 
-type Item = { label: string; hint: string; href: Href; icon: ComponentProps<typeof Ionicons>['name']; feature?: Feature; color: string };
-
-const ITEMS: Item[] = [
-  { label: 'Prestação de contas', color: '#0f7a6a', hint: 'Para onde foi o dinheiro, mês a mês', href: '/prestacao-de-contas', icon: 'pie-chart-outline', feature: 'accountability' },
-  { label: 'Comunicados', color: '#e8833a', hint: 'Avisos da administração', href: '/comunicados', icon: 'megaphone-outline', feature: 'announcements' },
-  { label: 'Encomendas', color: '#8a6d1f', hint: 'O que chegou na portaria', href: '/encomendas', icon: 'cube-outline', feature: 'deliveries' },
-  { label: 'Visitantes', color: '#2f7bd8', hint: 'Avise a portaria de quem vem', href: '/visitantes', icon: 'people-outline', feature: 'visitors' },
-  { label: 'Documentos', color: '#5b6bd6', hint: 'Convenção, regimento e atas', href: '/documentos', icon: 'document-text-outline', feature: 'documents' },
-  { label: 'Assembleias', color: '#07884c', hint: 'Datas, pauta e resultados', href: '/assembleias', icon: 'podium-outline', feature: 'assemblies' },
-  { label: 'Pets e veículos', color: '#c2477a', hint: 'Cadastro da sua unidade', href: '/pets-e-veiculos', icon: 'paw-outline' },
-];
-
-const ACCOUNT: Item[] = [
+const ACCOUNT: MenuItem[] = [
   { label: 'Verificação em duas etapas', color: '#0d2e27', hint: 'Opcional: um código além da senha', href: '/seguranca', icon: 'shield-checkmark-outline' },
 ];
 
@@ -62,36 +50,8 @@ function BiometricRow() {
   );
 }
 
-function Group({ items }: { items: Item[] }) {
-  return (
-    <View style={styles.group}>
-      {items.map((item, i) => (
-        <Pressable
-          key={item.label}
-          onPress={() => router.push(item.href)}
-          accessibilityRole="button"
-          accessibilityLabel={item.label}
-          style={({ pressed }) => [styles.item, pressed && { backgroundColor: colors.surfaceMuted }]}
-        >
-          <View style={[styles.icon, { backgroundColor: item.color }]}>
-            <Ionicons name={item.icon} size={18} color="#ffffff" />
-          </View>
-          <View style={[styles.itemBody, i < items.length - 1 && styles.separator]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemLabel}>{item.label}</Text>
-              <Text style={styles.itemHint}>{item.hint}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </View>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-export default function Mais() {
+export default function Perfil() {
   const { me, logout } = useAuth();
-  const items = ITEMS.filter((i) => !i.feature || isFeatureOn(me, i.feature));
   const many = (me?.links.length ?? 0) > 1;
 
   async function sair() {
@@ -101,7 +61,7 @@ export default function Mais() {
   }
 
   return (
-    <Screen title="Mais" tab>
+    <Screen title="Perfil" tab>
       {me?.current ? (
         <Card style={styles.profile}>
           <View style={styles.avatar}>
@@ -115,12 +75,10 @@ export default function Mais() {
           </View>
         </Card>
       ) : null}
-      {items.length > 0 ? <Group items={items} /> : null}
-      <Text style={styles.groupTitle}>Conta</Text>
-      <Group items={ACCOUNT} />
+      <MenuGroup title="Conta" items={ACCOUNT} />
       <BiometricRow />
       <View style={{ gap: space[2], marginTop: space[3] }}>
-        {many ? <Button title="Trocar de unidade" variant="secondary" onPress={() => router.push('/unidade')} /> : null}
+        {many ? <Button title="Trocar de unidade" variant="secondary" onPress={() => router.push('/trocar-unidade')} /> : null}
         <Button title="Sair" variant="danger" onPress={sair} />
       </View>
     </Screen>

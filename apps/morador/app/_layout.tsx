@@ -39,7 +39,11 @@ function RootStack() {
         <Stack.Screen name="pets-e-veiculos" />
         <Stack.Screen name="seguranca" />
         <Stack.Screen name="reservar/[id]" />
-        <Stack.Screen name="unidade" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="financeiro" />
+        <Stack.Screen name="reservas" />
+        <Stack.Screen name="ocorrencias" />
+        <Stack.Screen name="avisos" />
+        <Stack.Screen name="trocar-unidade" options={{ presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
   );

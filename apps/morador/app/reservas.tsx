@@ -2,16 +2,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../src/api/client';
-import type { CommonArea, Reservation } from '../../src/api/resident';
-import { useAuth } from '../../src/auth/AuthContext';
-import { areaIcon } from '../../src/lib/areas';
-import { confirm } from '../../src/lib/confirm';
-import { date, money, today } from '../../src/lib/format';
-import { useResource } from '../../src/lib/useResource';
-import { colors, fonts, radius, space } from '../../src/theme';
-import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
-import { dialog } from '../../src/ui/Dialog';
+import { ApiError } from '../src/api/client';
+import type { CommonArea, Reservation } from '../src/api/resident';
+import { useAuth } from '../src/auth/AuthContext';
+import { areaIcon } from '../src/lib/areas';
+import { confirm } from '../src/lib/confirm';
+import { date, money, today } from '../src/lib/format';
+import { useResource } from '../src/lib/useResource';
+import { colors, fonts, radius, space } from '../src/theme';
+import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../src/ui/kit';
+import { dialog } from '../src/ui/Dialog';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type Tab = 'new' | 'mine';
@@ -49,7 +49,7 @@ export default function Reservas() {
   };
 
   return (
-    <Screen title="Reservas" tab refreshing={areas.refreshing || list.refreshing} onRefresh={reload}>
+    <Screen title="Reservas" back refreshing={areas.refreshing || list.refreshing} onRefresh={reload}>
       <View style={styles.segment} accessibilityRole="tablist">
         {(
           [
