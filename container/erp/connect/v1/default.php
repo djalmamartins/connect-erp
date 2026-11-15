@@ -26,7 +26,10 @@ foreach ($catalog['pages'] as $id => $page) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <?= $head ?? '' ?>
-    <link rel="icon" href="<?= theme('/assets/images/favicon-32x32.png') ?>">
+    <?php /* Favicon do ERP: verde-escuro com a marca dourada (favicons por sistema, 15/11/2026). */ ?>
+    <link rel="icon" type="image/svg+xml" href="<?= themeErp('/assets/images/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= themeErp('/assets/images/favicon-32.png') ?>">
+    <link rel="apple-touch-icon" href="<?= themeErp('/assets/images/favicon-180.png') ?>">
     <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
 </head>
 <body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?>">

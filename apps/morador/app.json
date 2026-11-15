@@ -14,7 +14,7 @@
     "android": {
       "package": "br.com.connectcondominios.morador",
       "adaptiveIcon": {
-        "backgroundColor": "#0d2e27",
+        "backgroundColor": "#078b4c",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

@@ -14,7 +14,8 @@ $asset = static function (string $path): string {
     <meta name="theme-color" content="#f8faf9">
     <?= $head ?? '' ?>
     <link rel="manifest" href="<?= app_url('/manifest.webmanifest') ?>">
-    <link rel="icon" href="<?= themeApp('/assets/images/icon-192.png') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= themeApp('/assets/images/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="stylesheet" href="<?= $asset('/assets/css/app.css') ?>">
 </head>

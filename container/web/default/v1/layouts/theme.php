@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <?= $head; ?>
     <link rel="icon" href="<?= site_favicon_url(); ?>"/>
+    <link rel="apple-touch-icon" href="<?= theme('/assets/images/favicon-96x96.png'); ?>"/>
     <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/organic.min.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/organic.min.css') ?>"/>
     <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/compat-v1.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/compat-v1.css') ?>"/>
     <link rel="stylesheet" href="<?= theme('/assets/site.min.css') . '?v=' . filemtime(__DIR__ . '/../assets/site.min.css') ?>"/>
