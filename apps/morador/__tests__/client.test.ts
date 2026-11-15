@@ -177,3 +177,27 @@ describe('etapa 2: senha, primeiro acesso e foto', () => {
     expect(calls[0]!.init.body).toBeInstanceOf(FormData);
   });
 });
+
+describe('etapa 4: moradores da unidade', () => {
+  it('lê a lista com o meta.can_add', async () => {
+    const calls: Call[] = [];
+    const body = { data: [{ id: 1, name: 'Ana', relationship: 'owner', relationship_label: 'Proprietária', status: 'active', starts_on: null, ends_on: null, is_me: true, can_block: false }], meta: { can_add: ['resident', 'tenant'] } };
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4, fetchImpl: fakeFetch(200, body, calls) }));
+    const r = await api.household();
+    expect(calls[0]!.url).toBe('https://x/api/v1/resident/unit/residents?resident_id=4');
+    expect(r.data).toHaveLength(1);
+    expect(r.meta.can_add).toEqual(['resident', 'tenant']);
+  });
+
+  it('sem meta, ninguém cadastra', async () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: fakeFetch(200, { data: [] }, []) }));
+    await expect(api.household()).resolves.toEqual({ data: [], meta: { can_add: [] } });
+  });
+
+  it('bloqueio fora da regra vira ApiError 403', async () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: fakeFetch(403, { error: { code: 'not_allowed', message: 'Só o proprietário.' } }, []) }));
+    const e = await failure(api.blockTenant(9));
+    expect(e.status).toBe(403);
+    expect(e.code).toBe('not_allowed');
+  });
+});
