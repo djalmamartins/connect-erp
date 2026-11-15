@@ -222,26 +222,26 @@ p { margin: 0; }
 .erp-page-head h1 { font-size: 24px; letter-spacing: -.02em; }
 .erp-page-head p { margin-top: 4px; color: var(--erp-muted); max-width: 70ch; }
 .erp-page-head__actions { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); }
-/* "Sobre esta tela" (ADR 0309): o que a página faz e o que acontece por trás, para quem está chegando. */
-.erp-page-intro { border: 1px solid var(--erp-border); border-left: 4px solid var(--erp-info); background: var(--erp-surface); border-radius: var(--erp-radius-md); box-shadow: var(--erp-shadow-card); }
-.erp-page-intro__summary { display: flex; align-items: center; gap: var(--erp-space-2); padding: 10px var(--erp-space-4); cursor: pointer; list-style: none; font-weight: 600; color: var(--erp-info); }
-.erp-page-intro__summary::-webkit-details-marker { display: none; }
-.erp-page-intro__summary:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: 2px; border-radius: var(--erp-radius-md); }
-.erp-page-intro__icon { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--erp-info); color: #fff; font: italic 700 12px/1 Georgia, serif; }
-.erp-page-intro__title { flex: 1; font-size: 14px; }
-.erp-page-intro__toggle { font-size: 12px; font-weight: 500; color: var(--erp-muted); }
-.erp-page-intro__toggle::after { content: attr(data-closed); }
-.erp-page-intro[open] .erp-page-intro__toggle::after { content: attr(data-open); }
-.erp-page-intro__body { padding: 0 var(--erp-space-4) var(--erp-space-4) calc(var(--erp-space-4) + 28px); font-size: 14px; line-height: 1.55; color: var(--erp-text); }
-.erp-page-intro__lead { max-width: 95ch; }
-.erp-page-intro__heading { margin: var(--erp-space-3) 0 4px; font-size: 13px; font-weight: 700; color: var(--erp-text); }
-.erp-page-intro__list { margin: 0; padding-left: 18px; max-width: 95ch; }
-.erp-page-intro__list li { margin: 3px 0; }
-.erp-page-intro__more { display: inline-block; margin-top: var(--erp-space-3); font-weight: 600; color: var(--erp-brand-ink); }
-.erp-page-intro .kb-button { display: inline-block; padding: 0 6px; border-radius: 6px; background: var(--erp-brand-soft); color: var(--erp-brand-ink); font-weight: 600; font-size: 13px; }
-.erp-page-intro .kb-path { font-weight: 600; }
-.erp-page-intro .kb-path i { font-style: normal; margin: 0 4px; color: var(--erp-muted); }
-@media (max-width: 640px) { .erp-page-intro__body { padding-left: var(--erp-space-4); } }
+/* "Sobre esta tela" (ADR 0309): uma linha discreta abaixo do título; o X esconde de vez naquela tela. */
+.erp-page-intro { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px 9px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface-muted); color: var(--erp-muted); font-size: 13px; line-height: 1.5; }
+.erp-page-intro[hidden] { display: none; }
+.erp-page-intro__icon { flex: none; display: inline-flex; margin-top: 1px; color: var(--erp-faint); }
+.erp-page-intro__body { flex: 1; min-width: 0; }
+.erp-page-intro__lead { max-width: 110ch; }
+.erp-page-intro strong, .erp-page-intro .kb-path, .erp-page-intro .kb-button { font-weight: inherit; color: var(--erp-text); }
+.erp-page-intro .kb-path i { font-style: normal; margin: 0 3px; }
+.erp-page-intro__more { margin-top: 2px; }
+.erp-page-intro__more > summary { display: inline; cursor: pointer; color: var(--erp-brand-ink); list-style: none; }
+.erp-page-intro__more > summary::-webkit-details-marker { display: none; }
+.erp-page-intro__more > summary::after { content: " \203A"; }
+.erp-page-intro__more[open] > summary::after { content: ""; }
+.erp-page-intro__more > summary:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: 2px; border-radius: 4px; }
+.erp-page-intro__list { margin: 6px 0 0; padding-left: 18px; max-width: 110ch; }
+.erp-page-intro__list li { margin: 2px 0; }
+.erp-page-intro__link { display: inline-block; margin-top: 6px; color: var(--erp-brand-ink); }
+.erp-page-intro__close { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: var(--erp-faint); cursor: pointer; }
+.erp-page-intro__close:hover { background: var(--erp-neutral-soft); color: var(--erp-text); }
+.erp-page-intro__close:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: 1px; }
 @media print { .erp-page-intro { display: none !important; } }
 .erp-generate-month { display: flex; flex-wrap: wrap; align-items: center; gap: var(--erp-space-2); }
 .erp-generate-month .erp-input { width: auto; min-width: 150px; }

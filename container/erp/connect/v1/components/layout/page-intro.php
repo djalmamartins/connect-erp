@@ -1,9 +1,11 @@
 <?php
 /**
- * "Sobre esta tela" (ADR 0309): o que a página faz e o que acontece por trás quando você grava,
- * para quem usa o sistema pela primeira vez. Texto de Source\Services\Help\PageGuides (a mesma
- * fonte da seção "O que acontece por trás" do artigo da Central de Ajuda). Quem fecha o quadro
- * deixa ele fechado nesta página (erp.js guarda no navegador); "Mostrar" abre de novo.
+ * "Sobre esta tela" (ADR 0309): o que a página faz e, recolhido, o que acontece por trás quando você
+ * grava, para quem usa o sistema pela primeira vez. Texto de Source\Services\Help\PageGuides (a mesma
+ * fonte da seção "O que acontece por trás" do artigo da Central de Ajuda).
+ *
+ * Visual discreto (retorno do Djalma, 15/11/2026): uma linha clara, sem borda grossa nem negrito. O X
+ * fecha o quadro e ele não volta mais naquela tela, neste navegador (erp.js guarda no localStorage).
  *
  * @var ?string $currentPageId
  */
@@ -20,20 +22,19 @@ $introRenderer = new \Source\Services\Help\ArticleRenderer(
 $introCode = (string)$currentPageId;
 $introHelp = \Source\Services\Environments::url('site', '/suporte/tela/' . rawurlencode($introCode));
 ?>
-<details class="erp-page-intro" open data-erp-intro="<?= $this->e($introCode) ?>">
-    <summary class="erp-page-intro__summary">
-        <span class="erp-page-intro__icon" aria-hidden="true">i</span>
-        <span class="erp-page-intro__title">Sobre esta tela</span>
-        <span class="erp-page-intro__toggle" data-open="Esconder" data-closed="Mostrar" aria-hidden="true"></span>
-    </summary>
+<aside class="erp-page-intro" data-erp-intro="<?= $this->e($introCode) ?>" aria-label="Sobre esta tela">
+    <span class="erp-page-intro__icon" aria-hidden="true"><?= $icon('info', 'erp-icon--sm') ?></span>
     <div class="erp-page-intro__body">
         <p class="erp-page-intro__lead"><?= $introRenderer->inline($introGuide['faz']) ?></p>
         <?php if ($introGuide['por_tras'] !== []): ?>
-            <h2 class="erp-page-intro__heading">O que acontece por trás</h2>
-            <ul class="erp-page-intro__list">
-                <?php foreach ($introGuide['por_tras'] as $introItem): ?><li><?= $introRenderer->inline($introItem) ?></li><?php endforeach; ?>
-            </ul>
+            <details class="erp-page-intro__more">
+                <summary>O que acontece por trás</summary>
+                <ul class="erp-page-intro__list">
+                    <?php foreach ($introGuide['por_tras'] as $introItem): ?><li><?= $introRenderer->inline($introItem) ?></li><?php endforeach; ?>
+                </ul>
+                <a class="erp-page-intro__link" href="<?= $this->e($introHelp) ?>" target="_blank" rel="noopener">Guia completo desta tela</a>
+            </details>
         <?php endif; ?>
-        <a class="erp-page-intro__more" href="<?= $this->e($introHelp) ?>" target="_blank" rel="noopener">Guia completo desta tela, com as telas marcadas</a>
     </div>
-</details>
+    <button type="button" class="erp-page-intro__close" data-erp-intro-close aria-label="Fechar e não mostrar mais nesta tela" title="Fechar e não mostrar mais nesta tela"><?= $icon('close', 'erp-icon--sm') ?></button>
+</aside>

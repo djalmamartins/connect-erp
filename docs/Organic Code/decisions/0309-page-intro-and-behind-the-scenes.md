@@ -19,9 +19,10 @@ acontece por trás de cada ação ("quando eu cadastro um pagamento, o que acont
   você grava: validações, duplicidades, travas, histórico, efeitos em outras telas) e `mais` (texto só do artigo).
   Os textos são conferidos no código de cada tela; nada que o sistema não faça.
 - **ERP:** `components/layout/page-intro.php`, inserido pelo `page-head.php` (que todas as páginas usam), mostra o
-  quadro "Sobre esta tela" logo abaixo do título, com o link para `/suporte/tela/{código}`. Nasce aberto; quem fecha
-  deixa fechado naquela página (localStorage, só conveniência). Não aparece na impressão. Página sem explicação não
-  mostra nada.
+  quadro "Sobre esta tela" logo abaixo do título: uma linha discreta (fundo claro, borda fina, sem negrito) com o que a
+  tela faz e o link "O que acontece por trás", que abre a lista e o link para `/suporte/tela/{código}`. O X fecha e o
+  quadro não volta mais naquela tela, naquele navegador (localStorage). Não aparece na impressão. Página sem
+  explicação não mostra nada. (Visual revisto com o Djalma em 15/11/2026: o primeiro era grande demais.)
 - **Artigo:** `php tools/help.php explicar` escreve a seção `## O que acontece por trás` no .md (antes de "Quem pode
   usar"), e o `HelpWriter` (`escrever`) mantém a seção ao reescrever o artigo. O `check` (já no CI) falha se a seção
   do artigo estiver diferente da explicação ou se houver explicação de página que não existe no menu.
