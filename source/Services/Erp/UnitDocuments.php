@@ -102,6 +102,38 @@ final class UnitDocuments
             throw new InvalidArgumentException('Data de referência inválida (AAAA-MM-DD, até hoje).');
         }
         $unit = $this->unit($user, (int)filter_var($input['unit_id'] ?? 0, FILTER_VALIDATE_INT));
+        return $this->issueFor($user, $unit, $kind, $asOf, $input);
+    }
+
+    /**
+     * Certidão de débitos pedida pelo próprio morador no aplicativo (revisão de 15/11, etapa 5): a unidade vem do
+     * vínculo já conferido (ResidentLinks), não do escopo de condomínio da equipe. Mesma regra, mesmo registro e
+     * mesmo código de verificação da certidão emitida no ERP, com data de referência de hoje.
+     *
+     * @param array{unit_id:int, condominium_id:int, unit_label:string, condominium_name:string} $link
+     */
+    public function issueForResident(User $user, array $link): array
+    {
+        $unit = ['id' => (int)$link['unit_id'], 'condominium_id' => (int)$link['condominium_id'],
+            'label' => (string)$link['unit_label'], 'condominium_name' => (string)$link['condominium_name']];
+        return $this->issueFor($user, $unit, 'debt_certificate', date('Y-m-d'), []);
+    }
+
+    /** Documento já gravado, sem conferir escopo (quem chama já conferiu: ERP pelo find(), app pelo vínculo). */
+    public function load(int $documentId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT d.*, c.name AS condominium_name, u.label AS unit_label FROM erp_unit_documents d
+            JOIN condominiums c ON c.id = d.condominium_id JOIN erp_units u ON u.id = d.unit_id WHERE d.id = :id');
+        $stmt->execute(['id' => $documentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            throw new RegistryNotFound();
+        }
+        return $this->present($row, true);
+    }
+
+    private function issueFor(User $user, array $unit, string $kind, string $asOf, array $input): array
+    {
         $reference = null;
 
         if ($kind === 'receipt') {
@@ -303,10 +335,7 @@ final class UnitDocuments
     public function find(User $user, int $documentId): array
     {
         $this->row($user, $documentId);
-        $stmt = $this->pdo->prepare('SELECT d.*, c.name AS condominium_name, u.label AS unit_label FROM erp_unit_documents d
-            JOIN condominiums c ON c.id = d.condominium_id JOIN erp_units u ON u.id = d.unit_id WHERE d.id = :id');
-        $stmt->execute(['id' => $documentId]);
-        return $this->present($stmt->fetch(PDO::FETCH_ASSOC), true);
+        return $this->load($documentId);
     }
 
     private function store(User $user, array $unit, string $kind, string $asOf, ?string $reference, string $result, int $totalCents, array $payload): array
@@ -329,7 +358,7 @@ final class UnitDocuments
         }
         $id = (int)$this->pdo->lastInsertId();
         Audit::record('create', 'erp_unit_documents', $id, null, ['kind' => $kind, 'unit_id' => (int)$unit['id'], 'as_of' => $asOf, 'result' => $result, 'total_cents' => $totalCents]);
-        return $this->find($user, $id);
+        return $this->load($id);
     }
 
     private function unit(User $user, int $unitId): array

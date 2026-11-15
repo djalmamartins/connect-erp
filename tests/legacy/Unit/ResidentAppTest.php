@@ -66,10 +66,10 @@ final class ResidentAppTest extends TestCase
     public function testMenuFollowsTheFeatures(): void
     {
         $menu = AppScreens::menu(['boletos', 'deliveries'], 'charges');
-        self::assertSame(['home', 'resolve', 'charges', 'unit', 'deliveries', 'profile'], array_column($menu, 'key'));
-        self::assertSame([false, false, true, false, false, false], array_column($menu, 'active'));
-        self::assertSame([true, true, false, true, false, true], array_column($menu, 'tab'), 'Barra inferior: Início, Resolva fácil, Unidade e Perfil.');
-        self::assertSame([false, true, false, false, false, false], array_column($menu, 'tab_active'), 'Boletos acende a aba Resolva fácil.');
+        self::assertSame(['home', 'resolve', 'charges', 'certificates', 'unit', 'deliveries', 'profile'], array_column($menu, 'key'));
+        self::assertSame([false, false, true, false, false, false, false], array_column($menu, 'active'));
+        self::assertSame([true, true, false, false, true, false, true], array_column($menu, 'tab'), 'Barra inferior: Início, Resolva fácil, Unidade e Perfil.');
+        self::assertSame([false, true, false, false, false, false, false], array_column($menu, 'tab_active'), 'Boletos acende a aba Resolva fácil.');
         self::assertSame(['home', 'resolve', 'unit', 'profile'], array_column(AppScreens::menu([], 'home'), 'key'), 'As quatro abas sempre aparecem.');
         self::assertSame('unit', array_column(array_filter(AppScreens::menu(['deliveries'], 'deliveries'), static fn (array $i): bool => $i['tab_active']), 'key')[0], 'Correspondências fica na aba Unidade.');
         self::assertSame('profile', array_column(array_filter(AppScreens::menu([], 'security'), static fn (array $i): bool => $i['tab_active']), 'key')[0], 'Segurança fica no Perfil.');
@@ -107,6 +107,21 @@ final class ResidentAppTest extends TestCase
         self::assertStringStartsWith('Olá, Djalma!', $notice);
         self::assertStringContainsString('não está cadastrada como morador', $notice);
         self::assertStringStartsWith('Olá! ', AppLogin::notResidentNotice((object)[]));
+    }
+
+    public function testCndHtmlShowsResultCodeAndEscapes(): void
+    {
+        $doc = ['id' => 9, 'unit_label' => 'A-101 <b>', 'condominium_name' => 'Jardim & Cia', 'as_of' => '2026-11-15', 'result' => 'clear',
+            'total_cents' => 0, 'verification_code' => 'ABCDEFGHJKMNPQRS', 'verification_display' => 'ABCD-EFGH-JKMN-PQRS', 'issued_at' => '2026-11-15 10:00:00', 'content' => []];
+        $html = \Source\Services\Resident\ResidentCertificates::html($doc, 'https://connect.test');
+        self::assertStringContainsString('Nada consta.', $html);
+        self::assertStringContainsString('ABCD-EFGH-JKMN-PQRS', $html);
+        self::assertStringContainsString('https://connect.test/verificar-certidao-debitos', $html);
+        self::assertStringContainsString('A-101 &lt;b&gt;', $html);
+        self::assertStringNotContainsString('A-101 <b>', $html);
+        $item = \Source\Services\Resident\ResidentCertificates::present(['id' => 3, 'as_of' => '2026-11-15', 'result' => 'debts', 'total_cents' => 51000,
+            'verification_code' => 'ABCDEFGHJKMNPQRS', 'created_at' => '2026-11-15 10:00:00']);
+        self::assertSame(['debts', 'Com débitos', 'ABCD-EFGH-JKMN-PQRS'], [$item['result'], $item['result_label'], $item['verification_code']]);
     }
 
     public function testHouseholdRulesByRelationship(): void

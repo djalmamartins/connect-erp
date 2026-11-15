@@ -128,3 +128,14 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - API: `GET/POST /resident/unit/residents` (`meta.can_add`) e `POST /resident/unit/residents/{id}/block`. Web: `/minha-unidade/moradores`.
 - O acesso da pessoa cadastrada continua pelo convite da administração (decisão de 09/11).
 
+### Revisão de 15/11, etapa 5 (CND)
+- Interpretação (PENDENTE de confirmação do Djalma): CND é a Certidão de Débitos da unidade (AP-123, ADR 0044) em PDF.
+- `ResidentCertificates` usa a mesma regra e o mesmo registro do ERP:
+  - `UnitDocuments::issueForResident` usa a unidade do vínculo, sem o escopo da equipe, com data de hoje;
+  - o código de verificação é conferido em `/verificar-certidao-debitos`;
+  - a emissão fica na auditoria.
+- `UnitDocuments::load()` separa a leitura da checagem de escopo, que continua em `find()` para o ERP.
+- Segue a função `boletos`, porque mostra débitos: só proprietário, inquilino e responsável financeiro.
+- A lista traz as certidões válidas da unidade dos últimos 12 meses, emitidas no app ou no ERP. O PDF sai pelo Dompdf, sem rede, com o QR da verificação.
+- API: `GET/POST /resident/certificates` e `GET /resident/certificates/{id}/pdf`. Web: `/cnd` e `/cnd/{id}`.
+
