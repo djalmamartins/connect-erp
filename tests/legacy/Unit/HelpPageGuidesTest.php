@@ -59,4 +59,16 @@ final class HelpPageGuidesTest extends TestCase
         self::assertStringContainsString('data-erp-intro', $template);
         self::assertStringContainsString("insert('components/layout/page-intro')", (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/components/layout/page-head.php'));
     }
+
+    public function testEachStageOneAreaHasAnIntroOnTheHelpCenter(): void
+    {
+        $kb = new KnowledgeBase();
+        self::assertSame([], $kb->areaProblems());
+        foreach (['primeiros-passos', 'condominios', 'cadastros'] as $key) {
+            self::assertNotNull($kb->areaIntro($key), "área {$key} sem resumo");
+        }
+        self::assertNull($kb->areaIntro('../segredo'));
+        self::assertNull($kb->areaIntro('nao-existe'));
+        self::assertStringContainsString('areaIntro(', (string)file_get_contents(dirname(__DIR__, 3) . '/container/web/support/v1/pages/category.php'));
+    }
 }

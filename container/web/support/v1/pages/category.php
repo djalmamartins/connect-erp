@@ -12,6 +12,21 @@
                 <h1><?= htmlspecialchars($category->title) ?></h1>
             </header>
             <?php if ($category->description): ?><p class="hc-lead"><?= htmlspecialchars((string)$category->description) ?></p><?php endif; ?>
+            <?php
+            // "Como funciona esta área" (ADR 0309): o resumo geral do assunto, dos arquivos da base (kb/areas).
+            $areaKb = new \Source\Services\Help\KnowledgeBase();
+            $areaText = $areaKb->areaIntro((string)$category->uri);
+            if ($areaText !== null):
+                $areaArticles = $areaKb->articles();
+                $areaHtml = (new \Source\Services\Help\ArticleRenderer(
+                    static fn (string $slug): ?string => isset($areaArticles[$slug]) ? url('/suporte/' . \Source\Services\Help\HelpSync::categoryUri($areaArticles[$slug]['category']) . '/' . $slug) : null
+                ))->render($areaText)['html'];
+            ?>
+                <section class="hc-area" aria-labelledby="hc-area-title">
+                    <h2 id="hc-area-title"><?= \Source\Services\Help\Icons::svg('reader-outline') ?>Como funciona esta área</h2>
+                    <div class="hc-prose"><?= $areaHtml ?></div>
+                </section>
+            <?php endif; ?>
             <div class="hc-list">
                 <?php if (!$articles): ?><div class="hc-empty">Ainda não há tutoriais publicados neste assunto.</div><?php endif; ?>
                 <?php foreach ($articles as $item): $itemMeta = \Source\Controllers\Web\Support\Support::articleMeta($item); ?>

@@ -288,6 +288,48 @@ final class KnowledgeBase
         return $catalog;
     }
 
+    /**
+     * "Como funciona esta área" (ADR 0309): o resumo geral de uma categoria, em kb/areas/<chave>.md (Markdown
+     * da base, sem cabeçalho), mostrado no topo da página da categoria na Central de Ajuda. Null quando não há.
+     */
+    public function areaIntro(string $key): ?string
+    {
+        if (!preg_match('/^[a-z0-9-]{2,60}$/', $key)) {
+            return null;
+        }
+        $file = $this->root . '/areas/' . $key . '.md';
+        $text = is_file($file) ? trim(str_replace(["\r\n", "\r"], "\n", (string)file_get_contents($file))) : '';
+        return $text === '' ? null : $text;
+    }
+
+    /** @return list<string> resumos de área com categoria inexistente, curtos demais ou com link quebrado */
+    public function areaProblems(): array
+    {
+        $problems = [];
+        $categories = $this->categories();
+        $articles = $this->articles();
+        foreach (glob($this->root . '/areas/*.md') ?: [] as $file) {
+            $key = basename($file, '.md');
+            $where = 'areas/' . basename($file);
+            if (!isset($categories[$key])) {
+                $problems[] = "{$where}: não existe a categoria '{$key}' em categorias.json";
+                continue;
+            }
+            $text = (string)$this->areaIntro($key);
+            if (mb_strlen($text) < 200) {
+                $problems[] = "{$where}: resumo da área muito curto (mínimo de 200 caracteres)";
+            }
+            if (preg_match_all('/\(artigo:([a-z0-9-]+)\)/', $text, $links)) {
+                foreach (array_unique($links[1]) as $link) {
+                    if (!isset($articles[$link])) {
+                        $problems[] = "{$where}: link para artigo inexistente '{$link}'";
+                    }
+                }
+            }
+        }
+        return $problems;
+    }
+
     /** Assinatura do conteúdo: muda quando qualquer arquivo da base muda. */
     public function hash(): string
     {
