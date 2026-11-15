@@ -49,6 +49,7 @@ function RootStack() {
         <Stack.Screen name="chamados/[id]" />
         <Stack.Screen name="moradores/index" />
         <Stack.Screen name="moradores/novo" />
+        <Stack.Screen name="cnd" />
         <Stack.Screen name="avisos" />
         <Stack.Screen name="trocar-unidade" options={{ presentation: 'modal' }} />
       </Stack.Protected>

@@ -201,3 +201,15 @@ describe('etapa 4: moradores da unidade', () => {
     expect(e.code).toBe('not_allowed');
   });
 });
+
+describe('etapa 5: CND', () => {
+  it('emite com POST sem corpo e monta o PDF com o vínculo', async () => {
+    const calls: Call[] = [];
+    const item = { id: 3, as_of: '2026-11-15', result: 'clear', result_label: 'Nada consta', total_cents: 0, verification_code: 'ABCD-EFGH-JKMN-PQRS', issued_at: '2026-11-15 11:00:00' };
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4, fetchImpl: fakeFetch(201, { data: item }, calls) }));
+    await expect(api.issueCertificate()).resolves.toEqual(item);
+    expect(calls[0]!.url).toBe('https://x/api/v1/resident/certificates?resident_id=4');
+    expect(calls[0]!.init.method).toBe('POST');
+    expect(api.certificatePdfUrl(3)).toBe('https://x/api/v1/resident/certificates/3/pdf?resident_id=4');
+  });
+});
