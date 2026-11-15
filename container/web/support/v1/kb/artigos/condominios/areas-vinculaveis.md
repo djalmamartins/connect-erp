@@ -74,6 +74,16 @@ Colunas: **Identificação**, **Condomínio**, **Tipo**, **Unidade vinculada (te
 - Clique no nome (primeira coluna) para abrir o registro.
 - **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- A identificação (ex.: G1-023) não pode se repetir para o mesmo tipo no mesmo condomínio.
+- A unidade escolhida precisa ser uma unidade ativa do mesmo condomínio.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

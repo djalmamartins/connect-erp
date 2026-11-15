@@ -50,6 +50,17 @@ legenda: Tela Dashboard
 
 > Cada bloco aparece para quem tem permissão no módulo dele: receitas, despesas e inadimplência pedem acesso aos lançamentos; as atividades da equipe pedem acesso à auditoria.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O Dashboard só lê: nada é gravado quando você abre ou troca o mês.
+- Os números são calculados na hora, a partir dos lançamentos, cadastros e agendas do sistema. Não existe um "total guardado": se um lançamento muda, o Dashboard já mostra o novo valor na próxima vez que abrir.
+- Receitas e despesas seguem a **competência** (o mês de referência), como no balancete; a inadimplência e os alertas olham sempre para hoje.
+- Cada bloco aparece só para quem tem permissão no módulo dele, e só com os condomínios do seu acesso.
+
+Um exemplo: quando alguém registra o pagamento de uma conta em [[Financeiro > Contas e pagamentos > Contas a Pagar]], ela sai do cartão **A pagar em 7 dias** e o valor passa para o **pago** do mês em Receitas e despesas. Nada precisa ser atualizado à mão.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Dashboard**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta. O Dashboard só lê: nada é gravado por ele.

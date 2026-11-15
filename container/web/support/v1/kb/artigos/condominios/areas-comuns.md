@@ -78,6 +78,18 @@ Colunas: **Nome da área**, **Condomínio**, **Reserva**, **Capacidade (pessoas)
 
 > Com aprovação obrigatória, o pedido do morador cai em Agendamentos Pendentes até alguém confirmar.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O tipo de reserva decide o caminho do pedido: em área **Livre**, a reserva feita pela equipe já nasce confirmada; em área que **Exige aprovação**, a reserva espera em [[Operacional > Agendamentos Pendentes]] até alguém confirmar. O pedido feito pelo morador no aplicativo sempre espera a aprovação, mesmo em área livre.
+- Área **Bloqueada** ou **Não reservável** recusa qualquer reserva nova, e o sistema confere o horário de funcionamento da área.
+- A **taxa de reserva** vale para as reservas da área quando a reserva não informa outro valor; a cobrança da taxa é feita depois, como cobrança extra da unidade.
+- Não pode haver duas áreas com o mesmo nome no mesmo condomínio.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
