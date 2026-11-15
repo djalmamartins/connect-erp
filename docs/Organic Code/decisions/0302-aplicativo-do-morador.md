@@ -107,3 +107,10 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
   - **Foto:** confere o tipo pelo conteúdo, gira pelo EXIF, recorta em quadrado no centro, reduz a 512 px e grava em JPEG sem metadados em `storage/private/resident-photos`. A troca apaga a foto anterior, e tudo fica na auditoria.
   - **Primeiro acesso:** `GET /resident/onboarding`, `POST /resident/onboarding/complete` e `GET/POST/DELETE /resident/profile/photo`.
 - No web, `/` leva a `/boas-vindas` (foto e 3 dicas) até a pessoa concluir ou pular. A foto aparece no avatar da barra de cima e no Perfil (`/perfil/foto`, `Cache-Control: private`), sempre a da própria conta.
+
+### Revisão de 15/11, etapa 3 (chamado e ocorrência)
+- Um formulário só, com o tipo **Chamado** (pedido ou dúvida à administração) ou **Ocorrência** (problema ou fato no condomínio). Os dois seguem a ADR 0305: abrem a ocorrência da unidade e o chamado do Help Desk.
+- O tipo fica na categoria do chamado (`Chamado` ou `Ocorrência`, que já era a categoria de `Occurrences::ticketInput`). Assim a equipe filtra no Help Desk sem coluna nova.
+- `POST /resident/tickets` aceita `kind` (`chamado` ou `ocorrencia`, padrão `ocorrencia`, como antes). Valor fora disso dá 422 em `kind`, antes de gravar qualquer coisa. `GET /resident/tickets?kind=` filtra, e cada item traz `kind`.
+- No web, `/ocorrencias?tipo=` filtra, e `&abrir=1` abre o formulário com o tipo marcado. O Resolva fácil usa os dois atalhos.
+

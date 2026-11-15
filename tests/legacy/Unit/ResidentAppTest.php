@@ -109,6 +109,13 @@ final class ResidentAppTest extends TestCase
         self::assertStringStartsWith('Olá! ', AppLogin::notResidentNotice((object)[]));
     }
 
+    public function testTicketKindDefaultsToOcorrenciaAndRefusesOthers(): void
+    {
+        self::assertSame(['ocorrencia', 'ocorrencia', 'chamado'], [\Source\Services\Resident\ResidentTickets::kind(null), \Source\Services\Resident\ResidentTickets::kind(''), \Source\Services\Resident\ResidentTickets::kind('chamado')]);
+        $this->expectException(\Source\Services\Erp\Registry\RegistryValidationException::class);
+        \Source\Services\Resident\ResidentTickets::kind('reclamacao');
+    }
+
     public function testPhotoCropIsTheCentralSquare(): void
     {
         self::assertSame([150, 0, 600], \Source\Services\Resident\ResidentProfile::squareCrop(900, 600));

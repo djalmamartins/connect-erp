@@ -9,8 +9,8 @@ $items = array_values(array_filter([
     $on('boletos') ? ['Boletos', app_url('/boletos'), 'receipt', '2ª via e recibos'] : null,
     $on('reservations') ? ['Reservas', app_url('/reservas'), 'calendar', 'Salão, churrasqueira e quadra'] : null,
     ['CND', null, 'shield'],
-    $on('occurrences') ? ['Chamado', app_url('/ocorrencias'), 'alert', 'Fale com a administração'] : null,
-    ['Ocorrência', null, 'flag'],
+    $on('occurrences') ? ['Chamado', app_url('/ocorrencias') . '?tipo=chamado&abrir=1', 'alert', 'Pedido ou dúvida à administração'] : null,
+    $on('occurrences') ? ['Ocorrência', app_url('/ocorrencias') . '?tipo=ocorrencia&abrir=1', 'flag', 'Barulho, vazamento ou dano'] : null,
     $on('announcements') ? ['Comunicados', app_url('/comunicados'), 'megaphone', 'Avisos do condomínio'] : null,
 ]));
 ?>

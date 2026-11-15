@@ -276,6 +276,31 @@ final class ResidentAppIntegrationTest extends TestCase
         $tickets->reply($this->morador, $link, (int)$opened['id'], 'Ainda pingando.');
     }
 
+    public function testResidentChoosesChamadoOrOcorrencia(): void
+    {
+        $tickets = new ResidentTickets($this->pdo);
+        $link = $this->link($this->morador, ['occurrences']);
+        $request = $tickets->open($this->morador, $link, ['kind' => 'chamado', 'subject' => 'Segunda via do regimento', 'description' => 'Preciso do regimento interno atualizado.']);
+        $problem = $tickets->open($this->morador, $link, ['subject' => 'Barulho no 302', 'description' => 'Som alto depois das 22h ontem.']);
+        self::assertSame(['chamado', 'ocorrencia'], [$request['kind'], $problem['kind']]);
+        $categories = $this->pdo->query('SELECT id, category FROM studio_support_tickets WHERE id IN (' . (int)$request['id'] . ',' . (int)$problem['id'] . ') ORDER BY id')->fetchAll(\PDO::FETCH_KEY_PAIR);
+        self::assertSame(['Chamado', 'Ocorrência'], array_values($categories));
+        // Os dois seguem a regra de toda ocorrência ser chamado (ADR 0305).
+        self::assertNotNull($request['occurrence_id']);
+        self::assertSame(2, $tickets->list($this->morador, $link)['meta']['total']);
+        self::assertSame([$request['id']], array_column($tickets->list($this->morador, $link, 1, 'chamado')['data'], 'id'));
+        self::assertSame([$problem['id']], array_column($tickets->list($this->morador, $link, 1, 'ocorrencia')['data'], 'id'));
+
+        $before = (int)$this->pdo->query('SELECT COUNT(*) FROM studio_support_tickets')->fetchColumn();
+        try {
+            $tickets->open($this->morador, $link, ['kind' => 'reclamacao', 'subject' => 'Teste', 'description' => 'Tipo que não existe.']);
+            self::fail('Tipo inválido.');
+        } catch (\Source\Services\Erp\Registry\RegistryValidationException $error) {
+            self::assertArrayHasKey('kind', $error->errors);
+        }
+        self::assertSame($before, (int)$this->pdo->query('SELECT COUNT(*) FROM studio_support_tickets')->fetchColumn());
+    }
+
     private function link(User $user, array $extraFeatures = []): array
     {
         $link = (new ResidentLinks($this->pdo))->forUser($user)[0];
