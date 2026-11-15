@@ -6,7 +6,8 @@
     <?= $head ?>
     <?php $studioCss=dirname(__DIR__).'/assets/studio.min.css'; ?>
     <link rel="stylesheet" href="<?= themeStudio('/assets/studio.min.css', 'default') . '?v=' . filemtime($studioCss) ?>">
-    <link rel="icon" href="<?= theme('/assets/images/favicon.png') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/favicon-studio.svg', 'default') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= themeStudio('/assets/images/favicon-studio-32.png', 'default') ?>">
 </head>
 <body class="studio-login-body" data-environment="<?= htmlspecialchars($loginEnvironment ?? 'studio') ?>">
 <a class="studio-skip-link" href="#main-content">Ir para o conteúdo</a>
