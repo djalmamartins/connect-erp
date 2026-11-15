@@ -103,6 +103,22 @@ if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then
     stop "não foi possível concluir o merge que estava pela metade."
   fi
 fi
+# Arquivos que o próprio sistema regrava sozinho (bundles minificados a cada acesso local e o tsconfig que o Expo
+# reescreve ao abrir o app). Alterados só por isso, não devem parar o teste: guarda uma cópia nos logs e volta à
+# versão do repositório (o git pull traz a nova, e o próximo acesso gera de novo).
+generated="container/app/connect/v1/assets/style.css container/app/connect/v1/assets/scripts.js container/erp/connect/v1/assets/erp.min.css container/erp/connect/v1/assets/erp.min.js apps/morador/tsconfig.json"
+restored=""
+for file in $generated; do
+  if [ -f "$file" ] && ! git diff --quiet -- "$file" 2>/dev/null && git diff --cached --quiet -- "$file" 2>/dev/null; then
+    mkdir -p "$logs/regravados/$(dirname "$file")"
+    cp "$file" "$logs/regravados/$file"
+    git checkout -- "$file"
+    restored="$restored $file"
+  fi
+done
+if [ -n "$restored" ]; then
+  add "Arquivos gerados" OK "voltaram à versão do repositório (cópia em regravados/):$restored"
+fi
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git status --short | grep -v '^??' >"$logs/alteracoes-locais.txt"
   add "Pasta" FALHOU "há arquivos versionados alterados (ver alteracoes-locais.txt)"
