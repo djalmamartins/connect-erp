@@ -1,5 +1,5 @@
 <?php
-/** Início do app do morador (ADR 0302), no visual do Realizze PF. @var array $summary ResidentPortal::summary() @var array $link @var list<array> $menu */
+/** Início do app do morador (ADR 0302; revisão de 15/11): cartão da unidade, seis serviços e notificações. @var array $summary ResidentPortal::summary() @var array $link @var list<array> $feed ResidentFeed::notifications() @var ?string $seenAt */
 use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
@@ -57,73 +57,32 @@ $first = explode(' ', trim((string)$link['name']))[0] ?? '';
         <?php endif; ?>
     </section>
 <?php
-$quick = array_values(array_filter([
-    in_array('reservations', $features, true) ? ['Reservar', '/reservas', 'calendar'] : null,
-    in_array('occurrences', $features, true) ? ['Chamado', '/ocorrencias', 'alert'] : null,
-    in_array('visitors', $features, true) ? ['Visitante', '/visitantes', 'user-check'] : null,
-    in_array('documents', $features, true) ? ['Documentos', '/documentos', 'file'] : null,
+// Seis serviços principais, dois por linha (revisão de 15/11, iguais aos do app de celular).
+$on = static fn (string $feature): bool => in_array($feature, $features, true);
+$actions = array_values(array_filter([
+    $on('boletos') ? ['Boletos', app_url('/boletos'), 'receipt'] : null,
+    $on('reservations') ? ['Reservas', app_url('/reservas'), 'calendar'] : null,
+    $on('occurrences') ? ['Chamados', app_url('/ocorrencias'), 'alert'] : null,
+    $on('visitors') ? ['Autorizar entrada', app_url('/visitantes'), 'user-check'] : null,
+    $on('documents') ? ['Documentos', app_url('/documentos'), 'file'] : null,
+    $on('accountability') ? ['Prestação de contas', app_url('/prestacao-de-contas'), 'chart'] : null,
 ]));
-if ($quick !== []): ?>
-    <nav class="app-quick" aria-label="Atalhos">
-        <?php foreach ($quick as [$label, $path, $icon]): ?>
-            <a href="<?= app_url($path) ?>"><span class="app-quick__icon" aria-hidden="true"><svg><use href="#i-<?= $icon ?>"></use></svg></span><?= $label ?></a>
-        <?php endforeach; ?>
-    </nav>
-<?php endif; ?>
-<div class="app-grid">
-<?php if (isset($summary['deliveries_waiting'])): $w = (int)$summary['deliveries_waiting']; ?>
-    <a class="app-card app-tile" href="<?= app_url('/encomendas') ?>">
-        <span class="app-tile__icon<?= $w > 0 ? ' app-tile__icon--blue' : '' ?>"><svg aria-hidden="true"><use href="#i-box"></use></svg></span>
-        <span class="app-stat"><span class="app-stat__label">Encomendas na portaria</span><strong class="app-stat__value"><?= $w ?></strong><span class="app-stat__hint"><?= $w > 0 ? 'Aguardando retirada' : 'Nenhuma aguardando' ?></span></span>
-    </a>
-<?php endif; ?>
-<?php if (isset($summary['visits_today'])): ?>
-    <a class="app-card app-tile" href="<?= app_url('/visitantes') ?>">
-        <span class="app-tile__icon app-tile__icon--purple"><svg aria-hidden="true"><use href="#i-user-check"></use></svg></span>
-        <span class="app-stat"><span class="app-stat__label">Visitas previstas hoje</span><strong class="app-stat__value"><?= (int)$summary['visits_today'] ?></strong><span class="app-stat__hint">Avise a portaria pelo app</span></span>
-    </a>
-<?php endif; ?>
-</div>
-
-<?php if (!empty($summary['assemblies'])): ?>
-    <section class="app-section">
-        <div class="app-section__head"><h2>Assembleias</h2><a href="<?= app_url('/assembleias') ?>">Ver todas</a></div>
-        <ul class="app-items">
-        <?php foreach ($summary['assemblies'] as $a): [$label, $tone] = F::badge(F::ASSEMBLY, $a['status']);
-            $this->insert('partials/item', ['date' => $a['first_call_at'], 'title' => $a['title'], 'lines' => [F::dateTime($a['first_call_at'])],
-                'href' => app_url('/assembleias/' . $a['id']), 'badge' => [$label, $tone]]);
-        endforeach; ?>
-        </ul>
-    </section>
-<?php endif; ?>
-
-<?php if (isset($summary['next_reservations'])): ?>
-    <section class="app-section">
-        <div class="app-section__head"><h2>Próximas reservas</h2><a href="<?= app_url('/reservas') ?>">Reservar</a></div>
-        <?php if ($summary['next_reservations'] === []): ?>
-            <?php $this->insert('partials/empty', ['icon' => 'calendar', 'text' => 'Nenhuma reserva marcada.', 'action' => ['Reservar uma área', app_url('/reservas')]]) ?>
-        <?php else: ?>
-        <ul class="app-items">
-        <?php foreach ($summary['next_reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']);
-            $this->insert('partials/item', ['date' => $r['reserved_on'], 'title' => $r['area'], 'lines' => [$r['starts_time'] ? $r['starts_time'] . ' às ' . $r['ends_time'] : 'Dia todo'],
-                'href' => app_url('/reservas'), 'badge' => [$label, $tone]]);
-        endforeach; ?>
-        </ul>
-        <?php endif; ?>
-    </section>
-<?php endif; ?>
-
-<?php if (isset($summary['announcements'])): ?>
-    <section class="app-section">
-        <div class="app-section__head"><h2>Comunicados recentes</h2><a href="<?= app_url('/comunicados') ?>">Ver todos</a></div>
-        <?php if ($summary['announcements'] === []): ?>
-            <?php $this->insert('partials/empty', ['icon' => 'megaphone', 'text' => 'Nenhum comunicado por enquanto.']) ?>
-        <?php else: ?>
-        <ul class="app-items">
-        <?php foreach ($summary['announcements'] as $n):
-            $this->insert('partials/item', ['icon' => 'megaphone', 'title' => $n['subject'], 'lines' => [F::date($n['published_at'])], 'href' => app_url('/comunicados#c' . $n['id'])]);
-        endforeach; ?>
-        </ul>
-        <?php endif; ?>
-    </section>
-<?php endif; ?>
+if ($actions !== []) {
+    $this->insert('partials/actions', ['items' => $actions, 'label' => 'Principais serviços']);
+}
+$icons = ['charge' => 'receipt', 'delivery' => 'box', 'visit' => 'user-check', 'announcement' => 'megaphone', 'assembly' => 'users', 'reservation' => 'calendar'];
+?>
+<section class="app-section">
+    <div class="app-section__head"><h2>Notificações</h2><a href="<?= app_url('/avisos') ?>">Ver todas</a></div>
+    <?php if ($feed === []): ?>
+        <?php $this->insert('partials/empty', ['icon' => 'bell', 'text' => 'Nenhum aviso agora. Tudo em dia.']) ?>
+    <?php else: ?>
+    <ul class="app-items">
+    <?php foreach ($feed as $item):
+        $this->insert('partials/item', ['icon' => $icons[$item['kind']] ?? 'bell', 'tone' => $item['tone'], 'title' => $item['title'],
+            'lines' => [$item['detail'], F::date(substr($item['at'], 0, 10))], 'href' => app_url($item['path']),
+            'flag' => \Source\Services\Resident\ResidentFeed::isNew($item, $seenAt) ? 'Novo' : null]);
+    endforeach; ?>
+    </ul>
+    <?php endif; ?>
+</section>

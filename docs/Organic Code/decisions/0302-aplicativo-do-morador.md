@@ -92,3 +92,11 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - Reservas: abas Nova reserva / Minhas reservas, filtro por taxa e calendário do mês em `/reservas/area/{id}` (`ResidentPortal::calendar`, regra pura: já passou, fora do prazo, suspensa, livre, parte do dia, ocupado). Mostra só os horários tomados, nunca a unidade.
 - Boletos: rolagem infinita de 6 em 6 meses (`ResidentPortal::previousWindow`, `/boletos?parcial=1`), sem o filtro de datas.
 - Chamados: a tela de Ocorrências vira Chamados pelo `ResidentTickets` (ADR 0305), com número, situação, conversa e resposta (`/ocorrencias/{id}`, `/ocorrencias/{id}/mensagens`).
+
+### Revisão do Djalma de 15/11/2026, etapa 1 (navegação), igual ao app de celular
+- Versão anterior guardada nas branches `versao/app-morador-v1-2026-11-15` e `versao/app-morador-antes-revisao-15-11` (main 4bdbf65).
+- Barra inferior com Início, Resolva fácil, Unidade e Perfil (`AppScreens::TABS`). Cada item do `MENU` diz a aba a que pertence, e `tab_active` acende essa aba. O menu "Mais" saiu.
+- Início: cartão da unidade, até 6 botões com ícone, dois por linha (`partials/actions`: Boletos, Reservas, Chamados, Autorizar entrada, Documentos e Prestação de contas), e as 5 notificações mais recentes do `ResidentFeed`.
+- `/resolva-facil`: atalhos para os serviços. CND e Ocorrência aparecem como "Em breve" até as etapas 3 e 5.
+- `/minha-unidade` (Unidade): atalhos (Moradores "Em breve" até a etapa 4), veículos e pets. `/perfil`: dados da pessoa, duas etapas, avisos, instalar e sair. O avatar da barra de cima leva ao Perfil, ao lado do sino.
+- Próximas etapas, combinadas com a thread do app de celular: 2 login (recuperação de senha e boas-vindas com foto), 3 chamados e ocorrência, 4 moradores da unidade, 5 CND. As rotas novas da API do morador ficam com o web.

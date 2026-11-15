@@ -66,10 +66,13 @@ final class ResidentAppTest extends TestCase
     public function testMenuFollowsTheFeatures(): void
     {
         $menu = AppScreens::menu(['boletos', 'deliveries'], 'charges');
-        self::assertSame(['home', 'charges', 'deliveries', 'unit'], array_column($menu, 'key'));
-        self::assertSame([false, true, false, false], array_column($menu, 'active'));
-        self::assertSame([true, true, true, false], array_column($menu, 'tab'));
-        self::assertSame(['home', 'unit'], array_column(AppScreens::menu([], 'home'), 'key'), 'Início e Minha unidade sempre aparecem.');
+        self::assertSame(['home', 'resolve', 'charges', 'unit', 'deliveries', 'profile'], array_column($menu, 'key'));
+        self::assertSame([false, false, true, false, false, false], array_column($menu, 'active'));
+        self::assertSame([true, true, false, true, false, true], array_column($menu, 'tab'), 'Barra inferior: Início, Resolva fácil, Unidade e Perfil.');
+        self::assertSame([false, true, false, false, false, false], array_column($menu, 'tab_active'), 'Boletos acende a aba Resolva fácil.');
+        self::assertSame(['home', 'resolve', 'unit', 'profile'], array_column(AppScreens::menu([], 'home'), 'key'), 'As quatro abas sempre aparecem.');
+        self::assertSame('unit', array_column(array_filter(AppScreens::menu(['deliveries'], 'deliveries'), static fn (array $i): bool => $i['tab_active']), 'key')[0], 'Correspondências fica na aba Unidade.');
+        self::assertSame('profile', array_column(array_filter(AppScreens::menu([], 'security'), static fn (array $i): bool => $i['tab_active']), 'key')[0], 'Segurança fica no Perfil.');
     }
 
     public function testStatementPeriodAndDates(): void
