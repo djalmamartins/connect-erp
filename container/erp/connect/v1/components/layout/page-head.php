@@ -1,6 +1,7 @@
 <?php
 /**
  * Cabeçalho de página: contexto, título, descrição e ações. Páginas não o recriam.
+ * Logo abaixo vem o quadro "Sobre esta tela" (ADR 0309), quando a página tem explicação.
  * @var string $pageTitle @var ?string $pageEyebrow @var ?string $pageLead @var ?string $pageActions (HTML montado pela página)
  */
 ?>
@@ -12,3 +13,4 @@
     </div>
     <?php if (!empty($pageActions)): ?><div class="erp-page-head__actions"><?= $pageActions ?></div><?php endif; ?>
 </header>
+<?php $this->insert('components/layout/page-intro'); ?>

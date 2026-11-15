@@ -3102,4 +3102,12 @@
       $$('input[name="ticket_ids[]"]').forEach(function (box) { box.checked = all.checked; });
     });
   });
+
+  /* "Sobre esta tela" (ADR 0309) ------------------------------------------
+   * O quadro nasce aberto. Quem fecha deixa fechado naquela página, neste navegador. */
+  $$('details[data-erp-intro]').forEach(function (box) {
+    var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
+    if (storage.get(key) === 'closed') { box.open = false; }
+    box.addEventListener('toggle', function () { storage.set(key, box.open ? 'open' : 'closed'); });
+  });
 })();

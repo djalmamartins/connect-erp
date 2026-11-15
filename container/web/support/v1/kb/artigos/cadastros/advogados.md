@@ -74,6 +74,14 @@ Colunas: **Nome**, **OAB**, **Escritório**, **Telefone** e **Situação**.
 - Clique no nome (primeira coluna) para abrir o registro.
 - **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- A OAB (UF e número) não pode se repetir.
+- Advogado que deixou de atender a Connect deve ser inativado, para os processos antigos continuarem mostrando quem cuidou deles.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

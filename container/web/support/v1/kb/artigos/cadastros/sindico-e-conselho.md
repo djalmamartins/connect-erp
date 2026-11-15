@@ -81,6 +81,17 @@ Colunas: **Nome ou razão social**, **Condomínio**, **Cargo**, **Fim do mandato
 
 > Ao trocar de síndico, encerre o mandato anterior com a data de fim em vez de excluir, para manter o histórico.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- Cada condomínio só pode ter um síndico ativo. Para cadastrar o novo, inative o atual antes.
+- E-mail e telefone são obrigatórios, e o fim do mandato precisa ser depois do início.
+- O fim do mandato não inativa o membro sozinho: depois da eleição, inative quem saiu.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

@@ -243,7 +243,10 @@ final class HelpWriter
             $out[] = '>> Veja também: ' . $this->joinList($links) . '.';
             $out[] = '';
         }
-        return implode("\n", $out);
+        $markdown = implode("\n", $out);
+        // "O que acontece por trás" (ADR 0309): a explicação da tela continua no artigo reescrito.
+        $guide = PageGuides::for($code);
+        return $guide === null ? $markdown : PageGuides::apply($markdown, $guide);
     }
 
     private function mainScreen(string $slug, array $page, array $d): array

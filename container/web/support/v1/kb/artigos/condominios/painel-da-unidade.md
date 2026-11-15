@@ -41,6 +41,14 @@ Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros
 
 > Clique no telefone ou no e-mail para ligar ou escrever direto.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O painel só lê: nada é gravado aqui. Para mudar um dado, use o botão que leva ao cadastro.
+- Os débitos são as receitas da unidade ainda sem pagamento, calculadas na hora a partir dos lançamentos: as vencidas, com os encargos de atraso até hoje, e as que ainda vão vencer. Os acordos e documentos vêm das telas de cobrança e de documentos.
+- Só aparecem as unidades dos condomínios do seu acesso.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

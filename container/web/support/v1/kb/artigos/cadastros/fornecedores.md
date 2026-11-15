@@ -79,6 +79,14 @@ Colunas: **Razão social ou nome**, **Cnpj/cpf**, **Categoria**, **Telefone** e 
 
 > Cadastre o CNPJ certinho: a importação de NF-e encontra o fornecedor por ele.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O CPF ou CNPJ não pode se repetir: um fornecedor é cadastrado uma vez só e usado por todos os condomínios.
+- Um fornecedor ligado a lançamentos ou a outros cadastros ativos (contratos, manutenções, empenhos) não pode ser excluído. Inative-o: ele deixa de aparecer nas escolhas, e o histórico das despesas continua.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).
