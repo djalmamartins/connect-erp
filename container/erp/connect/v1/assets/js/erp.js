@@ -3104,7 +3104,7 @@
   });
 
   /* "Sobre esta tela" (ADR 0309) ------------------------------------------
-   * O quadro nasce aberto. Quem fecha deixa fechado naquela página, neste navegador. */
+   * Recolhida pelo título, a caixa continua recolhida naquela tela, neste navegador. */
   $$('details[data-erp-intro]').forEach(function (box) {
     var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
     if (storage.get(key) === 'closed') { box.open = false; }
