@@ -8,7 +8,7 @@ $species = ['cao' => 'Cão', 'gato' => 'Gato', 'ave' => 'Ave', 'outro' => 'Outro
 $on = static fn (string $feature): bool => in_array($feature, $link['features'], true);
 $count = static fn (int $n): string => $n === 0 ? 'Nenhum cadastrado' : ($n === 1 ? '1 cadastrado' : $n . ' cadastrados');
 $this->insert('partials/actions', ['label' => 'Unidade', 'items' => array_values(array_filter([
-    ['Moradores', null, 'users'],
+    $on('household') ? ['Moradores', app_url('/minha-unidade/moradores'), 'users', 'Família e inquilinos'] : null,
     ['Veículos', '#veiculos', 'car', $count(count($petsVehicles['vehicles']))],
     $on('deliveries') ? ['Correspondências', app_url('/encomendas'), 'box', 'Encomendas na portaria'] : null,
     ['Pets', '#pets', 'paw', $count(count($petsVehicles['pets']))],

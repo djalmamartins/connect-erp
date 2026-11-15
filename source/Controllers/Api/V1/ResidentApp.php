@@ -13,6 +13,8 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentFeed;
+use Source\Services\Resident\ResidentHousehold;
+use Source\Services\Resident\ResidentNotAllowed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentProfile;
 use Source\Services\Resident\ResidentSession;
@@ -120,6 +122,8 @@ final class ResidentApp
             $pdf = (new ResidentPortal())->chargePdf($link, $id);
         } catch (ResidentFeatureDisabled $error) {
             $this->disabled($error);
+        } catch (ResidentNotAllowed $exception) {
+            JsonResponse::send(403, ['error' => ['code' => 'not_allowed', 'message' => $exception->getMessage()]]);
             return;
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Boleto não encontrado.']]);
@@ -222,6 +226,26 @@ final class ResidentApp
         $this->write(201, fn (User $u, array $link, array $body): array => (new ResidentTickets())->reply($u, $link, $id, is_string($body['body'] ?? null) ? $body['body'] : ''));
     }
 
+    /** Moradores da unidade (revisão de 15/11, etapa 4). */
+    public function household(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            $this->run(200, fn () => (new ResidentHousehold())->list($link), true);
+        }
+    }
+
+    public function addHousehold(): void
+    {
+        $this->write(201, fn (User $u, array $link, array $body): array => (new ResidentHousehold())->add($u, $link, $body));
+    }
+
+    public function blockHousehold(array $data): void
+    {
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        $this->write(200, fn (User $u, array $link): array => (new ResidentHousehold())->block($u, $link, $id));
+    }
+
     public function deliveries(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->deliveries($link));
@@ -272,6 +296,8 @@ final class ResidentApp
             $file = (new ResidentPortal())->documentFile($link, $this->int($data['id'] ?? null) ?? 0);
         } catch (ResidentFeatureDisabled $error) {
             $this->disabled($error);
+        } catch (ResidentNotAllowed $exception) {
+            JsonResponse::send(403, ['error' => ['code' => 'not_allowed', 'message' => $exception->getMessage()]]);
             return;
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Documento não encontrado.']]);
@@ -451,6 +477,8 @@ final class ResidentApp
             JsonResponse::send(409, ['error' => ['code' => 'ticket_closed', 'message' => $exception->getMessage()]]);
         } catch (ResidentFeatureDisabled $error) {
             $this->disabled($error);
+        } catch (ResidentNotAllowed $exception) {
+            JsonResponse::send(403, ['error' => ['code' => 'not_allowed', 'message' => $exception->getMessage()]]);
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Não encontrado.']]);
         } catch (RegistryValidationException $exception) {
