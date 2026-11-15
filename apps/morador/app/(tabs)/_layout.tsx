@@ -1,8 +1,15 @@
+import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
+import { useProfile } from '../../src/auth/ProfileContext';
 import { colors } from '../../src/theme';
 import { FloatingTabBar } from '../../src/ui/FloatingTabBar';
 
 export default function TabsLayout() {
+  const { onboarding } = useProfile();
+  // Primeiro acesso: boas-vindas com foto e dicas antes do Início.
+  if (onboarding && !onboarding.completed) {
+    return <Redirect href="/boas-vindas" />;
+  }
   return (
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}

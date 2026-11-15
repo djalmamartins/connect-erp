@@ -17,8 +17,13 @@ type Request = {
   confirm: string;
   /** Sem cancelar = aviso de um botão só. */
   cancel?: string;
-  resolve: (ok: boolean) => void;
+  /** Várias opções (ex.: Tirar foto / Escolher da galeria). No lugar do botão principal. */
+  options?: ChoiceOption[];
+  /** Índice da opção escolhida (o botão principal é 0) ou null se cancelou. */
+  resolve: (choice: number | null) => void;
 };
+
+export type ChoiceOption = { label: string; icon?: IconName; danger?: boolean };
 
 const TONES: Record<DialogTone, { icon: IconName; tint: string; bg: string; button: string }> = {
   success: { icon: 'checkmark-circle', tint: colors.success, bg: colors.successSoft, button: colors.brand },
@@ -35,7 +40,7 @@ let listener: ((r: Request) => void) | null = null;
 let toastListener: ((text: string) => void) | null = null;
 const queue: Request[] = [];
 
-function open(r: Omit<Request, 'resolve'>): Promise<boolean> {
+function open(r: Omit<Request, 'resolve'>): Promise<number | null> {
   return new Promise((resolve) => {
     const req = { ...r, resolve };
     if (listener) listener(req);
@@ -46,11 +51,14 @@ function open(r: Omit<Request, 'resolve'>): Promise<boolean> {
 export const dialog = {
   /** Pergunta antes de uma ação. Resolve true se a pessoa confirmou. */
   confirm: (o: { title: string; message?: string; confirm: string; cancel?: string; tone?: DialogTone; icon?: IconName }) =>
-    open({ tone: 'danger', cancel: 'Voltar', ...o }),
+    open({ tone: 'danger', cancel: 'Voltar', ...o }).then((c) => c === 0),
   /** Aviso com um botão (Entendi). */
   notice: async (o: { title: string; message?: string; tone?: DialogTone; icon?: IconName; confirm?: string }) => {
     await open({ tone: 'info', confirm: 'Entendi', ...o });
   },
+  /** Lista de opções. Resolve o índice escolhido ou null se a pessoa voltou. */
+  choose: (o: { title: string; message?: string; options: ChoiceOption[]; cancel?: string; tone?: DialogTone; icon?: IconName }) =>
+    open({ tone: 'info', confirm: '', cancel: 'Voltar', ...o }),
   /** Recado rápido no topo, que some sozinho (ex.: "Código copiado"). */
   toast: (text: string) => {
     toastListener?.(text);
@@ -102,11 +110,11 @@ export function DialogHost() {
     }
   }, [current, fade]);
 
-  function close(ok: boolean) {
+  function close(choice: number | null) {
     const req = current;
     if (!req) return;
     Animated.timing(fade, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      req.resolve(ok);
+      req.resolve(choice);
       setCurrent(pending.current.shift() ?? null);
     });
   }
@@ -117,10 +125,10 @@ export function DialogHost() {
 
   return (
     <>
-      <Modal visible={!!current} transparent animationType="none" statusBarTranslucent onRequestClose={() => close(false)}>
+      <Modal visible={!!current} transparent animationType="none" statusBarTranslucent onRequestClose={() => close(null)}>
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
           <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-          <Pressable style={[StyleSheet.absoluteFill, styles.backdrop]} onPress={current?.cancel ? () => close(false) : undefined} accessibilityLabel="Fechar" />
+          <Pressable style={[StyleSheet.absoluteFill, styles.backdrop]} onPress={current?.cancel ? () => close(null) : undefined} accessibilityLabel="Fechar" />
         </Animated.View>
         <View style={styles.center} pointerEvents="box-none">
           {current ? (
@@ -131,15 +139,29 @@ export function DialogHost() {
               <Text style={styles.title}>{current.title}</Text>
               {current.message ? <Text style={styles.message}>{current.message}</Text> : null}
               <View style={styles.buttons}>
-                <Pressable
-                  onPress={() => close(true)}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.primary, { backgroundColor: tone.button }, pressed && { opacity: 0.85 }]}
-                >
-                  <Text style={styles.primaryText}>{current.confirm}</Text>
-                </Pressable>
+                {current.options ? (
+                  current.options.map((o, i) => (
+                    <Pressable
+                      key={o.label}
+                      onPress={() => close(i)}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.option, o.danger && { backgroundColor: colors.dangerSoft }, pressed && { opacity: 0.7 }]}
+                    >
+                      {o.icon ? <Ionicons name={o.icon} size={20} color={o.danger ? colors.danger : colors.brandStrong} /> : null}
+                      <Text style={[styles.optionText, o.danger && { color: colors.danger }]}>{o.label}</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <Pressable
+                    onPress={() => close(0)}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.primary, { backgroundColor: tone.button }, pressed && { opacity: 0.85 }]}
+                  >
+                    <Text style={styles.primaryText}>{current.confirm}</Text>
+                  </Pressable>
+                )}
                 {current.cancel ? (
-                  <Pressable onPress={() => close(false)} accessibilityRole="button" style={({ pressed }) => [styles.secondary, pressed && { opacity: 0.6 }]}>
+                  <Pressable onPress={() => close(null)} accessibilityRole="button" style={({ pressed }) => [styles.secondary, pressed && { opacity: 0.6 }]}>
                     <Text style={styles.secondaryText}>{current.cancel}</Text>
                   </Pressable>
                 ) : null}
@@ -184,6 +206,16 @@ const styles = StyleSheet.create({
   buttons: { alignSelf: 'stretch', gap: space[1], marginTop: space[5] },
   primary: { height: 50, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   primaryText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.onBrand },
+  option: {
+    height: 50,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[2],
+  },
+  optionText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brandStrong },
   secondary: { height: 46, alignItems: 'center', justifyContent: 'center' },
   secondaryText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.muted },
   toast: {

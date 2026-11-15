@@ -5,7 +5,7 @@ resumo: O app Connect Morador (iPhone e Android) mostra ao morador os boletos, a
 categoria: comunicacao
 icone: phone-portrait-outline
 situacao: guia
-palavras: aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
+palavras: esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
 rascunho: nao
 ---
 
@@ -17,6 +17,16 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 2. O morador cria a senha pelo link do convite.
 3. No app, ele entra com o e-mail (ou CPF) e a senha. A verificação em duas etapas é opcional para o morador: só se ele tiver ligado, o app pede o código do autenticador.
 4. Se o celular tiver Face ID, Touch ID ou digital cadastrada, aparece a opção **Nas próximas vezes, entrar com Face ID** (ou digital). Marcada, o app pede a biometria logo depois de entrar e, nas próximas vezes, abre só com ela, sem digitar a senha. O e-mail usado fica preenchido no login.
+5. Esqueceu a senha? No login, {{Esqueci minha senha}} pede o e-mail ou CPF e manda um link para o e-mail cadastrado. A senha nova é criada pelo link, como na web. Por segurança, o app sempre mostra a mesma mensagem, exista a conta ou não, e aceita poucas tentativas seguidas.
+
+## Primeiro acesso
+
+Na primeira vez que o morador entra, o app abre as **boas-vindas**:
+
+1. Ele pode colocar uma foto no perfil: {{Tirar foto}} usa a câmera e {{Escolher da galeria}} usa as fotos do celular. A foto é recortada em quadrado. Também dá para deixar para depois.
+2. Depois vêm cinco dicas curtas, uma para cada parte do app: Início, Resolva fácil, Unidade, Notificações e Perfil. {{Pular}} vai direto para o Início.
+
+As boas-vindas aparecem só uma vez por conta, mesmo que o morador tenha mais de uma unidade ou troque de celular. Para ver as dicas de novo, é só ir em **Perfil > Rever as dicas do app**.
 
 > Quem deixa de ser morador (vínculo encerrado) perde o acesso ao app na hora, sem precisar fazer nada no celular.
 
@@ -31,7 +41,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
 - **Resolva fácil**: Boletos, Reservas, Chamado, Ocorrência, Documentos, Prestação de contas, Assembleia digital, Comunicados e CND. Chamado e CND aparecem como "Em breve" até entrarem no app.
 - **Unidade**: a unidade e o condomínio (com troca, para quem tem mais de uma), Moradores ("Em breve"), Autorizar entrada (visitantes), Veículos, Pets, Correspondências (encomendas) e Consultar chamados.
-- **Perfil**: nome e unidade, Verificação em duas etapas, entrada com Face ID ou digital, trocar de unidade e sair.
+- **Perfil**: foto, nome e unidade. Tocando na foto, dá para tirar outra, escolher da galeria ou remover. Também tem Rever as dicas do app, Verificação em duas etapas, entrada com Face ID ou digital, trocar de unidade e sair.
 - **Notificações**: o sino abre a lista de avisos (contas vencidas, encomendas, visitas do dia, comunicados, assembleias, reservas chegando e reservas aprovadas); tocando num aviso, abre a tela dele.
 
 ## Ligar e desligar funções
@@ -46,5 +56,6 @@ Cada função é ligada por condomínio na matriz do portal do morador. Tudo com
 - Com a biometria ligada, o app pede de novo ao abrir e quando volta depois de 5 minutos fora. Na tela de entrada rápida, {{Entrar com e-mail e senha}} sai do aparelho e volta para o login normal.
 - Quando o morador escolhe "sair de todos os aparelhos" na web, o app também sai.
 - Cada entrada e saída pelo app fica na auditoria, com o nome do aparelho.
+- A foto do perfil fica guardada fora da área pública do servidor, sem os dados de localização da imagem, e só abre para quem está logado.
 
 >! O app ainda não está nas lojas da Apple e do Google. Enquanto isso, o teste é feito pelo Expo Go, com a equipe da Connect.

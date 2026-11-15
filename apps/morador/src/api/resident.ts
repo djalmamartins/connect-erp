@@ -3,7 +3,7 @@
  * Valores em centavos (amount_cents), datas AAAA-MM-DD, horas HH:MM. Todas as rotas do morador aceitam
  * ?resident_id= para escolher o vínculo; o cliente acrescenta o vínculo escolhido no app.
  */
-import type { ApiClient } from './client';
+import type { ApiClient, UploadFile } from './client';
 
 /** Funções da matriz do portal (ResidentPortalPermissions::FEATURES). */
 export type Feature =
@@ -202,6 +202,11 @@ export type TwoFactorStatus = {
   setup?: { secret: string; uri: string };
 };
 
+/** Primeiro acesso (boas-vindas) e foto do perfil: valem para a conta, não para o vínculo. */
+export type Onboarding = { completed: boolean; has_photo: boolean };
+
+export const FORGOT_MESSAGE = 'Se a conta existir, enviamos um link para o e-mail cadastrado.';
+
 export function isFeatureOn(me: Me | null, feature: Feature): boolean {
   return !!me?.current?.features?.includes(feature);
 }
@@ -251,6 +256,17 @@ export function residentApi(api: ApiClient) {
     confirmTwoFactor: (code: string) => api.post<{ enabled: true; recovery_codes: string[] }>('/resident/2fa/confirm', { code }),
     disableTwoFactor: (code: string) => api.post<{ enabled: false }>('/resident/2fa/disable', { code }),
     newRecoveryCodes: (code: string) => api.post<{ enabled: true; recovery_codes: string[] }>('/resident/2fa/recovery', { code }),
+    /** Pública: pede o link de nova senha por e-mail. A troca da senha continua no link (/forget/{token}). */
+    async forgotPassword(login: string): Promise<string> {
+      const data = await api.post<{ message?: string } | null>('/resident/password/forgot', { login });
+      return data?.message ?? FORGOT_MESSAGE;
+    },
+    onboarding: () => api.get<Onboarding>('/resident/onboarding'),
+    completeOnboarding: () => api.post<null>('/resident/onboarding/complete'),
+    uploadPhoto: (file: UploadFile) => api.upload<{ has_photo: boolean }>('/resident/profile/photo', {}, [{ field: 'photo', file }]),
+    deletePhoto: () => api.delete<null>('/resident/profile/photo'),
+    /** A foto só abre com o token, por isso vai com os cabeçalhos (o Image do React Native aceita). */
+    photoSource: (version: number) => ({ uri: api.url('/resident/profile/photo', { v: version }), headers: api.authHeaders() }),
     petsVehicles: () => api.get<{ pets: Pet[]; vehicles: Vehicle[] }>('/resident/pets-vehicles'),
   };
 }

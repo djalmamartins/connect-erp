@@ -7,7 +7,8 @@ import { isFeatureOn, type Feature, type Reservation } from '../../src/api/resid
 import { useAuth } from '../../src/auth/AuthContext';
 import { tokenStorage } from '../../src/auth/storage';
 import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
-import { date, greeting, initials, longToday, money } from '../../src/lib/format';
+import { date, greeting, longToday, money } from '../../src/lib/format';
+import { Avatar } from '../../src/ui/Avatar';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Card, CardTitle, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
@@ -107,7 +108,7 @@ export default function Home() {
     <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
       <Bell count={unseen} />
       <Pressable onPress={() => router.push('/perfil')} accessibilityRole="button" accessibilityLabel="Seu perfil" style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials(name)}</Text>
+        <Avatar name={name} size={44} />
       </Pressable>
     </View>
   );
@@ -268,18 +269,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.sidebar,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.accent,
-    marginBottom: 2,
-  },
-  avatarText: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
+  avatar: { marginBottom: 2, borderRadius: 22 },
   heroWrap: { borderRadius: 24, overflow: 'hidden' },
   services: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
   service: {
