@@ -22,7 +22,7 @@ O aplicativo do morador é o site **app.connect.lab**, feito para o celular. O m
 2. O morador abre o e-mail, cria a senha e entra em **app.connect.lab** com o e-mail e a senha. A verificação em duas etapas **não é obrigatória** para o morador: ele entra só com e-mail e senha.
 3. Quem tem mais de uma unidade troca de unidade no alto da tela.
 
->! Só entra quem tem **vínculo ativo** com uma unidade: cadastro de morador ativo, unidade e condomínio ativos e dentro das datas de início e fim. Funcionário da administradora sem vínculo recebe a mensagem e não vê nada.
+>! Só entra quem tem **vínculo ativo** com uma unidade: cadastro de morador ativo, unidade e condomínio ativos e dentro das datas de início e fim. Quem já está logado no ERP com uma conta da equipe, sem unidade, volta para a tela de entrada do aplicativo com um aviso de que essa conta não é de morador, e não vê nenhum dado.
 
 ## Verificação em duas etapas (opcional)
 
