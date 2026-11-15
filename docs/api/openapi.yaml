@@ -407,6 +407,7 @@ components:
         id: { type: integer }
         number: { type: string, description: Protocolo do chamado, example: CH261114A1B2 }
         subject: { type: string }
+        kind: { type: string, enum: [chamado, ocorrencia], description: 'chamado = pedido ou dúvida à administração; ocorrência = problema no condomínio' }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
         status_label: { type: string }
         priority: { type: string, enum: [baixa, media, alta] }
@@ -7594,6 +7595,7 @@ paths:
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
         - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: kind, in: query, required: false, description: 'Só chamados ou só ocorrências; sem o filtro, os dois', schema: { type: string, enum: [chamado, ocorrencia] } }
       responses:
         '200':
           description: OK (20 por página)
@@ -7626,6 +7628,7 @@ paths:
                 description: { type: string, maxLength: 4000 }
                 priority: { type: string, enum: [baixa, media, alta], default: media }
                 occurred_on: { type: string, format: date, description: 'Padrão: hoje' }
+                kind: { type: string, enum: [chamado, ocorrencia], default: ocorrencia, description: 'chamado = pedido ou dúvida à administração; ocorrencia = problema ou fato no condomínio' }
       responses:
         '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentTicketDetail' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }

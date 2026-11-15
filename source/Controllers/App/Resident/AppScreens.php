@@ -398,15 +398,18 @@ final class AppScreens extends Controller
     public function occurrences(): void
     {
         $page = max(1, (int)($_GET['pagina'] ?? 1));
-        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Chamados', fn (User $u, array $link): array => ['tickets' => (new ResidentTickets())->list($u, $link, $page)]);
+        $kind = in_array($_GET['tipo'] ?? null, ['chamado', 'ocorrencia'], true) ? $_GET['tipo'] : null;
+        $this->page('occurrences', 'occurrences', 'pages/occurrences', 'Chamados', fn (User $u, array $link): array => [
+            'tickets' => (new ResidentTickets())->list($u, $link, $page, $kind), 'kind' => $kind, 'open' => ($_GET['abrir'] ?? '') === '1']);
     }
 
     /** POST /ocorrencias — abre o chamado (a ocorrência da unidade vira chamado do Help Desk, ADR 0305). */
     public function reportOccurrence(array $data): void
     {
         $this->action('occurrences', '/ocorrencias', $data, function (User $u, array $link) use ($data): string {
-            $ticket = (new ResidentTickets())->open($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on']));
-            return 'Chamado ' . $ticket['number'] . ' aberto. Acompanhe a resposta da administração por aqui.';
+            $ticket = (new ResidentTickets())->open($u, $link, self::only($data, ['subject', 'description', 'priority', 'occurred_on', 'kind']));
+            return ($ticket['kind'] === 'chamado' ? 'Chamado ' . $ticket['number'] . ' aberto.' : 'Ocorrência ' . $ticket['number'] . ' registrada.')
+                . ' Acompanhe a resposta da administração por aqui.';
         });
     }
 

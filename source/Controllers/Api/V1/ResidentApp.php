@@ -198,9 +198,10 @@ final class ResidentApp
     public function tickets(): void
     {
         $page = $this->int($_GET['page'] ?? null) ?? 1;
+        $kind = in_array($_GET['kind'] ?? null, ['chamado', 'ocorrencia'], true) ? $_GET['kind'] : null;
         [$user, $link] = $this->context();
         if ($link !== null) {
-            $this->run(200, fn () => (new ResidentTickets())->list($user, $link, $page), true);
+            $this->run(200, fn () => (new ResidentTickets())->list($user, $link, $page, $kind), true);
         }
     }
 
