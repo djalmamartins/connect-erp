@@ -522,7 +522,7 @@ final class AppScreens extends Controller
     }
 
     /**
-     * Sessão + vínculo + função; senão redireciona (login), mostra "sem acesso" ou "não liberado".
+     * Sessão + vínculo + função; sem sessão ou sem vínculo vai para o login, sem a função mostra "não liberado".
      *
      * @return array{0: User, 1: array, 2: list<array>}|null
      */
@@ -536,8 +536,8 @@ final class AppScreens extends Controller
         }
         [$all, $link] = ResidentSession::resolve($user);
         if ($link === null) {
-            http_response_code(403);
-            $this->render('pages/no-access', 'Sem acesso', 'home', $user, [], null, []);
+            // Conta da equipe (ou vínculo encerrado): não entra no app; o login explica e pede a conta de morador.
+            redirect(app_url('/login'));
             return null;
         }
         if ($feature !== null && !in_array($feature, $link['features'], true)) {

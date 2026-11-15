@@ -33,6 +33,7 @@ final class AppLogin extends Controller
             redirect(app_url('/'));
             return;
         }
+        $notice = $user !== null ? self::notResidentNotice($user) : null;
         if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
             $this->attempt($data ?? []);
             return;
@@ -40,7 +41,17 @@ final class AppLogin extends Controller
         echo $this->view->render('pages/login', [
             'head' => $this->seo->render('Entrar · Connect Morador', 'Aplicativo do morador da Connect.', app_url('/login'), themeApp('/assets/images/icon-512.png'), false),
             'email' => (string)(filter_input(INPUT_COOKIE, 'authEmail') ?? ''),
+            'notice' => $notice,
         ]);
+    }
+
+    /** Aviso para quem já está logado (ex.: no ERP) com uma conta sem unidade de morador. */
+    public static function notResidentNotice(object $user): string
+    {
+        $name = trim((string)($user->first_name ?? ''));
+        return ($name !== '' ? "Olá, {$name}! " : 'Olá! ')
+            . 'A conta com que você entrou no sistema não está cadastrada como morador de nenhuma unidade. '
+            . 'Se você mora num condomínio atendido pela Connect, entre com a sua conta de morador ou peça o convite à administração.';
     }
 
     /** POST /sair — encerrar sessão altera estado, então exige CSRF. */
