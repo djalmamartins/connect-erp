@@ -11,6 +11,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Erp\ResidentPortalPermissions;
+use Source\Services\Resident\ResidentCertificates;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentHousehold;
 use Source\Services\Resident\ResidentNotAllowed;
@@ -356,6 +357,41 @@ final class ResidentAppIntegrationTest extends TestCase
         self::assertNotContains('Eva Nova Inquilina', array_column($household->list($neighbor, '2026-11-15')['data'], 'name'));
         $this->expectException(RegistryNotFound::class);
         $household->block($this->vizinho, ['relationship' => 'owner'] + $neighbor, $new['id'], '2026-11-15');
+    }
+
+    public function testResidentIssuesCndForOwnUnit(): void
+    {
+        $certificates = new ResidentCertificates($this->pdo);
+        $owner = $this->link($this->morador, ['boletos']);
+        try {
+            $certificates->issue($this->morador, $this->link($this->morador));
+            self::fail('Sem a função boletos.');
+        } catch (ResidentFeatureDisabled) {
+            self::assertTrue(true);
+        }
+
+        $clear = $certificates->issue($this->morador, $owner);
+        self::assertSame(['clear', 'Nada consta', 0, date('Y-m-d')], [$clear['result'], $clear['result_label'], $clear['total_cents'], $clear['as_of']]);
+        $account = $this->chartAccount();
+        $this->entry($account, $this->unitA, 50000, date('Y-m-d', strtotime('-40 days')));
+        $this->entry($account, $this->unitB, 99900, date('Y-m-d', strtotime('-40 days')));
+        $debts = $certificates->issue($this->morador, $owner);
+        self::assertSame('debts', $debts['result']);
+        self::assertGreaterThanOrEqual(50000, $debts['total_cents'], 'Só a conta da própria unidade, com encargos.');
+        self::assertLessThan(99900, $debts['total_cents']);
+        self::assertSame([$debts['id'], $clear['id']], array_column($certificates->list($owner), 'id'));
+
+        // O mesmo registro do ERP: código verificável, auditado, e o PDF sai.
+        $row = $this->pdo->query('SELECT kind, issued_by, unit_id FROM erp_unit_documents WHERE id = ' . $debts['id'])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['debt_certificate', (int)$this->morador->id, $this->unitA], [$row['kind'], (int)$row['issued_by'], (int)$row['unit_id']]);
+        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_unit_documents' AND action = 'create'")->fetchColumn());
+        self::assertStringStartsWith('%PDF', $certificates->pdf($owner, $debts['id']));
+
+        // Vizinho não lista nem baixa a certidão da outra unidade.
+        $neighbor = $this->link($this->vizinho, ['boletos']);
+        self::assertSame([], $certificates->list($neighbor));
+        $this->expectException(RegistryNotFound::class);
+        $certificates->pdf($neighbor, $debts['id']);
     }
 
     private function link(User $user, array $extraFeatures = []): array
