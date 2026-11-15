@@ -1,11 +1,12 @@
 <?php
-/** Login do app do morador (ADR 0302). @var string $head @var string $email */
+/** Login do app do morador (ADR 0302). @var string $head @var string $email @var ?string $notice */
 $this->layout('partials/bare');
 ?>
 <main class="app-login" id="app-main">
     <img class="app-login__logo" src="<?= $this->e(site_logo_url()) ?>" alt="Connect Condomínios" width="180" height="48">
     <h1>Aplicativo do morador</h1>
     <p class="app-login__lead">Boletos, reservas, encomendas, visitantes e avisos do seu condomínio.</p>
+    <?php if (!empty($notice)): ?><div class="app-flash" role="status"><div class="info"><?= $this->e($notice) ?></div></div><?php endif; ?>
     <?php if ($appFlash = flash()): ?><div class="app-flash" role="status"><?= $appFlash ?></div><?php endif; ?>
     <form method="post" action="<?= app_url('/login') ?>" class="app-form app-card">
         <?= csrf_input() ?>

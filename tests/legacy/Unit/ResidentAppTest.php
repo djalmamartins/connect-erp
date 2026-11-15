@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MovesOSTests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Source\Controllers\App\Resident\AppLogin;
 use Source\Controllers\App\Resident\AppScreens;
 use Source\Services\Environments;
 use Source\Services\Erp\ResidentPortalPermissions;
@@ -95,5 +96,13 @@ final class ResidentAppTest extends TestCase
         self::assertSame(['host' => 'app.connect.lab', 'path' => '/'], Environments::target('residents', 'erp.connect.lab'));
         self::assertSame(['host' => 'erp.connect.lab', 'path' => '/dashboard'], Environments::target('erp', 'app.connect.lab'));
         self::assertSame(['host' => 'localhost', 'path' => '/app'], Environments::target('residents', 'localhost'));
+    }
+
+    public function testStaffWithoutUnitGetsAFriendlyNoticeOnTheLogin(): void
+    {
+        $notice = AppLogin::notResidentNotice((object)['first_name' => 'Djalma']);
+        self::assertStringStartsWith('Olá, Djalma!', $notice);
+        self::assertStringContainsString('não está cadastrada como morador', $notice);
+        self::assertStringStartsWith('Olá! ', AppLogin::notResidentNotice((object)[]));
     }
 }
