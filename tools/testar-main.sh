@@ -51,6 +51,9 @@ strip() { sed -E $'s/\x1b\\[[0-9;]*m//g'; }
 phpunit_line() {
   local line
   line=$(strip <"$1" | grep -E '^(OK \(|OK, but|Tests: |FAILURES!|ERRORS!|No tests executed)' | tail -1)
+  if [ -z "$line" ] && grep -q 'exceeded the timeout' "$1"; then
+    line="o composer cortou a suíte por tempo (process-timeout)"
+  fi
   [ -n "$line" ] || line=$(strip <"$1" | grep -m1 -E 'Exception|Error:' | cut -c1-140)
   echo "$line"
 }
@@ -204,13 +207,30 @@ say "5/8 testes (banco movesos_test, nunca o connect_legacy)"
 # pelo ambiente (-e sem valor), não pela linha de comando.
 MOVESOS_TEST_DB_PASS=$(grep -E '^LEGACY_DB_ROOT_PASSWORD=' .env | tail -1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//")
 export MOVESOS_TEST_DB_PASS
-test_env=(-e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS)
+# COMPOSER_PROCESS_TIMEOUT=0: o composer corta qualquer script em 300 s e a suíte no Mac passa
+# disso quando o Docker está lento (15/11: o corte só deixava a linha de uso do composer no log).
+test_env=(-e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS -e COMPOSER_PROCESS_TIMEOUT=0)
 [ -n "$MOVESOS_TEST_DB_PASS" ] || echo "AVISO: LEGACY_DB_ROOT_PASSWORD não está no .env; os testes não vão conseguir criar o movesos_test." >&2
+
+# Conexões presas no movesos_test (de uma rodada interrompida) seguram trava de tabela e fazem o
+# TRUNCATE de cada teste esperar. O banco de teste é descartável: as conexões são listadas no log
+# e encerradas. Conexões de outros bancos (connect_legacy) nunca são tocadas.
+test_db_sql() {
+  docker compose exec -T -e MOVESOS_TEST_DB_PASS legacy-db \
+    sh -c 'mariadb -uroot -p"$MOVESOS_TEST_DB_PASS" -N -B' 2>>"$logs/test-db-sessions.log"
+}
+stale=$(echo "SELECT ID, USER, COMMAND, TIME, LEFT(COALESCE(INFO, ''), 120) FROM information_schema.PROCESSLIST WHERE DB LIKE 'movesos%test%' AND ID <> CONNECTION_ID();" | test_db_sql || true)
+if [ -n "$stale" ]; then
+  { echo "conexões no movesos_test antes dos testes:"; echo "$stale"; } >>"$logs/test-db-sessions.log"
+  echo "$stale" | cut -f1 | grep -E '^[0-9]+$' | sed 's/.*/KILL &;/' | test_db_sql >>"$logs/test-db-sessions.log" || true
+  echo "encerradas $(echo "$stale" | wc -l | tr -d ' ') conexão(ões) presas no movesos_test (ver test-db-sessions.log)"
+fi
 echo "-- unitários"
 if docker compose exec -T "${test_env[@]}" app composer test:unit >"$logs/test-unit.log" 2>&1; then
   add "Testes unitários" OK "$(phpunit_line "$logs/test-unit.log")"
 else
   add "Testes unitários" FALHOU "$(phpunit_line "$logs/test-unit.log") (ver test-unit.log)"
+  strip <"$logs/test-unit.log" | grep -m6 -A2 -E '^[0-9]+\) ' || true
 fi
 tail -3 "$logs/test-unit.log" | strip
 
@@ -221,6 +241,7 @@ if docker compose exec -T "${test_env[@]}" app composer test:integration >"$logs
   add "Testes de integração" OK "$(phpunit_line "$logs/test-integration.log")"
 else
   add "Testes de integração" FALHOU "$(phpunit_line "$logs/test-integration.log") (ver test-integration.log)"
+  strip <"$logs/test-integration.log" | grep -m6 -A2 -E '^[0-9]+\) ' || true
 fi
 tail -3 "$logs/test-integration.log" | strip
 
