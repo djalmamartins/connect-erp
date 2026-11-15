@@ -39,6 +39,8 @@ final class ErpSettings
     public const CATALOG = [
         'admin.support_email' => ['page' => 'AP-147', 'group' => 'Administrativo', 'label' => 'E-mail de atendimento da administradora', 'type' => 'email', 'default' => '', 'scope' => 'global'],
         'admin.support_phone' => ['page' => 'AP-147', 'group' => 'Administrativo', 'label' => 'Telefone de atendimento', 'type' => 'text', 'default' => '', 'scope' => 'global', 'max' => 20],
+        // ADR 0309: o quadro "Sobre esta tela" no topo das telas do ERP. Desligado, some para todos.
+        'admin.page_intro' => ['page' => 'AP-147', 'group' => 'Administrativo', 'label' => 'Mostrar o quadro "Sobre esta tela" no topo das telas do ERP', 'type' => 'bool', 'default' => true, 'scope' => 'global'],
         'closing.notify_board' => ['page' => 'AP-151', 'group' => 'Notificações da prestação de contas', 'label' => 'Avisar o conselho quando o mês for fechado', 'type' => 'bool', 'default' => false, 'scope' => 'condominium'],
         'app.display_name' => ['page' => 'AP-154', 'group' => 'Layout da aplicação', 'label' => 'Nome exibido no aplicativo', 'type' => 'text', 'default' => 'Connect', 'scope' => 'global', 'min' => 2, 'max' => 80],
         'app.notices_enabled' => ['page' => 'AP-155', 'group' => 'Notificações do aplicativo', 'label' => 'Enviar comunicados por e-mail', 'type' => 'bool', 'default' => true, 'scope' => 'condominium'],

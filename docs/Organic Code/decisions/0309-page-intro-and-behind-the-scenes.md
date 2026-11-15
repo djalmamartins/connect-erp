@@ -22,7 +22,9 @@ acontece por trás de cada ação ("quando eu cadastro um pagamento, o que acont
   quadro "Sobre esta tela" logo abaixo do título, no modelo que o Djalma mandou em 15/11/2026: caixa clara de borda
   fina, título pequeno com ícone, o que a tela faz, até 3 itens do que acontece por trás e "Abrir tutorial completo"
   (`/suporte/tela/{código}`). Clicar no título recolhe a caixa para só o título, e recolhida ela continua recolhida
-  naquela tela, naquele navegador (localStorage). Não aparece na impressão. Página sem explicação não mostra nada.
+  naquela tela, naquele navegador (localStorage). Depois, também a pedido dele: tom verde do ERP, X que fecha e não
+  volta mais naquela tela, e a chave global `admin.page_intro` (Configurações > Administrativo, padrão ligado) que tira
+  o quadro de todas as telas. Não aparece na impressão. Página sem explicação não mostra nada.
 - **Resumo de cada área na Central de Ajuda:** `kb/areas/<categoria>.md` (Markdown da base) aparece no topo da página
   da categoria em `/suporte`, como "Como funciona esta área": o que é a área, a ordem de uso e o que acontece por trás.
   `KnowledgeBase::areaIntro/areaProblems`; o `check` confere categoria e links. Escrito junto com a etapa da área.
