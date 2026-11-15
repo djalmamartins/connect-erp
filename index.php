@@ -40,6 +40,8 @@ $route->post("/auth/2fa/verify", "TwoFactor:verify");
 $route->post("/resident/app-sessions", "ResidentAppSessions:store");
 $route->post("/resident/app-sessions/verify", "ResidentAppSessions:verify");
 $route->delete("/resident/app-sessions/current", "ResidentAppSessions:destroy");
+// Recuperação de senha pelo app nativo (revisão de 15/11): resposta sempre igual e limite por conta e IP no banco.
+$route->post("/resident/password/forgot", "ResidentAppSessions:forgot");
 // Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
 // consulta de cada título no banco antes de mudar qualquer estado.
 $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
@@ -582,6 +584,11 @@ $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source
 $route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/onboarding", "ResidentApp:onboarding", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/onboarding/complete", "ResidentApp:onboardingComplete", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/profile/photo", "ResidentApp:photo", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/profile/photo", "ResidentApp:uploadPhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->delete("/resident/profile/photo", "ResidentApp:deletePhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/announcements", "ResidentApp:announcements", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/common-areas", "ResidentApp:commonAreas", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

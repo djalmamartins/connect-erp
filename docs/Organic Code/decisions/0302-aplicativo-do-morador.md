@@ -100,3 +100,10 @@ de visitas, o PDF do boleto, a prestação de contas pública (ADR 0301) e o Dis
 - `/resolva-facil`: atalhos para os serviços. CND e Ocorrência aparecem como "Em breve" até as etapas 3 e 5.
 - `/minha-unidade` (Unidade): atalhos (Moradores "Em breve" até a etapa 4), veículos e pets. `/perfil`: dados da pessoa, duas etapas, avisos, instalar e sair. O avatar da barra de cima leva ao Perfil, ao lado do sino.
 - Próximas etapas, combinadas com a thread do app de celular: 2 login (recuperação de senha e boas-vindas com foto), 3 chamados e ocorrência, 4 moradores da unidade, 5 CND. As rotas novas da API do morador ficam com o web.
+
+### Revisão de 15/11, etapa 2 (login e primeiro acesso)
+- `POST /api/v1/resident/password/forgot {login}` é pública e usa o mesmo `Auth::forget()` do site. Devolve sempre 202 com a mesma mensagem. O limite fica no banco (`LoginThrottle::FORGET`): 5 pedidos por conta e 20 por IP a cada 15 minutos. No web, o login já tinha "Esqueci minha senha".
+- `erp_resident_app_profiles` (migration 20261115_0900) tem uma linha por conta, com a foto e `onboarded_at`. `ResidentProfile` cuida das duas coisas:
+  - **Foto:** confere o tipo pelo conteúdo, gira pelo EXIF, recorta em quadrado no centro, reduz a 512 px e grava em JPEG sem metadados em `storage/private/resident-photos`. A troca apaga a foto anterior, e tudo fica na auditoria.
+  - **Primeiro acesso:** `GET /resident/onboarding`, `POST /resident/onboarding/complete` e `GET/POST/DELETE /resident/profile/photo`.
+- No web, `/` leva a `/boas-vindas` (foto e 3 dicas) até a pessoa concluir ou pular. A foto aparece no avatar da barra de cima e no Perfil (`/perfil/foto`, `Cache-Control: private`), sempre a da própria conta.
