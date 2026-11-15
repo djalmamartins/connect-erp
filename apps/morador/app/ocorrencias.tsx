@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { ApiError } from '../../src/api/client';
-import type { Priority } from '../../src/api/resident';
-import { useAuth } from '../../src/auth/AuthContext';
-import { date, parseDate, today } from '../../src/lib/format';
-import { useResource } from '../../src/lib/useResource';
-import { space } from '../../src/theme';
-import { Body, Button, Card, CardTitle, Choice, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../../src/ui/kit';
-import { dialog } from '../../src/ui/Dialog';
+import { ApiError } from '../src/api/client';
+import type { Priority } from '../src/api/resident';
+import { useAuth } from '../src/auth/AuthContext';
+import { date, parseDate, today } from '../src/lib/format';
+import { useResource } from '../src/lib/useResource';
+import { space } from '../src/theme';
+import { Body, Button, Card, CardTitle, Choice, Empty, ErrorBox, Field, Loading, Row, Screen, SectionTitle, StatusBadge } from '../src/ui/kit';
+import { dialog } from '../src/ui/Dialog';
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: 'baixa', label: 'Baixa' },
@@ -53,7 +53,7 @@ export default function Ocorrencias() {
   }
 
   return (
-    <Screen title="Ocorrências" tab refreshing={list.refreshing} onRefresh={list.reload}>
+    <Screen title="Ocorrências" back refreshing={list.refreshing} onRefresh={list.reload}>
       {list.error?.isFeatureDisabled ? (
         <ErrorBox error={list.error} />
       ) : (

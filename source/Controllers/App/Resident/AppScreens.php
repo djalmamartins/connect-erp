@@ -28,21 +28,26 @@ use Source\Services\Resident\ResidentTwoFactor;
 final class AppScreens extends Controller
 {
     /** Menu: chave, rótulo, caminho, função da matriz (null = sempre), ícone. */
+    /** [chave, rótulo, caminho, função exigida, ícone, aba da barra inferior a que pertence] — revisão de 15/11. */
     public const MENU = [
-        ['home', 'Início', '/', null, 'home'],
-        ['charges', 'Boletos', '/boletos', 'boletos', 'receipt'],
-        ['accountability', 'Prestação de contas', '/prestacao-de-contas', 'accountability', 'chart'],
-        ['announcements', 'Comunicados', '/comunicados', 'announcements', 'megaphone'],
-        ['reservations', 'Reservas', '/reservas', 'reservations', 'calendar'],
-        ['deliveries', 'Encomendas', '/encomendas', 'deliveries', 'box'],
-        ['visits', 'Visitantes', '/visitantes', 'visitors', 'user-check'],
-        ['occurrences', 'Chamados', '/ocorrencias', 'occurrences', 'alert'],
-        ['assemblies', 'Assembleias', '/assembleias', 'assemblies', 'users'],
-        ['documents', 'Documentos', '/documentos', 'documents', 'file'],
-        ['unit', 'Minha unidade', '/minha-unidade', null, 'key'],
+        ['home', 'Início', '/', null, 'home', 'home'],
+        ['resolve', 'Resolva fácil', '/resolva-facil', null, 'grid', 'resolve'],
+        ['charges', 'Boletos', '/boletos', 'boletos', 'receipt', 'resolve'],
+        ['accountability', 'Prestação de contas', '/prestacao-de-contas', 'accountability', 'chart', 'resolve'],
+        ['announcements', 'Comunicados', '/comunicados', 'announcements', 'megaphone', 'resolve'],
+        ['reservations', 'Reservas', '/reservas', 'reservations', 'calendar', 'resolve'],
+        ['assemblies', 'Assembleia digital', '/assembleias', 'assemblies', 'users', 'resolve'],
+        ['documents', 'Documentos', '/documentos', 'documents', 'file', 'resolve'],
+        ['occurrences', 'Chamados', '/ocorrencias', 'occurrences', 'alert', 'resolve'],
+        ['unit', 'Unidade', '/minha-unidade', null, 'key', 'unit'],
+        ['deliveries', 'Correspondências', '/encomendas', 'deliveries', 'box', 'unit'],
+        ['visits', 'Autorizar entrada', '/visitantes', 'visitors', 'user-check', 'unit'],
+        ['profile', 'Perfil', '/perfil', null, 'user', 'profile'],
     ];
-    /** Barra inferior no celular (as demais ficam em "Mais"). */
-    public const TABS = ['home', 'charges', 'reservations', 'deliveries'];
+    /** Barra inferior no celular: Início, Resolva fácil, Unidade e Perfil (revisão de 15/11). */
+    public const TABS = ['home', 'resolve', 'unit', 'profile'];
+    /** Páginas fora do menu e a aba que fica acesa nelas. */
+    private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile'];
 
     private ResidentPortal $portal;
 
@@ -56,18 +61,46 @@ final class AppScreens extends Controller
     public static function menu(array $features, string $active): array
     {
         $out = [];
+        $section = self::SECTION_OF[$active] ?? null;
+        foreach (self::MENU as [$key, $label, $path, $feature, $icon, $tabOf]) {
+            if ($section === null && $key === $active) {
+                $section = $tabOf;
+            }
+        }
         foreach (self::MENU as [$key, $label, $path, $feature, $icon]) {
             if ($feature !== null && !in_array($feature, $features, true)) {
                 continue;
             }
-            $out[] = ['key' => $key, 'label' => $label, 'path' => $path, 'icon' => $icon, 'active' => $key === $active, 'tab' => in_array($key, self::TABS, true)];
+            $tab = in_array($key, self::TABS, true);
+            $out[] = ['key' => $key, 'label' => $label, 'path' => $path, 'icon' => $icon, 'active' => $key === $active, 'tab' => $tab,
+                'tab_active' => $tab && $key === $section];
         }
         return $out;
     }
 
     public function home(): void
     {
-        $this->page('home', null, 'pages/home', 'Início', fn (User $u, array $link): array => ['summary' => $this->portal->summary($link)]);
+        $seen = self::seenAt();
+        $this->page('home', null, 'pages/home', 'Início', function (User $u, array $link) use ($seen): array {
+            try {
+                $feed = array_slice((new ResidentFeed())->notifications($link), 0, 5);
+            } catch (\Throwable) {
+                $feed = [];
+            }
+            return ['summary' => $this->portal->summary($link), 'feed' => $feed, 'seenAt' => $seen];
+        });
+    }
+
+    /** GET /resolva-facil — atalhos dos serviços do condomínio (revisão de 15/11). */
+    public function resolve(): void
+    {
+        $this->page('resolve', null, 'pages/resolve', 'Resolva fácil', fn (User $u, array $link): array => []);
+    }
+
+    /** GET /perfil — dados da pessoa, segurança, instalar e sair (revisão de 15/11). */
+    public function profile(): void
+    {
+        $this->page('profile', null, 'pages/profile', 'Perfil', fn (User $u, array $link): array => ['profile' => $this->portal->profile($link, $u)]);
     }
 
     public function charges(): void
@@ -387,8 +420,7 @@ final class AppScreens extends Controller
 
     public function unit(): void
     {
-        $this->page('unit', null, 'pages/unit', 'Minha unidade', fn (User $u, array $link): array => ['petsVehicles' => $this->portal->petsVehicles($link),
-            'profile' => $this->portal->profile($link, $u)]);
+        $this->page('unit', null, 'pages/unit', 'Unidade', fn (User $u, array $link): array => ['petsVehicles' => $this->portal->petsVehicles($link)]);
     }
 
     /** POST /unidade — troca o vínculo que está vendo (só entre os da própria conta). */
@@ -414,7 +446,7 @@ final class AppScreens extends Controller
     /** GET /seguranca — verificação em duas etapas opcional (ADR 0304). */
     public function security(): void
     {
-        $this->page('unit', null, 'pages/security', 'Segurança da conta', function (User $u): array {
+        $this->page('security', null, 'pages/security', 'Segurança da conta', function (User $u): array {
             $status = (new ResidentTwoFactor())->status($u);
             if (isset($status['setup'])) {
                 $status['setup']['qr'] = \Source\Support\QrCode::svg($status['setup']['uri'], 196, 'QR code para o aplicativo autenticador');

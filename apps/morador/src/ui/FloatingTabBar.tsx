@@ -10,10 +10,9 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 /** Ícone de cada aba: contorno quando parada, cheio quando aberta. */
 export const TAB_ICONS: Record<string, [IconName, IconName]> = {
   index: ['home-outline', 'home'],
-  financeiro: ['barcode-outline', 'barcode'],
-  reservas: ['calendar-outline', 'calendar'],
-  ocorrencias: ['chatbubble-ellipses-outline', 'chatbubble-ellipses'],
-  mais: ['grid-outline', 'grid'],
+  resolva: ['flash-outline', 'flash'],
+  unidade: ['business-outline', 'business'],
+  perfil: ['person-circle-outline', 'person-circle'],
 };
 
 /**

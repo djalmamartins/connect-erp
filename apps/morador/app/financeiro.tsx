@@ -1,14 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../src/api/client';
-import type { ChargesResponse, StatementLine } from '../../src/api/resident';
-import { useAuth } from '../../src/auth/AuthContext';
-import { historyWindow, mergeLines } from '../../src/lib/billing';
-import { copyText as copy, openBoleto, pendingLines } from '../../src/lib/boleto';
-import { date, money, today } from '../../src/lib/format';
-import { colors, fonts, radius, space } from '../../src/theme';
-import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { ApiError } from '../src/api/client';
+import type { ChargesResponse, StatementLine } from '../src/api/resident';
+import { useAuth } from '../src/auth/AuthContext';
+import { historyWindow, mergeLines } from '../src/lib/billing';
+import { copyText as copy, openBoleto, pendingLines } from '../src/lib/boleto';
+import { date, money, today } from '../src/lib/format';
+import { colors, fonts, radius, space } from '../src/theme';
+import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } from '../src/ui/kit';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -101,7 +101,7 @@ export default function Boletos() {
   const openCents = totals ? totals.open_cents + totals.overdue_cents : 0;
 
   return (
-    <Screen title="Boletos" tab refreshing={refreshing} onRefresh={refresh} onEndReached={loadMore}>
+    <Screen title="Boletos" back refreshing={refreshing} onRefresh={refresh} onEndReached={loadMore}>
       {loading ? <Loading /> : null}
       {error ? <ErrorBox error={error} onRetry={refresh} /> : null}
       {!loading && !error && totals ? (

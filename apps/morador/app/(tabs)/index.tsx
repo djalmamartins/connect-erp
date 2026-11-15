@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, type Href } from 'expo-router';
-import { useEffect, useState, type ComponentProps } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useEffect, useState, type ComponentProps } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { isFeatureOn, type Feature, type Reservation } from '../../src/api/resident';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -10,19 +10,22 @@ import { copyText, nextBoleto, openBoleto } from '../../src/lib/boleto';
 import { date, greeting, initials, longToday, money } from '../../src/lib/format';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
-import { Body, Card, CardTitle, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
-import { areaIcon } from '../../src/lib/areas';
+import { Body, Card, CardTitle, ErrorBox, Loading, Screen, SectionTitle } from '../../src/ui/kit';
 import { trackApprovals } from '../../src/lib/approvals';
+import { stamp, unseenCount } from '../../src/lib/notifications';
+import { Bell, NotificationRow } from '../../src/ui/Notifications';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
-type Shortcut = { label: string; icon: IconName; href: Href; feature: Feature };
-type Tile = { label: string; value: string; icon: IconName; href: Href };
+type Service = { label: string; hint: string; icon: IconName; color: string; href: Href; feature: Feature };
 
-const SHORTCUTS: Shortcut[] = [
-  { label: 'Reservar', icon: 'calendar', href: '/reservas', feature: 'reservations' },
-  { label: 'Ocorrência', icon: 'chatbubble-ellipses', href: '/ocorrencias', feature: 'occurrences' },
-  { label: 'Visitante', icon: 'person-add', href: '/visitantes', feature: 'visitors' },
-  { label: 'Documentos', icon: 'document-text', href: '/documentos', feature: 'documents' },
+/** Botões grandes do Início: os serviços mais usados, dois por linha, no máximo seis (revisão de 15/11). */
+const SERVICES: Service[] = [
+  { label: 'Boletos', hint: '2ª via e Pix', icon: 'barcode', color: '#07884c', href: '/financeiro', feature: 'boletos' },
+  { label: 'Reservas', hint: 'Salão, churrasqueira', icon: 'calendar', color: '#2f7bd8', href: '/reservas', feature: 'reservations' },
+  { label: 'Chamados', hint: 'Abra e acompanhe', icon: 'chatbubbles', color: '#c2611f', href: '/ocorrencias', feature: 'occurrences' },
+  { label: 'Autorizar entrada', hint: 'Avise a portaria', icon: 'person-add', color: '#5b6bd6', href: '/visitantes', feature: 'visitors' },
+  { label: 'Documentos', hint: 'Atas e regimento', icon: 'document-text', color: '#8a6d1f', href: '/documentos', feature: 'documents' },
+  { label: 'Prestação de contas', hint: 'Para onde foi o dinheiro', icon: 'pie-chart', color: '#0f7a6a', href: '/prestacao-de-contas', feature: 'accountability' },
 ];
 
 export default function Home() {
@@ -39,6 +42,15 @@ export default function Home() {
   const [opening, setOpening] = useState(false);
   const [hidden, setHidden] = useState(false);
   const many = (me?.links.length ?? 0) > 1;
+  const feed = useResource(() => api.notifications(), [residentId]);
+  const [seenAt, setSeenAt] = useState<string | null>(null);
+  // Ao voltar do sininho, relê a hora vista para o número sumir.
+  useFocusEffect(
+    useCallback(() => {
+      if (residentId !== null) void tokenStorage.getNotificationsSeen(residentId).then(setSeenAt);
+    }, [residentId]),
+  );
+  const unseen = unseenCount(feed.data ?? [], seenAt, stamp());
 
   useEffect(() => {
     void tokenStorage.getHideValues().then(setHidden);
@@ -83,26 +95,21 @@ export default function Home() {
   }
 
   async function refresh() {
-    await Promise.all([summary.reload(), charges.reload(), bookings.reload()]);
+    await Promise.all([summary.reload(), charges.reload(), bookings.reload(), feed.reload()]);
   }
   const current = me?.current ?? null;
   const s = summary.data;
   const name = current?.name ?? me?.user.name ?? '';
   const first = name.split(' ')[0] || 'morador';
-  const shortcuts = SHORTCUTS.filter((c) => isFeatureOn(me, c.feature));
-
-  const tiles: Tile[] = [];
-  if (s?.deliveries_waiting !== undefined) {
-    tiles.push({ label: 'Encomendas para retirar', value: String(s.deliveries_waiting), icon: 'cube', href: '/encomendas' });
-  }
-  if (s?.visits_today !== undefined) {
-    tiles.push({ label: 'Visitas previstas hoje', value: String(s.visits_today), icon: 'people', href: '/visitantes' });
-  }
+  const services = SERVICES.filter((c) => isFeatureOn(me, c.feature));
 
   const avatar = (
-    <Pressable onPress={() => router.push('/mais')} accessibilityRole="button" accessibilityLabel="Sua conta" style={styles.avatar}>
-      <Text style={styles.avatarText}>{initials(name)}</Text>
-    </Pressable>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+      <Bell count={unseen} />
+      <Pressable onPress={() => router.push('/perfil')} accessibilityRole="button" accessibilityLabel="Seu perfil" style={styles.avatar}>
+        <Text style={styles.avatarText}>{initials(name)}</Text>
+      </Pressable>
+    </View>
   );
 
   return (
@@ -118,7 +125,7 @@ export default function Home() {
           <View style={styles.heroTop}>
             <View style={{ flex: 1 }}>
               <Pressable
-                onPress={many ? () => router.push('/unidade') : undefined}
+                onPress={many ? () => router.push('/trocar-unidade') : undefined}
                 disabled={!many}
                 accessibilityRole={many ? 'button' : undefined}
                 accessibilityLabel={many ? 'Trocar de unidade' : undefined}
@@ -210,15 +217,24 @@ export default function Home() {
           </Pressable>
         </View>
       ) : null}
-      {shortcuts.length > 0 ? (
-        <View style={styles.shortcuts}>
-          {shortcuts.map((c) => (
-            <Pressable key={c.label} onPress={() => router.push(c.href)} accessibilityRole="button" accessibilityLabel={c.label} style={({ pressed }) => [styles.shortcut, pressed && { opacity: 0.7 }]}>
-              <View style={styles.shortcutIcon}>
-                <Ionicons name={c.icon} size={22} color={colors.brandStrong} />
+      {services.length > 0 ? (
+        <View style={styles.services}>
+          {services.map((c) => (
+            <Pressable
+              key={c.label}
+              onPress={() => router.push(c.href)}
+              accessibilityRole="button"
+              accessibilityLabel={c.label}
+              style={({ pressed }) => [styles.service, pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }]}
+            >
+              <View style={[styles.serviceIcon, { backgroundColor: c.color }]}>
+                <Ionicons name={c.icon} size={24} color="#ffffff" />
               </View>
-              <Text style={styles.shortcutLabel} numberOfLines={1}>
+              <Text style={styles.serviceLabel} numberOfLines={2}>
                 {c.label}
+              </Text>
+              <Text style={styles.serviceHint} numberOfLines={1}>
+                {c.hint}
               </Text>
             </Pressable>
           ))}
@@ -234,63 +250,16 @@ export default function Home() {
         </Card>
       ) : null}
 
-      {tiles.length > 0 ? (
-        <View style={styles.grid}>
-          {tiles.map((t) => (
-            <Card key={t.label} style={styles.tile} onPress={() => router.push(t.href)} accessibilityLabel={`${t.label}: ${t.value}`}>
-              <View style={styles.tileIcon}>
-                <Ionicons name={t.icon} size={18} color={colors.brandStrong} />
-              </View>
-              <Text style={styles.tileValue}>{t.value}</Text>
-              <Text style={styles.tileLabel}>{t.label}</Text>
-            </Card>
-          ))}
-        </View>
-      ) : null}
-
-      {s?.next_reservations && s.next_reservations.length > 0 ? (
+      {feed.data && feed.data.length > 0 ? (
         <>
-          <SectionTitle>Próximas reservas</SectionTitle>
-          {s.next_reservations.map((r) => (
-            <IconRow
-              key={r.id}
-              icon={areaIcon(r.area)}
-              title={r.area}
-              subtitle={`${date(r.reserved_on)}${r.starts_time ? ` · ${r.starts_time}` : ''}${r.ends_time ? ` às ${r.ends_time}` : ''}${r.status === 'active' ? ' · aguardando o síndico' : ''}`}
-              onPress={() => router.push('/reservas')}
-            />
-          ))}
-        </>
-      ) : null}
-      {s?.assemblies && s.assemblies.length > 0 ? (
-        <>
-          <SectionTitle>Assembleias</SectionTitle>
-          {s.assemblies.map((a) => (
-            <IconRow
-              key={a.id}
-              icon="podium"
-              tint="#07884c"
-              bg={colors.successSoft}
-              title={a.title}
-              subtitle={date(a.first_call_at)}
-              onPress={() => router.push({ pathname: '/assembleias/[id]', params: { id: String(a.id) } })}
-            />
-          ))}
-        </>
-      ) : null}
-      {s?.announcements && s.announcements.length > 0 ? (
-        <>
-          <SectionTitle>Comunicados</SectionTitle>
-          {s.announcements.map((a) => (
-            <IconRow
-              key={a.id}
-              icon="megaphone"
-              tint="#c2611f"
-              bg="#fdf0e6"
-              title={a.subject}
-              subtitle={date(a.published_at)}
-              onPress={() => router.push('/comunicados')}
-            />
+          <View style={styles.sectionHead}>
+            <SectionTitle>Notificações</SectionTitle>
+            <Pressable onPress={() => router.push('/avisos')} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.seeAll}>Ver todas</Text>
+            </Pressable>
+          </View>
+          {feed.data.slice(0, 4).map((n, i) => (
+            <NotificationRow key={`${n.kind}${i}${n.at}`} item={n} />
           ))}
         </>
       ) : null}
@@ -312,6 +281,27 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
   heroWrap: { borderRadius: 24, overflow: 'hidden' },
+  services: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
+  service: {
+    width: '47.8%',
+    flexGrow: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: space[4],
+    gap: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    shadowColor: '#0d2e27',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  serviceIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: space[2] },
+  serviceLabel: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
+  serviceHint: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  seeAll: { fontFamily: fonts.semibold, fontSize: 14, color: colors.brand },
   approved: { flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: '#e6f6ee', borderRadius: radius.xl, padding: space[4], borderWidth: 1, borderColor: '#bfe6d0' },
   approvedIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   approvedTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
@@ -366,27 +356,4 @@ const styles = StyleSheet.create({
   heroHint: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)', flexShrink: 1 },
   overdue: { backgroundColor: '#fde8e6', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   overdueText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.danger },
-  shortcuts: { flexDirection: 'row', justifyContent: 'space-between', gap: space[2], marginTop: space[1] },
-  shortcut: { flex: 1, alignItems: 'center', gap: 6 },
-  shortcutIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    shadowColor: '#0d2e27',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
-  },
-  shortcutLabel: { fontFamily: fonts.medium, fontSize: 12, color: colors.text },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
-  tile: { flexBasis: '47%', flexGrow: 1, gap: 4 },
-  tileIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  tileValue: { fontFamily: fonts.bold, fontSize: 24, letterSpacing: -0.4, color: colors.text },
-  tileLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
 });
