@@ -31,7 +31,9 @@ legenda: Tela Painel da unidade
 Use os filtros no alto da lista: **Unidade do Residencial Jardim das Acácias**.
 Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros.
 
-> Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.
+> Escolha primeiro o condomínio na barra superior: sem ele, o campo de unidade não aparece. Com o condomínio escolhido, a lista mostra só as unidades dele.
+
+No alto do painel aparece **Unidade vazia** ou **Unidade ocupada**, conforme a marca do cadastro da unidade. Para mudar, clique em {{Alterar na ficha da unidade}}.
 
 ## Ver a ficha da pessoa
 
@@ -47,7 +49,8 @@ Quando você usa esta tela, o sistema faz o seguinte:
 
 - O painel só lê: nada é gravado aqui. Para mudar um dado, use o botão que leva ao cadastro.
 - Os débitos são as receitas da unidade ainda sem pagamento, calculadas na hora a partir dos lançamentos: as vencidas, com os encargos de atraso até hoje, e as que ainda vão vencer. Os acordos e documentos vêm das telas de cobrança e de documentos.
-- Só aparecem as unidades dos condomínios do seu acesso.
+- Só aparecem as unidades dos condomínios do seu acesso. Sem condomínio escolhido na barra superior, o campo de unidade não aparece; com um escolhido, ele lista só as unidades daquele condomínio.
+- A marca **Unidade vazia** ou **Unidade ocupada** vem do cadastro da unidade, onde a equipe a altera.
 
 ## Quem pode usar
 

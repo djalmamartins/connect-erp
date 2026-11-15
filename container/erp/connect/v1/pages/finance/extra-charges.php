@@ -89,7 +89,7 @@ $this->insert('components/layout/page-head', [
                         <?php if (!$fine): ?>
                             <div class="erp-field erp-col-3"><label for="charge-method">Cálculo</label><select class="erp-select" id="charge-method" name="method" data-charge-method><?php foreach (EntryShortcuts::METHODS as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
                         <?php endif; ?>
-                        <div class="erp-field erp-col-3"><label for="charge-amount" data-charge-amount-label><?= $fine ? 'Valor (R$)' : 'Valor por unidade (R$)' ?></label><input class="erp-input" id="charge-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required></div>
+                        <div class="erp-field erp-col-3"><label for="charge-amount" data-charge-amount-label><?= $fine ? 'Valor (R$)' : 'Valor por unidade (R$)' ?></label><input data-erp-money class="erp-input" id="charge-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required></div>
                         <?php if ($fine): ?>
                             <div class="erp-field erp-col-6"><label for="charge-unit">Unidade</label><select class="erp-select" id="charge-unit" name="unit_id" required><option value="">Selecione</option><?php foreach ($chargeUnits as $u): ?><option value="<?= (int)$u['id'] ?>"><?= $this->e($u['label']) ?></option><?php endforeach; ?></select></div>
                             <?php $origins = $fineOrigins ?? ['occurrences' => [], 'reservations' => []]; if ($origins['occurrences'] !== [] || $origins['reservations'] !== []): ?>

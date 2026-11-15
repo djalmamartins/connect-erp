@@ -176,7 +176,7 @@ final class PanelSummaries
     {
         $today ??= date('Y-m-d');
         $this->authorize($user, 'unit');
-        $stmt = $this->pdo->prepare('SELECT u.id, u.condominium_id, u.label, u.block, u.number, u.type, u.ideal_fraction, c.name AS condominium_name
+        $stmt = $this->pdo->prepare('SELECT u.id, u.condominium_id, u.label, u.block, u.number, u.type, u.ideal_fraction, u.is_vacant, c.name AS condominium_name
             FROM erp_units u JOIN condominiums c ON c.id = u.condominium_id WHERE u.id = :id AND u.deleted_at IS NULL');
         $stmt->execute(['id' => $unitId]);
         $unit = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -211,6 +211,8 @@ final class PanelSummaries
             'unit' => ['id' => (int)$unit['id'], 'condominium_id' => $condominium, 'condominium_name' => (string)$unit['condominium_name'],
                 'label' => (string)$unit['label'], 'block' => $unit['block'], 'number' => (string)$unit['number'], 'type' => (string)$unit['type'],
                 'ideal_fraction' => $unit['ideal_fraction'] !== null ? (float)$unit['ideal_fraction'] : null,
+                // ADR 0310: marca "Unidade vazia" do cadastro (a ficha mostra Vazia ou Ocupada).
+                'is_vacant' => (bool)$unit['is_vacant'],
                 'address' => self::address($address, (string)$unit['label'])],
             'as_of' => $today,
             'people' => $people,

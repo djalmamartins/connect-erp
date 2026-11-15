@@ -114,7 +114,7 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-field erp-col-4"><label for="inv-competence">Competência</label><input class="erp-input" type="month" id="inv-competence" name="competence" value="<?= $this->e($filters['competencia'] !== '' ? $filters['competencia'] : date('Y-m')) ?>" required></div>
                     <div class="erp-field erp-col-4"><label for="inv-due">Vencimento</label><input class="erp-input" type="date" id="inv-due" name="due_on" required></div>
                     <div class="erp-field erp-col-4"><label for="inv-method">Cálculo</label><select class="erp-select" id="inv-method" name="method"><?php foreach ($methods as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
-                    <div class="erp-field erp-col-6"><label for="inv-amount" data-invoice-amount-label>Valor por unidade (R$)</label><input class="erp-input" id="inv-amount" name="amount_cents" inputmode="decimal" placeholder="Vazio = valor padrão do tipo" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"></div>
+                    <div class="erp-field erp-col-6"><label for="inv-amount" data-invoice-amount-label>Valor por unidade (R$)</label><input data-erp-money class="erp-input" id="inv-amount" name="amount_cents" inputmode="decimal" placeholder="Vazio = valor padrão do tipo" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"></div>
                     <div class="erp-field erp-col-6"><label for="inv-notes">Observações</label><input class="erp-input" id="inv-notes" name="notes" maxlength="255"></div>
                 </div>
             </div>

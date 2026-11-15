@@ -972,3 +972,18 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-inline-details > summary::-webkit-details-marker { display: none; }
 .erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
 .erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }
+/* Revisão de 15/11 (ADR 0310): ocupação no painel da unidade e "Itens por página" na paginação. */
+.erp-unit-occupancy { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 var(--erp-space-4); font-size: 13px; }
+.erp-per-page { display: flex; align-items: center; gap: 8px; margin: 0; }
+.erp-per-page label { font-size: 13px; color: var(--erp-muted); white-space: nowrap; }
+.erp-per-page .erp-select { width: auto; min-width: 84px; height: 34px; padding-top: 0; padding-bottom: 0; }
+.erp-pager { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.erp-pager a, .erp-pager span { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; }
+.erp-pager a:hover { border-color: var(--erp-brand); }
+.erp-pager .erp-pager_active, .erp-pager [aria-current="page"] { border-color: var(--erp-brand); background: var(--erp-brand); color: var(--erp-on-brand); font-weight: 700; }
+.erp-money { position: relative; display: block; width: 100%; }
+.erp-money::before { content: "R$"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--erp-muted); font-size: 14px; pointer-events: none; }
+.erp-money > .erp-input { padding-left: 38px; }
+.erp-money--sm { display: inline-block; width: auto; }
+.erp-money--sm::before { left: 8px; font-size: 12px; }
+.erp-money--sm > .erp-input { padding-left: 30px; }

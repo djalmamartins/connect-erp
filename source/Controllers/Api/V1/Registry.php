@@ -43,7 +43,9 @@ final class Registry
             'filter' => $_GET['type'] ?? null,
             'q' => $_GET['q'] ?? null,
             'page' => $_GET['page'] ?? 1,
-        ]);
+            // ADR 0310: filtro de marca (unidades: flag=vazias|ocupadas) e itens por página 50/100/200/500.
+            'flag' => $_GET['flag'] ?? null,
+        ] + (isset($_GET['per_page']) ? ['per_page' => $_GET['per_page']] : []));
         JsonResponse::send(200, [
             'data' => $result['data'],
             'meta' => ['total' => $result['total'], 'page' => $result['page'], 'per_page' => $result['per_page'], 'pages' => $result['pages']],

@@ -29,7 +29,7 @@ final class RegistryFormat
         return match ($field['type']) {
             'condominium' => (string)($condominiumName ?? $value),
             'select' => (string)($field['options'][$value] ?? $value),
-            'bool' => $value ? 'Sim' : 'Não',
+            'bool' => isset($field['shown']) ? (string)$field['shown'][$value ? 1 : 0] : ($value ? 'Sim' : 'Não'),
             'cpf', 'cnpj', 'document' => BrDocument::format((string)$value),
             'id_document' => strlen((string)$value) === 11 && ctype_digit((string)$value) ? BrDocument::format((string)$value) : (string)$value,
             'phone' => self::phone((string)$value),

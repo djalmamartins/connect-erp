@@ -145,7 +145,7 @@ $attachment ??= null;
                 'date' => ['date', ' min="1900-01-01" max="2100-12-31"', ''],
                 'time' => ['time', '', ''],
                 'int' => ['number', ' step="1" inputmode="numeric" min="' . (int)($field['min'] ?? 0) . '" max="' . (int)($field['max_value'] ?? 999999999) . '"', ''],
-                'money' => ['text', ' inputmode="decimal" maxlength="18"', '0,00'],
+                'money' => ['text', ' inputmode="decimal" maxlength="18" data-erp-money', '0,00'],
                 'percent' => ['text', ' inputmode="decimal" maxlength="6"', '0,00'],
                 'decimal' => ['text', ' inputmode="decimal" maxlength="20"', '0,' . str_repeat('0', (int)($field['scale'] ?? 2))],
                 'cpf' => ['text', ' inputmode="numeric" maxlength="14"', '000.000.000-00'],

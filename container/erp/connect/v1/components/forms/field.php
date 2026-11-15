@@ -37,7 +37,7 @@ $options = match ($field['type']) {
                 'month' => ['month', '', ''],
                 'int' => ['number', ' min="0" step="1" inputmode="numeric"', ''],
                 'pct' => ['number', ' min="0" max="100" step="0.01" inputmode="decimal"', '0,00'],
-                'money' => ['text', ' inputmode="decimal" pattern="\d{1,3}(\.?\d{3})*(,\d{2})?"', '0,00'],
+                'money' => ['text', ' inputmode="decimal" pattern="\d{1,3}(\.?\d{3})*(,\d{2})?" data-erp-money', '0,00'],
                 'doc' => ['text', ' inputmode="numeric" pattern="[0-9./-]{11,18}" maxlength="18"', 'Somente números'],
                 default => ['text', ' maxlength="180"', ''],
             }; ?>

@@ -44,7 +44,8 @@ return [
         'por_tras' => [
             'O painel só lê: nada é gravado aqui. Para mudar um dado, use o botão que leva ao cadastro.',
             'Os débitos são as receitas da unidade ainda sem pagamento, calculadas na hora a partir dos lançamentos: as vencidas, com os encargos de atraso até hoje, e as que ainda vão vencer. Os acordos e documentos vêm das telas de cobrança e de documentos.',
-            'Só aparecem as unidades dos condomínios do seu acesso.',
+            'Só aparecem as unidades dos condomínios do seu acesso. Sem condomínio escolhido na barra superior, o campo de unidade não aparece; com um escolhido, ele lista só as unidades daquele condomínio.',
+            'A marca **Unidade vazia** ou **Unidade ocupada** vem do cadastro da unidade, onde a equipe a altera.',
         ],
     ],
 
@@ -55,6 +56,8 @@ return [
             'No **Cadastro rápido**, você vê a lista antes de criar; ao confirmar, entram só as unidades que ainda não existem, todas juntas ou nenhuma (se uma falhar, nada é criado).',
             'A **fração ideal** é usada quando uma fatura é rateada pela fração: cada unidade paga a parte dela do total. Na grade de frações, a soma não pode passar de 100% e, com todas preenchidas, precisa dar 100%.',
             'Uma unidade com pessoas, veículos, lançamentos ou outros registros ativos ligados a ela não pode ser excluída. Inative-a: ela sai das cobranças novas e o histórico continua.',
+            'A marca **Unidade vazia** é da equipe: o sistema não a muda sozinho. Ela aparece na coluna **Ocupação**, no filtro de mesmo nome e no painel da unidade.',
+            'A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.',
             ...$registry,
         ],
     ],
