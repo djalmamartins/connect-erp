@@ -14,6 +14,7 @@ use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
+use Source\Services\Resident\ResidentProfile;
 use Source\Services\Resident\ResidentSession;
 use Source\Services\Resident\ResidentTicketClosed;
 use Source\Services\Resident\ResidentTickets;
@@ -58,6 +59,11 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  POST /api/v1/resident/2fa/confirm              ligar {code}; devolve os códigos de recuperação
  *  POST /api/v1/resident/2fa/disable              desligar {code}
  *  POST /api/v1/resident/2fa/recovery             novos códigos de recuperação {code}
+ *  GET  /api/v1/resident/onboarding               {completed, has_photo}: boas-vindas do primeiro acesso (revisão de 15/11)
+ *  POST /api/v1/resident/onboarding/complete      marca as boas-vindas como vistas → 204
+ *  GET  /api/v1/resident/profile/photo            foto da conta (image/jpeg 512×512) ou 404
+ *  POST /api/v1/resident/profile/photo            multipart, campo photo (JPG, PNG ou WebP até 10 MB) → {has_photo: true}
+ *  DELETE /api/v1/resident/profile/photo          tira a foto → 204
  */
 final class ResidentApp
 {
@@ -276,6 +282,64 @@ final class ResidentApp
     public function petsVehicles(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->petsVehicles($link));
+    }
+
+    public function onboarding(): void
+    {
+        $this->read(fn (User $u): array => (new ResidentProfile())->status((int)$u->id));
+    }
+
+    public function onboardingComplete(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            (new ResidentProfile())->complete((int)$user->id);
+            http_response_code(204);
+        }
+    }
+
+    public function photo(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link === null) {
+            return;
+        }
+        $file = (new ResidentProfile())->photo((int)$user->id);
+        if ($file === null) {
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Sem foto.']]);
+            return;
+        }
+        self::sendPhoto($file);
+    }
+
+    public function uploadPhoto(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            $this->run(200, function () use ($user): array {
+                (new ResidentProfile())->storePhoto((int)$user->id, is_array($_FILES['photo'] ?? null) ? $_FILES['photo'] : []);
+                return ['has_photo' => true];
+            });
+        }
+    }
+
+    public function deletePhoto(): void
+    {
+        [$user, $link] = $this->context();
+        if ($link !== null) {
+            (new ResidentProfile())->deletePhoto((int)$user->id);
+            http_response_code(204);
+        }
+    }
+
+    /** Foto só para a própria pessoa: nunca em cache compartilhado. Usado também pelo app web (/perfil/foto). */
+    public static function sendPhoto(string $file): void
+    {
+        header('Content-Type: image/jpeg');
+        header('Content-Length: ' . (string)filesize($file));
+        header('Cache-Control: private, max-age=300');
+        header('X-Content-Type-Options: nosniff');
+        readfile($file);
     }
 
     public function twoFactor(): void

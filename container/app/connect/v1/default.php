@@ -8,7 +8,7 @@
  * @var string $head @var string $title @var \Source\Models\User $user
  * @var list<array> $links vínculos válidos @var ?array $link vínculo atual
  * @var list<array{key:string,label:string,path:string,icon:string,active:bool,tab:bool,tab_active:bool}> $menu
- * @var int $unseen avisos novos no sininho
+ * @var int $unseen avisos novos no sininho @var ?string $photo endereço da foto da conta (revisão de 15/11)
  */
 $asset = static function (string $path): string {
     $file = __DIR__ . $path;
@@ -19,6 +19,7 @@ $personName = trim((string)($link['name'] ?? ''));
 $nameParts = $personName !== '' ? (preg_split('/\s+/u', $personName) ?: []) : [];
 $shortName = $nameParts === [] ? 'Morador' : $nameParts[0] . (count($nameParts) > 1 ? ' ' . end($nameParts) : '');
 $unseen = (int)($unseen ?? 0);
+$photo = $photo ?? null;
 $bell = function (string $class = '') use ($unseen): string {
     return '<a class="app-icon-button app-bell ' . $class . '" href="' . app_url('/avisos') . '" aria-label="Avisos' . ($unseen > 0 ? ' (' . $unseen . ' novos)' : '') . '" title="Avisos">'
         . '<svg aria-hidden="true"><use href="#i-bell"></use></svg>' . ($unseen > 0 ? '<span class="app-bell__count">' . ($unseen > 9 ? '9+' : $unseen) . '</span>' : '') . '</a>';
@@ -76,7 +77,7 @@ $unit = function (string $id) use ($link, $links): string {
         </div>
         <a class="app-icon-button" href="<?= app_url('/buscar') ?>" aria-label="Buscar" title="Buscar"><svg aria-hidden="true"><use href="#i-search"></use></svg></a>
         <?= $bell() ?>
-        <a class="app-top__avatar" href="<?= app_url('/perfil') ?>" aria-label="Perfil" title="Perfil"><?= $this->e($initials($personName)) ?></a>
+        <a class="app-top__avatar" href="<?= app_url('/perfil') ?>" aria-label="Perfil" title="Perfil"><?php if ($photo !== null): ?><img src="<?= $this->e($photo) ?>" alt="" width="38" height="38"><?php else: ?><?= $this->e($initials($personName)) ?><?php endif; ?></a>
     <?php else: ?>
         <a class="app-top__brand" href="<?= app_url('/') ?>" aria-label="Início">
             <img src="<?= $this->e(site_logo_url()) ?>" alt="Connect Condomínios" width="128" height="34">
@@ -127,7 +128,7 @@ $unit = function (string $id) use ($link, $links): string {
                 <input id="app-bar-q" type="search" name="q" placeholder="Buscar comunicados, documentos, encomendas…" maxlength="80" value="<?= $this->e(is_string($_GET['q'] ?? null) ? (string)$_GET['q'] : '') ?>">
             </form>
             <?= $bell() ?>
-            <a class="app-bar__avatar" href="<?= app_url('/perfil') ?>" title="Perfil" aria-label="Perfil"><?= $this->e($initials($personName)) ?></a>
+            <a class="app-bar__avatar" href="<?= app_url('/perfil') ?>" title="Perfil" aria-label="Perfil"><?php if ($photo !== null): ?><img src="<?= $this->e($photo) ?>" alt="" width="38" height="38"><?php else: ?><?= $this->e($initials($personName)) ?><?php endif; ?></a>
         </div>
         <?php endif; ?>
         <?php if ($appFlash = flash()): ?><div class="app-flash" role="status"><?= $appFlash ?></div><?php endif; ?>
