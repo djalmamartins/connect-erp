@@ -32,7 +32,7 @@ O morador não mexe com o dinheiro do condomínio, por isso a verificação em d
 
 ## Ligar as funções no condomínio
 
-Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Moradores]], escolha o condomínio na barra superior e ligue o que o aplicativo deve mostrar: Boletos, Prestação de contas, Comunicados, Reservas, Ocorrências, Encomendas, Visitantes, Assembleias e Documentos. A mudança vale na hora.
+Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Moradores]], escolha o condomínio na barra superior e ligue o que o aplicativo deve mostrar: Boletos, Prestação de contas, Comunicados, Reservas, Ocorrências, Encomendas, Visitantes, Assembleias, Documentos e Moradores da unidade. A mudança vale na hora.
 
 > Boletos aparecem só para **proprietário, inquilino e responsável financeiro**. O morador sem responsabilidade financeira não vê cobrança.
 
@@ -43,7 +43,12 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 - **Menu de baixo** (no celular): **Início**, **Resolva fácil**, **Unidade** e **Perfil**. No computador, as mesmas opções ficam no menu lateral.
 - **Início**: o cartão verde mostra o valor em aberto, o próximo vencimento e os botões **2ª via do boleto** e **Copiar código**. O ícone de olho esconde os valores (a escolha fica no aparelho). Quem tem mais de uma unidade toca na setinha ao lado do nome do condomínio para trocar. Embaixo ficam até seis botões, dois por linha: Boletos, Reservas, Chamados, Autorizar entrada, Documentos e Prestação de contas. Depois deles vêm as **notificações** mais recentes.
 - **Resolva fácil**: os serviços do condomínio num lugar só: Documentos, Prestação de contas, Assembleia digital, Boletos, Reservas, Chamado, Ocorrência e Comunicados. CND aparece como **Em breve**.
-- **Unidade**: atalhos para Correspondências (encomendas), Autorizar entrada (visitantes) e Chamados, e a lista de veículos e pets. Moradores aparece como **Em breve**.
+- **Unidade**: atalhos para Moradores, Correspondências (encomendas), Autorizar entrada (visitantes) e Chamados, e a lista de veículos e pets.
+- **Moradores** (função **Moradores da unidade**): mostra quem está ligado à unidade, com o vínculo e a situação, sem CPF, e-mail ou telefone.
+  - O **proprietário** cadastra inquilino e morador e pode **bloquear** um inquilino. O inquilino bloqueado fica inativo, com fim do vínculo no dia, e não entra mais no aplicativo. Logo depois, o app oferece cadastrar o novo inquilino.
+  - O **inquilino** cadastra morador (família ou quem mora junto), mas não bloqueia ninguém.
+  - O **morador** só vê a lista.
+  - O cadastro entra em [[Cadastros > Proprietários e inquilinos]] com a observação "Cadastrado pelo aplicativo do morador". Para a pessoa nova usar o aplicativo, a administração envia o convite, como sempre. Tudo fica na auditoria.
 - **Perfil**: os dados da pessoa no cadastro (nome, e-mail, telefone e CPF mascarado), a **foto** (colocar, trocar ou remover), a verificação em duas etapas, as dicas do primeiro acesso, os avisos, como instalar no celular e o botão **Sair**.
 - **Primeiro acesso**: na primeira vez que entra, o morador vê as **boas-vindas**: coloca uma foto (tirada na hora ou escolhida da galeria) e passa por três dicas rápidas. Ele pode pular a qualquer momento, e as boas-vindas não aparecem de novo. A foto é recortada em quadrado, perde os dados de localização e só a própria pessoa vê.
 - **Esqueci minha senha**: na tela de entrada, o morador informa o e-mail ou o CPF e recebe um link para criar uma senha nova. A resposta é sempre a mesma, exista a conta ou não, e há limite de pedidos.

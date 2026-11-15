@@ -268,6 +268,8 @@ final class RegistryService
         'waitlist' => ['common_area_id', 'desired_on', 'notes', 'resident_name'],
         'occurrences' => ['subject', 'priority', 'occurred_on', 'description'],
         'visit_forecasts' => ['visitor_name', 'visitor_document', 'expected_on', 'expected_until', 'notes', 'authorized_by'],
+        // Etapa 4 da revisão de 15/11: o vínculo (inquilino ou morador) é conferido antes, em ResidentHousehold.
+        'residents' => ['relationship', 'name', 'document', 'email', 'phone', 'starts_on', 'unit_label', 'notes'],
     ];
 
     /** @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident) */

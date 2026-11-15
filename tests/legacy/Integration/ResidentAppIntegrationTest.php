@@ -12,6 +12,8 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Erp\ResidentPortalPermissions;
 use Source\Services\Resident\ResidentFeatureDisabled;
+use Source\Services\Resident\ResidentHousehold;
+use Source\Services\Resident\ResidentNotAllowed;
 use Source\Services\Resident\ResidentLinks;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentTicketClosed;
@@ -299,6 +301,61 @@ final class ResidentAppIntegrationTest extends TestCase
             self::assertArrayHasKey('kind', $error->errors);
         }
         self::assertSame($before, (int)$this->pdo->query('SELECT COUNT(*) FROM studio_support_tickets')->fetchColumn());
+    }
+
+    public function testOwnerAddsAndBlocksTenantInOwnUnitOnly(): void
+    {
+        $household = new ResidentHousehold($this->pdo);
+        $tenantUser = $this->resident($this->alpha, $this->unitA, 'Carla Inquilina', 'tenant');
+        $owner = $this->link($this->morador, ['household']);
+        $tenant = $this->link($tenantUser, ['household']);
+
+        try {
+            $household->list($this->link($this->morador));
+            self::fail('Função desligada.');
+        } catch (ResidentFeatureDisabled) {
+            self::assertTrue(true);
+        }
+        $list = $household->list($owner, '2026-11-15');
+        self::assertSame(['Ana Moradora', 'Carla Inquilina'], array_column($list['data'], 'name'));
+        self::assertSame([['tenant', 'resident'], [false, true], [true, false]], [$list['meta']['can_add'], array_column($list['data'], 'can_block'), array_column($list['data'], 'is_me')]);
+        self::assertArrayNotHasKey('document', $list['data'][0], 'Sem CPF na lista (LGPD).');
+
+        // O inquilino cadastra morador, mas não outro inquilino, e não bloqueia.
+        $kid = $household->add($tenantUser, $tenant, ['relationship' => 'resident', 'name' => 'Davi Filho', 'unit_label' => 'X', 'condominium_id' => $this->beta], '2026-11-15');
+        $row = $this->pdo->query('SELECT condominium_id, unit_id, unit_label, created_by FROM erp_residents WHERE id = ' . $kid['id'])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame([$this->alpha, $this->unitA, (int)$tenantUser->id], [(int)$row['condominium_id'], (int)$row['unit_id'], (int)$row['created_by']], 'O vínculo manda.');
+        self::assertSame($tenant['unit_label'], $row['unit_label']);
+        foreach ([fn () => $household->add($tenantUser, $tenant, ['relationship' => 'tenant', 'name' => 'Outro'], '2026-11-15'),
+                fn () => $household->block($tenantUser, $tenant, $kid['id'], '2026-11-15')] as $refused) {
+            try {
+                $refused();
+                self::fail('O inquilino não pode.');
+            } catch (ResidentNotAllowed) {
+                self::assertTrue(true);
+            }
+        }
+        try {
+            $household->add($this->morador, $owner, ['relationship' => 'tenant', 'name' => ''], '2026-11-15');
+            self::fail('Nome obrigatório.');
+        } catch (RegistryValidationException $error) {
+            self::assertArrayHasKey('name', $error->errors);
+        }
+
+        // O proprietário bloqueia o inquilino: inativo, fim hoje, sem acesso ao app; e cadastra o novo.
+        $carla = array_values(array_filter($list['data'], static fn (array $p): bool => $p['relationship'] === 'tenant'))[0];
+        $blocked = $household->block($this->morador, $owner, $carla['id'], '2026-11-15');
+        self::assertSame(['blocked', '2026-11-15', false], [$blocked['status'], $blocked['ends_on'], $blocked['can_block']]);
+        self::assertSame([], (new ResidentLinks($this->pdo))->forUser($tenantUser, '2026-11-15'));
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_residents' AND action = 'update' AND entity_id = " . $carla['id'])->fetchColumn());
+        $new = $household->add($this->morador, $owner, ['relationship' => 'tenant', 'name' => 'Eva Nova Inquilina', 'document' => '529.982.247-25'], '2026-11-15');
+        self::assertSame(['tenant', 'active', true], [$new['relationship'], $new['status'], $new['can_block']]);
+
+        // Vizinho de outra unidade não vê nem bloqueia.
+        $neighbor = $this->link($this->vizinho, ['household']);
+        self::assertNotContains('Eva Nova Inquilina', array_column($household->list($neighbor, '2026-11-15')['data'], 'name'));
+        $this->expectException(RegistryNotFound::class);
+        $household->block($this->vizinho, ['relationship' => 'owner'] + $neighbor, $new['id'], '2026-11-15');
     }
 
     private function link(User $user, array $extraFeatures = []): array
