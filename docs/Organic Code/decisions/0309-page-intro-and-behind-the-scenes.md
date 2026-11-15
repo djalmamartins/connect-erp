@@ -19,10 +19,13 @@ acontece por trás de cada ação ("quando eu cadastro um pagamento, o que acont
   você grava: validações, duplicidades, travas, histórico, efeitos em outras telas) e `mais` (texto só do artigo).
   Os textos são conferidos no código de cada tela; nada que o sistema não faça.
 - **ERP:** `components/layout/page-intro.php`, inserido pelo `page-head.php` (que todas as páginas usam), mostra o
-  quadro "Sobre esta tela" logo abaixo do título: uma linha discreta (fundo claro, borda fina, sem negrito) com o que a
-  tela faz e o link "O que acontece por trás", que abre a lista e o link para `/suporte/tela/{código}`. O X fecha e o
-  quadro não volta mais naquela tela, naquele navegador (localStorage). Não aparece na impressão. Página sem
-  explicação não mostra nada. (Visual revisto com o Djalma em 15/11/2026: o primeiro era grande demais.)
+  quadro "Sobre esta tela" logo abaixo do título, no modelo que o Djalma mandou em 15/11/2026: caixa clara de borda
+  fina, título pequeno com ícone, o que a tela faz, até 3 itens do que acontece por trás e "Abrir tutorial completo"
+  (`/suporte/tela/{código}`). Clicar no título recolhe a caixa para só o título, e recolhida ela continua recolhida
+  naquela tela, naquele navegador (localStorage). Não aparece na impressão. Página sem explicação não mostra nada.
+- **Resumo de cada área na Central de Ajuda:** `kb/areas/<categoria>.md` (Markdown da base) aparece no topo da página
+  da categoria em `/suporte`, como "Como funciona esta área": o que é a área, a ordem de uso e o que acontece por trás.
+  `KnowledgeBase::areaIntro/areaProblems`; o `check` confere categoria e links. Escrito junto com a etapa da área.
 - **Artigo:** `php tools/help.php explicar` escreve a seção `## O que acontece por trás` no .md (antes de "Quem pode
   usar"), e o `HelpWriter` (`escrever`) mantém a seção ao reescrever o artigo. O `check` (já no CI) falha se a seção
   do artigo estiver diferente da explicação ou se houver explicação de página que não existe no menu.

@@ -47,7 +47,7 @@ $codes = array_keys($catalog['pages']);
 
 switch ($command) {
     case 'check':
-        $problems = array_merge($kb->problems($codes, !in_array('--sem-prints', $options, true)), PageGuides::problems($kb, $codes));
+        $problems = array_merge($kb->problems($codes, !in_array('--sem-prints', $options, true)), PageGuides::problems($kb, $codes), $kb->areaProblems());
         $drafts = array_filter($kb->articles(), static fn (array $a): bool => $a['draft']);
         if ($drafts) {
             fwrite(STDERR, count($drafts) . " artigo(s) ainda em rascunho (não aparecem no site):\n");

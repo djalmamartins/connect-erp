@@ -108,3 +108,5 @@ para o artigo. O mesmo texto vira a seção `## O que acontece por trás` do art
   O `check` falha se o artigo ficar diferente da explicação.
 - Página nova: escreva a explicação dela no mesmo PR do artigo.
 - O guia geral para quem está chegando é `primeiros-passos/como-o-sistema-funciona.md`.
+- Cada categoria tem (ou terá, por etapa) o resumo "Como funciona esta área" em
+  `container/web/support/v1/kb/areas/<categoria>.md`, mostrado no topo da página da categoria em `/suporte`.

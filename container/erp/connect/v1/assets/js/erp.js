@@ -3104,13 +3104,10 @@
   });
 
   /* "Sobre esta tela" (ADR 0309) ------------------------------------------
-   * O X fecha o quadro e ele não volta mais naquela tela, neste navegador. */
-  $$('[data-erp-intro]').forEach(function (box) {
+   * Recolhida pelo título, a caixa continua recolhida naquela tela, neste navegador. */
+  $$('details[data-erp-intro]').forEach(function (box) {
     var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
-    if (storage.get(key) === 'closed') { box.hidden = true; return; }
-    var close = $('[data-erp-intro-close]', box);
-    if (close) {
-      close.addEventListener('click', function () { storage.set(key, 'closed'); box.hidden = true; });
-    }
+    if (storage.get(key) === 'closed') { box.open = false; }
+    box.addEventListener('toggle', function () { storage.set(key, box.open ? 'open' : 'closed'); });
   });
 })();
