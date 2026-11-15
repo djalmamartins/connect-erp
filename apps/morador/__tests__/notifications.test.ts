@@ -19,3 +19,12 @@ describe('unseenCount', () => {
   });
   it('stamp no formato do servidor', () => expect(stamp(new Date(2026, 10, 5, 7, 3, 9))).toBe('2026-11-05 07:03:09'));
 });
+
+describe('chamados (etapa 3)', () => {
+  it('ocorrência e chamado abrem a lista ou a conversa', () => {
+    expect(notificationRoute('/ocorrencias')).toBe('/chamados');
+    expect(notificationRoute('/chamados')).toBe('/chamados');
+    expect(notificationRoute('/chamados/42')).toBe('/chamados/42');
+    expect(notificationRoute('/chamados/abc')).toBe('/avisos');
+  });
+});
