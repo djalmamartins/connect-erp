@@ -5,7 +5,7 @@ resumo: O app Connect Morador (iPhone e Android) mostra ao morador os boletos, a
 categoria: comunicacao
 icone: phone-portrait-outline
 situacao: guia
-palavras: chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
+palavras: moradores, inquilino, bloquear inquilino, chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
 rascunho: nao
 ---
 
@@ -40,7 +40,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Reservas**: duas abas. Em **Nova reserva** ficam os espaços liberados (com filtros Todos, Gratuitos e Com taxa), cada um com preço, capacidade e horário. Tocando no espaço abre o calendário do mês: dias livres em branco, parte do dia tomada em amarelo, ocupados em vermelho e fora do prazo em cinza. O morador escolhe o dia, vê os horários já reservados (sem saber quem reservou), escolhe o horário e pede a reserva, ou entra na lista de espera. Todo pedido do morador vai para a avaliação do síndico: o app avisa "Pedido enviado para o síndico" e a reserva fica **Aguardando o síndico**. Quando a equipe aprova no ERP, o morador recebe o e-mail de reserva aprovada e, ao abrir o app, vê o aviso **Reserva aprovada** no Início. Em **Minhas reservas** ficam as reservas com a cor da situação (aprovada, aguardando o síndico, cancelada) e a lista de espera.
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
 - **Resolva fácil**: Boletos, Reservas, Chamado, Ocorrência, Documentos, Prestação de contas, Assembleia digital, Comunicados e CND. CND aparece como "Em breve" até entrar no app.
-- **Unidade**: a unidade e o condomínio (com troca, para quem tem mais de uma), Moradores ("Em breve"), Autorizar entrada (visitantes), Veículos, Pets, Correspondências (encomendas) e Consultar chamados.
+- **Unidade**: a unidade e o condomínio (com troca, para quem tem mais de uma), Moradores, Autorizar entrada (visitantes), Veículos, Pets, Correspondências (encomendas) e Consultar chamados.
 - **Perfil**: foto, nome e unidade. Tocando na foto, dá para tirar outra, escolher da galeria ou remover. Também tem Rever as dicas do app, Verificação em duas etapas, entrada com Face ID ou digital, trocar de unidade e sair.
 - **Notificações**: o sino abre a lista de avisos (contas vencidas, encomendas, visitas do dia, comunicados, assembleias, reservas chegando e reservas aprovadas); tocando num aviso, abre a tela dele.
 
@@ -49,6 +49,18 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 No **Resolva fácil**, {{Chamado}} abre um pedido ou uma dúvida para a administração, e {{Ocorrência}} registra um problema no condomínio, como barulho, vazamento ou algo quebrado. A ocorrência também pede a data do fato. Os dois viram chamado do Help Desk e recebem um número de protocolo.
 
 Em **Unidade > Consultar chamados** fica a lista **Meus registros**, com os chamados e as ocorrências da pessoa. Dá para filtrar entre Todos, Chamados e Ocorrências. Tocando num registro, abre a conversa: as mensagens do morador ficam à direita, em verde, e as da administração ficam à esquerda. A resposta é escrita embaixo. Um chamado fechado não aceita mais mensagens, e para continuar o assunto é preciso abrir outro. A situação "Aguardando você" quer dizer que a administração espera uma resposta do morador.
+
+## Moradores da unidade
+
+Em **Unidade > Moradores** aparece quem mora na unidade: proprietário, inquilino e moradores, com a data de entrada. A lista mostra só nome e vínculo, sem CPF, e-mail ou telefone. Quem cadastra depende do vínculo:
+
+- O **proprietário** cadastra moradores e inquilinos e pode bloquear o inquilino atual.
+- O **inquilino** cadastra moradores.
+- O **morador** só consulta.
+
+Ao tocar em {{Bloquear inquilino}}, o app pede confirmação. O vínculo termina no mesmo dia e o inquilino perde o acesso ao app. Em seguida, o app oferece {{Cadastrar novo inquilino}}. Os vínculos encerrados ficam no fim da lista.
+
+Essa parte depende da função **Moradores da unidade** na matriz do portal, que começa desligada.
 
 ## Ligar e desligar funções
 

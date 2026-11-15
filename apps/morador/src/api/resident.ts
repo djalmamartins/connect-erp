@@ -15,7 +15,8 @@ export type Feature =
   | 'deliveries'
   | 'visitors'
   | 'documents'
-  | 'assemblies';
+  | 'assemblies'
+  | 'household';
 
 export type ResidentLink = {
   resident_id: number;
@@ -178,6 +179,33 @@ export type TicketDetail = Ticket & { messages: TicketMessage[] };
 
 export const TICKETS_PER_PAGE = 20;
 
+/** Pessoas da unidade (etapa 4). Sem CPF, e-mail ou telefone na lista (LGPD). */
+export type HouseholdRelationship = 'owner' | 'tenant' | 'resident' | 'financial';
+
+export type HouseholdMember = {
+  id: number;
+  name: string;
+  relationship: HouseholdRelationship | string;
+  relationship_label: string;
+  status: 'active' | 'blocked' | string;
+  status_label?: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  is_me: boolean;
+  can_block: boolean;
+};
+
+export type Household = { data: HouseholdMember[]; meta: { can_add: ('resident' | 'tenant')[] } };
+
+export type NewHouseholdMember = {
+  relationship: 'resident' | 'tenant';
+  name: string;
+  document?: string;
+  email?: string;
+  phone?: string;
+  starts_on?: string;
+};
+
 export type Delivery = {
   id: number;
   recipient: string;
@@ -281,6 +309,12 @@ export function residentApi(api: ApiClient) {
     openTicket: (body: { kind: TicketKind; subject: string; description: string; priority: Priority; occurred_on: string }) =>
       api.post<TicketDetail>('/resident/tickets', body),
     replyTicket: (id: number, body: string) => api.post<{ message_id: number; status: string }>(`/resident/tickets/${id}/messages`, { body }),
+    household: async (): Promise<Household> => {
+      const r = await api.getWithMeta<HouseholdMember[], Partial<Household['meta']>>('/resident/unit/residents');
+      return { data: r.data ?? [], meta: { can_add: r.meta?.can_add ?? [] } };
+    },
+    addHouseholdMember: (body: NewHouseholdMember) => api.post<HouseholdMember>('/resident/unit/residents', body),
+    blockTenant: (id: number) => api.post<HouseholdMember>(`/resident/unit/residents/${id}/block`),
     deliveries: () => api.get<Delivery[]>('/resident/deliveries'),
     visits: () => api.get<Visit[]>('/resident/visits'),
     createVisit: (body: { visitor_name: string; visitor_document?: string; expected_on: string; expected_until?: string; notes?: string }) =>
