@@ -72,7 +72,7 @@ export function createClient(options: ClientOptions) {
     return h;
   }
 
-  async function parse<T>(response: Response): Promise<T> {
+  async function parse<T>(response: Response, whole = false): Promise<T> {
     let body: unknown = null;
     const text = await response.text();
     if (text !== '') {
@@ -95,10 +95,13 @@ export function createClient(options: ClientOptions) {
       }
       throw apiError;
     }
+    if (whole) {
+      return (body ?? {}) as T;
+    }
     return ((body as { data?: T } | null)?.data ?? (null as T));
   }
 
-  async function send<T>(method: string, path: string, query: Query, init: RequestInit): Promise<T> {
+  async function send<T>(method: string, path: string, query: Query, init: RequestInit, whole = false): Promise<T> {
     const url = buildUrl(options.baseUrl, path, query, options.getResidentId?.() ?? null);
     let response: Response;
     try {
@@ -106,13 +109,17 @@ export function createClient(options: ClientOptions) {
     } catch {
       throw new ApiError(0, 'network', NETWORK_MESSAGE);
     }
-    return parse<T>(response);
+    return parse<T>(response, whole);
   }
 
   return {
     baseUrl: options.baseUrl,
     get<T>(path: string, query: Query = {}): Promise<T> {
       return send<T>('GET', path, query, { headers: headers() });
+    },
+    /** Resposta inteira ({data, meta}), para listas que mandam regras junto. */
+    getWithMeta<T, M>(path: string, query: Query = {}): Promise<{ data: T; meta: M }> {
+      return send<{ data: T; meta: M }>('GET', path, query, { headers: headers() }, true);
     },
     post<T>(path: string, body: unknown = {}, query: Query = {}): Promise<T> {
       return send<T>('POST', path, query, {

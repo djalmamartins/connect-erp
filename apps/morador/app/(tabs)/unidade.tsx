@@ -8,7 +8,7 @@ import { MenuGroup, visibleItems, type MenuItem } from '../../src/ui/Menu';
 
 /** Unidade: quem mora, o que tem e quem entra (revisão de 15/11). */
 const PEOPLE: MenuItem[] = [
-  { label: 'Moradores', hint: 'Cadastre moradores e inquilinos', icon: 'people', color: '#0f7a6a' },
+  { label: 'Moradores', hint: 'Cadastre moradores e inquilinos', icon: 'people', color: '#0f7a6a', href: '/moradores', feature: 'household' },
   { label: 'Autorizar entrada', hint: 'Avise a portaria de quem vem', icon: 'person-add', color: '#5b6bd6', href: '/visitantes', feature: 'visitors' },
 ];
 const THINGS: MenuItem[] = [
