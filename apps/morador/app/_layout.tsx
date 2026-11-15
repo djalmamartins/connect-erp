@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
+import { ProfileProvider } from '../src/auth/ProfileContext';
 import { colors } from '../src/theme';
 import { DialogHost } from '../src/ui/Dialog';
 import { IntroSplash } from '../src/ui/IntroSplash';
@@ -29,6 +30,7 @@ function RootStack() {
       </Stack.Protected>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="boas-vindas" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="comunicados" />
         <Stack.Screen name="prestacao-de-contas" />
         <Stack.Screen name="encomendas" />
@@ -66,7 +68,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <AuthProvider>
-        <RootStack />
+        <ProfileProvider>
+          <RootStack />
+        </ProfileProvider>
       </AuthProvider>
       <DialogHost />
       {intro ? (

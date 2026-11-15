@@ -140,3 +140,40 @@ describe('residentApi', () => {
     expect(isFeatureOn(null, 'boletos')).toBe(false);
   });
 });
+
+describe('etapa 2: senha, primeiro acesso e foto', () => {
+  it('pede o link de nova senha sem token e usa a mensagem do servidor', async () => {
+    const calls: Call[] = [];
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => null, fetchImpl: fakeFetch(202, { data: { message: 'Enviado.' } }, calls) }));
+    await expect(api.forgotPassword('ana@x.com')).resolves.toBe('Enviado.');
+    expect(calls[0]!.url).toBe('https://x/api/v1/resident/password/forgot');
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ login: 'ana@x.com' });
+    expect((calls[0]!.init.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
+
+  it('cai na mensagem genérica quando o corpo vem vazio', async () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => null, fetchImpl: fakeFetch(202, undefined, []) }));
+    await expect(api.forgotPassword('123.456.789-09')).resolves.toMatch(/Se a conta existir/);
+  });
+
+  it('devolve o 429 do limite de tentativas como ApiError', async () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => null, fetchImpl: fakeFetch(429, { error: { code: 'too_many_requests', message: 'Aguarde.' } }, []) }));
+    const e = await failure(api.forgotPassword('ana@x.com'));
+    expect(e.status).toBe(429);
+  });
+
+  it('a foto vai com o token e o vínculo, e a versão evita o cache', () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 'tok', getResidentId: () => 9, fetchImpl: fakeFetch(200, {}, []) }));
+    const src = api.photoSource(3);
+    expect(src.uri).toBe('https://x/api/v1/resident/profile/photo?v=3&resident_id=9');
+    expect(src.headers.Authorization).toBe('Bearer tok');
+  });
+
+  it('envia a foto como multipart no campo photo', async () => {
+    const calls: Call[] = [];
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 'tok', fetchImpl: fakeFetch(200, { data: { has_photo: true } }, calls) }));
+    await expect(api.uploadPhoto({ uri: 'file:///a.jpg', name: 'a.jpg', type: 'image/jpeg' })).resolves.toEqual({ has_photo: true });
+    expect(calls[0]!.init.method).toBe('POST');
+    expect(calls[0]!.init.body).toBeInstanceOf(FormData);
+  });
+});

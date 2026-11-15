@@ -29,6 +29,14 @@
       "expo-secure-store",
       "expo-font",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Connect usa as suas fotos para você escolher a foto do perfil.",
+          "cameraPermission": "O Connect usa a câmera para você tirar a foto do perfil.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "O Connect usa o Face ID para você entrar sem digitar a senha."
