@@ -533,5 +533,22 @@ a.app-day:hover { background: var(--app-brand-tint); }
 @media (min-width: 900px) { .app-calendar, .app-day-panel, .app-area-info { max-width: 620px; } }
 
 /* Espaçamento das listas (15/11): o espaço entre cartões vem só do gap da lista, e a lista se afasta dos totais. */
-.app-items > .app-card { margin-bottom: 0; }
+.app-items > .app-card, .app-item-wrap > .app-card { margin-bottom: 0; }
 .app-grid + .app-items, .app-grid + .app-empty, .app-grid + .app-card { margin-top: 14px; }
+
+/* Revisão de 15/11: botões grandes com ícone, dois por linha (Início, Resolva fácil, Unidade). */
+.app-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 18px; }
+.app-action { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 14px; border-radius: var(--app-radius); background: var(--app-surface);
+  box-shadow: var(--app-shadow); color: var(--app-text); text-decoration: none; }
+a.app-action { transition: box-shadow .15s, transform .15s; }
+a.app-action:hover { box-shadow: 0 6px 18px #0b2a1a1f; transform: translateY(-1px); }
+a.app-action:focus-visible { outline: 2px solid var(--app-brand); outline-offset: 2px; }
+.app-action__icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--app-brand-tint); color: var(--app-brand-strong); }
+.app-action__icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-action__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.app-action__text strong { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; hyphens: auto; }
+.app-action__text small { font-size: 12px; color: var(--app-muted); margin-top: 2px; }
+.app-action.is-soon { opacity: .6; box-shadow: none; border: 1px dashed #c9d6cf; background: transparent; }
+.app-action.is-soon .app-action__icon { background: #eef2f0; color: #7b8a83; }
+@media (min-width: 900px) { .app-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.app-wallet + .app-actions { margin-top: 14px; }

@@ -26,7 +26,7 @@ O aplicativo do morador é o site **app.connect.lab**, feito para o celular. O m
 
 ## Verificação em duas etapas (opcional)
 
-O morador não mexe com o dinheiro do condomínio, por isso a verificação em duas etapas é **opcional** para ele, mesmo quando é obrigatória para a equipe. Se quiser mais proteção, ele liga em **Minha unidade > Segurança da conta**: lê o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro), digita o código de 6 números e guarda os códigos de recuperação. Daí em diante o código é pedido ao entrar, no site e no aplicativo do celular. Para desligar, ele digita o código atual na mesma tela.
+O morador não mexe com o dinheiro do condomínio, por isso a verificação em duas etapas é **opcional** para ele, mesmo quando é obrigatória para a equipe. Se quiser mais proteção, ele liga em **Perfil > Verificação em duas etapas**: lê o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro), digita o código de 6 números e guarda os códigos de recuperação. Daí em diante o código é pedido ao entrar, no site e no aplicativo do celular. Para desligar, ele digita o código atual na mesma tela.
 
 >! Quem é da equipe e também mora no condomínio continua com a verificação obrigatória, porque a mesma conta entra no ERP.
 
@@ -40,8 +40,12 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 
 ## O que o morador pode fazer
 
-- **Início**: o cartão verde mostra o valor em aberto, o próximo vencimento e os botões **2ª via do boleto** e **Copiar código**. O ícone de olho esconde os valores (a escolha fica no aparelho). Quem tem mais de uma unidade toca na setinha ao lado do nome do condomínio para trocar. Os atalhos levam a Reservar, Chamado, Visitante e Documentos.
-- **Barra de cima**: o nome da pessoa e a unidade, a **busca** (comunicados, assembleias, documentos, encomendas e páginas) e o **sininho** com os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada e reserva da semana. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
+- **Menu de baixo** (no celular): **Início**, **Resolva fácil**, **Unidade** e **Perfil**. No computador, as mesmas opções ficam no menu lateral.
+- **Início**: o cartão verde mostra o valor em aberto, o próximo vencimento e os botões **2ª via do boleto** e **Copiar código**. O ícone de olho esconde os valores (a escolha fica no aparelho). Quem tem mais de uma unidade toca na setinha ao lado do nome do condomínio para trocar. Embaixo ficam até seis botões, dois por linha: Boletos, Reservas, Chamados, Autorizar entrada, Documentos e Prestação de contas. Depois deles vêm as **notificações** mais recentes.
+- **Resolva fácil**: os serviços do condomínio num lugar só: Documentos, Prestação de contas, Assembleia digital, Boletos, Reservas, Chamado e Comunicados. CND e Ocorrência aparecem como **Em breve**.
+- **Unidade**: atalhos para Correspondências (encomendas), Autorizar entrada (visitantes) e Chamados, e a lista de veículos e pets. Moradores aparece como **Em breve**.
+- **Perfil**: os dados da pessoa no cadastro (nome, e-mail, telefone e CPF mascarado), a verificação em duas etapas, os avisos, como instalar no celular e o botão **Sair**.
+- **Barra de cima**: o nome da pessoa e a unidade, a **busca**, o **sininho** ao lado da foto do perfil (comunicados, assembleias, documentos, encomendas e páginas). O sininho mostra os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada e reserva da semana. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
 - **Boletos**: ver a situação de cada conta da unidade; ao rolar até o fim, as contas mais antigas carregam sozinhas, de 6 em 6 meses. Tocando na conta: se estiver paga, abre o **recibo** para imprimir ou salvar em PDF; se estiver em aberto, oferece **baixar o boleto**, copiar a linha digitável ou o Pix.
 - **Prestação de contas**: abrir os links publicados no fechamento do mês.
 - **Comunicados**: ler os avisos gerais e os enviados para a unidade dele.
@@ -59,8 +63,6 @@ No [[Documentos > Disco Virtual]], clique em {{Mostrar}} na linha do arquivo. O 
 >> Tudo sobre o [Disco Virtual](artigo:disco-virtual)
 
 > O recibo é montado com a baixa que a administração registrou no ERP. Conta sem baixa não tem recibo.
-
-- **Minha unidade**: os dados da pessoa no cadastro (nome, e-mail, telefone e CPF mascarado), veículos, pets, a segurança da conta e como instalar no celular.
 
 ## Segurança e privacidade
 
