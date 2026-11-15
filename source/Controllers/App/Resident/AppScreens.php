@@ -18,6 +18,7 @@ use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
 use Source\Services\Resident\ResidentProfile;
 use Source\Services\Resident\ResidentSession;
+use Source\Services\Resident\ResidentCertificates;
 use Source\Services\Resident\ResidentHousehold;
 use Source\Services\Resident\ResidentNotAllowed;
 use Source\Services\Resident\ResidentTickets;
@@ -36,6 +37,7 @@ final class AppScreens extends Controller
         ['home', 'Início', '/', null, 'home', 'home'],
         ['resolve', 'Resolva fácil', '/resolva-facil', null, 'grid', 'resolve'],
         ['charges', 'Boletos', '/boletos', 'boletos', 'receipt', 'resolve'],
+        ['certificates', 'CND', '/cnd', 'boletos', 'shield', 'resolve'],
         ['accountability', 'Prestação de contas', '/prestacao-de-contas', 'accountability', 'chart', 'resolve'],
         ['announcements', 'Comunicados', '/comunicados', 'announcements', 'megaphone', 'resolve'],
         ['reservations', 'Reservas', '/reservas', 'reservations', 'calendar', 'resolve'],
@@ -293,6 +295,44 @@ final class AppScreens extends Controller
             'head' => $this->seo->render($page['title'] . ' · Connect Morador', 'Aplicativo do morador da Connect.', app_url('/'), themeApp('/assets/images/icon-512.png'), false),
             'title' => $page['title'], 'user' => $context[0], 'link' => $context[1],
         ]);
+    }
+
+    /** GET /cnd — certidão de débitos da unidade (etapa 5 de 15/11); a mais nova fica no topo. */
+    public function certificates(): void
+    {
+        $this->page('certificates', 'boletos', 'pages/certificates', 'CND', fn (User $u, array $link): array => [
+            'certificates' => (new ResidentCertificates())->list($link)]);
+    }
+
+    /** POST /cnd — emite a certidão de hoje (mesma regra e código de verificação do ERP). */
+    public function issueCertificate(array $data): void
+    {
+        $this->action('boletos', '/cnd', $data, function (User $u, array $link): string {
+            $issued = (new ResidentCertificates())->issue($u, $link);
+            return $issued['result'] === 'clear' ? 'Certidão emitida: nada consta.' : 'Certidão emitida. Ela mostra as contas vencidas em aberto.';
+        });
+    }
+
+    /** GET /cnd/{id} — o PDF da certidão (só da unidade do vínculo). */
+    public function certificatePdf(array $data): void
+    {
+        $context = $this->context('boletos');
+        if ($context === null) {
+            return;
+        }
+        $id = (int)($data['id'] ?? 0);
+        try {
+            $pdf = (new ResidentCertificates())->pdf($context[1], $id);
+        } catch (RegistryNotFound | ResidentFeatureDisabled) {
+            $this->message->warning('Certidão não encontrada.')->flash();
+            redirect(app_url('/cnd'));
+            return;
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="certidao-de-debitos-' . $id . '.pdf"');
+        header('Cache-Control: no-store, private');
+        header('X-Content-Type-Options: nosniff');
+        echo $pdf;
     }
 
     public function chargePdf(array $data): void

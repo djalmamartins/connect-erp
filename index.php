@@ -589,6 +589,9 @@ $route->post("/resident/onboarding/complete", "ResidentApp:onboardingComplete", 
 $route->get("/resident/profile/photo", "ResidentApp:photo", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/profile/photo", "ResidentApp:uploadPhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->delete("/resident/profile/photo", "ResidentApp:deletePhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/certificates", "ResidentApp:certificates", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/certificates", "ResidentApp:issueCertificate", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/certificates/{id}/pdf", "ResidentApp:certificatePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/announcements", "ResidentApp:announcements", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/common-areas", "ResidentApp:commonAreas", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

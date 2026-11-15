@@ -414,6 +414,17 @@ components:
         ends_on: { type: string, format: date, nullable: true }
         is_me: { type: boolean }
         can_block: { type: boolean }
+    ResidentCertificate:
+      type: object
+      description: Certidão de débitos da unidade (etapa 5 de 15/11)
+      properties:
+        id: { type: integer }
+        as_of: { type: string, format: date }
+        result: { type: string, enum: [clear, debts] }
+        result_label: { type: string, description: 'Nada consta ou Com débitos' }
+        total_cents: { type: integer, description: 'Vencidas com encargos; 0 em nada consta' }
+        verification_code: { type: string, example: ABCD-EFGH-JKMN-PQRS }
+        issued_at: { type: string }
     ResidentTicket:
       type: object
       description: Chamado do morador (ADR 0305)
@@ -7340,6 +7351,46 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: Não pode mais ser feito pelo app, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
         '502': { description: O banco não devolveu o PDF }
+  /resident/certificates:
+    get:
+      operationId: getResidentCertificates
+      tags: [Morador]
+      summary: 'CND: certidões de débitos da unidade'
+      description: 'Revisão de 15/11, etapa 5 (ADR 0302). Certidões válidas da unidade nos últimos 12 meses, emitidas no app ou no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/ResidentCertificate' } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: issueResidentCertificate
+      tags: [Morador]
+      summary: 'Emitir a certidão de débitos de hoje'
+      description: 'Mesma regra e mesmo código de verificação da Certidão de Débitos do ERP (ADR 0044), com data de referência de hoje. Sem corpo. Auditada.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '201': { description: Emitida, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentCertificate' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/certificates/{id}/pdf:
+    get:
+      operationId: getResidentCertificatePdf
+      tags: [Morador]
+      summary: 'PDF da certidão'
+      description: 'Só certidão válida da unidade do vínculo. Com o código e o endereço da verificação pública.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { description: not_found, content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/accountability:
     get:
       operationId: getResidentAccountability

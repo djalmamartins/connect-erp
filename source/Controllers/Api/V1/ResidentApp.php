@@ -12,6 +12,7 @@ use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Resident\ResidentFeatureDisabled;
+use Source\Services\Resident\ResidentCertificates;
 use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentHousehold;
 use Source\Services\Resident\ResidentNotAllowed;
@@ -138,6 +139,40 @@ final class ResidentApp
         }
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="boleto-' . $id . '.pdf"');
+        header('Cache-Control: no-store, private');
+        header('X-Content-Type-Options: nosniff');
+        echo $pdf;
+    }
+
+    /** CND: certidões de débitos da unidade (revisão de 15/11, etapa 5). */
+    public function certificates(): void
+    {
+        $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->list($link));
+    }
+
+    public function issueCertificate(): void
+    {
+        $this->write(201, fn (User $u, array $link): array => (new ResidentCertificates())->issue($u, $link));
+    }
+
+    public function certificatePdf(array $data): void
+    {
+        [$user, $link] = $this->context();
+        if ($link === null) {
+            return;
+        }
+        $id = $this->int($data['id'] ?? null) ?? 0;
+        try {
+            $pdf = (new ResidentCertificates())->pdf($link, $id);
+        } catch (ResidentFeatureDisabled $error) {
+            $this->disabled($error);
+            return;
+        } catch (RegistryNotFound) {
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Certidão não encontrada.']]);
+            return;
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="certidao-de-debitos-' . $id . '.pdf"');
         header('Cache-Control: no-store, private');
         header('X-Content-Type-Options: nosniff');
         echo $pdf;

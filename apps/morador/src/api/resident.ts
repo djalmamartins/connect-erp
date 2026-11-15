@@ -206,6 +206,17 @@ export type NewHouseholdMember = {
   starts_on?: string;
 };
 
+/** Certidão negativa de débitos da unidade (etapa 5). Vale como foto do dia em que foi emitida. */
+export type Certificate = {
+  id: number;
+  as_of: string;
+  result: 'clear' | 'debts' | string;
+  result_label: string;
+  total_cents: number;
+  verification_code: string;
+  issued_at: string;
+};
+
 export type Delivery = {
   id: number;
   recipient: string;
@@ -315,6 +326,9 @@ export function residentApi(api: ApiClient) {
     },
     addHouseholdMember: (body: NewHouseholdMember) => api.post<HouseholdMember>('/resident/unit/residents', body),
     blockTenant: (id: number) => api.post<HouseholdMember>(`/resident/unit/residents/${id}/block`),
+    certificates: () => api.get<Certificate[]>('/resident/certificates'),
+    issueCertificate: () => api.post<Certificate>('/resident/certificates'),
+    certificatePdfUrl: (id: number) => api.url(`/resident/certificates/${id}/pdf`),
     deliveries: () => api.get<Delivery[]>('/resident/deliveries'),
     visits: () => api.get<Visit[]>('/resident/visits'),
     createVisit: (body: { visitor_name: string; visitor_document?: string; expected_on: string; expected_until?: string; notes?: string }) =>
