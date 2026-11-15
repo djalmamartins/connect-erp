@@ -23,7 +23,7 @@ type Service = { label: string; hint: string; icon: IconName; color: string; hre
 const SERVICES: Service[] = [
   { label: 'Boletos', hint: '2ª via e Pix', icon: 'barcode', color: '#07884c', href: '/financeiro', feature: 'boletos' },
   { label: 'Reservas', hint: 'Salão, churrasqueira', icon: 'calendar', color: '#2f7bd8', href: '/reservas', feature: 'reservations' },
-  { label: 'Chamados', hint: 'Abra e acompanhe', icon: 'chatbubbles', color: '#c2611f', href: '/ocorrencias', feature: 'occurrences' },
+  { label: 'Chamados', hint: 'Abra e acompanhe', icon: 'chatbubbles', color: '#c2611f', href: '/chamados', feature: 'occurrences' },
   { label: 'Autorizar entrada', hint: 'Avise a portaria', icon: 'person-add', color: '#5b6bd6', href: '/visitantes', feature: 'visitors' },
   { label: 'Documentos', hint: 'Atas e regimento', icon: 'document-text', color: '#8a6d1f', href: '/documentos', feature: 'documents' },
   { label: 'Prestação de contas', hint: 'Para onde foi o dinheiro', icon: 'pie-chart', color: '#0f7a6a', href: '/prestacao-de-contas', feature: 'accountability' },

@@ -146,6 +146,38 @@ export type Occurrence = {
   has_ticket: boolean;
 };
 
+/** Chamado do Help Desk aberto pelo morador (ADR 0305). Ocorrência também vira chamado. */
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed';
+export type TicketKind = 'chamado' | 'ocorrencia';
+
+export type Ticket = {
+  id: number;
+  number: string;
+  subject: string;
+  status: TicketStatus | string;
+  status_label: string;
+  priority: Priority | string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
+  occurrence_id: number | null;
+  /** Desde a etapa 3; em chamados antigos pode faltar (usar ticketKind). */
+  kind?: TicketKind;
+};
+
+export type TicketMessage = {
+  id: number;
+  author: 'morador' | 'equipe';
+  author_name: string;
+  body: string;
+  created_at: string;
+  attachments: unknown[];
+};
+
+export type TicketDetail = Ticket & { messages: TicketMessage[] };
+
+export const TICKETS_PER_PAGE = 20;
+
 export type Delivery = {
   id: number;
   recipient: string;
@@ -243,6 +275,12 @@ export function residentApi(api: ApiClient) {
     /** Primeira versão sem foto (a foto vem depois, pelo Disco Virtual com antivírus). */
     createOccurrence: (body: { subject: string; description: string; priority: Priority; occurred_on: string }) =>
       api.post<unknown>('/resident/occurrences', body),
+    tickets: (page = 1, kind?: TicketKind) => api.get<Ticket[]>('/resident/tickets', { page, kind }),
+    ticket: (id: number) => api.get<TicketDetail>(`/resident/tickets/${id}`),
+    /** Ocorrência pede a data do fato; chamado usa a data de hoje. */
+    openTicket: (body: { kind: TicketKind; subject: string; description: string; priority: Priority; occurred_on: string }) =>
+      api.post<TicketDetail>('/resident/tickets', body),
+    replyTicket: (id: number, body: string) => api.post<{ message_id: number; status: string }>(`/resident/tickets/${id}/messages`, { body }),
     deliveries: () => api.get<Delivery[]>('/resident/deliveries'),
     visits: () => api.get<Visit[]>('/resident/visits'),
     createVisit: (body: { visitor_name: string; visitor_document?: string; expected_on: string; expected_until?: string; notes?: string }) =>

@@ -44,6 +44,9 @@ function RootStack() {
         <Stack.Screen name="financeiro" />
         <Stack.Screen name="reservas" />
         <Stack.Screen name="ocorrencias" />
+        <Stack.Screen name="chamados/index" />
+        <Stack.Screen name="chamados/novo" />
+        <Stack.Screen name="chamados/[id]" />
         <Stack.Screen name="avisos" />
         <Stack.Screen name="trocar-unidade" options={{ presentation: 'modal' }} />
       </Stack.Protected>
