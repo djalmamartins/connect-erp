@@ -71,4 +71,14 @@ final class HelpPageGuidesTest extends TestCase
         self::assertNull($kb->areaIntro('nao-existe'));
         self::assertStringContainsString('areaIntro(', (string)file_get_contents(dirname(__DIR__, 3) . '/container/web/support/v1/pages/category.php'));
     }
+    public function testIntroCanBeTurnedOffInSettingsAndClosedWithTheX(): void
+    {
+        $spec = \Source\Services\Erp\ErpSettings::CATALOG['admin.page_intro'];
+        self::assertSame(['AP-147', 'bool', true, 'global'], [$spec['page'], $spec['type'], $spec['default'], $spec['scope']]);
+        self::assertFalse(\Source\Services\Erp\ErpSettings::normalize('admin.page_intro', '0'));
+        $template = (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/components/layout/page-intro.php');
+        self::assertStringContainsString("'admin.page_intro'", $template);
+        self::assertStringContainsString('data-erp-intro-close', $template);
+        self::assertStringContainsString("'dismissed'", (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/assets/js/erp.js'));
+    }
 }

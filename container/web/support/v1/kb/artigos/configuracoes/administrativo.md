@@ -1,7 +1,7 @@
 ---
 codigo: AP-147
 titulo: Dados da administradora
-resumo: Administrativo: e-mail de atendimento da administradora; telefone de atendimento.
+resumo: Administrativo: e-mail e telefone de atendimento da administradora e o quadro "Sobre esta tela" no topo das telas do ERP.
 categoria: configuracoes
 rota: /configuracoes/administrativo
 menu: Configurações > Acesso > Administrativo
@@ -32,6 +32,7 @@ legenda: Tela Administrativo
 
 - **E-mail de atendimento da administradora**: e-mail. Padrão do sistema: vazio. Vale para todos os condomínios.
 - **Telefone de atendimento**: texto, até 20 caracteres. Padrão do sistema: vazio. Vale para todos os condomínios.
+- **Mostrar o quadro "Sobre esta tela" no topo das telas do ERP**: sim ou não. Padrão do sistema: sim. Vale para todos os condomínios e para todos os usuários. Desmarque para tirar o quadro de todas as telas. Para tirar só de uma tela, clique no **X** do quadro: ele não volta mais naquela tela, naquele navegador.
 
 ## Como alterar
 
