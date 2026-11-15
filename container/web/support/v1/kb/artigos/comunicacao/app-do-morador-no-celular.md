@@ -5,7 +5,7 @@ resumo: O app Connect Morador (iPhone e Android) mostra ao morador os boletos, a
 categoria: comunicacao
 icone: phone-portrait-outline
 situacao: guia
-palavras: moradores, inquilino, bloquear inquilino, chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
+palavras: cnd, certidão negativa, nada consta, moradores, inquilino, bloquear inquilino, chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
 rascunho: nao
 ---
 
@@ -39,7 +39,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Prestação de contas**: fica no **Resolva fácil** e nos botões do Início, e mostra para onde foi o dinheiro do condomínio mês a mês.
 - **Reservas**: duas abas. Em **Nova reserva** ficam os espaços liberados (com filtros Todos, Gratuitos e Com taxa), cada um com preço, capacidade e horário. Tocando no espaço abre o calendário do mês: dias livres em branco, parte do dia tomada em amarelo, ocupados em vermelho e fora do prazo em cinza. O morador escolhe o dia, vê os horários já reservados (sem saber quem reservou), escolhe o horário e pede a reserva, ou entra na lista de espera. Todo pedido do morador vai para a avaliação do síndico: o app avisa "Pedido enviado para o síndico" e a reserva fica **Aguardando o síndico**. Quando a equipe aprova no ERP, o morador recebe o e-mail de reserva aprovada e, ao abrir o app, vê o aviso **Reserva aprovada** no Início. Em **Minhas reservas** ficam as reservas com a cor da situação (aprovada, aguardando o síndico, cancelada) e a lista de espera.
 - **Ocorrências**: registrar uma ocorrência com assunto, descrição e prioridade e acompanhar a resposta.
-- **Resolva fácil**: Boletos, Reservas, Chamado, Ocorrência, Documentos, Prestação de contas, Assembleia digital, Comunicados e CND. CND aparece como "Em breve" até entrar no app.
+- **Resolva fácil**: Boletos, Reservas, Chamado, Ocorrência, Documentos, Prestação de contas, Assembleia digital, Comunicados e CND. 
 - **Unidade**: a unidade e o condomínio (com troca, para quem tem mais de uma), Moradores, Autorizar entrada (visitantes), Veículos, Pets, Correspondências (encomendas) e Consultar chamados.
 - **Perfil**: foto, nome e unidade. Tocando na foto, dá para tirar outra, escolher da galeria ou remover. Também tem Rever as dicas do app, Verificação em duas etapas, entrada com Face ID ou digital, trocar de unidade e sair.
 - **Notificações**: o sino abre a lista de avisos (contas vencidas, encomendas, visitas do dia, comunicados, assembleias, reservas chegando e reservas aprovadas); tocando num aviso, abre a tela dele.
@@ -61,6 +61,12 @@ Em **Unidade > Moradores** aparece quem mora na unidade: proprietário, inquilin
 Ao tocar em {{Bloquear inquilino}}, o app pede confirmação. O vínculo termina no mesmo dia e o inquilino perde o acesso ao app. Em seguida, o app oferece {{Cadastrar novo inquilino}}. Os vínculos encerrados ficam no fim da lista.
 
 Essa parte depende da função **Moradores da unidade** na matriz do portal, que começa desligada.
+
+## CND (certidão negativa de débitos)
+
+Em **Resolva fácil > CND**, o morador emite a certidão da unidade com a situação do dia: **Nada consta** ou **Com débitos**, com o total em aberto. Cada certidão traz um código de verificação, que dá para copiar com um toque, e o PDF para baixar e enviar. A lista mostra as certidões emitidas nos últimos 12 meses.
+
+A CND segue a função **Boletos** do portal, ou seja, aparece para o proprietário, o inquilino e o responsável financeiro.
 
 ## Ligar e desligar funções
 

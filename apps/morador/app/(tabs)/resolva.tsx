@@ -12,7 +12,7 @@ const ITEMS: MenuItem[] = [
   { label: 'Prestação de contas', hint: 'Para onde foi o dinheiro, mês a mês', icon: 'pie-chart', color: '#0f7a6a', href: '/prestacao-de-contas', feature: 'accountability' },
   { label: 'Assembleia digital', hint: 'Datas, pauta e resultados', icon: 'podium', color: '#07884c', href: '/assembleias', feature: 'assemblies' },
   { label: 'Comunicados', hint: 'Avisos da administração', icon: 'megaphone', color: '#e8833a', href: '/comunicados', feature: 'announcements' },
-  { label: 'CND', hint: 'Certidão negativa de débitos', icon: 'ribbon', color: '#8a6d1f', feature: 'boletos' },
+  { label: 'CND', hint: 'Certidão negativa de débitos', icon: 'ribbon', color: '#8a6d1f', href: '/cnd', feature: 'boletos' },
 ];
 
 export default function Resolva() {
