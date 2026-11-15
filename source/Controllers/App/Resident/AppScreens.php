@@ -16,6 +16,7 @@ use Source\Services\Erp\ResidentPortalPermissions;
 use Source\Services\Resident\ResidentFeatureDisabled;
 use Source\Services\Resident\ResidentFeed;
 use Source\Services\Resident\ResidentPortal;
+use Source\Services\Resident\ResidentProfile;
 use Source\Services\Resident\ResidentSession;
 use Source\Services\Resident\ResidentTickets;
 use Source\Services\Resident\ResidentTwoFactor;
@@ -47,7 +48,7 @@ final class AppScreens extends Controller
     /** Barra inferior no celular: Início, Resolva fácil, Unidade e Perfil (revisão de 15/11). */
     public const TABS = ['home', 'resolve', 'unit', 'profile'];
     /** Páginas fora do menu e a aba que fica acesa nelas. */
-    private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile'];
+    private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile', 'welcome' => 'home'];
 
     private ResidentPortal $portal;
 
@@ -80,6 +81,11 @@ final class AppScreens extends Controller
 
     public function home(): void
     {
+        $user = Auth::user();
+        if ($user !== null && !isset($_GET['pular']) && !$this->onboarded((int)$user->id)) {
+            redirect(app_url('/boas-vindas'));
+            return;
+        }
         $seen = self::seenAt();
         $this->page('home', null, 'pages/home', 'Início', function (User $u, array $link) use ($seen): array {
             try {
@@ -89,6 +95,65 @@ final class AppScreens extends Controller
             }
             return ['summary' => $this->portal->summary($link), 'feed' => $feed, 'seenAt' => $seen];
         });
+    }
+
+    /** GET /boas-vindas?passo=1..4 — primeiro acesso: foto e dicas (revisão de 15/11, igual ao app de celular). */
+    public function welcome(): void
+    {
+        $step = max(1, min(self::WELCOME_STEPS, (int)($_GET['passo'] ?? 1)));
+        $this->page('welcome', null, 'pages/welcome', 'Boas-vindas', fn (User $u, array $link): array => ['step' => $step, 'steps' => self::WELCOME_STEPS,
+            'hasPhoto' => (new ResidentProfile())->status((int)$u->id)['has_photo']]);
+    }
+
+    /** POST /boas-vindas — conclui ou pula as boas-vindas; não volta a aparecer. */
+    public function finishWelcome(array $data): void
+    {
+        $this->action(null, '/', $data, function (User $u): string {
+            (new ResidentProfile())->complete((int)$u->id);
+            return 'Tudo pronto! Este é o seu aplicativo.';
+        }, '/boas-vindas');
+    }
+
+    /** GET /perfil/foto — a foto da própria conta (nunca de outra pessoa). */
+    public function photo(): void
+    {
+        $user = Auth::user();
+        $file = $user !== null ? (new ResidentProfile())->photo((int)$user->id) : null;
+        if ($file === null) {
+            http_response_code(404);
+            return;
+        }
+        \Source\Controllers\Api\V1\ResidentApp::sendPhoto($file);
+    }
+
+    /** POST /perfil/foto — envia ou troca a foto; volta para ?voltar=boas-vindas quando veio do primeiro acesso. */
+    public function uploadPhoto(array $data): void
+    {
+        $back = ($data['voltar'] ?? '') === 'boas-vindas' ? '/boas-vindas?passo=1' : '/perfil';
+        $this->action(null, $back, $data, function (User $u): string {
+            (new ResidentProfile())->storePhoto((int)$u->id, is_array($_FILES['photo'] ?? null) ? $_FILES['photo'] : []);
+            return 'Foto salva.';
+        });
+    }
+
+    /** POST /perfil/foto/remover */
+    public function deletePhoto(array $data): void
+    {
+        $this->action(null, '/perfil', $data, function (User $u): string {
+            (new ResidentProfile())->deletePhoto((int)$u->id);
+            return 'Foto removida.';
+        });
+    }
+
+    private const WELCOME_STEPS = 4;
+
+    private function onboarded(int $userId): bool
+    {
+        try {
+            return (new ResidentProfile())->status($userId)['completed'];
+        } catch (\Throwable) {
+            return true; // sem a tabela (migration pendente) o app abre normalmente
+        }
     }
 
     /** GET /resolva-facil — atalhos dos serviços do condomínio (revisão de 15/11). */
@@ -605,7 +670,7 @@ final class AppScreens extends Controller
         $this->render($template, $title, $active, $user, $all, $link, $extra);
     }
 
-    private function action(string $feature, string $back, array $data, callable $run, ?string $failBack = null): void
+    private function action(?string $feature, string $back, array $data, callable $run, ?string $failBack = null): void
     {
         $context = $this->context($feature);
         if ($context === null) {
@@ -646,7 +711,22 @@ final class AppScreens extends Controller
             'link' => $link,
             'menu' => self::menu($link['features'] ?? [], $active),
             'unseen' => $this->unseen($link, $active),
+            'photo' => $this->photoUrl($user, $link),
         ]);
+    }
+
+    /** Endereço da foto da conta para o avatar (com a data no fim, para trocar na hora), ou null. */
+    private function photoUrl(User $user, ?array $link): ?string
+    {
+        if ($link === null) {
+            return null;
+        }
+        try {
+            $file = (new ResidentProfile())->photo((int)$user->id);
+        } catch (\Throwable) {
+            return null;
+        }
+        return $file !== null ? app_url('/perfil/foto') . '?v=' . (string)filemtime($file) : null;
     }
 
     /** Número no sininho; na própria página de avisos é zero. Erro aqui nunca derruba a página. */

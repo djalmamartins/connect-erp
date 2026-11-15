@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Source\Controllers\Api\V1;
 
 use Connect\Http\JsonResponse;
+use Source\Models\Auth;
+use Source\Services\LoginThrottle;
 use Source\Services\Resident\ResidentAppSessions as Sessions;
 use Source\Support\AppLogger;
+use Source\Support\ClientIp;
 
 /**
  * Sessão do app nativo do morador (ADR 0303), sem cookie nem CSRF: o app guarda o token Bearer no cofre do aparelho.
@@ -14,12 +17,14 @@ use Source\Support\AppLogger;
  *                                                 ou 202 {two_factor_required: true, challenge}
  *  POST   /api/v1/resident/app-sessions/verify   {challenge, code} → 201 {token, expires_at, idle_days}
  *  DELETE /api/v1/resident/app-sessions/current  (Bearer) sai deste aparelho
+ *  POST   /api/v1/resident/password/forgot       {login} → 202 sempre (e-mail de recuperação, se a conta existir)
  * Erros: 400 invalid_json, 401 invalid_credentials/challenge_expired/unauthenticated, 403 not_resident,
  * 409 two_factor_setup_required, 422 invalid_code, 429 too_many_attempts. Corpo até 8 KB.
  */
 final class ResidentAppSessions
 {
     private const MAX_BODY = 8192;
+    public const FORGOT_MESSAGE = 'Se a conta existir, enviamos um link para o e-mail cadastrado. Confira também a caixa de spam.';
 
     public function store(): void
     {
@@ -42,6 +47,38 @@ final class ResidentAppSessions
         if ($body !== null) {
             $this->run(fn () => (new Sessions())->verify($body['challenge'] ?? null, $body['code'] ?? null));
         }
+    }
+
+    /**
+     * POST /api/v1/resident/password/forgot {login} — pede o e-mail de recuperação (revisão de 15/11).
+     * Sempre devolve 202 com a mesma mensagem, para não revelar se a conta existe. Aceita 5 pedidos por conta e 20 por IP
+     * a cada 15 minutos. A troca da senha continua no link do e-mail (/forget/{token}).
+     */
+    public function forgot(): void
+    {
+        $body = $this->body();
+        if ($body === null) {
+            return;
+        }
+        header('Cache-Control: no-store, private');
+        $login = is_string($body['login'] ?? null) ? trim($body['login']) : '';
+        if ($login === '' || mb_strlen($login) > 191) {
+            JsonResponse::send(422, ['error' => ['code' => 'validation', 'message' => 'Informe o e-mail ou o CPF da conta.']]);
+            return;
+        }
+        $throttle = new LoginThrottle();
+        $subjects = LoginThrottle::subjects(Auth::throttleAccount($login), ClientIp::resolve());
+        if ($throttle->blocked(LoginThrottle::FORGET, $subjects)) {
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_attempts', 'message' => 'Muitos pedidos. Aguarde alguns minutos e tente de novo.']]);
+            return;
+        }
+        $throttle->fail(LoginThrottle::FORGET, $subjects);
+        try {
+            (new Auth())->forget($login);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'authentication', ['event_type' => 'resident_app_forgot_failed']);
+        }
+        JsonResponse::send(202, ['data' => ['message' => self::FORGOT_MESSAGE]]);
     }
 
     public function destroy(): void

@@ -552,3 +552,29 @@ a.app-action:focus-visible { outline: 2px solid var(--app-brand); outline-offset
 .app-action.is-soon .app-action__icon { background: #eef2f0; color: #7b8a83; }
 @media (min-width: 900px) { .app-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .app-wallet + .app-actions { margin-top: 14px; }
+
+/* Revisão de 15/11, etapa 2: boas-vindas do primeiro acesso e foto da conta. */
+.app-welcome { max-width: 520px; margin: 8px auto 0; padding: 26px 22px; text-align: center; display: grid; gap: 14px; }
+.app-welcome h1 { margin: 0; font-size: 22px; }
+.app-welcome p { margin: 0; color: var(--app-muted); line-height: 1.5; }
+.app-welcome__dots { display: flex; justify-content: center; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.app-welcome__dots li { width: 8px; height: 8px; border-radius: 99px; background: #d6e1db; transition: width .2s; }
+.app-welcome__dots li.is-done { background: var(--app-brand); }
+.app-welcome__dots li[aria-current] { width: 22px; background: var(--app-brand-strong); }
+.app-welcome__photo { display: grid; place-items: center; }
+.app-welcome__photo img, .app-welcome__placeholder { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; box-shadow: 0 6px 18px #0b2a1a1f; }
+.app-welcome__placeholder { display: grid; place-items: center; background: var(--app-brand-tint); color: var(--app-brand-strong); }
+.app-welcome__placeholder svg { width: 52px; height: 52px; }
+.app-welcome__icon { display: grid; place-items: center; width: 72px; height: 72px; margin: 6px auto 0; border-radius: 22px; background: var(--app-brand-tint); color: var(--app-brand-strong); }
+.app-welcome__icon svg { width: 34px; height: 34px; }
+.app-welcome__form { margin: 0; }
+.app-welcome__skip { margin: 0; }
+.app-file { position: relative; cursor: pointer; }
+.app-file input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.app-file:focus-within { outline: 2px solid var(--app-brand); outline-offset: 2px; }
+.app-top__avatar img, .app-bar__avatar img, .app-profile-card__avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.app-top__avatar, .app-bar__avatar, .app-profile-card__avatar { overflow: hidden; }
+.app-photo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.app-photo-row form { margin: 0; }
+.app-photo-row .app-hint { flex-basis: 100%; margin: 0; }
+.app-welcome__skip .app-link-button { color: var(--app-muted); }

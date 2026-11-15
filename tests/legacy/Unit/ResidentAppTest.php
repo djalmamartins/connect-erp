@@ -108,4 +108,11 @@ final class ResidentAppTest extends TestCase
         self::assertStringContainsString('não está cadastrada como morador', $notice);
         self::assertStringStartsWith('Olá! ', AppLogin::notResidentNotice((object)[]));
     }
+
+    public function testPhotoCropIsTheCentralSquare(): void
+    {
+        self::assertSame([150, 0, 600], \Source\Services\Resident\ResidentProfile::squareCrop(900, 600));
+        self::assertSame([0, 50, 300], \Source\Services\Resident\ResidentProfile::squareCrop(300, 400));
+        self::assertSame([0, 0, 512], \Source\Services\Resident\ResidentProfile::squareCrop(512, 512));
+    }
 }
