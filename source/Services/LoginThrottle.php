@@ -21,11 +21,14 @@ final class LoginThrottle
 {
     public const LOGIN = 'login';
     public const TWO_FACTOR = '2fa';
+    /** Pedidos de recuperação de senha pela API do app do morador: conta cada pedido, não só as falhas. */
+    public const FORGET = 'forget';
 
     /** [escopo => [tipo => [máximo de falhas, janela em segundos]]] */
     public const LIMITS = [
         self::LOGIN => ['account' => [6, 900], 'ip' => [30, 900]],
         self::TWO_FACTOR => ['account' => [6, 900], 'ip' => [30, 900]],
+        self::FORGET => ['account' => [5, 900], 'ip' => [20, 900]],
     ];
 
     /** Linhas mais antigas que isto são apagadas a cada falha registrada. */

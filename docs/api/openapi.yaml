@@ -648,6 +648,30 @@ paths:
         '401':
           description: Token ausente, inválido ou já revogado
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /resident/password/forgot:
+    post:
+      operationId: forgotResidentPassword
+      tags: [Morador]
+      summary: Pede o e-mail de recuperação de senha (app do morador)
+      description: >-
+        Revisão de 15/11 do ADR 0302. Pública, sem sessão. Chama a mesma recuperação do site (Auth::forget) e devolve sempre
+        202 com a mesma mensagem, exista a conta ou não. Limite de 5 pedidos por conta e 20 por IP a cada 15 minutos
+        (auth_throttle_events, escopo forget). A troca da senha continua no link do e-mail (/forget/{token}).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [login], properties: { login: { type: string, maxLength: 191, description: 'E-mail ou CPF da conta' } } }
+      responses:
+        '202':
+          description: Pedido aceito (mensagem genérica)
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { message: { type: string } } } } }
+        '400': { description: 'invalid_json', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: 'validation (login vazio)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /users/{id}/2fa:
     delete:
       operationId: resetUserTwoFactor
@@ -7901,6 +7925,73 @@ paths:
               schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { kind: { type: string }, kind_label: { type: string }, title: { type: string }, detail: { type: string }, path: { type: string } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/onboarding:
+    get:
+      operationId: getResidentOnboarding
+      tags: [Morador]
+      summary: 'Situação das boas-vindas do primeiro acesso'
+      description: 'Revisão de 15/11 do ADR 0302. É da conta (user_id), não do vínculo. completed=false: mostrar as boas-vindas (foto e dicas).'
+      security: [{ session: [] }, { residentApp: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { completed: { type: boolean }, has_photo: { type: boolean } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/onboarding/complete:
+    post:
+      operationId: completeResidentOnboarding
+      tags: [Morador]
+      summary: 'Marca as boas-vindas como vistas (concluídas ou puladas)'
+      description: 'Revisão de 15/11 do ADR 0302. Repetir não muda a data.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      responses:
+        '204': { description: 'Marcado' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/profile/photo:
+    get:
+      operationId: getResidentPhoto
+      tags: [Morador]
+      summary: 'Foto da conta'
+      description: 'Revisão de 15/11 do ADR 0302. JPEG quadrado de até 512 px, sem EXIF. Só a própria pessoa vê (Cache-Control private).'
+      security: [{ session: [] }, { residentApp: [] }]
+      responses:
+        '200': { description: 'Foto', content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '404': { description: 'Sem foto', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    post:
+      operationId: uploadResidentPhoto
+      tags: [Morador]
+      summary: 'Envia ou troca a foto da conta'
+      description: 'Revisão de 15/11 do ADR 0302. O tipo é conferido pelo conteúdo; a foto é recortada em quadrado no centro, reduzida a 512 px e regravada como JPEG (sem GPS nem EXIF), fora da pasta pública. A foto anterior é apagada.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [photo], properties: { photo: { type: string, format: binary, description: 'JPG, PNG ou WebP até 10 MB' } } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { has_photo: { const: true } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'validation_failed com error.fields.photo', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+    delete:
+      operationId: deleteResidentPhoto
+      tags: [Morador]
+      summary: 'Tira a foto da conta'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      responses:
+        '204': { description: 'Removida (ou já não havia foto)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/2fa:
     get:
       operationId: getResidentTwoFactor

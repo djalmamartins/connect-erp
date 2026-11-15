@@ -51,6 +51,11 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
     $route->get("/minha-unidade", "AppScreens:unit");
     $route->get("/resolva-facil", "AppScreens:resolve");
     $route->get("/perfil", "AppScreens:profile");
+    $route->get("/perfil/foto", "AppScreens:photo");
+    $route->post("/perfil/foto", "AppScreens:uploadPhoto");
+    $route->post("/perfil/foto/remover", "AppScreens:deletePhoto");
+    $route->get("/boas-vindas", "AppScreens:welcome");
+    $route->post("/boas-vindas", "AppScreens:finishWelcome");
     $route->get("/avisos", "AppScreens:notifications");
     $route->get("/buscar", "AppScreens:search");
     $route->get("/ops/{errcode}", "AppScreens:error");

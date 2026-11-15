@@ -30,7 +30,7 @@
     if (message && !window.confirm(message)) event.preventDefault();
   });
   document.addEventListener('change', function (event) {
-    if (event.target.matches('[data-app-autosubmit]')) event.target.form.submit();
+    if (event.target.matches('[data-app-autosubmit], [data-app-autosubmit-file]')) event.target.form.submit();
   });
   // Rolagem infinita dos boletos: busca a janela anterior quando o fim da lista aparece.
   function loadMore(more) {
