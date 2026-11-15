@@ -1,15 +1,20 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { confirm } from '../../src/lib/confirm';
-import { initials } from '../../src/lib/format';
+import { useProfile } from '../../src/auth/ProfileContext';
+import { pickPhoto } from '../../src/lib/photo';
+import { Avatar } from '../../src/ui/Avatar';
+import { dialog } from '../../src/ui/Dialog';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Body, Button, Card, Screen } from '../../src/ui/kit';
 import { MenuGroup, type MenuItem } from '../../src/ui/Menu';
 
 const ACCOUNT: MenuItem[] = [
+  { label: 'Rever as dicas do app', color: '#c5a131', hint: 'O passo a passo do primeiro acesso', href: '/boas-vindas?rever=1', icon: 'bulb-outline' },
   { label: 'Verificação em duas etapas', color: '#0d2e27', hint: 'Opcional: um código além da senha', href: '/seguranca', icon: 'shield-checkmark-outline' },
 ];
 
@@ -52,7 +57,46 @@ function BiometricRow() {
 
 export default function Perfil() {
   const { me, logout } = useAuth();
+  const { onboarding, setPhoto, removePhoto } = useProfile();
   const many = (me?.links.length ?? 0) > 1;
+  const [saving, setSaving] = useState(false);
+
+  async function changePhoto() {
+    const has = !!onboarding?.has_photo;
+    const choice = await dialog.choose({
+      title: has ? 'Trocar a foto' : 'Colocar uma foto',
+      icon: 'camera',
+      options: [
+        { label: 'Tirar foto', icon: 'camera-outline' },
+        { label: 'Escolher da galeria', icon: 'images-outline' },
+        ...(has ? [{ label: 'Remover a foto', icon: 'trash-outline' as const, danger: true }] : []),
+      ],
+    });
+    if (choice === null) {
+      return;
+    }
+    setSaving(true);
+    try {
+      if (choice === 2) {
+        await removePhoto();
+        dialog.toast('Foto removida');
+      } else {
+        const file = await pickPhoto(choice === 0 ? 'camera' : 'library');
+        if (file) {
+          await setPhoto(file);
+          dialog.toast('Foto salva');
+        }
+      }
+    } catch (e) {
+      await dialog.notice({
+        title: 'Não deu para salvar',
+        message: e instanceof ApiError ? (e.fields.photo ?? e.message) : 'Tente de novo em instantes.',
+        tone: 'error',
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function sair() {
     if (await confirm('Sair', 'Quer sair do app neste aparelho?', 'Sair')) {
@@ -64,9 +108,12 @@ export default function Perfil() {
     <Screen title="Perfil" tab>
       {me?.current ? (
         <Card style={styles.profile}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials(me.current.name ?? me.user.name)}</Text>
-          </View>
+          <Pressable onPress={changePhoto} disabled={saving} accessibilityRole="button" accessibilityLabel="Trocar a foto do perfil" style={({ pressed }) => (pressed || saving ? { opacity: 0.7 } : null)}>
+            <Avatar name={me.current.name ?? me.user.name} size={64} />
+            <View style={styles.camera}>
+              <Ionicons name="camera" size={13} color="#ffffff" />
+            </View>
+          </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{me.current.name ?? me.user.name}</Text>
             <Body muted>
@@ -87,17 +134,19 @@ export default function Perfil() {
 
 const styles = StyleSheet.create({
   profile: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.sidebar,
+  camera: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderWidth: 2,
+    borderColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.accent,
   },
-  avatarText: { fontFamily: fonts.bold, fontSize: 17, color: colors.accent },
   name: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text },
   groupTitle: { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.muted, marginTop: space[3], marginLeft: space[1] },
   group: {
