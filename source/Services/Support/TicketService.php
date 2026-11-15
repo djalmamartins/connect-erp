@@ -20,26 +20,27 @@ use Source\Support\Email;
  * Abertura de chamados (ADR 0034): uma porta só para todas as origens.
  *
  * Help Desk (fila interna), ERP (/operacional/chamados), site (widget público), portal dos
- * moradores e API REST (/api/v1/tickets) gravam pelo mesmo serviço em studio_support_tickets,
+ * moradores, API REST (/api/v1/tickets) e Connect Talk (WhatsApp, /api/v1/talk, ADR 0308) gravam pelo mesmo serviço em studio_support_tickets,
  * e todo chamado cai na fila do Help Desk com condomínio, unidade, solicitante e origem.
  *
  * Regras:
  * - assunto (4 a 180) e descrição (10+) obrigatórios; área, prioridade e origem por lista fechada;
  * - condomínio dentro do escopo de quem abre (CondominiumScope), quando há usuário;
  * - unidade só junto com o condomínio e pertencendo a ele;
- * - solicitante: um usuário do sistema ou nome + e-mail (morador, visitante do site);
+ * - solicitante: um usuário do sistema ou nome + e-mail (morador, visitante do site); do WhatsApp (origem talk),
+ *   nome + telefone, porque a conversa não traz e-mail;
  * - prazo (SLA) pela prioridade; protocolo CH + aammdd + 4 hex.
  */
 final class TicketService
 {
-    public const ORIGINS = ['helpdesk', 'erp', 'site', 'residents', 'api'];
+    public const ORIGINS = ['helpdesk', 'erp', 'site', 'residents', 'api', 'talk'];
     public const AREAS = ['general', 'technical', 'financial'];
     public const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
     public const STATUSES = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
     /** Filtro "tipo" da lista de chamados (ADR 0305): só as ocorrências, ou os outros chamados. */
     public const KIND_LABELS = ['occurrence' => 'Ocorrências', 'other' => 'Outros chamados'];
 
-    public const ORIGIN_LABELS = ['helpdesk' => 'Help Desk', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API'];
+    public const ORIGIN_LABELS = ['helpdesk' => 'Help Desk', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
     public const PRIORITY_LABELS = ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'urgent' => 'Urgente'];
     public const STATUS_LABELS = ['open' => 'Aberto', 'in_progress' => 'Em atendimento', 'waiting_customer' => 'Aguardando cliente', 'resolved' => 'Resolvido', 'closed' => 'Fechado'];
@@ -88,6 +89,8 @@ final class TicketService
             'requester_email' => mb_strtolower($text('requester_email', 190)) ?: null,
             'requester_phone' => preg_replace('/[^0-9+() -]/', '', $text('requester_phone', 30)) ?: null,
             'assigned_to' => $id('assigned_to'),
+            // Protocolo do sistema de origem (Talk, ADR 0308): único por origem, garante que o chamado não duplique.
+            'external_ref' => preg_replace('/[^0-9A-Za-z._-]/', '', $text('external_ref', 40)) ?: null,
         ];
         if (mb_strlen($data['subject']) < 4) {
             throw new TicketError('subject', 'Informe um assunto com pelo menos 4 caracteres.');
@@ -146,8 +149,9 @@ final class TicketService
         } elseif ($data['requester_name'] === null && $actor !== null) {
             $data['requester_id'] = (int)$actor->id;
         }
-        if ($data['requester_id'] === null && ($data['requester_name'] === null || $data['requester_email'] === null)) {
-            throw new TicketError('requester_name', 'Informe nome e e-mail do solicitante.');
+        $reachable = $data['requester_email'] !== null || ($data['origin'] === 'talk' && $data['requester_phone'] !== null);
+        if ($data['requester_id'] === null && ($data['requester_name'] === null || !$reachable)) {
+            throw new TicketError('requester_name', $data['origin'] === 'talk' ? 'Informe nome e telefone do solicitante.' : 'Informe nome e e-mail do solicitante.');
         }
         if ($data['assigned_to'] !== null && !(new User())->findById($data['assigned_to'])) {
             $data['assigned_to'] = null;
@@ -167,11 +171,11 @@ final class TicketService
                 $pdo->beginTransaction();
             }
             $stmt = $pdo->prepare('INSERT INTO studio_support_tickets
-                (protocol, subject, message, area, origin, condominium_id, unit_id, category, priority, requester_id, requester_name, requester_email, requester_phone, access_token, assigned_to, created_by, due_at)
-                VALUES (:protocol, :subject, :message, :area, :origin, :condominium, :unit, :category, :priority, :requester, :name, :email, :phone, :token, :assigned, :creator, :due)');
+                (protocol, subject, message, area, origin, external_ref, condominium_id, unit_id, category, priority, requester_id, requester_name, requester_email, requester_phone, access_token, assigned_to, created_by, due_at)
+                VALUES (:protocol, :subject, :message, :area, :origin, :external, :condominium, :unit, :category, :priority, :requester, :name, :email, :phone, :token, :assigned, :creator, :due)');
             $stmt->execute([
                 'protocol' => $protocol, 'subject' => $data['subject'], 'message' => $data['message'],
-                'area' => $data['area'], 'origin' => $data['origin'], 'condominium' => $data['condominium_id'],
+                'area' => $data['area'], 'origin' => $data['origin'], 'external' => $data['external_ref'], 'condominium' => $data['condominium_id'],
                 'unit' => $data['unit_id'], 'category' => $data['category'], 'priority' => $data['priority'],
                 'requester' => $data['requester_id'], 'name' => $data['requester_name'], 'email' => $data['requester_email'],
                 'phone' => $data['requester_phone'], 'token' => $accessToken, 'assigned' => $data['assigned_to'],

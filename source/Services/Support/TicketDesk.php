@@ -26,7 +26,8 @@ final class TicketDesk
 {
     public const FIELDS = ['status', 'priority', 'assigned_to', 'team', 'category', 'tags'];
     public const EVENT_LABELS = ['status' => 'Situação', 'priority' => 'Prioridade', 'assigned_to' => 'Responsável', 'team' => 'Equipe',
-        'category' => 'Categoria', 'tags' => 'Tags', 'origin' => 'Aberto por', 'requester_reply' => 'Resposta de quem pediu'];
+        'category' => 'Categoria', 'tags' => 'Tags', 'origin' => 'Aberto por', 'requester_reply' => 'Resposta de quem pediu',
+        'area' => 'Área'];
     private const FINAL = ['resolved', 'closed'];
 
     private PDO $pdo;
@@ -232,6 +233,7 @@ final class TicketDesk
                 'status' => TicketService::STATUS_LABELS[$value] ?? $value,
                 'priority' => TicketService::PRIORITY_LABELS[$value] ?? $value,
                 'origin' => TicketService::ORIGIN_LABELS[$value] ?? $value,
+                'area' => TicketService::AREA_LABELS[$value] ?? $value,
                 'assigned_to' => $names[$value] ??= (($u = (new User())->findById((int)$value)) ? $u->fullName() : '#' . $value),
                 default => $value,
             };

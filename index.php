@@ -45,6 +45,11 @@ $route->post("/resident/password/forgot", "ResidentAppSessions:forgot");
 // Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
 // consulta de cada título no banco antes de mudar qualquer estado.
 $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
+// Connect Talk, o atendimento por WhatsApp (ADR 0308): só o token de integração (Bearer ctk_...), sem sessão nem CSRF.
+$route->get("/talk/people", "Talk:people", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
