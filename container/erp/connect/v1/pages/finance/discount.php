@@ -69,7 +69,7 @@ $this->insert('components/layout/page-head', [
             <div class="erp-modal__body">
                 <p><strong data-discount-label></strong><br><span class="erp-muted">Valor atual: <span data-discount-current></span></span></p>
                 <div class="erp-form__grid">
-                    <div class="erp-field erp-col-6"><label for="discount-amount">Desconto (R$)</label><input class="erp-input" id="discount-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required aria-describedby="discount-amount-hint"><small class="erp-muted" id="discount-amount-hint" data-discount-after>Menor que o valor da conta.</small></div>
+                    <div class="erp-field erp-col-6"><label for="discount-amount">Desconto (R$)</label><input data-erp-money class="erp-input" id="discount-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required aria-describedby="discount-amount-hint"><small class="erp-muted" id="discount-amount-hint" data-discount-after>Menor que o valor da conta.</small></div>
                     <div class="erp-field erp-col-12"><label for="discount-reason">Motivo</label><textarea class="erp-textarea" id="discount-reason" name="reason" minlength="5" maxlength="255" required placeholder="Ex.: acordo em assembleia de 10/11"></textarea></div>
                 </div>
                 <div data-form-error aria-live="assertive"></div>

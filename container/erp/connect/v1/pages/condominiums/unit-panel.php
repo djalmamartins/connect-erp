@@ -23,6 +23,9 @@ $this->insert('components/layout/page-head', [
     'pageActions' => '',
 ]);
 ?>
+<?php if ($context === null): ?>
+    <?php $this->insert('components/feedback/needs-condominium', ['needsCondoText' => 'Depois, escolha a unidade para ver o painel.']); ?>
+<?php else: ?>
 <form class="erp-card erp-unit-pick" method="get" action="<?= $this->e($route) ?>" role="search" aria-label="Escolher unidade" data-erp-loading>
     <label for="unit-panel-pick">Unidade<?= $context !== null ? ' do ' . $this->e((string)$context['name']) : '' ?></label>
     <select class="erp-select" id="unit-panel-pick" name="unidade" data-erp-autosubmit<?= $unitPanelUnits === [] ? ' disabled' : '' ?>>
@@ -31,16 +34,18 @@ $this->insert('components/layout/page-head', [
     </select>
     <button type="submit" class="erp-btn"<?= $unitPanelUnits === [] ? ' disabled' : '' ?>>Ver painel</button>
 </form>
+<?php endif; ?>
 
 <?php if (($unitPanelError ?? null) !== null): ?>
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><?= $this->e($unitPanelError) ?></div></div>
 <?php endif; ?>
 
 <?php if ($panel === null): ?>
-    <?php if ($unitPanelUnits === []): ?>
-        <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('building') ?></span><strong>Nenhuma unidade cadastrada</strong><p><?= $context === null ? 'Cadastre as unidades em Condomínios › Unidades.' : 'Este condomínio ainda não tem unidades ativas.' ?> <a href="<?= erp_url('/condominios/unidades') ?>">Ir para Unidades</a></p></div></section>
+    <?php if ($context === null): ?>
+    <?php elseif ($unitPanelUnits === []): ?>
+        <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('building') ?></span><strong>Nenhuma unidade cadastrada</strong><p>Este condomínio ainda não tem unidades ativas. <a href="<?= erp_url('/condominios/unidades') ?>">Ir para Unidades</a></p></div></section>
     <?php elseif (($unitPanelError ?? null) === null): ?>
-        <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('search') ?></span><strong>Escolha uma unidade</strong><p><?= count($unitPanelUnits) ?> unidade(s)<?= $context === null ? ' em todos os condomínios do seu escopo' : '' ?>.</p></div></section>
+        <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('search') ?></span><strong>Escolha uma unidade</strong><p><?= count($unitPanelUnits) ?> unidade(s) neste condomínio.</p></div></section>
     <?php endif; ?>
 <?php else:
     $fin = $panel['finance'];
@@ -54,6 +59,10 @@ $this->insert('components/layout/page-head', [
         ['label' => 'Rotina', 'value' => (string)((int)$ops['deliveries_waiting'] + (int)$ops['occurrences_open']), 'meta' => $ops['deliveries_waiting'] . ' entrega(s) · ' . $ops['occurrences_open'] . ' ocorrência(s) · ' . $ops['reservations_upcoming'] . ' reserva(s)', 'icon' => 'clipboard', 'tone' => '', 'trend' => null],
     ];
 ?>
+    <?php // Ocupação (revisão de 15/11, ADR 0310): marca "Unidade vazia" do cadastro da unidade.
+    $vacant = (bool)($panel['unit']['is_vacant'] ?? false); ?>
+    <p class="erp-unit-occupancy" data-unit-occupancy="<?= $vacant ? 'vazia' : 'ocupada' ?>"><span class="erp-badge erp-badge--<?= $vacant ? 'warning' : 'success' ?>"><?= $vacant ? 'Unidade vazia' : 'Unidade ocupada' ?></span>
+        <a href="<?= erp_url('/condominios/unidades/' . (int)$panel['unit']['id']) ?>">Alterar na ficha da unidade</a></p>
     <section class="erp-grid erp-grid--kpi" aria-label="Indicadores da unidade" data-erp-unit-panel>
         <?php foreach ($kpis as $i => $kpi) { $this->insert('components/cards/kpi', ['kpi' => $kpi, 'delay' => $i * 60]); } ?>
     </section>

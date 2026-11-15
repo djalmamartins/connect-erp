@@ -431,7 +431,7 @@ final class Panel extends Controller
             $service = new UnitDocuments();
             $data['unitDocuments'] = $service->list($user, $context, ['kind' => $kind, 'page' => $_GET['pagina'] ?? 1]);
             $names = array_column($this->condominiumOptions($user), 'name', 'id');
-            $data['documentUnits'] = self::documentUnits((new RegistryService())->units($user), $names, $context);
+            $data['documentUnits'] = $context === null ? [] : self::documentUnits((new RegistryService())->units($user), $names, $context);
             $receiptUnit = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if ($kind === 'receipt' && $receiptUnit !== false && $receiptUnit !== null && in_array((int)$receiptUnit, array_column($data['documentUnits'], 'id'), true)) {
                 // Contas pagas sem recibo válido da unidade escolhida (?unidade=); a emissão confere de novo.
@@ -462,6 +462,19 @@ final class Panel extends Controller
      * @param array<int, string> $names condomínio => nome, do escopo do usuário
      * @return list<array{id:int, condominium_id:int, label:string, condominium_name:string}>
      */
+    /**
+     * Unidades do condomínio da barra superior (revisão de 15/11): sem condomínio escolhido, nenhuma,
+     * para que nenhum filtro de unidade misture condomínios.
+     * @param list<array{condominium_id:int}> $units
+     */
+    public static function contextUnits(array $units, ?int $context): array
+    {
+        if ($context === null) {
+            return [];
+        }
+        return array_values(array_filter($units, static fn (array $u): bool => (int)$u['condominium_id'] === $context));
+    }
+
     public static function documentUnits(array $units, array $names, ?int $context): array
     {
         $rows = [];
@@ -680,7 +693,8 @@ final class Panel extends Controller
             return $data;
         }
         $data['unitPanelReady'] = true;
-        $data['unitPanelUnits'] = array_values(array_filter($units, static fn (array $u): bool => $context === null || $u['condominium_id'] === $context));
+        // Revisão 15/11: sem condomínio na barra superior não há filtro de unidade; com ele, só as unidades dele.
+        $data['unitPanelUnits'] = self::contextUnits($units, $context);
         $selected = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($selected === false || $selected === null) {
             return $data;

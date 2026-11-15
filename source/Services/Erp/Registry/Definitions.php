@@ -136,8 +136,13 @@ final class Definitions
                     'floor' => ['label' => 'Andar', 'type' => 'text', 'max' => 10, 'span' => 2],
                     'ideal_fraction' => ['label' => 'Fração ideal', 'type' => 'decimal', 'scale' => 6, 'min' => 0, 'max_value' => 1, 'span' => 3, 'hint' => 'Entre 0 e 1, ex.: 0,012500'],
                     'private_area' => ['label' => 'Área privativa (m²)', 'type' => 'decimal', 'scale' => 2, 'min' => 0, 'max_value' => 99999999.99, 'span' => 3],
+                    // Revisão de 15/11 (ADR 0310): marca da equipe; 'shown' troca o Sim/Não por Vazia/Ocupada na lista.
+                    'is_vacant' => ['label' => 'Unidade vazia', 'type' => 'bool', 'span' => 6, 'list' => true, 'list_label' => 'Ocupação', 'shown' => ['Ocupada', 'Vazia'],
+                        'hint' => 'Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
+                // Filtro "Ocupação" da lista (?ocupacao=ocupadas|vazias), pela marca acima (ADR 0310).
+                'flag_filter' => ['field' => 'is_vacant', 'param' => 'ocupacao', 'label' => 'Ocupação', 'options' => ['ocupadas' => ['Ocupadas', 0], 'vazias' => ['Vazias', 1]]],
                 // Bloco vazio conta como valor: "101" sem bloco não pode repetir no mesmo condomínio.
                 'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
                 'computed' => ['label'],

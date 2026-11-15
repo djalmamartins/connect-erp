@@ -125,7 +125,11 @@ foreach ($paths as [$d, $name]) {
     if ($filter !== null) {
         $out[] = "        - { name: type, in: query, description: 'Filtra por {$filter}', schema: { type: string, enum: [" . implode(', ', array_map($q, array_keys($d['fields'][$filter]['options']))) . '] } }';
     }
+    if (isset($d['flag_filter'])) {
+        $out[] = "        - { name: flag, in: query, description: 'Filtra por {$d['flag_filter']['field']} (ADR 0310)', schema: { type: string, enum: [" . implode(', ', array_map($q, array_keys($d['flag_filter']['options']))) . '] } }';
+    }
     $out[] = '        - { name: page, in: query, schema: { type: integer, minimum: 1 } }';
+    $out[] = "        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }";
     $out[] = '      responses:';
     $out[] = "        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { \$ref: '#/components/schemas/{$name}' } }, meta: { \$ref: '#/components/schemas/Meta' } } } } } }";
     $out[] = "        '401': { description: Sem sessão, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";

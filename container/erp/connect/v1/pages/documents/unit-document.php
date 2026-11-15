@@ -147,8 +147,10 @@ $this->insert('components/layout/page-head', [
             <?php if ($canManageDocuments): ?>
                 <<?= $receipt ? 'section' : 'form' ?> class="erp-card erp-form erp-unit-doc__panel"<?= $receipt ? '' : ' data-unit-document-form' ?> aria-labelledby="unit-doc-issue">
                     <div class="erp-card__head"><div><h2 id="unit-doc-issue">Emitir</h2></div></div>
-                    <?php if ($documentUnits === []): ?>
-                        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhuma unidade ativa</strong><p>Cadastre as unidades em Condomínios › Unidades ou escolha outro condomínio na barra superior.</p></div>
+                    <?php if (\Source\Support\Erp\CondominiumContext::id() === null): ?>
+                        <?php $this->insert('components/feedback/needs-condominium', ['needsCondoText' => 'A lista ao lado continua mostrando os documentos de todos os condomínios do seu escopo.']); ?>
+                    <?php elseif ($documentUnits === []): ?>
+                        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhuma unidade ativa</strong><p>Este condomínio ainda não tem unidades ativas. Cadastre-as em Condomínios › Unidades.</p></div>
                     <?php elseif ($receipt): ?>
                         <?php $this->insert('components/cards/receipt-entries', ['documentUnits' => $documentUnits, 'receiptUnit' => $receiptUnit, 'receiptEntries' => $receiptEntries, 'route' => $route, 'brl' => $brl, 'date' => $date, 'month' => $month]); ?>
                     <?php else: ?>

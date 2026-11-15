@@ -81,7 +81,7 @@ $this->insert('components/layout/page-head', [
             <form method="post" action="<?= $this->e($route . '/' . $cid) ?>" class="erp-form">
                 <?= csrf_input() ?>
                 <div class="erp-form__grid">
-                    <div class="erp-field"><label for="fee-value">Valor mensal (R$)</label><input class="erp-input" id="fee-value" name="monthly_fee" inputmode="decimal" required placeholder="1.500,00" value="<?= $c !== null ? $this->e(number_format($c['monthly_fee_cents'] / 100, 2, ',', '.')) : '' ?>"></div>
+                    <div class="erp-field"><label for="fee-value">Valor mensal (R$)</label><input data-erp-money class="erp-input" id="fee-value" name="monthly_fee" inputmode="decimal" required placeholder="1.500,00" value="<?= $c !== null ? $this->e(number_format($c['monthly_fee_cents'] / 100, 2, ',', '.')) : '' ?>"></div>
                     <div class="erp-field"><label for="fee-due">Dia de vencimento</label><input class="erp-input" type="number" id="fee-due" name="due_day" min="1" max="28" required value="<?= $c !== null ? (int)$c['due_day'] : 10 ?>"></div>
                     <div class="erp-field"><label for="fee-start">Início do contrato</label><input class="erp-input" type="date" id="fee-start" name="start_date" required value="<?= $this->e($c['start_date'] ?? '') ?>"></div>
                     <div class="erp-field"><label for="fee-end">Fim (opcional)</label><input class="erp-input" type="date" id="fee-end" name="end_date" value="<?= $this->e($c['end_date'] ?? '') ?>"></div>

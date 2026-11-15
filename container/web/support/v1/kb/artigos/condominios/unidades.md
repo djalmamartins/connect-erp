@@ -26,7 +26,7 @@ legenda: Tela Unidades
 2: main .erp-page-head__actions :is(a,button):has-text("Nova unidade") | Botão {{Nova unidade}}
 3: main .erp-page-head__actions :is(a,button):has-text("Cadastro rápido") | Botão {{Cadastro rápido}}
 4: main .erp-page-head__actions :is(a,button):has-text("Fração ideal e área") | Botão {{Fração ideal e área}}
-5: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo e Situação
+5: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo, Ocupação e Situação
 6: main table thead | Colunas da lista
 ```
 
@@ -59,6 +59,7 @@ recorte: main form:not([method=get])
 - **Andar**.
 - **Fração ideal**: Entre 0 e 1, ex.: 0,012500.
 - **Área privativa (m²)**.
+- **Unidade vazia**: Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 
@@ -69,14 +70,18 @@ recorte: main form:not([method=get])
 
 ## Pesquisar e filtrar
 
-Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo**, **Ocupação** e **Situação**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
 Em **Pesquisar**, digite o número da unidade, o bloco ou o nome do proprietário ou do inquilino. O CPF ou CNPJ da pessoa também funciona. Um proprietário com várias unidades traz todas elas na mesma pesquisa.
 
+Em **Ocupação**, escolha **Vazias** para ver só as unidades marcadas como vazias, ou **Ocupadas** para as outras.
+
 ## O que a lista mostra
 
-Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo**, **Proprietário**, **Inquilino** e **Situação**.
+Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo**, **Ocupação** (Vazia ou Ocupada), **Proprietário**, **Inquilino** e **Situação**.
+
+A lista mostra 50 unidades por página. No rodapé, **Itens por página** troca para 100, 200 ou 500, e os números levam às outras páginas.
 
 Proprietário e inquilino vêm de [[Cadastros > Proprietários e inquilinos]]. A lista mostra só os vínculos ativos: um inquilino com data de fim já passada ou inativado sai da coluna. As colunas aparecem para quem também pode ver o cadastro de proprietários e inquilinos.
 
@@ -97,6 +102,8 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - No **Cadastro rápido**, você vê a lista antes de criar; ao confirmar, entram só as unidades que ainda não existem, todas juntas ou nenhuma (se uma falhar, nada é criado).
 - A **fração ideal** é usada quando uma fatura é rateada pela fração: cada unidade paga a parte dela do total. Na grade de frações, a soma não pode passar de 100% e, com todas preenchidas, precisa dar 100%.
 - Uma unidade com pessoas, veículos, lançamentos ou outros registros ativos ligados a ela não pode ser excluída. Inative-a: ela sai das cobranças novas e o histórico continua.
+- A marca **Unidade vazia** é da equipe: o sistema não a muda sozinho. Ela aparece na coluna **Ocupação**, no filtro de mesmo nome e no painel da unidade.
+- A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.
 - Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
 - Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
 - Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.

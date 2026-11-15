@@ -5,6 +5,7 @@
  * @var array $definition @var array $result @var array $filters @var ?string $filterField
  * @var list<array> $condominiums @var bool $canManage @var ?\Source\Support\Message $flash
  */
+use Source\Support\Erp\PerPage;
 use Source\Support\Erp\RegistryFormat;
 
 $this->layout('default');
@@ -21,15 +22,20 @@ if (isset($definition['people']) && $result['data'] !== [] && array_key_exists(r
     }
 }
 $searchHint = isset($definition['people']) ? 'Unidade, bloco, proprietário ou inquilino' : 'Nome, documento ou unidade';
-$query = static function (array $changes) use ($filters): string {
+// Filtro de marca da definição (ADR 0310: Ocupação das unidades).
+$flagFilter = $definition['flag_filter'] ?? null;
+$flagParam = $flagFilter['param'] ?? 'ocupacao';
+$query = static function (array $changes) use ($filters, $flagParam): string {
     $params = array_filter([
         'condominio' => $filters['condominium_id'] ?? null, 'situacao' => $filters['status'] ?? null,
         'tipo' => $filters['filter'] ?? null, 'q' => $filters['q'] ?? null,
+        $flagParam => $filters['flag'] ?? null,
+        'por_pagina' => ($filters['per_page'] ?? PerPage::DEFAULT) !== PerPage::DEFAULT ? $filters['per_page'] : null,
     ], static fn ($v): bool => $v !== null && $v !== '');
     $params = array_filter(array_merge($params, $changes), static fn ($v): bool => $v !== null && $v !== '');
     return $params === [] ? '' : '?' . http_build_query($params);
 };
-$filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null], static fn ($v): bool => $v !== null && $v !== '') !== [];
+$filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null, isset($flagFilter['options'][(string)($filters['flag'] ?? '')]) ? $filters['flag'] : null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php // AP-006: cadastro rápido e fração ideal/área em grade (ADR 0140).
     if (($definition['page'] ?? '') === 'AP-006'): ?>
@@ -71,6 +77,12 @@ $this->insert('components/layout/page-head', [
                 <?php foreach ($ff['options'] as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $key === ($filters['filter'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
             </select></div>
         <?php endif; ?>
+        <?php if ($flagFilter !== null): ?>
+            <div class="erp-field"><label for="reg-flag"><?= $this->e($flagFilter['label']) ?></label><select class="erp-select" id="reg-flag" name="<?= $this->e($flagParam) ?>"><option value="">Todas</option>
+                <?php foreach ($flagFilter['options'] as $key => [$label]): ?><option value="<?= $this->e($key) ?>"<?= $key === (string)($filters['flag'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
+            </select></div>
+        <?php endif; ?>
+        <?php if (($filters['per_page'] ?? PerPage::DEFAULT) !== PerPage::DEFAULT): ?><input type="hidden" name="por_pagina" value="<?= (int)$filters['per_page'] ?>"><?php endif; ?>
         <div class="erp-field"><label for="reg-status">Situação</label><select class="erp-select" id="reg-status" name="situacao"><option value="">Todas</option>
             <?php foreach ($definition['status'] as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $key === ($filters['status'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
         </select></div>
@@ -92,7 +104,7 @@ $this->insert('components/layout/page-head', [
                 <table class="erp-table">
                     <caption class="erp-sr-only"><?= $this->e($definition['label']) ?> (<?= (int)$result['total'] ?>)</caption>
                     <thead><tr>
-                        <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['label']) ?></th><?php endforeach; ?>
+                        <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['list_label'] ?? $field['label']) ?></th><?php endforeach; ?>
                         <?php foreach ($peopleColumns as $label): ?><th scope="col"><?= $this->e($label) ?></th><?php endforeach; ?>
                         <th scope="col">Situação</th>
                         <th scope="col" class="is-num"><span class="erp-sr-only">Ações</span></th>
@@ -113,15 +125,9 @@ $this->insert('components/layout/page-head', [
                     </tbody>
                 </table>
             </div>
-            <?php if ($result['pages'] > 1): ?>
-                <nav class="erp-pagination" aria-label="Paginação">
-                    <span>Página <?= (int)$result['page'] ?> de <?= (int)$result['pages'] ?></span>
-                    <div class="erp-pagination__pages">
-                        <?php if ($result['page'] > 1): ?><a class="erp-btn erp-btn--sm" href="<?= erp_url($route) . $this->e($query(['pagina' => $result['page'] - 1])) ?>" rel="prev">Anterior</a><?php endif; ?>
-                        <?php if ($result['page'] < $result['pages']): ?><a class="erp-btn erp-btn--sm" href="<?= erp_url($route) . $this->e($query(['pagina' => $result['page'] + 1])) ?>" rel="next">Próxima</a><?php endif; ?>
-                    </div>
-                </nav>
-            <?php endif; ?>
+            <?php // Paginação padrão (ADR 0310): moves/pager e itens por página 50/100/200/500.
+            parse_str(ltrim($query([]), '?'), $currentQuery);
+            $this->insert('components/tables/pagination', ['pagination' => $result, 'paginationBase' => erp_url($route), 'paginationQuery' => $currentQuery]); ?>
         <?php endif; ?>
     </div>
 </section>

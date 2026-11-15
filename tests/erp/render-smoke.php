@@ -530,6 +530,8 @@ $docRow = static fn (array $over = []): array => $over + ['id' => 31, 'condomini
 $docUnits = [['id' => 9, 'condominium_id' => 1, 'label' => 'Apto <101>', 'condominium_name' => 'Residencial Aurora'], ['id' => 10, 'condominium_id' => 2, 'label' => 'Casa 2', 'condominium_name' => 'Vila Sol']];
 $docList = ['data' => [$docRow(), $docRow(['id' => 32, 'result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data errada'])], 'total' => 2, 'page' => 1, 'per_page' => 25, 'pages' => 1];
 $docData = static fn (string $kind, array $over = []): array => $over + ['documentKind' => $kind, 'unitDocuments' => $docList, 'unitDocument' => null, 'documentUnits' => $docUnits, 'documentError' => null, 'canManageDocuments' => true];
+// Revisão de 15/11 (ADR 0310): a unidade só é escolhida com um condomínio na barra superior.
+Source\Support\Erp\CondominiumContext::use([['id' => 1, 'name' => 'Residencial Aurora']], 1);
 foreach (Source\Controllers\Erp\Connect\Panel::UNIT_DOCUMENT_PAGES as $docPage => $docKind) {
     $html = $agreementPage($docPage, 'pages/documents/unit-document', $docData($docKind), 'list');
     $common($html, $docPage, 'Emitir');
@@ -571,6 +573,11 @@ $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('rece
 $assert(!str_contains($html, 'data-receipt-form') && str_contains($html, 'Escolha a unidade para ver as contas pagas'), 'AP-040: sem unidade escolhida, só o seletor');
 $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['receiptUnit' => 9, 'receiptEntries' => []]));
 $assert(str_contains($html, 'Nenhuma conta paga sem recibo') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-040: unidade sem conta paga livre');
+Source\Support\Erp\CondominiumContext::reset();
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['documentUnits' => [], 'receiptUnit' => null, 'receiptEntries' => []]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unidade"'), 'AP-040: sem condomínio na barra superior, sem filtro de unidade (ADR 0310)');
+$html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['documentUnits' => []]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unit_id"'), 'AP-123: sem condomínio na barra superior, sem campo de unidade (ADR 0310)');
 $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['unitDocument' => $docRow(['kind' => 'receipt', 'kind_label' => 'Recibo', 'result' => 'clear', 'total_cents' => 102000,
     'content' => ['entries' => [['entry_id' => 71, 'description' => 'Taxa <out>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'paid_on' => '2026-10-09', 'amount_cents' => 50000, 'bank_account' => 'Conta <Itaú>'],
         ['entry_id' => 72, 'description' => 'Taxa nov', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'paid_on' => '2026-11-08', 'amount_cents' => 52000, 'bank_account' => null]], 'paid_cents' => 102000]])]), 'doc');
@@ -1427,6 +1434,7 @@ $unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' =>
     'documents' => [['id' => 5, 'kind_label' => 'Certidão de débitos', 'verification_display' => 'ABCD-EFGH', 'issued_at' => '2026-11-01 10:00:00', 'status' => 'issued']],
     'operations' => ['deliveries_waiting' => 1, 'reservations_upcoming' => 2, 'occurrences_open' => 1, 'vehicles' => 1, 'pets' => 0]];
 $unitData = static fn (array $over = []): array => $over + ['unitPanelReady' => true, 'unitPanel' => $unitPanel, 'unitPanelUnits' => [['id' => 9, 'condominium_id' => 7, 'label' => 'A-101'], ['id' => 10, 'condominium_id' => 7, 'label' => 'A-102']], 'unitPanelSelected' => 9, 'unitPanelError' => null];
+Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'Residencial Exemplo']], 7);
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(), 'real');
 $common($html, 'AP-003', 'Unidade A-101');
 $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 824,00') && str_contains($html, 'Taxa &lt;outubro&gt;') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Proprietário')
@@ -1442,6 +1450,13 @@ $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['un
 $assert(str_contains($html, 'Unidade não encontrada') && !str_contains($html, 'Escolha uma unidade'), 'AP-003: unidade fora do escopo');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem unidades');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'data-unit-occupancy') === false && str_contains($html, 'Unidade(s) neste condomínio') === false, 'AP-003: sem painel, sem marca de ocupação');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => ['unit' => ['is_vacant' => true] + $unitPanel['unit']] + $unitPanel]));
+$assert(str_contains($html, 'data-unit-occupancy="vazia"') && str_contains($html, 'Unidade vazia'), 'AP-003: unidade marcada como vazia (ADR 0310)');
+Source\Support\Erp\CondominiumContext::reset();
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unidade"') && !str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem condomínio na barra superior, sem filtro de unidade (ADR 0310)');
 
 // Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
 $html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));

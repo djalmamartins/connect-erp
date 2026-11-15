@@ -53,6 +53,9 @@ final class Registry extends Controller
             'filter' => $_GET['tipo'] ?? null,
             'q' => $_GET['q'] ?? null,
             'page' => $_GET['pagina'] ?? 1,
+            // ADR 0310: Ocupação das unidades e itens por página (50 por padrão; 100, 200 ou 500).
+            'flag' => $_GET[$definition['flag_filter']['param'] ?? 'ocupacao'] ?? null,
+            'per_page' => \Source\Support\Erp\PerPage::current(),
         ];
         echo $this->view->render('pages/registry/index', $this->layoutData($user, $definition, null, [
             'definition' => $definition,
