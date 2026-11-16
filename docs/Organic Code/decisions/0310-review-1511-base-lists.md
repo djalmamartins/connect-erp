@@ -21,6 +21,9 @@ o layout continua o do Connect ERP.
    por unidade usam essa regra; sem condomínio, a tela mostra `components/feedback/needs-condominium.php` no lugar do
    campo. As telas que já exigiam condomínio (entregas, cobranças extras, casos jurídicos) continuam iguais.
    O chamado (Help Desk) mantém o par condomínio + unidade do próprio formulário.
+   Nos formulários do motor de cadastros (ex.: Lançar receita = contas a receber), `Registry::formUnits()` oferece só
+   as unidades do condomínio do registro ou, num registro novo, do condomínio da barra superior (correção de 15/11,
+   pedido do Djalma); sem nenhum dos dois, a tela filtra as unidades pelo campo Condomínio, também quando ele é fixo.
 2. **Unidade vazia.** Coluna `erp_units.is_vacant` (migration `20261115_2330_unit_vacant`), marcada pela equipe no
    cadastro da unidade ("Unidade vazia"). O sistema não a muda sozinho: a regra automática de vaga por vínculos
    (ADR 0270, relatório de unidades vagas) continua separada. A lista de unidades ganha a coluna e o filtro
