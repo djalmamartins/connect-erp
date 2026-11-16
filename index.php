@@ -491,6 +491,8 @@ $route->post("/entries/reclassify", "EntryReclassification:store", null, \Source
 // Prorrogação de vencimento em lote (ADR 0197): contas em aberto, data fixa ou dias, pelas regras do formulário, com motivo.
 $route->post("/entries/reschedule", "EntryReschedule:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/entries/cancel", "EntryCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Copiar lançamentos selecionados para outra competência (ADR 0313, modelo 7).
+$route->post("/entries/copy", "EntryCopy:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/suppliers/deactivate", "SupplierDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);

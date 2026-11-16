@@ -41,7 +41,14 @@ final class EntryCancellation
             header('Cache-Control: no-store, private');
             JsonResponse::send(200, ['data' => $data]);
         } catch (RegistryValidationException $exception) {
-            JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Conta recusada: nada foi gravado.', 'errors' => $exception->errors]]);
+            // A tela mostra a mensagem: diz qual conta e por quê (ADR 0313).
+            $errors = $exception->errors;
+            $entry = (string)($errors['_entry'] ?? '');
+            $entry = ctype_digit($entry) ? 'Conta nº ' . $entry : $entry;
+            unset($errors['_entry']);
+            $why = (string)(array_values($errors)[0] ?? '');
+            JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Conta recusada: nada foi gravado.' . ($entry !== '' || $why !== '' ? ' ' . trim($entry . ($why !== '' ? ': ' . $why : ''), ': ') : ''),
+                'errors' => $exception->errors]]);
         } catch (InvalidArgumentException $exception) {
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
         } catch (CondominiumAccessDenied) {

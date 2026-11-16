@@ -1,6 +1,6 @@
-# 0313 — Revisão de 15/11, etapa 4: fechamento mensal em ordem, lançamento para várias unidades e Nova Receita
+# 0313 — Revisão de 15/11, etapa 4: fechamento em ordem, várias unidades, Nova Receita e atalhos dos lançamentos
 
-- Status: Aceito (partes 1, 2 e 3)
+- Status: Aceito (partes 1 a 4)
 - Data: 16/11/2026
 - Issue: #543 (revisão de 15/11, etapa 4)
 - Relacionadas: ADR 0031 (fechamento mensal), 0100 (concorrência), 0181 (conferência antes de fechar), 0205 (fechamento em lote)
@@ -52,6 +52,16 @@ mês imediatamente anterior, e o fechamento não recusava nada.
    anexos no mesmo envio (cada conta aceita anexo na ficha, ADR 0174). INFERIDO: o fundo de reserva sai como conta
    separada para a prestação de contas mostrar o fundo na conta dele.
 
+8. **Atalhos nos lançamentos** (parte 4, item 17, modelo 7): na lista de lançamentos (AP-020), com permissão de alterar,
+   uma barra com Nova receita, Nova despesa, Desconto, Importar (planilha de lançamentos) e Histórico. INFERIDO: o
+   "histórico" do modelo virou a lista dos lançamentos cancelados (`?situacao=inactive`), porque o log geral fica em
+   Relatórios › Logs. Com um condomínio escolhido, cada linha tem caixa de marcação e:
+   - **Copiar lançamento(s)**: `POST /api/v1/entries/copy` (serviço `EntryCopy`): cada um vira um novo na competência de
+     destino, em aberto, sem baixa, conta bancária ou origem, com o vencimento andando os mesmos meses (último dia
+     quando o mês é menor). Pelo motor de cadastros, tudo ou nada, até 200.
+   - **Excluir lançamentos**: o cancelamento em lote que já existia (ADR 0203), com motivo. Não apaga: fica Cancelado
+     e auditado. A mensagem de recusa passou a dizer qual conta e por quê.
+
 ## Testes
 
 - `tests/legacy/Integration/MonthClosingIntegrationTest.php`: meses pendentes por condomínio, mês vazio fora, recusa
@@ -65,3 +75,6 @@ mês imediatamente anterior, e o fechamento não recusava nada.
   "(1/N)" e fim de fevereiro, inquilino como pagador, valor de cada unidade, sem rateio, recusas (valor faltando, fundo
   acima de 30% ou sem conta, repetição acima de 24, mês fechado desfaz tudo, condomínio fora do escopo).
 - Render smoke: Nova Receita com rateio e opções, sem permissão de cobrança, sem condomínio e só consulta.
+- `tests/legacy/Integration/EntryCopyTest.php`: cópia em aberto com vencimento andando (fim de fevereiro), sem baixa
+  e com documento, mês fechado desfaz tudo, entradas inválidas e condomínio fora do escopo.
+- Render smoke: atalhos, marcação, copiar e excluir com condomínio; sem condomínio só os links; só consulta sem barra.

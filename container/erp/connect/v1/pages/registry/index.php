@@ -37,6 +37,9 @@ $query = static function (array $changes) use ($filters, $flagParam): string {
 };
 // Configuração em massa (ADR 0311): só na lista de unidades, com um condomínio escolhido e permissão de gravar.
 $bulkCondominium = ($definition['page'] ?? '') === 'AP-006' && $canManage ? (int)($filters['condominium_id'] ?? 0) : 0;
+// Atalhos e seleção na lista de lançamentos (ADR 0313, modelo 7): copiar e excluir só com um condomínio escolhido.
+$entryShortcuts = ($definition['page'] ?? '') === 'AP-020' && $canManage;
+$entryCondominium = $entryShortcuts ? (int)($filters['condominium_id'] ?? 0) : 0;
 $filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null, isset($flagFilter['options'][(string)($filters['flag'] ?? '')]) ? $filters['flag'] : null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php // AP-006: cadastro rápido e fração ideal/área em grade (ADR 0140).
@@ -95,6 +98,9 @@ $this->insert('components/layout/page-head', [
 
     <div class="erp-card erp-card--flush" style="margin-top:16px">
         <div class="erp-card__head"><div><h2><?= $this->e($definition['label']) ?></h2><p><?= $result['total'] === 1 ? '1 registro' : $result['total'] . ' registros' ?><?= $filtered ? ' com os filtros aplicados' : '' ?></p></div></div>
+        <?php if ($entryShortcuts) {
+            $this->insert('components/finance/entry-shortcuts', ['entryCondominium' => $entryCondominium, 'cancelledHref' => erp_url($route) . $query(['situacao' => 'inactive', 'pagina' => null])]);
+        } ?>
         <?php if ($result['data'] === []): ?>
             <div class="erp-empty" role="status">
                 <span class="erp-empty__icon"><?= $icon('users') ?></span>
@@ -114,6 +120,7 @@ $this->insert('components/layout/page-head', [
                     <caption class="erp-sr-only"><?= $this->e($definition['label']) ?> (<?= (int)$result['total'] ?>)</caption>
                     <thead><tr>
                         <?php if ($bulkCondominium > 0): ?><th scope="col" class="is-check"><input type="checkbox" data-unit-bulk-all aria-label="Marcar todas as unidades desta página"></th><?php endif; ?>
+                        <?php if ($entryCondominium > 0): ?><th scope="col" class="is-check"><input type="checkbox" data-entry-pick-all aria-label="Marcar todos os lançamentos desta página"></th><?php endif; ?>
                         <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['list_label'] ?? $field['label']) ?></th><?php endforeach; ?>
                         <?php foreach ($peopleColumns as $label): ?><th scope="col"><?= $this->e($label) ?></th><?php endforeach; ?>
                         <th scope="col">Situação</th>
@@ -123,6 +130,7 @@ $this->insert('components/layout/page-head', [
                     <?php foreach ($result['data'] as $row): $first = true; $href = erp_url($route . '/' . (int)$row['id']); ?>
                         <tr>
                             <?php if ($bulkCondominium > 0): ?><td class="is-check"><input type="checkbox" value="<?= (int)$row['id'] ?>" data-unit-bulk-item aria-label="Marcar a unidade <?= $this->e((string)($row[$definition['title']] ?? $row['id'])) ?>"></td><?php endif; ?>
+                            <?php if ($entryCondominium > 0): ?><td class="is-check"><input type="checkbox" value="<?= (int)$row['id'] ?>" data-entry-pick aria-label="Marcar o lançamento <?= $this->e((string)($row[$definition['title']] ?? $row['id'])) ?>"></td><?php endif; ?>
                             <?php foreach ($listFields as $name => $field): $text = RegistryFormat::display($field, $row[$name], $row['condominium_name'] ?? null); ?>
                                 <td><?php if ($first): $first = false; ?><a href="<?= $href ?>"><strong><?= $this->e($text) ?></strong></a><?php else: ?><?= $this->e($text) ?><?php endif; ?></td>
                             <?php endforeach; ?>

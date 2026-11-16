@@ -90,6 +90,17 @@ Os anexos entram numerados no [Livro caixa mensal](artigo:livro-caixa). O arquiv
 
 >! Dá para anexar mesmo com o mês fechado (o comprovante costuma chegar depois). Remover um anexo de mês fechado não: reabra o mês antes.
 
+## Atalhos e ações com vários lançamentos
+
+Acima da lista ficam os atalhos: {{Nova receita}}, {{Nova despesa}}, {{Desconto}}, {{Importar}} (planilha de lançamentos) e {{Histórico}} (os lançamentos cancelados).
+
+Com um condomínio escolhido na barra superior, cada linha ganha uma caixa de marcação (e a do cabeçalho marca a página toda). Com lançamentos marcados:
+
+- {{Copiar lançamento(s)}}: escolha a competência de destino. As cópias nascem em aberto, com os mesmos dados, e o vencimento anda os mesmos meses. Não levam baixa, boleto nem a origem (fatura, acordo).
+- {{Excluir lançamentos}}: informe o motivo. Os lançamentos ficam como **Cancelado** (saem dos relatórios e da cobrança) e o histórico guarda quem fez e o motivo.
+
+>! Se um dos lançamentos não puder ser copiado ou excluído (mês fechado, conta paga, boleto no banco), nada é gravado e a mensagem diz qual conferir.
+
 ## Pesquisar e filtrar
 
 Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Natureza** e **Situação**.
