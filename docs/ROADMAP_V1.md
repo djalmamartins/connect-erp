@@ -126,6 +126,9 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   ficam indisponíveis até autorizar de novo; o OneDrive passa a ser a cópia principal, então o backup desses arquivos precisa de um
   segundo lugar (ou aceitar a lixeira e o histórico de versões do OneDrive, 30 dias); LGPD: a Microsoft entra como suboperadora.
   Tamanho estimado: ~1 semana, junto da etapa 5, para o piloto já começar com os documentos no OneDrive.
+  Conta: **OneDrive empresarial da Connect** (Microsoft 365 Business, conta no domínio `connectcondominios.com.br`), não o pessoal
+  do Djalma: os dados ficam em nome da empresa, o acesso do sistema é por aplicativo registrado (não depende da senha de uma pessoa)
+  e o contrato de tratamento de dados da Microsoft cobre a LGPD. O backup cifrado pode ir para a mesma conta.
 - **Testar a restauração** num servidor vazio e anotar o tempo. Sem isso o backup não conta.
 
 ### 3.6 Monitoramento
