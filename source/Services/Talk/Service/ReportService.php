@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Source\Services\Talk\Service;
 
+use Source\Services\Erp\CollectionReports;
 use Source\Services\Talk\Domain\StaffMember;
 use Source\Services\Talk\Support\Db;
 
@@ -97,17 +98,19 @@ final class ReportService
         [$from, $to] = $this->period($f);
         $out = fopen('php://temp', 'w+');
         fwrite($out, "\xEF\xBB\xBF"); // BOM: acentos certos no Excel
-        fputcsv($out, ['Protocolo', 'Aberto em', 'Contato', 'Telefone', 'Setor', 'Atendente', 'Situação', 'Aceito em',
-            'Encerrado em', 'Espera (min)', 'Atendimento (min)', 'Nota', 'Comentário'], ';', '"', '');
+        // Cada célula passa por csvCell (ADR 0081): o nome do contato vem do WhatsApp e pode ser "=HYPERLINK(...)".
+        $csvCell = static fn (array $row): array => array_map(static fn ($v): string => CollectionReports::csvCell((string) $v), $row);
+        fputcsv($out, $csvCell(['Protocolo', 'Aberto em', 'Contato', 'Telefone', 'Setor', 'Atendente', 'Situação', 'Aceito em',
+            'Encerrado em', 'Espera (min)', 'Atendimento (min)', 'Nota', 'Comentário']), ';', '"', '');
         $status = ['bot' => 'Com a Jack', 'pending' => 'Na fila', 'open' => 'Em atendimento', 'closed' => 'Encerrado'];
         foreach ($this->rows($u, $from, $to, $f) as $r) {
-            fputcsv($out, [
+            fputcsv($out, $csvCell([
                 $r['protocol'], $this->br($r['opened_at']), $r['contact_name'], $r['phone'], $r['sector_name'], $r['user_name'],
                 $status[$r['status']] ?? $r['status'], $this->br($r['accepted_at']), $this->br($r['closed_at']),
                 $r['wait_s'] !== null ? number_format($r['wait_s'] / 60, 1, ',', '') : '',
                 $r['handle_s'] !== null ? number_format($r['handle_s'] / 60, 1, ',', '') : '',
                 $r['score'] ?? '', $r['comment'] ?? '',
-            ], ';', '"', '');
+            ]), ';', '"', '');
         }
         rewind($out);
         return (string) stream_get_contents($out);
