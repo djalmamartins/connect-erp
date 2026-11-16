@@ -47,7 +47,7 @@ Se o servidor ou a aprovação do Inter atrasarem, tudo anda junto: cada semana 
 | Pendências do modelo 8 (Nova Receita): conta relacionada, tipo da fatura, anexos no envio | aberto desde a etapa 4 de 15/11 | sim, pequeno |
 | Prestação de contas: colunas Sobras de rateio e Fundo de reserva, juntar anexos PDF | aberto desde a etapa 5 de 15/11 | sim |
 | Lista de revisão do Djalma prometida para depois de 19/11 | ainda não chegou | sim |
-| PR #538 API do Connect Talk (ADR 0308) | rascunho aberto desde 15/11 | opcional; decidir |
+| **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | a dimensionar numa frente própria; o PR #538 (API entre dois sistemas, ADR 0308) deve ser revisto ou fechado | a decidir |
 | NFS-e etapas 2 e 3 (certificado A1, envio à API Nacional, nota do condomínio) | dependem de dados fiscais e da norma de dez/2026 | **não** (emitir manualmente no início) |
 | Itaú e CNAB 240 genérico | não iniciados | **não** (v1.1) |
 | `docs/specs/pages/ap-*.md` com campos PENDENTE | documentação desatualizada | não bloqueia |
@@ -169,7 +169,7 @@ na ordem 4 → 5 → 6.
 4. **Condomínio piloto** e os dados reais dele.
 5. **LGPD**: encarregado, revisão dos textos e do contrato com os condomínios (advogado).
 6. **Armazenamento externo do backup** (ex.: outro provedor de nuvem) e **SMTP** de produção.
-7. **PR #538 (Talk)**: entra agora ou depois da v1.0.
+7. **Talk dentro do ERP**: entra na v1.0 ou logo depois (o tamanho sai da análise da frente própria).
 8. **Lista de revisão** de depois de 19/11.
 9. Confirmar o que fica para a v1.1: app nas lojas, NFS-e automática, AP-031, Itaú/CNAB, Cora produção.
 
