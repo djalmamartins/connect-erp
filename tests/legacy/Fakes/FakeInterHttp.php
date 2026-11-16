@@ -33,6 +33,9 @@ final class FakeInterHttp implements InterHttp
     public int $rateLimited = 0;
     /** O saldo responde 429 sempre. */
     public bool $balanceLimited = false;
+    /** Extrato completo responde 500 (como o sandbox em 16/11/2026); o simples também, se pedido. */
+    public bool $completeStatementFails = false;
+    public bool $simpleStatementFails = false;
     /** Escopos pedidos em cada token. @var list<string> */
     public array $tokenScopes = [];
     private int $sequence = 0;
@@ -69,6 +72,22 @@ final class FakeInterHttp implements InterHttp
         if ($method === 'GET' && str_starts_with($path, '/banking/v2/') && $this->rateLimited > 0) {
             $this->rateLimited--;
             return ['status' => 429, 'body' => ''];
+        }
+        if ($method === 'GET' && $path === '/banking/v2/extrato/completo' && $this->completeStatementFails) {
+            return ['status' => 500, 'body' => '{"title":"Erro desconhecido.","detail":"Tente novamente mais tarde"}'];
+        }
+        if ($method === 'GET' && $path === '/banking/v2/extrato') {
+            if ($this->simpleStatementFails) {
+                return ['status' => 500, 'body' => '{"title":"Erro desconhecido."}'];
+            }
+            parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
+            $simple = array_map(static function (array $t): array {
+                $t['dataEntrada'] = $t['dataTransacao'];
+                unset($t['idTransacao'], $t['dataTransacao'], $t['dataInclusao']);
+                return $t;
+            }, array_values(array_filter($this->statement, static fn (array $t): bool => ($t['dataTransacao'] ?? '') >= ($query['dataInicio'] ?? '')
+                && ($t['dataTransacao'] ?? '') <= ($query['dataFim'] ?? ''))));
+            return ['status' => 200, 'body' => json_encode(['transacoes' => $simple])];
         }
         if ($method === 'GET' && $path === '/banking/v2/extrato/completo') {
             parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
