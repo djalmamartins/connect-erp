@@ -52,7 +52,9 @@ O documento segue o padrão da Connect (cabeçalho com a Connect, o condomínio 
 2. **Termo de abertura** com a razão social, o endereço, o município e o CNPJ do condomínio.
 3. **Parecer do síndico e do conselho**, com os nomes do cadastro [[Cadastros > Síndico e conselho]] e as linhas para assinar.
 4. **Demonstrativo financeiro**: receitas e despesas pagas no mês por grupo e conta, com o total de cada grupo, o resumo (receitas, despesas e resultado) e o **resumo das contas** bancárias (saldo anterior, entradas, saídas e saldo atual).
-5. **Relatório de lançamentos**: as despesas pagas no mês e, para cada uma, a linha do lançamento seguida dos comprovantes anexados. Imagens entram dentro do PDF; anexo em PDF aparece citado (ele fica no pacote do livro caixa).
+5. **Relatório de lançamentos**: as despesas pagas no mês e, para cada uma, a linha do lançamento seguida dos comprovantes anexados. As colunas **Sobras de Rateio (R$)** e **Fundo de Reserva (R$)** mostram quanto de cada despesa foi pago com as sobras (conta 9.1) e com o fundo de reserva (conta 8.2), conforme os lançamentos patrimoniais ligados a ela, e a tabela fecha com o total e o total geral.
+
+Os comprovantes entram no próprio documento: imagens aparecem dentro da página da despesa, e comprovantes em PDF entram como páginas logo depois dela, com o rodapé e a numeração do documento. Um PDF que não dá para ler (protegido ou num formato que o sistema não abre) continua citado e fica no pacote do livro caixa.
 
 Com **Ocultar unidade** marcado, o documento também sai sem a unidade nas receitas.
 

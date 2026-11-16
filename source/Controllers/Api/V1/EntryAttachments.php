@@ -42,6 +42,17 @@ final class EntryAttachments
         }
     }
 
+    /** POST /api/v1/entry-attachments: o mesmo arquivo em vários lançamentos (entry_ids separados por vírgula, ADR 0323). */
+    public function storeMany(): void
+    {
+        $user = $this->authorize('manage');
+        if ($user !== null) {
+            $upload = is_array($_FILES['file'] ?? null) ? $_FILES['file'] : [];
+            $ids = array_map('intval', explode(',', is_string($_POST['entry_ids'] ?? null) ? $_POST['entry_ids'] : ''));
+            $this->run(201, fn () => (new Service())->attachMany($user, $ids, $upload, $_POST['kind'] ?? null, $_POST['title'] ?? null));
+        }
+    }
+
     public function destroy(array $data): void
     {
         $user = $this->authorize('manage');

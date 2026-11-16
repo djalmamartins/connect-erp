@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Connect Talk dentro do ERP (ADR 0323): front controller do host talk.<domínio>. O index.php do ERP inclui este
+ * Connect Talk dentro do ERP (ADR 0324): front controller do host talk.<domínio>. O index.php do ERP inclui este
  * arquivo quando talk_host() e a rota não é do ERP (troca de ambiente). Veio do public/index.php do Talk separado
  * (repositório djalmamartins/talk, 0.22.0) com três trocas: o login e as permissões são os do ERP (Auth + talk.access),
  * a sessão é a do ERP (chaves talk_*), e o chamado e o cadastro vêm direto do ERP (LocalHelpdesk, LocalContactDirectory).
@@ -145,7 +145,7 @@ try {
 
     // ---------------------------------------------------------------- login
     if ($path === '/login') {
-        // O login é o do ERP (ADR 0323). Logado no ERP mas sem acesso ao Talk: explica em vez de voltar em círculo.
+        // O login é o do ERP (ADR 0324). Logado no ERP mas sem acesso ao Talk: explica em vez de voltar em círculo.
         if (Auth::user() !== null && !$sessionOk()) {
             $view('login', ['error' => $app['erp_login']->deniedReason(Auth::user()), 'isLab' => $isLab, 'erpUrl' => Environments::url('erp', '/dashboard')]);
         }

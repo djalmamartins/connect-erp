@@ -54,7 +54,9 @@ recorte: main form[data-revenue-form]
 
 >! Se um dos meses estiver fechado no fechamento mensal, nada é gravado. Reabra o mês ou mude a competência.
 
-> Anexos: depois de salvar, abra cada lançamento e anexe a nota ou o contrato no quadro de anexos.
+## Anexos
+
+No campo **Anexos**, escolha até 5 arquivos (PDF, imagem, documento ou planilha, até 20 MB cada) e o **Tipo do anexo**. Ao salvar, cada arquivo vai para todas as contas geradas pelo lançamento, guardado uma vez só. Se um envio falhar, as contas já estão gravadas e o aviso diz qual arquivo faltou; anexe-o depois no quadro de anexos do lançamento.
 
 ## Quem pode usar
 

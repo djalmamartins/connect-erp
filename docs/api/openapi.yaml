@@ -5992,6 +5992,34 @@ paths:
         '409': { description: Arquivo já anexado a este lançamento }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '503': { description: Antivírus obrigatório fora do ar (ADR 0098) }
+  /entry-attachments:
+    post:
+      operationId: attachToEntries
+      summary: O mesmo arquivo em vários lançamentos de uma vez (erp.entries.manage, ADR 0323)
+      description: >-
+        Usado pela Nova Receita para anexar os arquivos a todas as contas geradas. O arquivo vai uma vez ao Disco
+        Virtual e os outros lançamentos ganham só o vínculo. Todos do mesmo condomínio e no escopo (senão 404). Lançamento
+        que já tem o arquivo ou já tem 20 anexos é pulado (skipped). Até 2000 lançamentos.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file, entry_ids]
+              properties:
+                entry_ids: { type: string, description: 'Ids separados por vírgula' }
+                kind: { type: string, enum: [nota_fiscal, conta, comprovante, recibo, outro] }
+                title: { type: string, maxLength: 160 }
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: '{ data: { document_id, attached, skipped } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '503': { description: Antivírus obrigatório fora do ar (ADR 0098) }
   /entries/{id}/attachments/{attachment}/download:
     get:
       operationId: downloadEntryAttachment

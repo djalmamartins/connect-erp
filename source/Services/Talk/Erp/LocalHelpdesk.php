@@ -9,7 +9,7 @@ use Source\Services\Talk\Support\Db;
 use Source\Services\Talk\TalkHelpdesk;
 
 /**
- * Chamado da conversa direto no Help Desk do ERP (ADR 0323), sem a API: mesmas regras de TalkHelpdesk (origem "talk",
+ * Chamado da conversa direto no Help Desk do ERP (ADR 0324), sem a API: mesmas regras de TalkHelpdesk (origem "talk",
  * idempotente pelo protocolo do Talk, sem e-mail). O atendente do Talk (talk_users) é o usuário do ERP de
  * talk_users.erp_user_id, que é quem aparece no chamado ao transferir ou encerrar. Atendente sem usuário do ERP
  * (perfil antigo, de antes da mudança): a transferência ou o encerramento no chamado é pulado e registrado no log,

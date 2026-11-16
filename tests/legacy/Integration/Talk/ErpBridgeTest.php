@@ -15,7 +15,7 @@ use Source\Services\Talk\TalkHelpdesk;
 use Source\Support\Access;
 
 /**
- * Talk dentro do ERP (ADR 0323): entrada com o usuário do ERP (talk.access), pessoa pelo telefone direto no cadastro
+ * Talk dentro do ERP (ADR 0324): entrada com o usuário do ERP (talk.access), pessoa pelo telefone direto no cadastro
  * de moradores e chamado direto no Help Desk, sem API nem token.
  */
 final class ErpBridgeTest extends DbTestCase

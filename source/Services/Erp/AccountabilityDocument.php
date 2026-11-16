@@ -7,6 +7,8 @@ namespace Source\Services\Erp;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use PDO;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 use Source\Core\Connect;
 use Source\Core\View;
 use Source\Models\User;
@@ -30,6 +32,9 @@ final class AccountabilityDocument
 {
     /** Meses na lista da tela. */
     public const MONTHS = 12;
+    /** Contas do plano usadas pelas colunas do relatório de lançamentos (ADR 0167 e 0169). */
+    public const RESERVE_CODE = '8.2';
+    public const SURPLUS_CODE = '9.1';
     public const COUNCIL_ROLES = ['fiscal', 'consultivo', 'subsindico'];
 
     private PDO $pdo;
@@ -172,6 +177,7 @@ final class AccountabilityDocument
                 $expenses[] = $line + ['annexes' => $annexesByLine[(int)$line['seq']] ?? []];
             }
         }
+        $expenses = $this->withFunds($condominiumId, $expenses);
         $place = implode(' / ', array_filter([trim((string)($condo['city'] ?? '')), trim((string)($condo['district'] ?? ''))]));
         return [
             'condominium' => $book['condominium'] + [
@@ -185,6 +191,8 @@ final class AccountabilityDocument
             'banks' => $book['banks'],
             'expenses' => $expenses,
             'expense_total_cents' => array_sum(array_column($expenses, 'amount_cents')),
+            'surplus_total_cents' => array_sum(array_column($expenses, 'surplus_cents')),
+            'reserve_total_cents' => array_sum(array_column($expenses, 'reserve_cents')),
             'missing_proof' => count($book['missing_proof']),
         ];
     }
@@ -198,8 +206,15 @@ final class AccountabilityDocument
         ]);
     }
 
+    /**
+     * PDF do documento. Os comprovantes em PDF (ADR 0323) entram logo depois da folha da despesa: o dompdf marca em que
+     * página cada folha termina (callback begin_frame no marcador data-annex-anchor) e o FPDI junta as páginas. O PDF
+     * que o FPDI gratuito não lê (compactado, PDF 1.5+ com object streams) ou protegido fica citado, como antes.
+     */
     public function pdf(array $doc): string
     {
+        $doc = $this->mergeable($doc);
+        $anchors = [];
         $options = new Options();
         $options->set('tempDir', sys_get_temp_dir());
         $options->set('chroot', $this->theme);
@@ -207,11 +222,143 @@ final class AccountabilityDocument
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);
+        $dompdf->setCallbacks([['event' => 'begin_frame', 'f' => static function ($frame, $canvas) use (&$anchors): void {
+            $node = $frame->get_node();
+            if ($node instanceof \DOMElement && $node->hasAttribute('data-annex-anchor')) {
+                $anchors[(int)$node->getAttribute('data-annex-anchor')] = $canvas->get_page_number();
+            }
+        }]]);
         $dompdf->loadHtml($this->html($doc, true), 'UTF-8');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
-        ListDocument::footer($dompdf, false);
-        return (string)$dompdf->output();
+        $files = [];
+        foreach ($doc['expenses'] as $line) {
+            foreach ($line['annexes'] as $annex) {
+                if (($annex['placement'] ?? null) === 'merge' && isset($anchors[(int)$line['seq']])) {
+                    $files[$anchors[(int)$line['seq']]][] = (string)$annex['absolute'];
+                }
+            }
+        }
+        ListDocument::footer($dompdf, false, $files === []);
+        $pdf = (string)$dompdf->output();
+        return $files === [] ? $pdf : self::merge($pdf, $files, ListDocument::issuer()['site']);
+    }
+
+    /** Marca como 'merge' os comprovantes em PDF que o FPDI consegue ler (os outros continuam 'package', citados). */
+    public function mergeable(array $doc): array
+    {
+        foreach ($doc['expenses'] as $i => $line) {
+            foreach ($line['annexes'] as $j => $annex) {
+                if (($annex['placement'] ?? null) === 'package' && (string)($annex['mime'] ?? '') === 'application/pdf' && self::readablePdf((string)($annex['absolute'] ?? ''))) {
+                    $doc['expenses'][$i]['annexes'][$j]['placement'] = 'merge';
+                }
+            }
+        }
+        return $doc;
+    }
+
+    public static function readablePdf(string $path): bool
+    {
+        if ($path === '' || !is_file($path)) {
+            return false;
+        }
+        try {
+            return (new Fpdi())->setSourceFile($path) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Junta o PDF do dompdf com os comprovantes (regra de montagem): depois da página $after entram as páginas de cada
+     * arquivo, no tamanho original. O número da página vai em todas, no lugar do rodapé do dompdf.
+     * @param array<int, list<string>> $after página do documento => arquivos que entram depois dela
+     */
+    public static function merge(string $main, array $after, string $site): string
+    {
+        $fpdi = new Fpdi();
+        $fpdi->SetAutoPageBreak(false);
+        $stamp = static function (Fpdi $fpdi, array $size, bool $annex) use ($site): void {
+            [$w, $h] = [$size['width'], $size['height']];
+            $fpdi->SetTextColor(17, 17, 17);
+            $fpdi->SetFont('Helvetica', '', 8);
+            if ($annex) {
+                // Página do comprovante: faixa branca embaixo para o rodapé não cair em cima do conteúdo.
+                $fpdi->SetFillColor(255, 255, 255);
+                $fpdi->Rect(0, $h - 12, $w, 12, 'F');
+                $fpdi->SetDrawColor(34, 34, 34);
+                $fpdi->Line(10.6, $h - 12.7, $w - 10.6, $h - 12.7);
+                $fpdi->Text(10.6, $h - 8.5, $site);
+            }
+            $number = (string)$fpdi->PageNo();
+            $fpdi->Text($w - 10.6 - $fpdi->GetStringWidth($number), $h - 8.5, $number);
+        };
+        $stream = StreamReader::createByString($main);
+        $pages = $fpdi->setSourceFile($stream);
+        for ($p = 1; $p <= $pages; $p++) {
+            $tpl = $fpdi->importPage($p);
+            $size = $fpdi->getTemplateSize($tpl);
+            $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $fpdi->useTemplate($tpl);
+            $stamp($fpdi, $size, false);
+            foreach ($after[$p] ?? [] as $file) {
+                try {
+                    $count = $fpdi->setSourceFile($file);
+                    for ($q = 1; $q <= $count; $q++) {
+                        $annexTpl = $fpdi->importPage($q);
+                        $annexSize = $fpdi->getTemplateSize($annexTpl);
+                        $fpdi->AddPage($annexSize['orientation'], [$annexSize['width'], $annexSize['height']]);
+                        $fpdi->useTemplate($annexTpl);
+                        $stamp($fpdi, $annexSize, true);
+                    }
+                } catch (\Throwable) {
+                    continue;   // conferido no mergeable(); se falhar aqui, o comprovante só fica citado
+                }
+                $fpdi->setSourceFile($stream);   // volta ao documento principal
+            }
+        }
+        return $fpdi->Output('S');
+    }
+
+    /**
+     * Quanto de cada despesa saiu das sobras de rateio e do fundo de reserva (revisão de 15/11, colunas do PDF de
+     * outubro, ADR 0323). Vem dos lançamentos patrimoniais ligados à despesa (ADR 0169): "usar o fundo" debita 8.2
+     * Fundo de reserva (ou subconta) e "usar as sobras" debita 9.1 Resultados acumulados. O estorno credita a mesma
+     * conta, então original e estorno se anulam.
+     * @param list<array{linked_entry_id:int|string, debit_code:string, credit_code:string, amount_cents:int|string}> $rows
+     * @return array<int, array{surplus_cents:int, reserve_cents:int}> por despesa
+     */
+    public static function fundsByExpense(array $rows): array
+    {
+        $in = static fn (string $code, string $root): bool => $code === $root || str_starts_with($code, $root . '.');
+        $out = [];
+        foreach ($rows as $row) {
+            $entry = (int)$row['linked_entry_id'];
+            $amount = (int)$row['amount_cents'];
+            $out[$entry] ??= ['surplus_cents' => 0, 'reserve_cents' => 0];
+            foreach (['reserve_cents' => self::RESERVE_CODE, 'surplus_cents' => self::SURPLUS_CODE] as $key => $root) {
+                $out[$entry][$key] += ($in((string)$row['debit_code'], $root) ? $amount : 0) - ($in((string)$row['credit_code'], $root) ? $amount : 0);
+            }
+        }
+        return $out;
+    }
+
+    /** @param list<array> $expenses @return list<array> as despesas com surplus_cents e reserve_cents */
+    private function withFunds(int $condominiumId, array $expenses): array
+    {
+        $ids = array_values(array_filter(array_map(static fn (array $l): int => (int)($l['entry_id'] ?? 0), $expenses)));
+        $funds = [];
+        if ($ids !== []) {
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->pdo->prepare("SELECT pe.linked_entry_id, d.code AS debit_code, c.code AS credit_code, pe.amount_cents
+                FROM erp_patrimonial_entries pe
+                JOIN erp_chart_accounts d ON d.id = pe.debit_account_id
+                JOIN erp_chart_accounts c ON c.id = pe.credit_account_id
+                WHERE pe.condominium_id = ? AND pe.linked_entry_id IN ({$marks})");
+            $stmt->execute(array_merge([$condominiumId], $ids));
+            $funds = self::fundsByExpense($stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+        return array_map(static fn (array $l): array => $l + ($funds[(int)($l['entry_id'] ?? 0)] ?? ['surplus_cents' => 0, 'reserve_cents' => 0]), $expenses);
     }
 
     /** Nome do arquivo (regra pura): prestacao-de-contas-<condomínio>-<AAAA-MM>.pdf */

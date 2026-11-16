@@ -114,6 +114,17 @@ final class BankStatementFetchTest extends TestCase
         self::assertNull(InterBankAdapter::statementLine(['dataTransacao' => 'ontem', 'tipoOperacao' => 'C', 'valor' => '30'], $seen));
     }
 
+    public function testUnreadableLinesAreDetectedWithTheOfxRules(): void
+    {
+        $ok = ['fitid' => 'inter-A1', 'kind' => 'credit', 'posted_on' => '2026-11-03', 'amount_cents' => 50000, 'memo' => 'Pix'];
+        self::assertTrue(BankStatementFetch::readable($ok));
+        self::assertTrue(BankStatementFetch::readable(['amount_cents' => 0] + $ok), 'Valor zero é legível.');
+        self::assertTrue(BankStatementFetch::readable(['amount_cents' => -9_999_999_999_99] + $ok), 'Teto de 10 dígitos inteiros.');
+        self::assertFalse(BankStatementFetch::readable(['amount_cents' => 1_000_000_000_000] + $ok), 'Acima de 10 dígitos inteiros.');
+        self::assertFalse(BankStatementFetch::readable(['posted_on' => '2026-02-30'] + $ok));
+        self::assertFalse(BankStatementFetch::readable(['fitid' => ' '] + $ok));
+    }
+
     public function testPeriodRules(): void
     {
         self::assertSame(['2026-08-19', '2026-11-16'], BankStatementFetch::period('2026-08-19', '2026-11-16', '2026-11-16'), '90 dias contando os dois.');

@@ -301,7 +301,7 @@ final class TalkHelpdesk
 
     /**
      * Condomínios em que a busca vale. Com usuário (API /talk, ADR 0308), o escopo dele. Sem usuário (o Talk dentro do ERP,
-     * ADR 0323, identificando quem escreveu antes de qualquer atendente), todos os condomínios ativos: o ERP é de uma
+     * ADR 0324, identificando quem escreveu antes de qualquer atendente), todos os condomínios ativos: o ERP é de uma
      * administradora só (ADR-002), e quem vê a conversa no Talk já é a equipe dela.
      *
      * @return list<int>

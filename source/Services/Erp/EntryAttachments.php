@@ -31,6 +31,8 @@ final class EntryAttachments
     /** Pasta do Disco Virtual de cada tipo. */
     public const FOLDER = ['nota_fiscal' => 'notas_fiscais', 'conta' => 'comprovantes', 'comprovante' => 'comprovantes', 'recibo' => 'comprovantes', 'outro' => 'outros'];
     public const MAX_PER_ENTRY = 20;
+    /** Lançamentos de uma vez no attachMany (24 meses x cobrança e fundo para um condomínio grande). */
+    public const MAX_BATCH = 2000;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -127,6 +129,46 @@ final class EntryAttachments
         $id = (int)$this->pdo->lastInsertId();
         Audit::record('create', 'erp_entry_attachments', $id, null, ['entry_id' => $entryId, 'document_id' => $documentId, 'kind' => $kind]);
         return $this->attachment($user, $entryId, $id);
+    }
+
+    /**
+     * O mesmo arquivo em vários lançamentos de uma vez (Nova Receita com anexos, modelo 8, ADR 0323): o arquivo vai uma
+     * vez ao Disco Virtual pelo attach() do primeiro lançamento e os outros só ganham o vínculo. Todos precisam ser do
+     * mesmo condomínio e estar no escopo (senão 404 antes de gravar). Lançamento que já tem o arquivo é pulado.
+     * @param list<int> $entryIds @return array{document_id:int, attached:int, skipped:int}
+     */
+    public function attachMany(User $user, array $entryIds, array $upload, mixed $kind, mixed $title = null): array
+    {
+        $kind = self::kind($kind);
+        $entryIds = array_values(array_unique(array_filter(array_map('intval', $entryIds), static fn (int $id): bool => $id > 0)));
+        if ($entryIds === [] || count($entryIds) > self::MAX_BATCH) {
+            throw new InvalidArgumentException(sprintf('Informe de 1 a %d lançamentos para o anexo.', self::MAX_BATCH));
+        }
+        $condominium = null;
+        foreach ($entryIds as $id) {
+            $entry = $this->entry($user, $id);
+            if ($condominium !== null && (int)$entry['condominium_id'] !== $condominium) {
+                throw new InvalidArgumentException('Os lançamentos do anexo precisam ser do mesmo condomínio.');
+            }
+            $condominium = (int)$entry['condominium_id'];
+        }
+        $first = $this->attach($user, $entryIds[0], $upload, $kind, $title);
+        $documentId = (int)$first['document_id'];
+        [$attached, $skipped] = [1, 0];
+        $exists = $this->pdo->prepare('SELECT COUNT(*) AS total, SUM(document_id = :d) AS same FROM erp_entry_attachments WHERE entry_id = :e AND deleted_at IS NULL');
+        $insert = $this->pdo->prepare('INSERT INTO erp_entry_attachments (condominium_id, entry_id, document_id, kind, created_by) VALUES (:c, :e, :d, :k, :u)');
+        foreach (array_slice($entryIds, 1) as $id) {
+            $exists->execute(['d' => $documentId, 'e' => $id]);
+            $row = $exists->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'same' => 0];
+            if ((int)$row['same'] > 0 || (int)$row['total'] >= self::MAX_PER_ENTRY) {
+                $skipped++;
+                continue;
+            }
+            $insert->execute(['c' => $condominium, 'e' => $id, 'd' => $documentId, 'k' => $kind, 'u' => (int)$user->id]);
+            $attached++;
+        }
+        Audit::record('create', 'erp_entry_attachments', $documentId, null, ['entries' => $entryIds, 'document_id' => $documentId, 'kind' => $kind, 'attached' => $attached]);
+        return ['document_id' => $documentId, 'attached' => $attached, 'skipped' => $skipped];
     }
 
     /** Remove o vínculo (exclusão lógica). Competência fechada trava. O arquivo continua no Disco Virtual. */

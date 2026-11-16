@@ -11,6 +11,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Imports\Imports;
+use Source\Services\Erp\Imports\OfxParser;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\AppLogger;
 
@@ -95,12 +96,41 @@ final class BankStatementFetch
                 'adapter' => $adapter instanceof BankAdapter ? $adapter->name() : '', 'error' => mb_substr($error->getMessage(), 0, 255)], 'erp');
             throw new \DomainException(mb_substr($error->getMessage(), 0, 400));
         }
+        // Linha que o leitor de OFX recusaria (valor acima do teto, data estranha) fica de fora sem travar o resto
+        // (o sandbox do Inter mandou uma assim em 16/11/2026); quantas foram puladas volta na prévia e no log.
+        $skipped = [];
+        $lines = array_values(array_filter($lines, static function (array $line) use (&$skipped): bool {
+            if (self::readable($line)) {
+                return true;
+            }
+            $skipped[] = ['posted_on' => (string)($line['posted_on'] ?? ''), 'amount_cents' => $line['amount_cents'] ?? null];
+            return false;
+        }));
+        if ($skipped !== []) {
+            AppLogger::log('notice', 'Linhas do extrato do banco puladas', ['event_type' => 'bank_statement_lines_skipped', 'bank_account_id' => (int)$account['id'],
+                'count' => count($skipped), 'sample' => array_slice($skipped, 0, 5)], 'erp');
+        }
         if ($lines === []) {
             throw new \DomainException('O banco não tem lançamentos nesta conta entre ' . date('d/m/Y', (int)strtotime($from)) . ' e ' . date('d/m/Y', (int)strtotime($to)) . '.');
         }
         $name = sprintf('extrato-%s-%s-a-%s.ofx', $adapter instanceof BankAdapter ? $adapter->name() : 'banco', $from, $to);
         $ofx = self::toOfx((string)($account['bank_code'] ?? ''), (string)$account['account_number'], $from, $to, $lines, $balance, (new \DateTimeImmutable())->format('YmdHis.u'));
-        return $this->imports->previewFetchedStatement($user, ['condominium_id' => (int)$condominium, 'bank_account_id' => (int)$account['id']], $ofx, $name);
+        return $this->imports->previewFetchedStatement($user, ['condominium_id' => (int)$condominium, 'bank_account_id' => (int)$account['id']], $ofx, $name)
+            + ['skipped_bank_lines' => count($skipped)];
+    }
+
+    /** A linha passa nas mesmas regras do leitor de OFX (FITID, data e valor até 10 dígitos inteiros)? Regra pura. */
+    public static function readable(array $line): bool
+    {
+        if (!is_string($line['fitid'] ?? null) || trim($line['fitid']) === '' || !is_string($line['posted_on'] ?? null) || !is_int($line['amount_cents'] ?? null)) {
+            return false;
+        }
+        try {
+            $parsed = OfxParser::parse(self::toOfx('', '1', $line['posted_on'], $line['posted_on'], [$line + ['memo' => '']], null, 'x'));
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
+        return ($parsed['transactions'][0]['amount_cents'] ?? null) === $line['amount_cents'];
     }
 
     /**

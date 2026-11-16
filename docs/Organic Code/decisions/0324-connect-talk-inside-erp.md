@@ -1,11 +1,11 @@
-# 0323 — Connect Talk dentro do ERP: container/talk, login e Help Desk do próprio ERP
+# 0324 — Connect Talk dentro do ERP: container/talk, login e Help Desk do próprio ERP
 
 - **Status:** aceito (fase 1 de 3)
 - **Data:** 2026-11-16
 - **Relacionados:** ADR-002 (administradora única), 0034 (alternador de ambientes), 0141 (Central de Ajuda),
   0308 (integração do Talk pela API, que continua valendo até a virada). Repositório `djalmamartins/talk` 0.22.0, que
   passa a ser só referência.
-- **Numeração:** faixa avulsa (0322 é da Cora).
+- **Numeração:** faixa avulsa (0322 é da Cora, 0323 das sobras e fundo de reserva).
 
 ## Contexto
 

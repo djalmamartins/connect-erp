@@ -16,7 +16,7 @@ $logger = AppLogger::bootstrap();
 $session = new Session();
 
 /**
- * CONNECT TALK (ADR 0323): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
+ * CONNECT TALK (ADR 0324): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
  * container/talk. Só a troca de ambiente (/ambiente/...) passa pelo roteador do ERP nesse host.
  */
 if (talk_host() && !str_starts_with((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/ambiente/')) {
@@ -475,6 +475,7 @@ $route->delete("/documents/{id}", "VirtualDisk:destroy", null, \Source\Support\M
 // Anexos dos lançamentos (ADR 0174): nota fiscal, comprovante e recibo, guardados no Disco Virtual.
 $route->get("/entries/{id}/attachments", "EntryAttachments:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/entries/{id}/attachments", "EntryAttachments:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/entry-attachments", "EntryAttachments:storeMany", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/entries/{id}/attachments/{attachment}/download", "EntryAttachments:download", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->delete("/entries/{id}/attachments/{attachment}", "EntryAttachments:destroy", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ocorrência abre chamado na fila do Help Desk (ADR 0034/0051). O cadastro é /occurrences, do motor.
