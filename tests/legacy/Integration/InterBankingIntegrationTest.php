@@ -173,6 +173,23 @@ final class InterBankingIntegrationTest extends TestCase
         self::assertSame(1, count(array_filter($this->http->requests, static fn (array $r): bool => $r['method'] === 'POST' && $r['path'] === '/cobranca/v3/cobrancas')), 'Só a primeira emissão chegou ao banco.');
     }
 
+    public function testSandboxSimulatedPaymentSettlesThroughRefresh(): void
+    {
+        $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
+        $after = $this->charges->simulatePayment($this->admin, $charge['id'], 'BOLETO');
+        self::assertSame(['paid', 50000], [$after['status'], $after['paid_cents']]);
+        $pay = array_values(array_filter($this->http->requests, static fn (array $r): bool => str_ends_with($r['path'], '/pagar')));
+        self::assertCount(1, $pay);
+        self::assertSame(['pagarCom' => 'BOLETO'], json_decode((string)$pay[0]['body'], true));
+        self::assertSame('2026-11-12', $this->service->find($this->admin, 'entries', $this->entries[0])['paid_on'], 'Baixa pela mesma conciliação.');
+        try {
+            $this->charges->simulatePayment($this->admin, $charge['id'], 'BOLETO');
+            self::fail('Boleto pago não pode ser pago de novo.');
+        } catch (\DomainException $e) {
+            self::assertStringContainsString('registrado', $e->getMessage());
+        }
+    }
+
     public function testBankCancellationArrivesByWebhook(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);

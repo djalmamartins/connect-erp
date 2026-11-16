@@ -968,6 +968,17 @@
       });
     });
 
+    /* Sandbox do Inter: simula o pagamento no banco e consulta; a baixa passa pela conciliação. */
+    $$('[data-charge-simulate]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!window.confirm('Simular o pagamento do boleto ' + button.getAttribute('data-label') + ' no ambiente de testes do Inter? A conta a receber será baixada como paga.')) return;
+        busy(button, true);
+        call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: 'BOLETO' })
+          .then(function (json) { toast('Situação depois da simulação: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
+
     $$('[data-charge-cancel]', root).forEach(function (button) {
       button.addEventListener('click', function () {
         if (!window.confirm('Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco? A conta a receber continua em aberto.')) return;

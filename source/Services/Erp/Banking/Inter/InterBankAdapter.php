@@ -248,6 +248,29 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         throw new RuntimeException('Inter respondeu ' . $response['status'] . ' no cancelamento.');
     }
 
+    /**
+     * Só sandbox (o adaptador recusa outra URL no construtor): pede ao Inter que simule o pagamento da
+     * cobrança, por boleto ou Pix. Caminho e corpo INFERIDOS (POST .../{codigoSolicitacao}/pagar com
+     * pagarCom); conferir na homologação. A baixa continua vindo da consulta (getCharge) ou do webhook.
+     */
+    public function simulatePayment(?string $externalId, string $method = 'BOLETO'): void
+    {
+        if ($externalId === null || !self::validRequestId($externalId)) {
+            throw new InvalidArgumentException('Boleto sem o código da solicitação do Inter.');
+        }
+        if (!in_array($method, ['BOLETO', 'PIX'], true)) {
+            throw new InvalidArgumentException('Forma de pagamento simulado inválida (BOLETO ou PIX).');
+        }
+        $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/pagar', ['pagarCom' => $method]);
+        if ($response['status'] >= 200 && $response['status'] < 300) {
+            return;
+        }
+        if ($response['status'] >= 400 && $response['status'] < 500) {
+            throw new InvalidArgumentException('O Inter recusou a simulação: ' . self::errorMessage($response));
+        }
+        throw new RuntimeException('Inter respondeu ' . $response['status'] . ' na simulação de pagamento.');
+    }
+
     public function parseReturn(string $content): array
     {
         throw new InvalidArgumentException('O Inter não usa arquivo de retorno: a baixa chega pelo webhook e pela consulta do boleto.');

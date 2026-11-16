@@ -121,6 +121,30 @@ final class BankCharges
         return $this->apply($chargeId, $result, (string)$charge['status'], $user);
     }
 
+    /**
+     * Sandbox do Inter (ADR 0156, homologação): simula o pagamento no banco e consulta o título, que passa
+     * pela mesma baixa e conciliação do webhook. Só para boleto registrado de conta Inter.
+     */
+    public function simulatePayment(User $user, int $chargeId, string $method = 'BOLETO'): array
+    {
+        $charge = $this->row($user, $chargeId);
+        if ((string)$charge['status'] !== 'registered') {
+            throw new DomainException('Só boleto registrado pode ter o pagamento simulado.');
+        }
+        $adapter = $this->adapterOf($charge);
+        if (!$adapter instanceof Inter\InterBankAdapter) {
+            throw new DomainException('A simulação de pagamento existe só no sandbox do Inter.');
+        }
+        try {
+            $adapter->simulatePayment($charge['external_id'] === null ? null : (string)$charge['external_id'], $method);
+        } catch (\RuntimeException $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_simulate_failed', 'charge_id' => $chargeId]);
+            throw new DomainException('O Inter não respondeu à simulação. Tente de novo em instantes (o sandbox funciona de segunda a sexta, das 8h às 20h).');
+        }
+        Audit::record('update', 'erp_bank_charges', $chargeId, null, ['simulated_payment' => $method]);
+        return $this->refresh($user, $chargeId);
+    }
+
     public function cancel(User $user, int $chargeId): array
     {
         $charge = $this->row($user, $chargeId);
