@@ -1537,6 +1537,22 @@ foreach ([['canManage' => false], ['filters' => ['condominium_id' => null] + $un
     $assert(!str_contains($html, 'data-unit-bulk') && !str_contains($html, 'unit-bulk-settings'), 'AP-006: sem permissão ou sem condomínio, sem configuração em massa');
 }
 
+// Atalhos da lista de lançamentos (ADR 0313, modelo 7): marcar, copiar e excluir só com condomínio; links sempre.
+$entriesDef = Source\Services\Erp\Registry\Definitions::all()['entries'];
+$entryRow = ['id' => 31, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'nature' => 'despesa', 'competence' => '2026-11', 'description' => 'Copasa <água>', 'amount_cents' => 171308,
+    'due_on' => '2026-11-10', 'paid_on' => null, 'unit_id' => null, 'status' => 'active'];
+$entryList = static fn (array $over): string => $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-020', $over + ['definition' => $entriesDef, 'result' => ['data' => [$entryRow], 'total' => 1, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+    'filters' => ['condominium_id' => 7, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => null, 'page' => 1, 'per_page' => 50], 'filterField' => 'nature',
+    'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Lançamentos'));
+$html = $entryList([]);
+$save('page-ap-020-shortcuts', $html);
+$assert(str_contains($html, 'data-entry-shortcuts') && str_contains($html, '/financeiro/lancar-receita"') && str_contains($html, '/financeiro/lancar-despesa"') && str_contains($html, '/importacoes/lancamentos-planilha"')
+    && str_contains($html, 'situacao=inactive') && str_contains($html, 'data-entry-pick') && str_contains($html, 'value="31" data-entry-pick') && str_contains($html, 'id="entry-copy-dialog"') && str_contains($html, '/api/v1/entries/copy')
+    && str_contains($html, '/api/v1/entries/cancel') && str_contains($html, 'Marcar o lançamento Copasa &lt;água&gt;'), 'AP-020: atalhos, marcação, copiar e excluir (ADR 0313)');
+$html = $entryList(['filters' => ['condominium_id' => null, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => null, 'page' => 1, 'per_page' => 50]]);
+$assert(str_contains($html, 'data-entry-shortcuts') && !str_contains($html, 'data-entry-pick') && !str_contains($html, 'entry-copy-dialog') && str_contains($html, 'escolha um condomínio na barra superior'), 'AP-020: sem condomínio, atalhos sem marcação');
+$assert(!str_contains($entryList(['canManage' => false]), 'data-entry-shortcuts'), 'AP-020: só consulta, sem atalhos');
+
 // Termo de entrada e de saída (ADR 0311): edição com palavras-chave e termo para imprimir.
 $termCurrent = ['condominium_id' => 7, 'kind' => 'saida', 'body' => "Texto <b>@morador</b>", 'source' => 'general', 'updated_at' => null];
 $html = $render('pages/condominiums/move-terms', $layoutData->invoke($panel, $user, 'AP-006', ['termCondominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'termCondominium' => 7,

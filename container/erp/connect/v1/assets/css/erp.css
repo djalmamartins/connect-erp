@@ -1028,3 +1028,6 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-entry-units.is-invalid { border-color: var(--erp-danger); }
 .erp-revenue-units td .erp-input { max-width: 160px; margin-left: auto; }
 .erp-revenue-units tbody { max-height: 420px; }
+/* Atalhos da lista de lançamentos (ADR 0313, modelo 7) */
+.erp-entry-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
+.erp-entry-shortcuts__sep { flex: 1 1 8px; }

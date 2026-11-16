@@ -6173,6 +6173,22 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou conta recusada (paga, cancelada, com boleto ativo, mês fechado, trava de origem; errors e _entry); nada é gravado' }
+  /entries/copy:
+    post:
+      operationId: copyEntries
+      summary: 'Copia os lançamentos escolhidos para outra competência (ADR 0313): em aberto, sem origem, vencimento andando os mesmos meses; tudo ou nada (erp.entries.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, entry_ids, competence], properties: { condominium_id: { type: integer }, entry_ids: { type: array, items: { type: integer }, maxItems: 200 }, competence: { type: string, example: '2026-12' } } } } }
+      responses:
+        '201': { description: Copiados, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { condominium_id: { type: integer }, competence: { type: string }, count: { type: integer }, total_cents: { type: integer }, entries: { type: array, items: { type: object, properties: { from: { type: integer }, id: { type: integer } } } } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /entries/cancel:
     post:
       operationId: cancelEntries
