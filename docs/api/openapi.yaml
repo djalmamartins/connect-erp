@@ -3116,6 +3116,32 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+  /privacy/personal-data:
+    post:
+      operationId: personalDataReport
+      summary: Relatório dos dados pessoais de um titular por CPF/CNPJ e/ou e-mail (LGPD art. 18, II), somente leitura e auditado (erp.access e erp.privacy.export, ADR 0328)
+      description: >-
+        Busca nos condomínios do escopo os cadastros de morador (erp_residents), convites do portal, visitantes com o mesmo
+        documento, veículos e animais da mesma unidade com dono/tutor de mesmo nome, contas a receber em que a pessoa é a
+        pagadora, chamados com o mesmo e-mail e a conta de acesso (só com vínculo no escopo ou acesso a todos). Não sai senha,
+        hash, token, segredo nem anotação interna. Até 500 linhas por grupo, com truncated. POST para o documento não ir para a
+        URL. Limite de 20 buscas por 10 minutos (429). A auditoria guarda só o hash da busca e o total.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document: { type: string, description: CPF ou CNPJ, com ou sem máscara }
+                email: { type: string, format: email }
+      responses:
+        '200': { description: '{ data: { criteria { document, email }, generated_at, residents { rows[], truncated }, invitations, visitors, vehicles, pets, receivables, tickets, account { rows[], truncated } | null, total } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Muitas buscas seguidas. }
   /users/revoke-condominium-access:
     post:
       operationId: revokeCondominiumAccessWithoutErp

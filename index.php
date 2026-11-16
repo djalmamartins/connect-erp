@@ -420,6 +420,8 @@ $route->post("/notifications/cancel-stale", "NotificationStaleCancellation:store
 $route->get("/reports/user-access", "UserAccessReport:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Acesso ao condomínio tirado em lote de quem, pela regra, não entra no ERP, tudo ou nada e com prévia (ADR 0283).
 $route->post("/users/revoke-condominium-access", "UserAccessRevocation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Relatório dos dados pessoais de um titular (LGPD art. 18, II), por CPF/CNPJ e/ou e-mail, somente leitura e auditado (ADR 0328).
+$route->post("/privacy/personal-data", "PersonalDataReport:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Situação das importações (prévias paradas, aplicadas, linhas com erro e última aplicação por tipo), somente leitura (ADR 0284).
 $route->get("/reports/imports", "ImportsOverview:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Prévias de importação paradas descartadas em lote, sem aplicar nem apagar arquivo, tudo ou nada e com prévia (ADR 0285). Antes de /imports/{id}.
