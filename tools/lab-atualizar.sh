@@ -31,6 +31,18 @@ echo "arquivos privados: $files_backup ($(du -h "$files_backup" | cut -f1))"
 echo "== 2/4 testes de integração (banco *_test)"
 MOVESOS_TEST_DB_PASS=$(grep -E '^LEGACY_DB_ROOT_PASSWORD=' .env | tail -1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//")
 export MOVESOS_TEST_DB_PASS
+# Conexões presas no movesos_test (de uma rodada interrompida com Ctrl+C) seguram trava de tabela e a
+# suíte fica parada sem mostrar nada. O banco de teste é descartável: elas são encerradas antes (como no
+# testar-main.sh). Conexões do banco do lab (connect_legacy) nunca são tocadas.
+test_db_sql() {
+  docker compose exec -T -e MOVESOS_TEST_DB_PASS legacy-db sh -c 'mariadb -uroot -p"$MOVESOS_TEST_DB_PASS" -N -B' 2>/dev/null
+}
+stale=$(echo "SELECT ID FROM information_schema.PROCESSLIST WHERE DB LIKE 'movesos%test%' AND ID <> CONNECTION_ID();" | test_db_sql || true)
+if [ -n "$stale" ]; then
+  echo "$stale" | grep -E '^[0-9]+$' | sed 's/.*/KILL &;/' | test_db_sql || true
+  echo "encerradas $(echo "$stale" | grep -cE '^[0-9]+$') conexão(ões) presas no banco de teste"
+fi
+echo "(leva de 5 a 10 minutos; o PHPUnit só aparece depois de montar o banco de teste)"
 docker compose exec -T -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS app composer test:integration
 
 echo "== 3/4 migrations ${until_prefix:+(até $until_prefix)}"
