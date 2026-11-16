@@ -66,6 +66,10 @@ final class ErpImportScreensTest extends TestCase
         self::assertStringContainsString("\$\$('[data-erp-imports]')", $js);
         self::assertStringContainsString("sendMultipart(root.getAttribute('data-preview-api'), csrf()", $js);
         self::assertStringContainsString("{ action: 'match', entry_id: parseInt(choice.value, 10)", $js);
+        // ADR 0318: extrato buscado no banco pela API, com a mesma prévia.
+        self::assertStringContainsString("url('/api/v1/imports/bank-statement')", $view);
+        self::assertStringContainsString('data-statement-fetch', $view);
+        self::assertStringContainsString("call('POST', root.getAttribute('data-statement-api')", $js);
         $candidates = $this->file('source/Services/Erp/Imports/StatementLineCandidates.php');
         self::assertStringContainsString('$this->scope->canAccess($user, (int)$line[\'condominium_id\'])', $candidates);
         self::assertStringContainsString('AND l.id IS NULL', $candidates, 'candidato já conciliado fica de fora');

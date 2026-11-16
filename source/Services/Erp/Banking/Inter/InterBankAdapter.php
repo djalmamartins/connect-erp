@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use Source\Services\Erp\Banking\BankAdapter;
 use Source\Services\Erp\Banking\BankChargeExtras;
+use Source\Services\Erp\Banking\BankStatementSource;
 
 /**
  * Banco Inter, API de Cobrança v3 (boleto com Pix), ADR 0156. SÓ SANDBOX nesta versão.
@@ -21,6 +22,11 @@ use Source\Services\Erp\Banking\BankChargeExtras;
  *  - GET    /cobranca/v3/cobrancas/{codigoSolicitacao}/pdf  PDF em base64
  *  - POST   /cobranca/v3/cobrancas/{codigoSolicitacao}/cancelar {motivoCancelamento}
  *  - webhook: o Inter chama o nosso endereço com uma lista de cobranças (codigoSolicitacao, seuNumero, situacao...).
+ * Extrato e saldo (API Banking v2, ADR 0318, escopo extrato.read pedido num token separado para não
+ * travar a cobrança de quem não liberou o extrato na aplicação):
+ *  - GET    /banking/v2/extrato/completo?dataInicio&dataFim&pagina&tamanhoPagina  transacoes (idTransacao,
+ *           dataTransacao, tipoOperacao C/D, valor, titulo, descricao), paginado (totalPaginas)
+ *  - GET    /banking/v2/saldo?dataSaldo=AAAA-MM-DD                                disponivel
  * O Inter não tem arquivo de retorno: a baixa vem da consulta e do webhook.
  *
  * Mapeamento da situação do Inter:
@@ -29,18 +35,22 @@ use Source\Services\Erp\Banking\BankChargeExtras;
  *   MARCADO_RECEBIDO (baixa manual no Inter, sem dinheiro pelo banco) → sem evento e com aviso;
  *   desconhecida → pending com aviso (nunca muda estado no escuro).
  */
-final class InterBankAdapter implements BankAdapter, BankChargeExtras
+final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankStatementSource
 {
     public const NAME = 'inter';
     public const BANK_CODE = '077';
     public const SANDBOX_URL = 'https://cdpj-sandbox.partners.uatinter.co';
     public const SCOPES = 'boleto-cobranca.read boleto-cobranca.write';
+    public const STATEMENT_SCOPE = 'extrato.read';
+    /** Linhas por página do extrato e teto de páginas por consulta (anti-laço). */
+    private const STATEMENT_PAGE_SIZE = 100;
+    private const STATEMENT_MAX_PAGES = 50;
     /** Dias depois do vencimento em que o boleto ainda pode ser pago (o Inter aceita até 60). */
     public const DAYS_AFTER_DUE = 30;
     private const MAX_WEBHOOK_ITEMS = 500;
 
-    private ?string $token = null;
-    private int $tokenExpiresAt = 0;
+    /** @var array<string, array{0:string, 1:int}> token e validade por escopo */
+    private array $tokens = [];
 
     /**
      * @param array{client_id:string, client_secret:string, certificate:string, private_key:string, account_number?:string} $credentials
@@ -69,7 +79,7 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
 
     public function capabilities(): array
     {
-        return ['register', 'query', 'cancel', 'pdf', 'pix', 'webhook'];
+        return ['register', 'query', 'cancel', 'pdf', 'pix', 'webhook', 'statement'];
     }
 
     /** Monta o corpo da emissão (regra pura, pública para os testes). Dado faltando = InvalidArgumentException. */
@@ -318,6 +328,86 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         return array_values($out);
     }
 
+    public function statement(string $from, string $to): array
+    {
+        $from = self::date($from);
+        $to = self::date($to);
+        if ($from === null || $to === null || $from > $to) {
+            throw new InvalidArgumentException('Período do extrato inválido.');
+        }
+        $lines = [];
+        $seen = [];
+        for ($page = 0; $page < self::STATEMENT_MAX_PAGES; $page++) {
+            $response = $this->call('GET', '/banking/v2/extrato/completo?' . http_build_query(['dataInicio' => $from, 'dataFim' => $to,
+                'pagina' => $page, 'tamanhoPagina' => self::STATEMENT_PAGE_SIZE]), null, 'application/json', self::STATEMENT_SCOPE);
+            if ($response['status'] !== 200) {
+                throw new RuntimeException(self::errorMessage($response));
+            }
+            $data = self::json($response['body']);
+            $items = is_array($data['transacoes'] ?? null) ? $data['transacoes'] : [];
+            foreach ($items as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $line = self::statementLine($item, $seen);
+                if ($line !== null) {
+                    $lines[] = $line;
+                }
+            }
+            $pages = (int)($data['totalPaginas'] ?? 1);
+            if ($items === [] || ($data['ultimaPagina'] ?? false) === true || $page + 1 >= $pages) {
+                return $lines;
+            }
+        }
+        throw new RuntimeException('O extrato do Inter tem páginas demais: escolha um período menor.');
+    }
+
+    public function balance(string $on): ?int
+    {
+        $on = self::date($on);
+        if ($on === null) {
+            throw new InvalidArgumentException('Data do saldo inválida.');
+        }
+        $response = $this->call('GET', '/banking/v2/saldo?' . http_build_query(['dataSaldo' => $on]), null, 'application/json', self::STATEMENT_SCOPE);
+        if ($response['status'] !== 200) {
+            throw new RuntimeException(self::errorMessage($response));
+        }
+        $data = self::json($response['body']);
+        $value = $data['disponivel'] ?? null;
+        if (!is_scalar($value) || $value === '') {
+            return null;
+        }
+        $negative = str_starts_with(trim((string)(is_float($value) ? number_format($value, 2, '.', '') : $value)), '-');
+        $cents = self::cents(is_float($value) ? number_format(abs($value), 2, '.', '') : ltrim(trim((string)$value), '-'));
+        return $cents === null ? null : ($negative ? -$cents : $cents);
+    }
+
+    /**
+     * Uma transação do extrato do Inter na forma de linha de OFX (regra pura, pública para os testes).
+     * Sem idTransacao, o FITID vem do conteúdo e da ordem (estável para a mesma consulta).
+     *
+     * @param array<string, true> $seen FITIDs já usados nesta consulta
+     */
+    public static function statementLine(array $item, array &$seen): ?array
+    {
+        $date = self::date($item['dataTransacao'] ?? $item['dataEntrada'] ?? $item['dataInclusao'] ?? null);
+        $cents = self::cents($item['valor'] ?? null);
+        $operation = strtoupper(trim((string)($item['tipoOperacao'] ?? '')));
+        if ($date === null || $cents === null || !in_array($operation, ['C', 'D'], true)) {
+            return null;
+        }
+        $memo = trim(implode(' - ', array_unique(array_filter([self::text($item['titulo'] ?? null, 80), self::text($item['descricao'] ?? null, 120)]))));
+        $id = self::text($item['idTransacao'] ?? null, 70);
+        $base = $id !== null ? 'inter-' . preg_replace('/[^A-Za-z0-9._:-]/', '', $id) : 'inter-h' . substr(sha1($date . '|' . $operation . '|' . $cents . '|' . $memo), 0, 24);
+        $fitid = $base;
+        for ($n = 2; isset($seen[$fitid]); $n++) {
+            $fitid = $base . '-' . $n;
+        }
+        $seen[$fitid] = true;
+        return ['fitid' => mb_substr($fitid, 0, 80), 'kind' => $operation === 'C' ? 'credit' : 'debit', 'posted_on' => $date,
+            'amount_cents' => $operation === 'C' ? $cents : -$cents, 'memo' => mb_substr($memo !== '' ? $memo : (string)($item['tipoTransacao'] ?? ''), 0, 160)];
+    }
+
     /** Só pede o token (homologação da credencial e do certificado), sem emitir nada. */
     public function checkAuthentication(): void
     {
@@ -325,9 +415,9 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
     }
 
     /** @return array{status:int, body:string} */
-    private function call(string $method, string $path, ?array $json = null, string $accept = 'application/json'): array
+    private function call(string $method, string $path, ?array $json = null, string $accept = 'application/json', string $scope = self::SCOPES): array
     {
-        $headers = ['Authorization' => 'Bearer ' . $this->token(), 'Accept' => $accept];
+        $headers = ['Authorization' => 'Bearer ' . $this->token($scope), 'Accept' => $accept];
         if ($json !== null) {
             $headers['Content-Type'] = 'application/json';
         }
@@ -338,17 +428,20 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         return $this->http->request($method, $this->baseUrl . $path, $headers, $body, $this->credentials['certificate'], $this->credentials['private_key']);
     }
 
-    private function token(): string
+    private function token(string $scope = self::SCOPES): string
     {
         $now = $this->clock !== null ? ($this->clock)() : time();
-        if ($this->token !== null && $now < $this->tokenExpiresAt) {
-            return $this->token;
+        if (isset($this->tokens[$scope]) && $now < $this->tokens[$scope][1]) {
+            return $this->tokens[$scope][0];
         }
         $response = $this->http->request('POST', $this->baseUrl . '/oauth/v2/token', ['Content-Type' => 'application/x-www-form-urlencoded', 'Accept' => 'application/json'],
             http_build_query(['client_id' => $this->credentials['client_id'], 'client_secret' => $this->credentials['client_secret'],
-                'grant_type' => 'client_credentials', 'scope' => self::SCOPES]),
+                'grant_type' => 'client_credentials', 'scope' => $scope]),
             $this->credentials['certificate'], $this->credentials['private_key']);
         if ($response['status'] !== 200) {
+            if ($scope === self::STATEMENT_SCOPE) {
+                throw new RuntimeException('Inter recusou o acesso ao extrato (' . $response['status'] . '). Na aplicação do Inter, marque a permissão de consultar extrato e saldo.');
+            }
             throw new RuntimeException('Inter recusou a autenticação (' . $response['status'] . '). Confira client_id, client_secret e certificado.');
         }
         $data = self::json($response['body']);
@@ -356,9 +449,8 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         if ($token === '') {
             throw new RuntimeException('Inter não devolveu o token de acesso.');
         }
-        $this->token = $token;
         // Renova um minuto antes de vencer.
-        $this->tokenExpiresAt = $now + max(60, (int)($data['expires_in'] ?? 3600) - 60);
+        $this->tokens[$scope] = [$token, $now + max(60, (int)($data['expires_in'] ?? 3600) - 60)];
         return $token;
     }
 

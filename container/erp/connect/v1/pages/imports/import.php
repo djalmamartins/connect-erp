@@ -5,6 +5,9 @@
  * a tela mostra linha a linha com os erros; "Aplicar" chama POST /api/v1/imports/{id}/apply, que
  * valida o arquivo inteiro de novo. No extrato, a fila de linhas pendentes se resolve à mão
  * (?linha=ID: ligar a um lançamento pago ou ignorar, com nota). erp.js: data-erp-imports.
+ * Conta com extrato pela API do banco (Inter, ADR 0318): "Buscar do banco" chama POST /api/v1/imports/bank-statement e
+ * mostra a mesma prévia do OFX.
+ * @var list<array> $importStatementAccounts
  * @var array $currentPage @var string $importKind @var ?int $importContext @var array $imports @var ?array $importDetail
  * @var ?string $importError @var list<array> $importBankAccounts @var list<array> $importExpenseAccounts @var ?array $pendingLines @var ?array $lineDetail
  * @var bool $canImport @var bool $canResolveLines
@@ -19,6 +22,7 @@ $ofx = $importKind === 'ofx';
 $nfe = $importKind === 'nfe';
 $maxBytes = ImportScreens::maxBytes($importKind);
 $importExpenseAccounts ??= [];
+$importStatementAccounts ??= [];
 $brl = static fn (int $cents): string => ($cents < 0 ? '− ' : '') . 'R$ ' . number_format(abs($cents) / 100, 2, ',', '.');
 $date = static fn (?string $value): string => $value ? date('d/m/Y', (int)strtotime($value)) : '—';
 $stamp = static fn (?string $value): string => $value ? date('d/m/Y H:i', (int)strtotime($value)) : '—';
@@ -46,7 +50,7 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $importDetail !== null ? '<a class="erp-btn" href="' . $this->e($route) . '">Voltar</a>' : '',
 ]);
 ?>
-<div class="erp-stack" data-erp-imports data-kind="<?= $this->e($importKind) ?>" data-route="<?= $this->e($route) ?>" data-preview-api="<?= $this->e(url('/api/v1/imports/preview')) ?>" data-apply-api="<?= $this->e(url('/api/v1/imports/__ID__/apply')) ?>">
+<div class="erp-stack" data-erp-imports data-kind="<?= $this->e($importKind) ?>" data-route="<?= $this->e($route) ?>" data-preview-api="<?= $this->e(url('/api/v1/imports/preview')) ?>" data-apply-api="<?= $this->e(url('/api/v1/imports/__ID__/apply')) ?>" data-statement-api="<?= $this->e(url('/api/v1/imports/bank-statement')) ?>">
     <?= csrf_input() ?>
     <?php if ($importError !== null): ?>
         <div class="erp-alert erp-alert--warning" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($importError) ?></strong><a href="<?= $this->e($route) ?>">Voltar à lista</a></div></div>
@@ -99,6 +103,18 @@ $this->insert('components/layout/page-head', [
             <?php elseif ($ofx && $importBankAccounts === []): ?>
                 <div class="erp-alert erp-alert--warning" role="note"><?= $icon('alert') ?><div><strong>O condomínio não tem conta bancária ativa.</strong>Cadastre a conta em Financeiro › Contas bancárias.</div></div>
             <?php else: ?>
+                <?php if ($ofx && $importStatementAccounts !== []): ?>
+                    <form class="erp-card erp-form" data-statement-fetch data-condominium="<?= (int)$importContext ?>" aria-labelledby="statement-fetch-title" novalidate>
+                        <div class="erp-card__head"><div><h2 id="statement-fetch-title">Buscar extrato do banco</h2><p>O sistema busca o extrato e o saldo direto no banco, até 90 dias por vez, e mostra a mesma prévia do arquivo OFX. Lançamento que já entrou aparece como "Já importada".</p></div></div>
+                        <div class="erp-form__grid">
+                            <div class="erp-field erp-col-6"><label for="statement-bank">Conta bancária</label><select class="erp-select" id="statement-bank" name="bank_account_id" required><?php foreach ($importStatementAccounts as $a): ?><option value="<?= (int)$a['id'] ?>"><?= $this->e($a['label']) ?></option><?php endforeach; ?></select></div>
+                            <div class="erp-field erp-col-3"><label for="statement-from">De</label><input class="erp-input" type="date" id="statement-from" name="from" required value="<?= $this->e(date('Y-m-01')) ?>" max="<?= $this->e(date('Y-m-d')) ?>"></div>
+                            <div class="erp-field erp-col-3"><label for="statement-to">Até</label><input class="erp-input" type="date" id="statement-to" name="to" required value="<?= $this->e(date('Y-m-d')) ?>" max="<?= $this->e(date('Y-m-d')) ?>"></div>
+                        </div>
+                        <div data-form-error aria-live="assertive"></div>
+                        <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('download', 'erp-icon--sm') ?>Buscar e ver a prévia</button></div>
+                    </form>
+                <?php endif; ?>
                 <form class="erp-card erp-form" data-import-form data-condominium="<?= (int)$importContext ?>" aria-labelledby="import-form-title" novalidate>
                     <div class="erp-card__head"><div><h2 id="import-form-title">Enviar arquivo</h2><p><?= $this->e(strtoupper(implode(' ou ', $definition['formats']))) ?>, até <?= $this->e(number_format($maxBytes / 1_000_000, 0)) ?> MB<?= $ofx || $nfe ? '' : ' e 5.000 linhas' ?>. Nada é gravado antes de você conferir a prévia e aplicar.</p></div></div>
                     <div class="erp-form__grid">

@@ -90,6 +90,27 @@ final class Imports
             throw new RegistryNotFound();
         }
         [$content, $name] = $this->readUpload($upload, $kind);
+        return $this->previewContent($user, $kind, $input, $content, $name, $condominium);
+    }
+
+    /**
+     * Extrato que o sistema buscou no banco (ADR 0318), montado como OFX: segue a mesma prévia, o mesmo
+     * arquivo guardado e a mesma aplicação do OFX enviado à mão. Escopo do condomínio conferido aqui de novo.
+     */
+    public function previewFetchedStatement(User $user, array $input, string $content, string $name): array
+    {
+        $condominium = $this->int($input['condominium_id'] ?? null);
+        if ($condominium === null || !$this->scope->canAccess($user, $condominium)) {
+            throw new RegistryNotFound();
+        }
+        if (strlen($content) > self::MAX_BYTES) {
+            throw new InvalidArgumentException('O extrato do período passa de 2 MB: escolha um período menor.');
+        }
+        return $this->previewContent($user, 'ofx', $input, $content, $name, $condominium);
+    }
+
+    private function previewContent(User $user, string $kind, array $input, string $content, string $name, int $condominium): array
+    {
         $bankAccount = null;
         if ($kind === 'ofx') {
             $bankAccount = $this->bankAccount($this->int($input['bank_account_id'] ?? null), $condominium);
@@ -122,7 +143,7 @@ final class Imports
                 if (($error->errorInfo[1] ?? null) !== 1062) {
                     throw $error;
                 }
-                return $this->preview($user, $kind, $input, $upload);   // pedido concorrente gravou primeiro: revalida sobre ele
+                return $this->previewContent($user, $kind, $input, $content, $name, $condominium);   // pedido concorrente gravou primeiro: revalida sobre ele
             }
             $id = (int)$this->pdo->lastInsertId();
             Audit::record('create', 'erp_imports', $id, null, ['kind' => $kind, 'file' => $name, 'rows' => count($result['rows']), 'errors' => $result['error_count']]);

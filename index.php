@@ -511,6 +511,8 @@ $route->post("/bank-transfers/{id}/cancel", "EntryShortcuts:cancelTransfer", nul
 // Importações (ADR 0058): prévia, aplicação e conciliação do extrato OFX. /preview antes de /{id}.
 $route->get("/imports", "Imports:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/imports/preview", "Imports:preview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Extrato e saldo buscados no banco (Inter), mesma prévia do OFX (ADR 0318).
+$route->post("/imports/bank-statement", "Imports:fetchStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/imports/{id}", "Imports:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/imports/{id}/apply", "Imports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-statement-lines", "Imports:pendingLines", null, \Source\Support\Middleware\ApiAuthenticated::class);
