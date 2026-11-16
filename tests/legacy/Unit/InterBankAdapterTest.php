@@ -199,6 +199,19 @@ final class InterBankAdapterTest extends TestCase
         }
     }
 
+    public function testRefusalShowsFieldViolations(): void
+    {
+        $id = (string)$this->adapter->registerCharge($this->charge())['external_id'];
+        $this->http->nextResponse = ['status' => 406, 'body' => json_encode(['title' => 'Falha', 'detail' => 'Verifique',
+            'violacoes' => [['razao' => 'não pode ser pago hoje', 'propriedade' => 'dataVencimento']]])];
+        try {
+            $this->adapter->simulatePayment($id, 'BOLETO');
+            self::fail('406 deveria recusar.');
+        } catch (InvalidArgumentException $e) {
+            self::assertStringContainsString('[dataVencimento não pode ser pago hoje]', $e->getMessage());
+        }
+    }
+
     public function testOnlySandboxAndCompleteCredentials(): void
     {
         try {
