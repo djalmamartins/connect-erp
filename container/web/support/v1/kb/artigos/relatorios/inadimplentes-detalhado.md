@@ -25,13 +25,13 @@ legenda: Tela Inadimplentes (Detalhado)
 1: menu | Inadimplentes (Detalhado) no menu lateral
 2: main .erp-page-head__actions :is(a,button):has-text("Download") | Botão {{Download}}
 3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Data de referência
+4: main :is(form[method=get], .erp-filters) | Filtros: Data de referência e Vencidas a partir de
 5: main table thead | Colunas da lista
 ```
 
 ## Escolher o período e os filtros
 
-Use os filtros no alto da lista: **Data de referência**.
+Use os filtros no alto da lista: **Data de referência** e, se quiser, **Vencidas a partir de**. Com a data inicial em branco, o relatório traz todas as contas vencidas até a data de referência; preenchida, só as que venceram a partir dela.
 Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
 ## O que o relatório mostra

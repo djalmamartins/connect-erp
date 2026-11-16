@@ -45,6 +45,7 @@ final class ErpCollectionReportScreensTest extends TestCase
         $filters = ['de' => '2026-01-01', 'ate' => '2026-03-31', 'referencia' => '2026-11-09', 'situacao' => 'breached', 'agrupar' => null];
         self::assertSame('/api/v1/reports/agreements?format=csv&condominium_id=4&from=2026-01-01&to=2026-03-31&status=breached', Screens::csvUrl('agreements', null, $filters, 4));
         self::assertSame('/api/v1/reports/delinquents?format=csv&as_of=2026-11-09&view=resident', Screens::csvUrl('delinquents', 'resident', $filters, null));
+        self::assertSame('/api/v1/reports/delinquents?format=csv&as_of=2026-11-09&from=2026-01-01&view=general', Screens::csvUrl('delinquents', 'general', ['inicio' => '2026-01-01'] + $filters, null));
         self::assertSame('/api/v1/reports/receipts?format=csv&from=2026-01-01&to=2026-03-31&group=chart_account', Screens::csvUrl('receipts', 'chart_account', $filters, null));
         self::assertSame('2026-02-28', Screens::date('2026-02-28'));
         self::assertNull(Screens::date('2026-02-30'));

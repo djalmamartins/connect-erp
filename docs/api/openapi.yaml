@@ -4396,6 +4396,7 @@ paths:
       parameters:
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: as_of, in: query, schema: { type: string, format: date } }
+        - { name: from, in: query, schema: { type: string, format: date }, description: "Opcional (ADR 0314): só contas vencidas a partir desta data; vazio = todas" }
         - { name: view, in: query, schema: { type: string, enum: [general, unit, detailed, fee, resident], default: unit } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
