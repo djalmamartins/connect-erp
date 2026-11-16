@@ -202,6 +202,11 @@ CONNECT_PAGES = [
      "route": "/condominios/honorarios", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-008-honorarios.md", "reference": "",
      "note": "Contrato de administração da Connect com cada condomínio, total mensal e pedido da nota fiscal (pedido do proprietário, 14/11/2026)"},
+    # Pedidos do titular pela LGPD: relatório dos dados e anonimização (ADR 0328, 0330 e 0332).
+    {"id": "CN-009", "name": "Dados pessoais (LGPD)", "group": "configuracoes", "section": "Acesso", "order": 100,
+     "route": "/configuracoes/dados-pessoais", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-009-dados-pessoais.md", "reference": "",
+     "note": "Pedidos do titular pela LGPD: o que o sistema guarda da pessoa, relatório em JSON e anonimização de quem saiu (roteiro da v1.0, 16/11/2026)"},
 ]
 for p in CONNECT_PAGES:
     pages.append(p)
@@ -250,6 +255,8 @@ for ap, orig, name, route, status, note in matrix:
         comp, actions, impl = "pages/inspections/*", "check-in GPS, checklist, fotos, concluir, relatório HTML/PDF, envio por e-mail, configurar modelos/planos/localização", "completa (dados reais)"
     elif p and p["id"] == "CN-004":
         comp, actions, impl = "pages/tickets/index", "abrir chamado (condomínio, unidade, solicitante), filtros, link para a fila do Help Desk", "completa (dados reais)"
+    elif p and p["id"] == "CN-009":
+        comp, actions, impl = "pages/settings/privacy", "buscar titular por CPF/CNPJ ou e-mail, baixar relatório JSON, anonimizar com motivo e confirmação", "completa (dados reais)"
     elif p and p["id"] == "CN-005":
         comp, actions, impl = "pages/notifications/index", "filtrar por situação, ver a trilha de entrega mascarada, reenviar aviso com falha", "completa (dados reais)"
     elif p:

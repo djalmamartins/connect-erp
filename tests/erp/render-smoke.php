@@ -284,6 +284,32 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, 'Honorários indisponíveis'), 'CN-008: sem banco');
         continue;
     }
+    if ($id === 'CN-009') {
+        // Dados pessoais (LGPD, ADR 0332): busca por POST com CSRF, relatório, prévia da anonimização e bloqueios.
+        $report = ['total' => 3, 'account' => null, 'residents' => ['rows' => [['id' => 4, 'name' => '<b>Ana</b>', 'condominium' => 'Residencial Teste', 'unit_label' => 'A-101',
+            'relationship' => 'tenant', 'status' => 'inactive', 'ends_on' => '2026-10-31', 'deleted_at' => null]], 'truncated' => false],
+            'invitations' => ['rows' => [], 'truncated' => false], 'visitors' => ['rows' => [['id' => 1]], 'truncated' => false], 'vehicles' => ['rows' => [], 'truncated' => false],
+            'pets' => ['rows' => [], 'truncated' => false], 'receivables' => ['rows' => [['id' => 9]], 'truncated' => false], 'tickets' => ['rows' => [], 'truncated' => false]];
+        $plan = ['residents' => [4], 'invitations' => [], 'visitors' => [1], 'vehicles' => [], 'pets' => [], 'tickets' => [], 'kept' => ['receivables' => 1]];
+        $privacyData = static fn (array $over = []): array => $over + ['privacyDocument' => '529.982.247-25', 'privacyEmail' => '', 'privacyReport' => null, 'privacyPreview' => null,
+            'privacyError' => null, 'canAnonymize' => true, 'privacyDatabase' => true, 'flash' => null];
+        $html = $render('pages/settings/privacy', $layoutData->invoke($panel, $user, 'CN-009', $privacyData()));
+        $common($html, $id, 'Dados pessoais (LGPD)');
+        $assert(str_contains($html, 'data-privacy-search') && !str_contains($html, 'data-privacy-report') && str_contains($html, 'configuracoes/dados-pessoais"') && !str_contains($html, '/dados-pessoais/anonimizar'), 'CN-009: só o formulário de busca');
+        $html = $render('pages/settings/privacy', $layoutData->invoke($panel, $user, 'CN-009', $privacyData(['privacyReport' => $report, 'privacyPreview' => ['confirmed' => false, 'blockers' => [], 'plan' => $plan]])));
+        $save('cn-009', $html);
+        $assert(str_contains($html, 'data-privacy-report') && str_contains($html, '/configuracoes/dados-pessoais/baixar') && str_contains($html, '/configuracoes/dados-pessoais/anonimizar')
+            && str_contains($html, 'data-confirm-undo="nao"') && !str_contains($html, '<b>Ana') && str_contains($html, 'Inquilino')
+            && substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"'), 'CN-009: relatório, baixar, anonimizar com confirmação, escape e CSRF');
+        $html = $render('pages/settings/privacy', $layoutData->invoke($panel, $user, 'CN-009', $privacyData(['privacyReport' => $report, 'privacyPreview' => ['confirmed' => false,
+            'blockers' => [['code' => 'open_receivable', 'id' => 9, 'message' => 'A conta #9 ainda está em aberto com essa pessoa como pagadora.']], 'plan' => $plan]])));
+        $assert(!str_contains($html, '/dados-pessoais/anonimizar') && str_contains($html, 'A conta #9 ainda está em aberto'), 'CN-009: bloqueio esconde o botão');
+        $html = $render('pages/settings/privacy', $layoutData->invoke($panel, $user, 'CN-009', $privacyData(['privacyReport' => $report, 'canAnonymize' => false, 'privacyPreview' => ['confirmed' => false, 'blockers' => [], 'plan' => $plan]])));
+        $assert(!str_contains($html, '/dados-pessoais/anonimizar') && str_contains($html, '/dados-pessoais/baixar'), 'CN-009: sem erp.users.manage não anonimiza');
+        $html = $render('pages/settings/privacy', $layoutData->invoke($panel, $user, 'CN-009', $privacyData(['privacyDatabase' => false])));
+        $assert(str_contains($html, 'Dados pessoais indisponíveis'), 'CN-009: sem banco');
+        continue;
+    }
     if ($id === 'AP-004') {
         // /erp/condominios usa dados reais (Condominiums + CondominiumScope); aqui, amostra fixa.
         $template = 'pages/condominiums/index';

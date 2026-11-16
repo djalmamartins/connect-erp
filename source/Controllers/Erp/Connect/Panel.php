@@ -57,7 +57,9 @@ final class Panel extends Controller
         'AP-059' => 'erp.agreements.view', 'AP-060' => 'erp.agreements.view', 'AP-061' => 'erp.agreements.view', 'AP-071' => 'erp.entries.view', 'AP-072' => 'erp.entries.view',
         // Gráficos (ADR 0083 e 0078); as permissões extras (plano de contas, contas bancárias) são conferidas nos dados.
         'AP-102' => 'erp.entries.view', 'AP-103' => 'erp.entries.view', 'AP-104' => 'erp.meter_readings.view', 'AP-105' => 'erp.meter_readings.view',
-        'AP-106' => 'erp.entries.view', 'AP-107' => 'erp.agreements.view', 'AP-108' => 'erp.entries.view', 'AP-109' => 'erp.reservations.view'];
+        'AP-106' => 'erp.entries.view', 'AP-107' => 'erp.agreements.view', 'AP-108' => 'erp.entries.view', 'AP-109' => 'erp.reservations.view',
+        // Dados pessoais (LGPD, ADR 0332).
+        'CN-009' => 'erp.privacy.export'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
