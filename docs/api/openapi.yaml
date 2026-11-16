@@ -3142,6 +3142,37 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { description: Muitas buscas seguidas. }
+  /privacy/anonymize:
+    post:
+      operationId: personalDataAnonymize
+      summary: Anonimização de quem saiu (LGPD), com prévia, motivo e tudo ou nada (erp.access, erp.privacy.export e erp.users.manage, ADR 0330)
+      description: >-
+        Mesma busca do relatório (/privacy/personal-data). Sem confirm devolve a prévia (plan com os ids por grupo e
+        blockers). Com confirm=true e reason (10 a 500 caracteres) anonimiza nos condomínios do escopo, numa transação:
+        cadastros de morador (nome "Titular anonimizado #id", documento, e-mail, telefone, anotações e vínculo com a conta
+        apagados, inativo), convites pendentes revogados, visitantes, dono/tutor de veículos e animais e quem abriu os
+        chamados. Contas, boletos, acordos e prestação de contas não mudam; a conta de acesso também não. Recusa (409) se
+        algum cadastro ainda está ativo sem saída no passado ou há conta a receber em aberto com a pessoa como pagadora.
+        Limite de 10 por 10 minutos (429). Não tem volta.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document: { type: string }
+                email: { type: string, format: email }
+                reason: { type: string, minLength: 10, maxLength: 500 }
+                confirm: { type: boolean }
+      responses:
+        '200': { description: '{ data: { confirmed, blockers[{ code, id, message }], plan { residents[], invitations[], visitors[], vehicles[], pets[], tickets[], kept { receivables } } } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: Nada encontrado, ou a pessoa ainda mora/paga ou tem conta em aberto. }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Muitos pedidos seguidos. }
   /users/revoke-condominium-access:
     post:
       operationId: revokeCondominiumAccessWithoutErp
