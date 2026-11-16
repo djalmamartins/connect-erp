@@ -48,6 +48,8 @@ ob_start(); ?>
         <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE) ?>"><?= $icon('file', 'erp-icon--sm') ?>Termo de entrada/saída</a><?php endif; ?>
         <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url('/condominios/unidades/cadastro-rapido') ?>"><?= $icon('sparkle', 'erp-icon--sm') ?>Cadastro rápido</a><?php endif; ?>
     <?php endif; ?>
+    <?php // Download da lista com os filtros aplicados (ADR 0314): PDF no padrão do modelo 3, Excel e CSV.
+    if ($result['data'] !== []): $this->insert('components/tables/download', ['downloadUrl' => erp_url($route) . $query(['pagina' => null]), 'downloadParam' => 'baixar', 'downloadTone' => '']); endif; ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
     <?php // AP-021: gera os lançamentos da competência a partir dos fixos (ADR 0027). A API valida tudo de novo.
     if (($definition['page'] ?? '') === 'AP-021' && $canManage && \Source\Support\Access::can('erp.entries.manage')): ?>

@@ -148,7 +148,7 @@ final class AccountabilityDeliveriesOpeningsTest extends TestCase
         self::assertContains(['Fundos', '', '  05/10/2026 -1+2', '', '0,05', '0,00', '0,05'], $hostile['rows'], 'Movimento com data e indentação (começa com espaço, não com sinal).');
         self::assertSame('Relatório parcial: algum bloco passou do limite de linhas.', end($hostile['rows'])[2]);
         $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Api/V1/Accountability.php');
-        foreach (['(new ReportExportLimit())->assertAllowed($user)', "Audit::record('export'", "'report' => 'accountability'", 'X-Content-Type-Options: nosniff',
+        foreach (['(new ReportExportLimit())->assertAllowed($user)', "Audit::record('export'", "'report' => 'accountability'", 'ListDocument::send($format, $content',
             "Access::can('erp.entries.view', \$user)", 'catch (DomainException'] as $needle) {
             self::assertStringContainsString($needle, $controller, $needle);
         }

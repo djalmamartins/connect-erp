@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ManagementReports as Reports;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\ReportExportLimit;
@@ -104,14 +104,11 @@ final class ManagementReports
         try {
             $data = $report(new Reports(), $user, $condominium);
             header('Cache-Control: no-store, private');
-            if ($this->text('format') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): até 30 por hora
-                $content = CollectionReports::csv(Reports::csvTable($kind, $data));
-                Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="' . $kind . '-' . date('Y-m-d') . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                $content = ListDocument::render($format, Reports::csvTable($kind, $data), ListDocument::meta($_GET['title'] ?? null, $kind, $condominium));
+                Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('' . $kind . '-' . date('Y-m-d') . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

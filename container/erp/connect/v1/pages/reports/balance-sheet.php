@@ -16,7 +16,7 @@ $b = $balance;
 $link = static fn (string $page, string $fallback): string => erp_url($catalog['pages'][$page]['route'] ?? $fallback);
 
 ob_start(); ?>
-    <?php if ($b !== null): ?><a class="erp-btn" href="<?= $this->e('/api/v1/reports/balance-sheet?' . http_build_query(['format' => 'csv', 'condominium_id' => (int)$b['condominium_id'], 'date' => $b['date']])) ?>"><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($b !== null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => '/api/v1/reports/balance-sheet?' . http_build_query(['condominium_id' => (int)$b['condominium_id'], 'date' => $b['date']]), 'downloadTitle' => 'Balanço patrimonial']); ?><?php endif; ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
