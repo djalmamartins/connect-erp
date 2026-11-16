@@ -878,6 +878,13 @@ final class RegistryService
         return $errors;
     }
 
+    /** Nome comparável (regra pura): sem acento, caixa e espaços repetidos. "Ana  Souza" = "ana souza". */
+    public static function personKey(string $name): string
+    {
+        $plain = function_exists('iconv') ? (string)@iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) : $name;
+        return trim((string)preg_replace('/\s+/', ' ', mb_strtolower($plain !== '' ? $plain : $name)));
+    }
+
     /** @return array<string, string> */
     private function businessRules(array $definition, array $values, ?int $id): array
     {
@@ -910,6 +917,21 @@ final class RegistryService
             $stmt->execute($params);
             if ($stmt->fetchColumn()) {
                 $errors[end($rule['fields'])] = $rule['message'];
+            }
+        }
+        // ADR 0311 (revisão de 15/11): o mesmo CPF/CNPJ é a mesma pessoa. Ele pode aparecer em várias unidades e
+        // vínculos, mas não com outro nome (dois cadastros diferentes com o mesmo documento). O nome da outra pessoa
+        // não sai na mensagem (pode ser de outro condomínio, LGPD).
+        $person = $definition['same_person'] ?? null;
+        if (is_array($person) && ($values[$person['document']] ?? null) !== null && ($values[$person['name']] ?? null) !== null) {
+            $sql = "SELECT `{$person['name']}` FROM `{$definition['table']}` WHERE deleted_at IS NULL AND `{$person['document']}` = :d" . ($id !== null ? ' AND id <> :self' : '') . ' LIMIT 50';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['d' => $values[$person['document']]] + ($id !== null ? ['self' => $id] : []));
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $other) {
+                if (self::personKey((string)$other) !== self::personKey((string)$values[$person['name']])) {
+                    $errors[$person['document']] = $person['message'];
+                    break;
+                }
             }
         }
         foreach ($definition['single_active'] as $rule) {

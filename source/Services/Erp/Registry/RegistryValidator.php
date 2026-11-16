@@ -36,6 +36,14 @@ final class RegistryValidator
             $errors['status'] = 'Situação inválida.';
         }
         $clean['status'] = $status;
+        // ADR 0311 (revisão de 15/11): vínculo com fim já passado fica inativo sozinho (pessoa sem unidade = inativa).
+        $endField = $definition['inactive_after'] ?? null;
+        if (is_string($endField) && isset($definition['status']['inactive']) && is_string($input[$endField] ?? null)) {
+            $end = \DateTimeImmutable::createFromFormat('!Y-m-d', trim((string)$input[$endField]));
+            if ($end !== false && $end->format('Y-m-d') < date('Y-m-d')) {
+                $clean['status'] = 'inactive';
+            }
+        }
 
         foreach ($definition['fields'] as $name => $field) {
             $after = $field['after'] ?? null;
@@ -82,6 +90,10 @@ final class RegistryValidator
         $text = trim((string)($raw ?? ''));
         $text = (string)preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
         if ($text === '') {
+            // ADR 0311: vazio com 'default' grava o padrão (a API antiga, sem o campo, continua funcionando).
+            if (array_key_exists('default', $field)) {
+                return [$field['default'], null];
+            }
             return [null, $field['required'] ? 'Campo obrigatório.' : null];
         }
         if (!mb_check_encoding($text, 'UTF-8')) {
@@ -185,6 +197,11 @@ final class RegistryValidator
                 return $int < $min || $int > $maxValue ? [null, "Informe um valor entre {$min} e {$maxValue}."] : [$int, null];
             case 'time':
                 return preg_match('/^([01]\d|2[0-3]):([0-5]\d)(:00)?$/', $text, $m) ? [$m[1] . ':' . $m[2], null] : [null, 'Hora inválida. Use HH:MM.'];
+            case 'cib':
+                // Código CIB (LC 214/2025, NFS-e cCIB): 7 caracteres + dígito verificador. O cálculo do DV não foi
+                // publicado de forma aberta (ADR 0311): aqui só o formato; o traço é opcional na digitação.
+                $cib = strtoupper((string)preg_replace('/[^0-9A-Za-z]/', '', $text));
+                return preg_match('/^[0-9A-Z]{8}$/', $cib) ? [$cib, null] : [null, 'Código CIB inválido. Use 7 caracteres e o dígito, ex.: ABC1234-5.'];
             case 'plate':
                 $plate = strtoupper((string)preg_replace('/[^0-9A-Za-z]/', '', $text));
                 return preg_match('/^[A-Z]{3}\d[A-Z0-9]\d{2}$/', $plate) ? [$plate, null] : [null, 'Placa inválida. Ex.: ABC1D23 ou ABC1234.'];

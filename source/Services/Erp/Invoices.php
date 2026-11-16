@@ -138,11 +138,12 @@ final class Invoices
         }
 
         $stmt = $this->pdo->prepare("SELECT id, label, ideal_fraction FROM erp_units
-            WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' ORDER BY label, id");
+            WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' AND apportionment_exempt = 0 ORDER BY label, id");
         $stmt->execute(['c' => $condominium]);
         $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Unidade isenta de rateio (ADR 0311) fica fora; a fração das demais é normalizada no apportion().
         if ($units === []) {
-            throw new InvalidArgumentException('O condomínio não tem unidades ativas para faturar.');
+            throw new InvalidArgumentException('O condomínio não tem unidades ativas (fora as isentas de rateio) para faturar.');
         }
         $amounts = $method === 'fraction'
             ? self::apportion($amount, array_column($units, 'ideal_fraction', 'id'))

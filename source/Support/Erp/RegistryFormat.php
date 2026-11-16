@@ -39,6 +39,7 @@ final class RegistryFormat
             'time' => substr((string)$value, 0, 5),
             'percent' => number_format((float)$value, 2, ',', '.') . '%',
             'decimal' => number_format((float)$value, (int)($field['scale'] ?? 2), ',', '.'),
+            'cib' => strlen((string)$value) === 8 ? substr((string)$value, 0, 7) . '-' . substr((string)$value, 7) : (string)$value,
             'plate' => strlen((string)$value) === 7 ? substr((string)$value, 0, 3) . '-' . substr((string)$value, 3) : (string)$value,
             default => (string)$value,
         };

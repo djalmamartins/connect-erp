@@ -12,6 +12,10 @@ $disabled = $readonly ? ' disabled' : '';
 $invalid = $error !== null ? ' aria-invalid="true" aria-describedby="' . $id . '-error"' : '';
 $star = $field['required'] ? ' <span aria-hidden="true" style="color:var(--erp-danger)">*</span>' : '';
 $text = $value === null || is_array($value) || is_bool($value) ? '' : (string)$value;
+// ADR 0311: campo com 'default' (ex.: selects das configurações da unidade) já vem escolhido num registro novo.
+if ($text === '' && array_key_exists('default', $field) && $field['type'] === 'select') {
+    $text = (string)$field['default'];
+}
 // Valores gravados chegam normalizados; mostra-os no formato de digitação.
 $display = match ($field['type']) {
     'cpf', 'cnpj', 'document' => \Source\Support\Erp\BrDocument::format($text),
@@ -153,6 +157,7 @@ $attachment ??= null;
                 'document' => ['text', ' inputmode="numeric" maxlength="18"', 'CPF ou CNPJ'],
                 'id_document' => ['text', ' maxlength="20"', 'CPF ou RG'],
                 'plate' => ['text', ' maxlength="8" style="text-transform:uppercase"', 'ABC1D23'],
+                'cib' => ['text', ' maxlength="9" style="text-transform:uppercase" autocomplete="off"', 'AAAAAAA-D'],
                 'oab' => ['text', ' maxlength="12"', 'SP 123456'],
                 default => ['text', ' maxlength="' . (int)($field['max'] ?? 160) . '"', ''],
             }; ?>

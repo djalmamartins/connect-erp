@@ -35,6 +35,8 @@ $query = static function (array $changes) use ($filters, $flagParam): string {
     $params = array_filter(array_merge($params, $changes), static fn ($v): bool => $v !== null && $v !== '');
     return $params === [] ? '' : '?' . http_build_query($params);
 };
+// Configuração em massa (ADR 0311): só na lista de unidades, com um condomínio escolhido e permissão de gravar.
+$bulkCondominium = ($definition['page'] ?? '') === 'AP-006' && $canManage ? (int)($filters['condominium_id'] ?? 0) : 0;
 $filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null, isset($flagFilter['options'][(string)($filters['flag'] ?? '')]) ? $filters['flag'] : null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php // AP-006: cadastro rápido e fração ideal/área em grade (ADR 0140).
@@ -100,10 +102,17 @@ $this->insert('components/layout/page-head', [
                 <?php if ($canManage && !$filtered && (!$hasCondominium || $condominiums !== [])): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
             </div>
         <?php else: ?>
+            <?php if ($bulkCondominium > 0): ?>
+                <div class="erp-bulk-bar" data-unit-bulk-bar>
+                    <span data-unit-bulk-selected>Marque as unidades para configurar em massa.</span>
+                    <button type="button" class="erp-btn erp-btn--sm" data-erp-modal-open="unit-bulk-settings" data-unit-bulk-open disabled><?= $icon('settings', 'erp-icon--sm') ?>Configurar unidades em massa</button>
+                </div>
+            <?php endif; ?>
             <div class="erp-table-wrap" role="region" aria-label="<?= $this->e($definition['label']) ?>" tabindex="0">
                 <table class="erp-table">
                     <caption class="erp-sr-only"><?= $this->e($definition['label']) ?> (<?= (int)$result['total'] ?>)</caption>
                     <thead><tr>
+                        <?php if ($bulkCondominium > 0): ?><th scope="col" class="is-check"><input type="checkbox" data-unit-bulk-all aria-label="Marcar todas as unidades desta página"></th><?php endif; ?>
                         <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['list_label'] ?? $field['label']) ?></th><?php endforeach; ?>
                         <?php foreach ($peopleColumns as $label): ?><th scope="col"><?= $this->e($label) ?></th><?php endforeach; ?>
                         <th scope="col">Situação</th>
@@ -112,6 +121,7 @@ $this->insert('components/layout/page-head', [
                     <tbody>
                     <?php foreach ($result['data'] as $row): $first = true; $href = erp_url($route . '/' . (int)$row['id']); ?>
                         <tr>
+                            <?php if ($bulkCondominium > 0): ?><td class="is-check"><input type="checkbox" value="<?= (int)$row['id'] ?>" data-unit-bulk-item aria-label="Marcar a unidade <?= $this->e((string)($row[$definition['title']] ?? $row['id'])) ?>"></td><?php endif; ?>
                             <?php foreach ($listFields as $name => $field): $text = RegistryFormat::display($field, $row[$name], $row['condominium_name'] ?? null); ?>
                                 <td><?php if ($first): $first = false; ?><a href="<?= $href ?>"><strong><?= $this->e($text) ?></strong></a><?php else: ?><?= $this->e($text) ?><?php endif; ?></td>
                             <?php endforeach; ?>
@@ -131,3 +141,4 @@ $this->insert('components/layout/page-head', [
         <?php endif; ?>
     </div>
 </section>
+<?php if ($bulkCondominium > 0 && $result['data'] !== []): $this->insert('components/units/bulk-settings', ['definition' => $definition, 'bulkCondominium' => $bulkCondominium]); endif; ?>

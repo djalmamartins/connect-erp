@@ -260,6 +260,9 @@ $route->post("/unit-batches", "UnitBatches:store", null, \Source\Support\Middlew
 $route->get("/unit-measures", "UnitBatches:measures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Configuração das unidades em massa (ADR 0311). Antes do laço dos cadastros.
+$route->get("/units/bulk-settings", "UnitBulkSettings:options", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/units/bulk-settings", "UnitBulkSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Saída de moradores da unidade (ADR 0206). Antes do laço dos cadastros.
 $route->post("/units/move-out", "UnitMoveOut:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Conclusão de manutenções com a próxima agendada (ADR 0208). Antes do laço dos cadastros.

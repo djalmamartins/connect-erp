@@ -991,3 +991,13 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-money--sm { display: inline-block; width: auto; }
 .erp-money--sm::before { left: 8px; font-size: 12px; }
 .erp-money--sm > .erp-input { padding-left: 30px; }
+
+/* Configuração das unidades em massa (ADR 0311) */
+.erp-unit-bulk__grid { margin-top: var(--erp-space-3); }
+.erp-inline-field { display: flex; gap: 8px; align-items: center; }
+.erp-inline-field .erp-input { flex: 1; min-width: 0; }
+.erp-inline-field .erp-check { margin-right: 0; white-space: nowrap; }
+.erp-bulk-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
+.erp-table .is-check { width: 36px; }
+.erp-table .is-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
+@media (max-width: 760px) { .erp-unit-bulk__grid { grid-template-columns: 1fr; } }

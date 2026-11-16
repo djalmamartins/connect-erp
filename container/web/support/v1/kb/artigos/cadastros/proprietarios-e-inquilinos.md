@@ -92,6 +92,8 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - A mesma pessoa pode ter vínculo com várias unidades e condomínios, mas não pode ter o mesmo vínculo duas vezes com a mesma unidade.
 - Marcar **Recebe boleto por e-mail** exige um e-mail e faz a pessoa receber o aviso de cobrança. Marcar **Não quer receber comunicados por e-mail** tira a pessoa dos comunicados gerais (a cobrança continua seguindo a opção do boleto).
 - O vínculo vale do **Início** ao **Fim do vínculo**. Quando o inquilino sai, preencha o fim ou inative o vínculo, em vez de excluir: o histórico de quem morou ali continua.
+- Vínculo com **Fim do vínculo** já passado é gravado como inativo: a pessoa sem unidade sai das listas de ativos.
+- O CPF/CNPJ é opcional, mas cada documento é de uma pessoa só: o mesmo CPF pode estar em vários vínculos, sempre com o mesmo nome. Com outro nome, o sistema avisa e não grava.
 - Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
 - Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
 - Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
