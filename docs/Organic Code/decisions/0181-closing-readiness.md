@@ -34,7 +34,7 @@ A lista de conferências do mês, cada uma com código, nível, mensagem, quanti
 |---|---|---|
 | erro | `balance_sheet` | o Balanço do último dia do mês não fecha (diferença diferente de zero) |
 | erro | `paid_without_bank` | lançamento da competência pago sem conta bancária |
-| aviso | `previous_open` | o mês anterior tem lançamentos e não está fechado |
+| erro (ADR 0313) | `previous_open` | há mês anterior com lançamentos ou reaberto que não está fechado |
 | aviso | `open_entries` | receitas ou despesas da competência em aberto |
 | aviso | `unmatched_statement` | linhas do extrato importado do mês sem conciliação |
 | aviso | `negative_bank` | conta bancária com saldo negativo no último dia do mês |

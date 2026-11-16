@@ -175,6 +175,7 @@ components:
         condominium_id: { type: integer }
         competence: { type: string }
         status: { type: string, enum: [open, closed, reopened] }
+        pending_before: { type: array, items: { type: string }, description: 'Meses anteriores em aberto (AAAA-MM, do mais antigo); com algum, o fechamento é recusado (ADR 0313)' }
         closing: { oneOf: [{ $ref: '#/components/schemas/MonthClosingRecord' }, { type: 'null' }] }
         summary:
           type: object
@@ -1070,7 +1071,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
-        '409': { description: Competência já fechada }
+        '409': { description: 'Competência já fechada, ou mês anterior em aberto (ADR 0313: o fechamento segue a ordem dos meses; a mensagem lista os meses pendentes)' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
@@ -1101,7 +1102,7 @@ paths:
         - { name: competence, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
       responses:
         '200':
-          description: 'ready (sem erro), contagem de erros e avisos e a lista de conferências (balance_sheet, paid_without_bank, previous_open, open_entries, unmatched_statement, negative_bank, already_closed)'
+          description: 'ready (sem erro), contagem de erros e avisos e a lista de conferências (balance_sheet, paid_without_bank, previous_open = erro com os meses anteriores em aberto (ADR 0313), open_entries, unmatched_statement, negative_bank, already_closed)'
           content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { condominium_id: { type: integer }, competence: { type: string }, as_of: { type: string, format: date }, ready: { type: boolean }, errors: { type: integer }, warnings: { type: integer }, checks: { type: array, items: { type: object, properties: { code: { type: string }, level: { type: string, enum: [error, warning, info] }, message: { type: string }, count: { type: integer }, amount_cents: { type: integer } } } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }

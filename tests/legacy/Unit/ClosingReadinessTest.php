@@ -79,11 +79,12 @@ final class ClosingReadinessTest extends TestCase
         // 500,00 do banco sem saldo inicial do PL + 50,00 da água paga sem banco (a despesa baixa o resultado, mas o caixa não muda).
         self::assertSame(50000 + 5000, $checks['balance_sheet']['amount_cents']);
         self::assertSame([1, 'error'], [$checks['paid_without_bank']['count'], $checks['paid_without_bank']['level']]);
-        self::assertSame(1, $checks['previous_open']['count'], 'Setembro tem lançamento e não foi fechado.');
+        self::assertSame([1, 'error'], [$checks['previous_open']['count'], $checks['previous_open']['level']], 'Setembro tem lançamento e não foi fechado (ADR 0313).');
+        self::assertStringContainsString('09/2026', $checks['previous_open']['message']);
         self::assertSame(40000, $checks['open_entries']['amount_cents']);
         self::assertSame([1, -1234], [$checks['unmatched_statement']['count'], $checks['unmatched_statement']['amount_cents']], 'Só o extrato do mês e do condomínio.');
         self::assertStringContainsString('Reserva', $checks['negative_bank']['message'], 'A energia saiu da conta reserva, que não tinha saldo.');
-        self::assertSame([2, 4], [$result['errors'], $result['warnings']]);
+        self::assertSame([3, 3], [$result['errors'], $result['warnings']]);
 
         // Corrige: saldo inicial do PL igual ao do banco, conta bancária na água, setembro fechado, extrato conciliado.
         (new ChartOpenings($this->pdo, new CondominiumScope($this->pdo)))->set($this->user(), 1, 91, '2026-01-01', 50000);
@@ -116,7 +117,7 @@ final class ClosingReadinessTest extends TestCase
                 self::assertTrue(true);
             }
         }
-        $clean = ClosingReadiness::evaluate(['status' => 'open', 'previous_competence' => '2026-09', 'previous_status' => null, 'previous_entries' => 0,
+        $clean = ClosingReadiness::evaluate(['status' => 'open', 'competence' => '2026-10', 'pending_before' => [],
             'open_revenue_cents' => 0, 'open_expense_cents' => 0, 'unmatched_lines' => 0, 'unmatched_cents' => 0, 'negative_banks' => [],
             'balance_difference_cents' => 0, 'paid_without_bank' => 0]);
         self::assertSame(['ready' => true, 'errors' => 0, 'warnings' => 0, 'checks' => []], $clean, 'Primeiro mês, tudo certo: pronto, sem aviso.');

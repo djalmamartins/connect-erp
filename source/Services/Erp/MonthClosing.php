@@ -23,6 +23,8 @@ use Source\Support\Audit;
  * - Escopo por condomínio (ADR-002): fora do escopo = CondominiumAccessDenied.
  * - Concorrência (ADR 0100): fechar grava a situação antes de somar, com a linha travada, e as
  *   gravações de lançamento conferem a competência com leitura travada na mesma transação.
+ * - Ordem (ADR 0313): não fecha um mês enquanto houver mês anterior em aberto (com lançamentos e não fechado, ou
+ *   reaberto). A tela e a conferência avisam quais são, para as pendências não se acumularem.
  */
 final class MonthClosing
 {
@@ -83,6 +85,7 @@ final class MonthClosing
         return [
             'condominium_id' => $condominiumId, 'competence' => $competence,
             'status' => $closing['status'] ?? 'open',
+            'pending_before' => $this->openMonthsBefore([$condominiumId], $competence)[$condominiumId] ?? [],
             'closing' => $closing === null ? null : $this->presentClosing($closing),
             'summary' => self::summarize($this->entryRows($condominiumId, $competence)),
         ];
@@ -133,7 +136,59 @@ final class MonthClosing
             'open_revenue_cents' => (int)$r['open_revenue_cents'], 'open_expense_cents' => (int)$r['open_expense_cents'],
             'result_cents' => (int)$r['revenue_cents'] - (int)$r['expense_cents'], 'entries' => (int)$r['entries'],
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        $pending = $this->openMonthsBefore($ids, $competence);
+        foreach ($rows as &$row) {
+            $row['pending_before'] = $pending[$row['condominium_id']] ?? [];
+        }
+        unset($row);
         return ['competence' => $competence, 'condominium_id' => $condominiumId, 'rows' => $rows, 'totals' => self::overviewTotals($rows)];
+    }
+
+    /**
+     * Meses anteriores em aberto (ADR 0313) de um condomínio do escopo: competências antes de $competence que têm
+     * lançamento válido ou fechamento gravado e não estão fechadas (aberta ou reaberta), da mais antiga para a mais nova.
+     *
+     * @return list<string>
+     */
+    public function pendingBefore(User $user, int $condominiumId, string $competence): array
+    {
+        $this->assertInput($user, $condominiumId, $competence);
+        return $this->openMonthsBefore([$condominiumId], $competence)[$condominiumId] ?? [];
+    }
+
+    /** Mensagem da recusa por ordem (regra pura), com os meses em MM/AAAA. @param list<string> $pending */
+    public static function orderMessage(string $competence, array $pending): string
+    {
+        $label = static fn (string $m): string => substr($m, 5, 2) . '/' . substr($m, 0, 4);
+        $list = implode(', ', array_map($label, $pending));
+        return 'Feche antes ' . (count($pending) === 1 ? 'o mês anterior em aberto' : 'os meses anteriores em aberto') . ": {$list}. "
+            . 'O fechamento segue a ordem dos meses para as pendências não se acumularem; ' . $label($competence) . ' fica liberado depois.';
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array<int, list<string>>
+     */
+    private function openMonthsBefore(array $ids, string $competence): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(',', $ids);
+        $stmt = $this->pdo->prepare("SELECT x.condominium_id, x.competence FROM (
+                SELECT DISTINCT e.condominium_id, e.competence FROM erp_entries e
+                WHERE e.condominium_id IN ({$in}) AND e.competence < :m1 AND e.status = 'active' AND e.deleted_at IS NULL
+                UNION SELECT mc.condominium_id, mc.competence FROM erp_month_closings mc WHERE mc.condominium_id IN ({$in}) AND mc.competence < :m2
+            ) x
+            WHERE NOT EXISTS (SELECT 1 FROM erp_month_closings c WHERE c.condominium_id = x.condominium_id AND c.competence = x.competence AND c.status = 'closed')
+            ORDER BY x.condominium_id, x.competence");
+        $stmt->execute(['m1' => $competence, 'm2' => $competence]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int)$row['condominium_id']][] = (string)$row['competence'];
+        }
+        return $out;
     }
 
     /**
@@ -175,6 +230,10 @@ final class MonthClosing
             $before = $this->closingRow($condominiumId, $competence, true);
             if (($before['status'] ?? null) === 'closed') {
                 throw new DomainException("A competência {$competence} já está fechada.");
+            }
+            $pending = $this->openMonthsBefore([$condominiumId], $competence)[$condominiumId] ?? [];
+            if ($pending !== []) {
+                throw new DomainException(self::orderMessage($competence, $pending));
             }
             // Primeiro grava a situação "fechada" (ADR 0100). Com a linha travada, quem grava lançamento confere
             // a competência com leitura travada e espera este fechamento; quem já gravou antes entra no resumo.

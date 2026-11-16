@@ -42,6 +42,12 @@ Colunas: **Condomínio**, **Situação**, **Receitas**, **Despesas**, **Resultad
 2. Clique em {{Fechar competência}} na linha do condomínio.
 3. Para corrigir depois, clique em {{Reabrir competência}} e informe o motivo. A reabertura aparece na listagem de prestações de contas.
 
+## Fechar na ordem dos meses
+
+O sistema só fecha um mês quando os anteriores estão fechados. Se algum mês anterior com lançamentos ficou aberto (ou foi reaberto), a tela mostra um alerta vermelho com o link de cada mês pendente e o botão {{Fechar competência}} fica travado. Feche os meses do alerta, do mais antigo para o mais novo, e volte. Assim as pendências não se acumulam de um mês para o outro. Mês sem nenhum lançamento não conta.
+
+Em **Todos os condomínios**, o alerta mostra quais condomínios têm mês anterior aberto, e a coluna **Situação** diz quais meses são.
+
 >! Feche só depois de conferir as baixas e os lançamentos do mês: o fechamento é a base da prestação de contas.
 
 > Ao fechar, o sistema gera sozinho o [link da prestação de contas para os moradores](artigo:livro-caixa) e manda o e-mail às unidades do condomínio. Ao fechar dezembro, sai também o livro anual. O prazo para os moradores receberem é o 5º dia útil do mês seguinte; perto dele, quem pode fechar o mês recebe um aviso no sistema.

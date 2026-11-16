@@ -16,10 +16,10 @@ use Source\Services\CondominiumScope;
  * fecha decide.
  *
  * Erro (o pacote do mês sai errado se fechar assim):
+ * - previous_open: há mês anterior em aberto (ADR 0313: o fechamento segue a ordem e recusa fechar antes dele);
  * - balance_sheet: o Balanço no último dia do mês não fecha (diferença diferente de zero);
  * - paid_without_bank: lançamento pago sem conta bancária (o caixa e o Razão bancário não batem).
  * Aviso (vale conferir):
- * - previous_open: o mês anterior tem lançamentos e não está fechado;
  * - open_entries: receitas ou despesas da competência ainda em aberto;
  * - unmatched_statement: linhas do extrato importado (AP-140) do mês sem conciliação;
  * - negative_bank: conta bancária com saldo negativo no último dia do mês.
@@ -29,7 +29,7 @@ use Source\Services\CondominiumScope;
  */
 final class ClosingReadiness
 {
-    public const ERRORS = ['balance_sheet', 'paid_without_bank'];
+    public const ERRORS = ['previous_open', 'balance_sheet', 'paid_without_bank'];
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -43,7 +43,7 @@ final class ClosingReadiness
     /**
      * Regra pura: dos fatos levantados, a lista de conferências e se o mês está pronto (sem erro).
      *
-     * @param array{status:string, previous_competence:string, previous_status:?string, previous_entries:int, open_revenue_cents:int,
+     * @param array{status:string, competence?:string, pending_before:list<string>, open_revenue_cents:int,
      *   open_expense_cents:int, unmatched_lines:int, unmatched_cents:int, negative_banks:list<array{name:string, closing_cents:int}>,
      *   balance_difference_cents:int, paid_without_bank:int} $facts
      * @return array{ready:bool, errors:int, warnings:int, checks:list<array{code:string, level:string, message:string, count:int, amount_cents:int}>}
@@ -66,8 +66,8 @@ final class ClosingReadiness
             $add('paid_without_bank', 'error', $facts['paid_without_bank'] . ' lançamento(s) pago(s) sem conta bancária: informe a conta para o caixa bater.',
                 $facts['paid_without_bank']);
         }
-        if ($facts['previous_entries'] > 0 && $facts['previous_status'] !== 'closed') {
-            $add('previous_open', 'warning', 'O mês anterior (' . $facts['previous_competence'] . ') tem lançamentos e não está fechado.', $facts['previous_entries']);
+        if ($facts['pending_before'] !== [] && $facts['status'] !== 'closed') {
+            $add('previous_open', 'error', MonthClosing::orderMessage((string)($facts['competence'] ?? ''), $facts['pending_before']), count($facts['pending_before']));
         }
         $open = $facts['open_revenue_cents'] + $facts['open_expense_cents'];
         if ($open > 0) {
@@ -92,7 +92,6 @@ final class ClosingReadiness
         }
         [$month, $from, $to] = Accountability::month($competence);   // 422 com competência inválida
         $this->scope->assertAccess($user, $condominiumId);         // 404 antes de consultar
-        $previous = (new \DateTimeImmutable($from))->modify('-1 month')->format('Y-m');
         $status = (new MonthClosing($this->pdo, $this->scope))->status($user, $condominiumId, $month);
         $balances = (new AccountingReports($this->pdo, $this->scope))->accountBalances($user, $condominiumId, $to);
         $sheet = (new BalanceSheet($this->pdo, $this->scope))->build($user, $condominiumId, $to);
@@ -100,10 +99,8 @@ final class ClosingReadiness
             WHERE condominium_id = ? AND status = 'unmatched' AND posted_on BETWEEN ? AND ?", [$condominiumId, $from, $to]);
         $facts = [
             'status' => (string)$status['status'],
-            'previous_competence' => $previous,
-            'previous_status' => $this->value('SELECT status FROM erp_month_closings WHERE condominium_id = ? AND competence = ?', [$condominiumId, $previous]),
-            'previous_entries' => (int)$this->value("SELECT COUNT(*) FROM erp_entries WHERE condominium_id = ? AND competence = ? AND status = 'active' AND deleted_at IS NULL",
-                [$condominiumId, $previous]),
+            'competence' => $month,
+            'pending_before' => (new MonthClosing($this->pdo, $this->scope))->pendingBefore($user, $condominiumId, $month),
             'open_revenue_cents' => (int)($status['summary']['open_revenue_cents'] ?? 0),
             'open_expense_cents' => (int)($status['summary']['open_expense_cents'] ?? 0),
             'unmatched_lines' => (int)$unmatched['n'], 'unmatched_cents' => (int)$unmatched['cents'],
