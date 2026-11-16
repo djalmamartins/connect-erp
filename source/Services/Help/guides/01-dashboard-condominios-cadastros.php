@@ -107,6 +107,17 @@ return [
         ],
     ],
 
+    'CN-009' => [
+        'faz' => 'Atende os pedidos dos titulares pela LGPD: mostra tudo o que o sistema guarda de uma pessoa nos condomínios que você acessa, baixa esse relatório em JSON para entregar a ela e anonimiza quem já saiu do condomínio.',
+        'por_tras' => [
+            'A busca vai pelo CPF/CNPJ e/ou pelo e-mail e não fica na barra de endereço. O histórico do sistema guarda só um código da busca, nunca o CPF ou o e-mail.',
+            'Anonimizar troca nome, documento, e-mail e telefone por "Titular anonimizado" nos cadastros, visitantes, veículos, animais e chamados. As contas a receber e a prestação de contas continuam guardadas.',
+            'Não dá para anonimizar quem ainda mora (cadastro ativo sem data de saída no passado) nem quem tem conta em aberto como pagador.',
+            'Não tem volta: os dados só voltam restaurando o backup.',
+            'Consultar exige a permissão de dados pessoais; anonimizar exige também a de gerenciar usuários.',
+        ],
+    ],
+
     'AP-005' => [
         'faz' => 'Cadastra as pessoas de cada unidade e o vínculo delas: proprietário, inquilino, morador ou responsável financeiro. É daqui que saem os nomes, e-mails e telefones usados nas cobranças, nos comunicados e no painel da unidade.',
         'por_tras' => [
