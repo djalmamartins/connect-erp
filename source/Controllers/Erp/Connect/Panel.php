@@ -255,6 +255,7 @@ final class Panel extends Controller
             return $data;
         }
         $data['canManageInvoices'] = Access::can('erp.invoices.manage', $user);
+        $data['canManageCharges'] = Access::can('erp.bank_charges.view', $user) && Access::can('erp.bank_charges.manage', $user);
         return $data;
     }
 

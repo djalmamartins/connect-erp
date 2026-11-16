@@ -210,6 +210,26 @@ final class InterBankingIntegrationTest extends TestCase
         self::assertSame(1, $this->charges->syncOpen()['failed']);
     }
 
+    public function testWholeInvoiceIsIssuedInBatchesWithoutRepeatingRefusals(): void
+    {
+        $invoiceId = (int)$this->pdo->query('SELECT id FROM erp_invoices ORDER BY id DESC LIMIT 1')->fetchColumn();
+        $first = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 1);
+        self::assertCount(1, $first['processed']);
+        self::assertSame(['101', 'registered'], [$first['processed'][0]['unit_label'], $first['processed'][0]['status']]);
+        self::assertSame(1, $first['remaining']);
+        $second = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 20);
+        self::assertSame('rejected', $second['processed'][0]['status'], 'Unidade 102 sem CPF: recusada sem parar o lote.');
+        self::assertStringContainsString('CPF', (string)$second['processed'][0]['error']);
+        self::assertSame([0, 1], [$second['remaining'], $second['skipped_rejected']]);
+        $third = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 20);
+        self::assertSame([[], 0], [$third['processed'], $third['remaining']], 'Nada a repetir: a recusa não volta para o lote.');
+        self::assertSame(1, $this->http->count('POST', '/cobranca/v3/cobrancas'), 'Só a unidade válida chegou ao banco.');
+
+        $outsider = $this->createUser(['level' => 2]);
+        $this->expectException(\Source\Services\Erp\Registry\RegistryNotFound::class);
+        $this->charges->issueForInvoice((new User())->findById($outsider), $invoiceId, $this->bank);
+    }
+
     public function testBankCancellationArrivesByWebhook(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);

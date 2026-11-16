@@ -81,6 +81,8 @@ $route->get("/invoices/{id}", "Invoices:show", null, \Source\Support\Middleware\
 $route->patch("/invoices/{id}/items/{item}", "Invoices:updateItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/issue", "Invoices:issue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/cancel", "Invoices:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Boletos de toda a fatura de uma vez (Inter ou sandbox), em lotes; exige erp.bank_charges.manage.
+$route->post("/invoices/{id}/bank-charges", "Banking:issueInvoice", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Boletos, remessas, retorno e fila de divergências (ADR 0035 e 0156): sandbox interno ou Inter (sandbox do banco).
 $route->get("/bank-charges", "Banking:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges", "Banking:store", null, \Source\Support\Middleware\ApiAuthenticated::class);

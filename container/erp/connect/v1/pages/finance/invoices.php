@@ -4,7 +4,9 @@
  * no contexto da barra superior), filtros por competência e situação, e as ações pela API
  * /api/v1/invoices (erp.js, data-erp-invoices): preparar, ver e ajustar os itens por unidade
  * (só em preparação), emitir e cancelar com motivo. A API valida permissão, escopo e CSRF de novo.
- * @var array $currentPage @var array $invoices @var bool $canManageInvoices @var list<array> $condoOptions
+ * Fatura emitida: "Gerar boletos" emite os boletos de todas as unidades em aberto (POST /api/v1/invoices/{id}/bank-charges,
+ * em lotes; exige erp.bank_charges.manage).
+ * @var array $currentPage @var array $invoices @var bool $canManageInvoices @var bool $canManageCharges @var list<array> $condoOptions
  */
 $this->layout('default');
 $route = erp_url($currentPage['route']);
@@ -23,6 +25,7 @@ $context = \Source\Support\Erp\CondominiumContext::id();
 $apiBase = url('/api/v1/invoices');
 $rows = $invoices['data'] ?? [];
 $canManageInvoices ??= false;
+$canManageCharges ??= false;
 
 ob_start(); ?>
     <?php if ($canManageInvoices): ?><button type="button" class="erp-btn erp-btn--primary" data-erp-modal-open="invoice-prepare"><?= $icon('plus', 'erp-icon--sm') ?>Preparar fatura</button><?php endif; ?>
@@ -34,7 +37,7 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
-<div data-erp-invoices data-api="<?= $this->e($apiBase) ?>" data-types-api="<?= $this->e(url('/api/v1/invoice-types')) ?>" data-can-manage="<?= $canManageInvoices ? '1' : '0' ?>">
+<div data-erp-invoices data-api="<?= $this->e($apiBase) ?>" data-types-api="<?= $this->e(url('/api/v1/invoice-types')) ?>" data-can-manage="<?= $canManageInvoices ? '1' : '0' ?>" data-accounts-api="<?= $this->e(url('/api/v1/bank-accounts')) ?>">
     <?= csrf_input() ?>
     <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Filtrar faturas">
         <div class="erp-field erp-field--compact"><label for="inv-month">Competência</label><input class="erp-input" type="month" id="inv-month" name="competencia" value="<?= $this->e($filters['competencia']) ?>"></div>
@@ -61,6 +64,7 @@ $this->insert('components/layout/page-head', [
                         <td><span class="erp-badge erp-badge--<?= $tones[$status] ?? 'plain' ?>"><?= $this->e((string)$invoice['status_label']) ?></span></td>
                         <td class="is-num erp-invoice-actions"><div class="erp-table__actions">
                             <?php if ($canManageInvoices && $status === 'draft'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--primary" data-invoice-issue="<?= (int)$invoice['id'] ?>" data-label="<?= $this->e($invoice['type_name'] . ' ' . $month((string)$invoice['competence'])) ?>">Emitir</button><?php endif; ?>
+                            <?php if ($canManageCharges && $status === 'issued'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--primary" data-invoice-boletos="<?= (int)$invoice['id'] ?>" data-condominium="<?= (int)$invoice['condominium_id'] ?>" data-label="<?= $this->e($invoice['type_name'] . ' ' . $month((string)$invoice['competence'])) ?>">Gerar boletos</button><?php endif; ?>
                             <?php if ($canManageInvoices && $status !== 'cancelled'): ?><button type="button" class="erp-btn erp-btn--sm" data-invoice-cancel="<?= (int)$invoice['id'] ?>" data-label="<?= $this->e($invoice['type_name'] . ' ' . $month((string)$invoice['competence'])) ?>">Cancelar</button><?php endif; ?>
                         </div></td>
                     </tr>
@@ -85,6 +89,20 @@ $this->insert('components/layout/page-head', [
     </dialog>
 
     <?php if ($canManageInvoices): ?>
+    <?php if ($canManageCharges): ?>
+    <dialog class="erp-modal" id="invoice-boletos" aria-labelledby="invoice-boletos-title">
+        <form data-invoice-boletos-form>
+            <div class="erp-modal__head"><h2 id="invoice-boletos-title">Gerar boletos da fatura</h2><button type="button" class="erp-btn erp-btn--ghost erp-btn--sm" data-erp-modal-close aria-label="Fechar"><?= $icon('close', 'erp-icon--sm') ?></button></div>
+            <div class="erp-modal__body">
+                <p class="erp-muted" data-invoice-boletos-label></p>
+                <p class="erp-muted">Emite um boleto para cada unidade com a conta a receber em aberto e ainda sem boleto. Unidade sem CPF/CNPJ ou endereço fica como recusada, sem parar as outras.</p>
+                <div class="erp-field"><label for="inv-bol-account">Conta bancária</label><select class="erp-select" id="inv-bol-account" name="bank_account_id" required data-invoice-boletos-accounts><option value="">Carregando…</option></select></div>
+                <div aria-live="polite" data-invoice-boletos-progress></div>
+            </div>
+            <div class="erp-modal__foot"><button type="button" class="erp-btn" data-erp-modal-close>Fechar</button><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('receipt', 'erp-icon--sm') ?>Gerar boletos</button></div>
+        </form>
+    </dialog>
+    <?php endif; ?>
     <dialog class="erp-modal" id="invoice-cancel" aria-labelledby="invoice-cancel-title">
         <form data-invoice-cancel-form>
             <div class="erp-modal__head"><h2 id="invoice-cancel-title">Cancelar fatura</h2><button type="button" class="erp-btn erp-btn--ghost erp-btn--sm" data-erp-modal-close aria-label="Fechar"><?= $icon('close', 'erp-icon--sm') ?></button></div>
