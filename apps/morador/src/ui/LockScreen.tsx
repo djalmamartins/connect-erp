@@ -33,7 +33,7 @@ export function LockScreen() {
   }, [tryUnlock]);
 
   async function usePassword() {
-    if (await confirm('Entrar com e-mail e senha', 'O app vai sair deste aparelho e pedir o e-mail e a senha de novo.', 'Continuar')) {
+    if (await confirm('Entrar com e-mail e senha', 'O app vai sair deste aparelho e pedir o e-mail e a senha de novo.', 'Continuar', { undo: true, text: 'É só entrar de novo com o seu e-mail e a senha.' })) {
       await logout();
     }
   }

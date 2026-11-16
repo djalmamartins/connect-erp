@@ -99,7 +99,7 @@ export default function Perfil() {
   }
 
   async function sair() {
-    if (await confirm('Sair', 'Quer sair do app neste aparelho?', 'Sair')) {
+    if (await confirm('Sair', 'Quer sair do app neste aparelho?', 'Sair', { undo: true, text: 'É só entrar de novo com o seu e-mail e a senha.' })) {
       await logout();
     }
   }
