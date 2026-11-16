@@ -34,7 +34,7 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
-<div class="erp-alert erp-alert--info" role="note"><div><strong>Sem arquivo de remessa no Inter.</strong> O Banco Inter registra cada boleto na hora, pela API. Esta tela mostra os lotes enviados e o que o banco já confirmou. Bancos que usam arquivo CNAB entram aqui quando forem integrados.</div></div>
+<div class="erp-alert erp-alert--info" role="note"><div><strong>Sem arquivo de remessa no Inter nem na Cora.</strong> O Banco Inter e a Cora registram cada boleto na hora, pela API. Esta tela mostra os lotes enviados e o que o banco já confirmou. Bancos que usam arquivo CNAB entram aqui quando forem integrados.</div></div>
 <div class="erp-stack">
     <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Filtrar remessas">
         <div class="erp-field erp-field--compact"><label for="rem-from">De</label><input class="erp-input" type="date" id="rem-from" name="de" value="<?= $this->e($filters['de']) ?>"></div>

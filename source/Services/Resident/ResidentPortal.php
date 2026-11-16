@@ -146,7 +146,7 @@ final class ResidentPortal
             if ($row['charge_id'] !== null && $situation !== 'renegotiated') {
                 $charge = ['id' => (int)$row['charge_id'], 'status' => (string)$row['charge_status'],
                     'digitable_line' => $row['digitable_line'], 'barcode' => $row['barcode'], 'pix_copy_paste' => $row['pix_copy_paste'],
-                    'pdf_available' => $row['adapter'] === 'inter' && !empty($row['external_id']) && in_array($row['charge_status'], ['registered', 'paid'], true)];
+                    'pdf_available' => in_array($row['adapter'], \Source\Services\Erp\Banking\BankAdapters::REAL, true) && !empty($row['external_id']) && in_array($row['charge_status'], ['registered', 'paid'], true)];
             }
             $lines[] = ['entry_id' => (int)$row['id'], 'description' => (string)$row['description'], 'competence' => (string)$row['competence'],
                 'due_on' => (string)$row['due_on'], 'paid_on' => $row['paid_on'], 'amount_cents' => $amount, 'situation' => $situation, 'charge' => $charge];
@@ -257,7 +257,7 @@ final class ResidentPortal
         if ($row['charge_id'] !== null && $situation !== 'renegotiated') {
             $charge = ['id' => (int)$row['charge_id'], 'status' => (string)$row['charge_status'],
                 'digitable_line' => $row['digitable_line'], 'barcode' => $row['barcode'], 'pix_copy_paste' => $row['pix_copy_paste'],
-                'pdf_available' => $row['adapter'] === 'inter' && !empty($row['external_id']) && in_array($row['charge_status'], ['registered', 'paid'], true)];
+                'pdf_available' => in_array($row['adapter'], \Source\Services\Erp\Banking\BankAdapters::REAL, true) && !empty($row['external_id']) && in_array($row['charge_status'], ['registered', 'paid'], true)];
         }
         $entry = ['entry_id' => (int)$row['id'], 'description' => (string)$row['description'], 'competence' => (string)$row['competence'],
             'due_on' => (string)$row['due_on'], 'paid_on' => $row['paid_on'], 'amount_cents' => (int)$row['amount_cents'],

@@ -74,8 +74,10 @@ final class IntegrationStatus
         $banks[] = ['adapter' => 'sandbox', 'available' => BankAdapters::get('sandbox') instanceof Banking\BankAdapter, 'production' => false];
         // Inter (ADR 0156): disponível quando o cofre tem chave; só o ambiente sandbox do Inter.
         $banks[] = ['adapter' => 'inter', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
+        // Cora (ADR 0322): mesma regra, só o ambiente de teste (stage) da Cora.
+        $banks[] = ['adapter' => 'cora', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
         return [
-            'bank' => ['adapters' => $banks, 'note' => 'Inter ligado só no sandbox do banco (ADR 0156). Produção só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
+            'bank' => ['adapters' => $banks, 'note' => 'Inter e Cora ligados só no ambiente de teste de cada banco (ADR 0156 e 0322). Produção só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
             'mail' => self::mail(defined('CONF_APP_ENV') ? (string)CONF_APP_ENV : 'development', getenv('ERP_MAIL_DELIVERY') ?: 'log', getenv('ERP_MAIL_SANDBOX_TO') ?: null),
             'price_indexes' => $indexes,
             'outbox' => $outbox,

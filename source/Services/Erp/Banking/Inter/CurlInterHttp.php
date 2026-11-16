@@ -7,7 +7,7 @@ namespace Source\Services\Erp\Banking\Inter;
 use RuntimeException;
 
 /**
- * mTLS com o Inter (ADR 0156). Certificado e chave vão para o cURL em memória (CURLOPT_SSLCERT_BLOB
+ * mTLS com o banco (Inter, ADR 0156; Cora, ADR 0322). Certificado e chave vão para o cURL em memória (CURLOPT_SSLCERT_BLOB
  * e CURLOPT_SSLKEY_BLOB): nada é gravado em disco. Verificação do servidor sempre ligada.
  */
 final class CurlInterHttp implements InterHttp
@@ -53,7 +53,7 @@ final class CurlInterHttp implements InterHttp
         curl_close($curl);
         if ($response === false || $status === 0) {
             // A mensagem do cURL não leva credencial; vai para o log, não para a tela.
-            throw new RuntimeException('Sem resposta do Inter: ' . mb_substr($error, 0, 160));
+            throw new RuntimeException('Sem resposta do banco: ' . mb_substr($error, 0, 160));
         }
         return ['status' => $status, 'body' => (string)$response];
     }

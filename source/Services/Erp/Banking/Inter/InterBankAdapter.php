@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use Source\Services\Erp\Banking\BankAdapter;
 use Source\Services\Erp\Banking\BankChargeExtras;
+use Source\Services\Erp\Banking\BankPaymentSimulator;
 use Source\Services\Erp\Banking\BankStatementSource;
 
 /**
@@ -35,7 +36,7 @@ use Source\Services\Erp\Banking\BankStatementSource;
  *   MARCADO_RECEBIDO (baixa manual no Inter, sem dinheiro pelo banco) → sem evento e com aviso;
  *   desconhecida → pending com aviso (nunca muda estado no escuro).
  */
-final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankStatementSource
+final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankStatementSource, BankPaymentSimulator
 {
     public const NAME = 'inter';
     public const BANK_CODE = '077';
