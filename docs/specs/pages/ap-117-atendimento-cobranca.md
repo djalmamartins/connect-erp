@@ -34,3 +34,9 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 
 ## Implementação no Connect ERP (ADR 0080 e 0076)
 Regras e API no ADR 0080; tela descrita no ADR 0076 (`docs/Organic Code/decisions/0076-collection-screens.md`).
+
+## Revisão de 15/11, etapa 6 (ADR 0315)
+- CONFIRMADO (pedido do Djalma, itens 22 e 23): o histórico de atendimento fica em destaque antes do formulário;
+  registrar o contato não recarrega a página (o contato entra no topo do histórico e a linha da fila se atualiza).
+- CONFIRMADO: no dia da próxima ação, lembrete no sino de quem registrou o contato ou, se a pessoa não puder mais
+  atender, da equipe que atende o condomínio (`tools/collection-reminders.php`, uma vez por dia).

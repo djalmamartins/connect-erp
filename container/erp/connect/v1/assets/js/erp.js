@@ -2805,9 +2805,34 @@
         var unit = contactForm.getAttribute('data-unit');
         post(contactForm, contactForm.getAttribute('data-api'), { unit_id: parseInt(unit, 10), channel: value(contactForm, 'channel'), outcome: outcome.value,
           contact_name: value(contactForm, 'contact_name'), note: value(contactForm, 'note'), promise_on: promise ? value(contactForm, 'promise_on') : '',
-          promise_cents: promise ? value(contactForm, 'promise_cents') : '', next_action_on: value(contactForm, 'next_action_on') }, function () {
+          promise_cents: promise ? value(contactForm, 'promise_cents') : '', next_action_on: value(contactForm, 'next_action_on') }, function (contact) {
+          /* Sem recarregar (ADR 0315): o contato entra no topo do histórico e na linha da fila. */
+          var label = function (name) { var el = $('[name="' + name + '"]', contactForm); return el && el.selectedIndex > 0 ? el.options[el.selectedIndex].text : ''; };
+          var day = function (iso) { var p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+          var channel = label('channel');
+          var title = (contact.outcome_label || label('outcome')) + (contact.promise_on ? ' para ' + day(contact.promise_on) + (contact.promise_cents != null ? ' (' + brl(contact.promise_cents) + ')' : '') : '');
+          var list = $('[data-contact-history]', root);
+          var template = $('[data-contact-template]', root);
+          if (list && template) {
+            var item = template.content.firstElementChild.cloneNode(true);
+            $('[data-slot="title"]', item).textContent = title;
+            $('[data-slot="meta"]', item).textContent = channel + (contact.contact_name ? ' · ' + contact.contact_name : '') + ' · em aberto ' + brl(contact.open_cents || 0) + (contact.next_action_on ? ' · próxima ação ' + day(contact.next_action_on) : '');
+            $('[data-slot="note"]', item).textContent = contact.note || '';
+            $('[data-slot="at"]', item).textContent = day(contact.created_at) + ' ' + String(contact.created_at || '').slice(11, 16);
+            list.insertBefore(item, list.firstChild);
+            var empty = $('[data-contact-empty]', root);
+            if (empty) empty.hidden = true;
+          }
+          var last = $('[data-row-last]', root);
+          if (last) last.innerHTML = '';
+          if (last) { last.appendChild(document.createTextNode(day(contact.created_at) + ' · ' + channel)); last.appendChild(document.createElement('br')); var muted = document.createElement('span'); muted.className = 'erp-muted'; muted.textContent = (contact.outcome_label || '') + (contact.promise_on ? ' para ' + day(contact.promise_on) : ''); last.appendChild(muted); }
+          var next = $('[data-row-next]', root);
+          if (next) { next.innerHTML = ''; var span = document.createElement('span'); if (contact.next_action_on) span.textContent = day(contact.next_action_on); else { span.className = 'erp-muted'; span.textContent = '—'; } next.appendChild(span); }
+          contactForm.reset();
+          promiseFields.forEach(function (f) { f.hidden = true; });
+          promiseOn.removeAttribute('required');
+          busy($('[type="submit"]', contactForm), false);
           toast('Contato registrado.', 'success');
-          window.setTimeout(function () { window.location.href = route + '?unidade=' + encodeURIComponent(unit) + '#atender'; }, 600);
         });
       });
     }

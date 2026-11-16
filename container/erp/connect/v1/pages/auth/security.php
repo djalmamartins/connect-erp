@@ -34,7 +34,7 @@ $codeField = static fn (string $id): string => '<div class="erp-field erp-col-6"
         <?php elseif (!$twoFactorEnabled && $twoFactorSetup): ?>
             <ol class="erp-steps-list">
                 <li>No Google Authenticator, Microsoft Authenticator ou similar, <?= !empty($twoFactorSetup['qr']) ? 'escaneie o QR code ou adicione' : 'adicione' ?> uma conta com a chave abaixo (ou abra o link no celular).</li>
-                <li>Digite o código de 6 dígitos que o aplicativo mostrar.</li>
+                <li>Digite o código de 6 dígitos que o aplicativo mostrar. No aplicativo, a conta aparece como <strong>Connect Condomínios</strong>.</li>
             </ol>
             <?php if (!empty($twoFactorSetup['qr'])): ?><figure class="erp-qr"><?= $twoFactorSetup['qr'] ?><figcaption>Aponte a câmera do aplicativo autenticador</figcaption></figure><?php endif; ?>
             <p class="erp-secret"><code><?= $this->e(trim(chunk_split($twoFactorSetup['secret'], 4, ' '))) ?></code></p>

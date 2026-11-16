@@ -756,6 +756,12 @@ p { margin: 0; }
 /* Cobrança (ADR 0076) */
 .erp-coll-history .erp-list__body { min-width: 0; }
 .erp-coll-note { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.erp-coll-history-box { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--erp-brand-line); border-left: 4px solid var(--erp-brand); border-radius: var(--erp-radius-md); background: var(--erp-brand-soft); }
+.erp-coll-history-box .erp-panel-subtitle { margin-top: 0; }
+.erp-coll-history-box .erp-coll-history { max-height: 360px; overflow-y: auto; }
+.erp-coll-history > li.is-new { animation: erp-coll-new 2.4s var(--erp-ease); }
+@keyframes erp-coll-new { from { background: var(--erp-success-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .erp-coll-history > li.is-new { animation: none; } }
 .erp-coll-filter { margin: 0 0 16px; }
 
 /* Proprietários e inquilinos: busca de pessoa e vínculo com várias unidades (ADR 0162). */

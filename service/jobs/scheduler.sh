@@ -6,6 +6,8 @@
 #   por padrão porque usa o SMTP gravado em settings, que pode apontar para um servidor real.
 # - Ao subir e depois todo dia às 07:00 (TZ do container): avisos do checklist de chegada.
 #   Rodar mais de uma vez no mesmo dia é seguro: cada item é avisado uma vez por situação.
+# - No mesmo horário: lembrete da próxima ação do atendimento de cobrança (tools/collection-reminders.php,
+#   ADR 0315), só no sino da equipe; cada contato é lembrado uma vez.
 set -u
 cd "$(dirname "$0")/../.."
 last_daily=""
@@ -14,6 +16,7 @@ while true; do
     hour=$(date +%H)
     if [ -z "$last_daily" ] || { [ "$today" != "$last_daily" ] && [ "$hour" -ge 7 ]; }; then
         php service/jobs/onboarding-alerts.php || echo "onboarding-alerts falhou com código $?" >&2
+        php tools/collection-reminders.php || echo "collection-reminders falhou com código $?" >&2
         last_daily=$today
     fi
     php tools/notifications-dispatch.php 50 || echo "notifications-dispatch falhou com código $?" >&2

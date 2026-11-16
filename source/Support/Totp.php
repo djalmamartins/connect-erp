@@ -65,16 +65,24 @@ final class Totp
         return null;
     }
 
-    public function uri(string $base32Secret, string $account, string $issuer): string
+    /**
+     * otpauth:// do aplicativo autenticador. $image (só https) é o ícone que alguns aplicativos mostram
+     * (FreeOTP, 2FAS e outros); os que não usam ignoram o parâmetro (ADR 0315).
+     */
+    public function uri(string $base32Secret, string $account, string $issuer, ?string $image = null): string
     {
         $label = rawurlencode($issuer) . ':' . rawurlencode($account);
-        return 'otpauth://totp/' . $label . '?' . http_build_query([
+        $query = [
             'secret' => $base32Secret,
             'issuer' => $issuer,
             'algorithm' => strtoupper($this->algorithm),
             'digits' => $this->digits,
             'period' => $this->period,
-        ], '', '&', PHP_QUERY_RFC3986);
+        ];
+        if ($image !== null && str_starts_with($image, 'https://')) {
+            $query['image'] = $image;
+        }
+        return 'otpauth://totp/' . $label . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
     public static function base32Encode(string $data): string
