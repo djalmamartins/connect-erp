@@ -70,7 +70,7 @@ final class LabSampleYearRemovalTest extends TestCase
                 installments INTEGER, first_due_on TEXT, notes TEXT, created_by INTEGER, cancelled_by INTEGER, cancelled_at TEXT, cancel_reason TEXT, broken_at TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT)",
             "CREATE TABLE erp_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL REFERENCES condominiums (id), nature TEXT,
-                chart_account_id INTEGER REFERENCES erp_chart_accounts (id), cost_center_id INTEGER, bank_account_id INTEGER REFERENCES erp_bank_accounts (id),
+                chart_account_id INTEGER REFERENCES erp_chart_accounts (id), cost_center_id INTEGER, related_account_id INTEGER, bank_account_id INTEGER REFERENCES erp_bank_accounts (id),
                 supplier_id INTEGER, unit_id INTEGER REFERENCES erp_units (id), description TEXT, amount_cents INTEGER, competence TEXT, due_on TEXT, paid_on TEXT,
                 document_number TEXT, notes TEXT, invoice_item_id INTEGER, recurring_entry_id INTEGER, agreement_id INTEGER REFERENCES erp_agreements (id),
                 agreement_role TEXT, agreement_installment INTEGER, extra_charge_id INTEGER, status TEXT DEFAULT 'active', created_by INTEGER, updated_by INTEGER,

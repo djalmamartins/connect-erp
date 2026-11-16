@@ -27,7 +27,7 @@ final class EntriesDefinitionTest extends TestCase
                 self::assertNotNull(Definitions::get($field['ref']), $name);
             }
         }
-        self::assertSame(['chart_account_id' => 'chart', 'cost_center_id' => 'cost_centers', 'bank_account_id' => 'bank_accounts', 'supplier_id' => 'suppliers'], $refs);
+        self::assertSame(['chart_account_id' => 'chart', 'cost_center_id' => 'cost_centers', 'related_account_id' => 'chart', 'bank_account_id' => 'bank_accounts', 'supplier_id' => 'suppliers'], $refs);
         // ADR 0152: as contas patrimoniais (7/8/9, ex.: 8.1 Contas a pagar) não aparecem no lançamento.
         self::assertSame(['kind' => 'analitica', 'nature' => ['receita', 'despesa']], $definition['fields']['chart_account_id']['ref_where']);
         self::assertSame(['nature' => 'nature'], $definition['fields']['chart_account_id']['ref_match']);
