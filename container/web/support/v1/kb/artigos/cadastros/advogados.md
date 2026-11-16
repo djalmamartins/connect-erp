@@ -42,7 +42,7 @@ legenda: Formulário: novo advogado
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="name"] | Nome (obrigatório)
 2: main form:not([method=get]) [name="oab"] | OAB (obrigatório)
-3: main form:not([method=get]) [name="document"] | CPF
+3: main form:not([method=get]) [name="document"] | CPF/CNPJ
 4: main form:not([method=get]) [name="firm"] | Escritório
 5: main form:not([method=get]) [name="status"] | Situação (obrigatório)
 6: main form:not([method=get]) button:has-text("Salvar") | Botão {{Salvar}}
@@ -52,7 +52,7 @@ recorte: main form:not([method=get])
 
 - **Nome** (obrigatório).
 - **OAB** (obrigatório): UF e número, ex.: SP 123456.
-- **CPF**.
+- **CPF/CNPJ**: CPF do advogado ou CNPJ do escritório. Com o CNPJ completo, o sistema busca os dados na Receita e preenche o escritório, o e-mail e o telefone que estiverem vazios. O CPF é conferido (dígitos) e não pode repetir em outro advogado; ele não tem consulta pública.
 - **Escritório**.
 - **E-mail**: Exemplo: nome@exemplo.com.
 - **Telefone**.
@@ -78,7 +78,8 @@ Colunas: **Nome**, **OAB**, **Escritório**, **Telefone** e **Situação**.
 
 Quando você usa esta tela, o sistema faz o seguinte:
 
-- A OAB (UF e número) não pode se repetir.
+- A OAB (UF e número) e o CPF/CNPJ não podem se repetir. O CPF é conferido pelos dígitos; não há consulta pública de CPF.
+- Com o CNPJ completo, o sistema consulta os dados públicos da Receita (BrasilAPI) e preenche só os campos vazios; nada que você já digitou é trocado. Só o CNPJ sai do navegador para a consulta, e o servidor confere tudo de novo ao salvar.
 - Advogado que deixou de atender a Connect deve ser inativado, para os processos antigos continuarem mostrando quem cuidou deles.
 - Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).
 

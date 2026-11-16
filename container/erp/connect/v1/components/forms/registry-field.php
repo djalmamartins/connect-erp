@@ -162,6 +162,9 @@ $attachment ??= null;
                 default => ['text', ' maxlength="' . (int)($field['max'] ?? 160) . '"', ''],
             }; ?>
             <?php if (!empty($field['month'])) { $extra .= ' data-erp-month'; } // ADR 0152: seletor de mês e ano (erp.js) ?>
+            <?php if (!empty($field['cnpj_lookup']) && !$readonly) { // ADR 0312: CNPJ completo busca na Receita e preenche os campos mapeados que estiverem vazios
+                $extra .= ' data-erp-cnpj-lookup data-cnpj-map="' . $this->e((string)json_encode($field['cnpj_lookup'])) . '"';
+            } ?>
             <input class="erp-input" type="<?= $type ?>" id="<?= $id ?>" name="<?= $this->e($name) ?>" value="<?= $this->e($display) ?>"<?= $extra ?><?= $placeholder !== '' ? ' placeholder="' . $this->e($placeholder) . '"' : '' ?><?= $required . $disabled . $invalid ?>>
         <?php endif; ?>
         <?php $hint = $attachment !== null ? 'Arquivo do Disco Virtual do mesmo condomínio do cadastro.' : ($field['hint'] ?? null); ?>

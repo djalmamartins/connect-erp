@@ -143,6 +143,7 @@ return [
         'faz' => 'Cadastra os fornecedores e prestadores de serviço da Connect (manutenção, limpeza, elevadores e outros). O mesmo cadastro serve para todos os condomínios e aparece na hora de lançar uma despesa.',
         'por_tras' => [
             'O CPF ou CNPJ não pode se repetir: um fornecedor é cadastrado uma vez só e usado por todos os condomínios.',
+            'Com o CNPJ completo, o sistema consulta os dados públicos da Receita (BrasilAPI) e preenche só os campos vazios; nada que você já digitou é trocado. Só o CNPJ sai do navegador para a consulta, e o servidor confere tudo de novo ao salvar.',
             'Um fornecedor ligado a lançamentos ou a outros cadastros ativos (contratos, manutenções, empenhos) não pode ser excluído. Inative-o: ele deixa de aparecer nas escolhas, e o histórico das despesas continua.',
             'Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).',
         ],
@@ -151,7 +152,8 @@ return [
     'AP-016' => [
         'faz' => 'Cadastra os advogados e escritórios parceiros, usados na cobrança judicial e na assessoria aos condomínios. O cadastro vale para todos os condomínios.',
         'por_tras' => [
-            'A OAB (UF e número) não pode se repetir.',
+            'A OAB (UF e número) e o CPF/CNPJ não podem se repetir. O CPF é conferido pelos dígitos; não há consulta pública de CPF.',
+            'Com o CNPJ completo, o sistema consulta os dados públicos da Receita (BrasilAPI) e preenche só os campos vazios; nada que você já digitou é trocado. Só o CNPJ sai do navegador para a consulta, e o servidor confere tudo de novo ao salvar.',
             'Advogado que deixou de atender a Connect deve ser inativado, para os processos antigos continuarem mostrando quem cuidou deles.',
             'Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).',
         ],

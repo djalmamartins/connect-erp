@@ -182,7 +182,7 @@ final class Definitions
                         'owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro',
                     ]],
                     'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
-                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true, 'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone']],
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'starts_on' => ['label' => 'Início do vínculo', 'type' => 'date', 'span' => 4],
@@ -259,7 +259,9 @@ final class Definitions
                 'lead' => 'Fornecedores e prestadores de serviço da Connect, usados por todos os condomínios.',
                 'fields' => [
                     'legal_name' => ['label' => 'Razão social ou nome', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
-                    'document' => ['label' => 'CNPJ/CPF', 'type' => 'document', 'required' => true, 'span' => 4, 'list' => true, 'search' => true],
+                    // Revisão de 15/11, etapa 3 (ADR 0312): CNPJ completo busca os dados na Receita e preenche os campos vazios.
+                    'document' => ['label' => 'CNPJ/CPF', 'type' => 'document', 'required' => true, 'span' => 4, 'list' => true, 'search' => true,
+                        'cnpj_lookup' => ['legal_name' => 'razao_social', 'trade_name' => 'nome_fantasia', 'email' => 'email', 'phone' => 'phone'], 'hint' => 'Com o CNPJ, buscamos os dados na Receita'],
                     'trade_name' => ['label' => 'Nome fantasia', 'type' => 'text', 'max' => 160, 'span' => 6, 'search' => true],
                     'category' => ['label' => 'Categoria', 'type' => 'select', 'required' => true, 'span' => 6, 'list' => true, 'filter' => true, 'options' => [
                         'manutencao' => 'Manutenção', 'limpeza' => 'Limpeza', 'seguranca' => 'Segurança', 'elevadores' => 'Elevadores',
@@ -284,14 +286,15 @@ final class Definitions
                 'fields' => [
                     'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'oab' => ['label' => 'OAB', 'type' => 'oab', 'required' => true, 'span' => 4, 'list' => true, 'search' => true, 'hint' => 'UF e número, ex.: SP 123456'],
-                    'document' => ['label' => 'CPF', 'type' => 'cpf', 'span' => 4],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'cnpj_lookup' => ['firm' => 'razao_social', 'email' => 'email', 'phone' => 'phone'],
+                        'hint' => 'CPF do advogado ou CNPJ do escritório (com o CNPJ, buscamos os dados na Receita)'],
                     'firm' => ['label' => 'Escritório', 'type' => 'text', 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'fee_percent' => ['label' => 'Honorários (%)', 'type' => 'percent', 'span' => 4],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                'unique' => [['fields' => ['oab'], 'message' => 'Já existe um advogado com esta OAB.']],
+                'unique' => [['fields' => ['oab'], 'message' => 'Já existe um advogado com esta OAB.'], ['fields' => ['document'], 'message' => 'Já existe um advogado com este CPF/CNPJ.']],
                 'order' => 'name',
             ],
             'vehicles' => [
