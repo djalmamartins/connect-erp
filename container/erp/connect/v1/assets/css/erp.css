@@ -1008,3 +1008,16 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-link-button { background: none; border: 0; padding: 0; font: inherit; font-weight: 650; color: var(--erp-brand); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .erp-move-term__text p { margin: 0 0 14px; line-height: 1.7; text-align: justify; }
 .erp-move-term__sign { display: inline-block; width: min(320px, 80%); border-bottom: 1px solid currentColor; margin-top: 48px; }
+
+/* Inquilino e proprietário da unidade (ADR 0311) */
+.erp-unit-occupants__role { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--erp-border); }
+.erp-unit-occupants__role .erp-btn { justify-self: start; }
+.erp-unit-occupants__people { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13.5px; }
+.erp-unit-occupants__results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 240px; overflow: auto; border: 1px solid var(--erp-border); border-radius: 8px; }
+.erp-unit-occupants__results:empty { display: none; }
+.erp-unit-occupants__results li { border-bottom: 1px solid var(--erp-border); padding: 0; font-size: 13.5px; }
+.erp-unit-occupants__results li.erp-muted { padding: 8px 12px; }
+.erp-unit-occupants__option { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 12px; font: inherit; cursor: pointer; }
+.erp-unit-occupants__option:hover, .erp-unit-occupants__option:focus-visible { background: var(--erp-surface-muted); }
+.erp-span-all { grid-column: 1 / -1; }
+#unit-occupant-dialog .erp-check { display: flex; margin: 4px 0; }

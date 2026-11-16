@@ -5588,6 +5588,40 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou manutenção recusada (errors e _maintenance); nada é gravado' }
+  /units/{id}/occupants:
+    get:
+      operationId: unitOccupants
+      summary: Proprietários e inquilinos atuais da unidade e o papel que paga as faturas (erp.units.view e erp.residents.view, ADR 0311)
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { owner[{ id, name, starts_on }], tenant[...], payer_role: owner|tenant|null } } — null = há responsável financeiro' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /units/{id}/occupant-change:
+    post:
+      operationId: changeUnitOccupant
+      summary: Troca o inquilino ou o proprietário da unidade, com datas de saída e entrada e o que fazer com as faturas abertas (erp.residents.manage; com invoices, também erp.entries.manage; ADR 0311)
+      description: >-
+        Pessoa já cadastrada (person_id, de /people/search) ou cadastro rápido (person). Com history (padrão), os vínculos atuais
+        terminam em exit_on e o novo começa em entry_on; sem history, os atuais ficam inativos e o novo entra sem datas.
+        Faturas só mudam quando o papel trocado paga a unidade; conta com boleto ativo nunca muda de pagador. Tudo ou nada, auditado.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [role, invoices], properties: { role: { type: string, enum: [tenant, owner] }, person_id: { type: integer }, person: { type: object, properties: { name: { type: string, maxLength: 160 }, document: { type: string }, email: { type: string }, phone: { type: string } } }, history: { type: boolean, default: true }, exit_on: { type: string, format: date }, entry_on: { type: string, format: date }, invoices: { type: string, enum: [current_and_next, next_only, all_unbilled, none] } } } } }
+      responses:
+        '200': { description: '{ data: { resident_id, ended[], invoices: <opção>|not_payer, moved, kept, with_boleto } }' }
+        '400': { description: Corpo JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /unit-move-terms:
     get:
       operationId: getUnitMoveTerm

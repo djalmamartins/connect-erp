@@ -71,6 +71,17 @@ recorte: main form:not([method=get])
 - {{Termo de entrada/saída}}: edita o texto do termo que o morador assina ao entrar ou sair da unidade (veja abaixo).
 - {{Cadastro rápido}}: gera todas as unidades de uma vez pela sequência de andares (ex.: 101 a 1208, 8 por andar), com pré-visualização antes de criar.
 
+## Trocar o inquilino ou o proprietário
+
+Abra a unidade (clique no nome dela na lista). No quadro **Inquilino e proprietário**, ao lado do formulário, clique em {{Trocar inquilino}} ou {{Trocar proprietário}} ({{Informar inquilino}} quando ainda não há ninguém).
+
+1. Busque a pessoa pelo nome ou CPF/CNPJ e clique nela. Se for alguém novo, clique em {{Nova pessoa}} e preencha nome, CPF/CNPJ, e-mail e telefone.
+2. Escolha o que fazer com as faturas abertas: alterar a do mês atual e as seguintes, só as seguintes, todas as que ainda não têm boleto, ou não alterar.
+3. Com **Registrar histórico de entrada/saída** marcado, informe a data de saída do antigo e a de entrada do novo. Desmarcado, o antigo só fica inativo.
+4. Clique em {{Salvar}}.
+
+> As faturas só mudam de pagador quando a pessoa trocada é quem paga a unidade (o **Responsável pela cobrança**; sem definição, o proprietário). Conta com boleto já gerado continua com o pagador de antes. Alterar faturas exige permissão no financeiro.
+
 ## Termo de entrada e de saída
 
 Clique em {{Termo de entrada/saída}}. Escolha o **Condomínio** e o **Tipo** (Entrada ou Saída), escreva o texto e clique em {{Salvar}}.
@@ -127,6 +138,7 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.
 - Na **configuração em massa**, só muda o que você escolher; o que ficar em **Manter como está** continua como está em cada unidade. Ou todas as unidades marcadas mudam, ou nenhuma, e cada unidade alterada fica com a mudança no histórico.
 - Unidade **isenta de rateio** fica fora das faturas geradas para o condomínio todo; o valor é dividido entre as outras.
+- Na troca de **inquilino ou proprietário**, o antigo termina na data de saída e o novo começa na data de entrada, tudo junto ou nada. As faturas abertas passam para a pessoa nova só quando ela é quem paga a unidade, conforme a opção escolhida; conta com boleto já gerado não muda. O antigo continua como pagador das contas que ficaram com ele.
 - O **termo de entrada/saída** usa o texto do condomínio; sem ele, o texto geral da Connect; sem nenhum, o texto padrão. As palavras-chave são trocadas pelos dados da unidade e da pessoa só na hora de gerar o termo, e o texto nunca vira código na página.
 - O **código CIB** tem 8 caracteres (7 e o dígito) e não pode repetir em outra unidade. O sistema confere o formato; o dígito não é conferido porque a regra dele não é pública.
 - Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.

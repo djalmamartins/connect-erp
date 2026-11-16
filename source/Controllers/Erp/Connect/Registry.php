@@ -222,7 +222,26 @@ final class Registry extends Controller
             'entryAttachments' => EntryAttachmentScreens::cardData($user, $definition['slug'], $id),
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
+            'unitOccupants' => $definition['slug'] === 'units' && $id !== null ? self::occupantsData($user, $id) : null,
         ]));
+    }
+
+    /**
+     * Inquilino e proprietário na ficha da unidade (ADR 0311): quem está hoje e a troca pela API, só com permissão de
+     * alterar pessoas. Alterar faturas exige também erp.entries.manage. null = não mostra o quadro.
+     *
+     * @return array{unitId:int, owner:list<array>, tenant:list<array>, payer_role:?string, canInvoices:bool}|null
+     */
+    private static function occupantsData(User $user, int $id): ?array
+    {
+        if (\Source\Core\Connect::databaseDisabled() || !Access::can('erp.residents.view', $user) || !Access::can('erp.residents.manage', $user)) {
+            return null;
+        }
+        try {
+            return ['unitId' => $id, 'canInvoices' => Access::can('erp.entries.manage', $user)] + (new \Source\Services\Erp\UnitOccupantChange())->current($user, $id);
+        } catch (RegistryNotFound) {
+            return null;
+        }
     }
 
     /**

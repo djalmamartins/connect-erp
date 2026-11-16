@@ -260,6 +260,9 @@ $route->post("/unit-batches", "UnitBatches:store", null, \Source\Support\Middlew
 $route->get("/unit-measures", "UnitBatches:measures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inquilino e proprietário da unidade: atuais e troca com datas e faturas (ADR 0311). Antes do laço dos cadastros.
+$route->get("/units/{id}/occupants", "UnitOccupants:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/units/{id}/occupant-change", "UnitOccupants:change", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Termo de entrada e de saída (ADR 0311).
 $route->get("/unit-move-terms", "UnitMoveTerms:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->put("/unit-move-terms", "UnitMoveTerms:update", null, \Source\Support\Middleware\ApiAuthenticated::class);

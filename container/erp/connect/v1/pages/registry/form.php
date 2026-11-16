@@ -59,6 +59,10 @@ $this->insert('components/layout/page-head', [
             'units' => $units ?? [], 'condominiums' => $condominiums,
         ]);
     } ?>
+    <?php if (($unitOccupants ?? null) !== null) {
+        // ADR 0311: inquilino e proprietário da unidade, com busca, cadastro rápido e troca com datas e faturas.
+        $this->insert('components/cards/unit-occupants', ['occupants' => $unitOccupants]);
+    } ?>
     <?php if (($entryAttachments ?? null) !== null) {
         // ADR 0174: nota fiscal, comprovante e recibo do lançamento, numerados no livro caixa.
         $this->insert('components/cards/entry-attachments', ['attachments' => $entryAttachments]);
