@@ -202,13 +202,14 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
                 <img src="<?= $src ?>" alt="<?= $this->e((string)$annex['original_name']) ?>">
                 <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?></p>
             <?php elseif ($forPdf): ?>
-                <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?>: <?= $placement === 'blocked' ? 'bloqueado pelo antivírus' : ($placement === 'missing' ? 'arquivo não encontrado' : 'em PDF, no pacote do livro caixa') ?>.</p>
+                <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?>: <?= $placement === 'blocked' ? 'bloqueado pelo antivírus' : ($placement === 'missing' ? 'arquivo não encontrado' : ($placement === 'merge' ? 'em PDF, nas páginas a seguir' : 'em PDF, no pacote do livro caixa')) ?>.</p>
             <?php else: ?>
                 <p><a href="<?= $this->e(erp_url('/financeiro/lancamentos/' . (int)$line['entry_id'] . '/anexos/' . (int)$annex['id'])) ?>" target="_blank" rel="noopener"><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?></a></p>
             <?php endif; ?>
         </div>
     <?php endforeach; ?>
     <?php if ($line['annexes'] === []): ?><p class="note">Sem comprovante anexado.</p><?php endif; ?>
+    <?php if ($forPdf): ?><div data-annex-anchor="<?= (int)$line['seq'] ?>" style="height:1px"></div><?php endif; ?>
 </div>
 <?php endforeach; ?>
 </body>

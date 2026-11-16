@@ -30,7 +30,7 @@ $apportion = $revenueCanApportion && $revenueUnits !== [] ? RevenueLaunch::APPOR
     <?php elseif (!$canCreate): ?>
         <div class="erp-alert erp-alert--warning" role="note"><?= $icon('alert') ?><div><strong>Falta uma conta de receita.</strong>Cadastre uma conta analítica de receita no plano de contas.</div></div>
     <?php else: ?>
-        <form class="erp-card erp-form" data-revenue-form data-api="<?= $this->e(url('/api/v1/revenues')) ?>" data-condominium="<?= (int)$shortcutContext ?>" aria-labelledby="revenue-title" novalidate>
+        <form class="erp-card erp-form" data-revenue-form data-api="<?= $this->e(url('/api/v1/revenues')) ?>" data-attach-api="<?= $this->e(url('/api/v1/entry-attachments')) ?>" data-condominium="<?= (int)$shortcutContext ?>" aria-labelledby="revenue-title" novalidate>
             <div class="erp-card__head"><div><h2 id="revenue-title">Dados da receita</h2><p>Campos com * são obrigatórios. A conta nasce em aberto, no vencimento escolhido.</p></div></div>
             <div class="erp-form__grid">
                 <div class="erp-field erp-col-12"><label for="rv-description">Descrição do lançamento *</label><input class="erp-input" id="rv-description" name="description" minlength="3" maxlength="120" required placeholder="Ex.: Controle do portão, aluguel do salão"></div>
@@ -68,7 +68,9 @@ $apportion = $revenueCanApportion && $revenueUnits !== [] ? RevenueLaunch::APPOR
                 <div class="erp-field erp-col-4"><label class="erp-check"><input type="checkbox" data-revenue-repeat> Repetir lançamento</label></div>
                 <div class="erp-field erp-col-4" data-revenue-repeat-field hidden><label for="rv-repeat">Quantas vezes?</label><select class="erp-select" id="rv-repeat" name="repeat" disabled><?php for ($n = 2; $n <= RevenueLaunch::MAX_REPEAT; $n++): ?><option value="<?= $n ?>"><?= $n ?> meses</option><?php endfor; ?></select></div>
                 <div class="erp-field erp-col-4" data-revenue-repeat-field hidden><label class="erp-check"><input type="checkbox" name="repeat_label" value="1" checked disabled> Mostrar "(1/N)" na descrição</label></div>
-                <p class="erp-field__hint erp-col-12">Anexos: depois de salvar, anexe a nota ou o contrato na ficha de cada lançamento (Lançamentos › abrir).</p>
+                <div class="erp-field erp-col-8"><label for="rv-files">Anexos (opcional)</label><input class="erp-input" type="file" id="rv-files" name="files" multiple data-revenue-files accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt,.csv" aria-describedby="rv-files-hint">
+                    <p class="erp-field__hint" id="rv-files-hint">Até 5 arquivos de até 20 MB. Cada um vai uma vez ao Disco Virtual e fica anexado a todas as contas geradas.</p></div>
+                <div class="erp-field erp-col-4"><label for="rv-files-kind">Tipo do anexo</label><select class="erp-select" id="rv-files-kind" name="files_kind" data-revenue-files-kind><?php foreach (\Source\Services\Erp\EntryAttachments::KINDS as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $key === 'outro' ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
             </div>
             <div data-form-error aria-live="assertive"></div>
             <div class="erp-form__actions">

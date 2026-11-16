@@ -89,6 +89,16 @@ final class AccountabilityDocumentTest extends TestCase
         $use->execute([$this->alpha, 7000, $reserve, $result, $water]);
         $use->execute([$this->alpha, 7000, $result, $reserve, $water]);   // estorno: anula o de 70,00
 
+        // Comprovante em PDF (ADR 0323): entra no documento depois da folha da despesa.
+        $proof = new \setasign\Fpdi\Fpdi();
+        $proof->AddPage('P', 'A4');
+        $proof->SetFont('Helvetica', '', 14);
+        $proof->Text(20, 30, 'Recibo da Cemig');
+        $pdfTmp = (string)tempnam(sys_get_temp_dir(), 'pdf');
+        file_put_contents($pdfTmp, $proof->Output('S'));
+        $cemig = (int)$this->pdo->query("SELECT id FROM erp_entries WHERE description = 'Cemig' LIMIT 1")->fetchColumn();
+        $attachments->attach($this->admin, $cemig, ['name' => 'recibo-cemig.pdf', 'tmp_name' => $pdfTmp, 'error' => UPLOAD_ERR_OK], 'comprovante');
+
         $theme = dirname(__DIR__, 3) . '/container/erp/connect/v1';
         $service = new AccountabilityDocument($this->pdo, null, $theme, new CashBookDocument($attachments, $theme));
         $doc = $service->build($this->admin, $this->alpha, '2026-10');
@@ -119,7 +129,15 @@ final class AccountabilityDocumentTest extends TestCase
         $pdfDoc = $service->build($this->admin, $this->alpha, '2026-10', false, true);
         self::assertSame('embed', $pdfDoc['expenses'][1]['annexes'][0]['placement']);
         self::assertStringContainsString('data:image/', $service->html($pdfDoc, true), 'Comprovante dentro do PDF.');
-        self::assertStringStartsWith('%PDF-', $service->pdf($pdfDoc));
+        $merged = $service->mergeable($pdfDoc);
+        self::assertSame('merge', $merged['expenses'][0]['annexes'][0]['placement'], 'PDF legível entra no documento.');
+        self::assertStringContainsString('em PDF, nas páginas a seguir', $service->html($merged, true));
+        $out = $service->pdf($pdfDoc);
+        self::assertStringStartsWith('%PDF-', $out);
+        $without = $service->pdf(['expenses' => array_map(static fn (array $l): array => ['annexes' => []] + $l, $pdfDoc['expenses'])] + $pdfDoc);
+        $pages = static fn (string $pdf): int => (new \setasign\Fpdi\Fpdi())->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($pdf));
+        self::assertSame($pages($without) + 1, $pages($out), 'A página do recibo entrou no documento.');
+        self::assertFalse(AccountabilityDocument::readablePdf('/nao/existe.pdf'));
         self::assertSame('prestacao-de-contas-bloco-10-2026-10.pdf', AccountabilityDocument::filename($doc));
 
         $months = $service->months($this->admin, $this->alpha, '2026-11');

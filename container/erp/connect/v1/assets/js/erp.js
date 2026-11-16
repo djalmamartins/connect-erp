@@ -3581,11 +3581,36 @@
         if (reserve && reserve.checked) { body.reserve_percent = value('reserve_percent'); body.reserve_account_id = parseInt(value('reserve_account_id'), 10); }
       }
       var button = $('[type="submit"]', form);
+      /* Anexos (modelo 8, ADR 0323): depois de lançar, cada arquivo vai uma vez para todas as contas geradas
+         (POST /api/v1/entry-attachments). Falha num anexo não desfaz a receita: o aviso diz qual ficou de fora. */
+      var filesInput = $('[data-revenue-files]', form);
+      var files = filesInput && filesInput.files ? Array.prototype.slice.call(filesInput.files) : [];
+      if (files.length > 5) { formError(form, 'Escolha até 5 anexos.', filesInput); return; }
+      var big = files.filter(function (f) { return f.size < 1 || f.size > 20 * 1024 * 1024; })[0];
+      if (big) { formError(form, 'O anexo ' + big.name + ' está vazio ou passa de 20 MB.', filesInput); return; }
       busy(button, true);
       call('POST', form.getAttribute('data-api'), body).then(function (json) {
         var data = json.data || {};
-        toast('Receita lançada: ' + (data.entries || []).length + ' conta(s) a receber' + ((data.months || 1) > 1 ? ', em ' + data.months + ' meses' : '') + '.', 'success');
-        window.setTimeout(function () { window.location.href = root.getAttribute('data-route'); }, 700);
+        var entries = data.entries || [];
+        var kind = ($('[data-revenue-files-kind]', form) || {}).value || 'outro';
+        var token = (($('[name="csrf"]', root) || {}).value || '');
+        var failed = [];
+        var chain = files.reduce(function (promise, file) {
+          return promise.then(function () {
+            if (!entries.length) return null;
+            var upload = new FormData();
+            upload.append('entry_ids', entries.join(','));
+            upload.append('kind', kind);
+            upload.append('file', file);
+            return sendMultipart(form.getAttribute('data-attach-api'), token, upload, function () {}).catch(function (error) { failed.push(file.name + ' (' + error.message + ')'); });
+          });
+        }, Promise.resolve());
+        return chain.then(function () {
+          toast('Receita lançada: ' + entries.length + ' conta(s) a receber' + ((data.months || 1) > 1 ? ', em ' + data.months + ' meses' : '')
+            + (files.length ? ', com ' + (files.length - failed.length) + ' anexo(s)' : '') + '.', 'success');
+          if (failed.length) { toast('Anexo não enviado: ' + failed.join('; ') + '. Anexe na ficha do lançamento.', 'warning', { persist: true }); return; }
+          window.setTimeout(function () { window.location.href = root.getAttribute('data-route'); }, 700);
+        });
       }).catch(function (error) { busy(button, false); formError(form, error.message); });
     });
   });
