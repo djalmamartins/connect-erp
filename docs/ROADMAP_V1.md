@@ -118,6 +118,14 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   do Studio e um cache de 24 h do PDF público da prestação de contas. O relatório de vistoria pode passar a ser gerado só para o envio
   (tarefa pequena). O que ocupa espaço de verdade são os arquivos enviados (notas, comprovantes, fotos, anexos), que não dá para gerar
   de novo e vão para o backup.
+- **Documentos dos condomínios no OneDrive** (pedido do Djalma, 16/11/2026): os arquivos do Disco Virtual (e depois fotos de vistoria,
+  anexos e importações) passam a morar numa pasta do OneDrive, uma subpasta por condomínio, e o ERP lê de lá pela API da Microsoft
+  (Microsoft Graph). Hoje o caminho é fixo em poucos serviços (`VirtualDisk`, `PhotoStorage`, `Imports`, `ResidentProfile`), então a
+  mudança é um "armazenamento" com duas opções (disco local ou OneDrive) mais a importação dos arquivos que o Djalma já tem lá.
+  Cuidados: abrir um arquivo depende da Microsoft responder (1 a 2 s); se a autorização expirar, o ERP continua, só os arquivos
+  ficam indisponíveis até autorizar de novo; o OneDrive passa a ser a cópia principal, então o backup desses arquivos precisa de um
+  segundo lugar (ou aceitar a lixeira e o histórico de versões do OneDrive, 30 dias); LGPD: a Microsoft entra como suboperadora.
+  Tamanho estimado: ~1 semana, junto da etapa 5, para o piloto já começar com os documentos no OneDrive.
 - **Testar a restauração** num servidor vazio e anotar o tempo. Sem isso o backup não conta.
 
 ### 3.6 Monitoramento
