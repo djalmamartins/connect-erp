@@ -12,6 +12,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\NotificationOutbox;
 use Source\Support\Audit;
 use Source\Support\AuditMask;
+use Source\Support\Erp\PerPage;
 
 /**
  * Serviço único dos cadastros do ERP: listagem, leitura, gravação e exclusão lógica,
@@ -105,6 +106,13 @@ final class RegistryService
             $where[] = "t.`{$filterField}` = :f_option";
             $params['f_option'] = $filterValue;
         }
+        // Filtro de marca da definição (ADR 0310: Ocupação das unidades, ?ocupacao=vazias|ocupadas).
+        $flag = $definition['flag_filter'] ?? null;
+        $flagValue = (string)($filters['flag'] ?? '');
+        if (is_array($flag) && isset($flag['options'][$flagValue])) {
+            $where[] = "t.`{$flag['field']}` = :f_flag";
+            $params['f_flag'] = (int)$flag['options'][$flagValue][1];
+        }
         $q = trim(mb_substr((string)($filters['q'] ?? ''), 0, 100));
         if ($q !== '') {
             $like = [];
@@ -141,10 +149,12 @@ final class RegistryService
         $count->execute($params);
         $total = (int)$count->fetchColumn();
 
-        $pages = max(1, (int)ceil($total / self::PER_PAGE));
+        // Itens por página (ADR 0310): 50, 100, 200 ou 500; sem 'per_page' fica o PER_PAGE de sempre (API e serviços).
+        $perPage = isset($filters['per_page']) ? PerPage::from($filters['per_page']) : self::PER_PAGE;
+        $pages = max(1, (int)ceil($total / $perPage));
         $page = min($pages, max(1, (int)(filter_var($filters['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1)));
-        $offset = ($page - 1) * self::PER_PAGE;
-        $stmt = $this->pdo->prepare($this->select($definition) . " WHERE {$whereSql} ORDER BY {$definition['order_sql']}, t.id LIMIT " . self::PER_PAGE . " OFFSET {$offset}");
+        $offset = ($page - 1) * $perPage;
+        $stmt = $this->pdo->prepare($this->select($definition) . " WHERE {$whereSql} ORDER BY {$definition['order_sql']}, t.id LIMIT " . $perPage . " OFFSET {$offset}");
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $names = $this->peopleNames($user, $definition, array_map(static fn (array $r): int => (int)$r['id'], $rows));
@@ -159,7 +169,7 @@ final class RegistryService
                 }
                 return $out;
             }, $rows),
-            'total' => $total, 'page' => $page, 'per_page' => self::PER_PAGE, 'pages' => $pages,
+            'total' => $total, 'page' => $page, 'per_page' => $perPage, 'pages' => $pages,
         ];
     }
 
@@ -868,6 +878,13 @@ final class RegistryService
         return $errors;
     }
 
+    /** Nome comparável (regra pura): sem acento, caixa e espaços repetidos. "Ana  Souza" = "ana souza". */
+    public static function personKey(string $name): string
+    {
+        $plain = function_exists('iconv') ? (string)@iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) : $name;
+        return trim((string)preg_replace('/\s+/', ' ', mb_strtolower($plain !== '' ? $plain : $name)));
+    }
+
     /** @return array<string, string> */
     private function businessRules(array $definition, array $values, ?int $id): array
     {
@@ -900,6 +917,21 @@ final class RegistryService
             $stmt->execute($params);
             if ($stmt->fetchColumn()) {
                 $errors[end($rule['fields'])] = $rule['message'];
+            }
+        }
+        // ADR 0311 (revisão de 15/11): o mesmo CPF/CNPJ é a mesma pessoa. Ele pode aparecer em várias unidades e
+        // vínculos, mas não com outro nome (dois cadastros diferentes com o mesmo documento). O nome da outra pessoa
+        // não sai na mensagem (pode ser de outro condomínio, LGPD).
+        $person = $definition['same_person'] ?? null;
+        if (is_array($person) && ($values[$person['document']] ?? null) !== null && ($values[$person['name']] ?? null) !== null) {
+            $sql = "SELECT `{$person['name']}` FROM `{$definition['table']}` WHERE deleted_at IS NULL AND `{$person['document']}` = :d" . ($id !== null ? ' AND id <> :self' : '') . ' LIMIT 50';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['d' => $values[$person['document']]] + ($id !== null ? ['self' => $id] : []));
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $other) {
+                if (self::personKey((string)$other) !== self::personKey((string)$values[$person['name']])) {
+                    $errors[$person['document']] = $person['message'];
+                    break;
+                }
             }
         }
         foreach ($definition['single_active'] as $rule) {

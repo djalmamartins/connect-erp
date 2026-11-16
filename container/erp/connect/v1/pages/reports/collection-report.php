@@ -42,7 +42,7 @@ $numeric = static fn (string $type): bool => in_array($type, ['money', 'int', 'd
 
 ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
-    <?php if ($cReportCsv !== null && $cReportRows !== []): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e(url($cReportCsv)) ?>" download><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($cReportCsv !== null && $cReportRows !== []): ?><?php $this->insert('components/tables/download', ['downloadUrl' => url($cReportCsv), 'downloadTitle' => (string)$currentPage['name']]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
@@ -57,12 +57,16 @@ $this->insert('components/layout/page-head', [
         <div class="erp-field erp-field--compact"><label for="cr-to">Até</label><input class="erp-input" type="date" id="cr-to" name="ate" value="<?= $this->e($f['ate']) ?>" required></div>
     <?php else: ?>
         <div class="erp-field erp-field--compact"><label for="cr-ref">Data de referência</label><input class="erp-input" type="date" id="cr-ref" name="referencia" value="<?= $this->e($f['referencia']) ?>" required></div>
+        <div class="erp-field erp-field--compact"><label for="cr-start">Vencidas a partir de <span class="erp-muted">(opcional)</span></label><input class="erp-input" type="date" id="cr-start" name="inicio" value="<?= $this->e((string)($f['inicio'] ?? '')) ?>" max="<?= $this->e($f['referencia']) ?>" aria-describedby="cr-start-hint"><small class="erp-field__hint" id="cr-start-hint">Em branco, todas as vencidas.</small></div>
     <?php endif; ?>
     <?php if ($kind === 'agreements'): ?>
         <div class="erp-field erp-field--compact"><label for="cr-status">Situação</label><select class="erp-select" id="cr-status" name="situacao"><option value="">Todas</option><?php foreach (Screens::AGREEMENT_STATUSES as $k => $l): ?><option value="<?= $k ?>"<?= $f['situacao'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div>
     <?php endif; ?>
     <?php if ($f['agrupar'] !== null): ?>
         <div class="erp-field erp-field--compact"><label for="cr-group">Agrupar por</label><select class="erp-select" id="cr-group" name="agrupar"><?php foreach (Screens::ACCOUNT_GROUPS as $k => $l): ?><option value="<?= $k ?>"<?= $f['agrupar'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div>
+    <?php endif; ?>
+    <?php if ($kind === 'receipts' && $cReportVariant === 'entry'): // ADR 0314: recebimento sem dizer qual unidade pagou ?>
+        <div class="erp-field erp-field--compact"><span class="erp-field__label" aria-hidden="true">&nbsp;</span><label class="erp-check" for="cr-hide-unit"><input type="checkbox" id="cr-hide-unit" name="ocultar_unidade" value="1"<?= !empty($f['ocultar_unidade']) ? ' checked' : '' ?>><span>Ocultar unidade</span></label></div>
     <?php endif; ?>
     <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Gerar</button></div>
 </form>
@@ -74,7 +78,7 @@ $this->insert('components/layout/page-head', [
         <div class="erp-alert" role="note"><?= $icon('lock') ?><div>Dados pessoais: o documento aparece mascarado, e a exportação fica registrada na auditoria.</div></div>
     <?php endif; ?>
     <section class="erp-card" aria-labelledby="cr-title">
-        <div class="erp-card__head"><div><h2 id="cr-title"><?= $this->e($currentPage['name']) ?></h2><p><?= $this->e($scopeLabel) ?> · <?= $period ? 'de ' . $this->e($date($f['de'])) . ' a ' . $this->e($date($f['ate'])) : 'em ' . $this->e($date($f['referencia'])) ?> · <?= count($cReportRows) ?> linha(s) · emitido em <?= date('d/m/Y') ?></p></div></div>
+        <div class="erp-card__head"><div><h2 id="cr-title"><?= $this->e($currentPage['name']) ?></h2><p><?= $this->e($scopeLabel) ?> · <?= $period ? 'de ' . $this->e($date($f['de'])) . ' a ' . $this->e($date($f['ate'])) : 'em ' . $this->e($date($f['referencia'])) . (($f['inicio'] ?? null) !== null ? ', vencidas desde ' . $this->e($date($f['inicio'])) : '') ?> · <?= count($cReportRows) ?> linha(s) · emitido em <?= date('d/m/Y') ?></p></div></div>
         <?php if ($cReportRows === []): ?>
             <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('chart') ?></span><strong>Nada neste filtro</strong><p><?= $period ? 'Não há registros no período escolhido.' : 'Não há conta vencida em aberto nesta data.' ?></p></div>
         <?php else: ?>

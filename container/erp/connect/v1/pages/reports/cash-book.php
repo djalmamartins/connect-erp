@@ -18,7 +18,7 @@ ob_start(); ?>
     <?php if ($b !== null): ?>
         <a class="erp-btn" href="<?= $this->e(erp_url(Screens::ROUTE . '/imprimir' . $query)) ?>" target="_blank" rel="noopener"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</a>
         <a class="erp-btn" href="<?= $this->e(erp_url(Screens::ROUTE . '/pacote' . $query)) ?>"><?= $icon('download', 'erp-icon--sm') ?>Pacote com anexos</a>
-        <a class="erp-btn erp-btn--primary" href="<?= $this->e(erp_url(Screens::ROUTE . '/pdf' . $query)) ?>"><?= $icon('file', 'erp-icon--sm') ?>Baixar PDF</a>
+        <a class="erp-btn erp-btn--primary" href="<?= $this->e(erp_url(Screens::ROUTE . '/pdf' . $query)) ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?>Abrir PDF</a>
     <?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [

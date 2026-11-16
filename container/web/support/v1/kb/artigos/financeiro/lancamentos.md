@@ -66,6 +66,17 @@ recorte: main form:not([method=get])
 - **Observações**.
 - **Situação** (obrigatório): Opções: Válido e Cancelado.
 
+## Lançar para várias unidades de uma vez
+
+Quando a mesma conta vale para mais de uma unidade (ex.: controle do portão para as unidades 01 e 303), faça um cadastro só:
+
+1. Escolha a primeira unidade no campo **Unidade**.
+2. Em **Lançar também para outras unidades**, marque as demais. A lista mostra só as unidades do condomínio escolhido.
+3. Escolha como fica o valor: **Valor para cada unidade** (cada uma recebe o valor informado) ou **Dividir o valor entre as unidades** (o valor informado é o total; os centavos que sobram ficam com as primeiras).
+4. Clique em {{Salvar}}. Sai um lançamento para cada unidade, com os mesmos dados, e cada um pode ser alterado depois sozinho.
+
+> Se alguma unidade não puder receber o lançamento (de outro condomínio, inativa ou mês fechado), nada é gravado e o erro diz qual unidade conferir.
+
 ## Anexar nota fiscal e comprovante
 
 Depois de salvar, o lançamento mostra o quadro **Notas e comprovantes**, ao lado do formulário.
@@ -78,6 +89,17 @@ Depois de salvar, o lançamento mostra o quadro **Notas e comprovantes**, ao lad
 Os anexos entram numerados no [Livro caixa mensal](artigo:livro-caixa). O arquivo fica guardado também no Disco Virtual, na pasta **Notas fiscais** ou **Comprovantes**. Se a mesma nota servir a duas parcelas, anexe o mesmo arquivo nas duas: o sistema guarda uma cópia só.
 
 >! Dá para anexar mesmo com o mês fechado (o comprovante costuma chegar depois). Remover um anexo de mês fechado não: reabra o mês antes.
+
+## Atalhos e ações com vários lançamentos
+
+Acima da lista ficam os atalhos: {{Nova receita}}, {{Nova despesa}}, {{Desconto}}, {{Importar}} (planilha de lançamentos) e {{Histórico}} (os lançamentos cancelados).
+
+Com um condomínio escolhido na barra superior, cada linha ganha uma caixa de marcação (e a do cabeçalho marca a página toda). Com lançamentos marcados:
+
+- {{Copiar lançamento(s)}}: escolha a competência de destino. As cópias nascem em aberto, com os mesmos dados, e o vencimento anda os mesmos meses. Não levam baixa, boleto nem a origem (fatura, acordo).
+- {{Excluir lançamentos}}: informe o motivo. Os lançamentos ficam como **Cancelado** (saem dos relatórios e da cobrança) e o histórico guarda quem fez e o motivo.
+
+>! Se um dos lançamentos não puder ser copiado ou excluído (mês fechado, conta paga, boleto no banco), nada é gravado e a mensagem diz qual conferir.
 
 ## Pesquisar e filtrar
 

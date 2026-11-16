@@ -76,6 +76,23 @@ final class EntryShortcuts
         }
     }
 
+    /**
+     * Nova Receita (AP-025, ADR 0313): sem rateio, um lançamento (erp.entries.manage); com rateio, cobranças extras por
+     * unidade, com fundo de reserva e repetição (também erp.invoices.manage, como a cobrança extra).
+     */
+    public function storeRevenue(): void
+    {
+        [$user, $body] = $this->write(self::ENTRIES);
+        if ($user === null) {
+            return;
+        }
+        if (($body['apportion'] ?? null) !== 'none' && !Access::can(self::INVOICES[1], $user)) {
+            JsonResponse::send(403, ['error' => ['code' => 'forbidden', 'message' => 'Ratear entre as unidades exige permissão de lançar cobranças.']]);
+            return;
+        }
+        $this->run(201, fn () => (new \Source\Services\Erp\RevenueLaunch())->launch($user, $body));
+    }
+
     public function cancelCharge(array $data): void
     {
         [$user, $body] = $this->write(self::INVOICES);

@@ -37,6 +37,7 @@ $schema = static function (array $field) use ($q): string {
         'phone' => '{ type: [string, "null"], description: ' . $q('DDD e número; resposta só com dígitos.') . ' }',
         'plate' => '{ type: [string, "null"], pattern: "^[A-Z]{3}\\\\d[A-Z0-9]\\\\d{2}$" }',
         'oab' => '{ type: [string, "null"], examples: ["SP 123456"] }',
+        'cib' => '{ type: [string, "null"], pattern: "^[0-9A-Z]{8}$", description: ' . $q('Código CIB: 7 caracteres + DV; aceita com traço, resposta sem.') . ' }',
         default => '{ type: [string, "null"], maxLength: ' . (int)($field['max'] ?? ($field['type'] === 'longtext' ? 2000 : 160)) . ' }',
     };
 };
@@ -125,7 +126,11 @@ foreach ($paths as [$d, $name]) {
     if ($filter !== null) {
         $out[] = "        - { name: type, in: query, description: 'Filtra por {$filter}', schema: { type: string, enum: [" . implode(', ', array_map($q, array_keys($d['fields'][$filter]['options']))) . '] } }';
     }
+    if (isset($d['flag_filter'])) {
+        $out[] = "        - { name: flag, in: query, description: 'Filtra por {$d['flag_filter']['field']} (ADR 0310)', schema: { type: string, enum: [" . implode(', ', array_map($q, array_keys($d['flag_filter']['options']))) . '] } }';
+    }
     $out[] = '        - { name: page, in: query, schema: { type: integer, minimum: 1 } }';
+    $out[] = "        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }";
     $out[] = '      responses:';
     $out[] = "        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { \$ref: '#/components/schemas/{$name}' } }, meta: { \$ref: '#/components/schemas/Meta' } } } } } }";
     $out[] = "        '401': { description: Sem sessão, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
@@ -134,9 +139,16 @@ foreach ($paths as [$d, $name]) {
     $out[] = "      tags: [{$tag}]";
     $out[] = '      summary: ' . $q('Cadastra (permissão ' . $d['permission'] . '.manage)');
     $out[] = '      security: [{ session: [], csrf: [] }]';
-    $out[] = "      requestBody: { required: true, content: { application/json: { schema: { \$ref: '#/components/schemas/{$name}Input' } } } }";
-    $out[] = '      responses:';
-    $out[] = "        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { \$ref: '#/components/schemas/{$name}' } } } } } }";
+    if (in_array($d['slug'] ?? '', \Source\Services\Erp\EntryUnits::SLUGS, true)) {
+        // Várias unidades num único cadastro (ADR 0313): um lançamento por unidade; data = o primeiro, meta.created_ids = todos.
+        $out[] = "      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ \$ref: '#/components/schemas/{$name}Input' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: " . (\Source\Services\Erp\EntryUnits::MAX_UNITS - 1) . ", description: " . $q('Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)') . " }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: " . $q('each = o valor para cada unidade; split = o valor é o total, dividido') . " } } }] } } } }";
+        $out[] = '      responses:';
+        $out[] = "        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { \$ref: '#/components/schemas/{$name}' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }";
+    } else {
+        $out[] = "      requestBody: { required: true, content: { application/json: { schema: { \$ref: '#/components/schemas/{$name}Input' } } } }";
+        $out[] = '      responses:';
+        $out[] = "        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { \$ref: '#/components/schemas/{$name}' } } } } } }";
+    }
     $out[] = "        '400': { description: JSON inválido, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
     $out[] = "        '403': { description: Sem permissão, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";
     $out[] = "        '419': { description: CSRF inválido, content: { application/json: { schema: { \$ref: '#/components/schemas/Error' } } } }";

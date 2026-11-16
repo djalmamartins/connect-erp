@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Banking\BankCharges;
+use Source\Services\Erp\BillingLetter;
 use Source\Services\Erp\Banking\BankRemittances;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\Registry\RegistryNotFound;
@@ -23,6 +24,9 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges/{id}/refresh                         consulta no banco
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
  *  GET  /api/v1/bank-charges/{id}/pdf                             PDF do boleto (Inter, ADR 0156)
+ *  GET  /api/v1/bank-charges/{id}/letter                          Carta de cobrança impressa em PDF (ADR 0320)
+ *  POST /api/v1/bank-charges/{id}/simulate-payment {method}       só sandbox do Inter: simula o pagamento e consulta
+ *  POST /api/v1/invoices/{id}/bank-charges {bank_account_id, limit} boletos de toda a fatura, em lotes (remaining)
  *  GET  /api/v1/bank-remittances?condominium_id=&from=&to=&status=&page=  remessas: lotes por conta e dia (AP-037)
  *  GET  /api/v1/bank-returns?condominium_id=&bank_account_id=&page=  arquivos importados (paginado)
  *  POST /api/v1/bank-returns {bank_account_id, filename, content} importa retorno (texto)
@@ -72,6 +76,29 @@ final class Banking
         }
     }
 
+    /** Sandbox do Inter: simula o pagamento e consulta (ADR 0156). Corpo {method: BOLETO|PIX}. */
+    public function simulatePayment(array $data): void
+    {
+        [$user, $body] = $this->write();
+        if ($user !== null) {
+            $method = strtoupper(is_string($body['method'] ?? null) ? $body['method'] : 'BOLETO');
+            $this->run(200, fn () => (new BankCharges())->simulatePayment($user, (int)$this->int($data['id'] ?? null), $method));
+        }
+    }
+
+    /** Boletos de todas as contas a receber em aberto de uma fatura emitida, em lotes (a tela repete até remaining = 0). */
+    public function issueInvoice(array $data): void
+    {
+        [$user, $body] = $this->write();
+        if ($user !== null) {
+            $limit = (int)($this->int($body['limit'] ?? null) ?? 20);
+            $this->run(200, fn () => (new BankCharges())->issueForInvoice($user, (int)$this->int($data['id'] ?? null),
+                (int)$this->int($body['bank_account_id'] ?? null), $limit, static function (): void {
+                    usleep(300000);
+                }));
+        }
+    }
+
     /** PDF do boleto direto do banco (só adaptadores que oferecem, ex.: Inter). */
     public function pdf(array $data): void
     {
@@ -95,6 +122,32 @@ final class Banking
         }
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="boleto-' . $id . '.pdf"');
+        header('Cache-Control: no-store, private');
+        header('X-Content-Type-Options: nosniff');
+        echo $pdf;
+    }
+
+    /** Carta de cobrança impressa (ADR 0320): parte externa e interna com a ficha do boleto, gerada pelo ERP. */
+    public function letter(array $data): void
+    {
+        $user = $this->authorize('view');
+        if ($user === null) {
+            return;
+        }
+        $id = (int)$this->int($data['id'] ?? null);
+        try {
+            $service = new BillingLetter();
+            $letter = $service->build($user, $id);
+            $pdf = $service->pdf($letter);
+        } catch (RegistryNotFound) {
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Registro não encontrado no seu escopo.']]);
+            return;
+        } catch (DomainException $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'banking_conflict', 'message' => $exception->getMessage()]]);
+            return;
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . BillingLetter::filename($letter) . '"');
         header('Cache-Control: no-store, private');
         header('X-Content-Type-Options: nosniff');
         echo $pdf;

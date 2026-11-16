@@ -371,6 +371,14 @@ $assert(str_contains($html, 'R$ 96.320,00') && !str_contains($html, '/fechamento
 $html = $closingPage(null, [$closingRow(['status' => 'closed']), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false, 'all');
 $assert(str_contains($html, '1 de 2 fechados') && str_contains($html, 'Edifício Dois') && str_contains($html, 'escolha um condomínio na barra superior') && !str_contains($html, 'method="post" action="' . $erpRoot . '/financeiro'), 'AP-030: em Todos lista cada condomínio e pede para escolher um antes de fechar');
 
+// ADR 0313: mês anterior em aberto vira alerta com link e trava o botão Fechar; em "Todos" aparece por condomínio.
+$html = $closingPage(7, [$closingRow(['pending_before' => ['2026-08', '2026-09']])], true, 'order');
+$assert(str_contains($html, 'data-closing-order') && str_contains($html, 'Há 2 meses anteriores em aberto') && str_contains($html, '?competencia=2026-08">08/2026</a>') && (bool)preg_match('~<button type="submit" class="erp-btn erp-btn--primary" disabled~', $html), 'AP-030: meses anteriores abertos alertam e travam o Fechar');
+$html = $closingPage(7, [$closingRow()], true);
+$assert(!str_contains($html, 'data-closing-order') && !(bool)preg_match('~erp-btn--primary" disabled~', $html), 'AP-030: sem mês anterior aberto, sem alerta');
+$html = $closingPage(null, [$closingRow(['pending_before' => ['2026-09']]), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false);
+$assert(str_contains($html, '1 condomínio(s) com mês anterior em aberto') && str_contains($html, 'antes: 09/2026'), 'AP-030: em Todos mostra quem tem mês anterior aberto');
+
 // Faturas (AP-032) com dados reais ($invoices de Panel::invoiceData, ADR 0033): lista, ações pela API e estados.
 $invoiceRow = static fn (array $over = []): array => $over + [
     'id' => 5, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'invoice_type_id' => 2, 'type_name' => 'Taxa <condominial>',
@@ -530,6 +538,8 @@ $docRow = static fn (array $over = []): array => $over + ['id' => 31, 'condomini
 $docUnits = [['id' => 9, 'condominium_id' => 1, 'label' => 'Apto <101>', 'condominium_name' => 'Residencial Aurora'], ['id' => 10, 'condominium_id' => 2, 'label' => 'Casa 2', 'condominium_name' => 'Vila Sol']];
 $docList = ['data' => [$docRow(), $docRow(['id' => 32, 'result' => 'clear', 'total_cents' => 0, 'status' => 'cancelled', 'cancelled_at' => '2026-11-09 11:00:00', 'cancel_reason' => 'Data errada'])], 'total' => 2, 'page' => 1, 'per_page' => 25, 'pages' => 1];
 $docData = static fn (string $kind, array $over = []): array => $over + ['documentKind' => $kind, 'unitDocuments' => $docList, 'unitDocument' => null, 'documentUnits' => $docUnits, 'documentError' => null, 'canManageDocuments' => true];
+// Revisão de 15/11 (ADR 0310): a unidade só é escolhida com um condomínio na barra superior.
+Source\Support\Erp\CondominiumContext::use([['id' => 1, 'name' => 'Residencial Aurora']], 1);
 foreach (Source\Controllers\Erp\Connect\Panel::UNIT_DOCUMENT_PAGES as $docPage => $docKind) {
     $html = $agreementPage($docPage, 'pages/documents/unit-document', $docData($docKind), 'list');
     $common($html, $docPage, 'Emitir');
@@ -571,6 +581,11 @@ $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('rece
 $assert(!str_contains($html, 'data-receipt-form') && str_contains($html, 'Escolha a unidade para ver as contas pagas'), 'AP-040: sem unidade escolhida, só o seletor');
 $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['receiptUnit' => 9, 'receiptEntries' => []]));
 $assert(str_contains($html, 'Nenhuma conta paga sem recibo') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-040: unidade sem conta paga livre');
+Source\Support\Erp\CondominiumContext::reset();
+$html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['documentUnits' => [], 'receiptUnit' => null, 'receiptEntries' => []]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unidade"'), 'AP-040: sem condomínio na barra superior, sem filtro de unidade (ADR 0310)');
+$html = $agreementPage('AP-123', 'pages/documents/unit-document', $docData('debt_certificate', ['documentUnits' => []]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unit_id"'), 'AP-123: sem condomínio na barra superior, sem campo de unidade (ADR 0310)');
 $html = $agreementPage('AP-040', 'pages/documents/unit-document', $docData('receipt', ['unitDocument' => $docRow(['kind' => 'receipt', 'kind_label' => 'Recibo', 'result' => 'clear', 'total_cents' => 102000,
     'content' => ['entries' => [['entry_id' => 71, 'description' => 'Taxa <out>', 'competence' => '2026-10', 'due_on' => '2026-10-10', 'paid_on' => '2026-10-09', 'amount_cents' => 50000, 'bank_account' => 'Conta <Itaú>'],
         ['entry_id' => 72, 'description' => 'Taxa nov', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'paid_on' => '2026-11-08', 'amount_cents' => 52000, 'bank_account' => null]], 'paid_cents' => 102000]])]), 'doc');
@@ -604,6 +619,20 @@ $assert(str_contains($html, 'data-charge-form') && str_contains($html, 'data-cha
 $html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['charges' => ['data' => [$chargeRow(['kind' => 'fine', 'kind_label' => 'Multa avulsa', 'method' => 'fixed', 'reason' => 'Barulho <22h>', 'units_count' => 1])], 'total' => 1]]), 'list');
 $common($html, 'AP-027', 'Lançar Multa');
 $assert(str_contains($html, 'data-charge-kind="fine"') && str_contains($html, 'name="unit_id" required') && !str_contains($html, 'name="unit_ids"') && !str_contains($html, 'data-charge-method') && str_contains($html, 'id="charge-reason"') && str_contains($html, 'Barulho &lt;22h&gt;'), 'AP-027: multa de uma unidade com motivo');
+// Nova Receita (AP-025, ADR 0313): modelo 8 no layout do Connect ERP, gravação pela API.
+$revenueData = static fn (array $over = []): array => $over + ['shortcutReady' => true, 'shortcutCanManage' => true, 'shortcutContext' => 7, 'shortcutError' => null,
+    'revenueAccounts' => [['id' => 3, 'condominium_id' => null, 'label' => '1.08 Receitas <diversas>']], 'revenueCostCenters' => [['id' => 4, 'condominium_id' => 7, 'label' => 'CC Portaria']],
+    'revenueUnits' => [['id' => 11, 'label' => 'Apto <101>', 'exempt' => false], ['id' => 12, 'label' => 'Apto 102', 'exempt' => true]], 'revenueCanApportion' => true];
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(), 'form');
+$assert(str_contains($html, 'data-revenue-form') && str_contains($html, '/api/v1/revenues') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '1.08 Receitas &lt;diversas&gt;')
+    && str_contains($html, 'value="chosen"') && str_contains($html, 'value="custom"') && str_contains($html, 'name="reserve_percent"') && str_contains($html, 'name="repeat"') && str_contains($html, 'value="tenant"')
+    && str_contains($html, '1 unidade(s) isenta(s) de rateio') && str_contains($html, 'data-exempt="1"'), 'AP-025: Nova Receita com rateio, valor de cada unidade, fundo, cobrar de e repetição');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['revenueCanApportion' => false]));
+$assert(str_contains($html, 'data-revenue-form') && !str_contains($html, 'value="chosen"') && str_contains($html, 'Ratear exige permissão'), 'AP-025: sem permissão de cobrança, só receita sem rateio');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['shortcutContext' => null]));
+$assert(!str_contains($html, 'data-revenue-form') && str_contains($html, 'Escolha um condomínio na barra superior'), 'AP-025: em Todos pede o condomínio');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['shortcutCanManage' => false]));
+$assert(!str_contains($html, 'data-revenue-form') && str_contains($html, 'somente para consulta'), 'AP-025: sem permissão só consulta');
 $html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['shortcutContext' => null, 'chargeUnits' => [], 'chargeAccounts' => []]));
 $assert(!str_contains($html, 'data-charge-form') && str_contains($html, 'Escolha um condomínio na barra superior para lançar'), 'AP-027: em todos os condomínios pede a escolha');
 $html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra', ['chargeAccounts' => []]));
@@ -692,6 +721,9 @@ $common($html, 'AP-047', 'Relatório de acordos');
 $assert(str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '>Ativo</span>') && str_contains($html, '>Cancelado</span>') && str_contains($html, '2 de 6') && str_contains($html, '<tfoot>')
     && str_contains($html, 'Total (sem cancelados)') && str_contains($html, 'R$ 1.950,00</td>') && str_contains($html, '/api/v1/reports/agreements?format=csv&amp;condominium_id=1&amp;from=2026-01-01&amp;to=2026-11-09')
     && str_contains($html, 'name="situacao"') && str_contains($html, 'name="de" value="2026-01-01"'), 'AP-047: acordos com situação, rodapé sem cancelados e CSV');
+$assert(!str_contains($html, 'name="inicio"'), 'AP-047: sem data inicial de inadimplência');
+$html = $agreementPage('AP-057', 'pages/reports/collection-report', $crData('AP-057', [], ['cReportFilters' => ['de' => '2026-01-01', 'ate' => '2026-11-09', 'referencia' => '2026-11-09', 'inicio' => '2026-03-01', 'situacao' => null, 'agrupar' => null]]));
+$assert(str_contains($html, 'name="inicio" value="2026-03-01"') && str_contains($html, '(opcional)') && str_contains($html, 'vencidas desde 01/03/2026'), 'AP-057: data inicial opcional (ADR 0314)');
 $html = $agreementPage('AP-048', 'pages/reports/collection-report', $crData('AP-048', [['condominium_id' => 1, 'condominium_name' => 'Residencial <Aurora>', 'agreements' => 3, 'cancelled' => 1,
     'original_cents' => 500000, 'fees_cents' => 40000, 'discount_cents' => 10000, 'net_fees_cents' => 30000, 'total_cents' => 530000]]));
 $assert(str_contains($html, 'Residencial &lt;Aurora&gt;') && str_contains($html, 'Encargos líquidos') && str_contains($html, 'R$ 300,00') && !str_contains($html, 'name="situacao"'), 'AP-048: taxas por condomínio');
@@ -749,8 +781,10 @@ $html = $agreementPage('AP-117', 'pages/collections/desk', ['deskUnit' => $deskR
     'promise_on' => '2026-11-05', 'promise_cents' => 50000, 'next_action_on' => '2026-11-08', 'note' => "Disse que <paga>\nsexta", 'open_cents' => 185000, 'created_by' => 1, 'created_at' => '2026-11-01 10:00:00']]] + $deskData, 'unit');
 $assert(str_contains($html, 'id="atender"') && str_contains($html, 'data-contact-form data-api="https://' . $smokeHost . '/api/v1/collection-contacts" data-unit="5"') && str_contains($html, 'Disse que &lt;paga&gt;<br />') && str_contains($html, 'Ana &lt;S&gt;')
     && str_contains($html, '(R$ 500,00)') && str_contains($html, '?abrir=5#abrir-caso') && str_contains($html, 'aria-current="true"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-117: histórico e registrar contato');
+$assert(strpos($html, 'Histórico de atendimento') < strpos($html, 'data-contact-form') && str_contains($html, 'data-contact-template') && str_contains($html, 'data-contact-empty hidden')
+    && str_contains($html, '<td data-row-last>') && str_contains($html, 'data-row-next') && str_contains($html, 'contact-next-hint'), 'AP-117: histórico em destaque antes do formulário e ganchos para salvar sem recarregar');
 $html = $agreementPage('AP-117', 'pages/collections/desk', ['collCanManage' => false, 'deskUnit' => $deskRow(), 'deskContacts' => []] + $deskData);
-$assert(!str_contains($html, 'data-contact-form') && !str_contains($html, '?abrir=') && str_contains($html, 'Nenhum contato registrado'), 'AP-117: sem permissão só consulta');
+$assert(!str_contains($html, 'data-contact-form') && !str_contains($html, '?abrir=') && str_contains($html, 'Nenhum contato registrado') && !str_contains($html, 'data-contact-empty hidden'), 'AP-117: sem permissão só consulta');
 
 $caseRow = static fn (array $over = []): array => $over + ['id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 6, 'unit_label' => 'Apto 102', 'lawyer_id' => 3, 'lawyer_name' => 'Dra. <Lima>',
     'status' => 'filed', 'status_label' => 'Ajuizado', 'case_number' => '0001234-56.2026.8.26.0100', 'court' => '2ª Vara Cível', 'opened_on' => '2026-10-01', 'claimed_cents' => 185000, 'closed_on' => null, 'close_reason' => null,
@@ -1079,10 +1113,17 @@ foreach ($RS::PAGES as $rsPage => $rsDef) {
     $html = $agreementPage($rsPage, 'pages/reports/report', $rsData($rsPage, [$rsSample($rsDef['columns'])]), 'real');
     $common($html, $rsPage, $catalog['pages'][$rsPage]['name']);
     $assert(str_contains($html, 'erp-report-table') && substr_count($html, '<th scope="col"') === count($rsDef['columns']) && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=csv')
+        && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=pdf') && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=xlsx') && str_contains($html, '&amp;title=')
         && !str_contains($html, 'Valor <') && !str_contains($html, 'Interface proposta'), "{$rsPage}: tabela real, escapada, com CSV da API");
 }
 $html = $agreementPage('AP-052', 'pages/reports/report', $rsData('AP-052', [$rsSample($RS::PAGES['AP-052']['columns'])]));
 $assert(str_contains($html, '−R$ 1.234,56') && str_contains($html, 'name="de" value="2026-01"') && str_contains($html, 'type="month"') && str_contains($html, 'view=accounts') && str_contains($html, 'erp-kpi'), 'AP-052: competências, valores e totais');
+// Ocultar unidade (ADR 0314): sem a coluna na tela e no download; caixa só nos demonstrativos.
+$hideF = $RS::filters('AP-069', ['ocultar_unidade' => '1'], '2026-11-10');
+$html = $agreementPage('AP-069', 'pages/reports/report', $rsData('AP-069', [$rsSample($RS::PAGES['AP-069']['columns'])], ['reportFilters' => $hideF, 'reportCsv' => $RS::csvUrl('AP-069', $hideF, 1)]));
+$assert(str_contains($html, 'name="ocultar_unidade" value="1" checked') && !str_contains($html, '<th scope="col">Unidade</th>') && str_contains($html, 'hide_unit=1')
+    && substr_count($html, '<th scope="col"') === count($RS::PAGES['AP-069']['columns']) - 1, 'AP-069: ocultar unidade (ADR 0314)');
+$assert(!str_contains($agreementPage('AP-086', 'pages/reports/report', $rsData('AP-086', [$rsSample($RS::PAGES['AP-086']['columns'])])), 'name="ocultar_unidade"'), 'AP-086: lista de unidades sem ocultar unidade');
 $html = $agreementPage('AP-080', 'pages/reports/report', $rsData('AP-080', [['analytic' => false] + $rsSample($RS::PAGES['AP-080']['columns'])], ['report' => ['rows' => [], 'totals' => ['revenue_months_cents' => array_fill(0, 12, 1000), 'expense_months_cents' => array_fill(0, 12, 400), 'result_months_cents' => array_fill(0, 12, 600), 'revenue_cents' => 12000, 'expense_cents' => 4800, 'result_cents' => 7200]]]));
 $assert(str_contains($html, 'Total de receitas') && str_contains($html, 'R$ 72,00') && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'name="ano" value="2026"') && str_contains($html, 'year=2026&amp;basis=competence'), 'AP-080: balancete anual com meses, rodapé e base');
 $html = $agreementPage('AP-062', 'pages/reports/report', $rsData('AP-062', [], ['reportNeedsCondo' => true]));
@@ -1243,6 +1284,16 @@ $assert(str_contains($html, 'Outubro de 2026') && str_contains($html, 'Mês em a
     && str_contains($html, 'erp-report-synthetic') && !str_contains($html, 'Interface proposta'), 'AP-101: pacote do mês');
 $html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityNeedsCondo' => true, 'accountability' => null] + $pcData);
 $assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'name="mes"'), 'AP-101: pede o condomínio');
+// Lista dos meses e documento no padrão do PDF de outubro (ADR 0314, item 21) e ocultar unidade (item 19).
+$html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityMonths' => [['competence' => '2026-11', 'label' => 'novembro de 2026', 'status' => 'open', 'payments' => 3],
+    ['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
+$assert(str_contains($html, 'data-accountability-months') && str_contains($html, 'Novembro de 2026') && str_contains($html, '>Fechado</span>') && str_contains($html, 'aria-current="true"')
+    && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/documento?mes=2026-10') && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/pdf?mes=2026-10')
+    && str_contains($html, 'Visualizar documento') && str_contains($html, 'Abrir PDF') && str_contains($html, 'target="_blank" rel="noopener" data-accountability-pdf') && str_contains($html, 'name="ocultar_unidade"') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-101: meses, documento e PDF (ADR 0314)');
+$_GET['ocultar_unidade'] = '1';
+$html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityMonths' => [['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
+unset($_GET['ocultar_unidade']);
+$assert(!str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, 'pdf?mes=2026-10&amp;ocultar_unidade=1') && str_contains($html, 'name="ocultar_unidade" value="1" checked'), 'AP-101: ocultar unidade (ADR 0314)');
 $assert($PC::month('2026-13', '2026-11-10') === '2026-10' && $PC::month('2026-11', '2026-11-10') === '2026-11' && $PC::month('2026-12', '2026-11-10') === '2026-10'
     && $PC::month(null, '2026-01-05') === '2025-12' && $PC::monthLabel('2026-03') === 'Março de 2026', 'prestação de contas: mês');
 
@@ -1259,7 +1310,7 @@ $bpData = ['balanceReady' => true, 'balanceDate' => '2026-11-10', 'balanceNeedsC
 $html = $agreementPage('AP-081', 'pages/reports/balance-sheet', $bpData, 'real');
 $common($html, 'AP-081', 'Balanço Patrimonial');
 $assert(str_contains($html, 'Balanço em 10/11/2026') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'Fundo de reserva &lt;F&gt;') && str_contains($html, 'R$ 120,00')
-    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'format=csv&amp;condominium_id=1&amp;date=2026-11-10')
+    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'condominium_id=1&amp;date=2026-11-10&amp;format=csv')
     && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'Patrimônio líquido') && !str_contains($html, 'Interface proposta'), 'AP-081: balanço com contas, bancos e vencido');
 $assert(($bpReport['balanced'] && str_contains($html, '>Fechado<')) || (!$bpReport['balanced'] && str_contains($html, 'Diferença de')), 'AP-081: selo de fechamento');
 $html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceNeedsCondo' => true, 'balance' => null] + $bpData);
@@ -1388,6 +1439,40 @@ $actionForm = static fn (string $slug, string $page, array $values): string => $
     'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
     'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => Source\Controllers\Erp\Connect\Registry::recordAction($slug, 8, $values),
 ], 'Registro'));
+// Busca do CNPJ com mapa de campos (ADR 0312): fornecedores, advogados e pessoas.
+foreach ([['suppliers', 'AP-010', '{&quot;legal_name&quot;:&quot;razao_social&quot;,&quot;trade_name&quot;:&quot;nome_fantasia&quot;'], ['lawyers', 'AP-016', '{&quot;firm&quot;:&quot;razao_social&quot;'], ['residents', 'AP-005', '{&quot;name&quot;:&quot;razao_social&quot;']] as [$cnpjSlug, $cnpjPage, $cnpjMap]) {
+    $cnpjHtml = $render('pages/registry/form', $layoutData->invoke($panel, $user, $cnpjPage, ['title' => 'Novo', 'definition' => Source\Services\Erp\Registry\Definitions::get($cnpjSlug), 'recordId' => null,
+        'values' => ['condominium_id' => 1], 'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
+        'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null], 'Novo'));
+    $assert(preg_match('/name="document"[^>]*data-erp-cnpj-lookup data-cnpj-map="' . preg_quote($cnpjMap, '/') . '/', $cnpjHtml) === 1, "{$cnpjPage}: CNPJ busca na Receita e preenche os campos do cadastro (ADR 0312)");
+}
+$cnpjHtml = $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-010', ['title' => 'Fornecedor', 'definition' => Source\Services\Erp\Registry\Definitions::get('suppliers'), 'recordId' => 3,
+    'values' => ['id' => 3], 'errors' => [], 'history' => [], 'condominiums' => [], 'units' => [], 'refs' => [], 'canManage' => false, 'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null], 'Fornecedor'));
+$assert(!str_contains($cnpjHtml, 'data-erp-cnpj-lookup'), 'AP-010: somente leitura, sem busca do CNPJ');
+
+// Várias unidades num lançamento (ADR 0313): só ao criar, com as unidades do escopo e o modo do valor.
+$entryUnitsForm = static fn (bool $entryUnits, array $values = [], array $errors = []): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-023', ['title' => 'Nova', 'definition' => Source\Services\Erp\Registry\Definitions::get('receivables'), 'recordId' => null,
+    'values' => $values + ['condominium_id' => 1], 'errors' => $errors, 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [['id' => 5, 'condominium_id' => 1, 'label' => '01'], ['id' => 6, 'condominium_id' => 1, 'label' => '<303>']],
+    'refs' => [], 'canManage' => true, 'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null, 'entryUnits' => $entryUnits], 'Nova'));
+$html = $entryUnitsForm(true, ['unit_id' => '5', 'extra_unit_ids' => ['6'], 'unit_amount_mode' => 'split'], ['extra_unit_ids' => 'Unidade <303>: inválida']);
+$assert(str_contains($html, 'data-entry-units') && str_contains($html, 'name="extra_unit_ids[]" value="6" checked') && str_contains($html, '&lt;303&gt;') && str_contains($html, 'value="split" checked')
+    && str_contains($html, 'href="#f-extra_unit_ids">Outras unidades</a>'), 'AP-023: outras unidades marcadas, escapadas, com o modo do valor e o erro no resumo');
+$assert(!str_contains($entryUnitsForm(false), 'data-entry-units'), 'AP-023: sem a opção ao editar ou sem permissão');
+
+// Inquilino e proprietário na ficha da unidade (ADR 0311): busca, nova pessoa, faturas e datas.
+$occupantsForm = static fn (?array $occupants): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-006', [
+    'title' => '101', 'definition' => Source\Services\Erp\Registry\Definitions::get('units'), 'recordId' => 8, 'values' => ['id' => 8, 'condominium_id' => 1, 'number' => '101', 'type' => 'apartamento', 'status' => 'active'],
+    'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
+    'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null, 'unitOccupants' => $occupants,
+], '101'));
+$html = $occupantsForm(['unitId' => 8, 'owner' => [['id' => 3, 'name' => 'Dona <Ana>', 'starts_on' => '2025-02-01']], 'tenant' => [], 'payer_role' => 'owner', 'canInvoices' => false]);
+$assert(str_contains($html, 'data-erp-unit-occupants') && str_contains($html, '/api/v1/units/8/occupant-change') && str_contains($html, 'Dona &lt;Ana&gt;') && str_contains($html, 'desde 01/02/2025')
+    && str_contains($html, 'data-unit-occupant-open="tenant" data-has-current="0"') && str_contains($html, 'Informar inquilino') && str_contains($html, 'Trocar proprietário')
+    && str_contains($html, 'value="next_only" disabled') && str_contains($html, 'value="none" checked') && str_contains($html, 'name="person_document" inputmode="numeric" maxlength="18" data-mask="document" data-erp-cnpj-lookup') && str_contains($html, 'Registrar histórico de entrada/saída')
+    && str_contains($html, 'saem em nome do o proprietário') === false && str_contains($html, 'Código CIB'), 'AP-006: inquilino e proprietário na ficha da unidade (ADR 0311)');
+$html = $occupantsForm(null);
+$assert(!str_contains($html, 'data-erp-unit-occupants'), 'AP-006: sem permissão em pessoas, sem o quadro de inquilino e proprietário');
+
 $html = $actionForm('reservations', 'AP-113', ['status' => 'inactive']);
 $save('page-ap-113-waitlist', $html);
 $assert(str_contains($html, 'data-erp-record-action data-kind="waitlist" data-api="https://' . $smokeHost . '/api/v1/reservations/8/call-waitlist"') && str_contains($html, 'Chamar lista de espera'), 'AP-113: reserva cancelada chama a lista de espera');
@@ -1427,6 +1512,7 @@ $unitPanel = ['unit' => ['id' => 9, 'condominium_id' => 7, 'condominium_name' =>
     'documents' => [['id' => 5, 'kind_label' => 'Certidão de débitos', 'verification_display' => 'ABCD-EFGH', 'issued_at' => '2026-11-01 10:00:00', 'status' => 'issued']],
     'operations' => ['deliveries_waiting' => 1, 'reservations_upcoming' => 2, 'occurrences_open' => 1, 'vehicles' => 1, 'pets' => 0]];
 $unitData = static fn (array $over = []): array => $over + ['unitPanelReady' => true, 'unitPanel' => $unitPanel, 'unitPanelUnits' => [['id' => 9, 'condominium_id' => 7, 'label' => 'A-101'], ['id' => 10, 'condominium_id' => 7, 'label' => 'A-102']], 'unitPanelSelected' => 9, 'unitPanelError' => null];
+Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'Residencial Exemplo']], 7);
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(), 'real');
 $common($html, 'AP-003', 'Unidade A-101');
 $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 824,00') && str_contains($html, 'Taxa &lt;outubro&gt;') && str_contains($html, 'Ana &lt;Souza&gt;') && str_contains($html, 'Proprietário')
@@ -1435,13 +1521,82 @@ $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 82
 $assert(str_contains($html, 'data-erp-modal-open="person-card-1"') && str_contains($html, '<dialog class="erp-modal erp-modal--wide erp-person-card" id="person-card-1"')
     && str_contains($html, '529.982.247-25') && str_contains($html, 'href="tel:+5511999990000"') && str_contains($html, '(11) 99999-0000') && str_contains($html, '01/03/2024')
     && str_contains($html, 'Sala 7') && str_contains($html, 'Edifício Beta') && str_contains($html, 'Prefere &lt;WhatsApp&gt;') && str_contains($html, 'Rua das Flores, 10')
-    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
+    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && str_contains($html, 'data-move-term-link="saida"') && str_contains($html, 'pessoa=1&amp;tipo=entrada') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Escolha uma unidade') && !str_contains($html, 'data-erp-unit-panel'), 'AP-003: sem unidade escolhida pede a escolha');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => 99, 'unitPanelError' => 'Unidade não encontrada no seu escopo de condomínios.']));
 $assert(str_contains($html, 'Unidade não encontrada') && !str_contains($html, 'Escolha uma unidade'), 'AP-003: unidade fora do escopo');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem unidades');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'data-unit-occupancy') === false && str_contains($html, 'Unidade(s) neste condomínio') === false, 'AP-003: sem painel, sem marca de ocupação');
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => ['unit' => ['is_vacant' => true] + $unitPanel['unit']] + $unitPanel]));
+$assert(str_contains($html, 'data-unit-occupancy="vazia"') && str_contains($html, 'Unidade vazia'), 'AP-003: unidade marcada como vazia (ADR 0310)');
+Source\Support\Erp\CondominiumContext::reset();
+$html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
+$assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unidade"') && !str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem condomínio na barra superior, sem filtro de unidade (ADR 0310)');
+
+// Lista de unidades com filtro Ocupação e paginação (revisão de 15/11, ADR 0310).
+if (is_file($vendor . '/movescode/pager/src/Pager.php')) require_once $vendor . '/movescode/pager/src/Pager.php';
+$unitsDef = Source\Services\Erp\Registry\Definitions::all()['units'];
+$unitRow = static fn (int $id, string $n, bool $vacant): array => ['id' => $id, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'block' => null, 'number' => $n, 'type' => 'apartamento', 'floor' => null,
+    'ideal_fraction' => null, 'private_area' => null, 'is_vacant' => $vacant, 'notes' => null, 'status' => 'active', 'label' => $n, 'owners' => ['Ana'], 'tenants' => []];
+foreach ([['ocupadas', false], ['vazias', true]] as [$flagValue, $vacant]) {
+    $unitFilters = ['condominium_id' => 7, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => 'homepage', 'page' => 2, 'flag' => $flagValue, 'per_page' => 100];
+    $html = $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-006', ['definition' => $unitsDef, 'result' => ['data' => [$unitRow(1, '101', $vacant)], 'total' => 250, 'page' => 2, 'per_page' => 100, 'pages' => 3],
+        'filters' => $unitFilters, 'filterField' => 'type', 'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Unidades'));
+    $assert(str_contains($html, 'name="ocupacao"') && str_contains($html, '<option value="' . $flagValue . '" selected>') && str_contains($html, '<th scope="col">Ocupação</th>')
+        && str_contains($html, '>' . ($vacant ? 'Vazia' : 'Ocupada') . '</td>') && str_contains($html, 'Exibindo <strong>101–200</strong> de <strong>250</strong> itens')
+        && str_contains($html, '<option value="100" selected>100</option>') && str_contains($html, 'ocupacao=' . $flagValue) && str_contains($html, 'q=homepag%65'), "AP-006: lista com Ocupação {$flagValue} e itens por página (ADR 0310)");
+}
+// Configuração em massa (ADR 0311): marcação e modal com "Manter como está"; sem gravar ou sem condomínio, nada.
+$assert(str_contains($html, 'data-unit-bulk-item') && str_contains($html, 'data-unit-bulk-all') && str_contains($html, 'id="unit-bulk-settings"') && str_contains($html, 'data-condominium="7"')
+    && substr_count($html, 'Manter como está</option>') === 10 && str_contains($html, 'name="due_day__clear"') && str_contains($html, 'name="postage_cents" inputmode="decimal" data-erp-money')
+    && str_contains($html, 'Nenhuma (tirar)'), 'AP-006: configuração das unidades em massa (ADR 0311)');
+foreach ([['canManage' => false], ['filters' => ['condominium_id' => null] + $unitFilters]] as $variant) {
+    $html = $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-006', $variant + ['definition' => $unitsDef, 'result' => ['data' => [$unitRow(1, '101', false)], 'total' => 1, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+        'filters' => $unitFilters, 'filterField' => 'type', 'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Unidades'));
+    $assert(!str_contains($html, 'data-unit-bulk') && !str_contains($html, 'unit-bulk-settings'), 'AP-006: sem permissão ou sem condomínio, sem configuração em massa');
+}
+
+// Atalhos da lista de lançamentos (ADR 0313, modelo 7): marcar, copiar e excluir só com condomínio; links sempre.
+$entriesDef = Source\Services\Erp\Registry\Definitions::all()['entries'];
+$entryRow = ['id' => 31, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'nature' => 'despesa', 'competence' => '2026-11', 'description' => 'Copasa <água>', 'amount_cents' => 171308,
+    'due_on' => '2026-11-10', 'paid_on' => null, 'unit_id' => null, 'status' => 'active'];
+$entryList = static fn (array $over): string => $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-020', $over + ['definition' => $entriesDef, 'result' => ['data' => [$entryRow], 'total' => 1, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+    'filters' => ['condominium_id' => 7, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => null, 'page' => 1, 'per_page' => 50], 'filterField' => 'nature',
+    'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Lançamentos'));
+$html = $entryList([]);
+$save('page-ap-020-shortcuts', $html);
+$assert(str_contains($html, 'data-entry-shortcuts') && str_contains($html, '/financeiro/lancar-receita"') && str_contains($html, '/financeiro/lancar-despesa"') && str_contains($html, '/importacoes/lancamentos-planilha"')
+    && str_contains($html, 'situacao=inactive') && str_contains($html, 'data-entry-pick') && str_contains($html, 'value="31" data-entry-pick') && str_contains($html, 'id="entry-copy-dialog"') && str_contains($html, '/api/v1/entries/copy')
+    && str_contains($html, '/api/v1/entries/cancel') && str_contains($html, 'Marcar o lançamento Copasa &lt;água&gt;'), 'AP-020: atalhos, marcação, copiar e excluir (ADR 0313)');
+$html = $entryList(['filters' => ['condominium_id' => null, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => null, 'page' => 1, 'per_page' => 50]]);
+$assert(str_contains($html, 'data-entry-shortcuts') && !str_contains($html, 'data-entry-pick') && !str_contains($html, 'entry-copy-dialog') && str_contains($html, 'escolha um condomínio na barra superior'), 'AP-020: sem condomínio, atalhos sem marcação');
+$assert(!str_contains($entryList(['canManage' => false]), 'data-entry-shortcuts'), 'AP-020: só consulta, sem atalhos');
+// Download das listas (ADR 0314, modelo 3): PDF, Excel e CSV com os filtros da tela; lista vazia sem botão.
+$html = $entryList(['filters' => ['condominium_id' => 7, 'include_standard' => true, 'status' => 'active', 'filter' => 'despesa', 'q' => 'Copasa', 'page' => 2, 'per_page' => 50]]);
+$assert(str_contains($html, 'erp-download') && str_contains($html, '>Download</summary>') && str_contains($html, 'baixar=pdf') && str_contains($html, 'baixar=xlsx') && str_contains($html, 'baixar=csv')
+    && str_contains($html, 'condominio=7&amp;situacao=active&amp;tipo=despesa&amp;q=Copasa&amp;baixar=pdf') && !str_contains($html, 'pagina=2&amp;baixar'), 'listas: Download com os filtros (ADR 0314)');
+$assert(!str_contains($entryList(['result' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 50, 'pages' => 0]]), 'erp-download'), 'listas: sem linhas, sem Download');
+
+// Termo de entrada e de saída (ADR 0311): edição com palavras-chave e termo para imprimir.
+$termCurrent = ['condominium_id' => 7, 'kind' => 'saida', 'body' => "Texto <b>@morador</b>", 'source' => 'general', 'updated_at' => null];
+$html = $render('pages/condominiums/move-terms', $layoutData->invoke($panel, $user, 'AP-006', ['termCondominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'termCondominium' => 7,
+    'termKind' => 'saida', 'termGlobal' => true, 'termCurrent' => $termCurrent, 'termDraft' => null, 'termError' => null, 'flash' => null], 'Termo de entrada/saída'));
+$assert(str_contains($html, 'data-erp-move-term') && str_contains($html, '<option value="geral">Geral (Connect)</option>') && str_contains($html, '<option value="saida" selected>')
+    && str_contains($html, 'Texto &lt;b&gt;@morador&lt;/b&gt;</textarea>') && str_contains($html, 'data-move-term-keyword="@linhaAssinatura"') && str_contains($html, 'usa o texto geral da Connect')
+    && str_contains($html, 'name="condominium_id" value="7"'), 'AP-006: texto do termo de entrada/saída (ADR 0311)');
+$html = $render('pages/condominiums/move-terms', $layoutData->invoke($panel, $user, 'AP-006', ['termCondominiums' => [], 'termCondominium' => null,
+    'termKind' => 'entrada', 'termGlobal' => false, 'termCurrent' => null, 'termDraft' => null, 'termError' => null, 'flash' => null], 'Termo de entrada/saída'));
+$assert(!str_contains($html, 'data-erp-move-term') && !str_contains($html, 'Geral (Connect)</option>') && str_contains($html, 'Escolha um condomínio'), 'AP-006: termo sem condomínio e sem acesso geral');
+$html = $render('pages/condominiums/move-term', $layoutData->invoke($panel, $user, 'AP-006', ['moveTerm' => ['kind' => 'entrada', 'title' => 'Termo de entrada', 'source' => 'default',
+    'html' => Source\Services\Erp\UnitMoveTerms::fill("Eu, @morador.\n\n@linhaAssinatura", ['morador' => 'Ana <i>']), 'condominium' => 'Residencial <Exemplo>', 'unit' => '101', 'person' => 'Ana', 'created_on' => '2026-11-16'],
+    'moveTermError' => null, 'moveTermUnit' => 5], 'Termo de entrada'));
+$assert(str_contains($html, 'data-erp-print') && str_contains($html, '<p>Eu, Ana &lt;i&gt;.</p>') && str_contains($html, 'erp-move-term__sign') && str_contains($html, 'Residencial &lt;Exemplo&gt;')
+    && str_contains($html, 'painel-da-unidade?unidade=5'), 'AP-006: termo de entrada para imprimir');
+$html = $render('pages/condominiums/move-term', $layoutData->invoke($panel, $user, 'AP-006', ['moveTerm' => null, 'moveTermError' => 'Unidade não encontrada no seu acesso.', 'moveTermUnit' => null], 'Termo'));
+$assert(!str_contains($html, 'data-erp-print') && str_contains($html, 'Unidade não encontrada no seu acesso.'), 'AP-006: termo fora do escopo');
 
 // Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
 $html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));

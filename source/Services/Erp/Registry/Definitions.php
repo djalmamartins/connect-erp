@@ -136,10 +136,29 @@ final class Definitions
                     'floor' => ['label' => 'Andar', 'type' => 'text', 'max' => 10, 'span' => 2],
                     'ideal_fraction' => ['label' => 'Fração ideal', 'type' => 'decimal', 'scale' => 6, 'min' => 0, 'max_value' => 1, 'span' => 3, 'hint' => 'Entre 0 e 1, ex.: 0,012500'],
                     'private_area' => ['label' => 'Área privativa (m²)', 'type' => 'decimal', 'scale' => 2, 'min' => 0, 'max_value' => 99999999.99, 'span' => 3],
+                    'cib' => ['label' => 'Código CIB', 'type' => 'cib', 'span' => 3, 'search' => true, 'hint' => 'Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito'],
+                    // Revisão de 15/11 (ADR 0310): marca da equipe; 'shown' troca o Sim/Não por Vazia/Ocupada na lista.
+                    'is_vacant' => ['label' => 'Unidade vazia', 'type' => 'bool', 'span' => 6, 'list' => true, 'list_label' => 'Ocupação', 'shown' => ['Ocupada', 'Vazia'],
+                        'hint' => 'Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).'],
+                    // Configurações de cobrança (revisão de 15/11, etapa 2, ADR 0311; as mesmas da configuração em massa).
+                    'due_day' => ['label' => 'Dia padrão de vencimento', 'type' => 'int', 'min' => 1, 'max_value' => 31, 'span' => 3, 'hint' => 'Mês sem esse dia: vence no último dia do mês'],
+                    'apportionment_exempt' => ['label' => 'Unidade isenta de rateio', 'type' => 'bool', 'span' => 3, 'hint' => 'Fica fora das faturas geradas para o condomínio todo'],
+                    'block_bill_merge' => ['label' => 'Bloquear unificação de boletos', 'type' => 'bool', 'span' => 6, 'hint' => 'Fica fora do boleto único de várias unidades'],
+                    'postage_cents' => ['label' => 'Valor porte postal', 'type' => 'money', 'default' => 0, 'span' => 3, 'hint' => 'Zero = não cobra'],
+                    'postage_payer' => ['label' => 'Responsável pelo porte postal', 'type' => 'select', 'default' => 'ambos', 'span' => 3, 'options' => ['ambos' => 'Ambos', 'proprietario' => 'Proprietário', 'inquilino' => 'Inquilino']],
+                    'billing_responsible' => ['label' => 'Responsável pela cobrança', 'type' => 'select', 'default' => 'nao_definido', 'span' => 3, 'options' => ['nao_definido' => 'Não definido', 'proprietario' => 'Proprietário', 'inquilino' => 'Inquilino'], 'hint' => 'Os boletos saem em nome dele'],
+                    'bill_address' => ['label' => 'Endereço do boleto', 'type' => 'select', 'default' => 'predio', 'span' => 3, 'options' => ['predio' => 'Prédio', 'correios' => 'Correios']],
+                    'bill_email_to' => ['label' => 'Enviar e-mail para', 'type' => 'select', 'default' => 'responsavel', 'span' => 3, 'options' => ['responsavel' => 'Responsável', 'proprietario' => 'Proprietário', 'inquilino' => 'Inquilino', 'ambos' => 'Ambos']],
+                    'reads_gas' => ['label' => 'Leitura de gás', 'type' => 'bool', 'span' => 3],
+                    'reads_water' => ['label' => 'Leitura de água', 'type' => 'bool', 'span' => 3],
+                    'reads_power' => ['label' => 'Leitura de energia elétrica', 'type' => 'bool', 'span' => 3],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
+                // Filtro "Ocupação" da lista (?ocupacao=ocupadas|vazias), pela marca acima (ADR 0310).
+                'flag_filter' => ['field' => 'is_vacant', 'param' => 'ocupacao', 'label' => 'Ocupação', 'options' => ['ocupadas' => ['Ocupadas', 0], 'vazias' => ['Vazias', 1]]],
                 // Bloco vazio conta como valor: "101" sem bloco não pode repetir no mesmo condomínio.
-                'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.']],
+                'unique' => [['fields' => ['condominium_id', 'block', 'number'], 'nullable' => ['block'], 'message' => 'Já existe esta unidade neste condomínio.'],
+                    ['fields' => ['cib'], 'message' => 'Este código CIB já está em outra unidade.']],
                 'computed' => ['label'],
                 // Não exclui unidade com cadastros ativos vinculados (RegistryInUse → 409).
                 'referenced_by' => ['erp_residents', 'erp_board_members', 'erp_vehicles', 'erp_visitors', 'erp_pets', 'erp_linkable_areas', 'erp_entries', 'erp_visit_forecasts', 'erp_access_logs', 'erp_deliveries', 'erp_meters', 'erp_occurrences', 'erp_reservations', 'erp_waitlist', 'erp_moves'],
@@ -163,7 +182,7 @@ final class Definitions
                         'owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro',
                     ]],
                     'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
-                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true, 'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone']],
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'starts_on' => ['label' => 'Início do vínculo', 'type' => 'date', 'span' => 4],
@@ -174,6 +193,10 @@ final class Definitions
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
                 'unique' => [['fields' => ['condominium_id', 'unit_label', 'relationship', 'document'], 'message' => 'Esta pessoa já tem este vínculo com a unidade.']],
+                // ADR 0311: CPF/CNPJ não é obrigatório, mas não pode haver duas pessoas com o mesmo documento; e o
+                // vínculo com fim já passado fica inativo sozinho.
+                'same_person' => ['document' => 'document', 'name' => 'name', 'message' => 'Este CPF/CNPJ já está cadastrado para outra pessoa. Confira o documento ou use o mesmo nome do cadastro existente.'],
+                'inactive_after' => 'ends_on',
                 'requires' => [['field' => 'email', 'when' => 'billing_by_email', 'message' => 'Informe o e-mail para enviar o boleto.'], $unitRequired()],
                 'order' => 'name',
             ],
@@ -236,7 +259,9 @@ final class Definitions
                 'lead' => 'Fornecedores e prestadores de serviço da Connect, usados por todos os condomínios.',
                 'fields' => [
                     'legal_name' => ['label' => 'Razão social ou nome', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
-                    'document' => ['label' => 'CNPJ/CPF', 'type' => 'document', 'required' => true, 'span' => 4, 'list' => true, 'search' => true],
+                    // Revisão de 15/11, etapa 3 (ADR 0312): CNPJ completo busca os dados na Receita e preenche os campos vazios.
+                    'document' => ['label' => 'CNPJ/CPF', 'type' => 'document', 'required' => true, 'span' => 4, 'list' => true, 'search' => true,
+                        'cnpj_lookup' => ['legal_name' => 'razao_social', 'trade_name' => 'nome_fantasia', 'email' => 'email', 'phone' => 'phone'], 'hint' => 'Com o CNPJ, buscamos os dados na Receita'],
                     'trade_name' => ['label' => 'Nome fantasia', 'type' => 'text', 'max' => 160, 'span' => 6, 'search' => true],
                     'category' => ['label' => 'Categoria', 'type' => 'select', 'required' => true, 'span' => 6, 'list' => true, 'filter' => true, 'options' => [
                         'manutencao' => 'Manutenção', 'limpeza' => 'Limpeza', 'seguranca' => 'Segurança', 'elevadores' => 'Elevadores',
@@ -261,14 +286,15 @@ final class Definitions
                 'fields' => [
                     'name' => ['label' => 'Nome', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'oab' => ['label' => 'OAB', 'type' => 'oab', 'required' => true, 'span' => 4, 'list' => true, 'search' => true, 'hint' => 'UF e número, ex.: SP 123456'],
-                    'document' => ['label' => 'CPF', 'type' => 'cpf', 'span' => 4],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'cnpj_lookup' => ['firm' => 'razao_social', 'email' => 'email', 'phone' => 'phone'],
+                        'hint' => 'CPF do advogado ou CNPJ do escritório (com o CNPJ, buscamos os dados na Receita)'],
                     'firm' => ['label' => 'Escritório', 'type' => 'text', 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'fee_percent' => ['label' => 'Honorários (%)', 'type' => 'percent', 'span' => 4],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                'unique' => [['fields' => ['oab'], 'message' => 'Já existe um advogado com esta OAB.']],
+                'unique' => [['fields' => ['oab'], 'message' => 'Já existe um advogado com esta OAB.'], ['fields' => ['document'], 'message' => 'Já existe um advogado com este CPF/CNPJ.']],
                 'order' => 'name',
             ],
             'vehicles' => [

@@ -10,6 +10,8 @@ declare(strict_types=1);
  *   php tools/help.php scaffold               cria o rascunho do artigo de cada página do menu que
  *                                             ainda não tem artigo (nunca sobrescreve)
  *   php tools/help.php screens [--only a,b]   lista os prints em JSON (usado por tools/help/shots.mjs)
+ *   php tools/help.php explicar               escreve em cada artigo a seção "O que acontece por trás"
+ *                                             a partir das explicações das telas (ADR 0309)
  *   php tools/help.php sync                   publica a base na Central de Ajuda (/suporte)
  *   php tools/help.php stats                  quantos artigos, prints e páginas cobertas
  *
@@ -36,6 +38,7 @@ if ($command === 'sync') {
 use Source\Services\Help\HelpScaffold;
 use Source\Services\Help\HelpSync;
 use Source\Services\Help\KnowledgeBase;
+use Source\Services\Help\PageGuides;
 
 $options = array_slice($argv, 2);
 $kb = new KnowledgeBase();
@@ -44,7 +47,7 @@ $codes = array_keys($catalog['pages']);
 
 switch ($command) {
     case 'check':
-        $problems = $kb->problems($codes, !in_array('--sem-prints', $options, true));
+        $problems = array_merge($kb->problems($codes, !in_array('--sem-prints', $options, true)), PageGuides::problems($kb, $codes), $kb->areaProblems());
         $drafts = array_filter($kb->articles(), static fn (array $a): bool => $a['draft']);
         if ($drafts) {
             fwrite(STDERR, count($drafts) . " artigo(s) ainda em rascunho (não aparecem no site):\n");
@@ -59,7 +62,8 @@ switch ($command) {
             }
             exit(1);
         }
-        echo 'Base de conhecimento OK: ' . count($kb->articles()) . ' artigos, ' . count($codes) . " páginas do menu cobertas.\n";
+        echo 'Base de conhecimento OK: ' . count($kb->articles()) . ' artigos, ' . count($codes) . ' páginas do menu cobertas, '
+            . PageGuides::coverage($codes) . " com a explicação \"Sobre esta tela\".\n";
         exit(0);
 
     case 'scaffold':
@@ -93,6 +97,26 @@ switch ($command) {
         $texts = is_file($root . '/tools/help/textos.php') ? require $root . '/tools/help/textos.php' : [];
         $written = (new \Source\Services\Help\HelpWriter($kb, $catalog, json_decode((string)file_get_contents($detailsFile), true) ?: [], $texts))->run($only);
         echo count($written) . " artigo(s) reescrito(s). Rode os prints e confira antes do commit.\n";
+        exit(0);
+
+    case 'explicar':
+        // "O que acontece por trás" (ADR 0309): a mesma explicação do quadro "Sobre esta tela" do ERP.
+        $changed = 0;
+        foreach ($kb->articles() as $article) {
+            $guide = PageGuides::forArticle($article);
+            if ($guide === null) {
+                continue;
+            }
+            $file = $root . '/' . $article['file'];
+            $source = (string)file_get_contents($file);
+            $updated = PageGuides::apply($source, $guide);
+            if ($updated !== str_replace(["\r\n", "\r"], "\n", $source)) {
+                file_put_contents($file, $updated);
+                echo "atualizado {$article['file']}\n";
+                $changed++;
+            }
+        }
+        echo $changed . " artigo(s) atualizado(s). Rode php tools/help.php check.\n";
         exit(0);
 
     case 'screens':
@@ -135,6 +159,6 @@ switch ($command) {
         exit(0);
 
     default:
-        echo "Uso: php tools/help.php check|scaffold|escrever|screens|sync|stats\n";
+        echo "Uso: php tools/help.php check|scaffold|escrever|explicar|screens|sync|stats\n";
         exit($command === 'help' ? 0 : 1);
 }

@@ -65,6 +65,10 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Cadastro rápido de unidades (ADR 0140): antes do motor, para /{id} não capturar a rota.
     $route->get(\Source\Controllers\Erp\Connect\UnitBatchScreen::ROUTE, "UnitBatchScreen:show", $erpName('erp.units.batch'));
+    // Termo de entrada e de saída (ADR 0311): antes do motor, para /{id} não capturar a rota.
+    $route->get(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE, "UnitMoveTermScreen:edit", $erpName('erp.units.terms'));
+    $route->post(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE, "UnitMoveTermScreen:save");
+    $route->get(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::PRINT_ROUTE, "UnitMoveTermScreen:show", $erpName('erp.units.term'));
 
     // Anexos dos lançamentos (ADR 0174) e downloads do livro caixa (CN-007): antes do motor e do catálogo.
     $route->post("/financeiro/lancamentos/{id}/anexos", "EntryAttachmentScreens:store");
@@ -73,6 +77,9 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/prestacao-de-contas/livro-caixa/pdf", "CashBookScreens:pdf");
     $route->get("/prestacao-de-contas/livro-caixa/pacote", "CashBookScreens:package");
     $route->get("/prestacao-de-contas/livro-caixa/imprimir", "CashBookScreens:printView");
+    // Prestação de contas no padrão do PDF de outubro (revisão de 15/11 item 21, ADR 0314).
+    $route->get("/prestacao-de-contas/prestacao-de-contas/documento", "AccountabilityScreens:document");
+    $route->get("/prestacao-de-contas/prestacao-de-contas/pdf", "AccountabilityScreens:documentPdf");
     // Link público da prestação de contas para os moradores (ADR 0301): gerar, enviar e revogar pelo livro caixa.
     $route->post("/prestacao-de-contas/livro-caixa/link", "CashBookScreens:generateLink");
     $route->post("/prestacao-de-contas/livro-caixa/link/{id}/enviar", "CashBookScreens:sendLink");

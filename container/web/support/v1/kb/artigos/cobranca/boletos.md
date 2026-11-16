@@ -8,7 +8,7 @@ menu: Cobrança > Boletos
 icone: list-outline
 relacionados: faturas, arquivo-de-retorno, retornos, acordos, remessas, banco-inter
 situacao: funciona
-palavras: boletos, cobrança, AP-035, inter, pix, pdf, boleto híbrido
+palavras: boletos, cobrança, AP-035, inter, pix, pdf, boleto híbrido, carta de cobrança, correio, envelope
 manual: sim
 rascunho: nao
 ---
@@ -55,6 +55,26 @@ recorte: dialog[open]
 
 O pagamento é baixado automaticamente quando o [arquivo de retorno](artigo:arquivo-de-retorno) do banco é importado.
 
+## Carta de cobrança para o Correio
+
+Em um boleto **registrado** ou **pago**, o botão {{Carta}} abre a carta de cobrança em PDF, pronta para imprimir em A4 e dobrar em três:
+
+- **Parte externa**: fundo floral da Connect, canais de atendimento e aplicativo (na aba de cima), destinatário, quadro "Para uso do Correio" e remetente.
+- **Parte interna**: vencimento e valor, composição do boleto, resumo do mês anterior (receitas em cotas, despesas e saldo), contas bancárias, fundos, inadimplência, área de avisos e a ficha do boleto com linha digitável, código de barras e o QR code do Pix (quando o banco devolve o Pix).
+
+O destinatário é o mesmo pagador do boleto no banco, com o endereço do condomínio, o bloco e o apartamento. A carta tem sempre duas folhas: quando o mês tem muitos lançamentos, o resumo mostra só as contas, os grupos ou os totais.
+
+### Mudar os textos da carta
+
+Em [[Configurações > Financeiro e parâmetros > Financeiro]] ficam os parâmetros **Carta de cobrança**:
+
+- **Aba externa (esquerda e direita)**: título e texto da aba que fica de cabeça para baixo na parte de fora. Vale para todos os condomínios.
+- **Avisos da parte interna**: título e texto do quadro acima do boleto. Escolha o condomínio na barra superior para ter um aviso só dele. Deixe vazio para não imprimir o quadro.
+
+No texto, cada linha pode começar com `# ` (subtítulo), `! ` (destaque, como um telefone), `- ` (item de lista) ou `~ ` (letra miúda).
+
+> A carta só lê os dados: gerar de novo não muda o boleto nem a conta a receber.
+
 ## Boletos pelo Banco Inter
 
 Quando a conta bancária de cobrança é do Banco Inter e a integração está ligada (veja [Ligar a cobrança pelo Banco Inter](artigo:banco-inter)), o boleto é registrado direto no Inter:
@@ -67,6 +87,10 @@ Quando a conta bancária de cobrança é do Banco Inter e a integração está l
 - Boleto cancelado ou vencido sem pagamento no Inter aparece como **Cancelado** e libera um boleto novo para a mesma conta a receber.
 
 >! Por enquanto o Inter está ligado só no **ambiente de testes do banco** (sandbox). Esses boletos não podem ser pagos.
+
+O sistema consulta no Inter, **de hora em hora**, os boletos em aberto: o que foi pago é baixado sozinho na conta a receber, e o que expirou ou foi cancelado no banco aparece como cancelado. Para ver na hora, use **Consultar**.
+
+No ambiente de testes do Inter, o boleto registrado tem o botão **Simular pagamento**. Ele pede ao Inter que simule o pagamento e consulta o boleto em seguida: a conta a receber é baixada pela mesma conciliação de um pagamento de verdade. Esse botão não existe em produção.
 
 
 ## Como usar

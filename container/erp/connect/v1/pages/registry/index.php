@@ -5,6 +5,7 @@
  * @var array $definition @var array $result @var array $filters @var ?string $filterField
  * @var list<array> $condominiums @var bool $canManage @var ?\Source\Support\Message $flash
  */
+use Source\Support\Erp\PerPage;
 use Source\Support\Erp\RegistryFormat;
 
 $this->layout('default');
@@ -21,21 +22,34 @@ if (isset($definition['people']) && $result['data'] !== [] && array_key_exists(r
     }
 }
 $searchHint = isset($definition['people']) ? 'Unidade, bloco, proprietário ou inquilino' : 'Nome, documento ou unidade';
-$query = static function (array $changes) use ($filters): string {
+// Filtro de marca da definição (ADR 0310: Ocupação das unidades).
+$flagFilter = $definition['flag_filter'] ?? null;
+$flagParam = $flagFilter['param'] ?? 'ocupacao';
+$query = static function (array $changes) use ($filters, $flagParam): string {
     $params = array_filter([
         'condominio' => $filters['condominium_id'] ?? null, 'situacao' => $filters['status'] ?? null,
         'tipo' => $filters['filter'] ?? null, 'q' => $filters['q'] ?? null,
+        $flagParam => $filters['flag'] ?? null,
+        'por_pagina' => ($filters['per_page'] ?? PerPage::DEFAULT) !== PerPage::DEFAULT ? $filters['per_page'] : null,
     ], static fn ($v): bool => $v !== null && $v !== '');
     $params = array_filter(array_merge($params, $changes), static fn ($v): bool => $v !== null && $v !== '');
     return $params === [] ? '' : '?' . http_build_query($params);
 };
-$filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null], static fn ($v): bool => $v !== null && $v !== '') !== [];
+// Configuração em massa (ADR 0311): só na lista de unidades, com um condomínio escolhido e permissão de gravar.
+$bulkCondominium = ($definition['page'] ?? '') === 'AP-006' && $canManage ? (int)($filters['condominium_id'] ?? 0) : 0;
+// Atalhos e seleção na lista de lançamentos (ADR 0313, modelo 7): copiar e excluir só com um condomínio escolhido.
+$entryShortcuts = ($definition['page'] ?? '') === 'AP-020' && $canManage;
+$entryCondominium = $entryShortcuts ? (int)($filters['condominium_id'] ?? 0) : 0;
+$filtered = array_filter([$filters['status'] ?? null, $filters['filter'] ?? null, $filters['q'] ?? null, isset($flagFilter['options'][(string)($filters['flag'] ?? '')]) ? $filters['flag'] : null], static fn ($v): bool => $v !== null && $v !== '') !== [];
 ob_start(); ?>
     <?php // AP-006: cadastro rápido e fração ideal/área em grade (ADR 0140).
     if (($definition['page'] ?? '') === 'AP-006'): ?>
         <a class="erp-btn" href="<?= erp_url('/configuracoes/fracao-ideal') ?>">Fração ideal e área</a>
+        <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE) ?>"><?= $icon('file', 'erp-icon--sm') ?>Termo de entrada/saída</a><?php endif; ?>
         <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url('/condominios/unidades/cadastro-rapido') ?>"><?= $icon('sparkle', 'erp-icon--sm') ?>Cadastro rápido</a><?php endif; ?>
     <?php endif; ?>
+    <?php // Download da lista com os filtros aplicados (ADR 0314): PDF no padrão do modelo 3, Excel e CSV.
+    if ($result['data'] !== []): $this->insert('components/tables/download', ['downloadUrl' => erp_url($route) . $query(['pagina' => null]), 'downloadParam' => 'baixar', 'downloadTone' => '']); endif; ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
     <?php // AP-021: gera os lançamentos da competência a partir dos fixos (ADR 0027). A API valida tudo de novo.
     if (($definition['page'] ?? '') === 'AP-021' && $canManage && \Source\Support\Access::can('erp.entries.manage')): ?>
@@ -71,6 +85,12 @@ $this->insert('components/layout/page-head', [
                 <?php foreach ($ff['options'] as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $key === ($filters['filter'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
             </select></div>
         <?php endif; ?>
+        <?php if ($flagFilter !== null): ?>
+            <div class="erp-field"><label for="reg-flag"><?= $this->e($flagFilter['label']) ?></label><select class="erp-select" id="reg-flag" name="<?= $this->e($flagParam) ?>"><option value="">Todas</option>
+                <?php foreach ($flagFilter['options'] as $key => [$label]): ?><option value="<?= $this->e($key) ?>"<?= $key === (string)($filters['flag'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
+            </select></div>
+        <?php endif; ?>
+        <?php if (($filters['per_page'] ?? PerPage::DEFAULT) !== PerPage::DEFAULT): ?><input type="hidden" name="por_pagina" value="<?= (int)$filters['per_page'] ?>"><?php endif; ?>
         <div class="erp-field"><label for="reg-status">Situação</label><select class="erp-select" id="reg-status" name="situacao"><option value="">Todas</option>
             <?php foreach ($definition['status'] as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $key === ($filters['status'] ?? '') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
         </select></div>
@@ -80,6 +100,9 @@ $this->insert('components/layout/page-head', [
 
     <div class="erp-card erp-card--flush" style="margin-top:16px">
         <div class="erp-card__head"><div><h2><?= $this->e($definition['label']) ?></h2><p><?= $result['total'] === 1 ? '1 registro' : $result['total'] . ' registros' ?><?= $filtered ? ' com os filtros aplicados' : '' ?></p></div></div>
+        <?php if ($entryShortcuts) {
+            $this->insert('components/finance/entry-shortcuts', ['entryCondominium' => $entryCondominium, 'cancelledHref' => erp_url($route) . $query(['situacao' => 'inactive', 'pagina' => null])]);
+        } ?>
         <?php if ($result['data'] === []): ?>
             <div class="erp-empty" role="status">
                 <span class="erp-empty__icon"><?= $icon('users') ?></span>
@@ -88,11 +111,19 @@ $this->insert('components/layout/page-head', [
                 <?php if ($canManage && !$filtered && (!$hasCondominium || $condominiums !== [])): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>
             </div>
         <?php else: ?>
+            <?php if ($bulkCondominium > 0): ?>
+                <div class="erp-bulk-bar" data-unit-bulk-bar>
+                    <span data-unit-bulk-selected>Marque as unidades para configurar em massa.</span>
+                    <button type="button" class="erp-btn erp-btn--sm" data-erp-modal-open="unit-bulk-settings" data-unit-bulk-open disabled><?= $icon('settings', 'erp-icon--sm') ?>Configurar unidades em massa</button>
+                </div>
+            <?php endif; ?>
             <div class="erp-table-wrap" role="region" aria-label="<?= $this->e($definition['label']) ?>" tabindex="0">
                 <table class="erp-table">
                     <caption class="erp-sr-only"><?= $this->e($definition['label']) ?> (<?= (int)$result['total'] ?>)</caption>
                     <thead><tr>
-                        <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['label']) ?></th><?php endforeach; ?>
+                        <?php if ($bulkCondominium > 0): ?><th scope="col" class="is-check"><input type="checkbox" data-unit-bulk-all aria-label="Marcar todas as unidades desta página"></th><?php endif; ?>
+                        <?php if ($entryCondominium > 0): ?><th scope="col" class="is-check"><input type="checkbox" data-entry-pick-all aria-label="Marcar todos os lançamentos desta página"></th><?php endif; ?>
+                        <?php foreach ($listFields as $field): ?><th scope="col"><?= $this->e($field['list_label'] ?? $field['label']) ?></th><?php endforeach; ?>
                         <?php foreach ($peopleColumns as $label): ?><th scope="col"><?= $this->e($label) ?></th><?php endforeach; ?>
                         <th scope="col">Situação</th>
                         <th scope="col" class="is-num"><span class="erp-sr-only">Ações</span></th>
@@ -100,6 +131,8 @@ $this->insert('components/layout/page-head', [
                     <tbody>
                     <?php foreach ($result['data'] as $row): $first = true; $href = erp_url($route . '/' . (int)$row['id']); ?>
                         <tr>
+                            <?php if ($bulkCondominium > 0): ?><td class="is-check"><input type="checkbox" value="<?= (int)$row['id'] ?>" data-unit-bulk-item aria-label="Marcar a unidade <?= $this->e((string)($row[$definition['title']] ?? $row['id'])) ?>"></td><?php endif; ?>
+                            <?php if ($entryCondominium > 0): ?><td class="is-check"><input type="checkbox" value="<?= (int)$row['id'] ?>" data-entry-pick aria-label="Marcar o lançamento <?= $this->e((string)($row[$definition['title']] ?? $row['id'])) ?>"></td><?php endif; ?>
                             <?php foreach ($listFields as $name => $field): $text = RegistryFormat::display($field, $row[$name], $row['condominium_name'] ?? null); ?>
                                 <td><?php if ($first): $first = false; ?><a href="<?= $href ?>"><strong><?= $this->e($text) ?></strong></a><?php else: ?><?= $this->e($text) ?><?php endif; ?></td>
                             <?php endforeach; ?>
@@ -113,15 +146,10 @@ $this->insert('components/layout/page-head', [
                     </tbody>
                 </table>
             </div>
-            <?php if ($result['pages'] > 1): ?>
-                <nav class="erp-pagination" aria-label="Paginação">
-                    <span>Página <?= (int)$result['page'] ?> de <?= (int)$result['pages'] ?></span>
-                    <div class="erp-pagination__pages">
-                        <?php if ($result['page'] > 1): ?><a class="erp-btn erp-btn--sm" href="<?= erp_url($route) . $this->e($query(['pagina' => $result['page'] - 1])) ?>" rel="prev">Anterior</a><?php endif; ?>
-                        <?php if ($result['page'] < $result['pages']): ?><a class="erp-btn erp-btn--sm" href="<?= erp_url($route) . $this->e($query(['pagina' => $result['page'] + 1])) ?>" rel="next">Próxima</a><?php endif; ?>
-                    </div>
-                </nav>
-            <?php endif; ?>
+            <?php // Paginação padrão (ADR 0310): moves/pager e itens por página 50/100/200/500.
+            parse_str(ltrim($query([]), '?'), $currentQuery);
+            $this->insert('components/tables/pagination', ['pagination' => $result, 'paginationBase' => erp_url($route), 'paginationQuery' => $currentQuery]); ?>
         <?php endif; ?>
     </div>
 </section>
+<?php if ($bulkCondominium > 0 && $result['data'] !== []): $this->insert('components/units/bulk-settings', ['definition' => $definition, 'bulkCondominium' => $bulkCondominium]); endif; ?>

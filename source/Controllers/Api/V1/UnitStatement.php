@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Services\CondominiumAccessDenied;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Services\Erp\UnitStatement as Service;
 use Source\Support\Access;
@@ -37,15 +37,12 @@ final class UnitStatement
         try {
             $data = (new Service())->build($user, $_GET['unit_id'] ?? null, $_GET['from'] ?? null, $_GET['to'] ?? null);
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);
-                $content = CollectionReports::csv(Service::csvTable($data));
+                $content = ListDocument::render($format, Service::csvTable($data), ListDocument::meta($_GET['title'] ?? null, 'Extrato da unidade', (int)$data['unit']['condominium_id']));
                 Audit::record('export', 'erp_reports', 0, null, ['report' => 'unit-statement', 'unit_id' => $data['unit']['id'],
-                    'condominium_id' => $data['unit']['condominium_id'], 'from' => $data['from'], 'to' => $data['to'], 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="unit-statement-' . $data['unit']['id'] . '-' . $data['from'] . '-' . $data['to'] . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                    'condominium_id' => $data['unit']['condominium_id'], 'from' => $data['from'], 'to' => $data['to'], 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('unit-statement-' . $data['unit']['id'] . '-' . $data['from'] . '-' . $data['to'] . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

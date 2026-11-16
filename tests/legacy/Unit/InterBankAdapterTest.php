@@ -184,6 +184,34 @@ final class InterBankAdapterTest extends TestCase
         }
     }
 
+    public function testSimulatedPaymentOnlyWithRequestIdAndKnownMethod(): void
+    {
+        $id = (string)$this->adapter->registerCharge($this->charge())['external_id'];
+        $this->adapter->simulatePayment($id, 'PIX');
+        self::assertSame('paid', $this->adapter->getCharge('0000000001', $id)['event']['kind'] ?? null);
+        foreach ([[null, 'BOLETO'], [$id, 'CHEQUE']] as [$bad, $method]) {
+            try {
+                $this->adapter->simulatePayment($bad, $method);
+                self::fail('Deveria recusar.');
+            } catch (InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
+    public function testRefusalShowsFieldViolations(): void
+    {
+        $id = (string)$this->adapter->registerCharge($this->charge())['external_id'];
+        $this->http->nextResponse = ['status' => 406, 'body' => json_encode(['title' => 'Falha', 'detail' => 'Verifique',
+            'violacoes' => [['razao' => 'não pode ser pago hoje', 'propriedade' => 'dataVencimento']]])];
+        try {
+            $this->adapter->simulatePayment($id, 'BOLETO');
+            self::fail('406 deveria recusar.');
+        } catch (InvalidArgumentException $e) {
+            self::assertStringContainsString('[dataVencimento não pode ser pago hoje]', $e->getMessage());
+        }
+    }
+
     public function testOnlySandboxAndCompleteCredentials(): void
     {
         try {

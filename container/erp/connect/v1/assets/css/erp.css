@@ -195,6 +195,8 @@ p { margin: 0; }
 .erp-dropdown__item:hover { background: var(--erp-surface-muted); text-decoration: none; }
 .erp-dropdown__item small { display: block; color: var(--erp-muted); font-size: 12px; }
 .erp-dropdown__sep { height: 1px; margin: 6px 0; background: var(--erp-border); }
+.erp-download > summary { cursor: pointer; }
+.erp-download__panel { width: 280px; }
 .erp-user-chip { display: flex; align-items: center; gap: 8px; padding: 3px 10px 3px 3px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-pill); background: var(--erp-surface); cursor: pointer; }
 .erp-user-chip .erp-avatar { width: 32px; height: 32px; font-size: 13px; }
 .erp-user-chip span { font-weight: 600; font-size: 13px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -222,6 +224,25 @@ p { margin: 0; }
 .erp-page-head h1 { font-size: 24px; letter-spacing: -.02em; }
 .erp-page-head p { margin-top: 4px; color: var(--erp-muted); max-width: 70ch; }
 .erp-page-head__actions { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); }
+/* "Sobre esta tela" (ADR 0309): caixa verde-clara de borda fina; o título recolhe, o X fecha de vez naquela tela. */
+.erp-page-intro { position: relative; border: 1px solid var(--erp-brand-line); border-radius: var(--erp-radius-sm); background: var(--erp-brand-soft); font-size: 13px; line-height: 1.55; color: var(--erp-muted); }
+.erp-page-intro[hidden] { display: none; }
+.erp-page-intro__summary { display: flex; align-items: center; gap: 8px; padding: 10px 44px 10px 14px; cursor: pointer; list-style: none; font-weight: 600; color: var(--erp-brand-ink); }
+.erp-page-intro__summary::-webkit-details-marker { display: none; }
+.erp-page-intro__summary:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: -2px; border-radius: var(--erp-radius-sm); }
+.erp-page-intro__body { padding: 0 14px 12px; }
+.erp-page-intro__body p { max-width: 110ch; }
+.erp-page-intro__list { margin: 6px 0 0; padding-left: 20px; max-width: 110ch; }
+.erp-page-intro__list li { margin: 3px 0; }
+.erp-page-intro strong, .erp-page-intro .kb-path, .erp-page-intro .kb-button { font-weight: inherit; color: var(--erp-text); }
+.erp-page-intro .kb-path i { font-style: normal; margin: 0 3px; }
+.erp-page-intro__link { display: inline-block; margin-top: 10px; font-weight: 600; color: var(--erp-text); }
+.erp-page-intro__link:hover { color: var(--erp-brand-ink); }
+.erp-page-intro__close { position: absolute; top: 6px; right: 6px; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--erp-muted); cursor: pointer; }
+.erp-page-intro__close:hover { background: var(--erp-brand-line); color: var(--erp-text); }
+.erp-page-intro__close:focus-visible { outline: 2px solid var(--erp-focus); outline-offset: 1px; }
+@media print { .erp-page-intro { display: none !important; } }
+@media print { .erp-no-print { display: none !important; } }
 .erp-generate-month { display: flex; flex-wrap: wrap; align-items: center; gap: var(--erp-space-2); }
 .erp-generate-month .erp-input { width: auto; min-width: 150px; }
 .erp-eyebrow { display: inline-block; margin-bottom: 4px; color: var(--erp-brand-ink); font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
@@ -735,6 +756,12 @@ p { margin: 0; }
 /* Cobrança (ADR 0076) */
 .erp-coll-history .erp-list__body { min-width: 0; }
 .erp-coll-note { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.erp-coll-history-box { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--erp-brand-line); border-left: 4px solid var(--erp-brand); border-radius: var(--erp-radius-md); background: var(--erp-brand-soft); }
+.erp-coll-history-box .erp-panel-subtitle { margin-top: 0; }
+.erp-coll-history-box .erp-coll-history { max-height: 360px; overflow-y: auto; }
+.erp-coll-history > li.is-new { animation: erp-coll-new 2.4s var(--erp-ease); }
+@keyframes erp-coll-new { from { background: var(--erp-success-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .erp-coll-history > li.is-new { animation: none; } }
 .erp-coll-filter { margin: 0 0 16px; }
 
 /* Proprietários e inquilinos: busca de pessoa e vínculo com várias unidades (ADR 0162). */
@@ -932,7 +959,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-dash-buckets dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* Avisos no canto superior direito (ADR 0120): sucesso, alerta, erro e informação. */
-.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 210; display: grid; gap: 10px; width: min(400px, calc(100vw - 32px)); pointer-events: none; }
+.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 99999; display: grid; gap: 10px; width: min(400px, calc(100vw - 32px)); pointer-events: none; }
 .erp-notice { --tone: var(--erp-info); --tone-soft: var(--erp-info-soft); display: flex; align-items: center; gap: 14px; padding: 12px 10px 12px 12px; border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent); border-radius: var(--erp-radius-md); background: var(--tone-soft); color: var(--tone); box-shadow: var(--erp-shadow-raised); pointer-events: auto; animation: erp-notice-in .28s var(--erp-ease) both; }
 .erp-notice--success { --tone: var(--erp-success); --tone-soft: var(--erp-success-soft); }
 .erp-notice--warning { --tone: var(--erp-warning); --tone-soft: var(--erp-warning-soft); }
@@ -946,6 +973,27 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-notice__close:hover, .erp-notice__close:focus-visible { opacity: 1; background: color-mix(in srgb, var(--tone) 12%, transparent); }
 .erp-notice__close svg { width: 18px; height: 18px; }
 .erp-notice--leaving { animation: erp-notice-out .26s var(--erp-ease) both; }
+/* Os avisos entram na camada do topo como popover, acima das modais (ADR 0316): tira o estilo padrão do popover. */
+.erp-toasts[popover] { inset: auto; top: calc(var(--erp-navbar-height) + 12px); right: 20px; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; height: auto; }
+
+/* Modal do sistema no lugar de alert/confirm/prompt do navegador (ADR 0316). */
+.erp-ask { --tone: var(--erp-brand); --tone-soft: var(--erp-brand-soft); width: min(480px, calc(100vw - 32px)); }
+.erp-ask--danger { --tone: var(--erp-danger); --tone-soft: var(--erp-danger-soft); }
+.erp-ask--warning { --tone: #e0a019; --tone-soft: var(--erp-warning-soft); }
+.erp-ask--info { --tone: var(--erp-info); --tone-soft: var(--erp-info-soft); }
+.erp-ask--success { --tone: var(--erp-success); --tone-soft: var(--erp-success-soft); }
+.erp-ask__head { display: flex; align-items: center; gap: 14px; padding: 22px 22px 6px; }
+.erp-ask__head h2 { margin: 0; font-size: 17px; line-height: 1.35; }
+.erp-ask__icon { flex: 0 0 42px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--tone-soft); color: var(--tone); }
+.erp-ask__body { display: grid; gap: 10px; padding: 8px 22px 20px 78px; color: var(--erp-muted); font-size: 14px; line-height: 1.5; }
+.erp-ask__body p { margin: 0; }
+.erp-ask__undo { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; padding: 10px 12px; border-radius: var(--erp-radius-md); font-size: 13.5px; }
+.erp-ask__undo svg { flex: 0 0 18px; margin-top: 1px; }
+.erp-ask__undo strong { font-weight: 700; }
+.erp-ask__undo--yes { background: var(--erp-success-soft); color: #0b5a40; }
+.erp-ask__undo--no { background: var(--erp-danger-soft); color: #8a1c13; }
+.erp-ask__copy { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+@media (max-width: 600px) { .erp-ask__body { padding-left: 22px; } }
 @keyframes erp-notice-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes erp-notice-out { to { opacity: 0; transform: translateX(28px); } }
 @media (max-width: 600px) { .erp-toasts { top: 12px; right: 16px; } }
@@ -958,3 +1006,58 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-inline-details > summary::-webkit-details-marker { display: none; }
 .erp-inline-details[open] > form { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
 .erp-inline-details[open] > form .erp-input { min-width: 180px; height: 34px; }
+/* Revisão de 15/11 (ADR 0310): ocupação no painel da unidade e "Itens por página" na paginação. */
+.erp-unit-occupancy { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 var(--erp-space-4); font-size: 13px; }
+.erp-per-page { display: flex; align-items: center; gap: 8px; margin: 0; }
+.erp-per-page label { font-size: 13px; color: var(--erp-muted); white-space: nowrap; }
+.erp-per-page .erp-select { width: auto; min-width: 84px; height: 34px; padding-top: 0; padding-bottom: 0; }
+.erp-pager { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.erp-pager a, .erp-pager span { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-sm); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; }
+.erp-pager a:hover { border-color: var(--erp-brand); }
+.erp-pager .erp-pager_active, .erp-pager [aria-current="page"] { border-color: var(--erp-brand); background: var(--erp-brand); color: var(--erp-on-brand); font-weight: 700; }
+.erp-money { position: relative; display: block; width: 100%; }
+.erp-money::before { content: "R$"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--erp-muted); font-size: 14px; pointer-events: none; }
+.erp-money > .erp-input { padding-left: 38px; }
+.erp-money--sm { display: inline-block; width: auto; }
+.erp-money--sm::before { left: 8px; font-size: 12px; }
+.erp-money--sm > .erp-input { padding-left: 30px; }
+
+/* Configuração das unidades em massa (ADR 0311) */
+.erp-unit-bulk__grid { margin-top: var(--erp-space-3); }
+.erp-inline-field { display: flex; gap: 8px; align-items: center; }
+.erp-inline-field .erp-input { flex: 1; min-width: 0; }
+.erp-inline-field .erp-check { margin-right: 0; white-space: nowrap; }
+.erp-bulk-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
+.erp-table .is-check { width: 36px; }
+.erp-table .is-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
+@media (max-width: 760px) { .erp-unit-bulk__grid { grid-template-columns: 1fr; } }
+
+/* Termo de entrada/saída (ADR 0311) */
+.erp-move-term__editor { min-height: 320px; font-family: inherit; line-height: 1.55; resize: vertical; }
+.erp-move-term__keywords ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 16px; }
+.erp-link-button { background: none; border: 0; padding: 0; font: inherit; font-weight: 650; color: var(--erp-brand); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.erp-move-term__text p { margin: 0 0 14px; line-height: 1.7; text-align: justify; }
+.erp-move-term__sign { display: inline-block; width: min(320px, 80%); border-bottom: 1px solid currentColor; margin-top: 48px; }
+
+/* Inquilino e proprietário da unidade (ADR 0311) */
+.erp-unit-occupants__role { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--erp-border); }
+.erp-unit-occupants__role .erp-btn { justify-self: start; }
+.erp-unit-occupants__people { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13.5px; }
+.erp-unit-occupants__results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 240px; overflow: auto; border: 1px solid var(--erp-border); border-radius: 8px; }
+.erp-unit-occupants__results:empty { display: none; }
+.erp-unit-occupants__results li { border-bottom: 1px solid var(--erp-border); padding: 0; font-size: 13.5px; }
+.erp-unit-occupants__results li.erp-muted { padding: 8px 12px; }
+.erp-unit-occupants__option { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 12px; font: inherit; cursor: pointer; }
+.erp-unit-occupants__option:hover, .erp-unit-occupants__option:focus-visible { background: var(--erp-surface-muted); }
+.erp-span-all { grid-column: 1 / -1; }
+#unit-occupant-dialog .erp-check { display: flex; margin: 4px 0; }
+
+/* Lançamento para várias unidades (ADR 0313) */
+.erp-entry-units__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 12px; max-height: 220px; overflow: auto; padding: 4px 0; }
+.erp-entry-units__mode { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; }
+.erp-entry-units.is-invalid { border-color: var(--erp-danger); }
+.erp-revenue-units td .erp-input { max-width: 160px; margin-left: auto; }
+.erp-revenue-units tbody { max-height: 420px; }
+/* Atalhos da lista de lançamentos (ADR 0313, modelo 7) */
+.erp-entry-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
+.erp-entry-shortcuts__sep { flex: 1 1 8px; }

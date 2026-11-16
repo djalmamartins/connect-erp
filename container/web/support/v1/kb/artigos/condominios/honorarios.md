@@ -46,6 +46,16 @@ Nesta etapa o pedido fica registrado no sistema. O envio à Receita, pela API Na
 
 Abra o condomínio, vá em **Pedidos de nota**, escreva o motivo e clique em {{Cancelar}}. A competência fica livre para um novo pedido. Uma nota já emitida não é cancelada por aqui.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- Cada condomínio tem no máximo um contrato de administração; salvar de novo atualiza o mesmo contrato.
+- Pedir a nota só registra o pedido, com o valor e a descrição do contrato. O envio à prefeitura é uma etapa que ainda vai ser ligada, e enquanto as notas fiscais estiverem desligadas nas configurações, nenhum pedido é aceito.
+- Só pode haver um pedido aberto por contrato e mês. O cancelamento fica registrado.
+- Os honorários não geram lançamento no financeiro do condomínio por esta tela.
+- Toda gravação entra no histórico.
+
 ## Quem pode usar
 
 Consultar exige a permissão **Visualizar honorários**. Cadastrar, pedir e cancelar notas exige **Gerenciar honorários**. Toda alteração fica registrada na auditoria.

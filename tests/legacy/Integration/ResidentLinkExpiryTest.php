@@ -100,9 +100,14 @@ final class ResidentLinkExpiryTest extends TestCase
 
     private function link(string $unit, string $relationship, ?int $endDays): int
     {
-        return (int)$this->registry->save($this->admin, 'residents', ['condominium_id' => $this->condominium, 'unit_id' => $this->units[$unit],
+        // Gravado com o fim ainda no futuro e a data passou depois: no formulário, fim já passado grava inativo (ADR 0311).
+        $id = (int)$this->registry->save($this->admin, 'residents', ['condominium_id' => $this->condominium, 'unit_id' => $this->units[$unit],
             'relationship' => $relationship, 'name' => 'Pessoa de teste', 'starts_on' => (new \DateTimeImmutable('-400 days'))->format('Y-m-d'),
-            'ends_on' => $endDays !== null ? (new \DateTimeImmutable("{$endDays} days"))->format('Y-m-d') : null])['id'];
+            'ends_on' => $endDays !== null ? (new \DateTimeImmutable('+30 days'))->format('Y-m-d') : null])['id'];
+        if ($endDays !== null) {
+            $this->pdo->prepare('UPDATE erp_residents SET ends_on = ? WHERE id = ?')->execute([(new \DateTimeImmutable("{$endDays} days"))->format('Y-m-d'), $id]);
+        }
+        return $id;
     }
 
     private function state(int $id): string

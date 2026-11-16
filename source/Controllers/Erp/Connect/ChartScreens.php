@@ -83,8 +83,7 @@ final class ChartScreens
         try {
             $context = CondominiumContext::id();
             if ($kind === 'consumption-unit') {
-                $data['chartUnits'] = array_values(array_filter((new RegistryService())->units($user),
-                    static fn (array $u): bool => $context === null || $u['condominium_id'] === $context));
+                $data['chartUnits'] = Panel::contextUnits((new RegistryService())->units($user), $context);
                 if ($filters['unidade'] === null) {
                     $data['chartNeedsUnit'] = true;
                     $data['chartReady'] = true;

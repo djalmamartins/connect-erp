@@ -32,7 +32,7 @@ legenda: Tela Parecer
 
 1. Em **Assembleia**, escolha a assembleia e clique em {{Abrir}}. A mais recente encerrada já vem escolhida.
 2. Confira os resultados. Na base **fração ideal**, os votos aparecem em fração (de 0 a 1); na base **uma unidade, um voto**, em número de unidades.
-3. Use {{Imprimir}} ou {{Exportar CSV}}.
+3. Use {{Imprimir}} ou {{Download}} (PDF, Excel ou CSV).
 
 A ata é gerada no encerramento e não muda mais. O código SHA-256 permite conferir que o texto é o mesmo.
 

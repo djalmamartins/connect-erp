@@ -13,6 +13,7 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 | PDF | `GET /api/v1/bank-charges/{id}/pdf` |
 | Baixa | webhook + consulta no banco, conciliação do ADR 0035 |
 | Remessas | `GET /api/v1/bank-remittances` (lotes por conta e dia; sem arquivo) |
+| Extrato e saldo | `POST /api/v1/imports/bank-statement` (Importações > Extrato, mesma prévia do OFX; escopo `extrato.read` em token separado, ADR 0318) |
 
 ## Sandbox: de onde vem a credencial
 
@@ -41,12 +42,21 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 
 ## Homologação no sandbox (checklist)
 
-- [ ] Token obtido (`testar`).
-- [ ] Emitir boleto com pagador PF e PJ; conferir linha digitável, Pix e PDF.
-- [ ] Conferir os nomes de campo do contrato inferido (multa/mora, `numDiasAgenda`, `mensagem`).
-- [ ] Simular pagamento no sandbox e ver a baixa chegar pelo webhook.
-- [ ] Cancelar boleto; conferir `CANCELADO` e o motivo.
+- [x] Token obtido (`testar` e tela Integrações).
+- [ ] Emitir boleto com pagador PJ (PF conferido em 16/11/2026).
+- [ ] Conferir multa/mora no PDF do Inter (o registro com esses campos foi aceito em 16/11/2026).
+- [x] Token obtido com a aplicação do portal de sandbox (16/11/2026).
+- [x] Boleto registrado no sandbox com linha digitável, Pix e PDF (16/11/2026); pagador sem CPF recusado antes do banco.
+- [x] Simular pagamento (16/11/2026): botão **Simular pagamento** em Cobrança > Boletos chama
+  `POST /cobranca/v3/cobrancas/{codigoSolicitacao}/pagar` com `pagarCom` (CONFIRMADO; o `Accept` precisa incluir
+  `application/problem+json`, senão 406) e consulta: boleto **Pago** e conta a receber baixada.
+- [x] Consulta automática (decisão do Djalma, 16/11/2026): `tools/bank-charges-sync.php`, de hora em hora pelo
+  `service/jobs/scheduler.sh`, consulta os boletos em aberto dos bancos reais e dá baixa sem webhook.
+- [ ] Ver a baixa chegar pelo webhook (precisa de endereço público; fica para o servidor com domínio).
+- [x] Cancelar boleto (16/11/2026): boleto **Cancelado** e conta a receber continua em aberto.
 - [ ] Erro de validação (CPF inválido, vencimento passado) aparece como Recusado com a mensagem do banco.
 - [ ] Reenvio do mesmo webhook não duplica; webhook com segredo errado = 404.
+- [ ] Extrato e saldo (ADR 0318; 429 por limite de consultas visto em 16/11/2026: o adaptador espera 5, 15 e 30 s e repete; saldo que não vem não impede o extrato; extrato completo com 500 no sandbox em 16/11/2026 cai para o extrato simples): a aplicação do sandbox precisa da permissão de extrato; buscar um período em
+  Importações > Extrato, conferir linhas, FITID e saldo e aplicar.
 
 Itens INFERIDOS do contrato estão listados no ADR 0156.

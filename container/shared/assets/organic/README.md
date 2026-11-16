@@ -27,3 +27,10 @@ npm run build
 cd ../connect
 php service/commands/sync-organic-v2.php ../organic-v2
 ```
+
+## Ajuste local do Connect (ADR 0321)
+
+As duas perguntas do editor (aplicar template e apagar rascunho/revisão) usam `window.ConnectDialog.confirm`
+(modal do sistema) em vez de `window.confirm`. O ajuste está nas quatro saídas `organic*.js` e precisa ser
+levado para o código-fonte do Organic; depois de sincronizar, confira com `composer test:unit:offline`
+(`SystemDialogsEverywhereTest`).

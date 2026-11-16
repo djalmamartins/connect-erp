@@ -77,6 +77,16 @@ Colunas: **Descrição**, **Condomínio**, **Número de patrimônio**, **Categor
 - Clique no nome (primeira coluna) para abrir o registro.
 - **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O número de patrimônio não pode se repetir no mesmo condomínio.
+- Este cadastro é um controle dos bens: ele não gera lançamento financeiro. A compra de um bem é lançada no Financeiro como despesa.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

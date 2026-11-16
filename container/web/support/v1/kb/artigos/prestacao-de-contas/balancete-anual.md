@@ -62,7 +62,7 @@ No rodapé ficam o total de receitas, o total de despesas e o resultado de cada 
 
 ## Imprimir ou exportar
 
-Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Exportar CSV}} baixa a mesma consulta em planilha (separador ponto e vírgula); cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
+Use {{Imprimir}} para levar o resultado ao conselho ou à assembleia. {{Download}} baixa a mesma consulta em PDF, Excel ou CSV; cada exportação fica registrada na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quem pode usar
 

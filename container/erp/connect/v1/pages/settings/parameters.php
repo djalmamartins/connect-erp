@@ -50,6 +50,9 @@ $this->insert('components/layout/page-head', [
                                         <option value="<?= $this->e((string)$value) ?>"<?= (string)$value === $field['value'] ? ' selected' : '' ?>><?= $this->e((string)$label) ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                            <?php elseif ($field['tag'] === 'textarea'): ?>
+                                <textarea class="erp-textarea" id="<?= $fid ?>" name="value"<?= $attrs ?><?= $editable ? '' : ' disabled' ?>><?= $this->e($field['value']) ?></textarea>
+                                <small class="erp-muted">Em cada linha: <code># </code> subtítulo, <code>! </code> destaque, <code>- </code> item de lista, <code>~ </code> letra miúda.</small>
                             <?php else: ?>
                                 <input class="erp-input" type="<?= $field['type'] ?>" id="<?= $fid ?>" name="value" value="<?= $this->e($field['value']) ?>"<?= $attrs ?><?= $editable ? '' : ' disabled' ?>>
                             <?php endif; ?>

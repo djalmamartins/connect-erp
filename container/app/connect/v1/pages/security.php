@@ -18,7 +18,7 @@ $codeField = '<label class="app-field">Código do aplicativo autenticador <input
     <?php if ($tf['required']): ?>
         <p class="app-hint">Na sua conta a verificação é obrigatória, porque ela também tem acesso da equipe.</p>
     <?php else: ?>
-        <form method="post" action="<?= app_url('/seguranca') ?>" class="app-form" data-app-confirm="Desligar a verificação em duas etapas?">
+        <form method="post" action="<?= app_url('/seguranca') ?>" class="app-form" data-app-confirm="Desligar a verificação em duas etapas? A entrada no app passa a pedir só o e-mail e a senha." data-confirm-undo="sim" data-confirm-undo-text="Dá para ligar de novo nesta tela." data-confirm-action="Desligar" data-confirm-tone="danger">
             <?= csrf_input() ?><input type="hidden" name="action" value="disable">
             <?= $codeField ?>
             <button class="app-button app-button--ghost" type="submit">Desligar</button>

@@ -22,7 +22,7 @@ $old = [];
 ob_start(); ?>
     <a class="erp-btn" href="<?= erp_url($base) ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Vistorias</a>
     <a class="erp-btn" href="<?= $url('/relatorio') ?>"><?= $icon('eye', 'erp-icon--sm') ?>Relatório</a>
-    <a class="erp-btn" href="<?= $url('/relatorio/pdf') ?>"><?= $icon('download', 'erp-icon--sm') ?>PDF</a>
+    <a class="erp-btn" href="<?= $url('/relatorio/pdf') ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?>PDF</a>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Vistoria nº ' . $id . ' · ' . $inspection['template'],
@@ -73,7 +73,7 @@ $this->insert('components/layout/page-head', [
                         <figure>
                             <a href="<?= $url('/fotos/' . (int)$photo['id']) ?>" target="_blank" rel="noopener"><img src="<?= $url('/fotos/' . (int)$photo['id']) ?>" alt="Foto de <?= $this->e($item['label']) ?>" width="96" height="96" loading="lazy"></a>
                             <?php if ($editable): ?>
-                                <form method="post" action="<?= $url('/fotos/' . (int)$photo['id'] . '/excluir') ?>" onsubmit="return confirm('Remover esta foto?')">
+                                <form method="post" action="<?= $url('/fotos/' . (int)$photo['id'] . '/excluir') ?>" data-erp-confirm="Remover esta foto? Ela sai da vistoria e o arquivo é apagado." data-confirm-undo="nao" data-confirm-undo-text="Para repor, tire a foto de novo." data-confirm-action="Remover foto">
                                     <?= csrf_input() ?><input type="hidden" name="item" value="<?= (int)$item['id'] ?>">
                                     <button type="submit" aria-label="Remover foto">×</button>
                                 </form>

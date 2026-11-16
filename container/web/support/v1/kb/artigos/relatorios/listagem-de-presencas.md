@@ -32,7 +32,7 @@ legenda: Tela Listagem de presenças
 
 1. Em **Assembleia**, escolha a assembleia (em andamento ou encerrada) e clique em {{Abrir}}. A mais recente em andamento já vem escolhida.
 2. Confira os totais: unidades, procurações e unidades sem direito a voto.
-3. Use {{Imprimir}} ou {{Exportar CSV}}.
+3. Use {{Imprimir}} ou {{Download}} (PDF, Excel ou CSV).
 
 O valor vencido de cada unidade só aparece para quem tem a permissão **erp.agreements.view**, a mesma que mostra a inadimplência.
 

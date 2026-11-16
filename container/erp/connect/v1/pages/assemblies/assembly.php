@@ -37,7 +37,7 @@ if ($a !== null && $assemblyReport !== null && ($assemblyReport['rows'] ?? []) !
 ob_start(); ?>
     <?php if ($kind === 'manage' && $a !== null): ?><a class="erp-btn" href="<?= $this->e($route) ?>">Voltar</a><?php endif; ?>
     <?php if (in_array($kind, ['attendance', 'results'], true)): ?><button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button><?php endif; ?>
-    <?php if ($csv !== null): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e($csv) ?>" download><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($csv !== null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => $csv, 'downloadTitle' => ($kind === 'attendance' ? 'Lista de presença' : 'Resultado da votação') . ' - ' . (string)($a['title'] ?? '')]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
@@ -87,7 +87,7 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-form__actions">
                         <?php foreach ($buttons as $action): if ($action === 'cancel') continue; ?>
                             <button type="button" class="erp-btn<?= $action === 'close' ? '' : ' erp-btn--primary' ?>" data-assembly-action data-api="<?= $this->e($api('/' . (int)$a['id'] . '/' . $action)) ?>"
-                                data-confirm="<?= $this->e(['convene' => 'Convocar e publicar o edital na fila de avisos?', 'open' => 'Abrir a assembleia agora?', 'close' => 'Encerrar a assembleia e gerar a ata? Depois disso, nada muda.'][$action]) ?>"
+                                data-confirm="<?= $this->e(['convene' => 'Convocar e publicar o edital na fila de avisos?', 'open' => 'Abrir a assembleia agora?', 'close' => 'Encerrar a assembleia e gerar a ata? Depois disso, nada muda.'][$action]) ?>" data-confirm-undo="<?= $action === 'close' ? 'nao' : '' ?>"
                                 data-done="<?= $this->e(['convene' => 'Edital publicado na fila de avisos.', 'open' => 'Assembleia aberta.', 'close' => 'Assembleia encerrada e ata gerada.'][$action]) ?>"><?= ['convene' => 'Convocar', 'open' => 'Abrir a assembleia', 'close' => 'Encerrar e gerar a ata'][$action] ?></button>
                         <?php endforeach; ?>
                     </div>
@@ -119,7 +119,7 @@ $this->insert('components/layout/page-head', [
                         <td class="erp-nowrap"><?= $this->e(Screens::resultText($item)) ?></td>
                         <?php if ($kind === 'voting' && $canManageAssembly && $a['status'] === 'open'): ?><td class="is-num">
                             <?php if ($item['status'] === 'pending' && $voting === null): ?><button type="button" class="erp-btn erp-btn--sm" data-assembly-action data-api="<?= $this->e($api('/' . (int)$a['id'] . '/items/' . (int)$item['id'] . '/start')) ?>" data-done="Item em votação." aria-label="Abrir a votação do item <?= (int)$item['position'] ?>">Abrir votação</button>
-                            <?php elseif ($item['status'] === 'voting'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--primary" data-assembly-action data-api="<?= $this->e($api('/' . (int)$a['id'] . '/items/' . (int)$item['id'] . '/close')) ?>" data-confirm="Apurar o item <?= (int)$item['position'] ?>? Depois disso, ninguém mais vota nele." data-done="Item apurado." aria-label="Apurar o item <?= (int)$item['position'] ?>">Apurar</button>
+                            <?php elseif ($item['status'] === 'voting'): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--primary" data-assembly-action data-api="<?= $this->e($api('/' . (int)$a['id'] . '/items/' . (int)$item['id'] . '/close')) ?>" data-confirm="Apurar o item <?= (int)$item['position'] ?>? Depois disso, ninguém mais vota nele." data-confirm-undo="nao" data-done="Item apurado." aria-label="Apurar o item <?= (int)$item['position'] ?>">Apurar</button>
                             <?php else: ?><span class="erp-muted">—</span><?php endif; ?>
                         </td><?php endif; ?>
                     </tr><?php endforeach; ?></tbody>

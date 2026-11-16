@@ -19,6 +19,8 @@ use Source\Support\Access;
  * Importações (ADR 0058):
  *  GET  /api/v1/imports?condominium_id=&kind=                         lista (erp.imports.view)
  *  POST /api/v1/imports/preview  multipart {kind, condominium_id, bank_account_id (ofx), file}   prévia
+ *  POST /api/v1/imports/bank-statement {condominium_id, bank_account_id, from, to}  extrato buscado no banco (Inter,
+ *       ADR 0318), mesma prévia do OFX; até 90 dias
  *  GET  /api/v1/imports/{id}                                          importação (OFX: com as linhas)
  *  POST /api/v1/imports/{id}/apply                                    aplica (revalida o arquivo inteiro)
  *  GET  /api/v1/bank-statement-lines?condominium_id=                  linhas do extrato pendentes
@@ -44,6 +46,22 @@ final class Imports
             $upload = is_array($_FILES['file'] ?? null) ? $_FILES['file'] : [];
             $this->run(201, fn () => (new Service())->preview($user, $kind, $_POST, $upload));
         }
+    }
+
+    public function fetchStatement(): void
+    {
+        $user = $this->authorize(true, Service::KINDS['ofx']['permission']);
+        if ($user === null) {
+            return;
+        }
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        if (!is_array($body)) {
+            JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
+            return;
+        }
+        // O Inter limita consultas por minuto: o adaptador espera e repete, o que pode passar de 30 s.
+        @set_time_limit(120);
+        $this->run(201, fn () => (new \Source\Services\Erp\Banking\BankStatementFetch())->preview($user, $body));
     }
 
     public function show(array $data): void

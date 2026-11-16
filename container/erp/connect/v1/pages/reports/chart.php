@@ -43,7 +43,7 @@ $this->insert('components/layout/page-head', [
     <?php if ($chartKind === 'accounts'): ?>
         <div class="erp-field erp-field--compact"><label for="chart-nature">Natureza</label><select class="erp-select" id="chart-nature" name="natureza"><?php foreach (Screens::NATURES as $k => $l): ?><option value="<?= $k ?>"<?= $f['natureza'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div>
     <?php endif; ?>
-    <?php if ($chartKind === 'consumption-unit'): ?>
+    <?php if ($chartKind === 'consumption-unit' && $chartUnits !== []): ?>
         <div class="erp-field erp-field--grow"><label for="chart-unit">Unidade</label><select class="erp-select" id="chart-unit" name="unidade" required>
             <option value="">Escolha a unidade</option>
             <?php foreach ($chartUnits as $u): ?><option value="<?= (int)$u['id'] ?>"<?= $f['unidade'] === (int)$u['id'] ? ' selected' : '' ?>><?= $this->e($u['label']) ?></option><?php endforeach; ?>
@@ -56,7 +56,7 @@ $this->insert('components/layout/page-head', [
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong>Não foi possível montar o gráfico</strong><?= $this->e($chartError) ?></div></div>
 <?php elseif ($chartNeedsUnit): ?>
     <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('chart') ?></span><strong>Escolha a unidade</strong>
-        <p><?= $chartUnits === [] ? 'Não há unidade ativa no seu escopo. Escolha um condomínio na barra superior ou cadastre as unidades.' : 'O gráfico mostra o consumo dos medidores da unidade escolhida.' ?></p></div></section>
+        <p><?= \Source\Support\Erp\CondominiumContext::id() === null ? 'Escolha um condomínio na barra superior; a unidade é escolhida entre as dele.' : ($chartUnits === [] ? 'Este condomínio ainda não tem unidades ativas. Cadastre-as em Condomínios › Unidades.' : 'O gráfico mostra o consumo dos medidores da unidade escolhida.') ?></p></div></section>
 <?php elseif ($panelsEmpty): ?>
     <section class="erp-card"><div class="erp-empty"><span class="erp-empty__icon"><?= $icon('chart') ?></span><strong>Sem dados no período</strong><p><?= $this->e($scopeLabel . ' · ' . $period) ?>. Tente outro período ou outro condomínio.</p></div></section>
 <?php else: ?>

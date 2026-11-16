@@ -75,6 +75,17 @@ Colunas: **Nome**, **Condomínio**, **Unidade visitada (texto)**, **Documento (c
 - Clique no nome (primeira coluna) para abrir o registro.
 - **Editar** abre o cadastro para alterar. Salve para gravar a mudança, que fica no histórico.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- Cada visitante precisa de uma data **Autorizado até** ou da marca de acesso permanente.
+- A situação **Liberado** ou **Bloqueado** é o que a portaria vê. Passada a data, bloqueie a autorização (o sistema não avisa o morador nem o visitante).
+- O visitante fica ligado à unidade visitada.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Cadastros**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

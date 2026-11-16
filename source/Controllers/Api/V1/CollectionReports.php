@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use InvalidArgumentException;
 use Source\Models\Auth;
@@ -19,7 +20,7 @@ use Source\Support\Audit;
  * Relatórios de cobrança (ADR 0081), somente leitura; ?format=csv baixa a mesma consulta em CSV:
  *  GET /api/v1/reports/agreements?condominium_id=&from=&to=&status=       acordos (AP-047)
  *  GET /api/v1/reports/agreement-fees?condominium_id=&from=&to=           taxas de acordos (AP-048)
- *  GET /api/v1/reports/delinquents?condominium_id=&as_of=&view=           inadimplentes (AP-057 a AP-061)
+ *  GET /api/v1/reports/delinquents?condominium_id=&as_of=&from=&view=      inadimplentes (AP-057 a AP-061)
  *  GET /api/v1/reports/receipts?condominium_id=&from=&to=&group=          recebimentos (AP-071/072)
  * Acordos e inadimplentes exigem erp.agreements.view; a visão "resident" exige também
  * erp.residents.view; recebimentos exigem erp.entries.view. condominium_id vazio = todos do escopo.
@@ -45,7 +46,7 @@ final class CollectionReports
         $view = $this->text('view') ?: 'unit';
         $permissions = $view === 'resident' ? ['erp.agreements.view', 'erp.residents.view'] : ['erp.agreements.view'];
         $this->run('delinquents-' . (isset(self::VIEWS[$view]) ? $view : 'unit'), $permissions,
-            fn (Reports $r, User $u, ?int $c): array => $r->delinquents($u, $c, $this->text('as_of') ?: null, $view));
+            fn (Reports $r, User $u, ?int $c): array => $r->delinquents($u, $c, $this->text('as_of') ?: null, $view, $this->text('from') ?: null));
     }
 
     public function receipts(): void
@@ -74,15 +75,12 @@ final class CollectionReports
         try {
             $data = $report(new Reports(), $user, $condominium);
             header('Cache-Control: no-store, private');
-            if ($this->text('format') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): até 30 por hora
-                $content = Reports::csv(Reports::csvTable($kind, $data));
+                $content = ListDocument::render($format, Reports::csvTable($kind, $data), ListDocument::meta($_GET['title'] ?? null, $kind, $condominium));
                 // Exportação de dados pessoais (visão por morador) fica na trilha de auditoria.
-                Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="' . $kind . '-' . date('Y-m-d') . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                Audit::record('export', 'erp_reports', 0, null, ['report' => $kind, 'condominium_id' => $condominium, 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('' . $kind . '-' . date('Y-m-d') . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

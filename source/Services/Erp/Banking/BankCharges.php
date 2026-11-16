@@ -106,6 +106,53 @@ final class BankCharges
     }
 
     /** Consulta no banco um título pendente (ou registrado) e grava a resposta. */
+    /**
+     * Boletos de uma fatura emitida de uma vez (pedido do Djalma, 16/11/2026): emite um boleto para cada conta a
+     * receber da fatura que ainda está em aberto e sem boleto, em lotes de $limit para caber no tempo de uma
+     * requisição (a tela repete até remaining = 0). Cada boleto é independente: recusado ou sem resposta não para
+     * os outros. Conta que já teve boleto recusado fica fora (corrigir o cadastro e emitir pela tela de boletos),
+     * para o lote não repetir a mesma recusa para sempre. Escopo pela fatura (fora = 404).
+     *
+     * @return array{processed:list<array>, counts:array{registered:int, pending:int, rejected:int}, remaining:int, skipped_rejected:int}
+     */
+    public function issueForInvoice(User $user, int $invoiceId, int $bankAccountId, int $limit = 20, ?\Closure $pause = null): array
+    {
+        $invoice = (new \Source\Services\Erp\Invoices($this->pdo, $this->scope))->find($user, $invoiceId);
+        if ($invoice['status'] !== 'issued') {
+            throw new DomainException('Só fatura emitida tem contas a receber para gerar boletos.');
+        }
+        $this->bankAccount($bankAccountId, (int)$invoice['condominium_id']);
+        $pending = function (bool $count, int $limit = 0) use ($invoiceId): mixed {
+            $sql = "FROM erp_invoice_items it JOIN erp_entries e ON e.invoice_item_id = it.id AND e.deleted_at IS NULL
+                WHERE it.invoice_id = :i AND e.paid_on IS NULL AND e.status = 'active'
+                  AND NOT EXISTS (SELECT 1 FROM erp_bank_charges c WHERE c.entry_id = e.id)";
+            $stmt = $this->pdo->prepare($count ? "SELECT COUNT(*) {$sql}" : "SELECT e.id, it.unit_label {$sql} ORDER BY it.unit_label, it.id LIMIT " . max(1, min($limit, 50)));
+            $stmt->execute(['i' => $invoiceId]);
+            return $count ? (int)$stmt->fetchColumn() : $stmt->fetchAll(PDO::FETCH_ASSOC);
+        };
+        $processed = [];
+        $counts = ['registered' => 0, 'pending' => 0, 'rejected' => 0];
+        foreach ($pending(false, $limit) as $i => $row) {
+            if ($i > 0 && $pause !== null) {
+                $pause();
+            }
+            $charge = $this->issue($user, (int)$row['id'], $bankAccountId);
+            $status = (string)$charge['status'];
+            if (isset($counts[$status])) {
+                $counts[$status]++;
+            }
+            $processed[] = ['entry_id' => (int)$row['id'], 'unit_label' => (string)$row['unit_label'], 'charge_id' => (int)$charge['id'],
+                'our_number' => (string)$charge['our_number'], 'status' => $status, 'status_label' => $charge['status_label'] ?? $status,
+                'error' => $charge['last_error'] ?? null];
+        }
+        $stmt = $this->pdo->prepare("SELECT COUNT(DISTINCT e.id) FROM erp_invoice_items it JOIN erp_entries e ON e.invoice_item_id = it.id AND e.deleted_at IS NULL
+            JOIN erp_bank_charges c ON c.entry_id = e.id
+            WHERE it.invoice_id = :i AND e.paid_on IS NULL AND e.status = 'active' AND c.status = 'rejected'
+              AND NOT EXISTS (SELECT 1 FROM erp_bank_charges a WHERE a.entry_id = e.id AND a.status IN ('pending','registered','paid'))");
+        $stmt->execute(['i' => $invoiceId]);
+        return ['processed' => $processed, 'counts' => $counts, 'remaining' => $pending(true), 'skipped_rejected' => (int)$stmt->fetchColumn()];
+    }
+
     public function refresh(User $user, int $chargeId): array
     {
         $charge = $this->row($user, $chargeId);
@@ -119,6 +166,30 @@ final class BankCharges
             $result = ['status' => 'pending', 'error' => 'Sem resposta do banco. Consulte de novo mais tarde.'];
         }
         return $this->apply($chargeId, $result, (string)$charge['status'], $user);
+    }
+
+    /**
+     * Sandbox do Inter (ADR 0156, homologação): simula o pagamento no banco e consulta o título, que passa
+     * pela mesma baixa e conciliação do webhook. Só para boleto registrado de conta Inter.
+     */
+    public function simulatePayment(User $user, int $chargeId, string $method = 'BOLETO'): array
+    {
+        $charge = $this->row($user, $chargeId);
+        if ((string)$charge['status'] !== 'registered') {
+            throw new DomainException('Só boleto registrado pode ter o pagamento simulado.');
+        }
+        $adapter = $this->adapterOf($charge);
+        if (!$adapter instanceof Inter\InterBankAdapter) {
+            throw new DomainException('A simulação de pagamento existe só no sandbox do Inter.');
+        }
+        try {
+            $adapter->simulatePayment($charge['external_id'] === null ? null : (string)$charge['external_id'], $method);
+        } catch (\RuntimeException $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_simulate_failed', 'charge_id' => $chargeId]);
+            throw new DomainException('O Inter não respondeu à simulação. Tente de novo em instantes (o sandbox funciona de segunda a sexta, das 8h às 20h).');
+        }
+        Audit::record('update', 'erp_bank_charges', $chargeId, null, ['simulated_payment' => $method]);
+        return $this->refresh($user, $chargeId);
     }
 
     public function cancel(User $user, int $chargeId): array
@@ -205,6 +276,44 @@ final class BankCharges
      * Consulta de um título vinda do webhook (ADR 0156): sem usuário, sem escopo (a conta já foi
      * identificada pelo segredo do endereço). Só títulos daquela conta.
      */
+    /**
+     * Consulta automática (ADR 0156, decisão de 16/11/2026): passa pelos boletos em aberto de bancos reais
+     * (adaptador diferente do sandbox interno) e consulta cada um no banco, como o webhook faria. Pagamento,
+     * baixa e divergência seguem a mesma conciliação. Sem usuário: roda pelo agendador do servidor.
+     * Um boleto que falha não para os outros. $pause roda entre consultas (limite de chamadas do banco).
+     *
+     * @return array{checked:int, paid:int, cancelled:int, failed:int}
+     */
+    public function syncOpen(int $limit = 200, ?\Closure $pause = null): array
+    {
+        $summary = ['checked' => 0, 'paid' => 0, 'cancelled' => 0, 'failed' => 0];
+        $stmt = $this->pdo->prepare("SELECT a.*, c.id AS charge_id, c.external_id AS charge_external_id, c.adapter AS charge_adapter FROM erp_bank_charges c
+            JOIN erp_bank_accounts a ON a.id = c.bank_account_id
+            WHERE c.status IN ('pending','registered') AND c.external_id IS NOT NULL AND c.adapter <> :sandbox
+            ORDER BY c.updated_at, c.id LIMIT " . max(1, min($limit, 1000)));
+        $stmt->execute(['sandbox' => BankAdapters::DEFAULT]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
+            if ($i > 0 && $pause !== null) {
+                $pause();
+            }
+            $chargeId = (int)$row['charge_id'];
+            $externalId = (string)$row['charge_external_id'];
+            $account = $row;   // a.* = a conta bancária (id, adapter, número...)
+            $account['adapter'] = (string)$row['charge_adapter'];   // o título continua no banco onde nasceu
+            try {
+                $summary['checked']++;
+                $status = $this->refreshFromBank($account, $externalId);
+                if ($status === 'paid' || $status === 'cancelled') {
+                    $summary[$status]++;
+                }
+            } catch (\Throwable $error) {
+                $summary['failed']++;
+                AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_sync_failed', 'charge_id' => $chargeId]);
+            }
+        }
+        return $summary;
+    }
+
     public function refreshFromBank(array $account, string $externalId): ?string
     {
         $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_charges WHERE bank_account_id = :b AND external_id = :x LIMIT 1');
@@ -260,20 +369,38 @@ final class BankCharges
     }
 
     /**
-     * Pagador do boleto: responsável financeiro da unidade, senão o proprietário (ativos, com
-     * documento primeiro). Endereço de cobrança = endereço do condomínio, com a unidade no complemento.
+     * Pagador do boleto: o pagador gravado na conta (troca de inquilino/proprietário, ADR 0311); senão o responsável
+     * financeiro da unidade; senão o "Responsável pela cobrança" da unidade (inquilino ou proprietário, ADR 0311), com o
+     * proprietário como reserva (ativos, com documento primeiro). Endereço de cobrança = endereço do condomínio, com a
+     * unidade no complemento.
      */
+    /** O mesmo pagador do registro no banco, para a carta de cobrança impressa (ADR 0320). */
+    public function payerFor(array $entry): ?array
+    {
+        return $this->payer($entry);
+    }
+
     private function payer(array $entry): ?array
     {
         if (empty($entry['unit_id'])) {
             return null;
         }
-        $stmt = $this->pdo->prepare("SELECT r.name, r.document, r.email FROM erp_residents r
-            WHERE r.unit_id = :u AND r.relationship IN ('financial','owner') AND r.status = 'active' AND r.deleted_at IS NULL
-              AND (r.ends_on IS NULL OR r.ends_on >= CURDATE())
-            ORDER BY r.relationship = 'financial' DESC, r.document IS NULL, r.id LIMIT 1");
-        $stmt->execute(['u' => $entry['unit_id']]);
-        $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        $person = false;
+        if (!empty($entry['id'])) {
+            $stmt = $this->pdo->prepare('SELECT r.name, r.document, r.email FROM erp_entries e JOIN erp_residents r ON r.id = e.payer_resident_id
+                WHERE e.id = :e AND r.deleted_at IS NULL');
+            $stmt->execute(['e' => $entry['id']]);
+            $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!is_array($person)) {
+            $stmt = $this->pdo->prepare("SELECT r.name, r.document, r.email FROM erp_residents r JOIN erp_units u ON u.id = r.unit_id
+                WHERE r.unit_id = :u AND r.relationship IN ('financial','owner','tenant') AND r.status = 'active' AND r.deleted_at IS NULL
+                  AND (r.ends_on IS NULL OR r.ends_on >= CURDATE())
+                  AND (r.relationship <> 'tenant' OR u.billing_responsible = 'inquilino')
+                ORDER BY r.relationship = 'financial' DESC, (r.relationship = 'tenant') = (u.billing_responsible = 'inquilino') DESC, r.document IS NULL, r.id LIMIT 1");
+            $stmt->execute(['u' => $entry['unit_id']]);
+            $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
         $stmt = $this->pdo->prepare('SELECT street, number, district, city, state, zip_code FROM condominiums WHERE id = :c');
         $stmt->execute(['c' => $entry['condominium_id']]);
         $address = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];

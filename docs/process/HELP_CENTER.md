@@ -95,3 +95,18 @@ Rota que começa com `/!` sai do `/erp` (ex.: `/!/suporte`). Marcação não enc
 - Prints só de banco `*_test` com dados fictícios (`tools/help/demo-seed.php`). Nunca do lab ou de produção.
 - Não copie texto, imagem ou identidade visual de outras empresas; as referências servem só de inspiração.
 - Tela proposta ou sem backend: `situacao: exemplo` ou `sem-backend`, com aviso no artigo.
+
+## "Sobre esta tela" e "O que acontece por trás" (ADR 0309)
+
+Cada página do ERP mostra, logo abaixo do título, o quadro **Sobre esta tela**: o que a tela faz e o que o sistema
+faz por trás quando você grava (validações, duplicidades, travas, histórico e o efeito nas outras telas), com o link
+para o artigo. O mesmo texto vira a seção `## O que acontece por trás` do artigo.
+
+- Os textos ficam em `source/Services/Help/guides/<etapa>.php`, por código da página: `faz`, `por_tras` (lista) e
+  `mais` (só no artigo). Escreva só o que o código faz; confira no serviço da tela antes.
+- Depois de mudar um texto: `php tools/help.php explicar` (escreve a seção nos artigos) e `php tools/help.php check`.
+  O `check` falha se o artigo ficar diferente da explicação.
+- Página nova: escreva a explicação dela no mesmo PR do artigo.
+- O guia geral para quem está chegando é `primeiros-passos/como-o-sistema-funciona.md`.
+- Cada categoria tem (ou terá, por etapa) o resumo "Como funciona esta área" em
+  `container/web/support/v1/kb/areas/<categoria>.md`, mostrado no topo da página da categoria em `/suporte`.

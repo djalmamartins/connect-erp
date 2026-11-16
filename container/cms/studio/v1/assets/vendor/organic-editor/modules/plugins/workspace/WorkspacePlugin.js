@@ -44,8 +44,10 @@ export class WorkspacePlugin {
             this.editor.setStatus(`Bloco "${item.name}" inserido`);
         });
 
-        this.renderCollection("#templateList", this.templates, (item) => {
-            const confirmed = window.confirm(`Aplicar o template "${item.name}" e substituir o conteúdo atual?`);
+        this.renderCollection("#templateList", this.templates, async (item) => {
+            // Connect (ADR 0320): modal do sistema no lugar do confirm do navegador. Manter ao sincronizar o Organic.
+            const confirmed = await window.ConnectDialog.confirm({ title: `Aplicar o template "${item.name}"?`, tone: "danger",
+                message: "O conteúdo atual do editor é trocado pelo template.", undo: true, undoText: "Use Desfazer (Ctrl+Z) no editor para voltar.", confirmLabel: "Aplicar template" });
             if (!confirmed) return;
 
             if (item.mode) {

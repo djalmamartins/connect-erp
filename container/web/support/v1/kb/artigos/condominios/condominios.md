@@ -98,6 +98,17 @@ Ao salvar, o condomínio novo vai para a barra superior e um guia aparece no top
 
 Use {{Próximo}} para ir ao passo seguinte ou clique em qualquer passo para ir direto a ele. Nada é bloqueado: dá para pular um passo e voltar depois. No checklist, {{Concluir cadastro}} fecha o guia e volta à visão geral. {{Fechar o guia}} fecha antes; para retomar, use {{Continuar o cadastro}} na visão geral.
 
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- Ao cadastrar um condomínio, o sistema confere o CNPJ (não pode repetir) e grava tudo de uma vez: os dados, o checklist de chegada com os itens do catálogo e, se você não acessa todos os condomínios, o seu acesso a ele.
+- Depois de salvar, o condomínio novo vira o condomínio da barra superior e abre o guia: unidades, proprietários, síndico e conselho, áreas e, por último, o checklist.
+- Condomínio salvo como inativo não abre o guia: ative-o para cadastrar unidades e pessoas.
+- Toda inclusão e alteração fica no histórico, com quem fez e quando.
+
+O condomínio é a peça central do sistema: unidades, pessoas, contas bancárias, lançamentos, cobranças e relatórios pertencem sempre a um condomínio. Cada pessoa da equipe só enxerga os condomínios liberados na conta dela.
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Condomínios**; cadastrar e editar pedem a permissão de gerenciar condomínios. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou). Os passos do guia só aparecem para quem pode abrir a tela de cada um.

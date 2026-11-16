@@ -173,6 +173,127 @@ final class InterBankingIntegrationTest extends TestCase
         self::assertSame(1, count(array_filter($this->http->requests, static fn (array $r): bool => $r['method'] === 'POST' && $r['path'] === '/cobranca/v3/cobrancas')), 'Só a primeira emissão chegou ao banco.');
     }
 
+    public function testSandboxSimulatedPaymentSettlesThroughRefresh(): void
+    {
+        $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
+        $after = $this->charges->simulatePayment($this->admin, $charge['id'], 'BOLETO');
+        self::assertSame(['paid', 50000], [$after['status'], $after['paid_cents']]);
+        $pay = array_values(array_filter($this->http->requests, static fn (array $r): bool => str_ends_with($r['path'], '/pagar')));
+        self::assertCount(1, $pay);
+        self::assertSame(['pagarCom' => 'BOLETO'], json_decode((string)$pay[0]['body'], true));
+        self::assertSame('2026-11-12', $this->service->find($this->admin, 'entries', $this->entries[0])['paid_on'], 'Baixa pela mesma conciliação.');
+        try {
+            $this->charges->simulatePayment($this->admin, $charge['id'], 'BOLETO');
+            self::fail('Boleto pago não pode ser pago de novo.');
+        } catch (\DomainException $e) {
+            self::assertStringContainsString('registrado', $e->getMessage());
+        }
+    }
+
+    public function testHourlySyncSettlesPaidAndCancelledWithoutWebhook(): void
+    {
+        $paid = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
+        $this->http->set($paid['external_id'], 'RECEBIDO', '500.00');
+        $pauses = 0;
+        $summary = $this->charges->syncOpen(50, function () use (&$pauses): void {
+            $pauses++;
+        });
+        self::assertSame(['checked' => 1, 'paid' => 1, 'cancelled' => 0, 'failed' => 0], $summary);
+        self::assertSame('paid', $this->charges->find($this->admin, $paid['id'])['status']);
+        self::assertSame('2026-11-12', $this->service->find($this->admin, 'entries', $this->entries[0])['paid_on']);
+        self::assertSame(0, $pauses, 'Pausa só entre consultas.');
+        self::assertSame(['checked' => 0, 'paid' => 0, 'cancelled' => 0, 'failed' => 0], $this->charges->syncOpen(), 'Pago não é consultado de novo.');
+
+        // Banco fora do ar: conta como falha e não muda nada.
+        $this->pdo->exec("UPDATE erp_bank_charges SET status = 'registered' WHERE id = " . (int)$paid['id']);
+        $this->http->failNext = true;
+        self::assertSame(1, $this->charges->syncOpen()['failed']);
+    }
+
+    public function testStatementFetchedFromInterGoesThroughTheOfxPreviewAndMatchesTheSettledBoleto(): void
+    {
+        $paid = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
+        $this->http->set($paid['external_id'], 'RECEBIDO', '500.00');
+        $this->charges->syncOpen();
+        $this->http->statement = [
+            ['idTransacao' => 'TX-1', 'dataTransacao' => '2026-11-12', 'tipoOperacao' => 'C', 'valor' => '500.00', 'titulo' => 'Boleto recebido', 'descricao' => 'Pessoa Teste'],
+            ['idTransacao' => 'TX-2', 'dataTransacao' => '2026-11-12', 'tipoOperacao' => 'D', 'valor' => '2.50', 'titulo' => 'Tarifa boleto', 'descricao' => ''],
+        ];
+        $this->http->balance = '497.50';
+        $root = sys_get_temp_dir() . '/stmt-test-' . bin2hex(random_bytes(4));
+        $fetch = new \Source\Services\Erp\Banking\BankStatementFetch($this->pdo, null, new \Source\Services\Erp\Imports\Imports($this->pdo, null, $root, true),
+            static fn (): string => '2026-11-16');
+        self::assertSame([$this->bank], array_column($fetch->accounts($this->admin, $this->alpha), 'id'), 'Conta do Inter com credencial busca o extrato.');
+
+        $input = ['condominium_id' => $this->alpha, 'bank_account_id' => $this->bank, 'from' => '2026-11-01', 'to' => '2026-11-16'];
+        $preview = $fetch->preview($this->admin, $input);
+        self::assertSame(['ofx', 'previewed', 2, 0], [$preview['kind'], $preview['status'], $preview['rows_count'], $preview['error_count']]);
+        self::assertSame('extrato-inter-2026-11-01-a-2026-11-16.ofx', $preview['original_name']);
+        self::assertSame(49750, $preview['summary']['balance_check']['bank_cents'], 'Saldo do banco na conferência.');
+        $applied = (new \Source\Services\Erp\Imports\Imports($this->pdo, null, $root, true))->apply($this->admin, $preview['id']);
+        self::assertSame(['lines' => 2, 'matched' => 1, 'unmatched' => 1, 'already' => 0], $applied['summary']['applied']);
+        self::assertSame((int)$this->entries[0], (int)$this->pdo->query("SELECT entry_id FROM erp_bank_statement_lines WHERE fitid = 'inter-TX-1'")->fetchColumn(),
+            'O crédito do banco confere com a baixa do boleto.');
+
+        $again = $fetch->preview($this->admin, $input);
+        // Saldo que não vem (429 até o fim) não impede o extrato: a prévia sai sem conferir o saldo.
+        $this->http->balanceLimited = true;
+        BankAdapters::override('inter', new InterBankAdapter((new BankCredentials($this->pdo, $this->vault))->secrets($this->bank), $this->http,
+            InterBankAdapter::SANDBOX_URL, null, static function (int $s): void {
+            }));
+        $noBalance = $fetch->preview($this->admin, $input);
+        self::assertNull($noBalance['summary']['ledger_balance_cents']);
+        self::assertSame(2, $noBalance['rows_count']);
+        $this->http->balanceLimited = false;
+        self::assertNotSame($preview['id'], $again['id'], 'Buscar de novo gera outra prévia.');
+        self::assertSame(['already', 'already'], array_column($again['preview'], 'status'), 'Linhas que já entraram não repetem.');
+
+        foreach ([['to' => '2026-11-17'], ['from' => '2026-07-01'], ['bank_account_id' => 999999]] as $bad) {
+            try {
+                $fetch->preview($this->admin, $bad + $input);
+                self::fail('Pedido inválido aceito: ' . json_encode($bad));
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+        $other = $this->service->save($this->admin, 'bank_accounts', ['condominium_id' => $this->alpha, 'name' => 'Conta comum', 'bank_code' => '001', 'branch' => '0001', 'account_number' => '555-1', 'kind' => 'corrente'])['id'];
+        try {
+            $fetch->preview($this->admin, ['bank_account_id' => $other] + $input);
+            self::fail('Conta sem banco pela API não busca extrato.');
+        } catch (\InvalidArgumentException $error) {
+            self::assertStringContainsString('OFX', $error->getMessage());
+        }
+        $this->http->statement = [];
+        try {
+            $fetch->preview($this->admin, ['from' => '2026-10-01', 'to' => '2026-10-31'] + $input);
+            self::fail('Período sem lançamento.');
+        } catch (\DomainException $error) {
+            self::assertStringContainsString('não tem lançamentos', $error->getMessage());
+        }
+        $this->expectException(\Source\Services\Erp\Registry\RegistryNotFound::class);
+        $fetch->preview((new User())->findById($this->createUser(['level' => 2])), $input);
+    }
+
+    public function testWholeInvoiceIsIssuedInBatchesWithoutRepeatingRefusals(): void
+    {
+        $invoiceId = (int)$this->pdo->query('SELECT id FROM erp_invoices ORDER BY id DESC LIMIT 1')->fetchColumn();
+        $first = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 1);
+        self::assertCount(1, $first['processed']);
+        self::assertSame(['101', 'registered'], [$first['processed'][0]['unit_label'], $first['processed'][0]['status']]);
+        self::assertSame(1, $first['remaining']);
+        $second = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 20);
+        self::assertSame('rejected', $second['processed'][0]['status'], 'Unidade 102 sem CPF: recusada sem parar o lote.');
+        self::assertStringContainsString('CPF', (string)$second['processed'][0]['error']);
+        self::assertSame([0, 1], [$second['remaining'], $second['skipped_rejected']]);
+        $third = $this->charges->issueForInvoice($this->admin, $invoiceId, $this->bank, 20);
+        self::assertSame([[], 0], [$third['processed'], $third['remaining']], 'Nada a repetir: a recusa não volta para o lote.');
+        self::assertSame(1, $this->http->count('POST', '/cobranca/v3/cobrancas'), 'Só a unidade válida chegou ao banco.');
+
+        $outsider = $this->createUser(['level' => 2]);
+        $this->expectException(\Source\Services\Erp\Registry\RegistryNotFound::class);
+        $this->charges->issueForInvoice((new User())->findById($outsider), $invoiceId, $this->bank);
+    }
+
     public function testBankCancellationArrivesByWebhook(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);

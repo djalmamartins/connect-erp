@@ -63,19 +63,23 @@ final class CollectionReportScreens
             'de' => self::date($_GET['de'] ?? null) ?? date('Y-01-01'),
             'ate' => self::date($_GET['ate'] ?? null) ?? $today,
             'referencia' => self::date($_GET['referencia'] ?? null) ?? $today,
+            // Inadimplentes (revisão de 15/11 item 20, ADR 0314): data inicial opcional; em branco busca tudo.
+            'inicio' => $kind === 'delinquents' ? self::date($_GET['inicio'] ?? null) : null,
+            // Recebimentos (AP-071) sem dizer qual unidade pagou (revisão de 15/11 item 19, ADR 0314).
+            'ocultar_unidade' => $id === 'AP-071' && ($_GET['ocultar_unidade'] ?? '') === '1',
             'situacao' => isset(self::AGREEMENT_STATUSES[$_GET['situacao'] ?? '']) ? $_GET['situacao'] : null,
             'agrupar' => $id === 'AP-072' && isset(self::ACCOUNT_GROUPS[$_GET['agrupar'] ?? '']) ? $_GET['agrupar'] : ($id === 'AP-072' ? 'bank_account' : null),
         ];
         $variant = $filters['agrupar'] ?? $variant;
         $data += ['cReportKind' => $kind, 'cReportVariant' => $variant, 'cReportFilters' => $filters, 'cReportError' => null, 'cReport' => null,
-            'cReportColumns' => self::columns($kind, $variant), 'cReportRows' => [], 'cReportCsv' => null];
+            'cReportColumns' => array_values(array_filter(self::columns($kind, $variant), static fn (array $c): bool => !$filters['ocultar_unidade'] || $c[1] !== 'unit_label')), 'cReportRows' => [], 'cReportCsv' => null];
         try {
             $context = CondominiumContext::id();
             $service = new CollectionReports();
             $report = match ($kind) {
                 'agreements' => $service->agreements($user, $context, $filters['de'], $filters['ate'], $filters['situacao']),
                 'agreement-fees' => $service->agreementFees($user, $context, $filters['de'], $filters['ate']),
-                'delinquents' => $service->delinquents($user, $context, $filters['referencia'], (string)$variant),
+                'delinquents' => $service->delinquents($user, $context, $filters['referencia'], (string)$variant, $filters['inicio']),
                 default => $service->receipts($user, $context, $filters['de'], $filters['ate'], (string)$variant),
             };
             $data['cReport'] = $report;
@@ -112,7 +116,7 @@ final class CollectionReportScreens
             $query['condominium_id'] = $context;
         }
         if ($kind === 'delinquents') {
-            $query += ['as_of' => $filters['referencia'], 'view' => $variant];
+            $query += ['as_of' => $filters['referencia']] + (($filters['inicio'] ?? null) !== null ? ['from' => $filters['inicio']] : []) + ['view' => $variant];
         } else {
             $query += ['from' => $filters['de'], 'to' => $filters['ate']];
         }
@@ -121,6 +125,9 @@ final class CollectionReportScreens
         }
         if ($kind === 'receipts') {
             $query['group'] = $variant;
+        }
+        if (!empty($filters['ocultar_unidade'])) {
+            $query['hide_unit'] = 1;
         }
         return '/api/v1/reports/' . $kind . '?' . http_build_query($query);
     }

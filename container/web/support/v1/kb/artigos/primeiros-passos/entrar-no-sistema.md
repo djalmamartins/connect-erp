@@ -8,7 +8,7 @@ menu:
 icone: log-in-outline
 situacao: guia
 relacionados: escolher-o-condominio, encontrar-uma-tela, pedir-ajuda
-palavras: login, entrar, acesso, senha, esqueci a senha, sair
+palavras: login, entrar, acesso, senha, esqueci a senha, sair, duas etapas, 2fa, autenticador, Connect Condomínios
 manual: sim
 rascunho: nao
 ---
@@ -33,6 +33,12 @@ legenda: Tela de entrada do Connect ERP
 ```
 
 > Marque **Manter conectado** só no seu computador. Em computador compartilhado, deixe desmarcado e use {{Sair}} no menu do seu nome ao terminar.
+
+## Verificação em duas etapas
+
+Para a equipe, o login também pede o código de 6 números de um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro). Ao ligar, você lê o QR code na tela **Segurança** do seu perfil. No aplicativo, a conta aparece com o nome **Connect Condomínios**; nos aplicativos que mostram ícone, aparece também o símbolo da Connect.
+
+> Se você ligou antes dessa mudança, o aplicativo continua mostrando o nome antigo. O código é o mesmo e funciona normalmente. Para trocar o nome, renomeie a conta no próprio aplicativo.
 
 ## Esqueci a minha senha
 

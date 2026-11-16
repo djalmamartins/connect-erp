@@ -33,7 +33,8 @@ use Source\Support\Audit;
 final class EntryShortcuts
 {
     public const CHARGE_KINDS = ['extra' => 'Cobrança extra', 'fine' => 'Multa avulsa'];
-    public const METHODS = ['fixed' => 'Valor fixo por unidade', 'equal' => 'Total dividido igualmente', 'fraction' => 'Total rateado pela fração ideal'];
+    public const METHODS = ['fixed' => 'Valor fixo por unidade', 'equal' => 'Total dividido igualmente', 'fraction' => 'Total rateado pela fração ideal',
+        'custom' => 'Valor de cada unidade'];
     /** Unidades por cobrança extra: limita o IN (...) e as contas geradas numa só transação (ADR 0062). */
     public const MAX_UNITS = 1000;
 
@@ -73,6 +74,26 @@ final class EntryShortcuts
             throw new InvalidArgumentException('Escolha no máximo ' . self::MAX_UNITS . ' unidades por cobrança.');
         }
         return $ids;
+    }
+
+    /**
+     * Valor de cada unidade (regra pura, ADR 0313): cada unidade escolhida precisa de um valor maior que zero.
+     *
+     * @param list<int> $unitIds
+     * @return array<int, int> centavos por unidade, na ordem das unidades
+     */
+    public static function customShares(mixed $raw, array $unitIds): array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $out = [];
+        foreach ($unitIds as $unitId) {
+            $cents = Invoices::cents($raw[$unitId] ?? $raw[(string)$unitId] ?? null);
+            if ($cents === null || $cents <= 0) {
+                throw new InvalidArgumentException('Informe o valor de cada unidade escolhida (maior que zero).');
+            }
+            $out[$unitId] = $cents;
+        }
+        return $out;
     }
 
     /** Desconto aceito (regra pura): maior que zero e menor que o valor da conta (nunca zera). */
@@ -211,7 +232,7 @@ final class EntryShortcuts
         if ($dueOn < date('Y-m-d')) {
             throw new InvalidArgumentException('O vencimento não pode ser no passado.');
         }
-        $amount = Invoices::cents($input['amount_cents'] ?? null);
+        $amount = $method === 'custom' ? 1 : Invoices::cents($input['amount_cents'] ?? null);
         if ($amount === null) {
             throw new InvalidArgumentException($method === 'fixed' ? 'Informe o valor por unidade.' : 'Informe o valor total a ratear.');
         }
@@ -266,7 +287,10 @@ final class EntryShortcuts
         foreach ($units as $unit) {
             $fractions[(int)$unit['id']] = $unit['ideal_fraction'];
         }
-        $shares = self::split($method, $amount, $fractions);
+        $shares = $method === 'custom' ? self::customShares($input['unit_amounts'] ?? null, array_keys($fractions)) : self::split($method, $amount, $fractions);
+        // Nova Receita (ADR 0313): documento e centro de custo informados passam para as contas geradas.
+        $document = is_string($input['document_number'] ?? null) ? trim(mb_substr($input['document_number'], 0, 40)) : '';
+        $costCenter = $this->int($input['cost_center_id'] ?? null);
         $total = array_sum($shares);
         $prefix = $kind === 'fine' ? 'MUL' : 'EXT';
 
@@ -288,8 +312,8 @@ final class EntryShortcuts
                     'condominium_id' => $condominium, 'nature' => 'receita', 'chart_account_id' => $account,
                     'description' => mb_substr("{$description} — {$unit['label']}", 0, 160),
                     'amount_cents' => number_format($shares[(int)$unit['id']] / 100, 2, ',', ''),
-                    'competence' => $competence, 'due_on' => $dueOn, 'unit_id' => (int)$unit['id'], 'document_number' => "{$prefix}-{$chargeId}",
-                ]);
+                    'competence' => $competence, 'due_on' => $dueOn, 'unit_id' => (int)$unit['id'], 'document_number' => $document !== '' ? $document : "{$prefix}-{$chargeId}",
+                ] + ($costCenter !== null ? ['cost_center_id' => $costCenter] : []));
                 $link->execute(['x' => $chargeId, 'id' => (int)$entry['id']]);
             }
             if ($own) {

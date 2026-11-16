@@ -159,7 +159,7 @@ final class CashBookDocument
     }
 
     /** Imagem reduzida (lado maior até MAX_IMAGE_SIDE) em JPEG data URI; sem GD, o arquivo original. */
-    private static function imageData(string $path): string
+    public static function imageData(string $path): string
     {
         if ($path === '' || !is_file($path)) {
             return '';

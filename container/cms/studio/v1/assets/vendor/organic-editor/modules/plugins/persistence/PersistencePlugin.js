@@ -175,12 +175,14 @@ export class PersistencePlugin {
         document.querySelector("#revisionDialog")?.close();
     }
 
-    deleteItem(collectionName, id) {
+    async deleteItem(collectionName, id) {
         const collection = this.getCollection(collectionName);
         const item = collection.find((entry) => entry.id === id);
         if (!item) return;
 
-        if (!window.confirm(`Apagar "${item.label}"?`)) return;
+        // Connect (ADR 0320): modal do sistema no lugar do confirm do navegador. Manter ao sincronizar o Organic.
+        if (!(await window.ConnectDialog.confirm({ title: `Apagar "${item.label}"?`, tone: "danger",
+            message: "A cópia sai da lista guardada neste navegador. O conteúdo que está no editor não muda.", undo: false, confirmLabel: "Apagar" }))) return;
 
         const filtered = collection.filter((entry) => entry.id !== id);
 

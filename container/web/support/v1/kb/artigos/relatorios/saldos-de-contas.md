@@ -23,7 +23,7 @@ rota: /relatorios/saldos-de-contas
 condominio: residencial-jardim-das-acacias
 legenda: Tela Saldos de Contas
 1: menu | Saldos de Contas no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+2: main .erp-page-head__actions :is(a,button):has-text("Download") | Botão {{Download}}
 3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
 4: main :is(form[method=get], .erp-filters) | Filtros: Data de referência
 5: main table thead | Colunas da lista
@@ -42,7 +42,7 @@ Os totais aparecem no rodapé da tabela.
 ## Imprimir ou exportar
 
 - {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
-- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Download}} baixa os dados filtrados em PDF (com o cabeçalho da Connect, o condomínio, o título, a data e o número da página), em Excel ou em CSV.
 
 ## Quem pode usar
 

@@ -8,7 +8,7 @@ menu: Importações > Extrato Bancário (OFX)
 icone: cloud-upload-outline
 situacao: funciona
 relacionados: importacao-de-leituras, importacao-nf-e-xml, inadimplentes-planilha, fracoes-ideais-planilha
-palavras: extrato bancário (ofx), importações, AP-140, conciliação, ofx, extrato, internet banking
+palavras: extrato bancário (ofx), importações, AP-140, conciliação, ofx, extrato, internet banking, inter, saldo, buscar extrato
 rascunho: nao
 ---
 
@@ -49,6 +49,21 @@ recorte: main form:not([method=get])
 
 - **Conta bancária do extrato** (obrigatório).
 - **Arquivo** (obrigatório): O número da conta no OFX precisa ser o da conta escolhida. Escolha o arquivo no seu computador.
+
+## Buscar o extrato direto no banco (Inter)
+
+Se a conta é do Banco Inter e já foi conectada em [[Configurações > Aplicativo e notificações > Integrações]], aparece o quadro **Buscar extrato do banco**. Não precisa baixar o OFX.
+
+1. Escolha a **conta bancária** e o período (**De** e **Até**). O banco entrega até 90 dias por vez, até hoje.
+2. Clique em {{Buscar e ver a prévia}}. O sistema busca os lançamentos e o saldo no banco e mostra a mesma prévia do arquivo.
+3. Confira e clique em {{Aplicar importação}}.
+
+- Pode buscar o mesmo período de novo: o que já entrou aparece como **Já importada** e não repete.
+- O saldo do banco no fim do período é comparado com o do sistema, como no OFX.
+- Use um caminho só por conta (busca pelo banco ou arquivo OFX). Os dois juntos no mesmo período repetem as linhas.
+- Se aparecer "Inter recusou o acesso ao extrato", marque a permissão de consultar extrato e saldo na aplicação do Inter e conecte de novo.
+
+>! Por enquanto só no ambiente de testes do Inter (sandbox). Nada aqui movimenta dinheiro.
 
 ## O que a lista mostra
 

@@ -75,6 +75,26 @@ $openCents = $t('open_revenue_cents') + $t('open_expense_cents');
             <span>Todos os condomínios do seu escopo · competência <strong><?= $this->e($monthLabel) ?></strong></span>
         <?php endif; ?>
     </div>
+    <?php
+    // Ordem do fechamento (ADR 0313): mês anterior em aberto bloqueia o fechamento deste e aparece em destaque.
+    $monthOf = static fn (string $m): string => substr($m, 5, 2) . '/' . substr($m, 0, 4);
+    $pendingRows = array_values(array_filter($rows, static fn (array $r): bool => ($r['pending_before'] ?? []) !== [] && $r['status'] !== 'closed'));
+    $singlePending = $single !== null && $single['status'] !== 'closed' ? ($single['pending_before'] ?? []) : [];
+    ?>
+    <?php if ($singlePending !== []): ?>
+        <div class="erp-alert erp-alert--danger" role="alert" data-closing-order><?= $icon('alert') ?><div>
+            <strong><?= count($singlePending) === 1 ? 'Há um mês anterior em aberto' : 'Há ' . count($singlePending) . ' meses anteriores em aberto' ?></strong>
+            Feche na ordem para as pendências não se acumularem:
+            <?php foreach ($singlePending as $i => $month): ?><?= $i > 0 ? ', ' : ' ' ?><a href="<?= $this->e($route . '?competencia=' . $month) ?>"><?= $this->e($monthOf($month)) ?></a><?php endforeach; ?>.
+            <?= $this->e($monthLabel) ?> só pode ser fechado depois.
+        </div></div>
+    <?php elseif ($single === null && $pendingRows !== []): ?>
+        <div class="erp-alert erp-alert--warning" role="status" data-closing-order><?= $icon('alert') ?><div>
+            <strong><?= count($pendingRows) ?> condomínio(s) com mês anterior em aberto</strong>
+            <?= $this->e(implode(' · ', array_map(static fn (array $r): string => $r['condominium_name'] . ': ' . implode(', ', array_map($monthOf, $r['pending_before'])), array_slice($pendingRows, 0, 5)))) ?><?= count($pendingRows) > 5 ? ' …' : '' ?>.
+            O fechamento segue a ordem dos meses.
+        </div></div>
+    <?php endif; ?>
     <?php if ($single !== null && $single['status'] === 'reopened'): ?>
         <div class="erp-alert erp-alert--warning"><?= $icon('info') ?><div><strong>Reaberta em <?= $this->e($dateTime($single['reopened_at'])) ?></strong>Motivo: <?= $this->e((string)$single['reopen_reason']) ?></div></div>
     <?php endif; ?>
@@ -98,7 +118,7 @@ $openCents = $t('open_revenue_cents') + $t('open_expense_cents');
                 <tbody><?php foreach ($rows as $row): [$badgeText, $badgeTone] = $badges[$row['status']] ?? $badges['open']; ?>
                     <tr>
                         <td><strong><?= $this->e($row['condominium_name']) ?></strong></td>
-                        <td><span class="erp-badge erp-badge--<?= $badgeTone ?>"><?= $badgeText ?></span></td>
+                        <td><span class="erp-badge erp-badge--<?= $badgeTone ?>"><?= $badgeText ?></span><?php if (($row['pending_before'] ?? []) !== [] && $row['status'] !== 'closed'): ?> <small class="erp-muted">antes: <?= $this->e(implode(', ', array_map($monthOf, $row['pending_before']))) ?></small><?php endif; ?></td>
                         <td class="is-num"><?= $brl((int)$row['revenue_cents']) ?></td>
                         <td class="is-num"><?= $brl((int)$row['expense_cents']) ?></td>
                         <td class="is-num"><?= $brl((int)$row['result_cents']) ?></td>
@@ -114,7 +134,7 @@ $openCents = $t('open_revenue_cents') + $t('open_expense_cents');
         <section class="erp-card" aria-labelledby="close-actions">
             <?php if ($single['status'] === 'closed'): ?>
                 <div class="erp-card__head"><div><h2 id="close-actions">Reabrir competência</h2><p>Os lançamentos de <?= $this->e($monthLabel) ?> voltam a aceitar alterações. O motivo fica registrado na auditoria.</p></div></div>
-                <form class="erp-form" method="post" action="<?= $this->e($route . '/reabrir') ?>" data-erp-confirm="Reabrir a competência <?= $this->e($monthLabel) ?>? Os lançamentos voltam a aceitar alterações.">
+                <form class="erp-form" method="post" action="<?= $this->e($route . '/reabrir') ?>" data-erp-confirm="Reabrir a competência <?= $this->e($monthLabel) ?>? Os lançamentos voltam a aceitar alterações." data-confirm-undo="sim" data-confirm-undo-text="Dá para fechar a competência de novo depois.">
                     <?= csrf_input() ?>
                     <input type="hidden" name="competence" value="<?= $this->e($closingCompetence) ?>">
                     <div class="erp-field"><label for="close-reason">Motivo da reabertura</label><textarea class="erp-textarea" id="close-reason" name="reason" minlength="5" maxlength="255" required placeholder="Ex.: lançamento de energia com valor errado"></textarea></div>
@@ -122,10 +142,10 @@ $openCents = $t('open_revenue_cents') + $t('open_expense_cents');
                 </form>
             <?php else: ?>
                 <div class="erp-card__head"><div><h2 id="close-actions">Fechar competência</h2><p>Grava o resumo acima e trava os lançamentos de <?= $this->e($monthLabel) ?>.<?= ((int)$single['open_revenue_cents'] + (int)$single['open_expense_cents']) > 0 ? ' Ainda há lançamentos em aberto.' : '' ?></p></div></div>
-                <form class="erp-form" method="post" action="<?= $this->e($route . '/fechar') ?>" data-erp-confirm="Fechar a competência <?= $this->e($monthLabel) ?>? O resumo é gravado e os lançamentos do mês ficam travados.">
+                <form class="erp-form" method="post" action="<?= $this->e($route . '/fechar') ?>" data-erp-confirm="Fechar a competência <?= $this->e($monthLabel) ?>? O resumo é gravado e os lançamentos do mês ficam travados." data-confirm-undo="sim" data-confirm-undo-text="Quem tem permissão pode reabrir a competência.">
                     <?= csrf_input() ?>
                     <input type="hidden" name="competence" value="<?= $this->e($closingCompetence) ?>">
-                    <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('lock', 'erp-icon--sm') ?>Fechar competência</button></div>
+                    <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"<?= $singlePending !== [] ? ' disabled title="Feche antes os meses anteriores em aberto."' : '' ?>><?= $icon('lock', 'erp-icon--sm') ?>Fechar competência</button></div>
                 </form>
             <?php endif; ?>
         </section>

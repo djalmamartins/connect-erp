@@ -212,19 +212,10 @@ export MOVESOS_TEST_DB_PASS
 test_env=(-e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS -e COMPOSER_PROCESS_TIMEOUT=0)
 [ -n "$MOVESOS_TEST_DB_PASS" ] || echo "AVISO: LEGACY_DB_ROOT_PASSWORD não está no .env; os testes não vão conseguir criar o movesos_test." >&2
 
-# Conexões presas no movesos_test (de uma rodada interrompida) seguram trava de tabela e fazem o
-# TRUNCATE de cada teste esperar. O banco de teste é descartável: as conexões são listadas no log
-# e encerradas. Conexões de outros bancos (connect_legacy) nunca são tocadas.
-test_db_sql() {
-  docker compose exec -T -e MOVESOS_TEST_DB_PASS legacy-db \
-    sh -c 'mariadb -uroot -p"$MOVESOS_TEST_DB_PASS" -N -B' 2>>"$logs/test-db-sessions.log"
-}
-stale=$(echo "SELECT ID, USER, COMMAND, TIME, LEFT(COALESCE(INFO, ''), 120) FROM information_schema.PROCESSLIST WHERE DB LIKE 'movesos%test%' AND ID <> CONNECTION_ID();" | test_db_sql || true)
-if [ -n "$stale" ]; then
-  { echo "conexões no movesos_test antes dos testes:"; echo "$stale"; } >>"$logs/test-db-sessions.log"
-  echo "$stale" | cut -f1 | grep -E '^[0-9]+$' | sed 's/.*/KILL &;/' | test_db_sql >>"$logs/test-db-sessions.log" || true
-  echo "encerradas $(echo "$stale" | wc -l | tr -d ' ') conexão(ões) presas no movesos_test (ver test-db-sessions.log)"
-fi
+# PHPs de teste e conexões que sobraram de uma rodada interrompida seguram a trava do banco de
+# teste e a suíte fica parada sem mostrar nada (16/11). O banco de teste é descartável; o detalhe
+# vai para test-db-sessions.log. Conexões do connect_legacy nunca são tocadas.
+LIMPEZA_LOG="$logs/test-db-sessions.log" bash tools/limpar-banco-teste.sh
 echo "-- unitários"
 if docker compose exec -T "${test_env[@]}" app composer test:unit >"$logs/test-unit.log" 2>&1; then
   add "Testes unitários" OK "$(phpunit_line "$logs/test-unit.log")"

@@ -8,7 +8,11 @@ use InvalidArgumentException;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
+use Source\Models\Auth;
 use Source\Services\Erp\Accountability;
+use Source\Services\Erp\AccountabilityDocument;
+use Source\Support\AppLogger;
+use Source\Support\Message;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
@@ -23,6 +27,7 @@ use Source\Support\Erp\CondominiumContext;
 final class AccountabilityScreens
 {
     public const PAGES = ['AP-101' => 'pages/reports/accountability'];
+    public const ROUTE = '/prestacao-de-contas/prestacao-de-contas';
 
     public const INCOME_COLUMNS = [['Código', 'code', 'text'], ['Conta', 'name', 'tree'], ['Natureza', 'nature', 'label:nature'], ['Valor', 'amount_cents', 'money']];
     public const BANK_COLUMNS = [['Conta bancária', 'name', 'text'], ['Saldo anterior', 'opening_cents', 'signed'], ['Entradas', 'received_cents', 'money'],
@@ -44,11 +49,13 @@ final class AccountabilityScreens
         }
         $context = CondominiumContext::id();
         $month = self::month($_GET['mes'] ?? null, date('Y-m-d'));
-        $data = ['accountabilityReady' => false, 'accountabilityMonth' => $month, 'accountabilityNeedsCondo' => $context === null,
+        $data = ['accountabilityReady' => false, 'accountabilityMonth' => $month, 'accountabilityMonths' => [], 'accountabilityNeedsCondo' => $context === null,
             'accountabilityError' => null, 'accountability' => null];
         try {
             if ($context !== null) {
                 try {
+                    // Lista dos meses com o documento no padrão do PDF de outubro (revisão de 15/11 item 21, ADR 0314).
+                    $data['accountabilityMonths'] = (new AccountabilityDocument())->months($user, $context);
                     $data['accountability'] = (new Accountability())->build($user, $context, $month);
                 } catch (InvalidArgumentException $error) {
                     $data['accountabilityError'] = $error->getMessage();
@@ -62,6 +69,77 @@ final class AccountabilityScreens
         }
         $data['accountabilityReady'] = true;
         return $data;
+    }
+
+    /** GET {ROUTE}/documento?mes=&ocultar_unidade=1: a prestação de contas para ver e imprimir no navegador. */
+    public function document(array $data): void
+    {
+        $this->deliver(function (array $doc, AccountabilityDocument $service, string $back): void {
+            header('Cache-Control: private, no-store');
+            header('X-Frame-Options: DENY');
+            echo $service->html($doc, false, $back);
+        }, false, 'accountability_document_view');
+    }
+
+    /** GET {ROUTE}/pdf?mes=&ocultar_unidade=1: o PDF com capa, termo, parecer, demonstrativo, lançamentos e comprovantes. */
+    public function documentPdf(array $data): void
+    {
+        $this->deliver(function (array $doc, AccountabilityDocument $service): void {
+            $pdf = $service->pdf($doc);
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: inline; filename="' . AccountabilityDocument::filename($doc) . '"');
+            header('Content-Length: ' . strlen($pdf));
+            header('Cache-Control: private, no-store');
+            header('X-Content-Type-Options: nosniff');
+            echo $pdf;
+        }, true, 'accountability_document_pdf');
+    }
+
+    /** Mesma permissão da tela (erp.entries.view e erp.chart.view), condomínio da barra e limite de downloads. */
+    private function deliver(callable $send, bool $forPdf, string $event): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect(erp_url('/login'));
+            return;
+        }
+        $month = self::month($_GET['mes'] ?? null, date('Y-m-d'));
+        $hideUnit = ($_GET['ocultar_unidade'] ?? '') === '1';
+        $back = erp_url(self::ROUTE . '?mes=' . $month . ($hideUnit ? '&ocultar_unidade=1' : ''));
+        if (!Access::can('erp.access', $user) || !Access::can('erp.entries.view', $user) || !Access::can('erp.chart.view', $user)) {
+            http_response_code(403);
+            (new Message())->error('Você não tem permissão para ver a prestação de contas.')->flash();
+            redirect($back);
+            return;
+        }
+        $condominium = CondominiumContext::id();
+        if ($condominium === null) {
+            (new Message())->warning('Escolha um condomínio na barra superior para gerar a prestação de contas.')->flash();
+            redirect($back);
+            return;
+        }
+        if (request_limit('erp_accountability_document', 30, 600)) {
+            (new Message())->error('Muitos downloads em pouco tempo. Aguarde alguns minutos.')->flash();
+            redirect($back);
+            return;
+        }
+        try {
+            $service = new AccountabilityDocument();
+            $doc = $service->build($user, $condominium, $month, $hideUnit, $forPdf);
+            \Source\Support\Audit::record('export', 'erp_reports', 0, null, ['report' => 'accountability-document', 'condominium_id' => $condominium,
+                'competence' => $month, 'format' => $forPdf ? 'pdf' : 'html', 'hide_unit' => $hideUnit]);
+            $send($doc, $service, $back);
+        } catch (InvalidArgumentException $error) {
+            (new Message())->error($error->getMessage())->flash();
+            redirect($back);
+        } catch (CondominiumAccessDenied) {
+            (new Message())->error('Condomínio fora do seu escopo de acesso.')->flash();
+            redirect($back);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => $event . '_failed']);
+            (new Message())->error('Não foi possível gerar a prestação de contas agora. Tente de novo.')->flash();
+            redirect($back);
+        }
     }
 
     /**

@@ -23,7 +23,7 @@ rota: /prestacao-de-contas/demonstrativo-analitico
 condominio: residencial-jardim-das-acacias
 legenda: Tela Demonstrativo Analítico
 1: menu | Demonstrativo Analítico no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+2: main .erp-page-head__actions :is(a,button):has-text("Download") | Botão {{Download}}
 3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
 4: main :is(form[method=get], .erp-filters) | Filtros: Competência inicial e Competência final
 5: main table thead | Colunas da lista
@@ -42,7 +42,11 @@ Os totais aparecem no rodapé da tabela.
 ## Imprimir ou exportar
 
 - {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
-- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Download}} baixa os dados filtrados em PDF (com o cabeçalho da Connect, o condomínio, o título, a data e o número da página), em Excel ou em CSV.
+
+## Ocultar unidade
+
+Marque **Ocultar unidade** nos filtros e clique em {{Gerar}} para mostrar os valores sem dizer qual unidade pagou ou deve, por exemplo para mandar ao grupo dos moradores. A coluna Unidade sai da tela, da impressão e do {{Download}} (PDF, Excel ou CSV).
 
 ## Quem pode usar
 

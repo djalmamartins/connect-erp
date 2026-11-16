@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Services\CondominiumAccessDenied;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Services\Erp\SupplierSpend as Service;
 use Source\Support\Access;
@@ -38,15 +38,12 @@ final class SupplierSpend
         try {
             $data = (new Service())->build($user, $condominium === false || $condominium === null ? null : (int)$condominium, $_GET['from'] ?? null, $_GET['to'] ?? null);
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);
-                $content = CollectionReports::csv(Service::csvTable($data));
+                $content = ListDocument::render($format, Service::csvTable($data), ListDocument::meta($_GET['title'] ?? null, 'Gastos por fornecedor', (int)$data['condominium_id']));
                 Audit::record('export', 'erp_reports', 0, null, ['report' => 'supplier-spend', 'condominium_id' => $data['condominium_id'],
-                    'from' => $data['from'], 'to' => $data['to'], 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="supplier-spend-' . $data['condominium_id'] . '-' . $data['from'] . '-' . $data['to'] . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                    'from' => $data['from'], 'to' => $data['to'], 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('supplier-spend-' . $data['condominium_id'] . '-' . $data['from'] . '-' . $data['to'] . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

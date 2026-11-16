@@ -140,7 +140,7 @@ final class AnnualAccountabilityTest extends TestCase
         }
         self::assertSame('Relatório parcial: algum bloco passou do limite de linhas.', end($hostile['rows'])[2]);
         $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Api/V1/AnnualAccountability.php');
-        foreach (['(new ReportExportLimit())->assertAllowed($user)', "Audit::record('export'", "'report' => 'annual-accountability'", 'X-Content-Type-Options: nosniff',
+        foreach (['(new ReportExportLimit())->assertAllowed($user)', "Audit::record('export'", "'report' => 'annual-accountability'", 'ListDocument::send($format, $content',
             "Access::can('erp.chart.view', \$user)", 'catch (CondominiumAccessDenied)', 'catch (DomainException'] as $needle) {
             self::assertStringContainsString($needle, $controller, $needle);
         }

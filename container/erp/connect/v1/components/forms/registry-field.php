@@ -12,6 +12,10 @@ $disabled = $readonly ? ' disabled' : '';
 $invalid = $error !== null ? ' aria-invalid="true" aria-describedby="' . $id . '-error"' : '';
 $star = $field['required'] ? ' <span aria-hidden="true" style="color:var(--erp-danger)">*</span>' : '';
 $text = $value === null || is_array($value) || is_bool($value) ? '' : (string)$value;
+// ADR 0311: campo com 'default' (ex.: selects das configurações da unidade) já vem escolhido num registro novo.
+if ($text === '' && array_key_exists('default', $field) && $field['type'] === 'select') {
+    $text = (string)$field['default'];
+}
 // Valores gravados chegam normalizados; mostra-os no formato de digitação.
 $display = match ($field['type']) {
     'cpf', 'cnpj', 'document' => \Source\Support\Erp\BrDocument::format($text),
@@ -145,7 +149,7 @@ $attachment ??= null;
                 'date' => ['date', ' min="1900-01-01" max="2100-12-31"', ''],
                 'time' => ['time', '', ''],
                 'int' => ['number', ' step="1" inputmode="numeric" min="' . (int)($field['min'] ?? 0) . '" max="' . (int)($field['max_value'] ?? 999999999) . '"', ''],
-                'money' => ['text', ' inputmode="decimal" maxlength="18"', '0,00'],
+                'money' => ['text', ' inputmode="decimal" maxlength="18" data-erp-money', '0,00'],
                 'percent' => ['text', ' inputmode="decimal" maxlength="6"', '0,00'],
                 'decimal' => ['text', ' inputmode="decimal" maxlength="20"', '0,' . str_repeat('0', (int)($field['scale'] ?? 2))],
                 'cpf' => ['text', ' inputmode="numeric" maxlength="14"', '000.000.000-00'],
@@ -153,10 +157,14 @@ $attachment ??= null;
                 'document' => ['text', ' inputmode="numeric" maxlength="18"', 'CPF ou CNPJ'],
                 'id_document' => ['text', ' maxlength="20"', 'CPF ou RG'],
                 'plate' => ['text', ' maxlength="8" style="text-transform:uppercase"', 'ABC1D23'],
+                'cib' => ['text', ' maxlength="9" style="text-transform:uppercase" autocomplete="off"', 'AAAAAAA-D'],
                 'oab' => ['text', ' maxlength="12"', 'SP 123456'],
                 default => ['text', ' maxlength="' . (int)($field['max'] ?? 160) . '"', ''],
             }; ?>
             <?php if (!empty($field['month'])) { $extra .= ' data-erp-month'; } // ADR 0152: seletor de mês e ano (erp.js) ?>
+            <?php if (!empty($field['cnpj_lookup']) && !$readonly) { // ADR 0312: CNPJ completo busca na Receita e preenche os campos mapeados que estiverem vazios
+                $extra .= ' data-erp-cnpj-lookup data-cnpj-map="' . $this->e((string)json_encode($field['cnpj_lookup'])) . '"';
+            } ?>
             <input class="erp-input" type="<?= $type ?>" id="<?= $id ?>" name="<?= $this->e($name) ?>" value="<?= $this->e($display) ?>"<?= $extra ?><?= $placeholder !== '' ? ' placeholder="' . $this->e($placeholder) . '"' : '' ?><?= $required . $disabled . $invalid ?>>
         <?php endif; ?>
         <?php $hint = $attachment !== null ? 'Arquivo do Disco Virtual do mesmo condomínio do cadastro.' : ($field['hint'] ?? null); ?>

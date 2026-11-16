@@ -41,6 +41,19 @@ components:
         floor: { type: [string, "null"], maxLength: 10 }
         ideal_fraction: { type: [number, "null"], minimum: 0, maximum: 1 }
         private_area: { type: [number, "null"], minimum: 0, maximum: 99999999.99 }
+        cib: { type: [string, "null"], pattern: "^[0-9A-Z]{8}$", description: 'Código CIB: 7 caracteres + DV; aceita com traço, resposta sem.' }
+        is_vacant: { type: boolean }
+        due_day: { type: [integer, "null"], minimum: 1, maximum: 31 }
+        apportionment_exempt: { type: boolean }
+        block_bill_merge: { type: boolean }
+        postage_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        postage_payer: { type: [string, "null"], enum: ['ambos', 'proprietario', 'inquilino'] }
+        billing_responsible: { type: [string, "null"], enum: ['nao_definido', 'proprietario', 'inquilino'] }
+        bill_address: { type: [string, "null"], enum: ['predio', 'correios'] }
+        bill_email_to: { type: [string, "null"], enum: ['responsavel', 'proprietario', 'inquilino', 'ambos'] }
+        reads_gas: { type: boolean }
+        reads_water: { type: boolean }
+        reads_power: { type: boolean }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
     Units:
@@ -162,7 +175,7 @@ components:
       properties:
         name: { type: [string, "null"], maxLength: 160 }
         oab: { type: [string, "null"], examples: ["SP 123456"] }
-        document: { type: [string, "null"], pattern: "^\\d{11}$", description: 'CPF com DV válido; resposta só com dígitos.' }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
         firm: { type: [string, "null"], maxLength: 160 }
         email: { type: [string, "null"], format: email, maxLength: 254 }
         phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
@@ -1008,7 +1021,9 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por type', schema: { type: string, enum: ['apartamento', 'casa', 'sala', 'loja', 'garagem', 'outro'] } }
+        - { name: flag, in: query, description: 'Filtra por is_vacant (ADR 0310)', schema: { type: string, enum: ['ocupadas', 'vazias'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Units' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1068,6 +1083,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por relationship', schema: { type: string, enum: ['owner', 'tenant', 'resident', 'financial'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Residents' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1126,6 +1142,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por role', schema: { type: string, enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/BoardMembers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1184,6 +1201,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por job', schema: { type: string, enum: ['zelador', 'porteiro', 'faxineiro', 'jardineiro', 'manutencao', 'vigia', 'administrativo', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Employees' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1241,6 +1259,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por category', schema: { type: string, enum: ['manutencao', 'limpeza', 'seguranca', 'elevadores', 'jardinagem', 'portaria', 'concessionaria', 'outros'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Suppliers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1298,6 +1317,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Lawyers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1355,6 +1375,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Vehicles' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1412,6 +1433,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Visitors' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1470,6 +1492,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por species', schema: { type: string, enum: ['cao', 'gato', 'ave', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Pets' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1528,6 +1551,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por service', schema: { type: string, enum: ['emergencia', 'encanador', 'eletricista', 'chaveiro', 'dedetizacao', 'gas', 'concessionaria', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/UsefulContacts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1586,6 +1610,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por booking_mode', schema: { type: string, enum: ['approval', 'free', 'blocked', 'none'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/CommonAreas' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1645,6 +1670,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['vaga', 'deposito', 'box', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/LinkableAreas' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1703,6 +1729,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por category', schema: { type: string, enum: ['mobiliario', 'equipamento', 'eletronico', 'ferramenta', 'seguranca', 'lazer', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Assets' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1761,6 +1788,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por nature', schema: { type: string, enum: ['receita', 'despesa', 'asset', 'liability', 'equity'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/ChartAccounts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1820,6 +1848,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por recurrence', schema: { type: string, enum: ['mensal', 'avulsa'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/InvoiceTypes' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1877,6 +1906,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/CostCenters' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1936,6 +1966,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['corrente', 'poupanca', 'aplicacao'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/BankAccounts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1995,6 +2026,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por nature', schema: { type: string, enum: ['receita', 'despesa'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Entries' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2003,9 +2035,9 @@ paths:
       tags: ['Lançamentos']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EntriesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/EntriesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Entries' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Entries' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2054,6 +2086,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por nature', schema: { type: string, enum: ['receita', 'despesa'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/RecurringEntries' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2111,6 +2144,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Payables' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2119,9 +2153,9 @@ paths:
       tags: ['Contas a pagar']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PayablesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/PayablesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2168,6 +2202,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Receivables' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2176,9 +2211,9 @@ paths:
       tags: ['Contas a receber']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivablesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/ReceivablesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2226,6 +2261,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['presencial', 'remota', 'hibrida'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Gatehouses' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2284,6 +2320,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, done, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/VisitForecasts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2343,6 +2380,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['visitante', 'prestador', 'entregador', 'morador'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/AccessLogs' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2400,6 +2438,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, returned, discarded] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/LostFound' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2458,6 +2497,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, picked_up, inactive] } }
         - { name: type, in: query, description: 'Filtra por carrier', schema: { type: string, enum: ['correios', 'mercado_livre', 'amazon', 'outra'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Deliveries' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2515,6 +2555,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Banners' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2573,6 +2614,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['iss', 'irrf', 'inss', 'pis_cofins_csll', 'outro'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Taxes' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2631,6 +2673,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['agua', 'gas', 'energia'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Meters' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2689,6 +2732,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['agua', 'gas', 'energia'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Tariffs' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2746,6 +2790,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, delivered, returned] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/DeliveryNotices' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2803,6 +2848,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/CheckCopies' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2860,6 +2906,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, settled, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Commitments' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2917,6 +2964,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, received, checked] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Pouches' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2975,6 +3023,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, running, done, inactive] } }
         - { name: type, in: query, description: 'Filtra por frequency', schema: { type: string, enum: ['unica', 'mensal', 'trimestral', 'semestral', 'anual'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Maintenances' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3033,6 +3082,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, running, done] } }
         - { name: type, in: query, description: 'Filtra por priority', schema: { type: string, enum: ['baixa', 'media', 'alta'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Occurrences' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3090,6 +3140,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, confirmed, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Reservations' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3147,6 +3198,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, served, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Waitlist' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3204,6 +3256,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Insurances' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3261,6 +3314,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, ended, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Contracts' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3319,6 +3373,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, done, inactive] } }
         - { name: type, in: query, description: 'Filtra por kind', schema: { type: string, enum: ['entrada', 'saida'] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Moves' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -3376,6 +3431,7 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
         - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/MoveSettings' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
         '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

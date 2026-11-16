@@ -51,6 +51,18 @@ final class CollectionReportsIntegrationTest extends TestCase
 
         $general = $this->reports->delinquents($this->admin, $this->alpha, null, 'general');
         self::assertSame([2, 70000], [$general['rows'][0]['units'], $general['rows'][0]['amount_cents']]);
+        // Data inicial opcional (ADR 0314): só as vencidas a partir dela; em branco, todas.
+        $recent = $this->reports->delinquents($this->admin, $this->alpha, null, 'general', date('Y-m-d', strtotime('-30 days')));
+        self::assertSame([1, 20000, date('Y-m-d', strtotime('-30 days'))], [$recent['rows'][0]['units'], $recent['rows'][0]['amount_cents'], $recent['from']]);
+        self::assertSame(70000, $this->reports->delinquents($this->admin, $this->alpha, null, 'general', '')['rows'][0]['amount_cents']);
+        foreach (['2026-02-30', date('Y-m-d', strtotime('+1 day'))] as $bad) {
+            try {
+                $this->reports->delinquents($this->admin, $this->alpha, null, 'general', $bad);
+                self::fail('Aceitou a data inicial ' . $bad);
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
         $resident = $this->reports->delinquents($this->admin, $this->alpha, null, 'resident');
         $byUnit = array_column($resident['rows'], 'responsible', 'unit_label');
         self::assertSame('Bia Moradora', $byUnit['101']['name']);

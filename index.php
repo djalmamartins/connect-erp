@@ -86,6 +86,8 @@ $route->get("/invoices/{id}", "Invoices:show", null, \Source\Support\Middleware\
 $route->patch("/invoices/{id}/items/{item}", "Invoices:updateItem", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/issue", "Invoices:issue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/invoices/{id}/cancel", "Invoices:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Boletos de toda a fatura de uma vez (Inter ou sandbox), em lotes; exige erp.bank_charges.manage.
+$route->post("/invoices/{id}/bank-charges", "Banking:issueInvoice", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Boletos, remessas, retorno e fila de divergências (ADR 0035 e 0156): sandbox interno ou Inter (sandbox do banco).
 $route->get("/bank-charges", "Banking:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges", "Banking:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -93,6 +95,8 @@ $route->get("/bank-charges/{id}", "Banking:show", null, \Source\Support\Middlewa
 $route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-charges/{id}/pdf", "Banking:pdf", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-charges/{id}/letter", "Banking:letter", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/bank-charges/{id}/simulate-payment", "Banking:simulatePayment", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-remittances", "Banking:remittances", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Credencial do banco pela tela Integrações (ADR 0158): pacote do banco, teste e cofre; só sandbox.
 $route->get("/bank-credentials", "BankCredentialsApi:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -265,6 +269,16 @@ $route->post("/unit-batches", "UnitBatches:store", null, \Source\Support\Middlew
 $route->get("/unit-measures", "UnitBatches:measures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Inquilino e proprietário da unidade: atuais e troca com datas e faturas (ADR 0311). Antes do laço dos cadastros.
+$route->get("/units/{id}/occupants", "UnitOccupants:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/units/{id}/occupant-change", "UnitOccupants:change", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Termo de entrada e de saída (ADR 0311).
+$route->get("/unit-move-terms", "UnitMoveTerms:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->put("/unit-move-terms", "UnitMoveTerms:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/unit-move-terms/render", "UnitMoveTerms:render", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Configuração das unidades em massa (ADR 0311). Antes do laço dos cadastros.
+$route->get("/units/bulk-settings", "UnitBulkSettings:options", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/units/bulk-settings", "UnitBulkSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Saída de moradores da unidade (ADR 0206). Antes do laço dos cadastros.
 $route->post("/units/move-out", "UnitMoveOut:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Conclusão de manutenções com a próxima agendada (ADR 0208). Antes do laço dos cadastros.
@@ -486,9 +500,13 @@ $route->post("/entries/reclassify", "EntryReclassification:store", null, \Source
 // Prorrogação de vencimento em lote (ADR 0197): contas em aberto, data fixa ou dias, pelas regras do formulário, com motivo.
 $route->post("/entries/reschedule", "EntryReschedule:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/entries/cancel", "EntryCancellation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Copiar lançamentos selecionados para outra competência (ADR 0313, modelo 7).
+$route->post("/entries/copy", "EntryCopy:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/suppliers/deactivate", "SupplierDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Nova Receita (AP-025, ADR 0313): rateio, valor de cada unidade, fundo de reserva, cobrar de e repetição.
+$route->post("/revenues", "EntryShortcuts:storeRevenue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges/{id}/cancel", "EntryShortcuts:cancelCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-transfers", "EntryShortcuts:transfers", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -498,6 +516,8 @@ $route->post("/bank-transfers/{id}/cancel", "EntryShortcuts:cancelTransfer", nul
 // Importações (ADR 0058): prévia, aplicação e conciliação do extrato OFX. /preview antes de /{id}.
 $route->get("/imports", "Imports:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/imports/preview", "Imports:preview", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Extrato e saldo buscados no banco (Inter), mesma prévia do OFX (ADR 0318).
+$route->post("/imports/bank-statement", "Imports:fetchStatement", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/imports/{id}", "Imports:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/imports/{id}/apply", "Imports:apply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-statement-lines", "Imports:pendingLines", null, \Source\Support\Middleware\ApiAuthenticated::class);

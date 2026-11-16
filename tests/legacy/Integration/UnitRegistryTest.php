@@ -209,6 +209,27 @@ final class UnitRegistryTest extends TestCase
         \Source\Support\Access::clear((int)$user->id);
     }
 
+    /** Revisão de 15/11 (ADR 0310): marca "Unidade vazia", filtro Ocupação e itens por página. */
+    public function testVacantFlagFiltersListAndPerPageChangesThePageSize(): void
+    {
+        $user = $this->user([$this->alpha]);
+        for ($i = 1; $i <= 55; $i++) {
+            $this->service->save($user, 'units', ['condominium_id' => $this->alpha, 'number' => (string)(100 + $i), 'type' => 'apartamento'] + ($i <= 3 ? ['is_vacant' => '1'] : []));
+        }
+        $vacant = $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'flag' => 'vazias', 'per_page' => 50]);
+        self::assertSame(3, $vacant['total']);
+        self::assertSame([true, true, true], array_column($vacant['data'], 'is_vacant'));
+        self::assertSame(52, $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'flag' => 'ocupadas'])['total']);
+        self::assertSame(55, $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'flag' => 'outra'])['total'], 'Valor desconhecido não filtra.');
+
+        $first = $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'per_page' => 50]);
+        self::assertSame([50, 2, 50], [count($first['data']), $first['pages'], $first['per_page']]);
+        $big = $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'per_page' => 100]);
+        self::assertSame([55, 1], [count($big['data']), $big['pages']]);
+        self::assertSame(50, $this->service->list($user, 'units', ['condominium_id' => $this->alpha, 'per_page' => 99999])['per_page'], 'Fora das opções volta a 50.');
+        self::assertSame(25, $this->service->list($user, 'units', ['condominium_id' => $this->alpha])['per_page'], 'Sem per_page (API antiga) continua 25.');
+    }
+
     private function assertInvalid(string $field, callable $call, string $message = ''): void
     {
         try {

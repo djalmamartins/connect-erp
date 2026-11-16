@@ -31,6 +31,10 @@ echo "arquivos privados: $files_backup ($(du -h "$files_backup" | cut -f1))"
 echo "== 2/4 testes de integração (banco *_test)"
 MOVESOS_TEST_DB_PASS=$(grep -E '^LEGACY_DB_ROOT_PASSWORD=' .env | tail -1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//")
 export MOVESOS_TEST_DB_PASS
+# PHPs de teste e conexões que sobraram de uma rodada interrompida seguram a trava do banco de
+# teste e a suíte fica parada sem mostrar nada (16/11). O banco de teste é descartável.
+bash tools/limpar-banco-teste.sh
+echo "(leva de 5 a 10 minutos; o PHPUnit só aparece depois de montar o banco de teste)"
 docker compose exec -T -e MOVESOS_TEST_DB_HOST=legacy-db -e MOVESOS_TEST_DB_USER=root -e MOVESOS_TEST_DB_PASS app composer test:integration
 
 echo "== 3/4 migrations ${until_prefix:+(até $until_prefix)}"

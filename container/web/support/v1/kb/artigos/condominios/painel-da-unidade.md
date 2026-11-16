@@ -31,15 +31,27 @@ legenda: Tela Painel da unidade
 Use os filtros no alto da lista: **Unidade do Residencial Jardim das Acácias**.
 Depois clique em {{Ver painel}}. Para voltar à lista completa, limpe os filtros.
 
-> Escolha a unidade no campo do alto. A lista mostra só as unidades do condomínio escolhido na barra superior.
+> Escolha primeiro o condomínio na barra superior: sem ele, o campo de unidade não aparece. Com o condomínio escolhido, a lista mostra só as unidades dele.
+
+No alto do painel aparece **Unidade vazia** ou **Unidade ocupada**, conforme a marca do cadastro da unidade. Para mudar, clique em {{Alterar na ficha da unidade}}.
 
 ## Ver a ficha da pessoa
 
 1. No bloco **Pessoas**, clique no nome do proprietário, inquilino ou morador.
 2. Abre a ficha com CPF/CNPJ, telefone, e-mail, início e fim do vínculo, se recebe boleto e comunicados por e-mail, o endereço da unidade, as outras unidades da pessoa nos seus condomínios e as observações.
 3. A ficha é só para consulta: nada pode ser alterado nela. Para corrigir um dado, clique em {{Abrir cadastro para alterar}}.
+4. Na mesma ficha, {{Termo de entrada}} e {{Termo de saída}} abrem o termo da pessoa pronto para imprimir e assinar, com o nome, o CPF/CNPJ, a unidade e a data já preenchidos.
 
 > Clique no telefone ou no e-mail para ligar ou escrever direto.
+
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O painel só lê: nada é gravado aqui. Para mudar um dado, use o botão que leva ao cadastro.
+- Os débitos são as receitas da unidade ainda sem pagamento, calculadas na hora a partir dos lançamentos: as vencidas, com os encargos de atraso até hoje, e as que ainda vão vencer. Os acordos e documentos vêm das telas de cobrança e de documentos.
+- Só aparecem as unidades dos condomínios do seu acesso. Sem condomínio escolhido na barra superior, o campo de unidade não aparece; com um escolhido, ele lista só as unidades daquele condomínio.
+- A marca **Unidade vazia** ou **Unidade ocupada** vem do cadastro da unidade, onde a equipe a altera.
 
 ## Quem pode usar
 

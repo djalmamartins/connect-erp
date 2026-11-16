@@ -26,7 +26,7 @@ legenda: Tela Unidades
 2: main .erp-page-head__actions :is(a,button):has-text("Nova unidade") | Botão {{Nova unidade}}
 3: main .erp-page-head__actions :is(a,button):has-text("Cadastro rápido") | Botão {{Cadastro rápido}}
 4: main .erp-page-head__actions :is(a,button):has-text("Fração ideal e área") | Botão {{Fração ideal e área}}
-5: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo e Situação
+5: main :is(form[method=get], .erp-filters) | Filtros: Pesquisar, Condomínio, Tipo, Ocupação e Situação
 6: main table thead | Colunas da lista
 ```
 
@@ -59,24 +59,61 @@ recorte: main form:not([method=get])
 - **Andar**.
 - **Fração ideal**: Entre 0 e 1, ex.: 0,012500.
 - **Área privativa (m²)**.
+- **Código CIB**: Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito.
+- **Unidade vazia**: Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).
+- **Configurações de cobrança**: dia padrão de vencimento, isenta de rateio, bloquear unificação de boletos, valor e responsável pelo porte postal, responsável pela cobrança, endereço do boleto (prédio ou Correios), para quem vai o e-mail e as leituras de gás, água e energia elétrica.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 
 ## Outros botões da tela
 
 - {{Fração ideal e área}}: abre a grade para preencher a fração ideal e a área privativa de todas as unidades juntas.
+- {{Termo de entrada/saída}}: edita o texto do termo que o morador assina ao entrar ou sair da unidade (veja abaixo).
 - {{Cadastro rápido}}: gera todas as unidades de uma vez pela sequência de andares (ex.: 101 a 1208, 8 por andar), com pré-visualização antes de criar.
+
+## Trocar o inquilino ou o proprietário
+
+Abra a unidade (clique no nome dela na lista). No quadro **Inquilino e proprietário**, ao lado do formulário, clique em {{Trocar inquilino}} ou {{Trocar proprietário}} ({{Informar inquilino}} quando ainda não há ninguém).
+
+1. Busque a pessoa pelo nome ou CPF/CNPJ e clique nela. Se for alguém novo, clique em {{Nova pessoa}} e preencha nome, CPF/CNPJ, e-mail e telefone.
+2. Escolha o que fazer com as faturas abertas: alterar a do mês atual e as seguintes, só as seguintes, todas as que ainda não têm boleto, ou não alterar.
+3. Com **Registrar histórico de entrada/saída** marcado, informe a data de saída do antigo e a de entrada do novo. Desmarcado, o antigo só fica inativo.
+4. Clique em {{Salvar}}.
+
+> As faturas só mudam de pagador quando a pessoa trocada é quem paga a unidade (o **Responsável pela cobrança**; sem definição, o proprietário). Conta com boleto já gerado continua com o pagador de antes. Alterar faturas exige permissão no financeiro.
+
+## Termo de entrada e de saída
+
+Clique em {{Termo de entrada/saída}}. Escolha o **Condomínio** e o **Tipo** (Entrada ou Saída), escreva o texto e clique em {{Salvar}}.
+
+- **Geral (Connect)** no campo Condomínio salva o texto usado por todos os condomínios que não têm termo próprio. Só quem acessa todos os condomínios altera o texto geral.
+- Sem nenhum texto salvo, vale um texto padrão do sistema, que você pode ajustar.
+- Deixe uma linha em branco entre os parágrafos. Clique numa palavra-chave da lista para colocá-la no texto: **@condominio**, **@unidade**, **@bloco**, **@morador**, **@documento**, **@cidade**, **@uf**, **@dataCriado** e **@linhaAssinatura** (a linha para a assinatura).
+
+Para imprimir o termo de uma pessoa, abra o [Painel da unidade](artigo:painel-da-unidade), clique no nome dela e use {{Termo de entrada}} ou {{Termo de saída}}.
+
+## Configurar unidades em massa
+
+Com um condomínio escolhido, cada linha da lista tem uma caixa de marcação. Marque as unidades (ou a caixa do título, para marcar todas da página) e clique em {{Configurar unidades em massa}}.
+
+No quadro que abre, cada campo começa em **Manter como está**. Troque só o que quer mudar, como o dia de vencimento, a isenção de rateio, as leituras ou a imobiliária, e clique em {{Aplicar às unidades marcadas}}. No dia de vencimento, marque **Tirar** para deixar as unidades sem dia padrão.
+
+> Para mudar mais de uma página de unidades, aumente **Itens por página** antes de marcar.
 
 ## Pesquisar e filtrar
 
-Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo** e **Situação**.
+Use os filtros no alto da lista: **Pesquisar**, **Condomínio**, **Tipo**, **Ocupação** e **Situação**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
 Em **Pesquisar**, digite o número da unidade, o bloco ou o nome do proprietário ou do inquilino. O CPF ou CNPJ da pessoa também funciona. Um proprietário com várias unidades traz todas elas na mesma pesquisa.
 
+Em **Ocupação**, escolha **Vazias** para ver só as unidades marcadas como vazias, ou **Ocupadas** para as outras.
+
 ## O que a lista mostra
 
-Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo**, **Proprietário**, **Inquilino** e **Situação**.
+Colunas: **Unidade**, **Condomínio**, **Bloco ou torre**, **Tipo**, **Ocupação** (Vazia ou Ocupada), **Proprietário**, **Inquilino** e **Situação**.
+
+A lista mostra 50 unidades por página. No rodapé, **Itens por página** troca para 100, 200 ou 500, e os números levam às outras páginas.
 
 Proprietário e inquilino vêm de [[Cadastros > Proprietários e inquilinos]]. A lista mostra só os vínculos ativos: um inquilino com data de fim já passada ou inativado sai da coluna. As colunas aparecem para quem também pode ver o cadastro de proprietários e inquilinos.
 
@@ -88,6 +125,25 @@ Proprietário e inquilino vêm de [[Cadastros > Proprietários e inquilinos]]. A
 > A fração ideal pode ficar para depois: ela é usada no rateio de despesas e pode ser dividida igualmente ou pela área na grade de frações.
 
 >! Unidade inativa sai das cobranças novas, mas o histórico continua. Prefira inativar a excluir.
+
+## O que acontece por trás
+
+Quando você usa esta tela, o sistema faz o seguinte:
+
+- O sistema não deixa repetir a mesma unidade (bloco e número) no mesmo condomínio.
+- No **Cadastro rápido**, você vê a lista antes de criar; ao confirmar, entram só as unidades que ainda não existem, todas juntas ou nenhuma (se uma falhar, nada é criado).
+- A **fração ideal** é usada quando uma fatura é rateada pela fração: cada unidade paga a parte dela do total. Na grade de frações, a soma não pode passar de 100% e, com todas preenchidas, precisa dar 100%.
+- Uma unidade com pessoas, veículos, lançamentos ou outros registros ativos ligados a ela não pode ser excluída. Inative-a: ela sai das cobranças novas e o histórico continua.
+- A marca **Unidade vazia** é da equipe: o sistema não a muda sozinho. Ela aparece na coluna **Ocupação**, no filtro de mesmo nome e no painel da unidade.
+- A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.
+- Na **configuração em massa**, só muda o que você escolher; o que ficar em **Manter como está** continua como está em cada unidade. Ou todas as unidades marcadas mudam, ou nenhuma, e cada unidade alterada fica com a mudança no histórico.
+- Unidade **isenta de rateio** fica fora das faturas geradas para o condomínio todo; o valor é dividido entre as outras.
+- Na troca de **inquilino ou proprietário**, o antigo termina na data de saída e o novo começa na data de entrada, tudo junto ou nada. As faturas abertas passam para a pessoa nova só quando ela é quem paga a unidade, conforme a opção escolhida; conta com boleto já gerado não muda. O antigo continua como pagador das contas que ficaram com ele.
+- O **termo de entrada/saída** usa o texto do condomínio; sem ele, o texto geral da Connect; sem nenhum, o texto padrão. As palavras-chave são trocadas pelos dados da unidade e da pessoa só na hora de gerar o termo, e o texto nunca vira código na página.
+- O **código CIB** tem 8 caracteres (7 e o dígito) e não pode repetir em outra unidade. O sistema confere o formato; o dígito não é conferido porque a regra dele não é pública.
+- Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
+- Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
+- Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.
 
 ## Quem pode usar
 

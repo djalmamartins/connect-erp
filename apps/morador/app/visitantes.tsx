@@ -54,7 +54,7 @@ export default function Visitantes() {
   }
 
   async function cancel(id: number) {
-    if (!(await confirm('Cancelar visita', 'A portaria deixa de esperar este visitante.', 'Cancelar visita'))) return;
+    if (!(await confirm('Cancelar visita', 'A portaria deixa de esperar este visitante.', 'Cancelar visita', { undo: false, text: 'Se a visita vier, avise de novo.' }))) return;
     try {
       await api.cancelVisit(id);
       await list.reload();

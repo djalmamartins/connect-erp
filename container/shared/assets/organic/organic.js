@@ -3870,8 +3870,9 @@ var WorkspacePlugin = class {
       this.editor.insertContent(item.html);
       this.editor.setStatus(`Bloco "${item.name}" inserido`);
     });
-    this.renderCollection("#templateList", this.templates, (item) => {
-      const confirmed = window.confirm(`Aplicar o template "${item.name}" e substituir o conte\xFAdo atual?`);
+    this.renderCollection("#templateList", this.templates, async (item) => {
+      // Connect (ADR 0321): modal do sistema quando existir (ConnectDialog).
+      const confirmed = await (window.ConnectDialog?window.ConnectDialog.confirm({title:`Aplicar o template "${item.name}"?`,tone:"danger",message:"O conte\xFAdo atual do editor \xE9 trocado pelo template.",undo:!0,undoText:"Use Desfazer (Ctrl+Z) no editor para voltar.",confirmLabel:"Aplicar template"}):Promise.resolve(window.confirm(`Aplicar o template "${item.name}" e substituir o conte\xFAdo atual?`)));
       if (!confirmed) return;
       if (item.mode) {
         this.editor.setEditorMode?.(item.mode);
@@ -4096,11 +4097,11 @@ var PersistencePlugin = class {
     this.editor.setStatus(`${item.label} restaurado`);
     document.querySelector("#revisionDialog")?.close();
   }
-  deleteItem(collectionName, id) {
+  async deleteItem(collectionName, id) {
     const collection = this.getCollection(collectionName);
     const item = collection.find((entry) => entry.id === id);
     if (!item) return;
-    if (!window.confirm(`Apagar "${item.label}"?`)) return;
+    if (!(await (window.ConnectDialog?window.ConnectDialog.confirm({title:`Apagar "${item.label}"?`,tone:"danger",message:"A c\xF3pia sai da lista guardada neste navegador. O conte\xFAdo que est\xE1 no editor n\xE3o muda.",undo:!1,confirmLabel:"Apagar"}):Promise.resolve(window.confirm(`Apagar "${item.label}"?`))))) return;
     const filtered = collection.filter((entry) => entry.id !== id);
     if (collectionName === "drafts") {
       this.drafts = filtered;

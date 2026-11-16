@@ -15,7 +15,11 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryPaymentLocked;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
+use Source\Services\Erp\ListDocument;
+use Source\Services\Erp\ReportExportLimit;
 use Source\Services\Erp\VirtualDisk;
+use Source\Support\Audit;
+use Source\Support\Erp\RegistryExport;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Message;
@@ -53,7 +57,16 @@ final class Registry extends Controller
             'filter' => $_GET['tipo'] ?? null,
             'q' => $_GET['q'] ?? null,
             'page' => $_GET['pagina'] ?? 1,
+            // ADR 0310: Ocupação das unidades e itens por página (50 por padrão; 100, 200 ou 500).
+            'flag' => $_GET[$definition['flag_filter']['param'] ?? 'ocupacao'] ?? null,
+            'per_page' => \Source\Support\Erp\PerPage::current(),
         ];
+        // Download em PDF, Excel ou CSV com os mesmos filtros (revisão de 15/11 item 18, ADR 0314).
+        $format = ListDocument::format($_GET['baixar'] ?? null);
+        if ($format !== null) {
+            $this->download($user, $definition, $service, $filters, $format);
+            return;
+        }
         echo $this->view->render('pages/registry/index', $this->layoutData($user, $definition, null, [
             'definition' => $definition,
             'result' => $service->list($user, $slug, $filters),
@@ -63,6 +76,18 @@ final class Registry extends Controller
             'canManage' => Access::can($definition['permission'] . '.manage', $user),
             'flash' => (new Session())->flash(),
         ]));
+    }
+
+    /**
+     * Unidades do formulário (revisão de 15/11, ADR 0310): só as do condomínio do registro ou, num registro novo, do
+     * condomínio da barra superior. Sem nenhum dos dois, todas as do escopo, filtradas na tela pelo campo Condomínio.
+     * @param list<array{id:int,condominium_id:int,label:string}> $units
+     */
+    public static function formUnits(array $units, array $values): array
+    {
+        $condominium = filter_var($values['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $condominium = $condominium !== false && $condominium !== null ? (int)$condominium : CondominiumContext::id();
+        return $condominium === null ? $units : Panel::contextUnits($units, $condominium);
     }
 
     /** GET {rota}/novo */
@@ -115,8 +140,14 @@ final class Registry extends Controller
             return;
         }
         $service = new RegistryService();
+        $many = \Source\Services\Erp\EntryUnits::applies($slug, $data, $id);
         try {
-            $service->save($user, $slug, $data, $id);
+            if ($many) {
+                // Várias unidades num único cadastro (ADR 0313): um lançamento por unidade, tudo ou nada.
+                $many = count((new \Source\Services\Erp\EntryUnits(null, null, $service))->create($user, $slug, $data));
+            } else {
+                $service->save($user, $slug, $data, $id);
+            }
         } catch (RegistryNotFound) {
             $this->notFound($user, $definition);
             return;
@@ -129,7 +160,8 @@ final class Registry extends Controller
             return;
         }
         $label = self::upperFirst($definition['entity']);
-        (new Message())->success($id === null ? "{$label} cadastrad{$definition['gender']} com sucesso." : "{$label} atualizad{$definition['gender']} com sucesso.")->flash();
+        (new Message())->success(is_int($many) ? "{$many} lançamentos cadastrados, um para cada unidade escolhida."
+            : ($id === null ? "{$label} cadastrad{$definition['gender']} com sucesso." : "{$label} atualizad{$definition['gender']} com sucesso."))->flash();
         redirect(erp_url($definition['route']));
     }
 
@@ -200,14 +232,34 @@ final class Registry extends Controller
             'errors' => $errors,
             'history' => $history,
             'condominiums' => $service->condominiums($user),
-            'units' => RegistryService::hasUnitField($definition) ? $service->units($user) : [],
+            'units' => RegistryService::hasUnitField($definition) ? self::formUnits($service->units($user), $values) : [],
             'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
             'registryAttachment' => self::attachmentData($user, $definition, $values),
             'entryAttachments' => EntryAttachmentScreens::cardData($user, $definition['slug'], $id),
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
+            'unitOccupants' => $definition['slug'] === 'units' && $id !== null ? self::occupantsData($user, $id) : null,
+            'entryUnits' => $id === null && $canManage && in_array($definition['slug'], \Source\Services\Erp\EntryUnits::SLUGS, true),
         ]));
+    }
+
+    /**
+     * Inquilino e proprietário na ficha da unidade (ADR 0311): quem está hoje e a troca pela API, só com permissão de
+     * alterar pessoas. Alterar faturas exige também erp.entries.manage. null = não mostra o quadro.
+     *
+     * @return array{unitId:int, owner:list<array>, tenant:list<array>, payer_role:?string, canInvoices:bool}|null
+     */
+    private static function occupantsData(User $user, int $id): ?array
+    {
+        if (\Source\Core\Connect::databaseDisabled() || !Access::can('erp.residents.view', $user) || !Access::can('erp.residents.manage', $user)) {
+            return null;
+        }
+        try {
+            return ['unitId' => $id, 'canInvoices' => Access::can('erp.entries.manage', $user)] + (new \Source\Services\Erp\UnitOccupantChange())->current($user, $id);
+        } catch (RegistryNotFound) {
+            return null;
+        }
     }
 
     /**
@@ -311,6 +363,35 @@ final class Registry extends Controller
     private function notFound(User $user, array $definition): void
     {
         $this->state($user, $definition, 404, 'Registro não encontrado', 'O registro não existe, foi excluído ou não está no seu escopo de condomínios.');
+    }
+
+    /** Junta as páginas da lista (até RegistryExport::MAX_ROWS), gera o arquivo e registra na auditoria. */
+    private function download(User $user, array $definition, RegistryService $service, array $filters, string $format): void
+    {
+        try {
+            (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): o mesmo limite dos relatórios
+        } catch (\DomainException $exception) {
+            $this->state($user, $definition, 429, 'Limite de downloads', $exception->getMessage());
+            return;
+        }
+        $rows = [];
+        $filters['per_page'] = 500;
+        for ($page = 1; ; $page++) {
+            $result = $service->list($user, $definition['slug'], ['page' => $page] + $filters);
+            array_push($rows, ...$result['data']);
+            if ($page >= $result['pages'] || count($rows) >= RegistryExport::MAX_ROWS) {
+                break;
+            }
+        }
+        $rows = array_slice($rows, 0, RegistryExport::MAX_ROWS);
+        $condominium = filter_var($filters['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $condominium = $condominium === false || $condominium === null || $definition['scope'] === 'none' ? null : (int)$condominium;
+        $status = $definition['status'][(string)($filters['status'] ?? '')] ?? null;
+        $title = $definition['label'] . ($status !== null ? ' - ' . $status : '');
+        $content = ListDocument::render($format, RegistryExport::table($definition, $rows), ListDocument::meta(null, $title, $condominium));
+        Audit::record('export', 'erp_reports', 0, null, ['report' => 'registry_' . $definition['slug'], 'condominium_id' => $condominium,
+            'format' => $format, 'rows' => count($rows), 'bytes' => strlen($content)]);
+        ListDocument::send($format, $content, ListDocument::filename($definition['label'], $format));
     }
 
     private function state(User $user, array $definition, int $code, string $title, string $message): void

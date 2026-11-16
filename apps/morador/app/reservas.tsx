@@ -35,7 +35,7 @@ export default function Reservas() {
   const shown = (areas.data ?? []).filter((a) => filter === 'all' || (filter === 'paid' ? (a.fee_cents ?? 0) > 0 : !a.fee_cents));
 
   async function cancel(id: number) {
-    if (!(await confirm('Cancelar reserva', 'Quer mesmo cancelar esta reserva?', 'Cancelar reserva'))) return;
+    if (!(await confirm('Cancelar reserva', 'O horário fica livre para outra unidade.', 'Cancelar reserva', { undo: false, text: 'Para usar o espaço, faça uma reserva nova (se o horário ainda estiver livre).' }))) return;
     try {
       await api.cancelReservation(id);
       await list.reload();

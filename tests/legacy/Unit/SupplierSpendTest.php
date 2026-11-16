@@ -127,7 +127,7 @@ final class SupplierSpendTest extends TestCase
         }
         $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Api/V1/SupplierSpend.php');
         foreach (["Access::can('erp.entries.view', \$user)", 'catch (CondominiumAccessDenied)', 'no-store', '(new ReportExportLimit())->assertAllowed($user)',
-            "Audit::record('export'", "'report' => 'supplier-spend'", 'X-Content-Type-Options: nosniff', 'JsonResponse::send(429'] as $needle) {
+            "Audit::record('export'", "'report' => 'supplier-spend'", 'ListDocument::send($format, $content', 'JsonResponse::send(429'] as $needle) {
             self::assertStringContainsString($needle, $controller, $needle);
         }
         self::assertStringContainsString('$route->get("/reports/supplier-spend", "SupplierSpend:show", null, \Source\Support\Middleware\ApiAuthenticated::class);',

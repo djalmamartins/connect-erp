@@ -65,7 +65,7 @@ $statusLabel = ['in_progress' => 'Em andamento (rascunho)', 'completed' => 'Conc
     <?php if (!$forPdf): ?>
         <div class="print">
             <a class="ghost" href="<?= erp_url('/operacional/vistorias/' . (int)$inspection['id']) ?>">Voltar</a>
-            <a href="<?= erp_url('/operacional/vistorias/' . (int)$inspection['id'] . '/relatorio/pdf') ?>">Baixar PDF</a>
+            <a href="<?= erp_url('/operacional/vistorias/' . (int)$inspection['id'] . '/relatorio/pdf') ?>" target="_blank" rel="noopener">Abrir PDF</a>
             <button type="button" onclick="window.print()">Imprimir</button>
         </div>
     <?php endif; ?>

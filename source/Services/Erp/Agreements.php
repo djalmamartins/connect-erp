@@ -104,16 +104,27 @@ final class Agreements
      *
      * @return array{as_of:string, units:list<array>, totals:array{units:int, entries:int, amount_cents:int, buckets:array<string,int>}}
      */
-    public function delinquency(User $user, ?int $condominiumId, ?string $asOf = null, ?int $unitId = null): array
+    public function delinquency(User $user, ?int $condominiumId, ?string $asOf = null, ?int $unitId = null, ?string $from = null): array
     {
         $asOf ??= date('Y-m-d');
         $ref = \DateTimeImmutable::createFromFormat('!Y-m-d', $asOf);
         if ($ref === false || $ref->format('Y-m-d') !== $asOf) {
             throw new InvalidArgumentException('Data de referência inválida (AAAA-MM-DD).');
         }
+        // Data inicial opcional (revisão de 15/11 item 20, ADR 0314): só contas vencidas a partir dela; vazia = tudo.
+        $from = $from === null || trim($from) === '' ? null : trim($from);
+        if ($from !== null) {
+            $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $from);
+            if ($start === false || $start->format('Y-m-d') !== $from) {
+                throw new InvalidArgumentException('Data inicial inválida (AAAA-MM-DD).');
+            }
+            if ($from > $asOf) {
+                throw new InvalidArgumentException('A data inicial não pode ser depois da data de referência.');
+            }
+        }
         $ids = $this->ids($user, $condominiumId);
         $empty = ['1-30' => 0, '31-60' => 0, '61-90' => 0, '90+' => 0];
-        $result = ['as_of' => $asOf, 'units' => [], 'totals' => ['units' => 0, 'entries' => 0, 'amount_cents' => 0, 'buckets' => $empty]];
+        $result = ['as_of' => $asOf, 'from' => $from, 'units' => [], 'totals' => ['units' => 0, 'entries' => 0, 'amount_cents' => 0, 'buckets' => $empty]];
         if ($ids === []) {
             return $result;
         }
@@ -121,10 +132,10 @@ final class Agreements
                 e.description, e.competence, e.due_on, e.amount_cents
             FROM erp_entries e JOIN condominiums c ON c.id = e.condominium_id LEFT JOIN erp_units u ON u.id = e.unit_id
             WHERE e.condominium_id IN (" . implode(',', $ids) . ") AND e.nature = 'receita' AND e.status = 'active'
-              AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . "
+              AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . ($from !== null ? ' AND e.due_on >= :f' : '') . "
             ORDER BY c.name, u.label, e.due_on, e.id LIMIT " . (self::MAX_DELINQUENCY_ROWS + 1));
         // $unitId (ADR 0103): o painel da unidade lê só as contas dela, não as do condomínio inteiro.
-        $stmt->execute(['d' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []));
+        $stmt->execute(['d' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []) + ($from !== null ? ['f' => $from] : []));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($rows) > self::MAX_DELINQUENCY_ROWS) {
             throw new InvalidArgumentException(sprintf('Mais de %d contas vencidas em aberto: escolha um condomínio.', self::MAX_DELINQUENCY_ROWS));

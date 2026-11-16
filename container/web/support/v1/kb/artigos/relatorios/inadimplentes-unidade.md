@@ -23,15 +23,15 @@ rota: /relatorios/inadimplentes-unidade
 condominio: residencial-jardim-das-acacias
 legenda: Tela Inadimplentes (Unidade)
 1: menu | Inadimplentes (Unidade) no menu lateral
-2: main .erp-page-head__actions :is(a,button):has-text("Exportar CSV") | Botão {{Exportar CSV}}
+2: main .erp-page-head__actions :is(a,button):has-text("Download") | Botão {{Download}}
 3: main .erp-page-head__actions :is(a,button):has-text("Imprimir") | Botão {{Imprimir}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Data de referência
+4: main :is(form[method=get], .erp-filters) | Filtros: Data de referência e Vencidas a partir de
 5: main table thead | Colunas da lista
 ```
 
 ## Escolher o período e os filtros
 
-Use os filtros no alto da lista: **Data de referência**.
+Use os filtros no alto da lista: **Data de referência** e, se quiser, **Vencidas a partir de**. Com a data inicial em branco, o relatório traz todas as contas vencidas até a data de referência; preenchida, só as que venceram a partir dela.
 Depois clique em {{Gerar}}. O relatório mostra só o que os filtros pedem, e a impressão sai igual à tela.
 
 ## O que o relatório mostra
@@ -42,7 +42,7 @@ Os totais aparecem no rodapé da tabela.
 ## Imprimir ou exportar
 
 - {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
-- {{Exportar CSV}} baixa os dados filtrados em CSV, que abre no Excel ou no Google Planilhas.
+- {{Download}} baixa os dados filtrados em PDF (com o cabeçalho da Connect, o condomínio, o título, a data e o número da página), em Excel ou em CSV.
 
 ## Quem pode usar
 

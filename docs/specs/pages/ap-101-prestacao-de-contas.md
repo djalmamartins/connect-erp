@@ -31,3 +31,18 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 - Quais regras não foram exercitadas pela auditoria somente leitura?
 - Quais links e estados condicionais exigem especificação adicional?
 - Qual dependência deve ser entregue antes desta página?
+
+## Revisão de 15/11 (ADR 0314, itens 19 e 21)
+- CONFIRMADO (Djalma, 15/11): a prestação de contas segue o PDF de outubro:
+  - lista dos meses;
+  - página de visualização;
+  - PDF com capa, termo de abertura, parecer do síndico e conselho, demonstrativo, resumo das contas, relatório de
+    lançamentos e comprovantes;
+  - "Ocultar unidade".
+- Implementado:
+  - tabela dos 12 últimos meses (Visualizar e PDF);
+  - `GET /prestacao-de-contas/prestacao-de-contas/documento` e `/pdf` (`AccountabilityDocument`);
+  - caixa "Ocultar unidade".
+- PENDENTE:
+  - colunas "Sobras de rateio" e "Fundo de reserva" por despesa;
+  - anexos em PDF juntados no mesmo arquivo.

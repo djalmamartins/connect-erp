@@ -43,7 +43,9 @@ final class Registry
             'filter' => $_GET['type'] ?? null,
             'q' => $_GET['q'] ?? null,
             'page' => $_GET['page'] ?? 1,
-        ]);
+            // ADR 0310: filtro de marca (unidades: flag=vazias|ocupadas) e itens por página 50/100/200/500.
+            'flag' => $_GET['flag'] ?? null,
+        ] + (isset($_GET['per_page']) ? ['per_page' => $_GET['per_page']] : []));
         JsonResponse::send(200, [
             'data' => $result['data'],
             'meta' => ['total' => $result['total'], 'page' => $result['page'], 'per_page' => $result['per_page'], 'pages' => $result['pages']],
@@ -133,6 +135,12 @@ final class Registry
             return;
         }
         try {
+            if (\Source\Services\Erp\EntryUnits::applies($slug, $body, $id)) {
+                // Várias unidades num único cadastro (ADR 0313): data = o primeiro; meta.created_ids = todos, na ordem.
+                $records = (new \Source\Services\Erp\EntryUnits())->create($user, $slug, $body);
+                JsonResponse::send(201, ['data' => $records[0], 'meta' => ['created_ids' => array_map(static fn (array $r): int => (int)$r['id'], $records)]]);
+                return;
+            }
             $record = (new RegistryService())->save($user, $slug, $body, $id);
             JsonResponse::send($id === null ? 201 : 200, ['data' => $record]);
         } catch (RegistryNotFound) {

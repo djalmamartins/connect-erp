@@ -33,9 +33,20 @@
     if (tone === 'success' || tone === 'warning') return tone;
     return 'info';
   };
+  // Os avisos ficam na camada do topo (popover): reabrir o popover depois de uma modal o põe acima dela.
+  function raiseNotices() {
+    var region = $('[data-erp-toasts]');
+    if (!region || typeof region.showPopover !== 'function') return;
+    if (!region.hasAttribute('popover')) region.setAttribute('popover', 'manual');
+    try {
+      if (region.matches(':popover-open')) region.hidePopover();
+      region.showPopover();
+    } catch (e) { /* navegador sem popover: fica o z-index 99999 */ }
+  }
   function notify(message, tone, options) {
     var region = $('[data-erp-toasts]');
     if (!region || !message) return;
+    raiseNotices();
     var kind = noticeTone(tone);
     var animated = kind === 'success' && !(options && options.quiet);
     var item = document.createElement('div');
@@ -110,6 +121,148 @@
     notify(flashText, kind);
   });
   window.ErpUI = { toast: toast, done: done };
+
+  /* Modais do sistema no lugar de alert, confirm e prompt do navegador (ADR 0316) ---------
+   * Toda pergunta e todo recado do ERP abrem uma modal no visual do sistema, que diz o que está
+   * acontecendo, o que vai acontecer e se dá para desfazer. Nada aqui chama window.alert/confirm/prompt.
+   *   ErpUI.confirm({ title, message, undo: true|false, undoText, confirmLabel, cancelLabel, tone }) → Promise<boolean>
+   *   ErpUI.alert({ title, message, tone }) → Promise
+   *   ErpUI.copy(label, value) → mostra o texto selecionado para copiar, quando a área de transferência falha.
+   * Os avisos do canto (flash e toast) ficam acima das modais (popover na camada do topo, z-index 99999). */
+  var ASK_ICONS = {
+    danger: NOTICE_ICONS.warning,
+    warning: NOTICE_ICONS.warning,
+    primary: NOTICE_ICONS.info,
+    info: NOTICE_ICONS.info,
+    success: STATIC_CHECK
+  };
+  var UNDO_ICONS = {
+    yes: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    no: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+  };
+  var askSeq = 0;
+  var openAsk = function (options) {
+    var o = options || {};
+    var tone = ['danger', 'warning', 'primary', 'info', 'success'].indexOf(o.tone) >= 0 ? o.tone : 'primary';
+    var id = 'erp-ask-' + (++askSeq);
+    var dialog = document.createElement('dialog');
+    dialog.className = 'erp-modal erp-ask erp-ask--' + tone;
+    dialog.setAttribute('aria-labelledby', id + '-title');
+    dialog.setAttribute('aria-describedby', id + '-text');
+    var head = document.createElement('div');
+    head.className = 'erp-ask__head';
+    var badge = document.createElement('span');
+    badge.className = 'erp-ask__icon';
+    badge.innerHTML = ASK_ICONS[tone];
+    var title = document.createElement('h2');
+    title.id = id + '-title';
+    title.textContent = o.title || 'Confirme';
+    head.appendChild(badge);
+    head.appendChild(title);
+    var body = document.createElement('div');
+    body.className = 'erp-ask__body';
+    body.id = id + '-text';
+    String(o.message || '').split(/\n+/).forEach(function (line) {
+      if (!line.trim()) return;
+      var p = document.createElement('p');
+      p.textContent = line.trim();
+      body.appendChild(p);
+    });
+    if (o.field) body.appendChild(o.field);
+    if (o.undo === true || o.undo === false) {
+      var undo = document.createElement('div');
+      undo.className = 'erp-ask__undo erp-ask__undo--' + (o.undo ? 'yes' : 'no');
+      undo.innerHTML = UNDO_ICONS[o.undo ? 'yes' : 'no'];
+      var undoText = document.createElement('span');
+      var strong = document.createElement('strong');
+      strong.textContent = o.undo ? 'Dá para desfazer.' : 'Não dá para desfazer.';
+      undoText.appendChild(strong);
+      if (o.undoText) undoText.appendChild(document.createTextNode(' ' + o.undoText));
+      undo.appendChild(undoText);
+      body.appendChild(undo);
+    }
+    var foot = document.createElement('div');
+    foot.className = 'erp-modal__foot';
+    var cancel = null;
+    if (o.cancelLabel !== false) {
+      cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'erp-btn';
+      cancel.textContent = o.cancelLabel || 'Voltar';
+      foot.appendChild(cancel);
+    }
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'erp-btn ' + (tone === 'danger' ? 'erp-btn--danger' : 'erp-btn--primary');
+    ok.textContent = o.confirmLabel || 'Confirmar';
+    foot.appendChild(ok);
+    dialog.appendChild(head);
+    dialog.appendChild(body);
+    dialog.appendChild(foot);
+    document.body.appendChild(dialog);
+
+    var back = document.activeElement;
+    return new Promise(function (resolve) {
+      var answer = false;
+      var finish = function (value) { answer = value; if (dialog.open) dialog.close(); };
+      ok.addEventListener('click', function () { finish(true); });
+      if (cancel) cancel.addEventListener('click', function () { finish(false); });
+      dialog.addEventListener('click', function (event) { if (event.target === dialog && cancel) finish(false); });
+      dialog.addEventListener('close', function () {
+        if (dialog.parentNode) dialog.parentNode.removeChild(dialog);
+        if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+        resolve(answer);
+      });
+      if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+      raiseNotices();
+      // Ação que não dá para desfazer começa com o foco em Voltar: um Enter distraído não confirma.
+      var first = o.focus || (tone === 'danger' && cancel ? cancel : ok);
+      first.focus();
+    });
+  };
+  // "Cancelar o boleto 12? A conta continua em aberto." → título "Cancelar o boleto 12?" e o resto como explicação.
+  var splitQuestion = function (question) {
+    var text = String(question || '').trim();
+    var at = text.indexOf('? ');
+    return at > 0 ? { title: text.slice(0, at + 1), message: text.slice(at + 2) } : { title: text, message: '' };
+  };
+  var confirmDialog = function (options) {
+    var o = typeof options === 'string' ? splitQuestion(options) : (options || {});
+    return openAsk(o);
+  };
+  var alertDialog = function (message, options) {
+    var o = typeof message === 'string' ? Object.assign({ message: message }, options || {}) : (message || {});
+    return openAsk({ title: o.title || 'Atenção', message: o.message, tone: o.tone || 'warning', confirmLabel: o.confirmLabel || 'Entendi', cancelLabel: false }).then(function () {});
+  };
+  var copyDialog = function (label, value) {
+    var field = document.createElement('input');
+    field.type = 'text';
+    field.readOnly = true;
+    field.className = 'erp-input erp-ask__copy';
+    field.value = value;
+    field.setAttribute('aria-label', label);
+    field.addEventListener('focus', function () { field.select(); });
+    return openAsk({ title: 'Copiar ' + label, message: 'O navegador não deixou copiar sozinho. O texto já está selecionado: use Ctrl+C (no Mac, Cmd+C) e depois Fechar.',
+      tone: 'info', field: field, focus: field, confirmLabel: 'Fechar', cancelLabel: false }).then(function () {});
+  };
+  // Lê data-confirm (ou data-erp-confirm) e os complementos data-confirm-title, -undo ("sim"/"nao"), -undo-text, -action e -tone.
+  var askFrom = function (element, attribute) {
+    var question = element.getAttribute(attribute);
+    if (!question) return Promise.resolve(true);
+    var o = splitQuestion(question);
+    var read = function (name) { return element.getAttribute('data-confirm-' + name); };
+    var undo = read('undo');
+    if (read('title')) { o.message = question; o.title = read('title'); }
+    if (undo === 'sim' || undo === 'nao') o.undo = undo === 'sim';
+    if (read('undo-text')) o.undoText = read('undo-text');
+    o.confirmLabel = read('action') || (element.tagName === 'BUTTON' && element.textContent.trim()) || 'Confirmar';
+    o.tone = read('tone') || (o.undo === false ? 'danger' : 'primary');
+    return openAsk(o);
+  };
+  window.ErpUI.confirm = confirmDialog;
+  window.ErpUI.alert = alertDialog;
+  window.ErpUI.copy = copyDialog;
+  window.ErpUI.ask = askFrom;
 
   /* Sidebar: recolher (desktop) e gaveta (celular) ------------------------- */
   var shell = $('[data-erp-shell]');
@@ -470,6 +623,18 @@
     };
     var fill = function (data) {
       if (!data || !data.razao_social) { say('CNPJ não encontrado na Receita. Preencha os dados manualmente.'); return; }
+      // ADR 0312: data-cnpj-map diz qual campo do formulário recebe cada dado ({"legal_name": "razao_social", ...}).
+      var map = null;
+      try { map = JSON.parse(field.getAttribute('data-cnpj-map') || 'null'); } catch (e) { map = null; }
+      if (map) {
+        var values = { razao_social: String(data.razao_social).trim(), nome_fantasia: titleCase(data.nome_fantasia || ''), fantasia_ou_razao: titleCase(data.nome_fantasia || data.razao_social),
+          email: data.email ? String(data.email).trim().toLowerCase() : '', phone: data.ddd_telefone_1 ? onlyDigits(data.ddd_telefone_1) : '' };
+        Object.keys(map).forEach(function (name) { put(name, values[map[name]] || ''); });
+        var mapped = String(data.descricao_situacao_cadastral || '').toUpperCase();
+        say((filled > 0 ? 'Dados da Receita preenchidos nos campos vazios. Confira antes de salvar.' : 'Os campos já estavam preenchidos; nada foi alterado.')
+          + (mapped && mapped !== 'ATIVA' ? ' Atenção: na Receita o CNPJ está ' + mapped.toLowerCase() + '.' : ''));
+        return;
+      }
       put('name', titleCase(data.nome_fantasia || data.razao_social));
       put('legal_name', String(data.razao_social).trim());
       put('zip_code', data.cep ? String(data.cep) : '');
@@ -658,7 +823,8 @@
     });
     var sources = Object.keys(matchFields).map(function (name) { return form.querySelector('[name="' + name + '"]'); }).filter(Boolean);
     if (condo && condo.tagName === 'SELECT') sources.push(condo);
-    if (sources.length === 0) return;
+    // Condomínio fixo (campo escondido, condomínio da barra superior): filtra uma vez, sem esperar mudança (ADR 0310).
+    if (sources.length === 0 && !(condo && condo.value !== '')) return;
     var apply = function () {
       var condoValue = condo ? condo.value : '';
       $$('option', select).forEach(function (option) {
@@ -725,7 +891,18 @@
   $$('form[data-erp-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
       if (!form.checkValidity()) return;
-      if (!window.confirm(form.getAttribute('data-erp-confirm'))) { event.preventDefault(); return; }
+      if (form._erpConfirmed) { form._erpConfirmed = false; } else {
+        // Pergunta na modal do sistema; com o sim, envia de novo pelo mesmo botão (mantém name/value do submit).
+        event.preventDefault();
+        var submitter = event.submitter || $('[type="submit"]', form);
+        if (submitter && !form.hasAttribute('data-confirm-action')) form.setAttribute('data-confirm-action', (submitter.textContent || submitter.value || '').trim());
+        askFrom(form, 'data-erp-confirm').then(function (yes) {
+          if (!yes) return;
+          form._erpConfirmed = true;
+          if (form.requestSubmit) form.requestSubmit(submitter && submitter.form === form ? submitter : undefined); else form.submit();
+        });
+        return;
+      }
       var button = $('[type="submit"]', form);
       if (button) { button.classList.add('is-loading'); button.setAttribute('aria-busy', 'true'); window.setTimeout(function () { button.disabled = true; }, 0); }
     });
@@ -809,6 +986,53 @@
       .catch(function (error) { select.innerHTML = '<option value="">Contas indisponíveis</option>'; toast(error.message, 'danger'); });
   };
 
+  /* AP-032: gerar os boletos de toda a fatura emitida, em lotes, até não sobrar unidade sem boleto. */
+  $$('[data-erp-invoices]').forEach(function (root) {
+    var dialog = $('#invoice-boletos', root);
+    var form = dialog && $('[data-invoice-boletos-form]', dialog);
+    if (!form) return;
+    var call = apiClient(root);
+    var accounts = $('[data-invoice-boletos-accounts]', form);
+    var progress = $('[data-invoice-boletos-progress]', form);
+    var invoiceId = null;
+    $$('[data-invoice-boletos]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        invoiceId = button.getAttribute('data-invoice-boletos');
+        $('[data-invoice-boletos-label]', form).textContent = 'Fatura ' + button.getAttribute('data-label') + '.';
+        progress.innerHTML = '';
+        loadBankAccounts(call, root.getAttribute('data-accounts-api'), parseInt(button.getAttribute('data-condominium') || '0', 10), accounts);
+        openDialog(dialog);
+      });
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity() || !invoiceId) return;
+      var button = $('[type="submit"]', form);
+      var totals = { registered: 0, pending: 0, rejected: 0 };
+      var refused = [];
+      busy(button, true);
+      var show = function (remaining, done) {
+        progress.innerHTML = '<p><strong>' + totals.registered + '</strong> registrado(s) · ' + totals.pending + ' aguardando banco · ' + totals.rejected + ' recusado(s)' +
+          (done ? '' : ' · faltam ' + remaining + '…') + '</p>' +
+          (refused.length ? '<ul class="erp-muted">' + refused.map(function (r) { return '<li>' + esc(r.unit_label) + ': ' + esc(r.error || 'recusado') + '</li>'; }).join('') + '</ul>' : '');
+      };
+      var step = function () {
+        call('POST', root.getAttribute('data-api') + '/' + invoiceId + '/bank-charges', { bank_account_id: parseInt(accounts.value, 10), limit: 20 })
+          .then(function (json) {
+            var d = json.data || {};
+            ['registered', 'pending', 'rejected'].forEach(function (k) { totals[k] += (d.counts && d.counts[k]) || 0; });
+            (d.processed || []).forEach(function (r) { if (r.status === 'rejected') refused.push(r); });
+            if ((d.processed || []).length && d.remaining > 0) { show(d.remaining, false); step(); return; }
+            show(0, true);
+            busy(button, false);
+            toast(totals.registered + totals.pending ? 'Boletos gerados: ' + (totals.registered + totals.pending) + '.' : 'Nenhuma unidade sem boleto nesta fatura.', totals.rejected ? 'warning' : 'success');
+          })
+          .catch(function (error) { busy(button, false); show(0, true); toast(error.message, 'danger'); });
+      };
+      step();
+    });
+  });
+
   /* AP-032: faturas da cobrança pela API /api/v1/invoices (ADR 0033) ------------------ */
   $$('[data-erp-invoices]').forEach(function (root) {
     var api = root.getAttribute('data-api');
@@ -824,7 +1048,7 @@
         var state = item.entry_id ? (item.paid_on ? 'Paga' : 'A receber') : (invoice.status === 'issued' ? '—' : 'Ainda não emitida');
         var amount = editable
           ? '<form class="erp-invoice-item" data-item="' + item.id + '"><label class="erp-sr-only" for="inv-item-' + item.id + '">Valor da unidade ' + esc(item.unit_label) + '</label>' +
-            '<input class="erp-input erp-input--sm" id="inv-item-' + item.id + '" name="amount" inputmode="decimal" value="' + esc((item.amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })) + '" required>' +
+            '<input class="erp-input erp-input--sm" id="inv-item-' + item.id + '" name="amount" inputmode="decimal" data-erp-money value="' + esc((item.amount_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })) + '" required>' +
             '<button type="submit" class="erp-btn erp-btn--sm">Salvar</button></form>'
           : brl(item.amount_cents);
         return '<tr><td><strong>' + esc(item.unit_label) + '</strong></td><td class="is-num">' + amount + '</td><td>' + esc(state) + '</td></tr>';
@@ -861,11 +1085,15 @@
     /* Emitir: cada item vira uma conta a receber da unidade (tudo ou nada). */
     $$('[data-invoice-issue]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Emitir a fatura ' + button.getAttribute('data-label') + '? Cada unidade passa a ter uma conta a receber e os valores não podem mais ser ajustados.')) return;
-        busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-invoice-issue') + '/issue', {})
-          .then(function () { toast('Fatura emitida. As contas a receber das unidades foram geradas.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Emitir a fatura ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'Cada unidade passa a ter uma conta a receber com o valor da fatura.\nDepois de emitida, os valores não podem mais ser ajustados.',
+          undo: false, undoText: 'Para corrigir, cancele a fatura com um motivo e faça outra.', confirmLabel: 'Emitir fatura' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-invoice-issue') + '/issue', {})
+            .then(function () { toast('Fatura emitida. As contas a receber das unidades foram geradas.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
 
@@ -940,8 +1168,8 @@
         var line = button.getAttribute('data-charge-copy');
         var label = button.getAttribute('data-copy-label') || 'a linha digitável';
         var done = function () { toast('Copiado: ' + label + '.', 'success', { quiet: true }); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie ' + label + ':', line); });
-        else window.prompt('Copie ' + label + ':', line);
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { ErpUI.copy(label, line); });
+        else ErpUI.copy(label, line);
       });
     });
 
@@ -955,13 +1183,32 @@
       });
     });
 
+    /* Sandbox do Inter: simula o pagamento no banco e consulta; a baixa passa pela conciliação. */
+    $$('[data-charge-simulate]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        ErpUI.confirm({ title: 'Simular o pagamento do boleto ' + button.getAttribute('data-label') + '?', tone: 'warning',
+          message: 'É só no ambiente de testes do Inter: nenhum dinheiro de verdade se move.\nO banco marca o boleto como pago e a conta a receber é baixada como paga no ERP.',
+          undo: false, undoText: 'A baixa fica registrada como se o morador tivesse pago.', confirmLabel: 'Simular pagamento' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: button.getAttribute('data-method') || 'BOLETO' })
+            .then(function (json) { toast('Situação depois da simulação: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
+      });
+    });
+
     $$('[data-charge-cancel]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco? A conta a receber continua em aberto.')) return;
-        busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-charge-cancel') + '/cancel', {})
-          .then(function () { toast('Boleto cancelado.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco?', tone: 'danger',
+          message: 'O ERP pede ao banco o cancelamento (baixa) do boleto. Depois disso, o boleto e o Pix dele deixam de poder ser pagos.\nA conta a receber da unidade continua em aberto: dá para emitir um boleto novo para ela.',
+          undo: false, undoText: 'O banco não reativa um boleto cancelado.', confirmLabel: 'Cancelar boleto', cancelLabel: 'Manter boleto' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-charge-cancel') + '/cancel', {})
+            .then(function () { toast('Boleto cancelado.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
 
@@ -1091,11 +1338,15 @@
     });
     $$('[data-bank-credential-remove]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Remover a credencial do Inter da conta ' + button.getAttribute('data-label') + '? A conta volta para o banco de testes interno e os boletos já emitidos continuam no Inter.')) return;
-        busy(button, true);
-        call('DELETE', api + '/' + button.getAttribute('data-bank-credential-remove'))
-          .then(function () { toast('Credencial removida.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Remover a credencial do Inter da conta ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'O certificado e a chave guardados no cofre são apagados, e a conta volta para o banco de testes interno.\nOs boletos já emitidos continuam no Inter.',
+          undo: true, undoText: 'Para voltar, cadastre a credencial de novo nesta tela.', confirmLabel: 'Remover credencial' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('DELETE', api + '/' + button.getAttribute('data-bank-credential-remove'))
+            .then(function () { toast('Credencial removida.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
     if (!form) return;
@@ -1353,12 +1604,17 @@
       var body = { condominium_id: condo > 0 ? condo : null, fine_bp: bp($('[name="fine_pct"]', ruleForm).value), monthly_interest_bp: bp($('[name="interest_pct"]', ruleForm).value),
         price_index: $('[name="price_index"]', ruleForm).value, breach_days_late: parseInt($('[name="breach_days_late"]', ruleForm).value, 10),
         breach_open_installments: parseInt($('[name="breach_open_installments"]', ruleForm).value, 10) };
-      if (!window.confirm(condo > 0 ? 'Salvar a regra própria deste condomínio? Ela passa a valer nos encargos calculados a partir de agora.' : 'Salvar o padrão da Connect? Ele vale para todos os condomínios sem regra própria.')) return;
-      var button = $('[type="submit"]', ruleForm);
-      busy(button, true);
-      call('PUT', root.getAttribute('data-rules-api'), body)
-        .then(function () { toast('Regra de cobrança salva.', 'success'); reload(); })
-        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      ErpUI.confirm(condo > 0
+        ? { title: 'Salvar a regra própria deste condomínio?', message: 'Ela passa a valer nos encargos calculados a partir de agora. Os encargos já calculados não mudam.', undo: true, undoText: 'Dá para alterar a regra de novo quando quiser.', confirmLabel: 'Salvar regra' }
+        : { title: 'Salvar o padrão da Connect?', message: 'Ele vale para todos os condomínios que não têm regra própria, nos encargos calculados a partir de agora.', undo: true, undoText: 'Dá para alterar o padrão de novo quando quiser.', confirmLabel: 'Salvar padrão' }
+      ).then(function (yes) {
+        if (!yes) return;
+        var button = $('[type="submit"]', ruleForm);
+        busy(button, true);
+        call('PUT', root.getAttribute('data-rules-api'), body)
+          .then(function () { toast('Regra de cobrança salva.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
     });
     var indexForm = $('[data-index-form]', root);
     if (indexForm) indexForm.addEventListener('submit', function (event) {
@@ -1405,13 +1661,17 @@
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!form.reportValidity()) return;
-        if (!condominium && !window.confirm('Salvar no padrão da Connect? Ele vale para todos os condomínios sem valor próprio.')) return;
-        save('', { condominium_id: condominium, key: key, value: $('[name="value"]', form).value.trim() }, 'Configuração salva.', $('[type="submit"]', form));
+        var go = function () { save('', { condominium_id: condominium, key: key, value: $('[name="value"]', form).value.trim() }, 'Configuração salva.', $('[type="submit"]', form)); };
+        if (condominium) { go(); return; }
+        ErpUI.confirm({ title: 'Salvar no padrão da Connect?', message: 'O valor vale para todos os condomínios que não têm valor próprio neste parâmetro.',
+          undo: true, undoText: 'Dá para mudar o valor de novo ou voltar ao padrão.', confirmLabel: 'Salvar padrão' }).then(function (yes) { if (yes) go(); });
       });
       var reset = $('[data-setting-reset]', form);
       if (reset) reset.addEventListener('click', function () {
-        if (!window.confirm('Voltar este parâmetro ao padrão?')) return;
-        save('/reset', { condominium_id: condominium, key: key }, 'Parâmetro de volta ao padrão.', reset);
+        ErpUI.confirm({ title: 'Voltar este parâmetro ao padrão?', message: 'O valor salvo aqui é apagado e passa a valer o padrão do sistema.',
+          undo: true, undoText: 'Dá para salvar outro valor depois.', confirmLabel: 'Voltar ao padrão' }).then(function (yes) {
+          if (yes) save('/reset', { condominium_id: condominium, key: key }, 'Parâmetro de volta ao padrão.', reset);
+        });
       });
     });
     var opening = $('[data-opening-form]', root);
@@ -1476,9 +1736,9 @@
     };
     $$('[data-assembly-action]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        var question = button.getAttribute('data-confirm');
-        if (question && !window.confirm(question)) return;
-        post(button.getAttribute('data-api'), {}, button.getAttribute('data-done') || 'Feito.', button, null);
+        askFrom(button, 'data-confirm').then(function (yes) {
+          if (yes) post(button.getAttribute('data-api'), {}, button.getAttribute('data-done') || 'Feito.', button, null);
+        });
       });
     });
     var cancel = $('[data-assembly-cancel]', root);
@@ -1601,14 +1861,15 @@
     var condo = parseInt(root.getAttribute('data-condominium') || '0', 10);
     $$('[data-access-post]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        var question = button.getAttribute('data-confirm');
-        if (question && !window.confirm(question)) return;
-        var body = {};
-        try { body = JSON.parse(button.getAttribute('data-body') || '{}'); } catch (e) { body = {}; }
-        busy(button, true);
-        call('POST', button.getAttribute('data-api'), body)
-          .then(function () { toast(button.getAttribute('data-done') || 'Feito.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        askFrom(button, 'data-confirm').then(function (yes) {
+          if (!yes) return;
+          var body = {};
+          try { body = JSON.parse(button.getAttribute('data-body') || '{}'); } catch (e) { body = {}; }
+          busy(button, true);
+          call('POST', button.getAttribute('data-api'), body)
+            .then(function () { toast(button.getAttribute('data-done') || 'Feito.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
     $$('[data-access-form]', root).forEach(function (form) {
@@ -2103,28 +2364,30 @@
       var competence = (($('[name="competence"]', form) || {}).value || '').trim();
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(competence)) { toast('Escolha o mês da competência.', 'warning'); return; }
       var label = competence.slice(5) + '/' + competence.slice(0, 4);
-      if (!window.confirm('Gerar os lançamentos de ' + label + ' a partir dos lançamentos fixos ativos? Os que já foram gerados não se repetem.')) return;
-      var body = { competence: competence };
-      var condominium = parseInt(form.getAttribute('data-condominium') || '0', 10);
-      if (condominium > 0) body.condominium_id = condominium;
-      var busy = function (on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
-      busy(true);
-      fetch(form.getAttribute('data-erp-generate-recurring'), {
-        method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': (($('[name="csrf"]', form) || {}).value || '') },
-        body: JSON.stringify(body)
-      }).then(function (response) {
-        return response.json().catch(function () { return {}; }).then(function (json) { return { ok: response.ok, json: json }; });
-      }).then(function (res) {
-        busy(false);
-        if (!res.ok) { toast((res.json.error && res.json.error.message) || 'Não foi possível gerar os lançamentos.', 'danger'); return; }
-        var data = res.json.data || {};
-        var created = (data.created || []).length, skipped = (data.skipped || []).length, failed = Object.keys(data.failed || {}).length;
-        var parts = [created === 1 ? '1 lançamento gerado' : created + ' lançamentos gerados'];
-        if (skipped) parts.push(skipped === 1 ? '1 já existia' : skipped + ' já existiam');
-        if (failed) parts.push(failed === 1 ? '1 com erro (revise o lançamento fixo)' : failed + ' com erro (revise os lançamentos fixos)');
-        toast(label + ': ' + parts.join(', ') + '.', failed ? 'warning' : 'success');
-      }).catch(function () { busy(false); toast('Não foi possível falar com o servidor. Tente de novo.', 'danger'); });
+      ErpUI.confirm({ title: 'Gerar os lançamentos de ' + label + '?', message: 'O ERP cria os lançamentos do mês a partir dos lançamentos fixos ativos. Os que já foram gerados não se repetem.', undo: true, undoText: 'Um lançamento gerado por engano pode ser excluído (com motivo) na lista de lançamentos.', confirmLabel: 'Gerar lançamentos' }).then(function (yes) {
+        if (!yes) return;
+        var body = { competence: competence };
+        var condominium = parseInt(form.getAttribute('data-condominium') || '0', 10);
+        if (condominium > 0) body.condominium_id = condominium;
+        var busy = function (on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
+        busy(true);
+        fetch(form.getAttribute('data-erp-generate-recurring'), {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': (($('[name="csrf"]', form) || {}).value || '') },
+          body: JSON.stringify(body)
+        }).then(function (response) {
+          return response.json().catch(function () { return {}; }).then(function (json) { return { ok: response.ok, json: json }; });
+        }).then(function (res) {
+          busy(false);
+          if (!res.ok) { toast((res.json.error && res.json.error.message) || 'Não foi possível gerar os lançamentos.', 'danger'); return; }
+          var data = res.json.data || {};
+          var created = (data.created || []).length, skipped = (data.skipped || []).length, failed = Object.keys(data.failed || {}).length;
+          var parts = [created === 1 ? '1 lançamento gerado' : created + ' lançamentos gerados'];
+          if (skipped) parts.push(skipped === 1 ? '1 já existia' : skipped + ' já existiam');
+          if (failed) parts.push(failed === 1 ? '1 com erro (revise o lançamento fixo)' : failed + ' com erro (revise os lançamentos fixos)');
+          toast(label + ': ' + parts.join(', ') + '.', failed ? 'warning' : 'success');
+        }).catch(function () { busy(false); toast('Não foi possível falar com o servidor. Tente de novo.', 'danger'); });
+      });
     });
   });
 
@@ -2508,15 +2771,17 @@
     var applyButton = preview && $('[data-import-apply]', preview);
     var current = null;
     var runApply = function (button, id, label) {
-      if (!window.confirm('Aplicar a importação ' + (label ? '"' + label + '"' : 'nº ' + id) + '? O arquivo é validado de novo e tudo é gravado de uma vez.')) return;
-      busy(button, true);
-      call('POST', applyApi(id)).then(function (json) {
-        toast('Importação aplicada.', 'success');
-        window.setTimeout(function () { window.location.href = route + '?importacao=' + encodeURIComponent((json.data || {}).id || id); }, 600);
-      }).catch(function (error) {
-        busy(button, false);
-        var box = preview && !preview.hidden ? $('[data-import-preview-alert]', preview) : null;
-        if (box) { box.innerHTML = '<div class="erp-alert erp-alert--danger" role="alert"><div>' + esc(error.message) + '</div></div>'; } else { toast(error.message, 'danger'); }
+      ErpUI.confirm({ title: 'Aplicar a importação ' + (label ? '"' + label + '"' : 'nº ' + id) + '?', tone: 'danger', message: 'O arquivo é validado de novo e tudo é gravado de uma vez: se uma linha tiver erro, nada é gravado.', undo: false, undoText: 'Os registros gravados precisam ser corrigidos ou excluídos um a um.', confirmLabel: 'Aplicar importação' }).then(function (yes) {
+        if (!yes) return;
+        busy(button, true);
+        call('POST', applyApi(id)).then(function (json) {
+          toast('Importação aplicada.', 'success');
+          window.setTimeout(function () { window.location.href = route + '?importacao=' + encodeURIComponent((json.data || {}).id || id); }, 600);
+        }).catch(function (error) {
+          busy(button, false);
+          var box = preview && !preview.hidden ? $('[data-import-preview-alert]', preview) : null;
+          if (box) { box.innerHTML = '<div class="erp-alert erp-alert--danger" role="alert"><div>' + esc(error.message) + '</div></div>'; } else { toast(error.message, 'danger'); }
+        });
       });
     };
     $$('[data-import-apply]', root).forEach(function (button) {
@@ -2566,9 +2831,27 @@
         busy(applyButton, false);
         renderRows();
         form.hidden = true;
+        if (fetchForm) fetchForm.hidden = true;
         preview.hidden = false;
         preview.focus();
       };
+      // ADR 0318: extrato buscado direto no banco (Inter), com a mesma prévia do OFX.
+      var fetchForm = $('[data-statement-fetch]', root);
+      if (fetchForm) {
+        fetchForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+          if (!formValid(fetchForm)) return;
+          var from = $('[name="from"]', fetchForm).value;
+          var to = $('[name="to"]', fetchForm).value;
+          if (from > to) { formError(fetchForm, 'O início do período precisa ser antes do fim.', $('[name="from"]', fetchForm)); return; }
+          var fetchButton = $('[type="submit"]', fetchForm);
+          busy(fetchButton, true);
+          call('POST', root.getAttribute('data-statement-api'), { condominium_id: parseInt(fetchForm.getAttribute('data-condominium'), 10),
+            bank_account_id: parseInt($('[name="bank_account_id"]', fetchForm).value, 10), from: from, to: to })
+            .then(function (json) { busy(fetchButton, false); formError(fetchForm, ''); showPreview(json.data || {}); })
+            .catch(function (error) { busy(fetchButton, false); formError(fetchForm, error.message); });
+        });
+      }
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!formValid(form)) return;
@@ -2595,7 +2878,7 @@
           .catch(function (error) { busy(button, false); progress.hidden = true; formError(form, error.message, fileInput); });
       });
       var reset = $('[data-import-reset]', preview);
-      if (reset) reset.addEventListener('click', function () { current = null; preview.hidden = true; form.hidden = false; form.reset(); bar.style.width = '0%'; fileInput.focus(); });
+      if (reset) reset.addEventListener('click', function () { current = null; preview.hidden = true; form.hidden = false; if (fetchForm) fetchForm.hidden = false; form.reset(); bar.style.width = '0%'; fileInput.focus(); });
     }
 
     var lineForm = $('[data-line-form]', root);
@@ -2683,10 +2966,12 @@
         var body = { condominium_id: parseInt(announceForm.getAttribute('data-condominium'), 10), subject: value(announceForm, 'subject'), body: value(announceForm, 'body'),
           audience: audience, unit_ids: audience === 'units' ? units : null, send_at: sendAt(announceForm) };
         var when = body.send_at ? 'agendado para ' + stamp(body.send_at) : 'enviado agora';
-        if (!window.confirm('Enviar o comunicado "' + body.subject + '" para ' + (audience === 'units' ? units.length : boxes.length) + ' unidade(s), ' + when + '?')) return;
-        post(announceForm, announceForm.getAttribute('data-api'), body, function (data) {
-          toast(sentMessage(data, 'Comunicado'), 'success');
-          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 600);
+        ErpUI.confirm({ title: 'Enviar o comunicado "' + body.subject + '"?', tone: body.send_at ? 'primary' : 'danger', message: 'Vai para ' + (audience === 'units' ? units.length : boxes.length) + ' unidade(s), ' + when + '.', undo: !!body.send_at, undoText: body.send_at ? 'Enquanto não sair, dá para cancelar o envio na tela do comunicado.' : 'Depois de enviado, o e-mail não volta.', confirmLabel: body.send_at ? 'Agendar comunicado' : 'Enviar agora' }).then(function (yes) {
+          if (!yes) return;
+          post(announceForm, announceForm.getAttribute('data-api'), body, function (data) {
+            toast(sentMessage(data, 'Comunicado'), 'success');
+            window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 600);
+          });
         });
       });
     }
@@ -2728,10 +3013,12 @@
         if (marked.length === 0) { formError(collectionForm, 'Nenhuma unidade marcada para o aviso.', ok[0] || minDays); return; }
         var body = { condominium_id: parseInt(collectionForm.getAttribute('data-condominium'), 10), as_of: collectionForm.getAttribute('data-as-of'),
           min_days_late: parseInt(minDays.value, 10), unit_ids: marked.length === ok.length ? null : marked, send_at: sendAt(collectionForm) };
-        if (!window.confirm('Enviar o aviso de débitos para ' + marked.length + ' unidade(s)? Só recebe quem autorizou a cobrança por e-mail.')) return;
-        post(collectionForm, collectionForm.getAttribute('data-api'), body, function (data) {
-          toast(sentMessage(data, 'Aviso de cobrança') + (data.skipped_recent ? ' ' + data.skipped_recent + ' unidade(s) já avisada(s) ficaram de fora.' : ''), 'success');
-          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 900);
+        ErpUI.confirm({ title: 'Enviar o aviso de débitos para ' + marked.length + ' unidade(s)?', tone: body.send_at ? 'primary' : 'danger', message: 'Só recebe quem autorizou a cobrança por e-mail.', undo: !!body.send_at, undoText: body.send_at ? 'Enquanto não sair, dá para cancelar o envio na tela do comunicado.' : 'Depois de enviado, o e-mail não volta.', confirmLabel: body.send_at ? 'Agendar aviso' : 'Enviar aviso' }).then(function (yes) {
+          if (!yes) return;
+          post(collectionForm, collectionForm.getAttribute('data-api'), body, function (data) {
+            toast(sentMessage(data, 'Aviso de cobrança') + (data.skipped_recent ? ' ' + data.skipped_recent + ' unidade(s) já avisada(s) ficaram de fora.' : ''), 'success');
+            window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 900);
+          });
         });
       });
     }
@@ -2792,9 +3079,34 @@
         var unit = contactForm.getAttribute('data-unit');
         post(contactForm, contactForm.getAttribute('data-api'), { unit_id: parseInt(unit, 10), channel: value(contactForm, 'channel'), outcome: outcome.value,
           contact_name: value(contactForm, 'contact_name'), note: value(contactForm, 'note'), promise_on: promise ? value(contactForm, 'promise_on') : '',
-          promise_cents: promise ? value(contactForm, 'promise_cents') : '', next_action_on: value(contactForm, 'next_action_on') }, function () {
+          promise_cents: promise ? value(contactForm, 'promise_cents') : '', next_action_on: value(contactForm, 'next_action_on') }, function (contact) {
+          /* Sem recarregar (ADR 0315): o contato entra no topo do histórico e na linha da fila. */
+          var label = function (name) { var el = $('[name="' + name + '"]', contactForm); return el && el.selectedIndex > 0 ? el.options[el.selectedIndex].text : ''; };
+          var day = function (iso) { var p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+          var channel = label('channel');
+          var title = (contact.outcome_label || label('outcome')) + (contact.promise_on ? ' para ' + day(contact.promise_on) + (contact.promise_cents != null ? ' (' + brl(contact.promise_cents) + ')' : '') : '');
+          var list = $('[data-contact-history]', root);
+          var template = $('[data-contact-template]', root);
+          if (list && template) {
+            var item = template.content.firstElementChild.cloneNode(true);
+            $('[data-slot="title"]', item).textContent = title;
+            $('[data-slot="meta"]', item).textContent = channel + (contact.contact_name ? ' · ' + contact.contact_name : '') + ' · em aberto ' + brl(contact.open_cents || 0) + (contact.next_action_on ? ' · próxima ação ' + day(contact.next_action_on) : '');
+            $('[data-slot="note"]', item).textContent = contact.note || '';
+            $('[data-slot="at"]', item).textContent = day(contact.created_at) + ' ' + String(contact.created_at || '').slice(11, 16);
+            list.insertBefore(item, list.firstChild);
+            var empty = $('[data-contact-empty]', root);
+            if (empty) empty.hidden = true;
+          }
+          var last = $('[data-row-last]', root);
+          if (last) last.innerHTML = '';
+          if (last) { last.appendChild(document.createTextNode(day(contact.created_at) + ' · ' + channel)); last.appendChild(document.createElement('br')); var muted = document.createElement('span'); muted.className = 'erp-muted'; muted.textContent = (contact.outcome_label || '') + (contact.promise_on ? ' para ' + day(contact.promise_on) : ''); last.appendChild(muted); }
+          var next = $('[data-row-next]', root);
+          if (next) { next.innerHTML = ''; var span = document.createElement('span'); if (contact.next_action_on) span.textContent = day(contact.next_action_on); else { span.className = 'erp-muted'; span.textContent = '—'; } next.appendChild(span); }
+          contactForm.reset();
+          promiseFields.forEach(function (f) { f.hidden = true; });
+          promiseOn.removeAttribute('required');
+          busy($('[type="submit"]', contactForm), false);
           toast('Contato registrado.', 'success');
-          window.setTimeout(function () { window.location.href = route + '?unidade=' + encodeURIComponent(unit) + '#atender'; }, 600);
         });
       });
     }
@@ -2814,12 +3126,14 @@
         if (!formValid(openForm)) return;
         var entries = entryBoxes.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
         if (entries.length === 0) { formError(openForm, 'Escolha ao menos uma conta vencida.', entryBoxes[0]); return; }
-        if (!window.confirm('Abrir o caso judicial com ' + entries.length + ' conta(s)? É só acompanhamento: nada é enviado e nenhum encargo é criado.')) return;
-        var lawyer = value(openForm, 'lawyer_id');
-        post(openForm, openForm.getAttribute('data-api'), { unit_id: parseInt(openForm.getAttribute('data-unit'), 10), entry_ids: entries, lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10),
-          case_number: value(openForm, 'case_number'), court: value(openForm, 'court').replace(/\s+/g, ' '), opened_on: value(openForm, 'opened_on'), note: value(openForm, 'note') }, function (data) {
-          toast('Caso judicial nº ' + data.id + ' aberto.', 'success');
-          window.setTimeout(function () { window.location.href = route + '?caso=' + encodeURIComponent(data.id); }, 600);
+        ErpUI.confirm({ title: 'Abrir o caso judicial com ' + entries.length + ' conta(s)?', message: 'É só acompanhamento: nada é enviado a ninguém e nenhum encargo é criado.', undo: true, undoText: 'Dá para encerrar o caso depois, com um motivo.', confirmLabel: 'Abrir caso' }).then(function (yes) {
+          if (!yes) return;
+          var lawyer = value(openForm, 'lawyer_id');
+          post(openForm, openForm.getAttribute('data-api'), { unit_id: parseInt(openForm.getAttribute('data-unit'), 10), entry_ids: entries, lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10),
+            case_number: value(openForm, 'case_number'), court: value(openForm, 'court').replace(/\s+/g, ' '), opened_on: value(openForm, 'opened_on'), note: value(openForm, 'note') }, function (data) {
+            toast('Caso judicial nº ' + data.id + ' aberto.', 'success');
+            window.setTimeout(function () { window.location.href = route + '?caso=' + encodeURIComponent(data.id); }, 600);
+          });
         });
       });
     }
@@ -2837,13 +3151,17 @@
       eventForm.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!formValid(eventForm)) return;
-        if (status.value === 'closed' && !window.confirm('Encerrar o caso? Encerrado é definitivo.')) return;
-        var lawyer = value(eventForm, 'lawyer_id');
-        post(eventForm, eventForm.getAttribute('data-api'), { happened_on: value(eventForm, 'happened_on'), to_status: status.value, note: value(eventForm, 'note'),
-          lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10), case_number: value(eventForm, 'case_number'), court: value(eventForm, 'court').replace(/\s+/g, ' ') }, function () {
-          toast(status.value === 'closed' ? 'Caso encerrado.' : 'Andamento registrado.', 'success');
-          reload();
-        });
+        var send = function () {
+          var lawyer = value(eventForm, 'lawyer_id');
+          post(eventForm, eventForm.getAttribute('data-api'), { happened_on: value(eventForm, 'happened_on'), to_status: status.value, note: value(eventForm, 'note'),
+            lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10), case_number: value(eventForm, 'case_number'), court: value(eventForm, 'court').replace(/\s+/g, ' ') }, function () {
+            toast(status.value === 'closed' ? 'Caso encerrado.' : 'Andamento registrado.', 'success');
+            reload();
+          });
+        };
+        if (status.value !== 'closed') { send(); return; }
+        ErpUI.confirm({ title: 'Encerrar o caso?', tone: 'danger', message: 'O caso fica encerrado e não recebe mais andamentos.', undo: false, undoText: 'Encerrado é definitivo: para continuar, abra um caso novo.', confirmLabel: 'Encerrar caso' })
+          .then(function (yes) { if (yes) send(); });
       });
     }
   });
@@ -2961,6 +3279,348 @@
         toast(error.message, 'danger');
       });
     });
+  });
+
+  /* Configuração das unidades em massa (ADR 0311): marca na lista, escolhe no modal e grava pela API /api/v1/units/bulk-settings.
+   * Só vão os campos alterados; "Manter como está" fica de fora. */
+  $$('dialog[data-erp-unit-bulk]').forEach(function (dialog) {
+    var api = dialog.getAttribute('data-erp-unit-bulk');
+    var form = $('[data-unit-bulk-form]', dialog);
+    var call = apiClient(dialog);
+    var items = $$('[data-unit-bulk-item]');
+    var all = $('[data-unit-bulk-all]');
+    var open = $('[data-unit-bulk-open]');
+    var label = $('[data-unit-bulk-selected]');
+    var count = $('[data-unit-bulk-count]', dialog);
+    var agencies = $('[data-unit-bulk-agencies]', dialog);
+    var loaded = false;
+    var marked = function () { return items.filter(function (i) { return i.checked; }).map(function (i) { return parseInt(i.value, 10); }); };
+    var refresh = function () {
+      var n = marked().length;
+      if (open) open.disabled = n === 0;
+      if (label) label.textContent = n ? n + ' unidade(s) marcada(s).' : 'Marque as unidades para configurar em massa.';
+      if (count) count.textContent = n + ' unidade(s) marcada(s) nesta página.';
+      if (all) { all.checked = n > 0 && n === items.length; all.indeterminate = n > 0 && n < items.length; }
+    };
+    items.forEach(function (i) { i.addEventListener('change', refresh); });
+    if (all) all.addEventListener('change', function () { items.forEach(function (i) { i.checked = all.checked; }); refresh(); });
+    if (open) open.addEventListener('click', function () {
+      if (loaded || !agencies) return;
+      loaded = true;
+      call('GET', api).then(function (json) {
+        (json.data.agencies || []).forEach(function (a) { var o = document.createElement('option'); o.value = String(a.id); o.textContent = a.name; agencies.appendChild(o); });
+      }).catch(function () { loaded = false; });
+    });
+    $$('input[name$="__clear"]', form).forEach(function (box) {
+      var input = form.elements[box.name.replace(/__clear$/, '')];
+      box.addEventListener('change', function () { if (input) { input.disabled = box.checked; if (box.checked) input.value = ''; } });
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var settings = {};
+      $$('select, input', form).forEach(function (el) {
+        if (!el.name || el.name === 'csrf' || el.type === 'checkbox' || el.type === 'hidden') return;
+        var clear = form.elements[el.name + '__clear'];
+        if (clear && clear.checked) { settings[el.name] = null; return; }
+        var value = String(el.value || '').trim();
+        if (value === '') return;
+        settings[el.name] = el.name === 'partner_agency_id' && value === 'none' ? null : value;
+      });
+      if (!Object.keys(settings).length) { formError(form, 'Escolha pelo menos uma configuração para alterar.'); return; }
+      var ids = marked();
+      if (!ids.length) { formError(form, 'Marque pelo menos uma unidade na lista.'); return; }
+      var button = $('[data-unit-bulk-save]', form);
+      busy(button, true);
+      formError(form, '');
+      call('POST', api, { condominium_id: parseInt(dialog.getAttribute('data-condominium'), 10), unit_ids: ids, settings: settings }).then(function (json) {
+        var d = json.data;
+        toast(d.updated + ' unidade(s) alterada(s)' + (d.unchanged ? '; ' + d.unchanged + ' já estava(m) assim.' : '.'), 'success');
+        dialog.close();
+        reload();
+      }).catch(function (error) {
+        var first = error.fields ? Object.keys(error.fields).map(function (k) { return form.elements[k]; }).filter(Boolean)[0] : null;
+        formError(form, error.message, first);
+      }).then(function () { busy(button, false); });
+    });
+    refresh();
+  });
+
+  /* Termo de entrada/saída (ADR 0311): clicar numa palavra-chave insere no ponto do cursor do texto. */
+  $$('form[data-erp-move-term]').forEach(function (form) {
+    var area = form.elements.body;
+    if (!area) return;
+    $$('[data-move-term-keyword]', form).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var word = button.getAttribute('data-move-term-keyword');
+        var start = area.selectionStart != null ? area.selectionStart : area.value.length;
+        var end = area.selectionEnd != null ? area.selectionEnd : start;
+        area.value = area.value.slice(0, start) + word + area.value.slice(end);
+        area.focus();
+        area.selectionStart = area.selectionEnd = start + word.length;
+      });
+    });
+  });
+
+  /* Inquilino e proprietário da unidade (ADR 0311, modelos 4/5/6): busca ou cadastro rápido, datas e faturas;
+   * grava por POST /api/v1/units/{id}/occupant-change, que confere tudo de novo. */
+  $$('[data-erp-unit-occupants]').forEach(function (root) {
+    var dialog = $('#unit-occupant-dialog', root);
+    var form = dialog && $('[data-unit-occupant-form]', dialog);
+    if (!form) return;
+    var call = apiClient(root);
+    var search = $('[data-unit-occupant-search]', form);
+    var results = $('[data-unit-occupant-results]', form);
+    var chosen = $('[data-unit-occupant-chosen]', form);
+    var pick = $('[data-unit-occupant-pick]', form);
+    var quick = $('[data-unit-occupant-quick]', form);
+    var history = $('[data-unit-occupant-history]', form);
+    var dates = $('[data-unit-occupant-dates]', form);
+    var exit = $('[data-unit-occupant-exit]', form);
+    var found = [];
+    var timer = null;
+    var seq = 0;
+    var mode = 'pick';
+    var setMode = function (next) {
+      mode = next;
+      quick.hidden = next !== 'quick';
+      search.closest('.erp-inline-field').hidden = next === 'quick';
+      results.hidden = next === 'quick';
+      if (next === 'quick') { form.elements.person_id.value = ''; chosen.hidden = true; form.elements.person_name.focus(); }
+    };
+    var syncDates = function () { dates.hidden = !history.checked; };
+    $$('[data-unit-occupant-open]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var role = button.getAttribute('data-unit-occupant-open');
+        var label = button.getAttribute('data-label');
+        form.reset();
+        form.elements.role.value = role;
+        form.elements.person_id.value = '';
+        $('[data-unit-occupant-legend]', form).textContent = 'Novo ' + label;
+        $$('[data-unit-occupant-role]', form).forEach(function (el) { el.textContent = label; });
+        exit.hidden = button.getAttribute('data-has-current') !== '1';
+        results.innerHTML = '';
+        chosen.hidden = true;
+        formError(form, '');
+        setMode('pick');
+        syncDates();
+        dialog._erpTrigger = button;
+        openDialog(dialog);
+        search.focus();
+      });
+    });
+    history.addEventListener('change', syncDates);
+    $('[data-unit-occupant-new]', form).addEventListener('click', function () { setMode('quick'); });
+    $('[data-unit-occupant-back]', form).addEventListener('click', function () { setMode('pick'); search.focus(); });
+    search.addEventListener('input', function () {
+      window.clearTimeout(timer);
+      var q = search.value.trim();
+      if (q.length < 3) { results.innerHTML = ''; return; }
+      timer = window.setTimeout(function () {
+        var mine = ++seq;
+        call('GET', root.getAttribute('data-search') + '?q=' + encodeURIComponent(q) + '&limit=10').then(function (json) {
+          if (mine !== seq) return;
+          found = json.data || [];
+          results.innerHTML = found.length ? found.map(function (p, i) {
+            return '<li><button type="button" class="erp-unit-occupants__option" role="option" data-occupant-pick="' + i + '"><strong>' + esc(p.name) + '</strong> <span class="erp-muted">' + esc(p.document_masked || 'sem documento') + '</span></button></li>';
+          }).join('') : '<li class="erp-muted">Ninguém encontrado. Use "Nova pessoa" para cadastrar.</li>';
+        }).catch(function (error) { if (mine === seq) results.innerHTML = '<li class="erp-muted">' + esc(error.message) + '</li>'; });
+      }, 300);
+    });
+    results.addEventListener('click', function (event) {
+      var b = event.target.closest('[data-occupant-pick]');
+      if (!b) return;
+      var p = found[parseInt(b.getAttribute('data-occupant-pick'), 10)];
+      form.elements.person_id.value = String(p.id);
+      chosen.textContent = 'Escolhida: ' + p.name + (p.document_masked ? ' (' + p.document_masked + ')' : '');
+      chosen.hidden = false;
+      results.innerHTML = '';
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var body = { role: form.elements.role.value, history: history.checked, invoices: (form.querySelector('input[name="invoices"]:checked') || {}).value || 'none' };
+      if (mode === 'quick') {
+        body.person = { name: form.elements.person_name.value.trim(), document: form.elements.person_document.value.trim(), email: form.elements.person_email.value.trim(), phone: form.elements.person_phone.value.trim() };
+      } else if (form.elements.person_id.value) {
+        body.person_id = parseInt(form.elements.person_id.value, 10);
+      } else {
+        formError(form, 'Escolha a pessoa na busca ou cadastre uma nova.', search);
+        return;
+      }
+      if (history.checked) {
+        body.entry_on = form.elements.entry_on.value;
+        body.exit_on = exit.hidden ? form.elements.entry_on.value : form.elements.exit_on.value;
+      }
+      var button = $('[data-unit-occupant-save]', form);
+      busy(button, true);
+      formError(form, '');
+      call('POST', root.getAttribute('data-api'), body).then(function (json) {
+        var d = json.data;
+        var extra = d.invoices === 'not_payer' ? ' As faturas não mudam: quem paga é outra pessoa.' : (d.moved ? ' ' + d.moved + ' fatura(s) passaram para a pessoa nova.' : '');
+        toast('Alteração gravada.' + extra + (d.with_boleto ? ' ' + d.with_boleto + ' com boleto gerado continuam como estavam.' : ''), 'success');
+        dialog.close();
+        reload();
+      }).catch(function (error) {
+        var fields = error.fields || {};
+        var map = { 'person.name': 'person_name', 'person.document': 'person_document', 'person.email': 'person_email', 'person.phone': 'person_phone' };
+        var first = Object.keys(fields).map(function (k) { return form.elements[map[k] || k]; }).filter(function (el) { return el && el.focus; })[0];
+        formError(form, error.message, first);
+      }).then(function () { busy(button, false); });
+    });
+  });
+
+  /* Várias unidades num lançamento (ADR 0313): mostra só as unidades do condomínio escolhido e esconde a
+     unidade principal da lista das outras. O servidor confere de novo. */
+  $$('[data-entry-units]').forEach(function (box) {
+    var form = box.closest('form');
+    if (!form) return;
+    var condo = form.querySelector('[name="condominium_id"]');
+    var main = form.querySelector('[name="unit_id"]');
+    var empty = box.querySelector('[data-entry-units-empty]');
+    var apply = function () {
+      var condoValue = condo ? condo.value : '';
+      var shown = 0;
+      $$('label[data-condominium]', box).forEach(function (label) {
+        var input = label.querySelector('input');
+        var ok = condoValue !== '' && label.getAttribute('data-condominium') === condoValue && !(main && main.value !== '' && input.value === main.value);
+        label.hidden = !ok;
+        if (!ok) input.checked = false;
+        if (ok) shown++;
+      });
+      if (empty) empty.hidden = shown > 0;
+    };
+    if (condo) condo.addEventListener('change', apply);
+    if (main) main.addEventListener('change', apply);
+    apply();
+  });
+
+  /* Nova Receita (AP-025, ADR 0313): rateio, valor de cada unidade, fundo de reserva e repetição, por
+     POST /api/v1/revenues. Parte escondida fica desabilitada (não valida nem vai no envio). */
+  $$('[data-revenue-form]').forEach(function (form) {
+    var root = form.closest('[data-erp-shortcuts]') || form;
+    var call = apiClient(root);
+    var value = function (name) { var el = $('[name="' + name + '"]', form); return el && !el.disabled ? el.value.replace(/\s+/g, ' ').trim() : ''; };
+    var apportion = $('[data-revenue-apportion]', form);
+    var split = $('[data-revenue-split]', form);
+    var method = $('[data-revenue-method]', form);
+    var amountField = $('[data-revenue-amount]', form);
+    var amountLabel = $('[data-revenue-amount-label]', form);
+    var amountInput = $('[name="amount_cents"]', form);
+    var rows = $$('[data-revenue-unit]', form);
+    var boxes = rows.map(function (row) { return $('[name="unit_ids"]', row); });
+    var all = $('[data-revenue-all]', form);
+    var count = $('[data-revenue-count]', form);
+    var reserve = $('[data-revenue-reserve]', form);
+    var repeat = $('[data-revenue-repeat]', form);
+    var toggle = function (selector, on) {
+      $$(selector, form).forEach(function (el) {
+        el.hidden = !on;
+        $$('input, select', el).forEach(function (input) { input.disabled = !on; });
+      });
+    };
+    var refresh = function () {
+      var mode = apportion ? apportion.value : 'none';
+      var custom = mode !== 'none' && method && method.value === 'custom';
+      split.hidden = mode === 'none';
+      split.disabled = mode === 'none';
+      $$('[data-revenue-split-only]', form).forEach(function (el) { el.disabled = mode === 'none'; });
+      rows.forEach(function (row, i) {
+        var show = mode === 'chosen' || row.getAttribute('data-exempt') !== '1';
+        row.hidden = !show;
+        if (mode === 'all') boxes[i].checked = show;
+        boxes[i].disabled = mode !== 'chosen';
+        var input = $('[data-unit-amount]', row);
+        if (input) { input.disabled = !custom || !boxes[i].checked || !show; input.required = !input.disabled; }
+      });
+      if (all) { all.disabled = mode !== 'chosen'; all.checked = boxes.every(function (b) { return b.checked || b.closest('tr').hidden; }); }
+      $$('[data-revenue-value-col]', form).forEach(function (cell) { cell.hidden = !custom; });
+      amountField.hidden = custom;
+      amountInput.disabled = custom;
+      amountLabel.textContent = mode === 'none' || (method && method.value === 'fixed') ? (mode === 'none' ? 'Valor (R$) *' : 'Valor por unidade (R$) *') : 'Valor total a ratear (R$) *';
+      if (count) {
+        var marked = boxes.filter(function (b, i) { return b.checked && !rows[i].hidden; }).length;
+        count.textContent = marked + ' unidade(s) na receita.';
+      }
+      toggle('[data-revenue-reserve-field]', mode !== 'none' && reserve && reserve.checked);
+      toggle('[data-revenue-repeat-field]', repeat && repeat.checked);
+    };
+    [apportion, method, reserve, repeat].forEach(function (el) { if (el) el.addEventListener('change', refresh); });
+    boxes.forEach(function (b) { b.addEventListener('change', refresh); });
+    if (all) all.addEventListener('change', function () { boxes.forEach(function (b, i) { if (!rows[i].hidden) b.checked = all.checked; }); refresh(); });
+    refresh();
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!formValid(form)) return;
+      var mode = apportion ? apportion.value : 'none';
+      var body = { condominium_id: parseInt(form.getAttribute('data-condominium'), 10), apportion: mode, description: value('description'),
+        chart_account_id: parseInt(value('chart_account_id'), 10), competence: value('competence'), due_on: value('due_on'),
+        amount_cents: value('amount_cents'), document_number: value('document_number'), repeat: repeat && repeat.checked ? parseInt(value('repeat'), 10) : 1 };
+      if (value('cost_center_id') !== '') body.cost_center_id = parseInt(value('cost_center_id'), 10);
+      var label = $('[name="repeat_label"]', form);
+      body.repeat_label = !!(label && !label.disabled && label.checked);
+      if (mode !== 'none') {
+        body.method = method.value;
+        body.payer = value('payer') || 'responsible';
+        var units = boxes.filter(function (b, i) { return b.checked && !rows[i].hidden; }).map(function (b) { return parseInt(b.value, 10); });
+        if (units.length === 0) { formError(form, 'Escolha ao menos uma unidade.', boxes[0]); return; }
+        if (mode === 'chosen') body.unit_ids = units;
+        if (method.value === 'custom') {
+          body.unit_amounts = {};
+          units.forEach(function (id) { var input = $('[data-unit-amount="' + id + '"]', form); body.unit_amounts[id] = input ? input.value.trim() : ''; });
+        }
+        if (reserve && reserve.checked) { body.reserve_percent = value('reserve_percent'); body.reserve_account_id = parseInt(value('reserve_account_id'), 10); }
+      }
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', form.getAttribute('data-api'), body).then(function (json) {
+        var data = json.data || {};
+        toast('Receita lançada: ' + (data.entries || []).length + ' conta(s) a receber' + ((data.months || 1) > 1 ? ', em ' + data.months + ' meses' : '') + '.', 'success');
+        window.setTimeout(function () { window.location.href = root.getAttribute('data-route'); }, 700);
+      }).catch(function (error) { busy(button, false); formError(form, error.message); });
+    });
+  });
+
+  /* Atalhos da lista de lançamentos (ADR 0313, modelo 7): marca lançamentos, copia para outra competência
+     (POST /api/v1/entries/copy) ou exclui = cancela com motivo (POST /api/v1/entries/cancel). Tudo ou nada no servidor. */
+  $$('[data-entry-shortcuts]').forEach(function (bar) {
+    var condominium = parseInt(bar.getAttribute('data-condominium') || '0', 10);
+    if (!condominium) return;
+    var call = apiClient(bar);
+    var picks = $$('[data-entry-pick]');
+    var all = $('[data-entry-pick-all]');
+    var label = $('[data-entry-picked]', bar);
+    var chosen = function () { return picks.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); }); };
+    var refresh = function () {
+      var n = chosen().length;
+      if (label) label.textContent = n === 0 ? 'Marque lançamentos na lista para copiar ou excluir.' : n + ' lançamento(s) marcado(s).';
+      $$('[data-entry-needs-pick]', bar).forEach(function (b) { b.disabled = n === 0; });
+      $$('[data-entry-pick-count]').forEach(function (p) { p.textContent = n + ' lançamento(s) marcado(s) nesta página.'; });
+      if (all) { all.checked = n > 0 && n === picks.length; all.indeterminate = n > 0 && n < picks.length; }
+    };
+    picks.forEach(function (b) { b.addEventListener('change', refresh); });
+    if (all) all.addEventListener('change', function () { picks.forEach(function (b) { b.checked = all.checked; }); refresh(); });
+    refresh();
+    var wire = function (selector, build, done) {
+      var form = $(selector);
+      if (!form) return;
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!formValid(form)) return;
+        var ids = chosen();
+        if (ids.length === 0) { formError(form, 'Marque ao menos um lançamento.'); return; }
+        var button = $('[type="submit"]', form);
+        busy(button, true);
+        call('POST', form.getAttribute('data-api'), build(form, ids)).then(function (json) {
+          var dialog = form.closest('dialog');
+          if (dialog) dialog.close();
+          toast(done(json.data || {}), 'success');
+          reload();
+        }).catch(function (error) { busy(button, false); formError(form, error.message); });
+      });
+    };
+    wire('[data-entry-copy-form]', function (form, ids) { return { condominium_id: condominium, entry_ids: ids, competence: $('[name="competence"]', form).value }; },
+      function (data) { return (data.count || 0) + ' lançamento(s) copiado(s) para ' + String(data.competence || '').split('-').reverse().join('/') + '.'; });
+    wire('[data-entry-cancel-form]', function (form, ids) { return { condominium_id: condominium, entry_ids: ids, reason: $('[name="reason"]', form).value.replace(/\s+/g, ' ').trim() }; },
+      function (data) { return (data.count || 0) + ' lançamento(s) excluído(s) (cancelados, com o motivo no histórico).'; });
   });
 
   /* Fração ideal e área em grade (AP-167, ADR 0140): divide e grava pela API /api/v1/unit-measures. */
@@ -3101,5 +3761,56 @@
     all.addEventListener('change', function () {
       $$('input[name="ticket_ids[]"]').forEach(function (box) { box.checked = all.checked; });
     });
+  });
+
+  /* Máscara de dinheiro R$ 0.000,00 (revisão de 15/11, ADR 0310) ------------------
+   * Todo campo com data-erp-money: os dígitos entram pelos centavos (digitar 1 2 5 0 0 0 dá 1.250,00) e o
+   * "R$" fica do lado de fora do valor, então o que vai ao servidor continua sendo 1.250,00, como antes.
+   * data-erp-money="signed" aceita o sinal de menos (saldos de abertura). Vazio continua vazio. */
+  var maskMoney = function (input) {
+    var raw = String(input.value || '');
+    var negative = input.getAttribute('data-erp-money') === 'signed' && /^\s*-/.test(raw);
+    var digits = raw.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    if (digits === '') { input.value = negative ? '-' : ''; return; }
+    while (digits.length < 3) digits = '0' + digits;
+    var whole = digits.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    input.value = (negative ? '-' : '') + whole + ',' + digits.slice(-2);
+  };
+  var moneyReady = function (input) {
+    if (input.getAttribute('data-erp-money-ready')) return;
+    input.setAttribute('data-erp-money-ready', '1');
+    // Valor que já veio preenchido (1250 ou 1.250,5) é lido como número, não pelos centavos.
+    var start = String(input.value || '').replace(/R\$|\s/g, '');
+    if (start !== '' && start !== '-') {
+      var n = parseFloat((start.indexOf(',') >= 0 ? start.replace(/\./g, '').replace(',', '.') : start.replace(/\.(?=\d{3}(\D|$))/g, '')));
+      if (!isNaN(n)) { input.value = (n < 0 ? '-' : '') + Math.abs(n).toFixed(2).replace('.', ''); maskMoney(input); }
+    }
+    if (!input.parentNode || input.parentNode.classList.contains('erp-money')) return;
+    var wrap = document.createElement('span');
+    wrap.className = 'erp-money' + (input.classList.contains('erp-input--sm') ? ' erp-money--sm' : '');
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+  };
+  $$('input[data-erp-money]').forEach(moneyReady);
+  document.addEventListener('input', function (event) {
+    var input = event.target;
+    if (input && input.matches && input.matches('input[data-erp-money]')) maskMoney(input);
+  });
+
+  /* "Sobre esta tela" (ADR 0309) ------------------------------------------
+   * Nasce fechada; quem abre pelo título deixa aberta naquela tela. O X fecha e não volta mais naquela tela, neste navegador. */
+  $$('[data-erp-intro]').forEach(function (box) {
+    var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
+    var details = $('details', box);
+    var state = storage.get(key);
+    if (state === 'dismissed') { box.hidden = true; return; }
+    if (details) {
+      if (state === 'open') { details.open = true; }
+      details.addEventListener('toggle', function () { storage.set(key, details.open ? 'open' : 'closed'); });
+    }
+    var close = $('[data-erp-intro-close]', box);
+    if (close) {
+      close.addEventListener('click', function () { storage.set(key, 'dismissed'); box.hidden = true; });
+    }
   });
 })();

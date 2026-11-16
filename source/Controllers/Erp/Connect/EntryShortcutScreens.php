@@ -23,16 +23,16 @@ final class EntryShortcutScreens
 {
     /** Página => tela própria. */
     public const PAGES = [
+        'AP-025' => 'pages/finance/new-revenue',
         'AP-026' => 'pages/finance/discount',
         'AP-027' => 'pages/finance/extra-charges',
         'AP-028' => 'pages/finance/extra-charges',
         'AP-029' => 'pages/finance/bank-transfers',
     ];
 
-    /** Lançar despesa e receita (AP-024 e AP-025, ADR 0057) são o "novo" de contas a pagar e a receber. */
+    /** Lançar despesa (AP-024, ADR 0057) é o "novo" de contas a pagar. Lançar receita (AP-025) tem tela própria (ADR 0313). */
     public const NEW_ENTRY_ROUTES = [
         '/financeiro/lancar-despesa' => '/financeiro/contas-a-pagar/novo',
-        '/financeiro/lancar-receita' => '/financeiro/contas-a-receber/novo',
     ];
 
     /** Tipo da origem de cada página de cobrança. */
@@ -50,7 +50,14 @@ final class EntryShortcutScreens
         $data['shortcutCanManage'] = Access::can($permission . '.manage', $user);
         try {
             $registry = new RegistryService();
-            if ($id === 'AP-026') {
+            if ($id === 'AP-025') {
+                // Nova Receita (ADR 0313): contas, centros de custo e unidades do condomínio da barra superior.
+                $refs = $registry->references($user, RegistryService::definition('receivables'));
+                $data['revenueAccounts'] = self::forContext($refs['chart_account_id'] ?? [], $context);
+                $data['revenueCostCenters'] = self::forContext($refs['cost_center_id'] ?? [], $context);
+                $data['revenueUnits'] = $context === null ? [] : self::revenueUnits($registry->units($user), $context);
+                $data['revenueCanApportion'] = Access::can('erp.invoices.manage', $user);
+            } elseif ($id === 'AP-026') {
                 $q = is_string($_GET['q'] ?? null) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
                 $data['discountQuery'] = $q;
                 $data['discountEntries'] = $registry->list($user, 'receivables', ['condominium_id' => $context, 'status' => 'active', 'q' => $q, 'page' => $_GET['pagina'] ?? 1]);
@@ -93,6 +100,24 @@ final class EntryShortcutScreens
         $data['shortcutReady'] = true;
         $data['shortcutContext'] = $context;
         return $data;
+    }
+
+    /**
+     * Unidades do condomínio para a Nova Receita, com a marca de isenta de rateio (ADR 0311).
+     *
+     * @param list<array{id:int, condominium_id:int, label:string}> $units
+     * @return list<array{id:int, label:string, exempt:bool}>
+     */
+    private static function revenueUnits(array $units, int $context): array
+    {
+        $units = array_values(array_filter($units, static fn (array $u): bool => $u['condominium_id'] === $context));
+        if ($units === []) {
+            return [];
+        }
+        $stmt = Connect::getInstance()->prepare('SELECT id FROM erp_units WHERE condominium_id = ? AND apportionment_exempt = 1');
+        $stmt->execute([$context]);
+        $exempt = array_flip(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)));
+        return array_map(static fn (array $u): array => ['id' => $u['id'], 'label' => $u['label'], 'exempt' => isset($exempt[$u['id']])], $units);
     }
 
     /**
