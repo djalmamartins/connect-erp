@@ -79,6 +79,24 @@ final class BankStatementFetchTest extends TestCase
         self::assertSame([5, 15, 5, 15, 30], $waits);
     }
 
+    public function testCompleteStatementServerErrorFallsBackToSimpleStatement(): void
+    {
+        $this->http->statement = [self::tx('T1', '2026-11-03', 'C', '10.00'), self::tx('T2', '2026-11-04', 'D', '2.5', 'Tarifa', '')];
+        $this->http->completeStatementFails = true;
+        $lines = $this->adapter->statement('2026-11-01', '2026-11-16');
+        self::assertSame([1000, -250], array_column($lines, 'amount_cents'));
+        self::assertStringStartsWith('inter-h', $lines[0]['fitid'], 'Extrato simples não tem idTransacao.');
+        self::assertSame($lines, $this->adapter->statement('2026-11-01', '2026-11-16'), 'FITID estável entre buscas.');
+        $this->http->simpleStatementFails = true;
+        try {
+            $this->adapter->statement('2026-11-01', '2026-11-16');
+            self::fail('Os dois extratos com erro.');
+        } catch (RuntimeException $error) {
+            self::assertStringContainsString('extrato completo e no simples', $error->getMessage());
+            self::assertStringContainsString('instabilidade do Inter', $error->getMessage());
+        }
+    }
+
     public function testBalanceAndLineFallbacks(): void
     {
         self::assertSame(150025, $this->adapter->balance('2026-11-16'));

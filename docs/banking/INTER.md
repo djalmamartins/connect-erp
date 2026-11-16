@@ -56,7 +56,7 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 - [x] Cancelar boleto (16/11/2026): boleto **Cancelado** e conta a receber continua em aberto.
 - [ ] Erro de validação (CPF inválido, vencimento passado) aparece como Recusado com a mensagem do banco.
 - [ ] Reenvio do mesmo webhook não duplica; webhook com segredo errado = 404.
-- [ ] Extrato e saldo (ADR 0318; 429 por limite de consultas visto em 16/11/2026: o adaptador espera 5, 15 e 30 s e repete; saldo que não vem não impede o extrato): a aplicação do sandbox precisa da permissão de extrato; buscar um período em
+- [ ] Extrato e saldo (ADR 0318; 429 por limite de consultas visto em 16/11/2026: o adaptador espera 5, 15 e 30 s e repete; saldo que não vem não impede o extrato; extrato completo com 500 no sandbox em 16/11/2026 cai para o extrato simples): a aplicação do sandbox precisa da permissão de extrato; buscar um período em
   Importações > Extrato, conferir linhas, FITID e saldo e aplicar.
 
 Itens INFERIDOS do contrato estão listados no ADR 0156.

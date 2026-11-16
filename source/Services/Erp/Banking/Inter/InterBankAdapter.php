@@ -343,6 +343,10 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         for ($page = 0; $page < self::STATEMENT_MAX_PAGES; $page++) {
             $response = $this->readStatement('/banking/v2/extrato/completo?' . http_build_query(['dataInicio' => $from, 'dataFim' => $to,
                 'pagina' => $page, 'tamanhoPagina' => self::STATEMENT_PAGE_SIZE]));
+            if ($page === 0 && $response['status'] >= 500) {
+                // O extrato completo do sandbox respondeu 500 em 16/11/2026: cai para o extrato simples (sem paginação nem idTransacao).
+                return $this->simpleStatement($from, $to, $response);
+            }
             if ($response['status'] !== 200) {
                 throw new RuntimeException(self::errorMessage($response));
             }
@@ -363,6 +367,33 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
             }
         }
         throw new RuntimeException('O extrato do Inter tem páginas demais: escolha um período menor.');
+    }
+
+    /**
+     * GET /banking/v2/extrato (simples): mesmas transações, sem idTransacao, então o FITID vem do conteúdo da linha.
+     *
+     * @param array{status:int, body:string} $completeFailure resposta do extrato completo, para a mensagem se os dois falharem
+     */
+    private function simpleStatement(string $from, string $to, array $completeFailure): array
+    {
+        $response = $this->readStatement('/banking/v2/extrato?' . http_build_query(['dataInicio' => $from, 'dataFim' => $to]));
+        if ($response['status'] !== 200) {
+            throw new RuntimeException('O Inter falhou no extrato completo e no simples. ' . self::errorMessage($response)
+                . ($response['status'] >= 500 ? ' Pode ser instabilidade do Inter: tente mais tarde ou um período menor.' : ''));
+        }
+        $lines = [];
+        $seen = [];
+        $data = self::json($response['body']);
+        foreach (is_array($data['transacoes'] ?? null) ? $data['transacoes'] : [] as $item) {
+            if (is_array($item)) {
+                unset($item['idTransacao']);
+                $line = self::statementLine($item, $seen);
+                if ($line !== null) {
+                    $lines[] = $line;
+                }
+            }
+        }
+        return $lines;
     }
 
     public function balance(string $on): ?int
