@@ -31,6 +31,8 @@ final class FakeInterHttp implements InterHttp
     public bool $refuseStatementScope = false;
     /** Quantas consultas do extrato/saldo seguidas o Inter limita (429). */
     public int $rateLimited = 0;
+    /** O saldo responde 429 sempre. */
+    public bool $balanceLimited = false;
     /** Escopos pedidos em cada token. @var list<string> */
     public array $tokenScopes = [];
     private int $sequence = 0;
@@ -79,6 +81,9 @@ final class FakeInterHttp implements InterHttp
                 'transacoes' => array_slice($inPeriod, $page * $size, $size)])];
         }
         if ($method === 'GET' && $path === '/banking/v2/saldo') {
+            if ($this->balanceLimited) {
+                return ['status' => 429, 'body' => '{"title":"Too Many Requests"}'];
+            }
             return ['status' => 200, 'body' => json_encode(['bloqueadoCheque' => 0, 'disponivel' => $this->balance, 'bloqueadoJudicialmente' => 0, 'limite' => 0])];
         }
         if ($method === 'POST' && $path === '/cobranca/v3/cobrancas') {

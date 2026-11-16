@@ -67,15 +67,16 @@ final class BankStatementFetchTest extends TestCase
         $this->http->statement = [self::tx('T1', '2026-11-03', 'C', '10.00')];
         $this->http->rateLimited = 2;
         self::assertCount(1, $adapter->statement('2026-11-01', '2026-11-16'), 'Depois de esperar, a consulta passa.');
-        self::assertSame([3, 8], $waits);
+        self::assertSame([5, 15], $waits);
         $this->http->rateLimited = 10;
         try {
             $adapter->balance('2026-11-16');
             self::fail('Limite que não passa vira erro claro.');
         } catch (RuntimeException $error) {
-            self::assertStringContainsString('Espere um minuto', $error->getMessage());
+            self::assertStringContainsString('ao buscar o saldo', $error->getMessage());
+            self::assertStringContainsString('Resposta do banco: Inter recusou (429)', $error->getMessage());
         }
-        self::assertSame([3, 8, 3, 8, 15], $waits);
+        self::assertSame([5, 15, 5, 15, 30], $waits);
     }
 
     public function testBalanceAndLineFallbacks(): void
