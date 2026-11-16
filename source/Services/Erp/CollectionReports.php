@@ -176,12 +176,12 @@ final class CollectionReports
      * Inadimplentes (AP-057 a AP-061) numa das visões de DELINQUENT_VIEWS. A visão "morador" mostra o
      * responsável da unidade (responsável financeiro, depois proprietário) com o documento mascarado.
      */
-    public function delinquents(User $user, ?int $condominiumId, ?string $asOf, string $view): array
+    public function delinquents(User $user, ?int $condominiumId, ?string $asOf, string $view, ?string $from = null): array
     {
         if (!in_array($view, self::DELINQUENT_VIEWS, true)) {
             throw new InvalidArgumentException('Visão inválida. Use: ' . implode(', ', self::DELINQUENT_VIEWS) . '.');
         }
-        $base = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominiumId, $asOf);
+        $base = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominiumId, $asOf, null, $from);
         $accounts = [];
         $people = [];
         $entryIds = [];
@@ -210,7 +210,7 @@ final class CollectionReports
                     'relationship' => (string)$row['relationship']];
             }
         }
-        return ['as_of' => $base['as_of'], 'view' => $view, 'rows' => self::delinquentView($base, $view, $accounts, $people), 'totals' => $base['totals']];
+        return ['as_of' => $base['as_of'], 'from' => $base['from'], 'view' => $view, 'rows' => self::delinquentView($base, $view, $accounts, $people), 'totals' => $base['totals']];
     }
 
     /**

@@ -721,6 +721,9 @@ $common($html, 'AP-047', 'Relatório de acordos');
 $assert(str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '>Ativo</span>') && str_contains($html, '>Cancelado</span>') && str_contains($html, '2 de 6') && str_contains($html, '<tfoot>')
     && str_contains($html, 'Total (sem cancelados)') && str_contains($html, 'R$ 1.950,00</td>') && str_contains($html, '/api/v1/reports/agreements?format=csv&amp;condominium_id=1&amp;from=2026-01-01&amp;to=2026-11-09')
     && str_contains($html, 'name="situacao"') && str_contains($html, 'name="de" value="2026-01-01"'), 'AP-047: acordos com situação, rodapé sem cancelados e CSV');
+$assert(!str_contains($html, 'name="inicio"'), 'AP-047: sem data inicial de inadimplência');
+$html = $agreementPage('AP-057', 'pages/reports/collection-report', $crData('AP-057', [], ['cReportFilters' => ['de' => '2026-01-01', 'ate' => '2026-11-09', 'referencia' => '2026-11-09', 'inicio' => '2026-03-01', 'situacao' => null, 'agrupar' => null]]));
+$assert(str_contains($html, 'name="inicio" value="2026-03-01"') && str_contains($html, '(opcional)') && str_contains($html, 'vencidas desde 01/03/2026'), 'AP-057: data inicial opcional (ADR 0314)');
 $html = $agreementPage('AP-048', 'pages/reports/collection-report', $crData('AP-048', [['condominium_id' => 1, 'condominium_name' => 'Residencial <Aurora>', 'agreements' => 3, 'cancelled' => 1,
     'original_cents' => 500000, 'fees_cents' => 40000, 'discount_cents' => 10000, 'net_fees_cents' => 30000, 'total_cents' => 530000]]));
 $assert(str_contains($html, 'Residencial &lt;Aurora&gt;') && str_contains($html, 'Encargos líquidos') && str_contains($html, 'R$ 300,00') && !str_contains($html, 'name="situacao"'), 'AP-048: taxas por condomínio');

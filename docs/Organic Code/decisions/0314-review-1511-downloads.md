@@ -1,6 +1,6 @@
-# 0314 — Revisão de 15/11, etapa 5: download das listas e relatórios em PDF e Excel
+# 0314 — Revisão de 15/11, etapa 5: download em PDF e Excel e inadimplentes com data inicial
 
-- Status: Aceito (parte 1, item 18)
+- Status: Aceito (parte 1, item 18; parte 2, item 20)
 - Data: 16/11/2026
 - Issue: #544 (revisão de 15/11, etapa 5)
 - Relacionadas: ADR 0081 (CSV dos relatórios), 0087 (limite de exportação, B5), 0174 (PDF com dompdf), 0310 (itens por página)
@@ -36,6 +36,13 @@ PENDENTE: as telas de exemplo (`modules/list`, `modules/report`, `modules/chart`
 pendente até terem dados reais. INFERIDO: o Excel leva as linhas de cabeçalho do PDF no topo da planilha, para o
 arquivo ficar igual ao modelo quando impresso.
 
+6. **Inadimplentes com data inicial opcional** (parte 2, item 20): os relatórios de inadimplentes (AP-057 a AP-061)
+   ganharam "Vencidas a partir de" (`?inicio=` na tela, `from` em `GET /api/v1/reports/delinquents`). Em branco traz
+   todas as vencidas até a data de referência, como antes; preenchida, só as que venceram a partir dela. Data inválida
+   ou depois da referência é recusada (422). O filtro fica em `Agreements::delinquency` (parâmetro opcional), então o
+   CSV, o PDF e o Excel saem com o mesmo corte. INFERIDO: o Djalma falou do "geral"; a data vale para as cinco visões,
+   que usam a mesma consulta.
+
 ## Testes
 
 - `tests/legacy/Unit/ListDocumentTest.php`: formato, título, nome do arquivo, célula protegida e número; PDF com o
@@ -45,3 +52,5 @@ arquivo ficar igual ao modelo quando impresso.
   condomínio do filtro, com a célula protegida.
 - Render smoke: Download nas listas com os filtros (sem a página), sem botão em lista vazia, e PDF/Excel/CSV com título
   nos relatórios.
+- `CollectionReportsIntegrationTest`: data inicial corta as mais antigas, vazia traz tudo, inválida ou futura recusa.
+- `ErpCollectionReportScreensTest`: CSV com `from`. Render smoke: campo opcional e "vencidas desde" no cabeçalho.

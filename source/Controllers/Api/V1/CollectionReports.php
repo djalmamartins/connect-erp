@@ -20,7 +20,7 @@ use Source\Support\Audit;
  * Relatórios de cobrança (ADR 0081), somente leitura; ?format=csv baixa a mesma consulta em CSV:
  *  GET /api/v1/reports/agreements?condominium_id=&from=&to=&status=       acordos (AP-047)
  *  GET /api/v1/reports/agreement-fees?condominium_id=&from=&to=           taxas de acordos (AP-048)
- *  GET /api/v1/reports/delinquents?condominium_id=&as_of=&view=           inadimplentes (AP-057 a AP-061)
+ *  GET /api/v1/reports/delinquents?condominium_id=&as_of=&from=&view=      inadimplentes (AP-057 a AP-061)
  *  GET /api/v1/reports/receipts?condominium_id=&from=&to=&group=          recebimentos (AP-071/072)
  * Acordos e inadimplentes exigem erp.agreements.view; a visão "resident" exige também
  * erp.residents.view; recebimentos exigem erp.entries.view. condominium_id vazio = todos do escopo.
@@ -46,7 +46,7 @@ final class CollectionReports
         $view = $this->text('view') ?: 'unit';
         $permissions = $view === 'resident' ? ['erp.agreements.view', 'erp.residents.view'] : ['erp.agreements.view'];
         $this->run('delinquents-' . (isset(self::VIEWS[$view]) ? $view : 'unit'), $permissions,
-            fn (Reports $r, User $u, ?int $c): array => $r->delinquents($u, $c, $this->text('as_of') ?: null, $view));
+            fn (Reports $r, User $u, ?int $c): array => $r->delinquents($u, $c, $this->text('as_of') ?: null, $view, $this->text('from') ?: null));
     }
 
     public function receipts(): void
