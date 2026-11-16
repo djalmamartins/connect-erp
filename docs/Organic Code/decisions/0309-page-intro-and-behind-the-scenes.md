@@ -21,8 +21,8 @@ acontece por trás de cada ação ("quando eu cadastro um pagamento, o que acont
 - **ERP:** `components/layout/page-intro.php`, inserido pelo `page-head.php` (que todas as páginas usam), mostra o
   quadro "Sobre esta tela" logo abaixo do título, no modelo que o Djalma mandou em 15/11/2026: caixa clara de borda
   fina, título pequeno com ícone, o que a tela faz, até 3 itens do que acontece por trás e "Abrir tutorial completo"
-  (`/suporte/tela/{código}`). Clicar no título recolhe a caixa para só o título, e recolhida ela continua recolhida
-  naquela tela, naquele navegador (localStorage). Depois, também a pedido dele: tom verde do ERP, X que fecha e não
+  (`/suporte/tela/{código}`). Desde 16/11/2026 a caixa nasce fechada (só o título) e a pessoa decide abrir; quem
+  abre pelo título deixa aberta naquela tela, naquele navegador (localStorage). Depois, também a pedido dele: tom verde do ERP, X que fecha e não
   volta mais naquela tela, e a chave global `admin.page_intro` (Configurações > Administrativo, padrão ligado) que tira
   o quadro de todas as telas. Não aparece na impressão. Página sem explicação não mostra nada.
 - **Resumo de cada área na Central de Ajuda:** `kb/areas/<categoria>.md` (Markdown da base) aparece no topo da página
