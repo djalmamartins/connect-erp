@@ -24,7 +24,7 @@ final class Crypto
     }
 
     /**
-     * Sem TALK_KEY no .env do ERP (ADR 0322): o Talk abre (caixa, chamados, equipe), e só o que lê ou grava as
+     * Sem TALK_KEY no .env do ERP (ADR 0323): o Talk abre (caixa, chamados, equipe), e só o que lê ou grava as
      * credenciais dos canais falha, com a mensagem de configuração.
      */
     public static function unconfigured(): self

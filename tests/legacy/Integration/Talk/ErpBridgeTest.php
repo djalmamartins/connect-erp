@@ -15,7 +15,7 @@ use Source\Services\Talk\TalkHelpdesk;
 use Source\Support\Access;
 
 /**
- * Talk dentro do ERP (ADR 0322): entrada com o usuário do ERP (talk.access), pessoa pelo telefone direto no cadastro
+ * Talk dentro do ERP (ADR 0323): entrada com o usuário do ERP (talk.access), pessoa pelo telefone direto no cadastro
  * de moradores e chamado direto no Help Desk, sem API nem token.
  */
 final class ErpBridgeTest extends DbTestCase
@@ -27,7 +27,7 @@ final class ErpBridgeTest extends DbTestCase
     {
         parent::setUp();
         $this->pdo->exec("INSERT IGNORE INTO access_permissions (name, slug, group_name) VALUES
-            ('Acessar o Connect Talk', 'talk.access', 'Atendimento'), ('Help Desk', 'support.manage', 'Conteúdo')");
+            ('Atendimento por WhatsApp (Connect Talk)', 'talk.access', 'Atendimento'), ('Help Desk', 'support.manage', 'Conteúdo')");
         $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Residencial Jardins', 'active']);
         $this->condo = (int) $this->pdo->lastInsertId();
         $this->pdo->prepare("INSERT INTO erp_units (condominium_id, block, number, type) VALUES (?, 'A', '101', 'apartamento')")->execute([$this->condo]);
@@ -66,7 +66,7 @@ final class ErpBridgeTest extends DbTestCase
         $login = new ErpLogin($this->db);
         $this->assertNull($login->profileFor(null));
         $this->assertNull($login->profileFor($this->erpUser(1)));
-        $this->assertStringContainsString('Acessar o Connect Talk', $login->deniedReason($this->erpUser(1)));
+        $this->assertStringContainsString('Atendimento por WhatsApp', $login->deniedReason($this->erpUser(1)));
 
         $ana = $this->erpUser();
         $profile = $login->profileFor($ana);

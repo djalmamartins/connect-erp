@@ -1,4 +1,4 @@
--- Reverte 20261116_1300 (ADR 0322): apaga as tabelas do Talk no ERP. Faça backup antes: as conversas vão junto.
+-- Reverte 20261116_1300 (ADR 0323): apaga as tabelas do Talk no ERP. Faça backup antes: as conversas vão junto.
 SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `talk_audit_log`;
 DROP TABLE IF EXISTS `talk_campaign_recipients`;

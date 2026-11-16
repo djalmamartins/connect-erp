@@ -919,7 +919,7 @@ function app_host(): bool
     return (bool)preg_match('/^app\.[a-z0-9.-]+(?::\d+)?$/', $host);
 }
 
-/** Connect Talk em host próprio (talk.connect.lab, talk.<domínio>), ADR 0322: só o Talk e a troca de ambiente. */
+/** Connect Talk em host próprio (talk.connect.lab, talk.<domínio>), ADR 0323: só o Talk e a troca de ambiente. */
 function talk_host(?string $host = null): bool
 {
     $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));

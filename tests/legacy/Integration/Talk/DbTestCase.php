@@ -32,7 +32,7 @@ abstract class DbTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Mesmo banco de teste do ERP (ADR 0322), numa conexão própria como no TalkApp; as tabelas talk_* vêm da
+        // Mesmo banco de teste do ERP (ADR 0323), numa conexão própria como no TalkApp; as tabelas talk_* vêm da
         // migration 20261116_1300 (aplicada pelo bootstrap) e são zeradas a cada teste.
         $this->db = \Source\Services\Talk\TalkApp::db();
         $pdo = $this->db->pdo();

@@ -17,7 +17,7 @@ use Source\Services\Talk\Support\Db;
 use Source\Support\AppLogger;
 
 /**
- * Montagem do Connect Talk dentro do ERP (ADR 0322). É o bootstrap.php do Talk separado, com o banco, o cadastro e o
+ * Montagem do Connect Talk dentro do ERP (ADR 0323). É o bootstrap.php do Talk separado, com o banco, o cadastro e o
  * Help Desk do próprio ERP.
  *
  * - Banco: o mesmo do ERP (CONF_DB_*), numa conexão própria, porque o Talk usa FETCH_ASSOC e prepares nativos.

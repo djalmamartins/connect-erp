@@ -10,7 +10,7 @@ use Source\Models\User;
 
 /**
  * Alternador de ambientes Connect (ADR 0034): Studio, ERP, Help Desk, portal dos moradores, Connect Talk e site.
- * O Talk (atendimento por WhatsApp, ADR 0322) mora no host talk.<domínio> e aparece só para quem tem talk.access.
+ * O Talk (atendimento por WhatsApp, ADR 0323) mora no host talk.<domínio> e aparece só para quem tem talk.access.
  *
  * Um só catálogo para o cabeçalho da sidebar do ERP e do Studio/Help Desk. Cada ambiente diz em
  * que host mora: com hosts próprios (erp.<domínio> e studio.<domínio>, ADR 0026) o ERP fica no
@@ -68,7 +68,7 @@ final class Environments
     public static function canAccess(?User $user, string $key): bool
     {
         if ($key === 'talk') {
-            // Só quem atende pelo WhatsApp (ADR 0322).
+            // Só quem atende pelo WhatsApp (ADR 0323).
             return $user !== null && \Source\Support\Access::can('talk.access', $user);
         }
         return $user !== null && self::exists($key);
@@ -150,7 +150,7 @@ final class Environments
         $path ??= $environment['path'];
 
         if ($key === 'talk' && $role === 'main') {
-            // O Talk só existe no host próprio (ADR 0322): de um host único, vai para talk.<domínio>.
+            // O Talk só existe no host próprio (ADR 0323): de um host único, vai para talk.<domínio>.
             return ['host' => 'talk.' . (string)preg_replace('/^www\./', '', $host), 'path' => $path];
         }
         if ($role === 'main') {

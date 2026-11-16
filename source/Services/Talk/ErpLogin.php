@@ -8,7 +8,7 @@ use Source\Services\Talk\Support\Db;
 use Source\Support\Access;
 
 /**
- * Entrada no Talk com o login do ERP (ADR 0322). Quem entra é o usuário do ERP ativo e com a permissão talk.access; o
+ * Entrada no Talk com o login do ERP (ADR 0323). Quem entra é o usuário do ERP ativo e com a permissão talk.access; o
  * Talk não tem senha nem tela de login próprias. O que é do Talk (setores e papel: atendente, gestor, supervisor)
  * continua em talk_users/talk_staff, e o perfil do Talk se liga ao usuário do ERP por talk_users.erp_user_id:
  *
@@ -65,7 +65,7 @@ final class ErpLogin
             return 'Entre no Connect ERP para abrir o Talk.';
         }
         if (!$this->allowed($user)) {
-            return 'Seu usuário do ERP não tem a permissão "Acessar o Connect Talk". Peça ao administrador.';
+            return 'Seu usuário do ERP não tem a permissão "Atendimento por WhatsApp (Connect Talk)". Peça ao administrador.';
         }
         return 'Seu acesso ao Talk está desativado em Equipe. Fale com o supervisor do Talk.';
     }

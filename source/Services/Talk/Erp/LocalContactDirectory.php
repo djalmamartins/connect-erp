@@ -7,7 +7,7 @@ use Source\Services\Talk\Contracts\ContactDirectory;
 use Source\Services\Talk\TalkHelpdesk;
 
 /**
- * Quem escreveu, direto do cadastro de moradores do ERP (ADR 0322). Mesma busca da rota GET /api/v1/talk/people
+ * Quem escreveu, direto do cadastro de moradores do ERP (ADR 0323). Mesma busca da rota GET /api/v1/talk/people
  * (TalkHelpdesk::people), sem passar pela rede: variantes do número (com e sem 55 e nono dígito), só cadastros ativos
  * e vigentes de condomínios ativos. O mesmo telefone em mais de um cadastro: usa o mais recente e marca quantos há
  * (a Jack só age sozinha quando há um só). Erro na consulta não para o atendimento: segue sem identificar.

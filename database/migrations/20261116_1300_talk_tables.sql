@@ -1,4 +1,4 @@
--- Connect Talk dentro do ERP (ADR 0322): as tabelas do atendimento por WhatsApp, iguais às do Talk separado
+-- Connect Talk dentro do ERP (ADR 0323): as tabelas do atendimento por WhatsApp, iguais às do Talk separado
 -- (repositório djalmamartins/talk, migrations 001 a 019, versão 0.22.0), para a cópia dos dados ser direta.
 -- Prefixo talk_ (não colide com o ERP). talk_users é o perfil do atendente no Talk: liga ao usuário do ERP por
 -- erp_user_id (login e permissões vêm do ERP). Idempotente (a suíte reaplica as migrations).

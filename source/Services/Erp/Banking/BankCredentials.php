@@ -7,6 +7,7 @@ namespace Source\Services\Erp\Banking;
 use InvalidArgumentException;
 use PDO;
 use Source\Core\Connect;
+use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 use Source\Support\Audit;
 
@@ -24,7 +25,11 @@ use Source\Support\Audit;
  */
 final class BankCredentials
 {
-    public const ADAPTERS = [InterBankAdapter::NAME => InterBankAdapter::BANK_CODE];
+    public const ADAPTERS = [InterBankAdapter::NAME => InterBankAdapter::BANK_CODE, CoraBankAdapter::NAME => CoraBankAdapter::BANK_CODE];
+    /** Nome do banco por adaptador, para as mensagens. */
+    public const BANK_NAMES = [InterBankAdapter::NAME => 'Inter', CoraBankAdapter::NAME => 'Cora'];
+    /** A Cora (Integração Direta) autentica só com client ID e certificado, sem client secret (ADR 0322). */
+    public const WITHOUT_SECRET = [CoraBankAdapter::NAME];
 
     private PDO $pdo;
 
@@ -38,7 +43,7 @@ final class BankCredentials
     {
         $certificate = @openssl_x509_read($certificatePem);
         if ($certificate === false) {
-            throw new InvalidArgumentException('Certificado inválido: use o arquivo .crt (PEM) baixado do Inter.');
+            throw new InvalidArgumentException('Certificado inválido: use o certificado (PEM) baixado do banco.');
         }
         $key = @openssl_pkey_get_private($privateKeyPem);
         if ($key === false) {
@@ -50,7 +55,7 @@ final class BankCredentials
         $info = openssl_x509_parse($certificate) ?: [];
         $expires = date('Y-m-d', (int)($info['validTo_time_t'] ?? 0));
         if ($expires < ($today ?? date('Y-m-d'))) {
-            throw new InvalidArgumentException("Certificado vencido em {$expires}: gere outro no Internet Banking do Inter.");
+            throw new InvalidArgumentException("Certificado vencido em {$expires}: gere outro no portal do banco.");
         }
         $subject = (string)($info['subject']['CN'] ?? $info['name'] ?? '');
         return ['subject' => mb_substr($subject, 0, 160), 'expires_on' => $expires];
@@ -76,7 +81,7 @@ final class BankCredentials
         }
         foreach (['client_id', 'client_secret', 'certificate', 'private_key'] as $key) {
             $secrets[$key] = trim((string)($secrets[$key] ?? ''));
-            if ($secrets[$key] === '') {
+            if ($secrets[$key] === '' && !($key === 'client_secret' && in_array($adapter, self::WITHOUT_SECRET, true))) {
                 throw new InvalidArgumentException("Falta {$key}.");
             }
         }

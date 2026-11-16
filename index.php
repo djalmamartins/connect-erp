@@ -16,7 +16,7 @@ $logger = AppLogger::bootstrap();
 $session = new Session();
 
 /**
- * CONNECT TALK (ADR 0322): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
+ * CONNECT TALK (ADR 0323): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
  * container/talk. Só a troca de ambiente (/ambiente/...) passa pelo roteador do ERP nesse host.
  */
 if (talk_host() && !str_starts_with((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/ambiente/')) {

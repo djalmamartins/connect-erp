@@ -1,4 +1,4 @@
--- Connect Talk no alternador de ambientes do ERP, com o mesmo login (ADR 0322).
+-- Connect Talk no alternador de ambientes do ERP, com o mesmo login (ADR 0323).
 -- Permissão talk.access: quem a tem vê "Talk" no alternador e entra no Talk sem digitar senha de novo.
 -- Nasce dada aos papéis que já atendem chamados (support.manage). Idempotente.
 INSERT IGNORE INTO `access_permissions` (`name`,`slug`,`group_name`,`description`) VALUES
