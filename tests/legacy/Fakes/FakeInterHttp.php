@@ -24,6 +24,13 @@ final class FakeInterHttp implements InterHttp
     public bool $failNext = false;
     /** Falha de rede/TLS no pedido de token (ex.: 'tlsv1 alert unknown ca'). */
     public ?string $tokenError = null;
+    /** Extrato (transacoes da API Banking v2) e saldo disponível; ADR 0318. */
+    public array $statement = [];
+    public mixed $balance = 1500.25;
+    /** A aplicação não tem o escopo extrato.read: o pedido de token com ele volta 403. */
+    public bool $refuseStatementScope = false;
+    /** Escopos pedidos em cada token. @var list<string> */
+    public array $tokenScopes = [];
     private int $sequence = 0;
 
     public function request(string $method, string $url, array $headers, ?string $body, string $certificatePem, string $privateKeyPem): array
@@ -37,6 +44,11 @@ final class FakeInterHttp implements InterHttp
             if ($this->tokenError !== null) {
                 throw new RuntimeException('Sem resposta do Inter: ' . $this->tokenError);
             }
+            parse_str((string)$body, $form);
+            $this->tokenScopes[] = (string)($form['scope'] ?? '');
+            if ($this->refuseStatementScope && str_contains((string)($form['scope'] ?? ''), 'extrato.read')) {
+                return ['status' => 403, 'body' => '{"title":"escopo não liberado"}'];
+            }
             return ['status' => 200, 'body' => json_encode(['access_token' => 'tok-' . (++$this->sequence), 'expires_in' => 3600])];
         }
         if ($this->failNext) {
@@ -49,6 +61,19 @@ final class FakeInterHttp implements InterHttp
         }
         if (($headers['Authorization'] ?? '') === '' || !str_starts_with($headers['Authorization'], 'Bearer tok-')) {
             return ['status' => 401, 'body' => '{}'];
+        }
+        if ($method === 'GET' && $path === '/banking/v2/extrato/completo') {
+            parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
+            $size = max(1, (int)($query['tamanhoPagina'] ?? 50));
+            $page = (int)($query['pagina'] ?? 0);
+            $inPeriod = array_values(array_filter($this->statement, static fn (array $t): bool => ($t['dataTransacao'] ?? '') >= ($query['dataInicio'] ?? '')
+                && ($t['dataTransacao'] ?? '') <= ($query['dataFim'] ?? '')));
+            $pages = max(1, (int)ceil(count($inPeriod) / $size));
+            return ['status' => 200, 'body' => json_encode(['totalPaginas' => $pages, 'totalElementos' => count($inPeriod), 'ultimaPagina' => $page + 1 >= $pages,
+                'transacoes' => array_slice($inPeriod, $page * $size, $size)])];
+        }
+        if ($method === 'GET' && $path === '/banking/v2/saldo') {
+            return ['status' => 200, 'body' => json_encode(['bloqueadoCheque' => 0, 'disponivel' => $this->balance, 'bloqueadoJudicialmente' => 0, 'limite' => 0])];
         }
         if ($method === 'POST' && $path === '/cobranca/v3/cobrancas') {
             $data = json_decode((string)$body, true);

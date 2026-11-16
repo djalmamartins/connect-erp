@@ -44,7 +44,7 @@ final class ImportScreens
         }
         $context = CondominiumContext::id();
         $data += ['importKind' => $kind, 'importContext' => $context, 'importDetail' => null, 'importError' => null, 'importBankAccounts' => [], 'importExpenseAccounts' => [],
-            'pendingLines' => null, 'lineDetail' => null,
+            'importStatementAccounts' => [], 'pendingLines' => null, 'lineDetail' => null,
             'canImport' => Access::can('erp.imports.manage', $user) && Access::can(Imports::KINDS[$kind]['permission'], $user),
             'canResolveLines' => Access::can('erp.imports.manage', $user) && Access::can('erp.entries.manage', $user)];
         try {
@@ -70,6 +70,10 @@ final class ImportScreens
             if ($kind === 'ofx') {
                 $data['importBankAccounts'] = EntryShortcutScreens::forContext(
                     (new RegistryService())->references($user, RegistryService::definition('receivables'))['bank_account_id'] ?? [], $context);
+                // Contas que buscam o extrato direto no banco (Inter, ADR 0318).
+                if ($context !== null && $data['canImport']) {
+                    $data['importStatementAccounts'] = (new \Source\Services\Erp\Banking\BankStatementFetch())->accounts($user, $context);
+                }
                 $data['pendingLines'] = $service->pendingLines($user, $context);
                 $line = filter_var($_GET['linha'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
                 if ($line !== false && $line !== null) {
