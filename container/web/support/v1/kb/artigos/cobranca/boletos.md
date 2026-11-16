@@ -68,6 +68,8 @@ Quando a conta bancária de cobrança é do Banco Inter e a integração está l
 
 >! Por enquanto o Inter está ligado só no **ambiente de testes do banco** (sandbox). Esses boletos não podem ser pagos.
 
+O sistema consulta no Inter, **de hora em hora**, os boletos em aberto: o que foi pago é baixado sozinho na conta a receber, e o que expirou ou foi cancelado no banco aparece como cancelado. Para ver na hora, use **Consultar**.
+
 No ambiente de testes do Inter, o boleto registrado tem o botão **Simular pagamento**. Ele pede ao Inter que simule o pagamento e consulta o boleto em seguida: a conta a receber é baixada pela mesma conciliação de um pagamento de verdade. Esse botão não existe em produção.
 
 

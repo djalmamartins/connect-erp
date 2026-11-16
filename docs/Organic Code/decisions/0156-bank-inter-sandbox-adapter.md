@@ -77,3 +77,12 @@ PENDENTE (Djalma): conta Inter Empresas para gerar a integração de sandbox (cl
   `tools/bank-credentials.php situacao`; alerta automático fica pendente).
 - Rollback: `0710.down.sql` remove as tabelas e colunas novas; `tools/bank-credentials.php remover` volta uma
   conta ao sandbox sem migration.
+
+## Atualização (16/11/2026)
+
+Homologação no sandbox confirmou emissão, consulta, pagamento simulado (`/pagar` exige `Accept` com
+`application/problem+json`) e cancelamento. Decisão do Djalma: enquanto não houver endereço público para o webhook,
+a baixa vem da **consulta automática de hora em hora** (`BankCharges::syncOpen`, `tools/bank-charges-sync.php`,
+chamado pelo `service/jobs/scheduler.sh`), que usa a mesma conciliação do webhook. O webhook continua pronto para
+quando o sistema estiver num servidor com domínio público.
+
