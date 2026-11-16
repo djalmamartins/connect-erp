@@ -260,6 +260,10 @@ $route->post("/unit-batches", "UnitBatches:store", null, \Source\Support\Middlew
 $route->get("/unit-measures", "UnitBatches:measures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->put("/unit-measures", "UnitBatches:saveMeasures", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/unit-measures/distribute", "UnitBatches:distribute", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Termo de entrada e de saída (ADR 0311).
+$route->get("/unit-move-terms", "UnitMoveTerms:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->put("/unit-move-terms", "UnitMoveTerms:update", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/unit-move-terms/render", "UnitMoveTerms:render", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Configuração das unidades em massa (ADR 0311). Antes do laço dos cadastros.
 $route->get("/units/bulk-settings", "UnitBulkSettings:options", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/units/bulk-settings", "UnitBulkSettings:store", null, \Source\Support\Middleware\ApiAuthenticated::class);

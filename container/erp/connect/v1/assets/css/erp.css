@@ -1001,3 +1001,10 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-table .is-check { width: 36px; }
 .erp-table .is-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
 @media (max-width: 760px) { .erp-unit-bulk__grid { grid-template-columns: 1fr; } }
+
+/* Termo de entrada/saída (ADR 0311) */
+.erp-move-term__editor { min-height: 320px; font-family: inherit; line-height: 1.55; resize: vertical; }
+.erp-move-term__keywords ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 16px; }
+.erp-link-button { background: none; border: 0; padding: 0; font: inherit; font-weight: 650; color: var(--erp-brand); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.erp-move-term__text p { margin: 0 0 14px; line-height: 1.7; text-align: justify; }
+.erp-move-term__sign { display: inline-block; width: min(320px, 80%); border-bottom: 1px solid currentColor; margin-top: 48px; }

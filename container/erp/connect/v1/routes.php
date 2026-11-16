@@ -65,6 +65,10 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Cadastro rápido de unidades (ADR 0140): antes do motor, para /{id} não capturar a rota.
     $route->get(\Source\Controllers\Erp\Connect\UnitBatchScreen::ROUTE, "UnitBatchScreen:show", $erpName('erp.units.batch'));
+    // Termo de entrada e de saída (ADR 0311): antes do motor, para /{id} não capturar a rota.
+    $route->get(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE, "UnitMoveTermScreen:edit", $erpName('erp.units.terms'));
+    $route->post(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE, "UnitMoveTermScreen:save");
+    $route->get(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::PRINT_ROUTE, "UnitMoveTermScreen:show", $erpName('erp.units.term'));
 
     // Anexos dos lançamentos (ADR 0174) e downloads do livro caixa (CN-007): antes do motor e do catálogo.
     $route->post("/financeiro/lancamentos/{id}/anexos", "EntryAttachmentScreens:store");

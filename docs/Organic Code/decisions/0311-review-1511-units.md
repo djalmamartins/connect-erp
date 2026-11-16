@@ -1,6 +1,6 @@
 # 0311 — Revisão de 15/11, etapa 2: configurações de cobrança da unidade, configuração em massa, CIB e pessoa única por CPF/CNPJ
 
-- Status: Aceito (parte 1)
+- Status: Aceito (partes 1 e 2)
 - Data: 16/11/2026
 - Issue: #541 (revisão de 15/11, etapa 2)
 - Relacionadas: ADR 0014 (motor de cadastros), 0030 (condomínio da barra superior), 0140 (cadastro rápido), 0206 (saída de moradores), 0310 (etapa 1)
@@ -39,9 +39,18 @@ unidade fique inativa. O modelo é referência de requisitos: o layout e o códi
    Assim a pessoa que não tem mais unidade some das listas de ativos. O fim que passa depois de gravado continua com o encerramento em lote
    da ADR 0241 (`POST /api/v1/residents/expire-ended`); os testes dela passaram a gravar o fim no futuro e ajustar a data depois.
 
+7. **Termo de entrada e de saída** (parte 2, migration `20261116_0130_unit_move_terms`): um texto por condomínio e
+   tipo, ou o geral da Connect (condomínio vazio, `scope_key` 0 na chave única), editado em
+   `/condominios/unidades/termos` (POST com CSRF) ou `GET/PUT /api/v1/unit-move-terms`. Ordem: do condomínio, geral,
+   padrão do sistema (texto próprio do Connect ERP). O texto é puro: linha em branco = parágrafo; as palavras-chave do
+   modelo 2 (@condominio, @unidade, @bloco, @morador, @documento, @cidade, @uf, @dataCriado, @linhaAssinatura) são
+   trocadas na hora de gerar, cada pedaço escapado (sem editor HTML, para não abrir XSS). O termo de cada pessoa sai da
+   ficha da pessoa no painel da unidade (`/condominios/unidades/termo`, `GET /api/v1/unit-move-terms/render`), para
+   imprimir; não é gravado. O texto geral exige acesso a todos os condomínios; gravar entra na auditoria.
+
 ## Fora desta parte (continua na etapa 2)
 
-Termo de entrada/saída (modelo 2), busca e cadastro rápido de inquilino/proprietário na unidade (modelos 4/5) e troca de
+Busca e cadastro rápido de inquilino/proprietário na unidade (modelos 4/5) e troca de
 inquilino/proprietário com datas e o que fazer com as faturas (modelo 6).
 
 ## Testes
@@ -50,4 +59,5 @@ inquilino/proprietário com datas e o que fazer com as faturas (modelo 6).
   tudo ou nada com unidade de outro condomínio, 404 fora do escopo, valores inválidos, imobiliária inativa, isenta fora da
   fatura com o total mantido, CIB normalizado e único, mesmo CPF com outro nome recusado, vínculo encerrado inativo.
 - `tests/legacy/Unit/UnitBulkSettingsRulesTest.php`: regras puras (configurações, CIB, chave do nome).
-- Render smoke: modal e marcação na lista; sem permissão ou sem condomínio, nada aparece.
+- Render smoke: modal e marcação na lista; sem permissão ou sem condomínio, nada aparece; edição e impressão do termo.
+- `tests/legacy/Integration/UnitMoveTermsTest.php`: condomínio, geral e padrão, escopo do texto geral, troca escapada das palavras-chave e pessoa de outra unidade recusada.

@@ -68,7 +68,18 @@ recorte: main form:not([method=get])
 ## Outros botões da tela
 
 - {{Fração ideal e área}}: abre a grade para preencher a fração ideal e a área privativa de todas as unidades juntas.
+- {{Termo de entrada/saída}}: edita o texto do termo que o morador assina ao entrar ou sair da unidade (veja abaixo).
 - {{Cadastro rápido}}: gera todas as unidades de uma vez pela sequência de andares (ex.: 101 a 1208, 8 por andar), com pré-visualização antes de criar.
+
+## Termo de entrada e de saída
+
+Clique em {{Termo de entrada/saída}}. Escolha o **Condomínio** e o **Tipo** (Entrada ou Saída), escreva o texto e clique em {{Salvar}}.
+
+- **Geral (Connect)** no campo Condomínio salva o texto usado por todos os condomínios que não têm termo próprio. Só quem acessa todos os condomínios altera o texto geral.
+- Sem nenhum texto salvo, vale um texto padrão do sistema, que você pode ajustar.
+- Deixe uma linha em branco entre os parágrafos. Clique numa palavra-chave da lista para colocá-la no texto: **@condominio**, **@unidade**, **@bloco**, **@morador**, **@documento**, **@cidade**, **@uf**, **@dataCriado** e **@linhaAssinatura** (a linha para a assinatura).
+
+Para imprimir o termo de uma pessoa, abra o [Painel da unidade](artigo:painel-da-unidade), clique no nome dela e use {{Termo de entrada}} ou {{Termo de saída}}.
 
 ## Configurar unidades em massa
 
@@ -116,6 +127,7 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.
 - Na **configuração em massa**, só muda o que você escolher; o que ficar em **Manter como está** continua como está em cada unidade. Ou todas as unidades marcadas mudam, ou nenhuma, e cada unidade alterada fica com a mudança no histórico.
 - Unidade **isenta de rateio** fica fora das faturas geradas para o condomínio todo; o valor é dividido entre as outras.
+- O **termo de entrada/saída** usa o texto do condomínio; sem ele, o texto geral da Connect; sem nenhum, o texto padrão. As palavras-chave são trocadas pelos dados da unidade e da pessoa só na hora de gerar o termo, e o texto nunca vira código na página.
 - O **código CIB** tem 8 caracteres (7 e o dígito) e não pode repetir em outra unidade. O sistema confere o formato; o dígito não é conferido porque a regra dele não é pública.
 - Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
 - Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.

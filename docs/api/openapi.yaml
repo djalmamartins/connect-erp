@@ -5588,6 +5588,50 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou manutenção recusada (errors e _maintenance); nada é gravado' }
+  /unit-move-terms:
+    get:
+      operationId: getUnitMoveTerm
+      summary: Texto em vigor do termo de entrada ou de saída (do condomínio, senão o geral, senão o padrão) (erp.units.manage, ADR 0311)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = texto geral da Connect (exige acesso a todos os condomínios)' }
+        - { name: kind, in: query, required: true, schema: { type: string, enum: [entrada, saida] } }
+      responses:
+        '200': { description: '{ data: { condominium_id, kind, body, source: condominium|general|default, updated_at } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    put:
+      operationId: saveUnitMoveTerm
+      summary: Grava o texto do termo de entrada ou de saída, do condomínio ou geral, com auditoria (erp.units.manage, ADR 0311)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [kind, body], properties: { condominium_id: { type: [integer, 'null'] }, kind: { type: string, enum: [entrada, saida] }, body: { type: string, minLength: 1, maxLength: 20000, description: 'Texto puro com @condominio, @unidade, @bloco, @morador, @documento, @cidade, @uf, @dataCriado e @linhaAssinatura' } } } } }
+      responses:
+        '200': { description: '{ data: { condominium_id, kind, body, source, updated_at } }' }
+        '400': { description: Corpo JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /unit-move-terms/render:
+    get:
+      operationId: renderUnitMoveTerm
+      summary: Termo de entrada ou de saída de uma pessoa da unidade, com as palavras-chave trocadas e o HTML escapado (erp.units.view e erp.residents.view, ADR 0311)
+      security: [{ session: [] }]
+      parameters:
+        - { name: unit_id, in: query, required: true, schema: { type: integer } }
+        - { name: resident_id, in: query, schema: { type: integer }, description: 'Vínculo da pessoa nesta unidade; vazio deixa nome e documento em branco' }
+        - { name: kind, in: query, required: true, schema: { type: string, enum: [entrada, saida] } }
+      responses:
+        '200': { description: '{ data: { kind, title, source, html, condominium, unit, person, created_on } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /units/bulk-settings:
     get:
       operationId: unitBulkSettingsOptions

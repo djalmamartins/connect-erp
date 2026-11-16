@@ -62,6 +62,10 @@ $phoneDigits = BrDocument::digits((string)($person['phone'] ?? ''));
     </div>
     <div class="erp-modal__foot">
         <button type="button" class="erp-btn" data-erp-modal-close>Fechar</button>
+        <?php // Termo de entrada e de saída desta pessoa nesta unidade (ADR 0311).
+        foreach (\Source\Services\Erp\UnitMoveTerms::KINDS as $termKind => $termLabel): ?>
+            <a class="erp-btn" href="<?= $this->e(erp_url(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::PRINT_ROUTE) . '?' . http_build_query(['unidade' => (int)$unit['id'], 'pessoa' => (int)$person['id'], 'tipo' => $termKind])) ?>" data-move-term-link="<?= $termKind ?>"><?= $icon('file', 'erp-icon--sm') ?><?= $this->e($termLabel) ?></a>
+        <?php endforeach; ?>
         <a class="erp-btn erp-btn--primary" href="<?= erp_url('/cadastros/proprietarios-e-inquilinos/' . (int)$person['id']) ?>"><?= $icon('edit', 'erp-icon--sm') ?>Abrir cadastro para alterar</a>
     </div>
 </dialog>
