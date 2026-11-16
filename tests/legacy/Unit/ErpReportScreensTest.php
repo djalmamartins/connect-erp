@@ -69,6 +69,12 @@ final class ErpReportScreensTest extends TestCase
         self::assertSame('despesa', Screens::filters('AP-074', [], '2026-11-10')['pagamento']);
         self::assertSame('/api/v1/reports/entries?format=csv&condominium_id=2&detailed=1&from=2026-01&to=2026-11&situation=overdue',
             Screens::csvUrl('AP-069', Screens::filters('AP-069', ['situacao' => 'overdue'], '2026-11-10'), 2));
+        // Ocultar unidade (ADR 0314): só nos demonstrativos da lista, na tela e no download.
+        $hidden = Screens::filters('AP-069', ['ocultar_unidade' => '1'], '2026-11-10');
+        self::assertStringEndsWith('&hide_unit=1', Screens::csvUrl('AP-069', $hidden, 2));
+        self::assertNotContains('unit_label', array_column(Screens::visibleColumns(Screens::PAGES['AP-069']['columns'], $hidden), 1));
+        self::assertContains('unit_label', array_column(Screens::visibleColumns(Screens::PAGES['AP-069']['columns'], Screens::filters('AP-069', [], '2026-11-10')), 1));
+        self::assertFalse(Screens::filters('AP-086', ['ocultar_unidade' => '1'], '2026-11-10')['ocultar_unidade'], 'Lista de unidades não oculta a unidade.');
         self::assertSame('/api/v1/reports/account-statement?format=csv&bank_account_id=3&from=2026-01-01&to=2026-11-10',
             Screens::csvUrl('AP-056', Screens::filters('AP-056', ['conta' => '3'], '2026-11-10'), null));
         self::assertSame('/api/v1/reports/annual-balance?format=csv&year=2025&basis=cash', Screens::csvUrl('AP-080', Screens::filters('AP-080', ['ano' => '2025', 'base' => 'cash'], '2026-11-10'), null));

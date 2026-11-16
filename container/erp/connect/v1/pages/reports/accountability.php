@@ -32,8 +32,15 @@ $table = function (string $id, array $columns, array $rows): string {
     return $html . '</tbody></table></div>';
 };
 
+$hideUnit = ($_GET['ocultar_unidade'] ?? '') === '1';
+// Documento no padrão do PDF de outubro (revisão de 15/11 item 21, ADR 0314): ver no navegador ou baixar o PDF.
+$docUrl = static fn (string $kind, string $month): string => erp_url(Screens::ROUTE . '/' . $kind . '?' . http_build_query(['mes' => $month] + ($hideUnit ? ['ocultar_unidade' => 1] : [])));
 ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <?php if (!$accountabilityNeedsCondo): ?>
+        <a class="erp-btn" href="<?= $this->e($docUrl('documento', $accountabilityMonth)) ?>" target="_blank" rel="noopener"><?= $icon('eye', 'erp-icon--sm') ?>Visualizar documento</a>
+        <a class="erp-btn erp-btn--primary" href="<?= $this->e($docUrl('pdf', $accountabilityMonth)) ?>" data-accountability-pdf><?= $icon('download', 'erp-icon--sm') ?>Baixar PDF</a>
+    <?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
@@ -47,8 +54,29 @@ $this->insert('components/layout/page-head', [
 <?php else: ?>
 <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Mês da prestação de contas">
     <div class="erp-field erp-field--compact"><label for="pc-month">Mês</label><input class="erp-input" type="month" id="pc-month" name="mes" value="<?= $this->e($accountabilityMonth) ?>" max="<?= date('Y-m') ?>" required></div>
+    <div class="erp-field erp-field--compact"><span class="erp-field__label" aria-hidden="true">&nbsp;</span><label class="erp-check" for="pc-hide-unit"><input type="checkbox" id="pc-hide-unit" name="ocultar_unidade" value="1"<?= $hideUnit ? ' checked' : '' ?>><span>Ocultar unidade</span></label></div>
     <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Gerar</button></div>
 </form>
+
+<?php if (($accountabilityMonths ?? []) !== []): $statusLabel = ['closed' => ['Fechado', 'success'], 'reopened' => ['Reaberto', 'warning'], 'open' => ['Em aberto', 'warning']]; ?>
+    <section class="erp-card erp-card--flush erp-no-print" aria-labelledby="pc-months-title" data-accountability-months>
+        <div class="erp-card__head"><div><h2 id="pc-months-title">Prestações de contas dos últimos meses</h2><p>Cada mês com capa, termo de abertura, parecer do síndico e conselho, demonstrativo, resumo das contas, lançamentos e comprovantes.</p></div></div>
+        <div class="erp-table-wrap" role="region" aria-labelledby="pc-months-title" tabindex="0"><table class="erp-table">
+            <thead><tr><th scope="col">Mês</th><th scope="col">Situação</th><th scope="col" class="is-num">Pagamentos</th><th scope="col" class="is-num"><span class="erp-sr-only">Ações</span></th></tr></thead>
+            <tbody>
+            <?php foreach ($accountabilityMonths as $m): [$label, $tone] = $statusLabel[$m['status']] ?? [$m['status'], 'plain']; ?>
+                <tr<?= $m['competence'] === $accountabilityMonth ? ' aria-current="true"' : '' ?>>
+                    <td><a href="<?= $this->e($route . '?' . http_build_query(['mes' => $m['competence']] + ($hideUnit ? ['ocultar_unidade' => 1] : []))) ?>"><?= $this->e(Screens::monthLabel($m['competence'])) ?></a></td>
+                    <td><span class="erp-badge erp-badge--<?= $tone ?>"><?= $this->e($label) ?></span></td>
+                    <td class="is-num"><?= (int)$m['payments'] ?></td>
+                    <td class="is-num erp-nowrap"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $this->e($docUrl('documento', $m['competence'])) ?>" target="_blank" rel="noopener"><?= $icon('eye', 'erp-icon--sm') ?>Visualizar</a>
+                        <a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $this->e($docUrl('pdf', $m['competence'])) ?>"><?= $icon('download', 'erp-icon--sm') ?>PDF</a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+    </section>
+<?php endif; ?>
 
 <?php if ($accountabilityError !== null): ?>
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong>Não foi possível montar a prestação de contas</strong><?= $this->e($accountabilityError) ?></div></div>
@@ -83,7 +111,7 @@ $this->insert('components/layout/page-head', [
 
     <section class="erp-card" aria-labelledby="pc-delinquency-title">
         <div class="erp-card__head"><div><h2 id="pc-delinquency-title">Inadimplência em <?= $this->e(RS::brDate($p['delinquency']['as_of'])) ?></h2><p><?= (int)$p['delinquency']['totals']['units'] ?> unidade(s) · <?= (int)$p['delinquency']['totals']['entries'] ?> conta(s) · <?= $this->e(RS::brl((int)$p['delinquency']['totals']['amount_cents'])) ?> sem encargos<?= !empty($p['delinquency']['truncated']) ? ' · mostrando as ' . count($p['delinquency']['units']) . ' maiores' : '' ?>.</p></div></div>
-        <?= $p['delinquency']['units'] === [] ? '<div class="erp-empty"><span class="erp-empty__icon">' . $icon('check') . '</span><strong>Nenhuma unidade em atraso</strong><p>Não havia conta vencida em aberto no fim do mês.</p></div>' : $table('pc-delinquency-title', Screens::DELINQUENCY_COLUMNS, $p['delinquency']['units']) ?>
+        <?= $p['delinquency']['units'] === [] ? '<div class="erp-empty"><span class="erp-empty__icon">' . $icon('check') . '</span><strong>Nenhuma unidade em atraso</strong><p>Não havia conta vencida em aberto no fim do mês.</p></div>' : $table('pc-delinquency-title', $hideUnit ? array_slice(Screens::DELINQUENCY_COLUMNS, 1) : Screens::DELINQUENCY_COLUMNS, $p['delinquency']['units']) ?>
     </section>
 <?php endif; ?>
 <?php endif; ?>

@@ -66,6 +66,16 @@ final class ListDocumentTest extends TestCase
         self::assertSame(ListDocument::render('csv', self::TABLE, ['title' => 'x']), CollectionReports::csv(self::TABLE), 'CSV é o de sempre.');
     }
 
+    public function testHideUnitDropsTheUnitColumnFromTheFile(): void
+    {
+        $table = ['header' => ['Data', 'Unidade', 'Descrição', 'Valor'], 'rows' => [['01/10/2026', 'Apto 101', 'Taxa', '200,00'], ['02/10/2026', 'Apto 102', 'Taxa', '300,00']]];
+        self::assertSame(['header' => ['Data', 'Descrição', 'Valor'], 'rows' => [['01/10/2026', 'Taxa', '200,00'], ['02/10/2026', 'Taxa', '300,00']]], ListDocument::withoutUnit($table));
+        $csv = ListDocument::render('csv', $table, ['title' => 'x', 'hide_unit' => true]);
+        self::assertStringNotContainsString('Apto', $csv);
+        self::assertStringContainsString('Apto 101', ListDocument::render('csv', $table, ['title' => 'x', 'hide_unit' => false]));
+        self::assertStringNotContainsString('Apto', ListDocument::html(ListDocument::withoutUnit($table), ['title' => 'x']));
+    }
+
     public function testRegistryTableUsesListColumnsMoneyAsNumberAndSafeCells(): void
     {
         $definition = ['title' => 'name', 'status' => ['active' => 'Ativo', 'inactive' => 'Inativo'],
