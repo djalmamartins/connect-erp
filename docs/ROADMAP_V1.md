@@ -130,6 +130,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   do Djalma: os dados ficam em nome da empresa, o acesso do sistema é por aplicativo registrado (não depende da senha de uma pessoa)
   e o contrato de tratamento de dados da Microsoft cobre a LGPD. O backup cifrado pode ir para a mesma conta.
 - **Testar a restauração** num servidor vazio e anotar o tempo. Sem isso o backup não conta.
+  **Feito em 16/11 (ADR 0334):** `tools/hosting/restore-check.sh` restaura num banco de teste e compara com o real; falta
+  rodar na hospedagem com o backup do OneDrive (depende do plano e da conta Microsoft).
 
 ### 3.6 Monitoramento
 - Verificação externa de disponibilidade (`/api/v1/health`) com aviso por e-mail/WhatsApp.
@@ -198,6 +200,6 @@ na ordem 4 → 5 → 6.
 - Prazo do banco para liberar produção é desconhecido; o webhook só testa com o servidor no ar.
 - A norma da NFS-e de dez/2026 pode exigir mudança na etapa 1 (ADR 0402).
 - Dados reais do piloto costumam trazer casos que o laboratório não tem (saldos antigos, acordos, unidades com histórico).
-- Não há teste de restauração de backup nem teste de carga até hoje.
+- Teste de restauração automatizado desde 16/11 (ADR 0334), ainda não rodado na hospedagem. Não há teste de carga até hoje.
 - Hospedagem compartilhada em nuvem: sem Docker nem controle do servidor web; se algum limite do plano não servir, o plano B é uma VPS.
 - Um servidor só, sem réplica: queda do servidor derruba ERP, app e webhook juntos (aceitável para a v1.0 com backup testado).

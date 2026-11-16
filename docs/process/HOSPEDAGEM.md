@@ -60,8 +60,16 @@ Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `
    gerada pelo rclone).
 3. Guardar a senha da cifragem fora do servidor (cofre de senhas do Djalma). Sem ela o backup não abre.
 4. `BACKUP_RCLONE_REMOTE=connect-backup:` no `.env` e rodar `bash tools/hosting/backup.sh` uma vez à mão.
-5. **Teste de restauração**: `rclone copy connect-backup:diario/<data>/ /tmp/restaura/`, importar o `.sql.gz` num banco
-   vazio, abrir o pacote de arquivos e conferir alguns documentos. Anotar data e tempo aqui.
+5. **Teste de restauração** (ADR 0334): criar no hPanel um banco vazio só para isso, com "restore" no nome (ex.:
+   `u123_connect_restore`) e o mesmo usuário do banco do sistema, e pôr `BACKUP_RESTORE_DB=u123_connect_restore` no
+   `.env`. Depois rodar `bash tools/hosting/restore-check.sh --remoto`: baixa o diário mais novo do OneDrive, restaura
+   nesse banco, confere o pacote de arquivos e compara tabela por tabela com o banco real. Sai `OK` ou `FALHOU` com o
+   tempo, e a linha fica em `storage/logs/restore-check.log`. O script recusa o banco de produção e qualquer nome sem
+   "restore". Repetir uma vez por mês e anotar aqui.
+
+   | Data | Backup | Tempo | Resultado |
+   |---|---|---|---|
+   | 16/11/2026 | banco de teste do ambiente de desenvolvimento (165 tabelas) | 4 s | OK (teste do script, não da hospedagem) |
 
 ## 6. Atualizar uma versão
 
