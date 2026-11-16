@@ -56,6 +56,7 @@ final class BatchReversalTest extends TestCase
             'CREATE TABLE erp_unit_document_entries (document_id INTEGER, entry_id INTEGER)',
             'CREATE TABLE erp_bank_statement_lines (id INTEGER PRIMARY KEY, status TEXT, entry_id INTEGER)',
             'CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, status TEXT, entry_id INTEGER)',
+            'CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
         ] as $sql) {
             $this->pdo->exec($sql);
         }

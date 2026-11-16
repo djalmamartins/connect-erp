@@ -51,6 +51,14 @@ recorte: dialog[open]
 
 > Pedir o boleto de novo para o mesmo lançamento devolve o mesmo boleto, sem duplicar a cobrança.
 
+## Rateio no mesmo boleto da fatura
+
+Uma receita rateada pela [Nova Receita](artigo:lancar-receita) com um **Tipo da fatura** entra no boleto da fatura daquele tipo da unidade, no mês de "Incluir na fatura de". Ao emitir o boleto da fatura (um a um ou pelo **Gerar boletos**), o sistema soma a taxa, o rateio e o fundo de reserva dessa unidade num boleto só, com o vencimento da fatura. Na lista, o valor mostra "com N cobrança(s) junto".
+
+Quando o banco confirma o pagamento, todas as contas do boleto são baixadas juntas. Enquanto o boleto estiver ativo, as contas que entraram nele não podem ser canceladas nem renegociadas sozinhas: cancele o boleto antes.
+
+> Se o boleto da fatura já tinha sido emitido quando o rateio foi lançado, o rateio sai com boleto próprio.
+
 >! Enquanto o banco estiver em modo de teste, os boletos são de homologação e não valem para pagamento.
 
 O pagamento é baixado automaticamente quando o [arquivo de retorno](artigo:arquivo-de-retorno) do banco é importado.

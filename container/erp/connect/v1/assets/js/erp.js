@@ -3577,6 +3577,7 @@
       if (mode !== 'none') {
         body.method = method.value;
         body.payer = value('payer') || 'responsible';
+        if (value('invoice_type_id') !== '') body.invoice_type_id = parseInt(value('invoice_type_id'), 10);
         var units = boxes.filter(function (b, i) { return b.checked && !rows[i].hidden; }).map(function (b) { return parseInt(b.value, 10); });
         if (units.length === 0) { formError(form, 'Escolha ao menos uma unidade.', boxes[0]); return; }
         if (mode === 'chosen') body.unit_ids = units;

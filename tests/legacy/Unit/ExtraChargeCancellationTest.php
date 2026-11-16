@@ -56,6 +56,7 @@ final class ExtraChargeCancellationTest extends TestCase
             'CREATE TABLE user_condominium_access (user_id INTEGER, condominium_id INTEGER)',
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',
             'CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, entry_id INTEGER, status TEXT)',
+            'CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_bank_statement_lines (id INTEGER PRIMARY KEY, entry_id INTEGER, status TEXT)',
             'CREATE TABLE erp_extra_charges (id INTEGER PRIMARY KEY, condominium_id INTEGER, kind TEXT, description TEXT, reason TEXT, competence TEXT, status TEXT,
                 created_by INTEGER, cancelled_by INTEGER, cancelled_at TEXT, cancel_reason TEXT)',

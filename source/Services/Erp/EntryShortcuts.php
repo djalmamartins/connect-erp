@@ -522,7 +522,7 @@ final class EntryShortcuts
 
     private function assertNoActiveCharge(int $entryId, string $message): void
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM erp_bank_charges WHERE entry_id = :e AND status IN ('pending','registered')");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " cv WHERE entry_id = :e AND status IN ('pending','registered')");
         $stmt->execute(['e' => $entryId]);
         if ((int)$stmt->fetchColumn() > 0) {
             throw new DomainException($message);

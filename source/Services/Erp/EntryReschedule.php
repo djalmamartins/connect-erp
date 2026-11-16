@@ -97,7 +97,7 @@ final class EntryReschedule
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $rows[(int)$r['id']] = $r;
             }
-            $charges = $this->pdo->prepare("SELECT DISTINCT entry_id FROM erp_bank_charges WHERE status IN ('pending', 'registered', 'paid') AND entry_id IN ({$marks})");
+            $charges = $this->pdo->prepare("SELECT DISTINCT entry_id FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " cv WHERE status IN ('pending', 'registered', 'paid') AND entry_id IN ({$marks})");
             $charges->execute($ids);
             $charged = array_fill_keys(array_map('intval', $charges->fetchAll(PDO::FETCH_COLUMN)), true);
             foreach ($ids as $id) {

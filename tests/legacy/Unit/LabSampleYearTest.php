@@ -96,6 +96,7 @@ final class LabSampleYearTest extends TestCase
                 cancelled_by INTEGER, cancelled_at TEXT, cancel_reason TEXT, broken_at TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT)",
             'CREATE TABLE erp_agreement_originals (id INTEGER PRIMARY KEY, agreement_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, entry_id INTEGER, status TEXT)',
+            'CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_notification_outbox (id INTEGER PRIMARY KEY, condominium_id INTEGER, event_type TEXT, event_key TEXT UNIQUE, subject_table TEXT, subject_id INTEGER,
                 payload_json TEXT, created_by INTEGER, available_at TEXT)',
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',

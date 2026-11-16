@@ -4,7 +4,7 @@
  * conta, centro de custo, documento, vencimento, valor, rateio (sem rateio, todas as unidades ou escolhidas), cálculo
  * (fixo, dividido, fração ou o valor de cada unidade), fundo de reserva, competência ("incluir na fatura de"),
  * cobrar de e repetição. Grava por POST /api/v1/revenues (erp.js, data-revenue-form), que confere tudo de novo.
- * @var array $currentPage @var list<array> $revenueAccounts @var list<array> $revenueRelatedAccounts @var list<array> $revenueCostCenters
+ * @var array $currentPage @var list<array> $revenueAccounts @var list<array> $revenueRelatedAccounts @var list<array{id:int, label:string}> $revenueInvoiceTypes @var list<array> $revenueCostCenters
  * @var list<array{id:int, label:string, exempt:bool}> $revenueUnits @var bool $revenueCanApportion @var bool $shortcutCanManage @var ?int $shortcutContext
  */
 use Source\Services\Erp\EntryShortcuts;
@@ -51,6 +51,8 @@ $apportion = $revenueCanApportion && $revenueUnits !== [] ? RevenueLaunch::APPOR
                     <legend>Rateio entre as unidades</legend>
                     <div class="erp-form__grid">
                         <div class="erp-field erp-col-6"><label for="rv-method">Cálculo</label><select class="erp-select" id="rv-method" name="method" data-revenue-method><?php foreach (EntryShortcuts::METHODS as $key => $label): ?><option value="<?= $key ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
+                        <div class="erp-field erp-col-6"><label for="rv-invoice-type">Tipo da fatura</label><select class="erp-select" id="rv-invoice-type" name="invoice_type_id" aria-describedby="rv-invoice-type-hint"><?php foreach ($revenueInvoiceTypes ?? [] as $t): ?><option value="<?= (int)$t['id'] ?>"><?= $this->e($t['label']) ?></option><?php endforeach; ?><option value="">Nenhum: boleto próprio</option></select>
+                            <small class="erp-field__hint" id="rv-invoice-type-hint">Com um tipo, a cobrança entra no boleto da fatura desse tipo da unidade, no mês de "Incluir na fatura de", se ele ainda não tiver sido emitido.</small></div>
                         <div class="erp-col-12">
                             <div class="erp-table-wrap" role="region" aria-label="Unidades da receita" tabindex="0"><table class="erp-table erp-revenue-units">
                                 <thead><tr><th scope="col"><label class="erp-check"><input type="checkbox" data-revenue-all checked> Unidade</label></th><th scope="col" class="is-num" data-revenue-value-col hidden>Valor</th></tr></thead>

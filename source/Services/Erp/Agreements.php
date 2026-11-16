@@ -385,7 +385,7 @@ final class Agreements
                     throw new DomainException('Há parcela paga. Estorne a baixa antes de cancelar o acordo.');
                 }
             }
-            $charges = $this->pdo->prepare("SELECT COUNT(*) FROM erp_bank_charges ch JOIN erp_entries e ON e.id = ch.entry_id
+            $charges = $this->pdo->prepare("SELECT COUNT(*) FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " ch JOIN erp_entries e ON e.id = ch.entry_id
                 WHERE e.agreement_id = :a AND e.agreement_role = 'installment' AND ch.status IN ('pending','registered','paid')");
             $charges->execute(['a' => $agreementId]);
             if ((int)$charges->fetchColumn() > 0) {
@@ -502,7 +502,7 @@ final class Agreements
         if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
             throw new DomainException("{$label}: a competência {$entry['competence']} está fechada. Reabra o fechamento mensal para renegociar.");
         }
-        $charge = $this->pdo->prepare("SELECT 1 FROM erp_bank_charges WHERE entry_id = :e AND status IN ('pending','registered') LIMIT 1");
+        $charge = $this->pdo->prepare("SELECT 1 FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " cv WHERE entry_id = :e AND status IN ('pending','registered') LIMIT 1");
         $charge->execute(['e' => $entry['id']]);
         if ($charge->fetchColumn()) {
             throw new DomainException("{$label} tem boleto ativo. Cancele o boleto antes do acordo.");

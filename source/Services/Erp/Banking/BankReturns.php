@@ -264,28 +264,44 @@ final class BankReturns
         return $decision['outcome'];
     }
 
-    /** Baixa da conta a receber; devolve uma divergência quando não dá para baixar com segurança. */
+    /**
+     * Baixa da conta a receber do título e das que entraram junto no boleto (ADR 0331), tudo ou nada; devolve uma
+     * divergência quando alguma não dá para baixar com segurança.
+     */
     private function settle(?User $user, array $account, array $charge, array $event, ?int $fileId = null): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM erp_entries WHERE id = :id FOR UPDATE');
-        $stmt->execute(['id' => $charge['entry_id']]);
-        $entry = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($entry) || $entry['deleted_at'] !== null || $entry['status'] !== 'active') {
-            return ['outcome' => 'divergence', 'status' => null, 'note' => 'Conta a receber do título foi cancelada ou excluída.'];
-        }
-        if ($entry['paid_on'] !== null) {
-            return ['outcome' => 'divergence', 'status' => null, 'note' => 'Conta a receber já estava baixada à mão.'];
-        }
-        if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
-            return ['outcome' => 'divergence', 'status' => null, 'note' => "Competência {$entry['competence']} fechada: reabra para baixar."];
-        }
         if ($event['occurred_on'] === null) {
             return ['outcome' => 'divergence', 'status' => null, 'note' => 'Pagamento sem data.'];
         }
-        $this->pdo->prepare('UPDATE erp_entries SET paid_on = :d, bank_account_id = :b, updated_by = :u WHERE id = :id AND paid_on IS NULL')
-            ->execute(['d' => $event['occurred_on'], 'b' => $account['id'], 'u' => $user !== null ? (int)$user->id : null, 'id' => $entry['id']]);
-        Audit::record('update', 'erp_entries', (int)$entry['id'], ['paid_on' => null], ['paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'],
-            'source' => $fileId === null ? 'bank_api' : 'bank_return']);
+        $ids = [(int)$charge['entry_id']];
+        $extra = $this->pdo->prepare('SELECT entry_id FROM erp_bank_charge_entries WHERE charge_id = :c ORDER BY entry_id');
+        $extra->execute(['c' => $charge['id']]);
+        foreach ($extra->fetchAll(PDO::FETCH_COLUMN) as $id) {
+            $ids[] = (int)$id;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM erp_entries WHERE id = :id FOR UPDATE');
+        $entries = [];
+        foreach ($ids as $i => $id) {
+            $stmt->execute(['id' => $id]);
+            $entry = $stmt->fetch(PDO::FETCH_ASSOC);
+            $which = $i === 0 ? 'Conta a receber do título' : 'Conta que entrou junto no boleto';
+            if (!is_array($entry) || $entry['deleted_at'] !== null || $entry['status'] !== 'active') {
+                return ['outcome' => 'divergence', 'status' => null, 'note' => "{$which} foi cancelada ou excluída."];
+            }
+            if ($entry['paid_on'] !== null) {
+                return ['outcome' => 'divergence', 'status' => null, 'note' => "{$which} já estava baixada à mão."];
+            }
+            if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
+                return ['outcome' => 'divergence', 'status' => null, 'note' => "Competência {$entry['competence']} fechada: reabra para baixar."];
+            }
+            $entries[] = $entry;
+        }
+        $update = $this->pdo->prepare('UPDATE erp_entries SET paid_on = :d, bank_account_id = :b, updated_by = :u WHERE id = :id AND paid_on IS NULL');
+        foreach ($entries as $entry) {
+            $update->execute(['d' => $event['occurred_on'], 'b' => $account['id'], 'u' => $user !== null ? (int)$user->id : null, 'id' => $entry['id']]);
+            Audit::record('update', 'erp_entries', (int)$entry['id'], ['paid_on' => null], ['paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'],
+                'source' => $fileId === null ? 'bank_api' : 'bank_return', 'charge_id' => (int)$charge['id']]);
+        }
         return null;
     }
 
