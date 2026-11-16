@@ -18,6 +18,7 @@ storage/private/
 storage/cache/
 storage/cert/
 storage/files/
+storage/talk/
 storage/images/
 storage/logs/
 storage/output/

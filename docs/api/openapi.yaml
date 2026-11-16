@@ -28,6 +28,13 @@ components:
       type: http
       scheme: bearer
       description: Token do app nativo do morador (ADR 0303), devolvido por POST /resident/app-sessions. Sem cookie e sem CSRF.
+    talkIntegration:
+      type: http
+      scheme: bearer
+      description: >-
+        Token de integração do Connect Talk (ADR 0308), formato ctk_ + 64 hexadecimais, gerado no terminal do servidor
+        por tools/talk-token.php. Vale só nas rotas /talk; sem sessão, sem cookie e sem CSRF. O token é de um usuário
+        de integração comum (permissão support.manage) e herda o escopo de condomínios dele.
   schemas:
     UnitBatchInput:
       type: object
@@ -55,7 +62,7 @@ components:
         subject: { type: string }
         message: { type: string }
         area: { type: string, enum: [general, technical, financial] }
-        origin: { type: string, enum: [helpdesk, erp, site, residents, api] }
+        origin: { type: string, enum: [helpdesk, erp, site, residents, api, talk] }
         category: { type: string, nullable: true }
         priority: { type: string, enum: [low, medium, high, urgent] }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
@@ -77,6 +84,18 @@ components:
           properties:
             code: { type: string, examples: [unauthenticated, forbidden, not_found, csrf_invalid, invalid_code, validation_failed] }
             message: { type: string }
+    TalkTicket:
+      type: object
+      description: Chamado do Help Desk aberto por uma conversa do Connect Talk (ADR 0308)
+      required: [id, protocol, status, area]
+      properties:
+        id: { type: integer }
+        protocol: { type: string, description: 'Protocolo do Help Desk (CH + aammdd + 4 hexadecimais), o que o cliente vê', examples: [CH261115A1B2] }
+        status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
+        area: { type: string, enum: [general, technical, financial] }
+        talk_protocol: { type: [string, 'null'], description: Protocolo da conversa no Talk (external_ref) }
+        condominium_id: { type: [integer, 'null'] }
+        unit_id: { type: [integer, 'null'] }
     MonthClosingRecord:
       type: object
       description: Fechamento gravado (foto dos totais no momento do fechamento, ADR 0031)
@@ -7405,6 +7424,132 @@ paths:
         '404': { description: Não encontrada }
         '409': { description: Já concluída ou cancelada }
         '422': { description: Itens pendentes, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /talk/people:
+    get:
+      operationId: talkFindPeople
+      tags: [Talk]
+      summary: Quem escreveu no WhatsApp, pelo telefone (Connect Talk)
+      description: >-
+        Procura o telefone em proprietários e inquilinos (erp_residents) com vínculo ativo e vigente, só nos condomínios
+        do escopo do usuário de integração. O servidor acrescenta as variantes com e sem 55 e com e sem o nono dígito.
+        Até 10 cadastros, o mais recente primeiro. Sem CPF e sem dados financeiros (LGPD, mínimo necessário).
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - name: phones
+          in: query
+          required: true
+          description: Até 6 números separados por vírgula, só dígitos, com DDD
+          schema: { type: string, examples: ['5531999998888,31999998888'] }
+      responses:
+        '200':
+          description: Cadastros encontrados (lista vazia quando ninguém tem o telefone)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    maxItems: 10
+                    items:
+                      type: object
+                      required: [id, name, relationship, condominium]
+                      properties:
+                        id: { type: integer, description: id em erp_residents }
+                        name: { type: string }
+                        relationship: { type: string, enum: [owner, tenant, resident, financial] }
+                        email: { type: [string, 'null'] }
+                        condominium: { type: object, properties: { id: { type: integer }, name: { type: string } } }
+                        unit: { type: [object, 'null'], properties: { id: { type: [integer, 'null'] }, label: { type: string } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: IP fora de TALK_ALLOWED_IPS, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Nenhum telefone válido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: Muitas falhas de token deste IP (20 em 15 minutos), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/tickets:
+    post:
+      operationId: talkOpenTicket
+      tags: [Talk]
+      summary: A conversa do WhatsApp vira chamado do Help Desk (idempotente)
+      description: >-
+        Abre o chamado com origem "talk" pelo mesmo serviço dos outros chamados (ADR 0034) e ele cai na fila do Help
+        Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. Com resident_id, o
+        ERP confere que o morador está no escopo, no condomínio e na unidade informados e que o telefone é dele, e usa o
+        nome do cadastro. Sem resident_id, abre como contato não identificado (nome e telefone).
+      security: [{ talkIntegration: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [talk_protocol, requester_phone]
+              properties:
+                talk_protocol: { type: string, maxLength: 40, pattern: '^[0-9A-Za-z._-]+$' }
+                subject: { type: string, minLength: 4, maxLength: 180 }
+                message: { type: string, description: 'Texto do chamado; com menos de 10 caracteres o ERP monta um padrão' }
+                area: { type: string, enum: [general, technical, financial], default: general }
+                priority: { type: string, enum: [low, medium, high, urgent], default: medium }
+                resident_id: { type: [integer, 'null'] }
+                condominium_id: { type: [integer, 'null'] }
+                unit_id: { type: [integer, 'null'] }
+                requester_name: { type: [string, 'null'], maxLength: 160 }
+                requester_phone: { type: string, description: Só dígitos }
+                conversation_url: { type: [string, 'null'], format: uri, description: Link da conversa no Talk; vai no texto do chamado }
+      responses:
+        '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/TalkTicket' } } } } } }
+        '200': { description: Esse protocolo do Talk já tinha chamado (nada foi criado), content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/TalkTicket' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Condomínio fora do escopo do usuário de integração, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos (morador de outro condomínio ou unidade, telefone que não é do morador...), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/tickets/{id}/transfer:
+    post:
+      operationId: talkTransferTicket
+      tags: [Talk]
+      summary: Transfere o chamado do Talk para outra área
+      description: Muda a área, grava o evento "Área" e a nota interna com o setor do Talk. Só chamados de origem talk do escopo; os outros são 404.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [area]
+              properties:
+                area: { type: string, enum: [general, technical, financial] }
+                sector: { type: string, maxLength: 60, description: Nome do setor no Talk (Financeiro, Manutenção, Administrativo) }
+                note: { type: [string, 'null'], maxLength: 2000 }
+                talk_user_id: { type: [integer, 'null'], description: Atendente no Talk (não é usuário do ERP) }
+      responses:
+        '200': { description: Chamado depois da transferência, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/TalkTicket' } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Chamado não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Área inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/tickets/{id}/close:
+    post:
+      operationId: talkCloseTicket
+      tags: [Talk]
+      summary: Encerra (resolve) o chamado do Talk
+      description: Resolve pelo mesmo atendimento do Help Desk (ADR 0307), com a resolução como resposta. Já resolvido ou fechado devolve 200 sem mudar nada.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolution: { type: [string, 'null'], maxLength: 5000 }
+                talk_user_id: { type: [integer, 'null'] }
+      responses:
+        '200': { description: Chamado resolvido, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/TalkTicket' } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Chamado não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /tickets:
     get:
       operationId: listTickets

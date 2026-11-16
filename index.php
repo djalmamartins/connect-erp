@@ -14,6 +14,15 @@ use Source\Support\AppLogger;
 
 $logger = AppLogger::bootstrap();
 $session = new Session();
+
+/**
+ * CONNECT TALK (ADR 0324): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
+ * container/talk. Só a troca de ambiente (/ambiente/...) passa pelo roteador do ERP nesse host.
+ */
+if (talk_host() && !str_starts_with((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/ambiente/')) {
+    require moves_container_path('talk', 'connect') . '/app.php';
+    exit;
+}
 $route = new Router(url(), ":");
 
 $route->namespace(null);
@@ -45,6 +54,11 @@ $route->post("/resident/password/forgot", "ResidentAppSessions:forgot");
 // Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
 // consulta de cada título no banco antes de mudar qualquer estado.
 $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
+// Connect Talk, o atendimento por WhatsApp (ADR 0308): só o token de integração (Bearer ctk_...), sem sessão nem CSRF.
+$route->get("/talk/people", "Talk:people", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

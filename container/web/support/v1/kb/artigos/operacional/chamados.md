@@ -7,7 +7,7 @@ rota: /operacional/chamados
 menu: Operacional > Rotina > Chamados
 icone: list-outline
 situacao: funciona
-relacionados: pedir-ajuda, ocorrencias, vistorias, manutencoes
+relacionados: pedir-ajuda, ocorrencias, vistorias, manutencoes, chamados-do-whatsapp
 palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendimento
 rascunho: nao
 ---
@@ -80,6 +80,8 @@ No alto da tela ficam os contadores da fila, como no Help Desk: um por situaçã
 
 Use os filtros no alto da lista: **Buscar**, **Condomínio**, **Situação**, **Prioridade**, **Responsável**, **Prazo**, **Origem** e **Tipo**.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
+
+As conversas do WhatsApp atendidas no Connect Talk também viram chamado, com a origem **WhatsApp (Connect Talk)**: veja [Chamados que chegam pelo WhatsApp](artigo:chamados-do-whatsapp).
 
 ## O que a lista mostra
 

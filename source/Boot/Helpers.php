@@ -421,6 +421,9 @@ function moves_container_path(string $area, string $theme): string
     if ($area === 'send' || $area === 'mail') {
         return dirname(__DIR__, 2) . "/container/send/" . moves_send_theme($theme) . "/v1";
     }
+    if ($area === 'talk') {
+        return dirname(__DIR__, 2) . "/container/talk/connect/v1";
+    }
     if ($area === 'residents') {
         return dirname(__DIR__, 2) . "/container/app/" . moves_safe_theme('residents', $theme, 'connect') . "/v1";
     }
@@ -914,6 +917,13 @@ function app_host(): bool
 {
     $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
     return (bool)preg_match('/^app\.[a-z0-9.-]+(?::\d+)?$/', $host);
+}
+
+/** Connect Talk em host próprio (talk.connect.lab, talk.<domínio>), ADR 0324: só o Talk e a troca de ambiente. */
+function talk_host(?string $host = null): bool
+{
+    $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
+    return (bool)preg_match('/^talk\.[a-z0-9.-]+(?::\d+)?$/', $host);
 }
 
 function app_base(): string

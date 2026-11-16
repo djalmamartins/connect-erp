@@ -25,6 +25,10 @@ if (is_file($environmentFile)) {
         // Cobrança bancária (ADR 0156): chave do cofre das credenciais e base pública do endereço do webhook.
         // Sem elas aqui, o Apache do lab não recebe a chave e o Inter não abre a credencial.
         "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL",
+        // Connect Talk dentro do ERP (ADR 0308/0324): cofre dos canais, endereço público, arquivos, Jack e WhatsApp.
+        "TALK_ALLOWED_IPS", "TALK_KEY", "TALK_ENV", "TALK_URL", "TALK_STORAGE", "TALK_RATING", "TALK_HTTP_TIMEOUT",
+        "TALK_JACK_MODE", "TALK_JACK_WAIT_SECONDS", "TALK_JACK_MAX_WAIT_SECONDS", "TALK_JACK_TYPING_SECONDS",
+        "TALK_QUEUE_WARN_MINUTES", "TALK_QUEUE_LATE_MINUTES", "EVOLUTION_URL", "EVOLUTION_API_KEY", "EVOLUTION_WEBHOOK_URL",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {
