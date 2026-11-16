@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Vigia da hospedagem (ADR 0333): php tools/hosting/watchdog.php [--dry-run]
+ * Roda de hora em hora pelo tools/hosting/cron.sh (grupo "hora"). Lê o sinal de vida das rotinas do cron, conta os avisos
+ * da fila que falharam nas últimas 24 horas e manda um e-mail para ALERT_EMAIL quando algo muda (ou a cada 12 horas
+ * enquanto continuar). Sem ALERT_EMAIL, ou com --dry-run, só escreve no log do cron. Não envia nada para morador.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+
+use Source\Support\Email;
+use Source\Support\HostingHealth;
+use Source\Support\HostingWatchdog;
+
+$dryRun = in_array('--dry-run', $argv, true);
+$now = time();
+$failed = 0;
+try {
+    $failed = (int)\Source\Core\Connect::getInstance()
+        ->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE status = 'failed' AND updated_at >= NOW() - INTERVAL 1 DAY")
+        ->fetchColumn();
+} catch (\Throwable $error) {
+    $problemsExtra = ['database' => 'O banco de dados não respondeu ao vigia.'];
+}
+$problems = HostingWatchdog::problems(HostingHealth::evaluate(HostingHealth::read(), $now), $failed) + ($problemsExtra ?? []);
+
+$stateFile = dirname(__DIR__, 2) . '/storage/temp/watchdog-state.json';
+$state = is_file($stateFile) ? (json_decode((string)file_get_contents($stateFile), true) ?: []) : [];
+$line = '[' . date('Y-m-d H:i:s', $now) . '] vigia: ' . ($problems === [] ? 'tudo certo' : implode(' | ', $problems));
+fwrite(STDOUT, $line . PHP_EOL);
+
+if (!HostingWatchdog::due($problems, $state, $now)) {
+    exit(0);
+}
+$to = trim((string)getenv('ALERT_EMAIL'));
+if ($dryRun || $to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+    fwrite(STDOUT, 'vigia: e-mail não enviado (' . ($dryRun ? '--dry-run' : 'ALERT_EMAIL vazio ou inválido') . ')' . PHP_EOL);
+    exit(0);
+}
+$host = (string)(parse_url((string)getenv('APP_URL'), PHP_URL_HOST) ?: gethostname() ?: 'servidor');
+$mail = HostingWatchdog::message($problems, $host);
+if ((new Email())->bootstrap($mail['subject'], $mail['body'], $to, 'Connect ERP')->send()) {
+    @mkdir(dirname($stateFile), 0775, true);
+    file_put_contents($stateFile, json_encode(['hash' => HostingWatchdog::hash($problems), 'sent_at' => $now]));
+    fwrite(STDOUT, 'vigia: aviso enviado' . PHP_EOL);
+    exit(0);
+}
+fwrite(STDERR, 'vigia: o e-mail de aviso não saiu' . PHP_EOL);
+exit(1);

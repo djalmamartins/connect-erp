@@ -79,3 +79,21 @@ Reversão: `git checkout <commit-anterior>` e, se uma migration quebrou dados, r
 Sem proxy próprio não dá para exigir o certificado do banco. A rota `/api/v1/webhooks/bank/{banco}/{segredo}` continua
 protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa; a lista de IPs do banco vai
 no `.htaccess` do subdomínio do ERP. A consulta de hora em hora (`cron.sh hora`) dá a baixa mesmo se o webhook falhar.
+
+## 8. Monitoramento (ADR 0333)
+
+Cada grupo do `cron.sh` grava, ao terminar, o sinal de vida em `storage/temp/heartbeat/<grupo>` (hora e quantos comandos
+falharam). Dois vigias leem esse sinal:
+
+1. **Por dentro, de hora em hora:** `tools/hosting/watchdog.php` roda no grupo `hora` e manda e-mail para `ALERT_EMAIL`
+   (no `.env`) quando uma rotina atrasou ou falhou, o backup passou de 26 horas, avisos da fila falharam nas últimas 24
+   horas ou o banco não respondeu. Repete a cada 12 horas enquanto o problema continuar e avisa uma vez quando tudo volta
+   ao normal. Testar sem enviar: `php tools/hosting/watchdog.php --dry-run`.
+2. **Por fora, a cada 5 minutos:** um monitor externo gratuito (UptimeRobot, Better Stack ou similar) abre
+   `https://erp.connectcondominios.com.br/api/v1/health` e procura a palavra-chave `"status":"ready"`. Isso cobre o que o
+   vigia de dentro não vê: site fora do ar, banco parado (HTTP 503) e o cron parado de vez (o status vira `degraded`).
+   O aviso do monitor vai por e-mail e, se o serviço permitir, por WhatsApp/Telegram.
+
+Prazos: minuto 10 min, hora 2h10, dia e backup 26 h. Rotina que nunca rodou aparece como `unknown` e não dispara alarme
+(lab, ou antes de configurar o cron). O `/health` mostra só as palavras (`ready`, `failing`, `stale`, `unknown`), sem
+caminho, idade ou erro.

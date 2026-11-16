@@ -11,6 +11,8 @@
 #
 # Cada grupo tem trava própria (flock): se a rodada anterior ainda estiver rodando, esta sai sem fazer nada.
 # Saída em storage/logs/cron-<grupo>.log (só as últimas 2000 linhas).
+# Ao terminar, grava o sinal de vida em storage/temp/heartbeat/<grupo> ("<epoch> <falhas>"), lido pelo /api/v1/health
+# e pelo vigia (tools/hosting/watchdog.php, ADR 0333).
 set -u
 project=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$project" || exit 1
@@ -20,6 +22,8 @@ log_dir="$project/storage/logs"
 mkdir -p "$log_dir"
 log="$log_dir/cron-${group:-sem-grupo}.log"
 
+failures=0
+
 run() {
     local started
     started=$(date '+%Y-%m-%d %H:%M:%S')
@@ -27,6 +31,7 @@ run() {
     local code=$?
     if [ "$code" -ne 0 ]; then
         echo "[$started] falhou com código $code: $*" >>"$log"
+        failures=$((failures + 1))
     fi
     return 0
 }
@@ -41,7 +46,8 @@ case "$group" in
         ;;
     hora)
         # Consulta dos boletos em aberto nos bancos reais (ADR 0156): dá baixa mesmo sem webhook.
-        jobs=("$php_bin tools/bank-charges-sync.php 200")
+        # Vigia (ADR 0333): avisa por e-mail quando uma rotina parou, o backup atrasou ou a fila de avisos falhou.
+        jobs=("$php_bin tools/bank-charges-sync.php 200" "$php_bin tools/hosting/watchdog.php")
         ;;
     dia)
         # Avisos do checklist de chegada e lembretes do atendimento de cobrança (ADR 0315).
@@ -67,6 +73,10 @@ for job in "${jobs[@]}"; do
     # shellcheck disable=SC2086
     run $job
 done
+
+beat_dir="$project/storage/temp/heartbeat"
+mkdir -p "$beat_dir"
+echo "$(date +%s) $failures" >"$beat_dir/$group.tmp" && mv "$beat_dir/$group.tmp" "$beat_dir/$group"
 
 if [ -f "$log" ] && [ "$(wc -l <"$log")" -gt 4000 ]; then
     tail -n 2000 "$log" >"$log.tmp" && mv "$log.tmp" "$log"
