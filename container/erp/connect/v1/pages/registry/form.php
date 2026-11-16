@@ -21,7 +21,7 @@ $this->insert('components/layout/page-head', [
     // ADR 0152: diz quais campos e o porquê, sem obrigar a procurar o destaque no formulário.
     $fieldErrors = array_diff_key($errors, ['_form' => 1]); ?>
     <div class="erp-alert erp-alert--danger" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($errors['_form'] ?? 'Não foi possível salvar. Revise os campos abaixo.') ?></strong>
-        <?php if ($fieldErrors !== []): ?><ul class="erp-alert__list"><?php foreach ($fieldErrors as $errorField => $errorText): ?><li><a href="#f-<?= $this->e((string)$errorField) ?>"><?= $this->e((string)($definition['fields'][$errorField]['label'] ?? ($errorField === 'status' ? 'Situação' : $errorField))) ?></a>: <?= $this->e((string)$errorText) ?></li><?php endforeach; ?></ul><?php endif; ?>
+        <?php if ($fieldErrors !== []): ?><ul class="erp-alert__list"><?php foreach ($fieldErrors as $errorField => $errorText): ?><li><a href="#f-<?= $this->e((string)$errorField) ?>"><?= $this->e((string)($definition['fields'][$errorField]['label'] ?? (['status' => 'Situação', 'extra_unit_ids' => 'Outras unidades'][$errorField] ?? $errorField))) ?></a>: <?= $this->e((string)$errorText) ?></li><?php endforeach; ?></ul><?php endif; ?>
     </div></div>
 <?php endif; ?>
 <?php if ($definition['scope'] !== 'none' && $condominiums === [] && $isNew): ?>
@@ -39,6 +39,9 @@ $this->insert('components/layout/page-head', [
                     'condominiums' => $condominiums, 'units' => $units ?? [], 'refOptions' => ($refs ?? [])[$name] ?? [], 'readonly' => $readonly,
                     'attachment' => (($registryAttachment ?? null)['field'] ?? null) === $name ? $registryAttachment : null,
                 ]);
+            } ?>
+            <?php if (($entryUnits ?? false) === true) {
+                $this->insert('components/forms/entry-units', ['units' => $units ?? [], 'values' => $values, 'error' => $errors['extra_unit_ids'] ?? null]);
             } ?>
             <?php $this->insert('components/forms/registry-field', [
                 'field' => ['name' => 'status', 'label' => 'Situação', 'type' => 'select', 'required' => true, 'span' => 4, 'options' => $definition['status'], 'hint' => null],

@@ -2035,9 +2035,9 @@ paths:
       tags: ['Lançamentos']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EntriesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/EntriesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Entries' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Entries' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2153,9 +2153,9 @@ paths:
       tags: ['Contas a pagar']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PayablesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/PayablesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Payables' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -2211,9 +2211,9 @@ paths:
       tags: ['Contas a receber']
       summary: 'Cadastra (permissão erp.entries.manage)'
       security: [{ session: [], csrf: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivablesInput' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/ReceivablesInput' }, { type: object, properties: { extra_unit_ids: { type: array, items: { type: integer }, maxItems: 99, description: 'Outras unidades: um lançamento para cada uma, com os mesmos dados (ADR 0313)' }, unit_amount_mode: { type: string, enum: [each, split], default: each, description: 'each = o valor para cada unidade; split = o valor é o total, dividido' } } }] } } } }
       responses:
-        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' } } } } } }
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Receivables' }, meta: { type: object, properties: { created_ids: { type: array, items: { type: integer } } } } } } } } }
         '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

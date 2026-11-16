@@ -1414,6 +1414,15 @@ $cnpjHtml = $render('pages/registry/form', $layoutData->invoke($panel, $user, 'A
     'values' => ['id' => 3], 'errors' => [], 'history' => [], 'condominiums' => [], 'units' => [], 'refs' => [], 'canManage' => false, 'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null], 'Fornecedor'));
 $assert(!str_contains($cnpjHtml, 'data-erp-cnpj-lookup'), 'AP-010: somente leitura, sem busca do CNPJ');
 
+// Várias unidades num lançamento (ADR 0313): só ao criar, com as unidades do escopo e o modo do valor.
+$entryUnitsForm = static fn (bool $entryUnits, array $values = [], array $errors = []): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-023', ['title' => 'Nova', 'definition' => Source\Services\Erp\Registry\Definitions::get('receivables'), 'recordId' => null,
+    'values' => $values + ['condominium_id' => 1], 'errors' => $errors, 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [['id' => 5, 'condominium_id' => 1, 'label' => '01'], ['id' => 6, 'condominium_id' => 1, 'label' => '<303>']],
+    'refs' => [], 'canManage' => true, 'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null, 'entryUnits' => $entryUnits], 'Nova'));
+$html = $entryUnitsForm(true, ['unit_id' => '5', 'extra_unit_ids' => ['6'], 'unit_amount_mode' => 'split'], ['extra_unit_ids' => 'Unidade <303>: inválida']);
+$assert(str_contains($html, 'data-entry-units') && str_contains($html, 'name="extra_unit_ids[]" value="6" checked') && str_contains($html, '&lt;303&gt;') && str_contains($html, 'value="split" checked')
+    && str_contains($html, 'href="#f-extra_unit_ids">Outras unidades</a>'), 'AP-023: outras unidades marcadas, escapadas, com o modo do valor e o erro no resumo');
+$assert(!str_contains($entryUnitsForm(false), 'data-entry-units'), 'AP-023: sem a opção ao editar ou sem permissão');
+
 // Inquilino e proprietário na ficha da unidade (ADR 0311): busca, nova pessoa, faturas e datas.
 $occupantsForm = static fn (?array $occupants): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-006', [
     'title' => '101', 'definition' => Source\Services\Erp\Registry\Definitions::get('units'), 'recordId' => 8, 'values' => ['id' => 8, 'condominium_id' => 1, 'number' => '101', 'type' => 'apartamento', 'status' => 'active'],
