@@ -77,8 +77,17 @@ os limites de cron.
 
 O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - **Sem Docker:** o código vai por Git/SSH; `composer install --no-dev` e `composer db:migrate` rodam pelo SSH. Banco criado no hPanel.
-- **Um domínio ou subdomínio por sistema** (ERP, Studio/Help Desk, app do morador, site e API), cada um com a pasta pública
-  apontando para o front controller certo e `.htaccess` para as rotas. **[Djalma]** domínio.
+- **Domínio: `connectcondominios.com.br`** (Djalma, 16/11/2026). Um subdomínio por sistema, espelhando o laboratório:
+
+  | Laboratório | Produção (proposta) | O que roda |
+  | --- | --- | --- |
+  | `www.connect.lab` | `www.connectcondominios.com.br` (e o domínio sem www) | site e Central de Ajuda (`/suporte`) |
+  | `erp.connect.lab` | `erp.connectcondominios.com.br` | ERP, API `/api/v1` e webhook dos bancos |
+  | `studio.connect.lab` | `studio.connectcondominios.com.br` | Studio e Help Desk |
+  | `app.connect.lab` | `app.connectcondominios.com.br` | app web do morador (e a API que o app nativo chama) |
+
+  Cada subdomínio com a pasta pública apontando para o front controller certo e `.htaccess` para as rotas. O DNS do domínio
+  precisa apontar para a hospedagem (ou ser gerenciado por ela). E-mail sai com SPF, DKIM e DMARC desse domínio.
 - **Agendador:** o `service/jobs/scheduler.sh` é um laço infinito e não pode rodar ali. Trocar por linhas de cron que chamam os
   mesmos scripts: fila de avisos a cada minuto, `tools/bank-charges-sync.php` de hora em hora, avisos do checklist e lembretes de
   cobrança às 07:00. Os scripts já são independentes; falta só o roteiro das linhas de cron.
@@ -154,7 +163,7 @@ na ordem 4 → 5 → 6.
 
 ## 5. O que depende do Djalma
 
-1. **Cloud Startup e domínio** (até 25/11): plano contratado, acesso SSH liberado para o deploy e os domínios públicos. É o que mais segura a data.
+1. **Cloud Startup** (até 25/11): plano contratado e acesso SSH liberado para o deploy; o DNS de `connectcondominios.com.br` apontando para a hospedagem. É o que mais segura a data.
 2. **Credencial de teste da Cora** (passo a passo em `docs/banking/CORA.md`), ou decidir que a v1.0 sai só com o Inter.
 3. **Aprovação de produção do Inter**: certificado da integração no Internet Banking e ok para o primeiro boleto real.
 4. **Condomínio piloto** e os dados reais dele.
