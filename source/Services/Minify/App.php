@@ -51,6 +51,7 @@ if (is_local_host()
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/highcharts.js");
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/tracker.js");
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/validation.js");
+    $minJS->add($movesRoot . "/container/shared/assets/js/connect-dialog.js");
 
     //theme CSS
     $jsDir = scandir($appThemePath . "/assets/js");

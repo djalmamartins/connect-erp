@@ -48,7 +48,7 @@ $icons = ['owner' => 'key', 'tenant' => 'user', 'resident' => 'users', 'financia
     <?php if ($household['data'] === []): ?><?php $this->insert('partials/empty', ['icon' => 'users', 'text' => 'Ninguém cadastrado nesta unidade.']) ?><?php endif; ?>
     <ul class="app-items">
     <?php foreach ($household['data'] as $p):
-        $block = $p['can_block'] ? '<form method="post" action="' . app_url('/minha-unidade/moradores/' . $p['id'] . '/bloquear') . '" data-app-confirm="Bloquear ' . $this->e($p['name']) . '? O inquilino deixa de acessar o aplicativo.">' . csrf_input() . '<button class="app-link-button" type="submit">Bloquear</button></form>' : null;
+        $block = $p['can_block'] ? '<form method="post" action="' . app_url('/minha-unidade/moradores/' . $p['id'] . '/bloquear') . '" data-app-confirm="Bloquear ' . $this->e($p['name']) . '? O inquilino deixa de acessar o aplicativo." data-confirm-undo="nao" data-confirm-undo-text="Para ele voltar, cadastre o inquilino de novo." data-confirm-action="Bloquear">' . csrf_input() . '<button class="app-link-button" type="submit">Bloquear</button></form>' : null;
         $since = $p['status'] === 'active' ? ($p['starts_on'] ? 'Desde ' . F::date($p['starts_on']) : '') : ($p['ends_on'] ? 'Até ' . F::date($p['ends_on']) : '');
         $this->insert('partials/item', ['icon' => $icons[$p['relationship']] ?? 'user', 'tone' => $p['status'] === 'active' ? 'brand' : 'neutral',
             'title' => $p['name'] . ($p['is_me'] ? ' (você)' : ''), 'lines' => [$p['relationship_label'] . ($since !== '' ? ' · ' . $since : '')],

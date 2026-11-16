@@ -24,7 +24,7 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges/{id}/refresh                         consulta no banco
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
  *  GET  /api/v1/bank-charges/{id}/pdf                             PDF do boleto (Inter, ADR 0156)
- *  GET  /api/v1/bank-charges/{id}/letter                          Carta de cobrança impressa em PDF (ADR 0317)
+ *  GET  /api/v1/bank-charges/{id}/letter                          Carta de cobrança impressa em PDF (ADR 0320)
  *  POST /api/v1/bank-charges/{id}/simulate-payment {method}       só sandbox do Inter: simula o pagamento e consulta
  *  POST /api/v1/invoices/{id}/bank-charges {bank_account_id, limit} boletos de toda a fatura, em lotes (remaining)
  *  GET  /api/v1/bank-remittances?condominium_id=&from=&to=&status=&page=  remessas: lotes por conta e dia (AP-037)
@@ -127,7 +127,7 @@ final class Banking
         echo $pdf;
     }
 
-    /** Carta de cobrança impressa (ADR 0317): parte externa e interna com a ficha do boleto, gerada pelo ERP. */
+    /** Carta de cobrança impressa (ADR 0320): parte externa e interna com a ficha do boleto, gerada pelo ERP. */
     public function letter(array $data): void
     {
         $user = $this->authorize('view');

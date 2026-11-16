@@ -51,7 +51,7 @@ $dot = ['confirmed' => 'success', 'active' => 'warning', 'inactive' => 'danger']
     <?php endif; ?>
     <ul class="app-items">
     <?php foreach ($mine['reservations'] as $r): [$label, $tone] = F::badge(F::RESERVATION, $r['status']);
-        $cancel = $r['status'] !== 'inactive' && $r['reserved_on'] >= $today ? '<form method="post" action="' . app_url('/reservas/' . $r['id'] . '/cancelar') . '" data-app-confirm="Cancelar esta reserva?">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
+        $cancel = $r['status'] !== 'inactive' && $r['reserved_on'] >= $today ? '<form method="post" action="' . app_url('/reservas/' . $r['id'] . '/cancelar') . '" data-app-confirm="Cancelar esta reserva? O horário fica livre para outra unidade." data-confirm-undo="nao" data-confirm-undo-text="Para usar o espaço, faça uma reserva nova (se o horário ainda estiver livre)." data-confirm-action="Cancelar reserva">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
         $this->insert('partials/item', ['date' => $r['reserved_on'], 'title' => $r['area'],
             'lines' => [($r['starts_time'] ? $r['starts_time'] . ' às ' . $r['ends_time'] : 'Dia todo') . ($r['fee_cents'] ? ' · taxa ' . F::money($r['fee_cents']) . ' no boleto' : '')],
             'badge' => [$label, $dot[$r['status']] ?? $tone], 'actions' => $cancel]);

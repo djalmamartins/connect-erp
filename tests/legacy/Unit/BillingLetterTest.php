@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use PHPUnit\Framework\TestCase;
 use Source\Services\Erp\BillingLetter;
 
-/** Carta de cobrança impressa (ADR 0317 e 0319): regras puras de linha digitável, código de barras, instruções, resumo e encaixe. */
+/** Carta de cobrança impressa (ADR 0320 e 0319): regras puras de linha digitável, código de barras, instruções, resumo e encaixe. */
 final class BillingLetterTest extends TestCase
 {
     /** Código de barras e linha digitável válidos (Febraban) do mesmo título fictício, banco 077. */

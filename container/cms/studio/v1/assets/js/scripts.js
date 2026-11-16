@@ -66,12 +66,17 @@ $(function () {
         var data = clicked.data();
         var load = $(".ajax_load");
 
-        if (data.confirm) {
-            var deleteConfirm = confirm(data.confirm);
-            if (!deleteConfirm) {
-                return;
-            }
+        // Pergunta na modal do sistema (ADR 0320); data-confirm-undo="sim|nao" diz se dá para desfazer.
+        if (data.confirm && !clicked.data("cnConfirmed")) {
+            ConnectDialog.ask(this, "data-confirm", $.trim(clicked.text()) || "Confirmar").then(function (yes) {
+                if (!yes) return;
+                clicked.data("cnConfirmed", true);
+                clicked.trigger("click");
+            });
+            return;
         }
+        clicked.removeData("cnConfirmed");
+        delete data.cnConfirmed;
 
         $.ajax({
             url: data.post,
