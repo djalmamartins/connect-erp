@@ -1458,6 +1458,20 @@ Source\Support\Erp\CondominiumContext::reset();
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'data-needs-condominium') && !str_contains($html, 'name="unidade"') && !str_contains($html, 'Nenhuma unidade cadastrada'), 'AP-003: sem condomínio na barra superior, sem filtro de unidade (ADR 0310)');
 
+// Lista de unidades com filtro Ocupação e paginação (revisão de 15/11, ADR 0310).
+if (is_file($vendor . '/movescode/pager/src/Pager.php')) require_once $vendor . '/movescode/pager/src/Pager.php';
+$unitsDef = Source\Services\Erp\Registry\Definitions::all()['units'];
+$unitRow = static fn (int $id, string $n, bool $vacant): array => ['id' => $id, 'condominium_id' => 7, 'condominium_name' => 'Residencial Exemplo', 'block' => null, 'number' => $n, 'type' => 'apartamento', 'floor' => null,
+    'ideal_fraction' => null, 'private_area' => null, 'is_vacant' => $vacant, 'notes' => null, 'status' => 'active', 'label' => $n, 'owners' => ['Ana'], 'tenants' => []];
+foreach ([['ocupadas', false], ['vazias', true]] as [$flagValue, $vacant]) {
+    $unitFilters = ['condominium_id' => 7, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => 'homepage', 'page' => 2, 'flag' => $flagValue, 'per_page' => 100];
+    $html = $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-006', ['definition' => $unitsDef, 'result' => ['data' => [$unitRow(1, '101', $vacant)], 'total' => 250, 'page' => 2, 'per_page' => 100, 'pages' => 3],
+        'filters' => $unitFilters, 'filterField' => 'type', 'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Unidades'));
+    $assert(str_contains($html, 'name="ocupacao"') && str_contains($html, '<option value="' . $flagValue . '" selected>') && str_contains($html, '<th scope="col">Ocupação</th>')
+        && str_contains($html, '>' . ($vacant ? 'Vazia' : 'Ocupada') . '</td>') && str_contains($html, 'Exibindo <strong>101–200</strong> de <strong>250</strong> itens')
+        && str_contains($html, '<option value="100" selected>100</option>') && str_contains($html, 'ocupacao=' . $flagValue) && str_contains($html, 'q=homepag%65'), "AP-006: lista com Ocupação {$flagValue} e itens por página (ADR 0310)");
+}
+
 // Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
 $html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));
 $save('unit-batch', $html);

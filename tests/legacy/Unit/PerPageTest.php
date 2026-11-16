@@ -32,6 +32,19 @@ final class PerPageTest extends TestCase
         self::assertSame([], Panel::contextUnits($units, 9));
     }
 
+    public function testRegistryFormListsOnlyUnitsOfTheRecordOrTheChosenCondominium(): void
+    {
+        $units = [['id' => 1, 'condominium_id' => 7, 'label' => '101'], ['id' => 2, 'condominium_id' => 8, 'label' => '102']];
+        \Source\Support\Erp\CondominiumContext::use([['id' => 7, 'name' => 'BNH 10'], ['id' => 8, 'name' => 'Outro']], 7);
+        try {
+            self::assertSame([1], array_column(\Source\Controllers\Erp\Connect\Registry::formUnits($units, []), 'id'), 'Novo registro: só as do condomínio da barra superior.');
+            self::assertSame([2], array_column(\Source\Controllers\Erp\Connect\Registry::formUnits($units, ['condominium_id' => '8']), 'id'), 'Registro existente: as do condomínio dele.');
+        } finally {
+            \Source\Support\Erp\CondominiumContext::reset();
+        }
+        self::assertSame([1, 2], array_column(\Source\Controllers\Erp\Connect\Registry::formUnits($units, []), 'id'), 'Sem condomínio: a tela filtra pelo campo Condomínio.');
+    }
+
     public function testUnitsDefinitionHasVacantFlagAndOccupancyFilter(): void
     {
         $units = Definitions::all()['units'];

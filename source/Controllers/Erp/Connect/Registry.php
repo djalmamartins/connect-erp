@@ -68,6 +68,18 @@ final class Registry extends Controller
         ]));
     }
 
+    /**
+     * Unidades do formulário (revisão de 15/11, ADR 0310): só as do condomínio do registro ou, num registro novo, do
+     * condomínio da barra superior. Sem nenhum dos dois, todas as do escopo, filtradas na tela pelo campo Condomínio.
+     * @param list<array{id:int,condominium_id:int,label:string}> $units
+     */
+    public static function formUnits(array $units, array $values): array
+    {
+        $condominium = filter_var($values['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $condominium = $condominium !== false && $condominium !== null ? (int)$condominium : CondominiumContext::id();
+        return $condominium === null ? $units : Panel::contextUnits($units, $condominium);
+    }
+
     /** GET {rota}/novo */
     public function create(string $slug): void
     {
@@ -203,7 +215,7 @@ final class Registry extends Controller
             'errors' => $errors,
             'history' => $history,
             'condominiums' => $service->condominiums($user),
-            'units' => RegistryService::hasUnitField($definition) ? $service->units($user) : [],
+            'units' => RegistryService::hasUnitField($definition) ? self::formUnits($service->units($user), $values) : [],
             'refs' => $service->references($user, $definition),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
             'registryAttachment' => self::attachmentData($user, $definition, $values),

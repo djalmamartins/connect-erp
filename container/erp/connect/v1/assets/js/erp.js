@@ -658,7 +658,8 @@
     });
     var sources = Object.keys(matchFields).map(function (name) { return form.querySelector('[name="' + name + '"]'); }).filter(Boolean);
     if (condo && condo.tagName === 'SELECT') sources.push(condo);
-    if (sources.length === 0) return;
+    // Condomínio fixo (campo escondido, condomínio da barra superior): filtra uma vez, sem esperar mudança (ADR 0310).
+    if (sources.length === 0 && !(condo && condo.value !== '')) return;
     var apply = function () {
       var condoValue = condo ? condo.value : '';
       $$('option', select).forEach(function (option) {
