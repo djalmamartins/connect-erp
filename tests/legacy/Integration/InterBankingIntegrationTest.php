@@ -236,6 +236,15 @@ final class InterBankingIntegrationTest extends TestCase
             'O crédito do banco confere com a baixa do boleto.');
 
         $again = $fetch->preview($this->admin, $input);
+        // Saldo que não vem (429 até o fim) não impede o extrato: a prévia sai sem conferir o saldo.
+        $this->http->balanceLimited = true;
+        BankAdapters::override('inter', new InterBankAdapter((new BankCredentials($this->pdo, $this->vault))->secrets($this->bank), $this->http,
+            InterBankAdapter::SANDBOX_URL, null, static function (int $s): void {
+            }));
+        $noBalance = $fetch->preview($this->admin, $input);
+        self::assertNull($noBalance['summary']['ledger_balance_cents']);
+        self::assertSame(2, $noBalance['rows_count']);
+        $this->http->balanceLimited = false;
         self::assertNotSame($preview['id'], $again['id'], 'Buscar de novo gera outra prévia.');
         self::assertSame(['already', 'already'], array_column($again['preview'], 'status'), 'Linhas que já entraram não repetem.');
 

@@ -46,7 +46,7 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
     private const STATEMENT_PAGE_SIZE = 100;
     private const STATEMENT_MAX_PAGES = 50;
     /** Esperas (segundos) antes de repetir uma consulta do extrato que o Inter limitou (429). */
-    private const RATE_LIMIT_WAITS = [3, 8, 15];
+    private const RATE_LIMIT_WAITS = [5, 15, 30];
     /** Dias depois do vencimento em que o boleto ainda pode ser pago (o Inter aceita até 60). */
     public const DAYS_AFTER_DUE = 30;
     private const MAX_WEBHOOK_ITEMS = 500;
@@ -419,6 +419,7 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
      */
     private function readStatement(string $path): array
     {
+        $response = ['status' => 429, 'body' => ''];
         foreach ([...self::RATE_LIMIT_WAITS, null] as $wait) {
             $response = $this->call('GET', $path, null, 'application/json', self::STATEMENT_SCOPE);
             if ($response['status'] !== 429) {
@@ -428,7 +429,10 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
                 $this->sleep !== null ? ($this->sleep)($wait) : sleep($wait);
             }
         }
-        throw new RuntimeException('O Inter limitou as consultas por minuto (429) e continuou recusando depois de esperar. Espere um minuto e tente um período menor.');
+        // O que o Inter respondeu (título e detalhe) vai junto: diz se o limite é por minuto, por dia ou do sandbox.
+        $what = str_contains($path, '/saldo') ? 'o saldo' : 'o extrato';
+        throw new RuntimeException('O Inter continuou limitando as consultas (429) ao buscar ' . $what . ', mesmo depois de esperar 50 s. '
+            . 'Espere alguns minutos e tente um período de poucos dias. Resposta do banco: ' . self::errorMessage($response));
     }
 
     /** Só pede o token (homologação da credencial e do certificado), sem emitir nada. */

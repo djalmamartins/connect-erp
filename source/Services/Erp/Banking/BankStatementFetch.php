@@ -80,7 +80,14 @@ final class BankStatementFetch
         }
         try {
             $lines = $adapter->statement($from, $to);
-            $balance = $adapter->balance($to);
+            try {
+                $balance = $adapter->balance($to);
+            } catch (RuntimeException $error) {
+                // Saldo é só para a conferência: sem ele, a prévia sai sem comparar o saldo (e o motivo fica no log).
+                $balance = null;
+                AppLogger::log('notice', 'Saldo do banco não veio', ['event_type' => 'bank_balance_fetch_failed', 'bank_account_id' => (int)$account['id'],
+                    'error' => mb_substr($error->getMessage(), 0, 255)], 'erp');
+            }
         } catch (InvalidArgumentException $error) {
             throw $error;
         } catch (RuntimeException $error) {
