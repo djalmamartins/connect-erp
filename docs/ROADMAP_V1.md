@@ -93,7 +93,10 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   (`PENDENCIAS.md` item 7).
 - Roteiro de implantação e de reversão: `deploy-check.php`, migrations, smoke HTTP, volta para a versão anterior.
 - E-mail: o e-mail da própria hospedagem ou um SMTP transacional, com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
-- Limites do plano (memória e processos) podem apertar nos PDFs grandes e nas importações; medir no piloto.
+- Recursos do plano (informados pelo Djalma em 16/11/2026): até 4 núcleos, 4 GB de RAM, 100 GB de disco, 2 milhões de inodes,
+  banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
+  não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar
+  nos PDFs grandes e nas importações, medir no piloto.
 
 ### 3.5 Backup e recuperação
 - O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,
