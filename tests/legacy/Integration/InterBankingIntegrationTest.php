@@ -190,6 +190,26 @@ final class InterBankingIntegrationTest extends TestCase
         }
     }
 
+    public function testHourlySyncSettlesPaidAndCancelledWithoutWebhook(): void
+    {
+        $paid = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
+        $this->http->set($paid['external_id'], 'RECEBIDO', '500.00');
+        $pauses = 0;
+        $summary = $this->charges->syncOpen(50, function () use (&$pauses): void {
+            $pauses++;
+        });
+        self::assertSame(['checked' => 1, 'paid' => 1, 'cancelled' => 0, 'failed' => 0], $summary);
+        self::assertSame('paid', $this->charges->find($this->admin, $paid['id'])['status']);
+        self::assertSame('2026-11-12', $this->service->find($this->admin, 'entries', $this->entries[0])['paid_on']);
+        self::assertSame(0, $pauses, 'Pausa só entre consultas.');
+        self::assertSame(['checked' => 0, 'paid' => 0, 'cancelled' => 0, 'failed' => 0], $this->charges->syncOpen(), 'Pago não é consultado de novo.');
+
+        // Banco fora do ar: conta como falha e não muda nada.
+        $this->pdo->exec("UPDATE erp_bank_charges SET status = 'registered' WHERE id = " . (int)$paid['id']);
+        $this->http->failNext = true;
+        self::assertSame(1, $this->charges->syncOpen()['failed']);
+    }
+
     public function testBankCancellationArrivesByWebhook(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);

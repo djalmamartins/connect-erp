@@ -8,9 +8,12 @@
 #   Rodar mais de uma vez no mesmo dia é seguro: cada item é avisado uma vez por situação.
 # - No mesmo horário: lembrete da próxima ação do atendimento de cobrança (tools/collection-reminders.php,
 #   ADR 0315), só no sino da equipe; cada contato é lembrado uma vez.
+# - De hora em hora: consulta dos boletos em aberto nos bancos reais (tools/bank-charges-sync.php, ADR 0156).
+#   Dá baixa do que foi pago sem depender do webhook (que precisa de endereço público).
 set -u
 cd "$(dirname "$0")/../.."
 last_daily=""
+last_hourly=""
 while true; do
     today=$(date +%Y-%m-%d)
     hour=$(date +%H)
@@ -18,6 +21,11 @@ while true; do
         php service/jobs/onboarding-alerts.php || echo "onboarding-alerts falhou com código $?" >&2
         php tools/collection-reminders.php || echo "collection-reminders falhou com código $?" >&2
         last_daily=$today
+    fi
+    hour_key=$(date +%Y-%m-%dT%H)
+    if [ "$hour_key" != "$last_hourly" ]; then
+        php tools/bank-charges-sync.php 200 || echo "bank-charges-sync falhou com código $?" >&2
+        last_hourly=$hour_key
     fi
     php tools/notifications-dispatch.php 50 || echo "notifications-dispatch falhou com código $?" >&2
     if [ "${LAB_MAIL_QUEUE_SEND:-0}" = "1" ]; then

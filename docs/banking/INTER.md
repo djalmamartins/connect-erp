@@ -49,7 +49,9 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 - [x] Simular pagamento (16/11/2026): botão **Simular pagamento** em Cobrança > Boletos chama
   `POST /cobranca/v3/cobrancas/{codigoSolicitacao}/pagar` com `pagarCom` (CONFIRMADO; o `Accept` precisa incluir
   `application/problem+json`, senão 406) e consulta: boleto **Pago** e conta a receber baixada.
-- [ ] Ver a baixa chegar pelo webhook (precisa de endereço público).
+- [x] Consulta automática (decisão do Djalma, 16/11/2026): `tools/bank-charges-sync.php`, de hora em hora pelo
+  `service/jobs/scheduler.sh`, consulta os boletos em aberto dos bancos reais e dá baixa sem webhook.
+- [ ] Ver a baixa chegar pelo webhook (precisa de endereço público; fica para o servidor com domínio).
 - [x] Cancelar boleto (16/11/2026): boleto **Cancelado** e conta a receber continua em aberto.
 - [ ] Erro de validação (CPF inválido, vencimento passado) aparece como Recusado com a mensagem do banco.
 - [ ] Reenvio do mesmo webhook não duplica; webhook com segredo errado = 404.

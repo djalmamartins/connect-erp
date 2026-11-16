@@ -229,6 +229,44 @@ final class BankCharges
      * Consulta de um título vinda do webhook (ADR 0156): sem usuário, sem escopo (a conta já foi
      * identificada pelo segredo do endereço). Só títulos daquela conta.
      */
+    /**
+     * Consulta automática (ADR 0156, decisão de 16/11/2026): passa pelos boletos em aberto de bancos reais
+     * (adaptador diferente do sandbox interno) e consulta cada um no banco, como o webhook faria. Pagamento,
+     * baixa e divergência seguem a mesma conciliação. Sem usuário: roda pelo agendador do servidor.
+     * Um boleto que falha não para os outros. $pause roda entre consultas (limite de chamadas do banco).
+     *
+     * @return array{checked:int, paid:int, cancelled:int, failed:int}
+     */
+    public function syncOpen(int $limit = 200, ?\Closure $pause = null): array
+    {
+        $summary = ['checked' => 0, 'paid' => 0, 'cancelled' => 0, 'failed' => 0];
+        $stmt = $this->pdo->prepare("SELECT a.*, c.id AS charge_id, c.external_id AS charge_external_id, c.adapter AS charge_adapter FROM erp_bank_charges c
+            JOIN erp_bank_accounts a ON a.id = c.bank_account_id
+            WHERE c.status IN ('pending','registered') AND c.external_id IS NOT NULL AND c.adapter <> :sandbox
+            ORDER BY c.updated_at, c.id LIMIT " . max(1, min($limit, 1000)));
+        $stmt->execute(['sandbox' => BankAdapters::DEFAULT]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
+            if ($i > 0 && $pause !== null) {
+                $pause();
+            }
+            $chargeId = (int)$row['charge_id'];
+            $externalId = (string)$row['charge_external_id'];
+            $account = $row;   // a.* = a conta bancária (id, adapter, número...)
+            $account['adapter'] = (string)$row['charge_adapter'];   // o título continua no banco onde nasceu
+            try {
+                $summary['checked']++;
+                $status = $this->refreshFromBank($account, $externalId);
+                if ($status === 'paid' || $status === 'cancelled') {
+                    $summary[$status]++;
+                }
+            } catch (\Throwable $error) {
+                $summary['failed']++;
+                AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_sync_failed', 'charge_id' => $chargeId]);
+            }
+        }
+        return $summary;
+    }
+
     public function refreshFromBank(array $account, string $externalId): ?string
     {
         $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_charges WHERE bank_account_id = :b AND external_id = :x LIMIT 1');
