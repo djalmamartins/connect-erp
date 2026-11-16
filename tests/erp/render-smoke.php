@@ -1289,7 +1289,7 @@ $html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilit
     ['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
 $assert(str_contains($html, 'data-accountability-months') && str_contains($html, 'Novembro de 2026') && str_contains($html, '>Fechado</span>') && str_contains($html, 'aria-current="true"')
     && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/documento?mes=2026-10') && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/pdf?mes=2026-10')
-    && str_contains($html, 'Visualizar documento') && str_contains($html, 'Baixar PDF') && str_contains($html, 'name="ocultar_unidade"') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-101: meses, documento e PDF (ADR 0314)');
+    && str_contains($html, 'Visualizar documento') && str_contains($html, 'Abrir PDF') && str_contains($html, 'target="_blank" rel="noopener" data-accountability-pdf') && str_contains($html, 'name="ocultar_unidade"') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-101: meses, documento e PDF (ADR 0314)');
 $_GET['ocultar_unidade'] = '1';
 $html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityMonths' => [['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
 unset($_GET['ocultar_unidade']);

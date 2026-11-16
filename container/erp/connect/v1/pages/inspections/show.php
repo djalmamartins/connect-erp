@@ -22,7 +22,7 @@ $old = [];
 ob_start(); ?>
     <a class="erp-btn" href="<?= erp_url($base) ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Vistorias</a>
     <a class="erp-btn" href="<?= $url('/relatorio') ?>"><?= $icon('eye', 'erp-icon--sm') ?>Relatório</a>
-    <a class="erp-btn" href="<?= $url('/relatorio/pdf') ?>"><?= $icon('download', 'erp-icon--sm') ?>PDF</a>
+    <a class="erp-btn" href="<?= $url('/relatorio/pdf') ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?>PDF</a>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Vistoria nº ' . $id . ' · ' . $inspection['template'],

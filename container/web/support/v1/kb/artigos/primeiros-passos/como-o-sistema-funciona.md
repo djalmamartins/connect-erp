@@ -90,7 +90,7 @@ Exemplo: chegou a conta de manutenção do elevador, de R$ 1.200,00, que vence d
 - **Sem repetição.** O sistema recusa duplicidades: o mesmo CNPJ de condomínio, a mesma unidade, a mesma placa, a mesma fatura no mesmo mês.
 - **Mês fechado é mês travado.** Para mudar qualquer lançamento dele, reabra o mês com motivo.
 - **Erro mostra o que corrigir.** Se algo estiver errado ao salvar, nada é gravado, e o formulário marca cada campo com a explicação.
-- **Toda lista se baixa.** O botão **Download**, no alto das listas e dos relatórios, baixa o que está na tela, com os mesmos filtros, em **PDF** (cabeçalho da Connect, condomínio, título, data, site e número da página), em **Excel** (os valores viram número e somam na planilha) ou em **CSV**. Cada download fica na auditoria, com no máximo 30 por hora por pessoa.
+- **Toda lista se baixa.** O botão **Download**, no alto das listas e dos relatórios, baixa o que está na tela, com os mesmos filtros, em **PDF** (cabeçalho da Connect, condomínio, título, data, site e número da página; abre numa aba do navegador para você ver antes, e de lá imprime ou baixa), em **Excel** (os valores viram número e somam na planilha) ou em **CSV**. Cada download fica na auditoria, com no máximo 30 por hora por pessoa.
 
 ## Quando tiver dúvida
 

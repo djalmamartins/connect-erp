@@ -39,7 +39,7 @@ ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
     <?php if (!$accountabilityNeedsCondo): ?>
         <a class="erp-btn" href="<?= $this->e($docUrl('documento', $accountabilityMonth)) ?>" target="_blank" rel="noopener"><?= $icon('eye', 'erp-icon--sm') ?>Visualizar documento</a>
-        <a class="erp-btn erp-btn--primary" href="<?= $this->e($docUrl('pdf', $accountabilityMonth)) ?>" data-accountability-pdf><?= $icon('download', 'erp-icon--sm') ?>Baixar PDF</a>
+        <a class="erp-btn erp-btn--primary" href="<?= $this->e($docUrl('pdf', $accountabilityMonth)) ?>" target="_blank" rel="noopener" data-accountability-pdf><?= $icon('file', 'erp-icon--sm') ?>Abrir PDF</a>
     <?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
@@ -70,7 +70,7 @@ $this->insert('components/layout/page-head', [
                     <td><span class="erp-badge erp-badge--<?= $tone ?>"><?= $this->e($label) ?></span></td>
                     <td class="is-num"><?= (int)$m['payments'] ?></td>
                     <td class="is-num erp-nowrap"><a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $this->e($docUrl('documento', $m['competence'])) ?>" target="_blank" rel="noopener"><?= $icon('eye', 'erp-icon--sm') ?>Visualizar</a>
-                        <a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $this->e($docUrl('pdf', $m['competence'])) ?>"><?= $icon('download', 'erp-icon--sm') ?>PDF</a></td>
+                        <a class="erp-btn erp-btn--ghost erp-btn--sm" href="<?= $this->e($docUrl('pdf', $m['competence'])) ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?>PDF</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

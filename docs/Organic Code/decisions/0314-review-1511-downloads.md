@@ -90,3 +90,14 @@ arquivo ficar igual ao modelo quando impresso.
 - `tests/legacy/Integration/AccountabilityDocumentTest.php`: grupos e contas do demonstrativo, totais, receita com a
   unidade e sem ela (ocultar), síndico e conselho, despesas do mês com o comprovante dentro do PDF, as partes do
   documento, a lista dos meses e o escopo. Render smoke: lista dos meses, Visualizar, PDF e ocultar unidade na AP-101.
+
+## Ajuste de 16/11 (pedido do Djalma)
+
+- **PDF abre no navegador**: o PDF das listas e relatórios, da prestação de contas, do livro-caixa e da vistoria sai
+  com `Content-Disposition: inline` e o link abre numa aba nova. A pessoa vê antes e decide se baixa ou imprime ("mais
+  honesto e não enche o computador"). Excel e CSV continuam baixando. O PDF do link público do morador continua como
+  download, porque a página dele roda com CSP `sandbox`, que impede o leitor de PDF do navegador.
+- **Leiaute igual ao modelo 3**: logo à esquerda e os dados da Connect centralizados à direita, linha escura embaixo,
+  data à direita, condomínio e título centralizados em negrito, tabela com o cabeçalho em negrito entre linhas cinza e
+  rodapé com linha, o site e o número da página em negrito itálico. O cabeçalho inteiro se repete em cada página. A
+  prestação de contas usa o mesmo rodapé com linha, em texto normal como no PDF de outubro.

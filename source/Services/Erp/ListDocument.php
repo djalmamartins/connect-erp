@@ -139,7 +139,8 @@ final class ListDocument
     public static function send(string $format, string $content, string $filename): void
     {
         header('Content-Type: ' . self::FORMATS[$format]);
-        header('Content-Disposition: attachment; filename="' . str_replace('"', '', $filename) . '"');
+        // PDF abre no navegador (inline) para a pessoa ver antes de decidir baixar (pedido do Djalma, 16/11); Excel e CSV baixam.
+        header('Content-Disposition: ' . ($format === 'pdf' ? 'inline' : 'attachment') . '; filename="' . str_replace('"', '', $filename) . '"');
         header('Content-Length: ' . strlen($content));
         header('Cache-Control: no-store, private');
         header('X-Content-Type-Options: nosniff');
@@ -157,21 +158,28 @@ final class ListDocument
         foreach ($table['header'] as $i => $label) {
             $numeric[$i] = $rows !== [] && array_filter($rows, static fn (array $r): bool => ($r[$i] ?? '') !== '' && self::number(self::plain((string)$r[$i])) === null) === [];
         }
+        // Leiaute do modelo 3 (revisão de 15/11, pedido do Djalma de 16/11: "manter tudo igual"): logo à esquerda e os
+        // dados da Connect centralizados à direita, linha escura, data à direita, condomínio e título centralizados em
+        // negrito, tabela com cabeçalho em negrito entre linhas cinza e rodapé com linha, site e página em negrito itálico.
         $html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>'
-            . '@page{margin:28px 28px 40px}body{font-family:"DejaVu Sans",sans-serif;font-size:8.5px;color:#1f2a24}'
-            . '.issuer{text-align:right;font-size:8.5px;line-height:1.45}.issuer strong{font-size:10px}.logo{float:left;height:34px}'
-            . '.date{text-align:right;margin:10px 0 2px}.head{text-align:center;margin:4px 0 12px}.head .condo{font-size:10px;font-weight:bold}'
-            . '.head .title{font-size:11px;font-weight:bold;margin-top:2px}table{width:100%;border-collapse:collapse}'
-            . 'thead{display:table-header-group}th{text-align:left;font-weight:bold;border-bottom:1px solid #9aa59f;padding:5px 4px}'
-            . 'td{padding:5px 4px;border-bottom:1px solid #e3e7e4;vertical-align:top}.num{text-align:right;white-space:nowrap}'
-            . '.empty,.cut{text-align:center;color:#5d6b63;padding:14px}</style></head><body>';
+            . '@page{margin:40px 30px 52px}body{font-family:"DejaVu Sans",sans-serif;font-size:9.5px;color:#333}'
+            . '.top{width:100%;border-collapse:collapse;border-bottom:1px solid #222}.top td{border:0;padding:0 0 10px;vertical-align:middle}'
+            . '.top .brand{width:26%;text-align:center}.logo{height:38px}.issuer{text-align:center;font-size:9px;line-height:1.35;color:#222}'
+            . '.issuer strong{display:block;font-size:14.5px;letter-spacing:.2px;color:#222;margin-bottom:2px}'
+            . '.date{text-align:right;margin:5px 0 0;font-size:9.5px;color:#222}.head{text-align:center;margin:2px 0 12px;color:#222}'
+            . '.head .condo{font-size:11px;font-weight:bold}.head .title{font-size:11px;font-weight:bold;margin-top:6px}'
+            . 'table.list{width:100%;border-collapse:collapse}thead{display:table-header-group}'
+            . 'table.list th{text-align:left;font-weight:bold;color:#222;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6;padding:6px 8px}'
+            . 'table.list td{padding:7px 8px;border-bottom:1px solid #dedede;vertical-align:middle}tr{page-break-inside:avoid}'
+            . '.list td.sheet{padding:0;border:0}.num{text-align:right;white-space:nowrap}.empty,.cut{text-align:center;color:#666;padding:14px}</style></head><body>';
+        // O cabeçalho inteiro (Connect, data, condomínio e título) fica no thead para se repetir em cada página, como no modelo.
         $logo = self::logo();
-        $html .= '<div class="issuer">' . ($logo !== '' ? '<img class="logo" src="' . $logo . '" alt="">' : '')
-            . '<strong>' . $e($issuer['name']) . '</strong><br>CNPJ: ' . $e($issuer['document']) . '<br>' . $e($issuer['address']) . '</div>';
-        $html .= '<div class="date">' . $e($meta['date'] ?? date('d/m/Y')) . '</div><div class="head">'
+        $sheetHead = '<table class="top"><tr><td class="brand">' . ($logo !== '' ? '<img class="logo" src="' . $logo . '" alt="">' : '') . '</td>'
+            . '<td class="issuer"><strong>' . $e($issuer['name']) . '</strong>CNPJ: ' . $e($issuer['document']) . '<br>' . $e($issuer['address']) . '</td></tr></table>';
+        $sheetHead .= '<div class="date">' . $e($meta['date'] ?? date('d/m/Y')) . '</div><div class="head">'
             . '<div class="condo">' . $e((string)($meta['condominium'] ?? 'Todos os condomínios')) . '</div>'
             . '<div class="title">' . $e($meta['title']) . '</div></div>';
-        $html .= '<table><thead><tr>';
+        $html .= '<table class="list"><thead><tr><td class="sheet" colspan="' . max(1, count($table['header'])) . '">' . $sheetHead . '</td></tr><tr>';
         foreach ($table['header'] as $i => $label) {
             $html .= '<th' . ($numeric[$i] ? ' class="num"' : '') . '>' . $e((string)$label) . '</th>';
         }
@@ -205,11 +213,26 @@ final class ListDocument
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
-        $height = $canvas->get_height();
-        $canvas->page_text(28, $height - 26, self::issuer()['site'], $font, 7.5, [0.36, 0.42, 0.39]);
-        $canvas->page_text($canvas->get_width() - 40, $height - 26, '{PAGE_NUM}', $font, 7.5, [0.36, 0.42, 0.39]);
+        self::footer($dompdf);
         return (string)$dompdf->output();
+    }
+
+    /**
+     * Rodapé em cada página: linha escura, o site à esquerda e o número da página à direita. Nas listas (modelo 3) em
+     * negrito itálico; na prestação de contas (PDF de outubro) em texto normal ($emphasis = false).
+     */
+    public static function footer(Dompdf $dompdf, bool $emphasis = true): void
+    {
+        $canvas = $dompdf->getCanvas();
+        $metrics = $dompdf->getFontMetrics();
+        $font = ($emphasis ? $metrics->getFont('DejaVu Sans', 'bold_italic') : null) ?? $metrics->getFont('DejaVu Sans');
+        [$width, $height] = [$canvas->get_width(), $canvas->get_height()];
+        $canvas->page_line(30, $height - 36, $width - 30, $height - 36, [0.13, 0.13, 0.13], 0.6);
+        $canvas->page_text(30, $height - 30, self::issuer()['site'], $font, 8, [0.07, 0.07, 0.07]);
+        $canvas->page_script(static function (int $page, int $pages, $canvas, $metrics) use ($font, $width, $height): void {
+            $text = (string)$page;
+            $canvas->text($width - 30 - $metrics->getTextWidth($text, $font, 8), $height - 30, $text, $font, 8, [0.07, 0.07, 0.07]);
+        });
     }
 
     private static function xlsx(array $table, array $meta): string

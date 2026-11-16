@@ -87,4 +87,17 @@ final class ListDocumentTest extends TestCase
         self::assertSame(['Nome', 'Valor', 'Condomínio', 'Proprietário', 'Situação'], $table['header']);
         self::assertSame([["'=1+1", '1234,56', 'Alpha', 'Ana, Bia', 'Ativo'], ['B', '', 'Todos', '', 'Inativo']], $table['rows']);
     }
+
+    public function testPdfFollowsModel3AndOpensInTheBrowser(): void
+    {
+        $html = ListDocument::html(['header' => ['Unidade', 'Valor'], 'rows' => [['101', '10,00']]], ['title' => 'Unidades', 'condominium' => 'Alpha', 'date' => '16/11/2026']);
+        // Cabeçalho inteiro no thead (repete em cada página, como no modelo 3), antes dos títulos das colunas.
+        self::assertMatchesRegularExpression('~<thead><tr><td class="sheet" colspan="2"><table class="top">.*CONNECT CONDOM.*16/11/2026.*Alpha.*Unidades.*</td></tr><tr><th~s', $html);
+        $root = dirname(__DIR__, 3);
+        self::assertStringContainsString("(\$format === 'pdf' ? 'inline' : 'attachment')", (string)file_get_contents($root . '/source/Services/Erp/ListDocument.php'));
+        self::assertStringContainsString("\$format === 'pdf' ? ' target=\"_blank\" rel=\"noopener\"' : ' download'", (string)file_get_contents($root . '/container/erp/connect/v1/components/tables/download.php'));
+        foreach (['Erp/Connect/AccountabilityScreens.php', 'Erp/Connect/CashBookScreens.php', 'Erp/Connect/Inspections.php'] as $controller) {
+            self::assertStringContainsString("Content-Disposition: inline; filename=", (string)file_get_contents($root . '/source/Controllers/' . $controller), $controller);
+        }
+    }
 }
