@@ -379,7 +379,17 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         $title = is_array($data) ? trim((string)($data['title'] ?? $data['message'] ?? '')) : '';
         $detail = is_array($data) ? trim((string)($data['detail'] ?? '')) : '';
         $text = trim($title . ($detail !== '' ? ': ' . $detail : ''));
-        return mb_substr('Inter recusou (' . $response['status'] . ')' . ($text !== '' ? ' ' . $text : '') . '.', 0, 255);
+        // Violações por campo (razão e propriedade), quando o Inter manda: é o que diz o que corrigir.
+        $violations = [];
+        foreach ((is_array($data) && is_array($data['violacoes'] ?? null) ? $data['violacoes'] : []) as $v) {
+            if (is_array($v)) {
+                $violations[] = trim((string)($v['propriedade'] ?? '') . ' ' . (string)($v['razao'] ?? ''));
+            }
+        }
+        if ($violations !== []) {
+            $text .= ' [' . implode('; ', array_slice(array_filter($violations), 0, 3)) . ']';
+        }
+        return mb_substr('Inter recusou (' . $response['status'] . ')' . ($text !== '' ? ' ' . $text : '') . '.', 0, 400);
     }
 
     private static function text(mixed $value, int $max): ?string

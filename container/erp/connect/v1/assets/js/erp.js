@@ -973,7 +973,7 @@
       button.addEventListener('click', function () {
         if (!window.confirm('Simular o pagamento do boleto ' + button.getAttribute('data-label') + ' no ambiente de testes do Inter? A conta a receber será baixada como paga.')) return;
         busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: 'BOLETO' })
+        call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: button.getAttribute('data-method') || 'BOLETO' })
           .then(function (json) { toast('Situação depois da simulação: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
           .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
       });
