@@ -30,12 +30,15 @@ $route->group("/api/v1");
 $route->get("/health", static function (): void {
     header("Content-Type: application/json; charset=utf-8");
     header("Cache-Control: no-store");
+    // Rotinas do cron e backup (ADR 0333): "degraded" com HTTP 200 quando uma rotina parou ou falhou; 503 só sem banco.
+    // O monitor externo procura a palavra "ready" no status.
+    $hosting = \Source\Support\HostingHealth::publicChecks();
     try {
         \Source\Core\Connect::getInstance()->query("SELECT 1")->fetchColumn();
-        echo json_encode(["data" => ["service" => "connect-web-cms", "status" => "ready", "checks" => ["database" => "ready"]]], JSON_THROW_ON_ERROR);
+        echo json_encode(["data" => ["service" => "connect-web-cms", "status" => $hosting["status"], "checks" => ["database" => "ready", "cron" => $hosting["checks"]]]], JSON_THROW_ON_ERROR);
     } catch (\Throwable $error) {
         http_response_code(503);
-        echo json_encode(["data" => ["service" => "connect-web-cms", "status" => "degraded", "checks" => ["database" => "unavailable"]]], JSON_THROW_ON_ERROR);
+        echo json_encode(["data" => ["service" => "connect-web-cms", "status" => "degraded", "checks" => ["database" => "unavailable", "cron" => $hosting["checks"]]]], JSON_THROW_ON_ERROR);
     }
 });
 

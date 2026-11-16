@@ -134,6 +134,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 ### 3.6 Monitoramento
 - Verificação externa de disponibilidade (`/api/v1/health`) com aviso por e-mail/WhatsApp.
 - Alerta quando o scheduler parar, a fila de avisos encher (ADR 0280 já mede) ou a consulta dos boletos falhar.
+- **Feito em 16/11 (ADR 0333):** sinal de vida de cada grupo do cron, `/api/v1/health` com as rotinas e vigia de hora em hora
+  que avisa por e-mail (`ALERT_EMAIL`). Falta o Djalma escolher o e-mail e criar o monitor externo (roteiro em HOSPEDAGEM.md §8).
 - Rotação dos logs, disco e uso de memória; aviso de certificado HTTPS e de certificado do banco perto de vencer.
 
 ### 3.7 Segurança

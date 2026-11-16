@@ -566,10 +566,32 @@ paths:
   /health:
     get:
       operationId: getHealth
-      summary: Verifica aplicação e MariaDB
+      summary: Verifica aplicação, MariaDB e as rotinas do cron
+      description: >-
+        status "ready" quando o banco responde e nenhuma rotina do cron (minuto, hora, dia, backup) está atrasada ou falhando;
+        "degraded" com HTTP 200 quando alguma está (ADR 0333). Rotina que nunca rodou nesta instalação aparece como "unknown"
+        e não muda o status. Sem idade, caminho nem mensagem de erro.
       security: []
       responses:
-        '200': { description: Serviço pronto }
+        '200':
+          description: Serviço no ar (ver status)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      service: { type: string }
+                      status: { type: string, enum: [ready, degraded] }
+                      checks:
+                        type: object
+                        properties:
+                          database: { type: string, enum: [ready, unavailable] }
+                          cron:
+                            type: object
+                            additionalProperties: { type: string, enum: [ready, failing, stale, unknown] }
         '503': { description: Dependência indisponível }
   /auth/2fa/verify:
     post:
