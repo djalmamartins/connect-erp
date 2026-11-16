@@ -959,7 +959,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-dash-buckets dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* Avisos no canto superior direito (ADR 0120): sucesso, alerta, erro e informação. */
-.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 210; display: grid; gap: 10px; width: min(400px, calc(100vw - 32px)); pointer-events: none; }
+.erp-toasts { position: fixed; top: calc(var(--erp-navbar-height) + 12px); right: 20px; z-index: 99999; display: grid; gap: 10px; width: min(400px, calc(100vw - 32px)); pointer-events: none; }
 .erp-notice { --tone: var(--erp-info); --tone-soft: var(--erp-info-soft); display: flex; align-items: center; gap: 14px; padding: 12px 10px 12px 12px; border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent); border-radius: var(--erp-radius-md); background: var(--tone-soft); color: var(--tone); box-shadow: var(--erp-shadow-raised); pointer-events: auto; animation: erp-notice-in .28s var(--erp-ease) both; }
 .erp-notice--success { --tone: var(--erp-success); --tone-soft: var(--erp-success-soft); }
 .erp-notice--warning { --tone: var(--erp-warning); --tone-soft: var(--erp-warning-soft); }
@@ -973,6 +973,27 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-notice__close:hover, .erp-notice__close:focus-visible { opacity: 1; background: color-mix(in srgb, var(--tone) 12%, transparent); }
 .erp-notice__close svg { width: 18px; height: 18px; }
 .erp-notice--leaving { animation: erp-notice-out .26s var(--erp-ease) both; }
+/* Os avisos entram na camada do topo como popover, acima das modais (ADR 0316): tira o estilo padrão do popover. */
+.erp-toasts[popover] { inset: auto; top: calc(var(--erp-navbar-height) + 12px); right: 20px; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; height: auto; }
+
+/* Modal do sistema no lugar de alert/confirm/prompt do navegador (ADR 0316). */
+.erp-ask { --tone: var(--erp-brand); --tone-soft: var(--erp-brand-soft); width: min(480px, calc(100vw - 32px)); }
+.erp-ask--danger { --tone: var(--erp-danger); --tone-soft: var(--erp-danger-soft); }
+.erp-ask--warning { --tone: #e0a019; --tone-soft: var(--erp-warning-soft); }
+.erp-ask--info { --tone: var(--erp-info); --tone-soft: var(--erp-info-soft); }
+.erp-ask--success { --tone: var(--erp-success); --tone-soft: var(--erp-success-soft); }
+.erp-ask__head { display: flex; align-items: center; gap: 14px; padding: 22px 22px 6px; }
+.erp-ask__head h2 { margin: 0; font-size: 17px; line-height: 1.35; }
+.erp-ask__icon { flex: 0 0 42px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--tone-soft); color: var(--tone); }
+.erp-ask__body { display: grid; gap: 10px; padding: 8px 22px 20px 78px; color: var(--erp-muted); font-size: 14px; line-height: 1.5; }
+.erp-ask__body p { margin: 0; }
+.erp-ask__undo { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; padding: 10px 12px; border-radius: var(--erp-radius-md); font-size: 13.5px; }
+.erp-ask__undo svg { flex: 0 0 18px; margin-top: 1px; }
+.erp-ask__undo strong { font-weight: 700; }
+.erp-ask__undo--yes { background: var(--erp-success-soft); color: #0b5a40; }
+.erp-ask__undo--no { background: var(--erp-danger-soft); color: #8a1c13; }
+.erp-ask__copy { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+@media (max-width: 600px) { .erp-ask__body { padding-left: 22px; } }
 @keyframes erp-notice-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes erp-notice-out { to { opacity: 0; transform: translateX(28px); } }
 @media (max-width: 600px) { .erp-toasts { top: 12px; right: 16px; } }

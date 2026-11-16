@@ -33,9 +33,20 @@
     if (tone === 'success' || tone === 'warning') return tone;
     return 'info';
   };
+  // Os avisos ficam na camada do topo (popover): reabrir o popover depois de uma modal o põe acima dela.
+  function raiseNotices() {
+    var region = $('[data-erp-toasts]');
+    if (!region || typeof region.showPopover !== 'function') return;
+    if (!region.hasAttribute('popover')) region.setAttribute('popover', 'manual');
+    try {
+      if (region.matches(':popover-open')) region.hidePopover();
+      region.showPopover();
+    } catch (e) { /* navegador sem popover: fica o z-index 99999 */ }
+  }
   function notify(message, tone, options) {
     var region = $('[data-erp-toasts]');
     if (!region || !message) return;
+    raiseNotices();
     var kind = noticeTone(tone);
     var animated = kind === 'success' && !(options && options.quiet);
     var item = document.createElement('div');
@@ -110,6 +121,148 @@
     notify(flashText, kind);
   });
   window.ErpUI = { toast: toast, done: done };
+
+  /* Modais do sistema no lugar de alert, confirm e prompt do navegador (ADR 0316) ---------
+   * Toda pergunta e todo recado do ERP abrem uma modal no visual do sistema, que diz o que está
+   * acontecendo, o que vai acontecer e se dá para desfazer. Nada aqui chama window.alert/confirm/prompt.
+   *   ErpUI.confirm({ title, message, undo: true|false, undoText, confirmLabel, cancelLabel, tone }) → Promise<boolean>
+   *   ErpUI.alert({ title, message, tone }) → Promise
+   *   ErpUI.copy(label, value) → mostra o texto selecionado para copiar, quando a área de transferência falha.
+   * Os avisos do canto (flash e toast) ficam acima das modais (popover na camada do topo, z-index 99999). */
+  var ASK_ICONS = {
+    danger: NOTICE_ICONS.warning,
+    warning: NOTICE_ICONS.warning,
+    primary: NOTICE_ICONS.info,
+    info: NOTICE_ICONS.info,
+    success: STATIC_CHECK
+  };
+  var UNDO_ICONS = {
+    yes: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    no: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+  };
+  var askSeq = 0;
+  var openAsk = function (options) {
+    var o = options || {};
+    var tone = ['danger', 'warning', 'primary', 'info', 'success'].indexOf(o.tone) >= 0 ? o.tone : 'primary';
+    var id = 'erp-ask-' + (++askSeq);
+    var dialog = document.createElement('dialog');
+    dialog.className = 'erp-modal erp-ask erp-ask--' + tone;
+    dialog.setAttribute('aria-labelledby', id + '-title');
+    dialog.setAttribute('aria-describedby', id + '-text');
+    var head = document.createElement('div');
+    head.className = 'erp-ask__head';
+    var badge = document.createElement('span');
+    badge.className = 'erp-ask__icon';
+    badge.innerHTML = ASK_ICONS[tone];
+    var title = document.createElement('h2');
+    title.id = id + '-title';
+    title.textContent = o.title || 'Confirme';
+    head.appendChild(badge);
+    head.appendChild(title);
+    var body = document.createElement('div');
+    body.className = 'erp-ask__body';
+    body.id = id + '-text';
+    String(o.message || '').split(/\n+/).forEach(function (line) {
+      if (!line.trim()) return;
+      var p = document.createElement('p');
+      p.textContent = line.trim();
+      body.appendChild(p);
+    });
+    if (o.field) body.appendChild(o.field);
+    if (o.undo === true || o.undo === false) {
+      var undo = document.createElement('div');
+      undo.className = 'erp-ask__undo erp-ask__undo--' + (o.undo ? 'yes' : 'no');
+      undo.innerHTML = UNDO_ICONS[o.undo ? 'yes' : 'no'];
+      var undoText = document.createElement('span');
+      var strong = document.createElement('strong');
+      strong.textContent = o.undo ? 'Dá para desfazer.' : 'Não dá para desfazer.';
+      undoText.appendChild(strong);
+      if (o.undoText) undoText.appendChild(document.createTextNode(' ' + o.undoText));
+      undo.appendChild(undoText);
+      body.appendChild(undo);
+    }
+    var foot = document.createElement('div');
+    foot.className = 'erp-modal__foot';
+    var cancel = null;
+    if (o.cancelLabel !== false) {
+      cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'erp-btn';
+      cancel.textContent = o.cancelLabel || 'Voltar';
+      foot.appendChild(cancel);
+    }
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'erp-btn ' + (tone === 'danger' ? 'erp-btn--danger' : 'erp-btn--primary');
+    ok.textContent = o.confirmLabel || 'Confirmar';
+    foot.appendChild(ok);
+    dialog.appendChild(head);
+    dialog.appendChild(body);
+    dialog.appendChild(foot);
+    document.body.appendChild(dialog);
+
+    var back = document.activeElement;
+    return new Promise(function (resolve) {
+      var answer = false;
+      var finish = function (value) { answer = value; if (dialog.open) dialog.close(); };
+      ok.addEventListener('click', function () { finish(true); });
+      if (cancel) cancel.addEventListener('click', function () { finish(false); });
+      dialog.addEventListener('click', function (event) { if (event.target === dialog && cancel) finish(false); });
+      dialog.addEventListener('close', function () {
+        if (dialog.parentNode) dialog.parentNode.removeChild(dialog);
+        if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+        resolve(answer);
+      });
+      if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+      raiseNotices();
+      // Ação que não dá para desfazer começa com o foco em Voltar: um Enter distraído não confirma.
+      var first = o.focus || (tone === 'danger' && cancel ? cancel : ok);
+      first.focus();
+    });
+  };
+  // "Cancelar o boleto 12? A conta continua em aberto." → título "Cancelar o boleto 12?" e o resto como explicação.
+  var splitQuestion = function (question) {
+    var text = String(question || '').trim();
+    var at = text.indexOf('? ');
+    return at > 0 ? { title: text.slice(0, at + 1), message: text.slice(at + 2) } : { title: text, message: '' };
+  };
+  var confirmDialog = function (options) {
+    var o = typeof options === 'string' ? splitQuestion(options) : (options || {});
+    return openAsk(o);
+  };
+  var alertDialog = function (message, options) {
+    var o = typeof message === 'string' ? Object.assign({ message: message }, options || {}) : (message || {});
+    return openAsk({ title: o.title || 'Atenção', message: o.message, tone: o.tone || 'warning', confirmLabel: o.confirmLabel || 'Entendi', cancelLabel: false }).then(function () {});
+  };
+  var copyDialog = function (label, value) {
+    var field = document.createElement('input');
+    field.type = 'text';
+    field.readOnly = true;
+    field.className = 'erp-input erp-ask__copy';
+    field.value = value;
+    field.setAttribute('aria-label', label);
+    field.addEventListener('focus', function () { field.select(); });
+    return openAsk({ title: 'Copiar ' + label, message: 'O navegador não deixou copiar sozinho. O texto já está selecionado: use Ctrl+C (no Mac, Cmd+C) e depois Fechar.',
+      tone: 'info', field: field, focus: field, confirmLabel: 'Fechar', cancelLabel: false }).then(function () {});
+  };
+  // Lê data-confirm (ou data-erp-confirm) e os complementos data-confirm-title, -undo ("sim"/"nao"), -undo-text, -action e -tone.
+  var askFrom = function (element, attribute) {
+    var question = element.getAttribute(attribute);
+    if (!question) return Promise.resolve(true);
+    var o = splitQuestion(question);
+    var read = function (name) { return element.getAttribute('data-confirm-' + name); };
+    var undo = read('undo');
+    if (read('title')) { o.message = question; o.title = read('title'); }
+    if (undo === 'sim' || undo === 'nao') o.undo = undo === 'sim';
+    if (read('undo-text')) o.undoText = read('undo-text');
+    o.confirmLabel = read('action') || (element.tagName === 'BUTTON' && element.textContent.trim()) || 'Confirmar';
+    o.tone = read('tone') || (o.undo === false ? 'danger' : 'primary');
+    return openAsk(o);
+  };
+  window.ErpUI.confirm = confirmDialog;
+  window.ErpUI.alert = alertDialog;
+  window.ErpUI.copy = copyDialog;
+  window.ErpUI.ask = askFrom;
 
   /* Sidebar: recolher (desktop) e gaveta (celular) ------------------------- */
   var shell = $('[data-erp-shell]');
@@ -738,7 +891,18 @@
   $$('form[data-erp-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
       if (!form.checkValidity()) return;
-      if (!window.confirm(form.getAttribute('data-erp-confirm'))) { event.preventDefault(); return; }
+      if (form._erpConfirmed) { form._erpConfirmed = false; } else {
+        // Pergunta na modal do sistema; com o sim, envia de novo pelo mesmo botão (mantém name/value do submit).
+        event.preventDefault();
+        var submitter = event.submitter || $('[type="submit"]', form);
+        if (submitter && !form.hasAttribute('data-confirm-action')) form.setAttribute('data-confirm-action', (submitter.textContent || submitter.value || '').trim());
+        askFrom(form, 'data-erp-confirm').then(function (yes) {
+          if (!yes) return;
+          form._erpConfirmed = true;
+          if (form.requestSubmit) form.requestSubmit(submitter && submitter.form === form ? submitter : undefined); else form.submit();
+        });
+        return;
+      }
       var button = $('[type="submit"]', form);
       if (button) { button.classList.add('is-loading'); button.setAttribute('aria-busy', 'true'); window.setTimeout(function () { button.disabled = true; }, 0); }
     });
@@ -874,11 +1038,15 @@
     /* Emitir: cada item vira uma conta a receber da unidade (tudo ou nada). */
     $$('[data-invoice-issue]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Emitir a fatura ' + button.getAttribute('data-label') + '? Cada unidade passa a ter uma conta a receber e os valores não podem mais ser ajustados.')) return;
-        busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-invoice-issue') + '/issue', {})
-          .then(function () { toast('Fatura emitida. As contas a receber das unidades foram geradas.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Emitir a fatura ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'Cada unidade passa a ter uma conta a receber com o valor da fatura.\nDepois de emitida, os valores não podem mais ser ajustados.',
+          undo: false, undoText: 'Para corrigir, cancele a fatura com um motivo e faça outra.', confirmLabel: 'Emitir fatura' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-invoice-issue') + '/issue', {})
+            .then(function () { toast('Fatura emitida. As contas a receber das unidades foram geradas.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
 
@@ -953,8 +1121,8 @@
         var line = button.getAttribute('data-charge-copy');
         var label = button.getAttribute('data-copy-label') || 'a linha digitável';
         var done = function () { toast('Copiado: ' + label + '.', 'success', { quiet: true }); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { window.prompt('Copie ' + label + ':', line); });
-        else window.prompt('Copie ' + label + ':', line);
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, function () { ErpUI.copy(label, line); });
+        else ErpUI.copy(label, line);
       });
     });
 
@@ -971,21 +1139,29 @@
     /* Sandbox do Inter: simula o pagamento no banco e consulta; a baixa passa pela conciliação. */
     $$('[data-charge-simulate]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Simular o pagamento do boleto ' + button.getAttribute('data-label') + ' no ambiente de testes do Inter? A conta a receber será baixada como paga.')) return;
-        busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: button.getAttribute('data-method') || 'BOLETO' })
-          .then(function (json) { toast('Situação depois da simulação: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Simular o pagamento do boleto ' + button.getAttribute('data-label') + '?', tone: 'warning',
+          message: 'É só no ambiente de testes do Inter: nenhum dinheiro de verdade se move.\nO banco marca o boleto como pago e a conta a receber é baixada como paga no ERP.',
+          undo: false, undoText: 'A baixa fica registrada como se o morador tivesse pago.', confirmLabel: 'Simular pagamento' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-charge-simulate') + '/simulate-payment', { method: button.getAttribute('data-method') || 'BOLETO' })
+            .then(function (json) { toast('Situação depois da simulação: ' + ((json.data && json.data.status_label) || 'atualizada') + '.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
 
     $$('[data-charge-cancel]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco? A conta a receber continua em aberto.')) return;
-        busy(button, true);
-        call('POST', api + '/' + button.getAttribute('data-charge-cancel') + '/cancel', {})
-          .then(function () { toast('Boleto cancelado.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Cancelar o boleto ' + button.getAttribute('data-label') + ' no banco?', tone: 'danger',
+          message: 'O ERP pede ao banco o cancelamento (baixa) do boleto. Depois disso, o boleto e o Pix dele deixam de poder ser pagos.\nA conta a receber da unidade continua em aberto: dá para emitir um boleto novo para ela.',
+          undo: false, undoText: 'O banco não reativa um boleto cancelado.', confirmLabel: 'Cancelar boleto', cancelLabel: 'Manter boleto' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-charge-cancel') + '/cancel', {})
+            .then(function () { toast('Boleto cancelado.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
 
@@ -1115,11 +1291,15 @@
     });
     $$('[data-bank-credential-remove]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        if (!window.confirm('Remover a credencial do Inter da conta ' + button.getAttribute('data-label') + '? A conta volta para o banco de testes interno e os boletos já emitidos continuam no Inter.')) return;
-        busy(button, true);
-        call('DELETE', api + '/' + button.getAttribute('data-bank-credential-remove'))
-          .then(function () { toast('Credencial removida.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        ErpUI.confirm({ title: 'Remover a credencial do Inter da conta ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'O certificado e a chave guardados no cofre são apagados, e a conta volta para o banco de testes interno.\nOs boletos já emitidos continuam no Inter.',
+          undo: true, undoText: 'Para voltar, cadastre a credencial de novo nesta tela.', confirmLabel: 'Remover credencial' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('DELETE', api + '/' + button.getAttribute('data-bank-credential-remove'))
+            .then(function () { toast('Credencial removida.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
     if (!form) return;
@@ -1377,12 +1557,17 @@
       var body = { condominium_id: condo > 0 ? condo : null, fine_bp: bp($('[name="fine_pct"]', ruleForm).value), monthly_interest_bp: bp($('[name="interest_pct"]', ruleForm).value),
         price_index: $('[name="price_index"]', ruleForm).value, breach_days_late: parseInt($('[name="breach_days_late"]', ruleForm).value, 10),
         breach_open_installments: parseInt($('[name="breach_open_installments"]', ruleForm).value, 10) };
-      if (!window.confirm(condo > 0 ? 'Salvar a regra própria deste condomínio? Ela passa a valer nos encargos calculados a partir de agora.' : 'Salvar o padrão da Connect? Ele vale para todos os condomínios sem regra própria.')) return;
-      var button = $('[type="submit"]', ruleForm);
-      busy(button, true);
-      call('PUT', root.getAttribute('data-rules-api'), body)
-        .then(function () { toast('Regra de cobrança salva.', 'success'); reload(); })
-        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      ErpUI.confirm(condo > 0
+        ? { title: 'Salvar a regra própria deste condomínio?', message: 'Ela passa a valer nos encargos calculados a partir de agora. Os encargos já calculados não mudam.', undo: true, undoText: 'Dá para alterar a regra de novo quando quiser.', confirmLabel: 'Salvar regra' }
+        : { title: 'Salvar o padrão da Connect?', message: 'Ele vale para todos os condomínios que não têm regra própria, nos encargos calculados a partir de agora.', undo: true, undoText: 'Dá para alterar o padrão de novo quando quiser.', confirmLabel: 'Salvar padrão' }
+      ).then(function (yes) {
+        if (!yes) return;
+        var button = $('[type="submit"]', ruleForm);
+        busy(button, true);
+        call('PUT', root.getAttribute('data-rules-api'), body)
+          .then(function () { toast('Regra de cobrança salva.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
     });
     var indexForm = $('[data-index-form]', root);
     if (indexForm) indexForm.addEventListener('submit', function (event) {
@@ -1429,13 +1614,17 @@
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!form.reportValidity()) return;
-        if (!condominium && !window.confirm('Salvar no padrão da Connect? Ele vale para todos os condomínios sem valor próprio.')) return;
-        save('', { condominium_id: condominium, key: key, value: $('[name="value"]', form).value.trim() }, 'Configuração salva.', $('[type="submit"]', form));
+        var go = function () { save('', { condominium_id: condominium, key: key, value: $('[name="value"]', form).value.trim() }, 'Configuração salva.', $('[type="submit"]', form)); };
+        if (condominium) { go(); return; }
+        ErpUI.confirm({ title: 'Salvar no padrão da Connect?', message: 'O valor vale para todos os condomínios que não têm valor próprio neste parâmetro.',
+          undo: true, undoText: 'Dá para mudar o valor de novo ou voltar ao padrão.', confirmLabel: 'Salvar padrão' }).then(function (yes) { if (yes) go(); });
       });
       var reset = $('[data-setting-reset]', form);
       if (reset) reset.addEventListener('click', function () {
-        if (!window.confirm('Voltar este parâmetro ao padrão?')) return;
-        save('/reset', { condominium_id: condominium, key: key }, 'Parâmetro de volta ao padrão.', reset);
+        ErpUI.confirm({ title: 'Voltar este parâmetro ao padrão?', message: 'O valor salvo aqui é apagado e passa a valer o padrão do sistema.',
+          undo: true, undoText: 'Dá para salvar outro valor depois.', confirmLabel: 'Voltar ao padrão' }).then(function (yes) {
+          if (yes) save('/reset', { condominium_id: condominium, key: key }, 'Parâmetro de volta ao padrão.', reset);
+        });
       });
     });
     var opening = $('[data-opening-form]', root);
@@ -1500,9 +1689,9 @@
     };
     $$('[data-assembly-action]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        var question = button.getAttribute('data-confirm');
-        if (question && !window.confirm(question)) return;
-        post(button.getAttribute('data-api'), {}, button.getAttribute('data-done') || 'Feito.', button, null);
+        askFrom(button, 'data-confirm').then(function (yes) {
+          if (yes) post(button.getAttribute('data-api'), {}, button.getAttribute('data-done') || 'Feito.', button, null);
+        });
       });
     });
     var cancel = $('[data-assembly-cancel]', root);
@@ -1625,14 +1814,15 @@
     var condo = parseInt(root.getAttribute('data-condominium') || '0', 10);
     $$('[data-access-post]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        var question = button.getAttribute('data-confirm');
-        if (question && !window.confirm(question)) return;
-        var body = {};
-        try { body = JSON.parse(button.getAttribute('data-body') || '{}'); } catch (e) { body = {}; }
-        busy(button, true);
-        call('POST', button.getAttribute('data-api'), body)
-          .then(function () { toast(button.getAttribute('data-done') || 'Feito.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        askFrom(button, 'data-confirm').then(function (yes) {
+          if (!yes) return;
+          var body = {};
+          try { body = JSON.parse(button.getAttribute('data-body') || '{}'); } catch (e) { body = {}; }
+          busy(button, true);
+          call('POST', button.getAttribute('data-api'), body)
+            .then(function () { toast(button.getAttribute('data-done') || 'Feito.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
       });
     });
     $$('[data-access-form]', root).forEach(function (form) {
@@ -2127,28 +2317,30 @@
       var competence = (($('[name="competence"]', form) || {}).value || '').trim();
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(competence)) { toast('Escolha o mês da competência.', 'warning'); return; }
       var label = competence.slice(5) + '/' + competence.slice(0, 4);
-      if (!window.confirm('Gerar os lançamentos de ' + label + ' a partir dos lançamentos fixos ativos? Os que já foram gerados não se repetem.')) return;
-      var body = { competence: competence };
-      var condominium = parseInt(form.getAttribute('data-condominium') || '0', 10);
-      if (condominium > 0) body.condominium_id = condominium;
-      var busy = function (on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
-      busy(true);
-      fetch(form.getAttribute('data-erp-generate-recurring'), {
-        method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': (($('[name="csrf"]', form) || {}).value || '') },
-        body: JSON.stringify(body)
-      }).then(function (response) {
-        return response.json().catch(function () { return {}; }).then(function (json) { return { ok: response.ok, json: json }; });
-      }).then(function (res) {
-        busy(false);
-        if (!res.ok) { toast((res.json.error && res.json.error.message) || 'Não foi possível gerar os lançamentos.', 'danger'); return; }
-        var data = res.json.data || {};
-        var created = (data.created || []).length, skipped = (data.skipped || []).length, failed = Object.keys(data.failed || {}).length;
-        var parts = [created === 1 ? '1 lançamento gerado' : created + ' lançamentos gerados'];
-        if (skipped) parts.push(skipped === 1 ? '1 já existia' : skipped + ' já existiam');
-        if (failed) parts.push(failed === 1 ? '1 com erro (revise o lançamento fixo)' : failed + ' com erro (revise os lançamentos fixos)');
-        toast(label + ': ' + parts.join(', ') + '.', failed ? 'warning' : 'success');
-      }).catch(function () { busy(false); toast('Não foi possível falar com o servidor. Tente de novo.', 'danger'); });
+      ErpUI.confirm({ title: 'Gerar os lançamentos de ' + label + '?', message: 'O ERP cria os lançamentos do mês a partir dos lançamentos fixos ativos. Os que já foram gerados não se repetem.', undo: true, undoText: 'Um lançamento gerado por engano pode ser excluído (com motivo) na lista de lançamentos.', confirmLabel: 'Gerar lançamentos' }).then(function (yes) {
+        if (!yes) return;
+        var body = { competence: competence };
+        var condominium = parseInt(form.getAttribute('data-condominium') || '0', 10);
+        if (condominium > 0) body.condominium_id = condominium;
+        var busy = function (on) { if (!button) return; button.disabled = on; button.classList.toggle('is-loading', on); if (on) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy'); };
+        busy(true);
+        fetch(form.getAttribute('data-erp-generate-recurring'), {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': (($('[name="csrf"]', form) || {}).value || '') },
+          body: JSON.stringify(body)
+        }).then(function (response) {
+          return response.json().catch(function () { return {}; }).then(function (json) { return { ok: response.ok, json: json }; });
+        }).then(function (res) {
+          busy(false);
+          if (!res.ok) { toast((res.json.error && res.json.error.message) || 'Não foi possível gerar os lançamentos.', 'danger'); return; }
+          var data = res.json.data || {};
+          var created = (data.created || []).length, skipped = (data.skipped || []).length, failed = Object.keys(data.failed || {}).length;
+          var parts = [created === 1 ? '1 lançamento gerado' : created + ' lançamentos gerados'];
+          if (skipped) parts.push(skipped === 1 ? '1 já existia' : skipped + ' já existiam');
+          if (failed) parts.push(failed === 1 ? '1 com erro (revise o lançamento fixo)' : failed + ' com erro (revise os lançamentos fixos)');
+          toast(label + ': ' + parts.join(', ') + '.', failed ? 'warning' : 'success');
+        }).catch(function () { busy(false); toast('Não foi possível falar com o servidor. Tente de novo.', 'danger'); });
+      });
     });
   });
 
@@ -2532,15 +2724,17 @@
     var applyButton = preview && $('[data-import-apply]', preview);
     var current = null;
     var runApply = function (button, id, label) {
-      if (!window.confirm('Aplicar a importação ' + (label ? '"' + label + '"' : 'nº ' + id) + '? O arquivo é validado de novo e tudo é gravado de uma vez.')) return;
-      busy(button, true);
-      call('POST', applyApi(id)).then(function (json) {
-        toast('Importação aplicada.', 'success');
-        window.setTimeout(function () { window.location.href = route + '?importacao=' + encodeURIComponent((json.data || {}).id || id); }, 600);
-      }).catch(function (error) {
-        busy(button, false);
-        var box = preview && !preview.hidden ? $('[data-import-preview-alert]', preview) : null;
-        if (box) { box.innerHTML = '<div class="erp-alert erp-alert--danger" role="alert"><div>' + esc(error.message) + '</div></div>'; } else { toast(error.message, 'danger'); }
+      ErpUI.confirm({ title: 'Aplicar a importação ' + (label ? '"' + label + '"' : 'nº ' + id) + '?', tone: 'danger', message: 'O arquivo é validado de novo e tudo é gravado de uma vez: se uma linha tiver erro, nada é gravado.', undo: false, undoText: 'Os registros gravados precisam ser corrigidos ou excluídos um a um.', confirmLabel: 'Aplicar importação' }).then(function (yes) {
+        if (!yes) return;
+        busy(button, true);
+        call('POST', applyApi(id)).then(function (json) {
+          toast('Importação aplicada.', 'success');
+          window.setTimeout(function () { window.location.href = route + '?importacao=' + encodeURIComponent((json.data || {}).id || id); }, 600);
+        }).catch(function (error) {
+          busy(button, false);
+          var box = preview && !preview.hidden ? $('[data-import-preview-alert]', preview) : null;
+          if (box) { box.innerHTML = '<div class="erp-alert erp-alert--danger" role="alert"><div>' + esc(error.message) + '</div></div>'; } else { toast(error.message, 'danger'); }
+        });
       });
     };
     $$('[data-import-apply]', root).forEach(function (button) {
@@ -2707,10 +2901,12 @@
         var body = { condominium_id: parseInt(announceForm.getAttribute('data-condominium'), 10), subject: value(announceForm, 'subject'), body: value(announceForm, 'body'),
           audience: audience, unit_ids: audience === 'units' ? units : null, send_at: sendAt(announceForm) };
         var when = body.send_at ? 'agendado para ' + stamp(body.send_at) : 'enviado agora';
-        if (!window.confirm('Enviar o comunicado "' + body.subject + '" para ' + (audience === 'units' ? units.length : boxes.length) + ' unidade(s), ' + when + '?')) return;
-        post(announceForm, announceForm.getAttribute('data-api'), body, function (data) {
-          toast(sentMessage(data, 'Comunicado'), 'success');
-          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 600);
+        ErpUI.confirm({ title: 'Enviar o comunicado "' + body.subject + '"?', tone: body.send_at ? 'primary' : 'danger', message: 'Vai para ' + (audience === 'units' ? units.length : boxes.length) + ' unidade(s), ' + when + '.', undo: !!body.send_at, undoText: body.send_at ? 'Enquanto não sair, dá para cancelar o envio na tela do comunicado.' : 'Depois de enviado, o e-mail não volta.', confirmLabel: body.send_at ? 'Agendar comunicado' : 'Enviar agora' }).then(function (yes) {
+          if (!yes) return;
+          post(announceForm, announceForm.getAttribute('data-api'), body, function (data) {
+            toast(sentMessage(data, 'Comunicado'), 'success');
+            window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 600);
+          });
         });
       });
     }
@@ -2752,10 +2948,12 @@
         if (marked.length === 0) { formError(collectionForm, 'Nenhuma unidade marcada para o aviso.', ok[0] || minDays); return; }
         var body = { condominium_id: parseInt(collectionForm.getAttribute('data-condominium'), 10), as_of: collectionForm.getAttribute('data-as-of'),
           min_days_late: parseInt(minDays.value, 10), unit_ids: marked.length === ok.length ? null : marked, send_at: sendAt(collectionForm) };
-        if (!window.confirm('Enviar o aviso de débitos para ' + marked.length + ' unidade(s)? Só recebe quem autorizou a cobrança por e-mail.')) return;
-        post(collectionForm, collectionForm.getAttribute('data-api'), body, function (data) {
-          toast(sentMessage(data, 'Aviso de cobrança') + (data.skipped_recent ? ' ' + data.skipped_recent + ' unidade(s) já avisada(s) ficaram de fora.' : ''), 'success');
-          window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 900);
+        ErpUI.confirm({ title: 'Enviar o aviso de débitos para ' + marked.length + ' unidade(s)?', tone: body.send_at ? 'primary' : 'danger', message: 'Só recebe quem autorizou a cobrança por e-mail.', undo: !!body.send_at, undoText: body.send_at ? 'Enquanto não sair, dá para cancelar o envio na tela do comunicado.' : 'Depois de enviado, o e-mail não volta.', confirmLabel: body.send_at ? 'Agendar aviso' : 'Enviar aviso' }).then(function (yes) {
+          if (!yes) return;
+          post(collectionForm, collectionForm.getAttribute('data-api'), body, function (data) {
+            toast(sentMessage(data, 'Aviso de cobrança') + (data.skipped_recent ? ' ' + data.skipped_recent + ' unidade(s) já avisada(s) ficaram de fora.' : ''), 'success');
+            window.setTimeout(function () { window.location.href = route + '?comunicado=' + encodeURIComponent(data.id); }, 900);
+          });
         });
       });
     }
@@ -2863,12 +3061,14 @@
         if (!formValid(openForm)) return;
         var entries = entryBoxes.filter(function (b) { return b.checked; }).map(function (b) { return parseInt(b.value, 10); });
         if (entries.length === 0) { formError(openForm, 'Escolha ao menos uma conta vencida.', entryBoxes[0]); return; }
-        if (!window.confirm('Abrir o caso judicial com ' + entries.length + ' conta(s)? É só acompanhamento: nada é enviado e nenhum encargo é criado.')) return;
-        var lawyer = value(openForm, 'lawyer_id');
-        post(openForm, openForm.getAttribute('data-api'), { unit_id: parseInt(openForm.getAttribute('data-unit'), 10), entry_ids: entries, lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10),
-          case_number: value(openForm, 'case_number'), court: value(openForm, 'court').replace(/\s+/g, ' '), opened_on: value(openForm, 'opened_on'), note: value(openForm, 'note') }, function (data) {
-          toast('Caso judicial nº ' + data.id + ' aberto.', 'success');
-          window.setTimeout(function () { window.location.href = route + '?caso=' + encodeURIComponent(data.id); }, 600);
+        ErpUI.confirm({ title: 'Abrir o caso judicial com ' + entries.length + ' conta(s)?', message: 'É só acompanhamento: nada é enviado a ninguém e nenhum encargo é criado.', undo: true, undoText: 'Dá para encerrar o caso depois, com um motivo.', confirmLabel: 'Abrir caso' }).then(function (yes) {
+          if (!yes) return;
+          var lawyer = value(openForm, 'lawyer_id');
+          post(openForm, openForm.getAttribute('data-api'), { unit_id: parseInt(openForm.getAttribute('data-unit'), 10), entry_ids: entries, lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10),
+            case_number: value(openForm, 'case_number'), court: value(openForm, 'court').replace(/\s+/g, ' '), opened_on: value(openForm, 'opened_on'), note: value(openForm, 'note') }, function (data) {
+            toast('Caso judicial nº ' + data.id + ' aberto.', 'success');
+            window.setTimeout(function () { window.location.href = route + '?caso=' + encodeURIComponent(data.id); }, 600);
+          });
         });
       });
     }
@@ -2886,13 +3086,17 @@
       eventForm.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!formValid(eventForm)) return;
-        if (status.value === 'closed' && !window.confirm('Encerrar o caso? Encerrado é definitivo.')) return;
-        var lawyer = value(eventForm, 'lawyer_id');
-        post(eventForm, eventForm.getAttribute('data-api'), { happened_on: value(eventForm, 'happened_on'), to_status: status.value, note: value(eventForm, 'note'),
-          lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10), case_number: value(eventForm, 'case_number'), court: value(eventForm, 'court').replace(/\s+/g, ' ') }, function () {
-          toast(status.value === 'closed' ? 'Caso encerrado.' : 'Andamento registrado.', 'success');
-          reload();
-        });
+        var send = function () {
+          var lawyer = value(eventForm, 'lawyer_id');
+          post(eventForm, eventForm.getAttribute('data-api'), { happened_on: value(eventForm, 'happened_on'), to_status: status.value, note: value(eventForm, 'note'),
+            lawyer_id: lawyer === '' ? null : parseInt(lawyer, 10), case_number: value(eventForm, 'case_number'), court: value(eventForm, 'court').replace(/\s+/g, ' ') }, function () {
+            toast(status.value === 'closed' ? 'Caso encerrado.' : 'Andamento registrado.', 'success');
+            reload();
+          });
+        };
+        if (status.value !== 'closed') { send(); return; }
+        ErpUI.confirm({ title: 'Encerrar o caso?', tone: 'danger', message: 'O caso fica encerrado e não recebe mais andamentos.', undo: false, undoText: 'Encerrado é definitivo: para continuar, abra um caso novo.', confirmLabel: 'Encerrar caso' })
+          .then(function (yes) { if (yes) send(); });
       });
     }
   });
