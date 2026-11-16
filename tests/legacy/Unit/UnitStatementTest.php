@@ -99,7 +99,7 @@ final class UnitStatementTest extends TestCase
         self::assertSame('overdue', UnitStatement::situation(['status' => 'active', 'paid_on' => '2026-08-05', 'due_on' => '2026-07-10', 'agreement_role' => null], '2026-07-31'),
             'Pago depois da data de corte: vencida na data.');
         $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Api/V1/UnitStatement.php');
-        foreach (["Access::can('erp.entries.view', \$user)", '(new ReportExportLimit())->assertAllowed($user)', "'report' => 'unit-statement'", 'X-Content-Type-Options: nosniff',
+        foreach (["Access::can('erp.entries.view', \$user)", '(new ReportExportLimit())->assertAllowed($user)', "'report' => 'unit-statement'", 'ListDocument::send($format, $content',
             'catch (CondominiumAccessDenied)', 'no-store'] as $needle) {
             self::assertStringContainsString($needle, $controller, $needle);
         }

@@ -42,7 +42,7 @@ $numeric = static fn (string $type): bool => in_array($type, ['money', 'int', 'd
 
 ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
-    <?php if ($cReportCsv !== null && $cReportRows !== []): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e(url($cReportCsv)) ?>" download><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($cReportCsv !== null && $cReportRows !== []): ?><?php $this->insert('components/tables/download', ['downloadUrl' => url($cReportCsv), 'downloadTitle' => (string)$currentPage['name']]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

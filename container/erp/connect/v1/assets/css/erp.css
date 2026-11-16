@@ -195,6 +195,8 @@ p { margin: 0; }
 .erp-dropdown__item:hover { background: var(--erp-surface-muted); text-decoration: none; }
 .erp-dropdown__item small { display: block; color: var(--erp-muted); font-size: 12px; }
 .erp-dropdown__sep { height: 1px; margin: 6px 0; background: var(--erp-border); }
+.erp-download > summary { cursor: pointer; }
+.erp-download__panel { width: 280px; }
 .erp-user-chip { display: flex; align-items: center; gap: 8px; padding: 3px 10px 3px 3px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-pill); background: var(--erp-surface); cursor: pointer; }
 .erp-user-chip .erp-avatar { width: 32px; height: 32px; font-size: 13px; }
 .erp-user-chip span { font-weight: 600; font-size: 13px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

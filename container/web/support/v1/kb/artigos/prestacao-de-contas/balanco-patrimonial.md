@@ -25,7 +25,7 @@ rota: /prestacao-de-contas/balanco-patrimonial
 condominio: residencial-jardim-das-acacias
 legenda: Tela Balanço Patrimonial
 1: menu | Balanço Patrimonial no menu lateral
-2: main :is(a,button):has-text("Exportar") | Botão {{Exportar CSV}}
+2: main :is(a,button):has-text("Download") | Botão {{Download}}
 3: main form.erp-filters | Data do balanço
 4: main .erp-grid--kpi | Totais do balanço
 ```
@@ -37,7 +37,7 @@ legenda: Tela Balanço Patrimonial
 1. Escolha a **Data do balanço** (até hoje) e clique em {{Gerar}}. A tela abre na data de hoje.
 2. Confira o selo no alto: **Fechado** quando o ativo é igual a passivo + patrimônio líquido, ou **Diferença de R$ …** quando não fecha.
 3. Leia os totais e as três tabelas. Abaixo do **Disponível** aparecem as contas bancárias, com o saldo de cada uma na data.
-4. Use {{Imprimir}} para levar à reunião ou {{Exportar CSV}} para abrir na planilha.
+4. Use {{Imprimir}} para levar à reunião ou {{Download}} para baixar em PDF, Excel ou CSV.
 
 ### O que cada coluna mostra
 

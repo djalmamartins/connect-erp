@@ -37,7 +37,7 @@ if ($a !== null && $assemblyReport !== null && ($assemblyReport['rows'] ?? []) !
 ob_start(); ?>
     <?php if ($kind === 'manage' && $a !== null): ?><a class="erp-btn" href="<?= $this->e($route) ?>">Voltar</a><?php endif; ?>
     <?php if (in_array($kind, ['attendance', 'results'], true)): ?><button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button><?php endif; ?>
-    <?php if ($csv !== null): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e($csv) ?>" download><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($csv !== null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => $csv, 'downloadTitle' => ($kind === 'attendance' ? 'Lista de presença' : 'Resultado da votação') . ' - ' . (string)($a['title'] ?? '')]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

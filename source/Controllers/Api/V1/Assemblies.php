@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
@@ -11,7 +12,6 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\Assemblies as Service;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Support\Access;
@@ -157,19 +157,16 @@ final class Assemblies
         try {
             $result = $report(new Service(), $user, $id);
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 try {
                     (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5)
                 } catch (DomainException $exception) {
                     JsonResponse::send(429, ['error' => ['code' => 'too_many_exports', 'message' => $exception->getMessage()]]);
                     return;
                 }
-                $content = CollectionReports::csv(Service::csvTable($kind, $result));
-                Audit::record('export', 'erp_reports', 0, null, ['report' => 'assembly_' . $kind, 'assembly_id' => $id, 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="assembleia-' . $id . '-' . $kind . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                $content = ListDocument::render($format, Service::csvTable($kind, $result), ListDocument::meta($_GET['title'] ?? null, 'Assembleia', (int)($result['assembly']['condominium_id'] ?? 0)));
+                Audit::record('export', 'erp_reports', 0, null, ['report' => 'assembly_' . $kind, 'assembly_id' => $id, 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('assembleia-' . $id . '-' . $kind . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $result]);

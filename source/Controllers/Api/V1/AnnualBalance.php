@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\AnnualBalance as Report;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Support\Access;
 use Source\Support\Audit;
@@ -39,14 +39,11 @@ final class AnnualBalance
         try {
             $data = (new Report())->report($user, $condominium, $_GET['year'] ?? null, $_GET['basis'] ?? 'competence');
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);
-                $content = CollectionReports::csv(Report::csvTable($data));
-                Audit::record('export', 'erp_reports', 0, null, ['report' => 'annual-balance', 'condominium_id' => $condominium, 'year' => $data['year'], 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="balancete-anual-' . $data['year'] . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                $content = ListDocument::render($format, Report::csvTable($data), ListDocument::meta($_GET['title'] ?? null, 'Balancete anual', $condominium));
+                Audit::record('export', 'erp_reports', 0, null, ['report' => 'annual-balance', 'condominium_id' => $condominium, 'year' => $data['year'], 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('balancete-anual-' . $data['year'] . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

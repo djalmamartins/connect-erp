@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\AnnualAccountability as Service;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Support\Access;
 use Source\Support\Audit;
@@ -39,15 +39,12 @@ final class AnnualAccountability
         try {
             $data = (new Service())->build($user, $condominium, $_GET['year'] ?? null);
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);
-                $content = CollectionReports::csv(Service::csvTable($data));
+                $content = ListDocument::render($format, Service::csvTable($data), ListDocument::meta($_GET['title'] ?? null, 'Prestação de contas anual', $condominium));
                 Audit::record('export', 'erp_reports', 0, null, ['report' => 'annual-accountability', 'condominium_id' => $condominium, 'year' => $data['year'],
-                    'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="annual-accountability-' . $data['year'] . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                    'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('annual-accountability-' . $data['year'] . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

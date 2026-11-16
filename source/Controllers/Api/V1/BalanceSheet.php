@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Erp\ListDocument;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Services\CondominiumAccessDenied;
 use Source\Services\Erp\BalanceSheet as Service;
-use Source\Services\Erp\CollectionReports;
 use Source\Services\Erp\ReportExportLimit;
 use Source\Support\Access;
 use Source\Support\Audit;
@@ -40,14 +40,11 @@ final class BalanceSheet
         try {
             $data = (new Service())->build($user, $condominium, $_GET['date'] ?? date('Y-m-d'));
             header('Cache-Control: no-store, private');
-            if (($_GET['format'] ?? '') === 'csv') {
+            if (($format = ListDocument::format($_GET['format'] ?? null)) !== null) {   // CSV, PDF ou Excel (ADR 0314)
                 (new ReportExportLimit())->assertAllowed($user);
-                $content = CollectionReports::csv(Service::csvTable($data));
-                Audit::record('export', 'erp_reports', 0, null, ['report' => 'balance-sheet', 'condominium_id' => $condominium, 'bytes' => strlen($content)]);
-                header('Content-Type: text/csv; charset=utf-8');
-                header('Content-Disposition: attachment; filename="balance-sheet-' . $data['date'] . '.csv"');
-                header('X-Content-Type-Options: nosniff');
-                echo $content;
+                $content = ListDocument::render($format, Service::csvTable($data), ListDocument::meta($_GET['title'] ?? null, 'Balanço patrimonial', $condominium));
+                Audit::record('export', 'erp_reports', 0, null, ['report' => 'balance-sheet', 'condominium_id' => $condominium, 'format' => $format, 'bytes' => strlen($content)]);
+                ListDocument::send($format, $content, ListDocument::rename('balance-sheet-' . $data['date'] . '.csv', $format));
                 return;
             }
             JsonResponse::send(200, ['data' => $data]);

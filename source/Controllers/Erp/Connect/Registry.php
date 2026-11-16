@@ -15,7 +15,11 @@ use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryPaymentLocked;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
+use Source\Services\Erp\ListDocument;
+use Source\Services\Erp\ReportExportLimit;
 use Source\Services\Erp\VirtualDisk;
+use Source\Support\Audit;
+use Source\Support\Erp\RegistryExport;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Message;
@@ -57,6 +61,12 @@ final class Registry extends Controller
             'flag' => $_GET[$definition['flag_filter']['param'] ?? 'ocupacao'] ?? null,
             'per_page' => \Source\Support\Erp\PerPage::current(),
         ];
+        // Download em PDF, Excel ou CSV com os mesmos filtros (revisão de 15/11 item 18, ADR 0314).
+        $format = ListDocument::format($_GET['baixar'] ?? null);
+        if ($format !== null) {
+            $this->download($user, $definition, $service, $filters, $format);
+            return;
+        }
         echo $this->view->render('pages/registry/index', $this->layoutData($user, $definition, null, [
             'definition' => $definition,
             'result' => $service->list($user, $slug, $filters),
@@ -353,6 +363,35 @@ final class Registry extends Controller
     private function notFound(User $user, array $definition): void
     {
         $this->state($user, $definition, 404, 'Registro não encontrado', 'O registro não existe, foi excluído ou não está no seu escopo de condomínios.');
+    }
+
+    /** Junta as páginas da lista (até RegistryExport::MAX_ROWS), gera o arquivo e registra na auditoria. */
+    private function download(User $user, array $definition, RegistryService $service, array $filters, string $format): void
+    {
+        try {
+            (new ReportExportLimit())->assertAllowed($user);   // ADR 0087 (B5): o mesmo limite dos relatórios
+        } catch (\DomainException $exception) {
+            $this->state($user, $definition, 429, 'Limite de downloads', $exception->getMessage());
+            return;
+        }
+        $rows = [];
+        $filters['per_page'] = 500;
+        for ($page = 1; ; $page++) {
+            $result = $service->list($user, $definition['slug'], ['page' => $page] + $filters);
+            array_push($rows, ...$result['data']);
+            if ($page >= $result['pages'] || count($rows) >= RegistryExport::MAX_ROWS) {
+                break;
+            }
+        }
+        $rows = array_slice($rows, 0, RegistryExport::MAX_ROWS);
+        $condominium = filter_var($filters['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $condominium = $condominium === false || $condominium === null || $definition['scope'] === 'none' ? null : (int)$condominium;
+        $status = $definition['status'][(string)($filters['status'] ?? '')] ?? null;
+        $title = $definition['label'] . ($status !== null ? ' - ' . $status : '');
+        $content = ListDocument::render($format, RegistryExport::table($definition, $rows), ListDocument::meta(null, $title, $condominium));
+        Audit::record('export', 'erp_reports', 0, null, ['report' => 'registry_' . $definition['slug'], 'condominium_id' => $condominium,
+            'format' => $format, 'rows' => count($rows), 'bytes' => strlen($content)]);
+        ListDocument::send($format, $content, ListDocument::filename($definition['label'], $format));
     }
 
     private function state(User $user, array $definition, int $code, string $title, string $message): void

@@ -38,7 +38,7 @@ final class ReportExportLimit
             AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)");
         $stmt->execute(['u' => (int)$user->id]);
         if (self::exceeded((int)$stmt->fetchColumn())) {
-            throw new DomainException(sprintf('Limite de %d exportações em CSV por hora. Tente mais tarde.', self::MAX_PER_HOUR));
+            throw new DomainException(sprintf('Limite de %d downloads de relatório (CSV, PDF ou Excel) por hora. Tente mais tarde.', self::MAX_PER_HOUR));
         }
     }
 }

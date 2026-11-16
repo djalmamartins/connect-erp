@@ -1108,6 +1108,7 @@ foreach ($RS::PAGES as $rsPage => $rsDef) {
     $html = $agreementPage($rsPage, 'pages/reports/report', $rsData($rsPage, [$rsSample($rsDef['columns'])]), 'real');
     $common($html, $rsPage, $catalog['pages'][$rsPage]['name']);
     $assert(str_contains($html, 'erp-report-table') && substr_count($html, '<th scope="col"') === count($rsDef['columns']) && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=csv')
+        && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=pdf') && str_contains($html, '/api/v1/reports/' . $rsDef['api'] . '?format=xlsx') && str_contains($html, '&amp;title=')
         && !str_contains($html, 'Valor <') && !str_contains($html, 'Interface proposta'), "{$rsPage}: tabela real, escapada, com CSV da API");
 }
 $html = $agreementPage('AP-052', 'pages/reports/report', $rsData('AP-052', [$rsSample($RS::PAGES['AP-052']['columns'])]));
@@ -1288,7 +1289,7 @@ $bpData = ['balanceReady' => true, 'balanceDate' => '2026-11-10', 'balanceNeedsC
 $html = $agreementPage('AP-081', 'pages/reports/balance-sheet', $bpData, 'real');
 $common($html, 'AP-081', 'Balanço Patrimonial');
 $assert(str_contains($html, 'Balanço em 10/11/2026') && str_contains($html, 'Corrente &lt;Itaú&gt;') && str_contains($html, 'Fundo de reserva &lt;F&gt;') && str_contains($html, 'R$ 120,00')
-    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'format=csv&amp;condominium_id=1&amp;date=2026-11-10')
+    && str_contains($html, 'Contas a receber') && str_contains($html, 'Resultado do exercício') && str_contains($html, 'name="data"') && str_contains($html, 'condominium_id=1&amp;date=2026-11-10&amp;format=csv')
     && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'Patrimônio líquido') && !str_contains($html, 'Interface proposta'), 'AP-081: balanço com contas, bancos e vencido');
 $assert(($bpReport['balanced'] && str_contains($html, '>Fechado<')) || (!$bpReport['balanced'] && str_contains($html, 'Diferença de')), 'AP-081: selo de fechamento');
 $html = $agreementPage('AP-081', 'pages/reports/balance-sheet', ['balanceNeedsCondo' => true, 'balance' => null] + $bpData);
@@ -1552,6 +1553,11 @@ $assert(str_contains($html, 'data-entry-shortcuts') && str_contains($html, '/fin
 $html = $entryList(['filters' => ['condominium_id' => null, 'include_standard' => true, 'status' => null, 'filter' => null, 'q' => null, 'page' => 1, 'per_page' => 50]]);
 $assert(str_contains($html, 'data-entry-shortcuts') && !str_contains($html, 'data-entry-pick') && !str_contains($html, 'entry-copy-dialog') && str_contains($html, 'escolha um condomínio na barra superior'), 'AP-020: sem condomínio, atalhos sem marcação');
 $assert(!str_contains($entryList(['canManage' => false]), 'data-entry-shortcuts'), 'AP-020: só consulta, sem atalhos');
+// Download das listas (ADR 0314, modelo 3): PDF, Excel e CSV com os filtros da tela; lista vazia sem botão.
+$html = $entryList(['filters' => ['condominium_id' => 7, 'include_standard' => true, 'status' => 'active', 'filter' => 'despesa', 'q' => 'Copasa', 'page' => 2, 'per_page' => 50]]);
+$assert(str_contains($html, 'erp-download') && str_contains($html, '>Download</summary>') && str_contains($html, 'baixar=pdf') && str_contains($html, 'baixar=xlsx') && str_contains($html, 'baixar=csv')
+    && str_contains($html, 'condominio=7&amp;situacao=active&amp;tipo=despesa&amp;q=Copasa&amp;baixar=pdf') && !str_contains($html, 'pagina=2&amp;baixar'), 'listas: Download com os filtros (ADR 0314)');
+$assert(!str_contains($entryList(['result' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 50, 'pages' => 0]]), 'erp-download'), 'listas: sem linhas, sem Download');
 
 // Termo de entrada e de saída (ADR 0311): edição com palavras-chave e termo para imprimir.
 $termCurrent = ['condominium_id' => 7, 'kind' => 'saida', 'body' => "Texto <b>@morador</b>", 'source' => 'general', 'updated_at' => null];

@@ -40,7 +40,7 @@ $totals = Screens::totals($report, $reportPage['totalLabels'] ?? []);
 
 ob_start(); ?>
     <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
-    <?php if ($reportCsv !== null && $reportRows !== [] && $reportError === null): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e(url($reportCsv)) ?>" download><?= $icon('download', 'erp-icon--sm') ?>Exportar CSV</a><?php endif; ?>
+    <?php if ($reportCsv !== null && $reportRows !== [] && $reportError === null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => url($reportCsv), 'downloadTitle' => (string)$currentPage['name'] . ($periodText !== '' ? ' - ' . $periodText : '')]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
