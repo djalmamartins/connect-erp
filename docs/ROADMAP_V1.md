@@ -11,14 +11,14 @@ Lembrete de escopo (ADR-002): uma administradora (Connect) e vários condomínio
 O sistema está funcionalmente quase completo para uma v1.0: cadastros, financeiro, cobrança, fechamento, prestação de contas,
 relatórios, operacional, Help Desk, app web do morador e app React Native existem e estão ligados à API REST. Só uma página do ERP
 ainda está em demonstração (AP-031 Pagamentos pelo banco). **O que falta para produção é quase todo fora do código de telas:**
-servidor público, backup fora da máquina, monitoramento, LGPD, homologação dos bancos com webhook e um condomínio piloto rodando
+hospedagem Cloud Startup configurada, backup fora do provedor, monitoramento, LGPD, homologação dos bancos com webhook e um condomínio piloto rodando
 um mês inteiro.
 
 **Estimativa:**
 
 | Marco | Data provável | Condição |
 | --- | --- | --- |
-| Servidor de produção no ar (sem dados reais) | 04/12/2026 | servidor e domínio escolhidos até 25/11 |
+| Servidor de produção no ar (sem dados reais) | 04/12/2026 | Cloud Startup contratado e domínio definido até 25/11 |
 | v1.0 piloto: 1 condomínio real emitindo boletos | 14/12/2026 | Inter aprovado em produção |
 | v1.0 oficial: piloto fechou um mês completo | 15/01/2027 | fechamento de dezembro e prestação de contas conferidos |
 
@@ -68,19 +68,36 @@ uma em 10 minutos e fechar. `#46` (decisões antes do banco real) fica aberta at
 | Cora produção | depois do stage; pode ficar para v1.1 se o piloto usar Inter |
 | Proxy do webhook: `ssl_verify_client` com a CA do Inter, IPs do banco, corpo até 256 KB | configurar no servidor |
 
-### 3.4 Servidor e implantação (não existe nada de produção hoje)
-- Hospedagem: VPS com Docker (o `compose.yaml` já roda app, scheduler e MariaDB 11.8). **[Djalma]** escolher fornecedor e plano.
-- Domínios públicos para ERP, Studio/Help Desk, app do morador, site e API (hoje tudo é `*.connect.lab`). **[Djalma]** domínio.
-- HTTPS (Let's Encrypt), nginx na frente, cabeçalhos de segurança, HSTS.
-- `compose` de produção: sem portas do banco expostas, `APP_ENV=production`, `ERP_DEMO_DATA=false`, sem rotas de laboratório.
+### 3.4 Servidor e implantação: Hostinger Cloud Startup (decisão do Djalma, 16/11/2026)
+Hoje não existe nada de produção. O alvo é a hospedagem **Cloud Startup** (Hostinger, painel hPanel), não uma VPS. Ela traz PHP
+selecionável, MariaDB, SSH, Composer, Git, cron, SSL grátis, e-mail e backup diário do próprio provedor. Ela **não** tem Docker,
+root, processo rodando o tempo todo nem configuração própria do servidor web (é LiteSpeed com `.htaccess`). Conferir no hPanel
+antes da etapa 4: versão do PHP (≥ 8.2), extensões `intl`, `pdo_mysql`, `openssl`, `fileinfo`, `mbstring`, versão do MariaDB e
+os limites de cron.
+
+O que muda em relação ao laboratório (que roda com `compose.yaml`):
+- **Sem Docker:** o código vai por Git/SSH; `composer install --no-dev` e `composer db:migrate` rodam pelo SSH. Banco criado no hPanel.
+- **Um domínio ou subdomínio por sistema** (ERP, Studio/Help Desk, app do morador, site e API), cada um com a pasta pública
+  apontando para o front controller certo e `.htaccess` para as rotas. **[Djalma]** domínio.
+- **Agendador:** o `service/jobs/scheduler.sh` é um laço infinito e não pode rodar ali. Trocar por linhas de cron que chamam os
+  mesmos scripts: fila de avisos a cada minuto, `tools/bank-charges-sync.php` de hora em hora, avisos do checklist e lembretes de
+  cobrança às 07:00. Os scripts já são independentes; falta só o roteiro das linhas de cron.
+- **Backup:** `tools/backup-database.sh` usa `docker compose exec`; precisa de uma versão com `mariadb-dump` direto (ver 3.5).
+- **Webhook do banco:** sem proxy próprio não dá para exigir o certificado do Inter (`ssl_verify_client`). Continua protegido pelo
+  segredo do endereço e pela consulta de cada título no banco antes de dar baixa (`BankWebhook.php`); a lista de IPs do banco vai no
+  `.htaccess`. A consulta de hora em hora segue como garantia se o webhook falhar.
+- **Antivírus de upload** (ClamAV, ADR 0098) não existe nessa hospedagem: fica desligado, com os limites de tipo e tamanho.
+- **Saída com certificado (mTLS) para o Inter e a Cora** usa o cURL do PHP e deve funcionar; testar logo no começo da etapa 4.
+- `APP_ENV=production`, `ERP_DEMO_DATA=false`, `.env` fora da pasta pública, sem rotas de laboratório.
 - Segredos só no `.env` do servidor: `CONNECT_BANK_VAULT_KEY` nova, senhas novas do banco. **Rotacionar toda credencial histórica**
   (`PENDENCIAS.md` item 7).
 - Roteiro de implantação e de reversão: `deploy-check.php`, migrations, smoke HTTP, volta para a versão anterior.
-- E-mail real: SMTP transacional com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
+- E-mail: o e-mail da própria hospedagem ou um SMTP transacional, com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
+- Limites do plano (memória e processos) podem apertar nos PDFs grandes e nas importações; medir no piloto.
 
 ### 3.5 Backup e recuperação
-- Hoje os backups ficam em `.local/backups` na mesma máquina. Falta: agendar todo dia, **cifrar**, copiar para fora do servidor
-  (outro provedor), guardar 30 dias + 12 meses, e incluir `storage/private/documents`.
+- O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,
+  incluindo `storage/private/documents`), **cifrado**, copiado para fora da Hostinger, guardando 30 dias + 12 meses.
 - **Testar a restauração** num servidor vazio e anotar o tempo. Sem isso o backup não conta.
 
 ### 3.6 Monitoramento
@@ -121,7 +138,7 @@ uma em 10 minutos e fechar. `#46` (decisões antes do banco real) fica aberta at
 | 1 | Limpeza | fechar issues #1/#2/#3/#10/#11, atualizar `PENDENCIAS.md`, decidir o PR #538 | 1 dia | ok do Djalma no #538 | 20/11 |
 | 2 | Revisão do Djalma | lista que ele traz depois de 19/11 + pendências do modelo 8 e da prestação de contas | ~1 semana | a lista | 20–27/11 |
 | 3 | Sandbox dos bancos | itens que faltam do Inter; Cora inteiro quando a credencial chegar | 2–3 dias | credencial Cora; sandbox Inter seg–sex 8h–20h | 23–27/11 |
-| 4 | Servidor de produção | VPS, domínio, HTTPS, compose de produção, segredos novos, SMTP, roteiro de implantação/reversão | ~1 semana | servidor e domínio | 30/11–04/12 |
+| 4 | Servidor de produção | Cloud Startup: domínios, HTTPS, deploy por Git/SSH, cron no lugar do scheduler, segredos novos, e-mail, roteiro de implantação/reversão | ~1 semana | plano contratado e domínio | 30/11–04/12 |
 | 5 | Backup e monitoramento | backup diário cifrado fora do servidor, teste de restauração, alertas | 2–3 dias | conta de armazenamento externo | 01–05/12 |
 | 6 | Segurança e LGPD | revisão final, teste de carga, antivírus, exportar/anonimizar titular, textos | ~1 semana | advogado/encarregado para os textos | 01–09/12 |
 | 7 | Webhook e produção do banco | webhook no sandbox com o endereço público; credencial de produção do Inter; primeiro boleto real de valor baixo | 3–5 dias + prazo do banco | aprovação do Djalma | 07–11/12 |
@@ -134,7 +151,7 @@ na ordem 4 → 5 → 6.
 
 ## 5. O que depende do Djalma
 
-1. **Servidor e domínio** (até 25/11): fornecedor da VPS, plano e os domínios públicos. É o que mais segura a data.
+1. **Cloud Startup e domínio** (até 25/11): plano contratado, acesso SSH liberado para o deploy e os domínios públicos. É o que mais segura a data.
 2. **Credencial de teste da Cora** (passo a passo em `docs/banking/CORA.md`), ou decidir que a v1.0 sai só com o Inter.
 3. **Aprovação de produção do Inter**: certificado da integração no Internet Banking e ok para o primeiro boleto real.
 4. **Condomínio piloto** e os dados reais dele.
@@ -149,4 +166,5 @@ na ordem 4 → 5 → 6.
 - A norma da NFS-e de dez/2026 pode exigir mudança na etapa 1 (ADR 0402).
 - Dados reais do piloto costumam trazer casos que o laboratório não tem (saldos antigos, acordos, unidades com histórico).
 - Não há teste de restauração de backup nem teste de carga até hoje.
+- Hospedagem compartilhada em nuvem: sem Docker nem controle do servidor web; se algum limite do plano não servir, o plano B é uma VPS.
 - Um servidor só, sem réplica: queda do servidor derruba ERP, app e webhook juntos (aceitável para a v1.0 com backup testado).
