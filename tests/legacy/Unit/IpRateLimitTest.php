@@ -29,7 +29,7 @@ final class IpRateLimitTest extends TestCase
     public function testBlocksIpAfterLimitEvenWithoutSession(): void
     {
         $limit = new IpRateLimit($this->dir);
-        $now = 1_800_000_000;
+        $now = time();
         for ($i = 1; $i <= 3; $i++) {
             self::assertFalse($limit->hit('resident_app_login', '203.0.113.7', 3, 60, $now), "pedido {$i}");
         }
@@ -42,7 +42,7 @@ final class IpRateLimitTest extends TestCase
     public function testWindowReopensAfterSeconds(): void
     {
         $limit = new IpRateLimit($this->dir);
-        $now = 1_800_000_000;
+        $now = time();
         self::assertFalse($limit->hit('k', '198.51.100.1', 1, 60, $now));
         self::assertTrue($limit->hit('k', '198.51.100.1', 1, 60, $now + 59));
         self::assertFalse($limit->hit('k', '198.51.100.1', 1, 60, $now + 61));

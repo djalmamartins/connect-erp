@@ -60,7 +60,8 @@ final class IpRateLimit
             fclose($handle);
         }
         if (random_int(1, 200) === 1) {
-            $this->purge($now);
+            // A limpeza compara com a data real do arquivo, não com o $now injetado nos testes.
+            $this->purge();
         }
         return $count > $limit;
     }
