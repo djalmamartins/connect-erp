@@ -1,6 +1,6 @@
 # 0311 — Revisão de 15/11, etapa 2: configurações de cobrança da unidade, configuração em massa, CIB e pessoa única por CPF/CNPJ
 
-- Status: Aceito (partes 1 e 2)
+- Status: Aceito (partes 1, 2 e 3)
 - Data: 16/11/2026
 - Issue: #541 (revisão de 15/11, etapa 2)
 - Relacionadas: ADR 0014 (motor de cadastros), 0030 (condomínio da barra superior), 0140 (cadastro rápido), 0206 (saída de moradores), 0310 (etapa 1)
@@ -48,10 +48,18 @@ unidade fique inativa. O modelo é referência de requisitos: o layout e o códi
    ficha da pessoa no painel da unidade (`/condominios/unidades/termo`, `GET /api/v1/unit-move-terms/render`), para
    imprimir; não é gravado. O texto geral exige acesso a todos os condomínios; gravar entra na auditoria.
 
-## Fora desta parte (continua na etapa 2)
-
-Busca e cadastro rápido de inquilino/proprietário na unidade (modelos 4/5) e troca de
-inquilino/proprietário com datas e o que fazer com as faturas (modelo 6).
+8. **Inquilino e proprietário na ficha da unidade** (parte 3, modelos 4, 5 e 6): quadro ao lado do formulário com
+   quem está hoje e a troca num modal: busca pela API de pessoas (ADR 0162) ou cadastro rápido no "+" (nome, CPF/CNPJ,
+   e-mail, telefone, com as regras do cadastro de pessoas), datas e faturas. `POST /api/v1/units/{id}/occupant-change`
+   (serviço `UnitOccupantChange`, tudo ou nada, auditado). Com histórico, os vínculos atuais terminam na saída (inativos
+   se a data já chegou) e o novo começa na entrada; sem histórico, os atuais só ficam inativos.
+9. **Pagador da conta** (migration `20261116_0230_entry_payer`): `erp_entries.payer_resident_id`. As opções de fatura
+   do modelo 6 gravam o novo como pagador nas contas abertas escolhidas (mês da entrada em diante, meses seguintes ou
+   todas) e o antigo nas que ficam, só quando o papel trocado é quem paga (responsável pela cobrança; sem definição, o
+   proprietário; com responsável financeiro, nada muda). Conta com boleto ativo nunca muda de pagador (o título já está
+   no banco). O boleto (`BankCharges::payer`) usa, nessa ordem: o pagador gravado, o responsável financeiro e o
+   responsável pela cobrança da unidade (inquilino ou proprietário). INFERIDO: "mês atual" = mês da data de entrada.
+   Alterar faturas exige `erp.entries.manage`.
 
 ## Testes
 
@@ -60,4 +68,6 @@ inquilino/proprietário com datas e o que fazer com as faturas (modelo 6).
   fatura com o total mantido, CIB normalizado e único, mesmo CPF com outro nome recusado, vínculo encerrado inativo.
 - `tests/legacy/Unit/UnitBulkSettingsRulesTest.php`: regras puras (configurações, CIB, chave do nome).
 - Render smoke: modal e marcação na lista; sem permissão ou sem condomínio, nada aparece; edição e impressão do termo.
+- `tests/legacy/Integration/UnitOccupantChangeTest.php`: troca com e sem histórico, pessoa existente e nova, faturas só
+  quando o papel paga, boleto ativo não muda, antigo fica nas contas que ficam, recusas sem gravar e escopo.
 - `tests/legacy/Integration/UnitMoveTermsTest.php`: condomínio, geral e padrão, escopo do texto geral, troca escapada das palavras-chave e pessoa de outra unidade recusada.

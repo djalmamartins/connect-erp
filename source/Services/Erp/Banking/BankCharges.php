@@ -260,20 +260,32 @@ final class BankCharges
     }
 
     /**
-     * Pagador do boleto: responsável financeiro da unidade, senão o proprietário (ativos, com
-     * documento primeiro). Endereço de cobrança = endereço do condomínio, com a unidade no complemento.
+     * Pagador do boleto: o pagador gravado na conta (troca de inquilino/proprietário, ADR 0311); senão o responsável
+     * financeiro da unidade; senão o "Responsável pela cobrança" da unidade (inquilino ou proprietário, ADR 0311), com o
+     * proprietário como reserva (ativos, com documento primeiro). Endereço de cobrança = endereço do condomínio, com a
+     * unidade no complemento.
      */
     private function payer(array $entry): ?array
     {
         if (empty($entry['unit_id'])) {
             return null;
         }
-        $stmt = $this->pdo->prepare("SELECT r.name, r.document, r.email FROM erp_residents r
-            WHERE r.unit_id = :u AND r.relationship IN ('financial','owner') AND r.status = 'active' AND r.deleted_at IS NULL
-              AND (r.ends_on IS NULL OR r.ends_on >= CURDATE())
-            ORDER BY r.relationship = 'financial' DESC, r.document IS NULL, r.id LIMIT 1");
-        $stmt->execute(['u' => $entry['unit_id']]);
-        $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        $person = false;
+        if (!empty($entry['id'])) {
+            $stmt = $this->pdo->prepare('SELECT r.name, r.document, r.email FROM erp_entries e JOIN erp_residents r ON r.id = e.payer_resident_id
+                WHERE e.id = :e AND r.deleted_at IS NULL');
+            $stmt->execute(['e' => $entry['id']]);
+            $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!is_array($person)) {
+            $stmt = $this->pdo->prepare("SELECT r.name, r.document, r.email FROM erp_residents r JOIN erp_units u ON u.id = r.unit_id
+                WHERE r.unit_id = :u AND r.relationship IN ('financial','owner','tenant') AND r.status = 'active' AND r.deleted_at IS NULL
+                  AND (r.ends_on IS NULL OR r.ends_on >= CURDATE())
+                  AND (r.relationship <> 'tenant' OR u.billing_responsible = 'inquilino')
+                ORDER BY r.relationship = 'financial' DESC, (r.relationship = 'tenant') = (u.billing_responsible = 'inquilino') DESC, r.document IS NULL, r.id LIMIT 1");
+            $stmt->execute(['u' => $entry['unit_id']]);
+            $person = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
         $stmt = $this->pdo->prepare('SELECT street, number, district, city, state, zip_code FROM condominiums WHERE id = :c');
         $stmt->execute(['c' => $entry['condominium_id']]);
         $address = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
