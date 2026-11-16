@@ -47,7 +47,7 @@ $today = date('Y-m-d');
                     </div>
                     <div class="erp-grid erp-grid--2" data-unit-occupant-quick hidden>
                         <div class="erp-field"><label class="erp-field__label" for="uo-name">Nome completo ou razão social *</label><input class="erp-input" id="uo-name" name="person_name" maxlength="160"></div>
-                        <div class="erp-field"><label class="erp-field__label" for="uo-document">CPF/CNPJ</label><input class="erp-input" id="uo-document" name="person_document" inputmode="numeric" maxlength="18"></div>
+                        <div class="erp-field"><label class="erp-field__label" for="uo-document">CPF/CNPJ</label><input class="erp-input" id="uo-document" name="person_document" inputmode="numeric" maxlength="18" data-mask="document" data-erp-cnpj-lookup data-cnpj-map="<?= $this->e((string)json_encode(['person_name' => 'razao_social', 'person_email' => 'email', 'person_phone' => 'phone'])) ?>"><span class="erp-field__error" aria-live="polite"></span></div>
                         <div class="erp-field"><label class="erp-field__label" for="uo-email">E-mail</label><input class="erp-input" id="uo-email" name="person_email" type="email" maxlength="254"></div>
                         <div class="erp-field"><label class="erp-field__label" for="uo-phone">Telefone</label><input class="erp-input" id="uo-phone" name="person_phone" inputmode="tel" maxlength="20"></div>
                         <p class="erp-field__hint erp-span-all"><button type="button" class="erp-link-button" data-unit-occupant-back>Voltar para a busca</button></p>

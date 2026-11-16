@@ -1395,6 +1395,17 @@ $actionForm = static fn (string $slug, string $page, array $values): string => $
     'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
     'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => Source\Controllers\Erp\Connect\Registry::recordAction($slug, 8, $values),
 ], 'Registro'));
+// Busca do CNPJ com mapa de campos (ADR 0312): fornecedores, advogados e pessoas.
+foreach ([['suppliers', 'AP-010', '{&quot;legal_name&quot;:&quot;razao_social&quot;,&quot;trade_name&quot;:&quot;nome_fantasia&quot;'], ['lawyers', 'AP-016', '{&quot;firm&quot;:&quot;razao_social&quot;'], ['residents', 'AP-005', '{&quot;name&quot;:&quot;razao_social&quot;']] as [$cnpjSlug, $cnpjPage, $cnpjMap]) {
+    $cnpjHtml = $render('pages/registry/form', $layoutData->invoke($panel, $user, $cnpjPage, ['title' => 'Novo', 'definition' => Source\Services\Erp\Registry\Definitions::get($cnpjSlug), 'recordId' => null,
+        'values' => ['condominium_id' => 1], 'errors' => [], 'history' => [], 'condominiums' => [['id' => 1, 'name' => 'Residencial Aurora']], 'units' => [], 'refs' => [], 'canManage' => true,
+        'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null], 'Novo'));
+    $assert(preg_match('/name="document"[^>]*data-erp-cnpj-lookup data-cnpj-map="' . preg_quote($cnpjMap, '/') . '/', $cnpjHtml) === 1, "{$cnpjPage}: CNPJ busca na Receita e preenche os campos do cadastro (ADR 0312)");
+}
+$cnpjHtml = $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-010', ['title' => 'Fornecedor', 'definition' => Source\Services\Erp\Registry\Definitions::get('suppliers'), 'recordId' => 3,
+    'values' => ['id' => 3], 'errors' => [], 'history' => [], 'condominiums' => [], 'units' => [], 'refs' => [], 'canManage' => false, 'registryAttachment' => null, 'occurrenceTicket' => null, 'recordAction' => null], 'Fornecedor'));
+$assert(!str_contains($cnpjHtml, 'data-erp-cnpj-lookup'), 'AP-010: somente leitura, sem busca do CNPJ');
+
 // Inquilino e proprietário na ficha da unidade (ADR 0311): busca, nova pessoa, faturas e datas.
 $occupantsForm = static fn (?array $occupants): string => $render('pages/registry/form', $layoutData->invoke($panel, $user, 'AP-006', [
     'title' => '101', 'definition' => Source\Services\Erp\Registry\Definitions::get('units'), 'recordId' => 8, 'values' => ['id' => 8, 'condominium_id' => 1, 'number' => '101', 'type' => 'apartamento', 'status' => 'active'],
@@ -1404,7 +1415,7 @@ $occupantsForm = static fn (?array $occupants): string => $render('pages/registr
 $html = $occupantsForm(['unitId' => 8, 'owner' => [['id' => 3, 'name' => 'Dona <Ana>', 'starts_on' => '2025-02-01']], 'tenant' => [], 'payer_role' => 'owner', 'canInvoices' => false]);
 $assert(str_contains($html, 'data-erp-unit-occupants') && str_contains($html, '/api/v1/units/8/occupant-change') && str_contains($html, 'Dona &lt;Ana&gt;') && str_contains($html, 'desde 01/02/2025')
     && str_contains($html, 'data-unit-occupant-open="tenant" data-has-current="0"') && str_contains($html, 'Informar inquilino') && str_contains($html, 'Trocar proprietário')
-    && str_contains($html, 'value="next_only" disabled') && str_contains($html, 'value="none" checked') && str_contains($html, 'name="person_document"') && str_contains($html, 'Registrar histórico de entrada/saída')
+    && str_contains($html, 'value="next_only" disabled') && str_contains($html, 'value="none" checked') && str_contains($html, 'name="person_document" inputmode="numeric" maxlength="18" data-mask="document" data-erp-cnpj-lookup') && str_contains($html, 'Registrar histórico de entrada/saída')
     && str_contains($html, 'saem em nome do o proprietário') === false && str_contains($html, 'Código CIB'), 'AP-006: inquilino e proprietário na ficha da unidade (ADR 0311)');
 $html = $occupantsForm(null);
 $assert(!str_contains($html, 'data-erp-unit-occupants'), 'AP-006: sem permissão em pessoas, sem o quadro de inquilino e proprietário');

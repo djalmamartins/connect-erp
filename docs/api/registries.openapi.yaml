@@ -175,7 +175,7 @@ components:
       properties:
         name: { type: [string, "null"], maxLength: 160 }
         oab: { type: [string, "null"], examples: ["SP 123456"] }
-        document: { type: [string, "null"], pattern: "^\\d{11}$", description: 'CPF com DV válido; resposta só com dígitos.' }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
         firm: { type: [string, "null"], maxLength: 160 }
         email: { type: [string, "null"], format: email, maxLength: 254 }
         phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
