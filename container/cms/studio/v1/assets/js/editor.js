@@ -45,7 +45,13 @@ const installToolbar = (editor, textarea) => {
         ["", "Alinhar à esquerda", "justifyLeft", "reorder-three-outline"], ["", "Centralizar", "justifyCenter", "menu-outline"], ["", "Alinhar à direita", "justifyRight", "reorder-two-outline"],
         ["Tx", "Limpar formatação", "removeFormat", null]
     ].forEach(([label, title, command, icon]) => toolbar.append(editorButton(label, title, () => editor.execCommand(command), icon)));
-    toolbar.append(editorButton("", "Inserir link", () => { editor.selection.restore(); const href = window.prompt("URL do link (https://...)"); if (href) editor.execCommand("createLink", href.trim()); }, "link-outline"));
+    // Perguntas do editor na modal do sistema (ADR 0320), no lugar de prompt/alert do navegador.
+    toolbar.append(editorButton("", "Inserir link", async () => {
+        editor.selection.restore();
+        const href = await ConnectDialog.prompt({ title: "Inserir link", message: "O texto selecionado vira um link para o endereço abaixo.", label: "Endereço (https://...)", value: "https://", type: "url", confirmLabel: "Inserir link" });
+        editor.selection.restore();
+        if (href && href.trim() && href.trim() !== "https://") editor.execCommand("createLink", href.trim());
+    }, "link-outline"));
     const file = document.createElement("input");
     file.type = "file";
     file.accept = "image/jpeg,image/png,image/webp,image/gif";
@@ -58,7 +64,7 @@ const installToolbar = (editor, textarea) => {
         try {
             const uploaded = await uploadImage(selected);
             editor.insertContent(`<p class="organic-image-block"><img src="${uploaded.url.replaceAll('"', '&quot;')}" alt="${selected.name.replaceAll('"', '&quot;')}" class="organic-content-image"></p><p><br></p>`);
-        } catch (error) { window.alert(error.message); }
+        } catch (error) { ConnectDialog.alert({ title: "A imagem não foi enviada", message: error.message + "\nO conteúdo do editor não mudou.", tone: "danger" }); }
         finally { button?.classList.remove("is-loading"); file.value = ""; }
     });
     const imageButton = editorButton("", "Enviar imagem", () => file.click(), "cloud-upload-outline");
@@ -76,18 +82,21 @@ const installToolbar = (editor, textarea) => {
         }
         picker.click();
     }, "images-outline"));
-    toolbar.append(editorButton("", "Inserir tabela", () => {
-        const rowInput = window.prompt("Número de linhas:", "3");
+    toolbar.append(editorButton("", "Inserir tabela", async () => {
+        const rowInput = await ConnectDialog.prompt({ title: "Inserir tabela", message: "Quantas linhas a tabela vai ter, além do cabeçalho? De 1 a 20.", label: "Linhas", value: "3", type: "number", min: 1, max: 20, confirmLabel: "Próximo" });
         if (rowInput === null) return;
         const rows = Math.min(20, Math.max(1, Number(rowInput) || 1));
-        const columnInput = window.prompt("Número de colunas:", "3");
+        const columnInput = await ConnectDialog.prompt({ title: "Inserir tabela", message: "E quantas colunas? De 1 a 10.", label: "Colunas", value: "3", type: "number", min: 1, max: 10, confirmLabel: "Inserir tabela" });
         if (columnInput === null) return;
         const columns = Math.min(10, Math.max(1, Number(columnInput) || 1));
         const cells = (tag) => `<${tag}>Conteúdo</${tag}>`.repeat(columns);
         editor.insertContent(`<div class="organic-table-wrap"><table class="organic-content-table"><thead><tr>${cells("th")}</tr></thead><tbody>${`<tr>${cells("td")}</tr>`.repeat(rows)}</tbody></table></div><p><br></p>`);
     }, "grid-outline"));
     toolbar.append(editorButton("", "Inserir linha horizontal", () => editor.execCommand("insertHorizontalRule"), "remove-outline"));
-    toolbar.append(editorButton("", "Editar HTML", () => { const html = window.prompt("Edite o HTML do conteúdo:", editor.getContent()); if (html !== null) editor.setExternalContent(html); }, "code-slash-outline"));
+    toolbar.append(editorButton("", "Editar HTML", async () => {
+        const html = await ConnectDialog.prompt({ title: "Editar HTML", message: "O conteúdo do editor é trocado pelo HTML abaixo quando você aplicar.", label: "HTML do conteúdo", value: editor.getContent(), multiline: true, confirmLabel: "Aplicar HTML" });
+        if (html !== null) editor.setExternalContent(html);
+    }, "code-slash-outline"));
     toolbar.append(editorButton("", "Tela cheia", () => textarea.closest(".studio-panel")?.classList.toggle("moves-organic-fullscreen"), "expand-outline"));
     editor.element.before(toolbar);
 };
@@ -140,7 +149,7 @@ document.querySelectorAll("textarea[data-organic-editor]").forEach((textarea) =>
             event.preventDefault();
             event.stopImmediatePropagation();
             editor.focus();
-            window.alert("Preencha o conteúdo antes de salvar.");
+            ConnectDialog.alert({ title: "Conteúdo vazio", message: "Preencha o conteúdo antes de salvar. Nada foi gravado." });
         }
     }, true);
 });

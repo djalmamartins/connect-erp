@@ -10,7 +10,7 @@
   if (window.ConnectNotice) return;
 
   var CSS = '' +
-    '.cn-notices{position:fixed;top:20px;right:20px;z-index:100000;display:grid;gap:10px;width:min(400px,calc(100vw - 32px));pointer-events:none;font-family:inherit}' +
+    '.cn-notices{position:fixed;top:20px;right:20px;z-index:99999;display:grid;gap:10px;width:min(400px,calc(100vw - 32px));pointer-events:none;font-family:inherit}' +
     '.cn-notice{--tone:#18587d;--soft:#eaf3fc;--badge:#18587d;display:flex;align-items:center;gap:14px;padding:12px 10px 12px 12px;border:1px solid rgba(0,0,0,.08);border-radius:11px;background:var(--soft);color:var(--tone);box-shadow:0 14px 34px rgba(20,44,33,.14);pointer-events:auto;text-align:left;animation:cn-in .28s cubic-bezier(.2,.7,.2,1) both}' +
     '.cn-notice--success{--tone:#12805c;--soft:#e3f4ec;--badge:#12805c}' +
     '.cn-notice--warning{--tone:#9a6400;--soft:#fff8e8;--badge:#e0a019}' +
@@ -27,6 +27,8 @@
     '@keyframes cn-out{to{opacity:0;transform:translateX(28px)}}' +
     '@media (max-width:600px){.cn-notices{top:12px;right:16px}}' +
     '@media (prefers-reduced-motion:reduce){.cn-notice,.cn-notice--leaving{animation-duration:.01ms}}' +
+    '.cn-notices[popover]{inset:auto;top:20px;right:20px;margin:0;padding:0;border:0;background:transparent;color:inherit;overflow:visible;height:auto}' +
+    '@media (max-width:600px){.cn-notices[popover]{top:12px;right:16px}}' +
     '@media print{.cn-notices{display:none}}';
 
   var ICONS = {
@@ -64,11 +66,24 @@
     return box;
   }
 
+  // Acima de tudo, inclusive das modais (ADR 0320): z-index 99999 e, onde há popover, a região entra na camada
+  // do topo e é reaberta a cada aviso ou modal nova, ficando por cima da <dialog> aberta.
+  function raise() {
+    var box = document.querySelector('[data-cn-notices]');
+    if (!box || typeof box.showPopover !== 'function') return;
+    if (!box.hasAttribute('popover')) box.setAttribute('popover', 'manual');
+    try {
+      if (box.matches(':popover-open')) box.hidePopover();
+      box.showPopover();
+    } catch (e) { /* sem popover: fica o z-index */ }
+  }
+
   function show(message, tone, options) {
     if (!message || !document.body) return;
     var kind = kindOf(tone);
     var animated = kind === 'success' && !(options && options.quiet);
     var box = region();
+    raise();
     var item = document.createElement('div');
     item.className = 'cn-notice cn-notice--' + kind;
     item.setAttribute('role', kind === 'error' || kind === 'warning' ? 'alert' : 'status');
@@ -164,5 +179,5 @@
     start();
   }
 
-  window.ConnectNotice = { show: show };
+  window.ConnectNotice = { show: show, raise: raise };
 })();

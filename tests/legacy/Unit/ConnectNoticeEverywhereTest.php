@@ -35,12 +35,12 @@ final class ConnectNoticeEverywhereTest extends TestCase
         self::assertStringContainsString("close.setAttribute('aria-label', 'Fechar aviso');", $js);
         self::assertStringContainsString("'cn-done-mask-' + (++seq)", $js, 'máscara única por aviso');
         self::assertStringNotContainsString('repeatCount', $js, 'a animação não repete');
-        self::assertStringContainsString('window.ConnectNotice = { show: show };', $js);
+        self::assertStringContainsString('window.ConnectNotice = { show: show, raise: raise };', $js);
     }
 
     public function testStudioSiteAndLoginLoadTheComponent(): void
     {
-        self::assertStringContainsString('/container/shared/assets/js/connect-notice.js", $themeRoot . "/assets/js/scripts.js"', $this->file('source/Services/Minify/Studio.php'));
+        self::assertStringContainsString('/container/shared/assets/js/connect-notice.js", $movesRoot . "/container/shared/assets/js/connect-dialog.js", $themeRoot . "/assets/js/scripts.js"', $this->file('source/Services/Minify/Studio.php'));
         self::assertStringContainsString('"/container/shared/assets/js/connect-notice.js",', $this->file('source/Services/Minify/Web.php'));
         self::assertStringContainsString("url('/container/shared/assets/js/connect-notice.js')", $this->file('container/cms/studio/v1/layouts/login.php'));
         self::assertStringContainsString('ConnectNotice', $this->file('container/cms/studio/v1/assets/studio.min.js'), 'bundle do Studio regerado');

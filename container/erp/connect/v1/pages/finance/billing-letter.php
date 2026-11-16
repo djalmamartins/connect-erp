@@ -1,6 +1,6 @@
 <?php
 /**
- * Carta de cobrança impressa (ADR 0317): folha A4 dobrada em três. Página 1 = parte externa (fundo floral cinza,
+ * Carta de cobrança impressa (ADR 0320): folha A4 dobrada em três. Página 1 = parte externa (fundo floral cinza,
  * aba de cabeça para baixo, destinatário, Correio e remetente); página 2 = parte interna (demonstrativos, avisos
  * e ficha do boleto). Nunca passa de duas folhas: o resumo encolhe (BillingLetter::fit). Medidas em mm, posições absolutas e tabelas,
  * porque o dompdf não entende flex/grid. Bloco com posição absoluta: a largura NÃO inclui o padding (dompdf).

@@ -17,7 +17,7 @@ use Source\Support\Audit;
 use Source\Support\QrCode;
 
 /**
- * Carta de cobrança impressa (pedido do Djalma, 16/11/2026, ADR 0317): uma folha A4 dobrada em três, com
+ * Carta de cobrança impressa (pedido do Djalma, 16/11/2026, ADR 0320): uma folha A4 dobrada em três, com
  *
  * 1. parte externa: fundo floral cinza da Connect, aba de cima de cabeça para baixo (canais de atendimento e
  *    aplicativo), logo e QR do aplicativo, destinatário na altura da janela do envelope, quadro "Para uso do

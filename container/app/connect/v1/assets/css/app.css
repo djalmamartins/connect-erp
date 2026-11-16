@@ -255,8 +255,11 @@ a.app-hero:hover { box-shadow: 0 12px 28px #06513f40; }
 .app-login__forgot { justify-self: center; font-size: 13px; }
 .app-login__note { color: var(--app-muted); font-size: 12px; margin-top: 16px; }
 .app-toast { position: fixed; left: 50%; bottom: calc(var(--app-tabs) + 24px); transform: translateX(-50%); background: #142d23; color: #fff;
-  padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 40; }
+  padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 99999; }
 @media (min-width: 900px) { .app-toast { left: auto; right: 24px; bottom: 24px; transform: none; } }
+/* Aviso como popover, acima das modais (ADR 0320): tira o estilo padrão do popover. */
+.app-toast[popover] { top: auto; right: auto; width: auto; height: auto; margin: 0; border: 0; overflow: visible; color: #fff; background: #142d23; }
+@media (min-width: 900px) { .app-toast[popover] { left: auto; right: 24px; } }
 
 @media (prefers-reduced-motion: no-preference) {
   a.app-card { transition: box-shadow .15s, transform .15s; }

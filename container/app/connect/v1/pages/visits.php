@@ -25,7 +25,7 @@ $today = date('Y-m-d');
     <?php if ($visits === []): ?><?php $this->insert('partials/empty', ['icon' => 'user-check', 'text' => 'Nenhuma visita avisada nos últimos 30 dias.']) ?><?php endif; ?>
     <ul class="app-items">
     <?php foreach ($visits as $v): [$label, $tone] = F::badge(F::VISIT, $v['status']);
-        $cancel = $v['status'] === 'active' ? '<form method="post" action="' . app_url('/visitantes/' . $v['id'] . '/cancelar') . '" data-app-confirm="Cancelar o aviso desta visita?">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
+        $cancel = $v['status'] === 'active' ? '<form method="post" action="' . app_url('/visitantes/' . $v['id'] . '/cancelar') . '" data-app-confirm="Cancelar o aviso desta visita? A portaria deixa de esperar este visitante." data-confirm-undo="nao" data-confirm-undo-text="Se a visita vier, avise de novo." data-confirm-action="Cancelar aviso">' . csrf_input() . '<button class="app-link-button" type="submit">Cancelar</button></form>' : null;
         $this->insert('partials/item', ['icon' => 'user-check', 'tone' => $v['status'] === 'active' ? 'brand' : 'neutral', 'title' => $v['visitor_name'],
             'lines' => [F::date($v['expected_on']) . ($v['expected_until'] && $v['expected_until'] !== $v['expected_on'] ? ' a ' . F::date($v['expected_until']) : '') . ($v['visitor_document'] ? ' · doc. ' . $v['visitor_document'] : ''), (string)$v['notes']],
             'badge' => [$label, $tone], 'actions' => $cancel]);

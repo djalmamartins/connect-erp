@@ -28,7 +28,7 @@ $this->layout('default');
             <noscript><button class="app-button" type="submit">Enviar</button></noscript>
         </form>
         <?php if (!empty($photo)): ?>
-            <form method="post" action="<?= app_url('/perfil/foto/remover') ?>" data-app-confirm="Tirar a sua foto?"><?= csrf_input() ?><button class="app-link-button" type="submit">Remover</button></form>
+            <form method="post" action="<?= app_url('/perfil/foto/remover') ?>" data-app-confirm="Tirar a sua foto? Ela sai do seu perfil." data-confirm-undo="sim" data-confirm-undo-text="Dá para enviar uma foto de novo." data-confirm-action="Remover foto"><?= csrf_input() ?><button class="app-link-button" type="submit">Remover</button></form>
         <?php endif; ?>
         <p class="app-hint">JPG, PNG ou WebP até 10 MB. A foto aparece só para você.</p>
     </div>

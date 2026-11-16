@@ -8,6 +8,8 @@
     el.setAttribute('role', 'status');
     el.textContent = text;
     document.body.appendChild(el);
+    // Acima de tudo, inclusive de uma modal aberta (ADR 0320): popover na camada do topo, ou z-index 99999.
+    if (typeof el.showPopover === 'function') { el.setAttribute('popover', 'manual'); try { el.showPopover(); } catch (e) { /* fica o z-index */ } }
     setTimeout(function () { el.remove(); }, 2600);
   }
   document.addEventListener('click', function (event) {
@@ -16,18 +18,27 @@
       var value = copy.getAttribute('data-app-copy');
       var done = function () { toast('Copiado. Cole no app do seu banco.'); };
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(value).then(done, function () { window.prompt('Copie o código:', value); });
+        navigator.clipboard.writeText(value).then(done, function () { window.ConnectDialog.copy('o código', value); });
       } else {
-        window.prompt('Copie o código:', value);
+        window.ConnectDialog.copy('o código', value);
       }
       return;
     }
     var more = document.querySelector('.app-tabs__more[open]');
     if (more && !more.contains(event.target)) more.removeAttribute('open');
   });
+  // Cancelamentos: a pergunta abre a modal do sistema (ADR 0320); com o sim, o formulário segue.
   document.addEventListener('submit', function (event) {
-    var message = event.target.getAttribute('data-app-confirm');
-    if (message && !window.confirm(message)) event.preventDefault();
+    var form = event.target;
+    if (!form.hasAttribute('data-app-confirm')) return;
+    if (form._appConfirmed) { form._appConfirmed = false; return; }
+    event.preventDefault();
+    var submitter = event.submitter || form.querySelector('[type="submit"]');
+    window.ConnectDialog.ask(form, 'data-app-confirm', submitter ? (submitter.textContent || submitter.value || '').trim() : '').then(function (yes) {
+      if (!yes) return;
+      form._appConfirmed = true;
+      if (form.requestSubmit) form.requestSubmit(submitter && submitter.form === form ? submitter : undefined); else form.submit();
+    });
   });
   document.addEventListener('change', function (event) {
     if (event.target.matches('[data-app-autosubmit], [data-app-autosubmit-file]')) event.target.form.submit();
