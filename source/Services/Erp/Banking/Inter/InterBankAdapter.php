@@ -45,6 +45,8 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
     /** Linhas por página do extrato e teto de páginas por consulta (anti-laço). */
     private const STATEMENT_PAGE_SIZE = 100;
     private const STATEMENT_MAX_PAGES = 50;
+    /** Esperas (segundos) antes de repetir uma consulta do extrato que o Inter limitou (429). */
+    private const RATE_LIMIT_WAITS = [3, 8, 15];
     /** Dias depois do vencimento em que o boleto ainda pode ser pago (o Inter aceita até 60). */
     public const DAYS_AFTER_DUE = 30;
     private const MAX_WEBHOOK_ITEMS = 500;
@@ -60,6 +62,7 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         private InterHttp $http,
         private string $baseUrl = self::SANDBOX_URL,
         private ?\Closure $clock = null,
+        private ?\Closure $sleep = null,
     ) {
         foreach (['client_id', 'client_secret', 'certificate', 'private_key'] as $key) {
             if (trim((string)($credentials[$key] ?? '')) === '') {
@@ -338,8 +341,8 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         $lines = [];
         $seen = [];
         for ($page = 0; $page < self::STATEMENT_MAX_PAGES; $page++) {
-            $response = $this->call('GET', '/banking/v2/extrato/completo?' . http_build_query(['dataInicio' => $from, 'dataFim' => $to,
-                'pagina' => $page, 'tamanhoPagina' => self::STATEMENT_PAGE_SIZE]), null, 'application/json', self::STATEMENT_SCOPE);
+            $response = $this->readStatement('/banking/v2/extrato/completo?' . http_build_query(['dataInicio' => $from, 'dataFim' => $to,
+                'pagina' => $page, 'tamanhoPagina' => self::STATEMENT_PAGE_SIZE]));
             if ($response['status'] !== 200) {
                 throw new RuntimeException(self::errorMessage($response));
             }
@@ -368,7 +371,7 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         if ($on === null) {
             throw new InvalidArgumentException('Data do saldo inválida.');
         }
-        $response = $this->call('GET', '/banking/v2/saldo?' . http_build_query(['dataSaldo' => $on]), null, 'application/json', self::STATEMENT_SCOPE);
+        $response = $this->readStatement('/banking/v2/saldo?' . http_build_query(['dataSaldo' => $on]));
         if ($response['status'] !== 200) {
             throw new RuntimeException(self::errorMessage($response));
         }
@@ -406,6 +409,26 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         $seen[$fitid] = true;
         return ['fitid' => mb_substr($fitid, 0, 80), 'kind' => $operation === 'C' ? 'credit' : 'debit', 'posted_on' => $date,
             'amount_cents' => $operation === 'C' ? $cents : -$cents, 'memo' => mb_substr($memo !== '' ? $memo : (string)($item['tipoTransacao'] ?? ''), 0, 160)];
+    }
+
+    /**
+     * GET do extrato ou do saldo. O Inter limita as consultas por minuto (429, confirmado no sandbox em 16/11/2026):
+     * espera e repete algumas vezes antes de desistir com uma mensagem clara.
+     *
+     * @return array{status:int, body:string}
+     */
+    private function readStatement(string $path): array
+    {
+        foreach ([...self::RATE_LIMIT_WAITS, null] as $wait) {
+            $response = $this->call('GET', $path, null, 'application/json', self::STATEMENT_SCOPE);
+            if ($response['status'] !== 429) {
+                return $response;
+            }
+            if ($wait !== null) {
+                $this->sleep !== null ? ($this->sleep)($wait) : sleep($wait);
+            }
+        }
+        throw new RuntimeException('O Inter limitou as consultas por minuto (429) e continuou recusando depois de esperar. Espere um minuto e tente um período menor.');
     }
 
     /** Só pede o token (homologação da credencial e do certificado), sem emitir nada. */

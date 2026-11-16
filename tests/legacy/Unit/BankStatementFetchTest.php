@@ -57,6 +57,27 @@ final class BankStatementFetchTest extends TestCase
         self::assertSame(['extrato.read', InterBankAdapter::SCOPES], $this->http->tokenScopes, 'Token da cobrança pedido à parte, sem o escopo do extrato.');
     }
 
+    public function testRateLimitWaitsAndRetriesThenGivesUpClearly(): void
+    {
+        $waits = [];
+        $adapter = new InterBankAdapter(['client_id' => 'cid-teste', 'client_secret' => 'segredo-teste', 'certificate' => 'CERT', 'private_key' => 'KEY'],
+            $this->http, InterBankAdapter::SANDBOX_URL, null, function (int $seconds) use (&$waits): void {
+                $waits[] = $seconds;
+            });
+        $this->http->statement = [self::tx('T1', '2026-11-03', 'C', '10.00')];
+        $this->http->rateLimited = 2;
+        self::assertCount(1, $adapter->statement('2026-11-01', '2026-11-16'), 'Depois de esperar, a consulta passa.');
+        self::assertSame([3, 8], $waits);
+        $this->http->rateLimited = 10;
+        try {
+            $adapter->balance('2026-11-16');
+            self::fail('Limite que não passa vira erro claro.');
+        } catch (RuntimeException $error) {
+            self::assertStringContainsString('Espere um minuto', $error->getMessage());
+        }
+        self::assertSame([3, 8, 3, 8, 15], $waits);
+    }
+
     public function testBalanceAndLineFallbacks(): void
     {
         self::assertSame(150025, $this->adapter->balance('2026-11-16'));
