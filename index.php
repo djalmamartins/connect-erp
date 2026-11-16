@@ -90,6 +90,7 @@ $route->get("/bank-charges/{id}", "Banking:show", null, \Source\Support\Middlewa
 $route->post("/bank-charges/{id}/refresh", "Banking:refresh", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/cancel", "Banking:cancel", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-charges/{id}/pdf", "Banking:pdf", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/bank-charges/{id}/letter", "Banking:letter", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-charges/{id}/simulate-payment", "Banking:simulatePayment", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-remittances", "Banking:remittances", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Credencial do banco pela tela Integrações (ADR 0158): pacote do banco, teste e cofre; só sandbox.

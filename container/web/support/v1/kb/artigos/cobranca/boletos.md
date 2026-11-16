@@ -8,7 +8,7 @@ menu: Cobrança > Boletos
 icone: list-outline
 relacionados: faturas, arquivo-de-retorno, retornos, acordos, remessas, banco-inter
 situacao: funciona
-palavras: boletos, cobrança, AP-035, inter, pix, pdf, boleto híbrido
+palavras: boletos, cobrança, AP-035, inter, pix, pdf, boleto híbrido, carta de cobrança, correio, envelope
 manual: sim
 rascunho: nao
 ---
@@ -54,6 +54,17 @@ recorte: dialog[open]
 >! Enquanto o banco estiver em modo de teste, os boletos são de homologação e não valem para pagamento.
 
 O pagamento é baixado automaticamente quando o [arquivo de retorno](artigo:arquivo-de-retorno) do banco é importado.
+
+## Carta de cobrança para o Correio
+
+Em um boleto **registrado** ou **pago**, o botão {{Carta}} abre a carta de cobrança em PDF, pronta para imprimir em A4 e dobrar em três:
+
+- **Parte externa**: fundo floral da Connect, canais de atendimento e aplicativo (na aba de cima), destinatário, quadro "Para uso do Correio" e remetente.
+- **Parte interna**: vencimento e valor, composição do boleto, demonstrativo do mês anterior do condomínio, contas bancárias, inadimplência, espaço de avisos e a ficha do boleto com linha digitável e código de barras.
+
+O destinatário é o mesmo pagador do boleto no banco, com o endereço do condomínio, o bloco e o apartamento. Quando o demonstrativo não cabe na parte interna, ela mostra os totais e o detalhe sai numa folha a mais.
+
+> A carta só lê os dados: gerar de novo não muda o boleto nem a conta a receber.
 
 ## Boletos pelo Banco Inter
 

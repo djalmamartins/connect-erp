@@ -1339,6 +1339,22 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: 'Boleto não registrado ou banco sem PDF (sandbox interno)' }
         '502': { description: 'O banco não devolveu o PDF agora' }
+  /bank-charges/{id}/letter:
+    get:
+      operationId: getBankChargeLetter
+      summary: Carta de cobrança impressa em PDF, gerada pelo ERP (ADR 0317; erp.bank_charges.view)
+      description: >-
+        Folha A4 dobrada em três: parte externa (destinatário, Correio, remetente, canais e aplicativo) e parte interna
+        (composição do boleto, demonstrativo do mês anterior, contas bancárias, inadimplência, avisos e ficha do boleto
+        com linha digitável e código de barras ITF-25). Só para boleto registrado ou pago, com linha digitável.
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Boleto ainda não registrado no banco (sem linha digitável)' }
   /webhooks/bank/{adapter}/{secret}:
     post:
       operationId: receiveBankWebhook
