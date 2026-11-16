@@ -1,6 +1,6 @@
-# 0313 — Revisão de 15/11, etapa 4: fechamento mensal em ordem e lançamento para várias unidades
+# 0313 — Revisão de 15/11, etapa 4: fechamento mensal em ordem, lançamento para várias unidades e Nova Receita
 
-- Status: Aceito (partes 1 e 2)
+- Status: Aceito (partes 1, 2 e 3)
 - Data: 16/11/2026
 - Issue: #543 (revisão de 15/11, etapa 4)
 - Relacionadas: ADR 0031 (fechamento mensal), 0100 (concorrência), 0181 (conferência antes de fechar), 0205 (fechamento em lote)
@@ -37,6 +37,21 @@ mês imediatamente anterior, e o fechamento não recusava nada.
    API: o mesmo `POST` do cadastro aceita `extra_unit_ids` e `unit_amount_mode`; responde 201 com o primeiro em `data` e
    todos em `meta.created_ids`.
 
+7. **Nova Receita no padrão do modelo 8** (parte 3, item 16): Lançar Receita (AP-025) deixa de abrir o "novo" de contas
+   a receber e ganha tela própria, `POST /api/v1/revenues` (serviço `RevenueLaunch`) sobre o que já existe:
+   - sem rateio: um lançamento de receita sem unidade, pelo motor de cadastros;
+   - com rateio (todas as unidades menos as isentas, ADR 0311, ou as escolhidas): uma cobrança extra
+     (`EntryShortcuts::createCharge`), que ganhou o cálculo `custom` (valor de cada unidade, migration
+     `20261116_0400_extra_charge_custom`, reversível), o documento e o centro de custo nas contas geradas;
+   - fundo de reserva: percentual de 0,01 a 30 sobre o valor de cada unidade, numa segunda cobrança com a conta do fundo;
+   - cobrar de: o responsável pela cobrança (padrão) ou o proprietário ou inquilino ativo, gravado como pagador (ADR 0311);
+   - repetir de 2 a 24 meses (competência e vencimento do mês seguinte, último dia quando o mês é menor), com "(1/N)";
+   - tudo numa transação: mês fechado ou unidade inválida em qualquer mês desfaz todos.
+   Permissão: `erp.entries.manage`; ratear também exige `erp.invoices.manage` (a mesma da cobrança extra).
+   PENDENTE: "conta relacionada" e "tipo da fatura" do modelo (as contas avulsas não entram numa fatura de tipo) e
+   anexos no mesmo envio (cada conta aceita anexo na ficha, ADR 0174). INFERIDO: o fundo de reserva sai como conta
+   separada para a prestação de contas mostrar o fundo na conta dele.
+
 ## Testes
 
 - `tests/legacy/Integration/MonthClosingIntegrationTest.php`: meses pendentes por condomínio, mês vazio fora, recusa
@@ -46,3 +61,7 @@ mês imediatamente anterior, e o fechamento não recusava nada.
 - `tests/legacy/Integration/EntryUnitsTest.php`: um por unidade, valor por unidade e dividido, auditoria de cada um,
   e recusas sem gravar (unidade de outro condomínio, sem a primeira unidade, total pequeno demais, mês fechado).
 - Render smoke: outras unidades marcadas, escapadas, modo do valor e erro no resumo; nada ao editar.
+- `tests/legacy/Integration/RevenueLaunchTest.php`: todas as unidades sem a isenta, fundo de reserva, repetição com
+  "(1/N)" e fim de fevereiro, inquilino como pagador, valor de cada unidade, sem rateio, recusas (valor faltando, fundo
+  acima de 30% ou sem conta, repetição acima de 24, mês fechado desfaz tudo, condomínio fora do escopo).
+- Render smoke: Nova Receita com rateio e opções, sem permissão de cobrança, sem condomínio e só consulta.

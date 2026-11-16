@@ -6210,6 +6210,23 @@ paths:
         '403': { description: 'Sem permissão, ou sem acesso a todos os condomínios' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou fornecedor recusado (errors e _supplier); nada é gravado' }
+  /revenues:
+    post:
+      operationId: launchRevenue
+      summary: 'Nova Receita (AP-025, ADR 0313): sem rateio ou rateada entre as unidades, com fundo de reserva, cobrar de e repetição (erp.entries.manage; com rateio, também erp.invoices.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, apportion, description, chart_account_id, competence, due_on], properties: { condominium_id: { type: integer }, apportion: { type: string, enum: [none, all, chosen], description: 'none = receita do condomínio, sem unidade; all = todas as unidades ativas menos as isentas de rateio; chosen = unit_ids' }, description: { type: string, minLength: 3, maxLength: 120 }, chart_account_id: { type: integer }, cost_center_id: { type: integer }, document_number: { type: string, maxLength: 40 }, competence: { type: string, example: '2026-11', description: 'Incluir na fatura de' }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction, custom] }, amount_cents: { type: string, example: '120,00' }, unit_ids: { type: array, items: { type: integer } }, unit_amounts: { type: object, additionalProperties: { type: string } }, reserve_percent: { type: string, example: '10', description: '0,01 a 30; vazio = sem fundo' }, reserve_account_id: { type: integer }, payer: { type: string, enum: [responsible, owner, tenant], default: responsible }, repeat: { type: integer, minimum: 1, maximum: 24, default: 1 }, repeat_label: { type: boolean, description: 'Acrescenta (1/N) à descrição' } } } } }
+      responses:
+        '201': { description: Lançada, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { entries: { type: array, items: { type: integer } }, charges: { type: array, items: { type: integer } }, months: { type: integer } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Competência fechada }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /extra-charges:
     get:
       operationId: listExtraCharges
@@ -6233,7 +6250,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [condominium_id, kind, description, chart_account_id, competence, due_on, amount_cents, unit_ids], properties: { condominium_id: { type: integer }, kind: { type: string, enum: [extra, fine] }, description: { type: string, minLength: 3, maxLength: 120 }, chart_account_id: { type: integer, description: 'Conta analítica de receita' }, competence: { type: string, example: '2026-11' }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction] }, amount_cents: { type: string, example: '120,00' }, unit_ids: { type: array, items: { type: integer } }, related_entry_id: { type: integer, description: 'Multa: conta a que se refere' }, reason: { type: string, description: 'Multa: obrigatório' } } } } }
+        content: { application/json: { schema: { type: object, required: [condominium_id, kind, description, chart_account_id, competence, due_on, amount_cents, unit_ids], properties: { condominium_id: { type: integer }, kind: { type: string, enum: [extra, fine] }, description: { type: string, minLength: 3, maxLength: 120 }, chart_account_id: { type: integer, description: 'Conta analítica de receita' }, competence: { type: string, example: '2026-11' }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction, custom] }, amount_cents: { type: string, example: '120,00', description: 'Sem uso com method custom' }, unit_ids: { type: array, items: { type: integer } }, unit_amounts: { type: object, additionalProperties: { type: string }, description: 'method custom (ADR 0313): valor de cada unidade, pelo id da unidade' }, document_number: { type: string, maxLength: 40 }, cost_center_id: { type: integer }, related_entry_id: { type: integer, description: 'Multa: conta a que se refere' }, reason: { type: string, description: 'Multa: obrigatório' } } } } }
       responses:
         '201': { description: Cobrança com as contas geradas }
         '401': { $ref: '#/components/responses/Unauthenticated' }

@@ -619,6 +619,20 @@ $assert(str_contains($html, 'data-charge-form') && str_contains($html, 'data-cha
 $html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['charges' => ['data' => [$chargeRow(['kind' => 'fine', 'kind_label' => 'Multa avulsa', 'method' => 'fixed', 'reason' => 'Barulho <22h>', 'units_count' => 1])], 'total' => 1]]), 'list');
 $common($html, 'AP-027', 'Lançar Multa');
 $assert(str_contains($html, 'data-charge-kind="fine"') && str_contains($html, 'name="unit_id" required') && !str_contains($html, 'name="unit_ids"') && !str_contains($html, 'data-charge-method') && str_contains($html, 'id="charge-reason"') && str_contains($html, 'Barulho &lt;22h&gt;'), 'AP-027: multa de uma unidade com motivo');
+// Nova Receita (AP-025, ADR 0313): modelo 8 no layout do Connect ERP, gravação pela API.
+$revenueData = static fn (array $over = []): array => $over + ['shortcutReady' => true, 'shortcutCanManage' => true, 'shortcutContext' => 7, 'shortcutError' => null,
+    'revenueAccounts' => [['id' => 3, 'condominium_id' => null, 'label' => '1.08 Receitas <diversas>']], 'revenueCostCenters' => [['id' => 4, 'condominium_id' => 7, 'label' => 'CC Portaria']],
+    'revenueUnits' => [['id' => 11, 'label' => 'Apto <101>', 'exempt' => false], ['id' => 12, 'label' => 'Apto 102', 'exempt' => true]], 'revenueCanApportion' => true];
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(), 'form');
+$assert(str_contains($html, 'data-revenue-form') && str_contains($html, '/api/v1/revenues') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, '1.08 Receitas &lt;diversas&gt;')
+    && str_contains($html, 'value="chosen"') && str_contains($html, 'value="custom"') && str_contains($html, 'name="reserve_percent"') && str_contains($html, 'name="repeat"') && str_contains($html, 'value="tenant"')
+    && str_contains($html, '1 unidade(s) isenta(s) de rateio') && str_contains($html, 'data-exempt="1"'), 'AP-025: Nova Receita com rateio, valor de cada unidade, fundo, cobrar de e repetição');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['revenueCanApportion' => false]));
+$assert(str_contains($html, 'data-revenue-form') && !str_contains($html, 'value="chosen"') && str_contains($html, 'Ratear exige permissão'), 'AP-025: sem permissão de cobrança, só receita sem rateio');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['shortcutContext' => null]));
+$assert(!str_contains($html, 'data-revenue-form') && str_contains($html, 'Escolha um condomínio na barra superior'), 'AP-025: em Todos pede o condomínio');
+$html = $agreementPage('AP-025', 'pages/finance/new-revenue', $revenueData(['shortcutCanManage' => false]));
+$assert(!str_contains($html, 'data-revenue-form') && str_contains($html, 'somente para consulta'), 'AP-025: sem permissão só consulta');
 $html = $agreementPage('AP-027', 'pages/finance/extra-charges', $chargeData('fine', ['shortcutContext' => null, 'chargeUnits' => [], 'chargeAccounts' => []]));
 $assert(!str_contains($html, 'data-charge-form') && str_contains($html, 'Escolha um condomínio na barra superior para lançar'), 'AP-027: em todos os condomínios pede a escolha');
 $html = $agreementPage('AP-028', 'pages/finance/extra-charges', $chargeData('extra', ['chargeAccounts' => []]));

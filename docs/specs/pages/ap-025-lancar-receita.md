@@ -7,10 +7,15 @@
 - **Natureza desta ficha:** scaffold gerado automaticamente; detalhes ainda NÃO confirmados
 
 ## Objetivo funcional
-PENDENTE: detalhar com base na auditoria e decisões próprias do Connect ERP.
+CONFIRMADO (revisão de 15/11, item 16, modelo 8; ADR 0313): lançar uma receita do condomínio ou cobrada das unidades,
+com rateio, valor de cada unidade, fundo de reserva, cobrar de e repetição.
 
 ## Campos, controles, filtros, colunas e links
-PENDENTE: levantar evidências específicas; não inferir a partir da quantidade de controles.
+CONFIRMADO (modelo 8): descrição, conta da receita, centro de custo, vencimento, valor, documento, rateio (sem rateio,
+todas as unidades menos as isentas, escolhidas), cálculo (fixo, dividido, fração, valor de cada unidade), fundo de
+reserva (% e conta), incluir na fatura de (competência), cobrar de (responsável, proprietário, inquilino), repetir
+(2 a 24 meses, com "(1/N)" opcional). Grava por `POST /api/v1/revenues` (`RevenueLaunch`).
+PENDENTE: "conta relacionada", "tipo da fatura" e anexos no mesmo envio (anexo na ficha de cada lançamento, ADR 0174).
 
 ## Modelo de dados e dependências
 PROPOSTO: mapear entidades canônicas e relacionamentos após inspeção do Organic Code.
