@@ -1489,6 +1489,7 @@ paths:
         - { name: basis, in: query, schema: { type: string, enum: [competence, cash], default: competence } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { condominium_id, year, basis, truncated, months[12], rows[{code, name, nature, level, analytic, months_cents[12], total_cents}], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1510,6 +1511,7 @@ paths:
         - { name: year, in: query, required: true, schema: { type: integer, minimum: 2000, maximum: 2100 } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { condominium_id, year, from, to, as_of, truncated, months{expected, closed, open}, income_statement, balance_sheet, funds, budget, delinquency, summary, warnings } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1532,6 +1534,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { unit{id, condominium_id, label}, from, to, as_of, truncated, rows[{entry_id, description, competence, due_on, paid_on, amount_cents, agreement_id, situation}], totals{opening_cents, charged_cents, paid_cents, open_cents, overdue_cents, paid, open, overdue, renegotiated} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1600,6 +1603,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}$' } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { from, to, previous_from, previous_to, expenses_cents, identified_cents, suppliers, truncated, rows[{ supplier_id, name, document_masked, entries, total_cents, paid_cents, open_cents, share_percent, top_accounts[], first_competence, last_competence, months_active, previous_cents, variation_percent }], without_supplier, concentration{ top1_percent, top5_percent, hhi }, previous_only_suppliers, warnings[] } } ou CSV' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1680,6 +1684,7 @@ paths:
         - { name: account_code, in: query, schema: { type: string, example: '2.01' } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { accounts[{code, name, nature, opening_cents, debit_cents, credit_cents, closing_cents, lines[]}], truncated } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1699,6 +1704,7 @@ paths:
         - { name: to, in: query, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { accounts[{bank_account_id, condominium_id, condominium_name, name, opening_cents, received_cents, paid_cents, closing_cents}], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -1718,6 +1724,7 @@ paths:
         - { name: basis, in: query, schema: { type: string, enum: [competence, cash], default: competence } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[{code, name, nature, level, analytic, amount_cents}], totals{revenue_cents, expense_cents, result_cents, margin_percent} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -2059,6 +2066,7 @@ paths:
         - { name: date, in: query, schema: { type: string, format: date }, description: 'Sem ela, vale hoje' }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { date, year_start, assets, liabilities, equity, totals, balanced, warnings[], limitations[] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4364,6 +4372,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, breached, cancelled] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { from, to, as_of, agreements[], totals{agreements, total_cents, paid_cents, open_cents, overdue_cents, by_status} } } ou text/csv' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4381,6 +4390,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { condominiums[], totals } } ou text/csv' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4400,6 +4410,7 @@ paths:
         - { name: view, in: query, schema: { type: string, enum: [general, unit, detailed, fee, resident], default: unit } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { as_of, view, rows[], totals } } ou text/csv' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4418,6 +4429,7 @@ paths:
         - { name: group, in: query, schema: { type: string, enum: [entry, bank_account, chart_account], default: entry } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { from, to, group, rows[], totals{entries, amount_cents, late} } } ou text/csv' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4437,6 +4449,7 @@ paths:
         - { name: by, in: query, schema: { type: string, enum: [unit] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { from, to, by_unit, rows[{ kind, unit_label, readings, consumption, amount_cents, billed }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4454,6 +4467,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4473,6 +4487,7 @@ paths:
         - { name: to_b, in: query, required: true, schema: { type: string } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { a, b, rows[{ code, name, nature, a_cents, b_cents, difference_cents, percent }] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4491,6 +4506,7 @@ paths:
         - { name: view, in: query, schema: { type: string, enum: [accounts, analytic, situation], default: accounts } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { view, rows[], totals{receita_cents, despesa_cents, result_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4508,6 +4524,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { opening_cents, rows[{ on_date, description, amount_cents, balance_cents }], totals{in_cents, out_cents, closing_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4531,6 +4548,7 @@ paths:
         - { name: unit_id, in: query, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { blocked, missing_fraction[], rows[], totals{expenses, amount_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4551,6 +4569,7 @@ paths:
         - { name: detailed, in: query, schema: { type: boolean } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{entries, receita_cents, despesa_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4569,6 +4588,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [pending, registered, rejected, paid, cancelled] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{charges, amount_cents, paid_cents, by_status} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4587,6 +4607,7 @@ paths:
         - { name: nature, in: query, schema: { type: string, enum: [despesa, receita, all], default: despesa } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ from, to, nature, rows[{ paid_on, due_on, paid_late, description, document_number, account, bank_account, supplier, supplier_document (mascarado), unit_label, amount_cents }], totals{entries, amount_cents, by_bank_account} }, ou CSV' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4605,6 +4626,7 @@ paths:
         - { name: as_of, in: query, schema: { type: string, format: date }, description: 'Padrão hoje; no máximo 60 dias à frente (ADR 0113)' }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ as_of, rule{fine_bp, monthly_interest_bp, price_index, source, formula}, rows[{ unit_label, description, competence, due_on, principal_cents, index_steps[{competence, rate_percent, factor}], days_late, correction_cents, fine_cents, interest_cents, total_cents, missing_index }], totals }, ou CSV' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4624,6 +4646,7 @@ paths:
         - { name: active_only, in: query, schema: { type: string, enum: ['1'] }, description: '1 = esconde as canceladas' }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ from, to, rows[{ transferred_on, from_account, to_account, description, amount_cents, status, cancel_reason }], totals{transfers, amount_cents, cancelled} }, ou CSV' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4754,6 +4777,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, confirmed, inactive] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{reservations, confirmed, fee_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4769,6 +4793,7 @@ paths:
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{units, without_fraction, fraction_sum, with_overdue} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4784,6 +4809,7 @@ paths:
         - { name: relationship, in: query, schema: { type: string, enum: [owner, tenant, resident, financial] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[{ name, relationship, document (mascarado), email (mascarado), phone (mascarado) }], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4797,6 +4823,7 @@ paths:
       parameters:
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4813,6 +4840,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [active, running, done] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{occurrences, by_status} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4829,6 +4857,7 @@ paths:
         - { name: until, in: query, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { until, rows[], totals{entries, amount_cents, overdue_cents} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4846,6 +4875,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4863,6 +4893,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4877,6 +4908,7 @@ paths:
       parameters:
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4893,6 +4925,7 @@ paths:
         - { name: action, in: query, schema: { type: string, enum: [create, update, delete, export] } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[{ created_at, user_name, action, entity, entity_id, severity, ip, context }], totals } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4907,6 +4940,7 @@ paths:
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{grants, people}, note } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -4923,6 +4957,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
         - { name: format, in: query, schema: { type: string, enum: [json, csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ data: { rows[], totals{notices, by_status, recipients} } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -6744,6 +6779,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ assembly, rows[{ unit_label, attendee_name, is_proxy, proxy_document_id, eligible, overdue_cents, checked_in_at }], totals }, ou CSV. overdue_cents só com erp.agreements.view; senão null (ADR 0094)' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -6777,6 +6813,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: format, in: query, schema: { type: string, enum: [csv, pdf, xlsx] }, description: "Download (ADR 0314): csv, pdf no padrão do modelo 3 ou xlsx" }
         - { name: title, in: query, schema: { type: string, maxLength: 120 }, description: "Título no PDF e no Excel (texto simples)" }
+        - { name: hide_unit, in: query, schema: { type: integer, enum: [1] }, description: "Download sem a coluna Unidade (ADR 0314, Ocultar unidade)" }
       responses:
         '200': { description: '{ assembly (com minutes e minutes_sha256), rows[{ position, title, vote_basis, quorum, status, yes, no, abstain, total, votes, approved }] }, ou CSV' }
         '401': { $ref: '#/components/responses/Unauthenticated' }

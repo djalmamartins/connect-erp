@@ -42,11 +42,14 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
+<?php // "Ocultar unidade" (revisão de 15/11 item 19, ADR 0314): mostra os valores sem dizer qual unidade.
+$hideUnit = ($_GET['ocultar_unidade'] ?? '') === '1'; ?>
 <?php if ($accountabilityNeedsCondo): ?>
     <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('building') ?></span><strong>Escolha um condomínio</strong><p>A prestação de contas é de um condomínio só. Escolha o condomínio na barra superior.</p></div>
 <?php else: ?>
 <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Mês da prestação de contas">
     <div class="erp-field erp-field--compact"><label for="pc-month">Mês</label><input class="erp-input" type="month" id="pc-month" name="mes" value="<?= $this->e($accountabilityMonth) ?>" max="<?= date('Y-m') ?>" required></div>
+    <div class="erp-field erp-field--compact"><span class="erp-field__label" aria-hidden="true">&nbsp;</span><label class="erp-check" for="pc-hide-unit"><input type="checkbox" id="pc-hide-unit" name="ocultar_unidade" value="1"<?= $hideUnit ? ' checked' : '' ?>><span>Ocultar unidade</span></label></div>
     <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Gerar</button></div>
 </form>
 
@@ -83,7 +86,7 @@ $this->insert('components/layout/page-head', [
 
     <section class="erp-card" aria-labelledby="pc-delinquency-title">
         <div class="erp-card__head"><div><h2 id="pc-delinquency-title">Inadimplência em <?= $this->e(RS::brDate($p['delinquency']['as_of'])) ?></h2><p><?= (int)$p['delinquency']['totals']['units'] ?> unidade(s) · <?= (int)$p['delinquency']['totals']['entries'] ?> conta(s) · <?= $this->e(RS::brl((int)$p['delinquency']['totals']['amount_cents'])) ?> sem encargos<?= !empty($p['delinquency']['truncated']) ? ' · mostrando as ' . count($p['delinquency']['units']) . ' maiores' : '' ?>.</p></div></div>
-        <?= $p['delinquency']['units'] === [] ? '<div class="erp-empty"><span class="erp-empty__icon">' . $icon('check') . '</span><strong>Nenhuma unidade em atraso</strong><p>Não havia conta vencida em aberto no fim do mês.</p></div>' : $table('pc-delinquency-title', Screens::DELINQUENCY_COLUMNS, $p['delinquency']['units']) ?>
+        <?= $p['delinquency']['units'] === [] ? '<div class="erp-empty"><span class="erp-empty__icon">' . $icon('check') . '</span><strong>Nenhuma unidade em atraso</strong><p>Não havia conta vencida em aberto no fim do mês.</p></div>' : $table('pc-delinquency-title', $hideUnit ? array_slice(Screens::DELINQUENCY_COLUMNS, 1) : Screens::DELINQUENCY_COLUMNS, $p['delinquency']['units']) ?>
     </section>
 <?php endif; ?>
 <?php endif; ?>

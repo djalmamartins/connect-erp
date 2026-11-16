@@ -1,6 +1,6 @@
-# 0314 — Revisão de 15/11, etapa 5: download em PDF e Excel e inadimplentes com data inicial
+# 0314 — Revisão de 15/11, etapa 5: download em PDF e Excel, ocultar unidade e inadimplentes com data inicial
 
-- Status: Aceito (parte 1, item 18; parte 2, item 20)
+- Status: Aceito (parte 1, item 18; parte 2, item 20; parte 3, item 19)
 - Data: 16/11/2026
 - Issue: #544 (revisão de 15/11, etapa 5)
 - Relacionadas: ADR 0081 (CSV dos relatórios), 0087 (limite de exportação, B5), 0174 (PDF com dompdf), 0310 (itens por página)
@@ -43,6 +43,14 @@ arquivo ficar igual ao modelo quando impresso.
    CSV, o PDF e o Excel saem com o mesmo corte. INFERIDO: o Djalma falou do "geral"; a data vale para as cinco visões,
    que usam a mesma consulta.
 
+7. **Ocultar unidade** (parte 3, item 19): caixa "Ocultar unidade" nos demonstrativos com coluna de unidade
+   (AP-053 demonstrativo analítico, AP-068 e AP-069 lançamentos, AP-070 boletos, AP-074 pagamentos e AP-071
+   recebimentos) e na prestação de contas da tela (AP-101, lista de inadimplência). A tela tira a coluna Unidade e o
+   Download leva `hide_unit=1`, que tira a coluna "Unidade" do CSV, do PDF e do Excel (`ListDocument::withoutUnit`).
+   O link público da prestação de contas (ADR 0301) já mostra o recebimento das unidades só como soma. INFERIDO: a
+   caixa não aparece em relatórios que são da unidade (rateio, inadimplentes por unidade, lista de unidades), onde
+   tirar a unidade deixaria a lista sem sentido. A prestação de contas nova (item 21) leva a mesma opção.
+
 ## Testes
 
 - `tests/legacy/Unit/ListDocumentTest.php`: formato, título, nome do arquivo, célula protegida e número; PDF com o
@@ -54,3 +62,5 @@ arquivo ficar igual ao modelo quando impresso.
   nos relatórios.
 - `CollectionReportsIntegrationTest`: data inicial corta as mais antigas, vazia traz tudo, inválida ou futura recusa.
 - `ErpCollectionReportScreensTest`: CSV com `from`. Render smoke: campo opcional e "vencidas desde" no cabeçalho.
+- `ListDocumentTest`: arquivo sem a coluna Unidade com `hide_unit`. `ErpReportScreensTest`: `hide_unit=1` no CSV, colunas
+  da tela sem a unidade e caixa só nos demonstrativos. Render smoke: caixa marcada, sem a coluna e lista de unidades sem a caixa.

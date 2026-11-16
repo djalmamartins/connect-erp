@@ -65,6 +65,9 @@ $this->insert('components/layout/page-head', [
     <?php if ($f['agrupar'] !== null): ?>
         <div class="erp-field erp-field--compact"><label for="cr-group">Agrupar por</label><select class="erp-select" id="cr-group" name="agrupar"><?php foreach (Screens::ACCOUNT_GROUPS as $k => $l): ?><option value="<?= $k ?>"<?= $f['agrupar'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div>
     <?php endif; ?>
+    <?php if ($kind === 'receipts' && $cReportVariant === 'entry'): // ADR 0314: recebimento sem dizer qual unidade pagou ?>
+        <div class="erp-field erp-field--compact"><span class="erp-field__label" aria-hidden="true">&nbsp;</span><label class="erp-check" for="cr-hide-unit"><input type="checkbox" id="cr-hide-unit" name="ocultar_unidade" value="1"<?= !empty($f['ocultar_unidade']) ? ' checked' : '' ?>><span>Ocultar unidade</span></label></div>
+    <?php endif; ?>
     <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Gerar</button></div>
 </form>
 

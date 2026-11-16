@@ -44,6 +44,10 @@ Os totais aparecem no rodapé da tabela.
 - {{Imprimir}} abre a versão para impressão, com o cabeçalho do condomínio. Para guardar em PDF, escolha **Salvar como PDF** na janela de impressão.
 - {{Download}} baixa os dados filtrados em PDF (com o cabeçalho da Connect, o condomínio, o título, a data e o número da página), em Excel ou em CSV.
 
+## Ocultar unidade
+
+Marque **Ocultar unidade** nos filtros e clique em {{Gerar}} para mostrar os valores sem dizer qual unidade pagou ou deve, por exemplo para mandar ao grupo dos moradores. A coluna Unidade sai da tela, da impressão e do {{Download}} (PDF, Excel ou CSV).
+
 ## Quem pode usar
 
 A tela aparece para quem tem acesso ao módulo **Prestação de contas**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]]. Cada pessoa só vê os condomínios vinculados à própria conta, e toda gravação fica registrada no histórico (quem fez, quando e o que mudou).

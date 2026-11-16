@@ -15,7 +15,7 @@ $condo = \Source\Support\Erp\CondominiumContext::current();
 $scopeLabel = ($reportPage['scope'] ?? null) === 'all' || $condo === null ? 'Todos os condomínios do seu escopo' : (string)$condo['name'];
 $f = $reportFilters;
 $filters = $reportPage['filters'];
-$columns = $reportPage['columns'];
+$columns = Screens::visibleColumns($reportPage['columns'], $reportFilters);
 $has = static fn (string $name): bool => in_array($name, $filters, true);
 $competences = $has('competences') || $has('compare');
 $periodText = match (true) {
@@ -70,6 +70,9 @@ $this->insert('components/layout/page-head', [
             default => isset(Screens::SELECTS[$filter]) ? $select($filter, Screens::SELECTS[$filter][2], $f[$filter], Screens::SELECTS[$filter][0]) : '',
         } ?>
     <?php endforeach; ?>
+    <?php if (in_array($currentPageId, Screens::HIDE_UNIT_PAGES, true)): // ADR 0314: recebimento sem dizer qual unidade pagou ?>
+        <div class="erp-field erp-field--compact"><span class="erp-field__label" aria-hidden="true">&nbsp;</span><label class="erp-check" for="rp-hide-unit"><input type="checkbox" id="rp-hide-unit" name="ocultar_unidade" value="1"<?= !empty($f['ocultar_unidade']) ? ' checked' : '' ?>><span>Ocultar unidade</span></label></div>
+    <?php endif; ?>
     <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Gerar</button></div>
 </form>
 <?php endif; ?>

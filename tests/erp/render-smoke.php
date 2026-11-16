@@ -1116,6 +1116,12 @@ foreach ($RS::PAGES as $rsPage => $rsDef) {
 }
 $html = $agreementPage('AP-052', 'pages/reports/report', $rsData('AP-052', [$rsSample($RS::PAGES['AP-052']['columns'])]));
 $assert(str_contains($html, '−R$ 1.234,56') && str_contains($html, 'name="de" value="2026-01"') && str_contains($html, 'type="month"') && str_contains($html, 'view=accounts') && str_contains($html, 'erp-kpi'), 'AP-052: competências, valores e totais');
+// Ocultar unidade (ADR 0314): sem a coluna na tela e no download; caixa só nos demonstrativos.
+$hideF = $RS::filters('AP-069', ['ocultar_unidade' => '1'], '2026-11-10');
+$html = $agreementPage('AP-069', 'pages/reports/report', $rsData('AP-069', [$rsSample($RS::PAGES['AP-069']['columns'])], ['reportFilters' => $hideF, 'reportCsv' => $RS::csvUrl('AP-069', $hideF, 1)]));
+$assert(str_contains($html, 'name="ocultar_unidade" value="1" checked') && !str_contains($html, '<th scope="col">Unidade</th>') && str_contains($html, 'hide_unit=1')
+    && substr_count($html, '<th scope="col"') === count($RS::PAGES['AP-069']['columns']) - 1, 'AP-069: ocultar unidade (ADR 0314)');
+$assert(!str_contains($agreementPage('AP-086', 'pages/reports/report', $rsData('AP-086', [$rsSample($RS::PAGES['AP-086']['columns'])])), 'name="ocultar_unidade"'), 'AP-086: lista de unidades sem ocultar unidade');
 $html = $agreementPage('AP-080', 'pages/reports/report', $rsData('AP-080', [['analytic' => false] + $rsSample($RS::PAGES['AP-080']['columns'])], ['report' => ['rows' => [], 'totals' => ['revenue_months_cents' => array_fill(0, 12, 1000), 'expense_months_cents' => array_fill(0, 12, 400), 'result_months_cents' => array_fill(0, 12, 600), 'revenue_cents' => 12000, 'expense_cents' => 4800, 'result_cents' => 7200]]]));
 $assert(str_contains($html, 'Total de receitas') && str_contains($html, 'R$ 72,00') && str_contains($html, 'erp-report-synthetic') && str_contains($html, 'name="ano" value="2026"') && str_contains($html, 'year=2026&amp;basis=competence'), 'AP-080: balancete anual com meses, rodapé e base');
 $html = $agreementPage('AP-062', 'pages/reports/report', $rsData('AP-062', [], ['reportNeedsCondo' => true]));

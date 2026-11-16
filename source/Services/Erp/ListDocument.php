@@ -28,6 +28,8 @@ final class ListDocument
     public const LABELS = ['pdf' => 'PDF', 'xlsx' => 'Excel', 'csv' => 'CSV'];
     /** Linhas no PDF (o Excel e o CSV levam tudo o que a consulta trouxe). */
     public const MAX_PDF_ROWS = 5000;
+    /** Cabeçalhos que "Ocultar unidade" tira do arquivo. */
+    public const UNIT_HEADERS = ['Unidade'];
 
     /** CONFIRMADO no modelo 3 da revisão de 15/11 (cabeçalho dos PDFs da Connect). */
     private const ISSUER = ['name' => 'CONNECT CONDOMÍNIOS LTDA', 'document' => '43.346.552/0001-69',
@@ -96,6 +98,9 @@ final class ListDocument
      */
     public static function render(string $format, array $table, array $meta): string
     {
+        if (!empty($meta['hide_unit'])) {
+            $table = self::withoutUnit($table);
+        }
         return match ($format) {
             'csv' => CollectionReports::csv($table),
             'pdf' => self::pdf($table, $meta),
@@ -111,7 +116,17 @@ final class ListDocument
      */
     public static function meta(mixed $title, string $fallback, ?int $condominiumId): array
     {
-        return ['title' => self::title($title, $fallback), 'condominium' => self::condominiumLabel($condominiumId), 'date' => date('d/m/Y')];
+        // ?hide_unit=1 (revisão de 15/11 item 19): o arquivo sai sem a coluna Unidade, como na tela com "Ocultar unidade".
+        return ['title' => self::title($title, $fallback), 'condominium' => self::condominiumLabel($condominiumId), 'date' => date('d/m/Y'),
+            'hide_unit' => ($_GET['hide_unit'] ?? '') === '1'];
+    }
+
+    /** Tabela sem as colunas de unidade (regra pura): "Ocultar unidade" mostra o valor sem dizer qual unidade pagou. */
+    public static function withoutUnit(array $table): array
+    {
+        $keep = array_keys(array_filter($table['header'], static fn ($label): bool => !in_array((string)$label, self::UNIT_HEADERS, true)));
+        return ['header' => array_values(array_map(static fn (int $i) => $table['header'][$i], $keep)),
+            'rows' => array_map(static fn (array $row): array => array_values(array_map(static fn (int $i): string => (string)($row[$i] ?? ''), $keep)), $table['rows'])];
     }
 
     /** Troca a extensão .csv do nome de arquivo antigo pela do formato pedido (regra pura). */

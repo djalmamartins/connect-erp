@@ -38,6 +38,10 @@ legenda: Tela Prestação de contas
 3. Confira o resumo, a [Demonstração do resultado](artigo:demonstracao-do-resultado), os [Saldos de contas](artigo:saldos-de-contas) e a inadimplência por unidade.
 4. Use {{Imprimir}} para levar à reunião. Cada parte tem o CSV no relatório de origem; os links ficam no título de cada bloco.
 
+## Ocultar unidade
+
+Marque **Ocultar unidade** nos filtros e clique em {{Gerar}} para mostrar os valores sem dizer qual unidade pagou ou deve, por exemplo para mandar ao grupo dos moradores. A coluna Unidade sai da lista de inadimplência, na tela e na impressão.
+
 ## Quem pode usar
 
 Exige as permissões **erp.entries.view** e **erp.chart.view**. Cada pessoa só vê os condomínios vinculados à própria conta.

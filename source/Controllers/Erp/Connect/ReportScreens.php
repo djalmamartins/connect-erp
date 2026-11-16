@@ -198,6 +198,12 @@ final class ReportScreens
     ];
 
     /** Selects dos filtros: nome do parâmetro na tela => [rótulo, parâmetro da API, opções (vazio = todas)]. */
+    /**
+     * Demonstrativos com "Ocultar unidade" (revisão de 15/11 item 19, ADR 0314): a tela e o download saem sem a coluna
+     * Unidade, para mostrar o recebimento sem dizer qual unidade pagou.
+     */
+    public const HIDE_UNIT_PAGES = ['AP-053', 'AP-068', 'AP-069', 'AP-070', 'AP-074'];
+
     public const SELECTS = [
         'natureza' => ['Natureza', 'nature', ['' => 'Todas', 'receita' => 'Receitas', 'despesa' => 'Despesas']],
         'situacao' => ['Situação', 'situation', ['' => 'Todas'] + ManagementReports::SITUATIONS],
@@ -392,6 +398,7 @@ final class ReportScreens
             'unidade' => self::id($query['unidade'] ?? null),
             'codigo' => is_string($query['codigo'] ?? null) && preg_match('/^\d+(\.\d+)*$/', trim($query['codigo'])) ? trim($query['codigo']) : '',
             'ano' => preg_match('/^20\d{2}$/', (string)(is_string($query['ano'] ?? null) ? $query['ano'] : '')) ? (int)$query['ano'] : (int)$year,
+            'ocultar_unidade' => in_array($id, self::HIDE_UNIT_PAGES, true) && ($query['ocultar_unidade'] ?? '') === '1',
         ];
         foreach (self::SELECTS as $name => [, , $options]) {
             $value = $query[$name] ?? '';
@@ -424,7 +431,16 @@ final class ReportScreens
                 default => isset(self::SELECTS[$filter]) && $f[$filter] !== '' ? [self::SELECTS[$filter][1] => $f[$filter]] : [],
             };
         }
+        if (!empty($f['ocultar_unidade'])) {
+            $query['hide_unit'] = 1;
+        }
         return '/api/v1/reports/' . $page['api'] . '?' . http_build_query($query);
+    }
+
+    /** Colunas da tela (regra pura): sem a Unidade quando "Ocultar unidade" está marcado. */
+    public static function visibleColumns(array $columns, array $f): array
+    {
+        return empty($f['ocultar_unidade']) ? $columns : array_values(array_filter($columns, static fn (array $c): bool => $c[1] !== 'unit_label'));
     }
 
     /**
