@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Banking\BankCharges;
+use Source\Services\Erp\BillingLetter;
 use Source\Services\Erp\Banking\BankRemittances;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\Registry\RegistryNotFound;
@@ -23,6 +24,7 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges/{id}/refresh                         consulta no banco
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
  *  GET  /api/v1/bank-charges/{id}/pdf                             PDF do boleto (Inter, ADR 0156)
+ *  GET  /api/v1/bank-charges/{id}/letter                          Carta de cobrança impressa em PDF (ADR 0317)
  *  POST /api/v1/bank-charges/{id}/simulate-payment {method}       só sandbox do Inter: simula o pagamento e consulta
  *  POST /api/v1/invoices/{id}/bank-charges {bank_account_id, limit} boletos de toda a fatura, em lotes (remaining)
  *  GET  /api/v1/bank-remittances?condominium_id=&from=&to=&status=&page=  remessas: lotes por conta e dia (AP-037)
@@ -120,6 +122,32 @@ final class Banking
         }
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="boleto-' . $id . '.pdf"');
+        header('Cache-Control: no-store, private');
+        header('X-Content-Type-Options: nosniff');
+        echo $pdf;
+    }
+
+    /** Carta de cobrança impressa (ADR 0317): parte externa e interna com a ficha do boleto, gerada pelo ERP. */
+    public function letter(array $data): void
+    {
+        $user = $this->authorize('view');
+        if ($user === null) {
+            return;
+        }
+        $id = (int)$this->int($data['id'] ?? null);
+        try {
+            $service = new BillingLetter();
+            $letter = $service->build($user, $id);
+            $pdf = $service->pdf($letter);
+        } catch (RegistryNotFound) {
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Registro não encontrado no seu escopo.']]);
+            return;
+        } catch (DomainException $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'banking_conflict', 'message' => $exception->getMessage()]]);
+            return;
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . BillingLetter::filename($letter) . '"');
         header('Cache-Control: no-store, private');
         header('X-Content-Type-Options: nosniff');
         echo $pdf;

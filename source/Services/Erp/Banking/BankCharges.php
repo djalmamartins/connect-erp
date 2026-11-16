@@ -374,6 +374,12 @@ final class BankCharges
      * proprietário como reserva (ativos, com documento primeiro). Endereço de cobrança = endereço do condomínio, com a
      * unidade no complemento.
      */
+    /** O mesmo pagador do registro no banco, para a carta de cobrança impressa (ADR 0317). */
+    public function payerFor(array $entry): ?array
+    {
+        return $this->payer($entry);
+    }
+
     private function payer(array $entry): ?array
     {
         if (empty($entry['unit_id'])) {
