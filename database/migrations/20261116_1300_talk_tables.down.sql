@@ -1,0 +1,27 @@
+-- Reverte 20261116_1300 (ADR 0322): apaga as tabelas do Talk no ERP. Faça backup antes: as conversas vão junto.
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS `talk_audit_log`;
+DROP TABLE IF EXISTS `talk_campaign_recipients`;
+DROP TABLE IF EXISTS `talk_campaigns`;
+DROP TABLE IF EXISTS `talk_channels`;
+DROP TABLE IF EXISTS `talk_contact_notes`;
+DROP TABLE IF EXISTS `talk_contact_tags`;
+DROP TABLE IF EXISTS `talk_contacts`;
+DROP TABLE IF EXISTS `talk_conversations`;
+DROP TABLE IF EXISTS `talk_events`;
+DROP TABLE IF EXISTS `talk_holidays`;
+DROP TABLE IF EXISTS `talk_jack_decisions`;
+DROP TABLE IF EXISTS `talk_login_attempts`;
+DROP TABLE IF EXISTS `talk_messages`;
+DROP TABLE IF EXISTS `talk_outbox`;
+DROP TABLE IF EXISTS `talk_protocol_seq`;
+DROP TABLE IF EXISTS `talk_quick_messages`;
+DROP TABLE IF EXISTS `talk_ratings`;
+DROP TABLE IF EXISTS `talk_schedules`;
+DROP TABLE IF EXISTS `talk_sectors`;
+DROP TABLE IF EXISTS `talk_settings`;
+DROP TABLE IF EXISTS `talk_staff`;
+DROP TABLE IF EXISTS `talk_tags`;
+DROP TABLE IF EXISTS `talk_templates`;
+DROP TABLE IF EXISTS `talk_users`;
+SET FOREIGN_KEY_CHECKS=1;

@@ -9,7 +9,8 @@ use Source\Core\Connect;
 use Source\Models\User;
 
 /**
- * Alternador de ambientes Connect (ADR 0034): Studio, ERP, Help Desk, portal dos moradores e site.
+ * Alternador de ambientes Connect (ADR 0034): Studio, ERP, Help Desk, portal dos moradores, Connect Talk e site.
+ * O Talk (atendimento por WhatsApp, ADR 0322) mora no host talk.<domínio> e aparece só para quem tem talk.access.
  *
  * Um só catálogo para o cabeçalho da sidebar do ERP e do Studio/Help Desk. Cada ambiente diz em
  * que host mora: com hosts próprios (erp.<domínio> e studio.<domínio>, ADR 0026) o ERP fica no
@@ -38,6 +39,7 @@ final class Environments
         'erp' => ['label' => 'ERP', 'description' => 'Gestão administrativa', 'icon' => 'business-outline', 'host' => 'erp', 'path' => '/dashboard', 'permission' => 'erp.access', 'auth' => true],
         'helpdesk' => ['label' => 'Help Desk', 'description' => 'Atendimento e chamados', 'icon' => 'headset-outline', 'host' => 'studio', 'path' => '/helpdesk/tickets', 'permission' => 'support.manage', 'auth' => true],
         'residents' => ['label' => 'Moradores', 'description' => 'Aplicativo do morador', 'icon' => 'home-outline', 'host' => 'app', 'path' => '/', 'permission' => 'app.access', 'auth' => true],
+        'talk' => ['label' => 'Talk', 'description' => 'Atendimento por WhatsApp', 'icon' => 'chatbubbles-outline', 'host' => 'talk', 'path' => '/', 'permission' => 'talk.access', 'auth' => true],
         'site' => ['label' => 'Site', 'description' => 'Site institucional', 'icon' => 'globe-outline', 'host' => 'site', 'path' => '/', 'permission' => 'site.access', 'auth' => false],
     ];
 
@@ -65,6 +67,10 @@ final class Environments
      */
     public static function canAccess(?User $user, string $key): bool
     {
+        if ($key === 'talk') {
+            // Só quem atende pelo WhatsApp (ADR 0322).
+            return $user !== null && \Source\Support\Access::can('talk.access', $user);
+        }
         return $user !== null && self::exists($key);
     }
 
@@ -108,7 +114,7 @@ final class Environments
             && is_file(moves_container_path('residents', CONF_VIEW_APP) . '/default.php');
     }
 
-    /** Papel do host: 'erp', 'studio', 'app' ou 'main' (host único: localhost, www, domínio puro). */
+    /** Papel do host: 'erp', 'studio', 'app', 'talk' ou 'main' (host único: localhost, www, domínio puro). */
     public static function hostRole(?string $host = null): string
     {
         $host = strtolower($host ?? (string)($_SERVER['HTTP_HOST'] ?? ''));
@@ -120,6 +126,9 @@ final class Environments
         }
         if (preg_match('/^app\.[a-z0-9.-]+(?::\d+)?$/', $host)) {
             return 'app';
+        }
+        if (preg_match('/^talk\.[a-z0-9.-]+(?::\d+)?$/', $host)) {
+            return 'talk';
         }
         return 'main';
     }
@@ -140,6 +149,10 @@ final class Environments
         $environment = self::ENVIRONMENTS[$key];
         $path ??= $environment['path'];
 
+        if ($key === 'talk' && $role === 'main') {
+            // O Talk só existe no host próprio (ADR 0322): de um host único, vai para talk.<domínio>.
+            return ['host' => 'talk.' . (string)preg_replace('/^www\./', '', $host), 'path' => $path];
+        }
         if ($role === 'main') {
             // Host único: tudo no mesmo host; o ERP fica em /erp e o app do morador em /app (ADR 0302).
             return ['host' => $host, 'path' => match ($key) {
@@ -149,11 +162,12 @@ final class Environments
             }];
         }
 
-        $base = (string)preg_replace('/^(?:erp|studio|app)\./', '', $host);
+        $base = (string)preg_replace('/^(?:erp|studio|app|talk)\./', '', $host);
         $targetHost = match ($environment['host']) {
             'erp' => 'erp.' . $base,
             'studio' => 'studio.' . $base,
             'app' => 'app.' . $base,
+            'talk' => 'talk.' . $base,
             default => 'www.' . $base,
         };
         return ['host' => $targetHost, 'path' => $path];

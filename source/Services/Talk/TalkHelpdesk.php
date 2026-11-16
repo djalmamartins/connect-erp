@@ -90,10 +90,10 @@ final class TalkHelpdesk
     }
 
     /** @return list<array{id:int, name:string, relationship:string, email:?string, condominium:array{id:int,name:string}, unit:?array{id:?int,label:string}}> */
-    public function people(User $agent, string $phones): array
+    public function people(?User $agent, string $phones): array
     {
         $variants = self::phoneVariants($phones);
-        $allowed = $this->scope->allowedIds($agent);
+        $allowed = $this->condominiumIds($agent);
         if ($variants === [] || $allowed === []) {
             return [];
         }
@@ -122,7 +122,7 @@ final class TalkHelpdesk
             ];
         }
         AppLogger::log('info', 'Connect Talk consultou pessoa pelo telefone', ['event_type' => 'talk_people_lookup', 'origin' => 'talk',
-            'phone' => self::maskPhone($variants[0]), 'found' => count($people), 'users_id' => (int)$agent->id], 'integration');
+            'phone' => self::maskPhone($variants[0]), 'found' => count($people), 'users_id' => $agent !== null ? (int)$agent->id : null], 'integration');
         return $people;
     }
 
@@ -132,7 +132,7 @@ final class TalkHelpdesk
      * @return array{created:bool, ticket:array<string, mixed>}
      * @throws TicketError
      */
-    public function open(User $agent, array $input): array
+    public function open(?User $agent, array $input): array
     {
         $ref = preg_replace('/[^0-9A-Za-z._-]/', '', mb_substr(trim((string)($input['talk_protocol'] ?? '')), 0, 40)) ?? '';
         if ($ref === '') {
@@ -152,7 +152,7 @@ final class TalkHelpdesk
         $residentId = $int('resident_id');
         if ($residentId !== null) {
             $resident = $this->resident($residentId);
-            if ($resident === null || !$this->scope->canAccess($agent, (int)$resident['condominium_id'])) {
+            if ($resident === null || ($agent !== null && !$this->scope->canAccess($agent, (int)$resident['condominium_id']))) {
                 throw new TicketError('resident_id', 'Morador não encontrado.');
             }
             if ($condominiumId !== null && $condominiumId !== (int)$resident['condominium_id']) {
@@ -297,6 +297,21 @@ final class TalkHelpdesk
             throw new TicketError('ticket', 'Chamado não encontrado.', 404);
         }
         return ['status' => (string)$row['status'], 'area' => (string)$row['area']];
+    }
+
+    /**
+     * Condomínios em que a busca vale. Com usuário (API /talk, ADR 0308), o escopo dele. Sem usuário (o Talk dentro do ERP,
+     * ADR 0322, identificando quem escreveu antes de qualquer atendente), todos os condomínios ativos: o ERP é de uma
+     * administradora só (ADR-002), e quem vê a conversa no Talk já é a equipe dela.
+     *
+     * @return list<int>
+     */
+    private function condominiumIds(?User $agent): array
+    {
+        if ($agent !== null) {
+            return $this->scope->allowedIds($agent);
+        }
+        return array_map('intval', $this->pdo->query("SELECT id FROM condominiums WHERE status = 'active'")->fetchAll(PDO::FETCH_COLUMN));
     }
 
     private function findByRef(string $ref): ?array
