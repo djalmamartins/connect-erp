@@ -221,7 +221,7 @@ final class ListDocument
      * Rodapé em cada página: linha escura, o site à esquerda e o número da página à direita. Nas listas (modelo 3) em
      * negrito itálico; na prestação de contas (PDF de outubro) em texto normal ($emphasis = false).
      */
-    public static function footer(Dompdf $dompdf, bool $emphasis = true): void
+    public static function footer(Dompdf $dompdf, bool $emphasis = true, bool $pageNumber = true): void
     {
         $canvas = $dompdf->getCanvas();
         $metrics = $dompdf->getFontMetrics();
@@ -229,6 +229,9 @@ final class ListDocument
         [$width, $height] = [$canvas->get_width(), $canvas->get_height()];
         $canvas->page_line(30, $height - 36, $width - 30, $height - 36, [0.13, 0.13, 0.13], 0.6);
         $canvas->page_text(30, $height - 30, self::issuer()['site'], $font, 8, [0.07, 0.07, 0.07]);
+        if (!$pageNumber) {
+            return;   // a numeração vem depois, na junção com os comprovantes (AccountabilityDocument::merge)
+        }
         $canvas->page_script(static function (int $page, int $pages, $canvas, $metrics) use ($font, $width, $height): void {
             $text = (string)$page;
             $canvas->text($width - 30 - $metrics->getTextWidth($text, $font, 8), $height - 30, $text, $font, 8, [0.07, 0.07, 0.07]);

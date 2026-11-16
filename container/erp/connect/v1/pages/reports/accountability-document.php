@@ -176,13 +176,15 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
 
 <?= $head('Relatório de lançamentos de ' . $range) ?>
     <table class="grid">
-        <thead><tr><th>Data</th><th>Tipo</th><th>Lançamento</th><th class="n">Valor (R$)</th></tr></thead>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Lançamento</th><th class="n">Valor (R$)</th><th class="n">Sobras de Rateio (R$)</th><th class="n">Fundo de Reserva (R$)</th></tr></thead>
         <tbody>
         <?php foreach ($doc['expenses'] as $line): ?>
-            <tr><td><?= $date($line['paid_on']) ?></td><td>Despesa</td><td><?= $this->e((string)$line['description']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td></tr>
+            <tr><td><?= $date($line['paid_on']) ?></td><td>Despesa</td><td><?= $this->e((string)$line['description']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td>
+                <td class="n"><?= $num((int)($line['surplus_cents'] ?? 0)) ?></td><td class="n"><?= $num((int)($line['reserve_cents'] ?? 0)) ?></td></tr>
         <?php endforeach; ?>
-        <?php if ($doc['expenses'] === []): ?><tr><td colspan="4" class="note">Nenhuma despesa paga no mês.</td></tr><?php endif; ?>
-            <tr class="tot"><td colspan="3">Total Geral</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td></tr>
+        <?php if ($doc['expenses'] === []): ?><tr><td colspan="6" class="note">Nenhuma despesa paga no mês.</td></tr><?php endif; ?>
+            <tr class="tot"><td colspan="3">Total</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td><td class="n"><?= $num((int)($doc['surplus_total_cents'] ?? 0)) ?></td><td class="n"><?= $num((int)($doc['reserve_total_cents'] ?? 0)) ?></td></tr>
+            <tr class="tot"><td colspan="3">Total Geral</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td><td colspan="2"></td></tr>
         </tbody>
     </table>
 </div>
@@ -200,13 +202,14 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
                 <img src="<?= $src ?>" alt="<?= $this->e((string)$annex['original_name']) ?>">
                 <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?></p>
             <?php elseif ($forPdf): ?>
-                <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?>: <?= $placement === 'blocked' ? 'bloqueado pelo antivírus' : ($placement === 'missing' ? 'arquivo não encontrado' : 'em PDF, no pacote do livro caixa') ?>.</p>
+                <p><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?>: <?= $placement === 'blocked' ? 'bloqueado pelo antivírus' : ($placement === 'missing' ? 'arquivo não encontrado' : ($placement === 'merge' ? 'em PDF, nas páginas a seguir' : 'em PDF, no pacote do livro caixa')) ?>.</p>
             <?php else: ?>
                 <p><a href="<?= $this->e(erp_url('/financeiro/lancamentos/' . (int)$line['entry_id'] . '/anexos/' . (int)$annex['id'])) ?>" target="_blank" rel="noopener"><?= $this->e((string)$annex['kind_label']) ?> · <?= $this->e((string)$annex['original_name']) ?></a></p>
             <?php endif; ?>
         </div>
     <?php endforeach; ?>
     <?php if ($line['annexes'] === []): ?><p class="note">Sem comprovante anexado.</p><?php endif; ?>
+    <?php if ($forPdf): ?><div data-annex-anchor="<?= (int)$line['seq'] ?>" style="height:1px"></div><?php endif; ?>
 </div>
 <?php endforeach; ?>
 </body>

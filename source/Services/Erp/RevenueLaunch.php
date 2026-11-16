@@ -26,8 +26,11 @@ use Source\Support\Audit;
  * - Repetir: de 1 a 24 vezes, um mês depois do outro (competência e vencimento), com "(1/N)" na descrição se pedido.
  * - Competência = "Incluir na fatura de". Tudo numa transação: erro em qualquer mês desfaz todos.
  *
- * PENDENTE: tipo da fatura (o modelo agrupa a conta numa fatura de um tipo; aqui as contas avulsas não entram em
- * fatura) e anexos no mesmo envio (cada conta gerada aceita anexo na ficha do lançamento, ADR 0174).
+ * - Anexos no mesmo envio (ADR 0323): a tela manda cada arquivo depois do lançamento para todas as contas geradas
+ *   (POST /api/v1/entry-attachments, EntryAttachments::attachMany), uma cópia só no Disco Virtual.
+ *
+ * PENDENTE: tipo da fatura (o modelo agrupa a conta numa fatura de um tipo, num boleto só com a taxa do mês; aqui
+ * cada conta tem o próprio boleto) e conta relacionada (sentido no modelo não confirmado). Decisão com o Djalma.
  */
 final class RevenueLaunch
 {
