@@ -2,11 +2,11 @@
 /**
  * Carta de cobrança impressa (ADR 0317): folha A4 dobrada em três. Página 1 = parte externa (fundo floral cinza,
  * aba de cabeça para baixo, destinatário, Correio e remetente); página 2 = parte interna (demonstrativos, avisos
- * e ficha do boleto); página 3 só quando o demonstrativo não cabe. Medidas em mm, posições absolutas e tabelas,
+ * e ficha do boleto). Nunca passa de duas folhas: o resumo encolhe (BillingLetter::fit). Medidas em mm, posições absolutas e tabelas,
  * porque o dompdf não entende flex/grid. Bloco com posição absoluta: a largura NÃO inclui o padding (dompdf).
  *
  * @var array $letter BillingLetter::build() @var bool $forPdf @var array $issuer @var string $logo @var string $floral
- * @var string $barcode @var string $qr @var string $appLink @var array $channels @var array $social
+ * @var string $barcode @var string $qr @var string $appLink
  */
 $e = fn (?string $t): string => $this->e((string)$t);
 $num = static fn (int $cents): string => ($cents < 0 ? '-' : '') . number_format(abs($cents) / 100, 2, ',', '.');
@@ -16,8 +16,8 @@ $c = $letter['charge'];
 $a = $letter['address'];
 $payer = $letter['payer'];
 $st = $letter['statement'];
-$demo = $st['demonstrative'];
-$detail = $st['detail'];
+$sum = $st['summary'];
+$fit = $st['fit'];
 $recipient = $payer['name'] ?? ('Unidade ' . $letter['unit']['label']);
 $addressLines = array_values(array_filter([
     trim($a['line1'] . ($a['unit'] !== '' ? ' - ' . $a['unit'] : '')),
@@ -28,32 +28,56 @@ $issuerParts = array_map('trim', explode(' - ', (string)$issuer['address']));
 $issuerLines = array_values(array_filter([implode(' - ', array_slice($issuerParts, 0, 2)), $issuerParts[2] ?? '', implode(' - ', array_slice($issuerParts, 3))]));
 $notice = $letter['notice'];
 $tiles = $floral !== '' ? range(0, 34) : [];
-$totalBanks = ['opening_cents' => 0, 'received_cents' => 0, 'paid_cents' => 0, 'closing_cents' => 0];
+$cut = static fn (string $t, int $n): string => mb_strimwidth($t, 0, $n, '…');
+$bankTotals = ['opening_cents' => 0, 'received_cents' => 0, 'paid_cents' => 0, 'closing_cents' => 0];
 foreach ($st['banks'] as $b) {
-    foreach ($totalBanks as $k => $_) {
-        $totalBanks[$k] += (int)($b[$k] ?? 0);
+    foreach ($bankTotals as $k => $_) {
+        $bankTotals[$k] += (int)($b[$k] ?? 0);
     }
 }
-$section = function (array $sec, string $level) use ($e, $num, $date): string {
-    $html = '<tr class="sec"><td colspan="3">' . $e($sec['label']) . '</td></tr>';
+// Receitas ou despesas resumidas no nível que coube (quotas, accounts, groups, totals).
+$section = function (string $title, array $sec, string $level, string $empty) use ($e, $num, $cut): string {
+    $html = '<tr class="sec"><td>' . $e($title) . '</td><td class="n">' . $num($sec['total_cents']) . '</td></tr>';
     if ($sec['groups'] === []) {
-        return $html . '<tr><td colspan="3" class="muted">Nenhum lançamento pago no mês.</td></tr>';
+        return $html . '<tr><td colspan="2" class="muted">' . $e($empty) . '</td></tr>';
     }
-    foreach ($level === 'totals' ? [] : $sec['groups'] as $g) {
-        $html .= '<tr class="grp"><td colspan="3">' . $e($g['name']) . '</td></tr>';
-        if ($level === 'items' || $level === 'accounts') {
-            foreach ($g['accounts'] as $acc) {
-                $html .= '<tr class="acc"><td>' . $e(mb_strimwidth((string)$acc['name'], 0, 46, '…')) . '</td><td></td><td class="n">' . ($level === 'accounts' ? $num($acc['total_cents']) : '') . '</td></tr>';
-                if ($level === 'items') {
-                    foreach ($acc['items'] as $it) {
-                        $html .= '<tr class="it"><td>' . $e(mb_strimwidth($date($it['paid_on']) . ' ' . $it['description'], 0, 40, '…')) . '</td><td class="n">' . $num($it['amount_cents']) . '</td><td></td></tr>';
-                    }
+    if ($level === 'totals') {
+        return $html;
+    }
+    foreach ($sec['groups'] as $g) {
+        $html .= '<tr class="grp"><td>' . $e($cut((string)$g['name'], 52)) . '</td><td class="n">' . ($level === 'groups' ? $num($g['total_cents']) : '') . '</td></tr>';
+        if ($level === 'groups') {
+            continue;
+        }
+        foreach ($g['accounts'] as $acc) {
+            $html .= '<tr class="acc"><td>' . $e($cut((string)$acc['name'], 50)) . '</td><td class="n">' . $num($acc['total_cents']) . '</td></tr>';
+            if ($level === 'quotas') {
+                foreach ($acc['quotas'] as $q) {
+                    $html .= '<tr class="it"><td>' . $q['count'] . ($q['count'] > 1 ? ' cotas' : ' cota') . ' de R$ ' . $num($q['amount_cents']) . '</td><td class="n">' . $num($q['total_cents']) . '</td></tr>';
                 }
             }
         }
-        $html .= '<tr class="gt"><td>Total do grupo</td><td></td><td class="n">' . $num($g['total_cents']) . '</td></tr>';
     }
-    return $html . '<tr class="tot"><td>Total</td><td></td><td class="n">' . $num($sec['total_cents']) . '</td></tr>';
+    return $html;
+};
+$blocks = function (array $blocks) use ($e): string {
+    $html = '';
+    $list = false;
+    foreach ($blocks as $b) {
+        if ($b['kind'] !== 'item' && $list) {
+            $html .= '</ul>';
+            $list = false;
+        }
+        $html .= match ($b['kind']) {
+            'title' => '<p class="fb-title">' . $e($b['text']) . '</p>',
+            'highlight' => '<p class="fb-hi">' . $e($b['text']) . '</p>',
+            'small' => '<p class="fb-small">' . $e($b['text']) . '</p>',
+            'item' => ($list ? '' : '<ul class="fb-list">') . '<li>' . $e($b['text']) . '</li>',
+            default => '<p class="fb-text">' . $e($b['text']) . '</p>',
+        };
+        $list = $b['kind'] === 'item';
+    }
+    return $html . ($list ? '</ul>' : '');
 };
 ?>
 <!doctype html>
@@ -82,14 +106,15 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
         .flap h2 { margin: 0 0 3mm; font-size: 11pt; color: #a8861f; }
         .flap table { width: 100%; border-collapse: collapse; }
         .flap td { vertical-align: top; padding: 0; }
-        .chan { margin: 0 0 2.6mm; }
-        .chan strong { display: block; font-size: 8.5pt; }
-        .chan .v { font-size: 11pt; font-weight: bold; color: #a8861f; }
-        .chan .h { font-size: 6.5pt; color: #6b7275; }
-        .social { font-size: 7pt; color: #4a5155; margin-top: 1mm; }
+        .fb-title { margin: 1.6mm 0 0; font-size: 8.5pt; font-weight: bold; }
+        .fb-hi { margin: 0; font-size: 11pt; font-weight: bold; color: #a8861f; }
+        .fb-small { margin: 0 0 .6mm; font-size: 6.5pt; color: #6b7275; }
+        .fb-text { margin: 1mm 0 0; font-size: 7.5pt; color: #4a5155; }
+        .fb-list { margin: 1mm 0 1mm 4mm; padding: 0; font-size: 7.5pt; }
+        .fb-list li { margin: 0 0 .8mm; }
         .app li { margin: 0 0 1mm; }
         .app ul { margin: 1mm 0 2mm 4mm; padding: 0; }
-        .app .qr { width: 26mm; height: 26mm; }
+        .flap .qr { width: 24mm; height: 24mm; }
         .brand { position: absolute; left: 16mm; top: 108mm; width: 62mm; }
         .brand-qr { position: absolute; right: 16mm; top: 104mm; width: 26mm; height: 26mm; background: #fff; padding: 1.5mm; }
         .brand-qr img { width: 23mm; height: 23mm; }
@@ -119,17 +144,19 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
         .pill--gold { background: #a8861f; color: #fff; }
         .pill--gold small { color: #f4ecd2; }
         .cols { width: 100%; border-collapse: collapse; margin-top: 3mm; border-top: .4mm solid #a8861f; }
-        .cols > tbody > tr > td { vertical-align: top; padding: 2mm 0 0; width: 50%; }
-        .cols > tbody > tr > td.l { padding-right: 3mm; border-right: .2mm solid #d6d3cb; }
+        .colsbox { overflow: hidden; }
+        .cols > tbody > tr > td { vertical-align: top; padding: 2mm 0 0; }
+        .cols > tbody > tr > td.l { width: 54%; padding-right: 3mm; border-right: .2mm solid #d6d3cb; }
         .cols > tbody > tr > td.r { padding-left: 3mm; }
         h4 { margin: 0 0 1.2mm; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .2mm; color: #a8861f; }
         table.t { width: 100%; border-collapse: collapse; margin-bottom: 2.5mm; font-size: 6.8pt; }
         .t th { text-align: left; font-weight: bold; border-bottom: .2mm solid #9ea3a6; padding: .6mm .8mm; }
         .t td { padding: .2mm .8mm; vertical-align: top; }
-        .t .sec td { font-weight: bold; background: #f1efe9; padding-top: .8mm; }
+        .t .sec td { font-weight: bold; background: #f1efe9; padding-top: .8mm; text-transform: uppercase; font-size: 6.6pt; }
         .t .grp td { font-weight: bold; padding-left: 2mm; }
         .t .acc td:first-child { padding-left: 4mm; }
-        .t .it td:first-child { padding-left: 6mm; color: #4a5155; }
+        .t .it td { color: #6b7275; }
+        .t .it td:first-child { padding-left: 7mm; }
         .t .gt td { padding-left: 2mm; border-top: .1mm solid #e4e1da; }
         .t .tot td { font-weight: bold; border-top: .2mm solid #9ea3a6; }
         .t .sum td { font-weight: bold; border-top: .2mm solid #9ea3a6; }
@@ -149,11 +176,16 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
         .slip .bank .code { font-size: 12pt; font-weight: bold; border-left: .5mm solid #23282b; border-right: .5mm solid #23282b; text-align: center; width: 18mm; }
         .slip .bank .line { font-size: 9.5pt; font-weight: bold; text-align: right; letter-spacing: .1mm; }
         .slip .v { text-align: right; }
-        .bars { margin-top: 2.5mm; height: 13mm; }
+        .bars { height: 13mm; }
         .bars img { width: 103mm; height: 13mm; }
         .auth { float: right; font-size: 6pt; text-transform: uppercase; color: #6b7275; margin-top: 1mm; }
-        .cont { padding: 10mm 12mm; }
-        .cont h3 { font-size: 10pt; margin: 0 0 3mm; color: #a8861f; }
+        .pay { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+        .pay td { border: 0; padding: 0; vertical-align: middle; }
+        .pay__bars { width: 108mm; }
+        .pay__pix { width: 25mm; text-align: center; }
+        .pay__pix img { width: 23mm; height: 23mm; }
+        .pay__pixtext { font-size: 7pt; padding-left: 2mm; }
+        .pay__pixtext strong { font-size: 8.5pt; color: #a8861f; }
     </style>
 </head>
 <body>
@@ -169,19 +201,15 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
     <div class="flap"><div class="flap__in">
         <table><tr>
             <td style="width: 54%; padding-right: 5mm;">
-                <h2>Nossos canais de atendimento</h2>
-                <?php foreach ($channels as $ch): ?>
-                    <div class="chan"><strong><?= $e($ch['title']) ?></strong><span class="v"><?= $e($ch['value']) ?></span><br><span class="h"><?= $e($ch['hint']) ?></span></div>
-                <?php endforeach; ?>
-                <div class="social">Site: <?= $e($social['site']) ?> · Instagram: <?= $e($social['instagram']) ?> · Facebook: <?= $e($social['facebook']) ?></div>
+                <h2><?= $e($letter['flap']['left']['title']) ?></h2>
+                <?= $blocks($letter['flap']['left']['blocks']) ?>
             </td>
-            <td class="app" style="border-left: .2mm solid #e1ddd2; padding-left: 5mm;">
-                <h2>Aplicativo do condômino</h2>
-                Acesse pelo celular ou computador para:
-                <ul><li>ver e copiar seus boletos</li><li>abrir chamados e ocorrências</li><li>acompanhar comunicados</li><li>consultar a prestação de contas</li></ul>
-                <table><tr>
-                    <td style="width: 29mm;"><?php if ($qr !== ''): ?><img class="qr" src="<?= $qr ?>" alt="QR code do aplicativo"><?php endif; ?></td>
-                    <td style="vertical-align: middle; font-size: 7pt;"><strong>Aponte a câmera para o QR code</strong><br><?= $e($appLink) ?><br><span class="muted">Primeiro acesso: peça o convite ao Financeiro.</span></td>
+            <td style="border-left: .2mm solid #e1ddd2; padding-left: 5mm;">
+                <h2><?= $e($letter['flap']['right']['title']) ?></h2>
+                <?= $blocks($letter['flap']['right']['blocks']) ?>
+                <table style="margin-top: 1.5mm;"><tr>
+                    <td style="width: 27mm;"><?php if ($qr !== ''): ?><img class="qr" src="<?= $qr ?>" alt="QR code do aplicativo"><?php endif; ?></td>
+                    <td style="vertical-align: middle; font-size: 7pt;"><strong>Aponte a câmera para o QR code</strong><br><?= $e($appLink) ?></td>
                 </tr></table>
             </td>
         </tr></table>
@@ -242,6 +270,7 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
         </td>
     </tr></table>
 
+    <div class="colsbox" style="height: <?= is_array($notice) ? 104 : 122 ?>mm;">
     <table class="cols"><tr>
         <td class="l">
             <h4>Composição do boleto</h4>
@@ -252,24 +281,35 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
                 <?php endforeach; ?>
                 <tr class="sum"><td>Total do boleto</td><td></td><td class="n"><?= $num($c['amount_cents']) ?></td></tr>
             </table>
-            <h4>Demonstrativo de <?= $e($st['label']) ?></h4>
-            <table class="t"><?= $section($demo['receita'], $detail) ?></table>
+            <h4>Prestação de contas de <?= $e($st['label']) ?></h4>
+            <table class="t"><?= $section('Receitas do mês', $sum['receita'], $fit['receita'], 'Nenhuma receita recebida no mês.') ?></table>
+            <table class="t"><?= $section('Despesas do mês', $sum['despesa'], $fit['despesa'], 'Nenhuma despesa paga no mês.') ?></table>
+            <table class="t">
+                <tr class="sum"><td>Saldo do mês (receitas − despesas)</td><td class="n"><?= $num($sum['result_cents']) ?></td></tr>
+            </table>
         </td>
         <td class="r">
-            <h4>&nbsp;</h4>
-            <table class="t"><?= $section($demo['despesa'], $detail) ?></table>
-            <table class="t">
-                <tr><td>Receitas</td><td class="n"><?= $num($demo['receita']['total_cents']) ?></td></tr>
-                <tr><td>Despesas</td><td class="n"><?= $num($demo['despesa']['total_cents']) ?></td></tr>
-                <tr class="sum"><td>Resultado do mês (receitas − despesas)</td><td class="n"><?= $num($demo['result_cents']) ?></td></tr>
-            </table>
             <h4>Contas bancárias</h4>
             <table class="t">
                 <tr><th>Conta</th><th class="n">Anterior</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Atual</th></tr>
                 <?php foreach ($st['banks'] as $b): ?>
-                    <tr><td><?= $e(mb_strimwidth((string)$b['name'], 0, 24, '…')) ?></td><td class="n"><?= $num((int)$b['opening_cents']) ?></td><td class="n"><?= $num((int)$b['received_cents']) ?></td><td class="n"><?= $num((int)$b['paid_cents']) ?></td><td class="n"><?= $num((int)$b['closing_cents']) ?></td></tr>
+                    <tr><td><?= $e($cut((string)$b['name'], 15)) ?></td><td class="n"><?= $num((int)$b['opening_cents']) ?></td><td class="n"><?= $num((int)$b['received_cents']) ?></td><td class="n"><?= $num((int)$b['paid_cents']) ?></td><td class="n"><?= $num((int)$b['closing_cents']) ?></td></tr>
                 <?php endforeach; ?>
-                <tr class="sum"><td>Total</td><td class="n"><?= $num($totalBanks['opening_cents']) ?></td><td class="n"><?= $num($totalBanks['received_cents']) ?></td><td class="n"><?= $num($totalBanks['paid_cents']) ?></td><td class="n"><?= $num($totalBanks['closing_cents']) ?></td></tr>
+                <tr class="sum"><td>Total</td><td class="n"><?= $num($bankTotals['opening_cents']) ?></td><td class="n"><?= $num($bankTotals['received_cents']) ?></td><td class="n"><?= $num($bankTotals['paid_cents']) ?></td><td class="n"><?= $num($bankTotals['closing_cents']) ?></td></tr>
+            </table>
+            <h4>Fundos</h4>
+            <table class="t">
+                <?php if ($st['funds']['accounts'] === []): ?>
+                    <tr><td class="muted">Nenhum fundo com movimento.</td></tr>
+                <?php else: ?>
+                    <tr><th>Fundo</th><th class="n">Anterior</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Atual</th></tr>
+                    <?php foreach ($st['funds']['accounts'] as $f): ?>
+                        <tr><td><?= $e($cut((string)$f['name'], 15)) ?></td><td class="n"><?= $num((int)$f['opening_cents']) ?></td><td class="n"><?= $num((int)$f['in_cents']) ?></td><td class="n"><?= $num((int)$f['out_cents']) ?></td><td class="n"><?= $num((int)$f['closing_cents']) ?></td></tr>
+                    <?php endforeach; ?>
+                    <?php if (count($st['funds']['accounts']) > 1): ?>
+                        <tr class="sum"><td>Total</td><td class="n"><?= $num($st['funds']['totals']['opening_cents']) ?></td><td class="n"><?= $num($st['funds']['totals']['in_cents']) ?></td><td class="n"><?= $num($st['funds']['totals']['out_cents']) ?></td><td class="n"><?= $num($st['funds']['totals']['closing_cents']) ?></td></tr>
+                    <?php endif; ?>
+                <?php endif; ?>
             </table>
             <div class="delq">
                 <strong>Inadimplência</strong>
@@ -279,21 +319,18 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
                     Em <?= $e($date($letter['delinquency']['as_of'])) ?>: nenhuma unidade em atraso.
                 <?php endif; ?>
             </div>
-            <?php if ($detail !== 'items'): ?><p class="muted">O detalhe de cada pagamento está na folha seguinte.</p><?php endif; ?>
         </td>
     </tr></table>
+    </div>
 </div>
 
+    <?php if (is_array($notice)): ?>
     <div class="notice">
-        <?php if (is_array($notice)): ?>
-            <?php if (!empty($notice['image'])): ?><img src="<?= $e($notice['image']) ?>" alt=""><?php endif; ?>
-            <h5><?= $e($notice['title'] ?? 'Aviso') ?></h5>
-            <p><?= nl2br($e($notice['body'] ?? '')) ?></p>
-        <?php else: ?>
-            <h5>Avisos do condomínio</h5>
-            <p class="muted">Espaço reservado para avisos, comunicados e parceiros da Connect.</p>
-        <?php endif; ?>
+        <?php if (!empty($notice['image'])): ?><img src="<?= $e($notice['image']) ?>" alt=""><?php endif; ?>
+        <?php if (trim((string)($notice['title'] ?? '')) !== ''): ?><h5><?= $e($notice['title']) ?></h5><?php endif; ?>
+        <p><?= nl2br($e($notice['body'] ?? '')) ?></p>
     </div>
+    <?php endif; ?>
     <div class="access">Acesse seus boletos, a prestação de contas e os comunicados em <strong><?= $e($appLink) ?></strong>.</div>
     <div class="cut"></div>
 
@@ -309,17 +346,15 @@ $section = function (array $sec, string $level) use ($e, $num, $date): string {
                 <td class="v"><small>Valor do documento</small><strong><?= $e($brl($c['amount_cents'])) ?></strong></td></tr>
         </table>
         <span class="auth">Autenticação mecânica</span>
-        <div class="bars"><?php if ($barcode !== ''): ?><img src="<?= $barcode ?>" alt="Código de barras"><?php endif; ?></div>
+        <table class="pay"><tr>
+            <td class="pay__bars"><div class="bars"><?php if ($barcode !== ''): ?><img src="<?= $barcode ?>" alt="Código de barras"><?php endif; ?></div></td>
+            <?php if ($pixQr !== ''): ?>
+            <td class="pay__pix"><img src="<?= $pixQr ?>" alt="QR code do Pix"></td>
+            <td class="pay__pixtext"><strong>Pague com Pix</strong><br>Abra o app do seu banco, escolha Pix e leia o QR code. O pagamento cai na hora.</td>
+            <?php endif; ?>
+        </tr></table>
     </div>
 </div>
 
-<?php if ($detail !== 'items'): ?>
-<!-- Página 3: demonstrativo completo, só quando não coube na parte interna -->
-<div class="cont break">
-    <h3>Demonstrativo de <?= $e($st['label']) ?> · <?= $e($letter['condominium']['name']) ?></h3>
-    <table class="t"><?= $section($demo['receita'], 'items') ?></table>
-    <table class="t"><?= $section($demo['despesa'], 'items') ?></table>
-</div>
-<?php endif; ?>
 </body>
 </html>

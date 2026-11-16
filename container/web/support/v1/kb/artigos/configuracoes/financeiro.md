@@ -45,3 +45,7 @@ legenda: Tela Financeiro
 ## Quem pode usar
 
 Ver exige a permissão **erp.settings.view**; salvar, **erp.settings.manage**. O administrador libera o acesso no cadastro do usuário, em [[Studio > Usuários]].
+
+## Textos da carta de cobrança
+
+Os parâmetros **Carta de cobrança** mudam os textos da carta impressa pelo botão {{Carta}} em [Boletos](artigo:boletos): a aba externa (canais de atendimento e aplicativo, para todos os condomínios) e o quadro de avisos da parte interna (por condomínio; vazio = sem quadro). Em cada linha: `# ` subtítulo, `! ` destaque, `- ` item de lista, `~ ` letra miúda.
