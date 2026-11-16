@@ -797,7 +797,7 @@ function request_limit(string $key, int $limit = 5, int $seconds = 60, bool $res
             "time" => time() + $seconds,
             "requests" => $session->$key->requests + 1
         ]);
-        return false;
+        return request_limit_ip($key, $limit, $seconds);
     }
 
     if ($session->has($key) && $session->$key->time >= time() && $session->$key->requests >= $limit) {
@@ -809,7 +809,21 @@ function request_limit(string $key, int $limit = 5, int $seconds = 60, bool $res
         "requests" => 1
     ]);
 
-    return false;
+    return request_limit_ip($key, $limit, $seconds);
+}
+
+/**
+ * Segunda trava do request_limit(), por IP (ADR 0326): sem ela, quem não manda o cookie de sessão
+ * ganha uma sessão nova a cada pedido e nunca chega ao limite. Fora de uma requisição HTTP (CLI, testes)
+ * não há IP e não conta.
+ */
+function request_limit_ip(string $key, int $limit, int $seconds): bool
+{
+    $ip = \Source\Support\ClientIp::resolve();
+    if ($ip === null || PHP_SAPI === 'cli') {
+        return false;
+    }
+    return (new \Source\Support\IpRateLimit())->hit($key, $ip, \Source\Support\IpRateLimit::ipLimitFor($limit), $seconds);
 }
 
 /**
