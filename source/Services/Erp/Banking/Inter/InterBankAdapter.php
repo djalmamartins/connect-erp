@@ -238,7 +238,8 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         if ($externalId === null || !self::validRequestId($externalId)) {
             return ['status' => 'pending', 'error' => 'Sem o código da solicitação do Inter: cancele pelo Internet Banking.'];
         }
-        $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/cancelar', ['motivoCancelamento' => 'Cancelado pela administradora']);
+        $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/cancelar', ['motivoCancelamento' => 'Cancelado pela administradora'],
+            'application/json, application/problem+json');
         if ($response['status'] >= 200 && $response['status'] < 300) {
             return ['status' => 'cancelled', 'error' => null];
         }
@@ -261,7 +262,10 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
         if (!in_array($method, ['BOLETO', 'PIX'], true)) {
             throw new InvalidArgumentException('Forma de pagamento simulado inválida (BOLETO ou PIX).');
         }
-        $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/pagar', ['pagarCom' => $method]);
+        // CONFIRMADO no sandbox (16/11/2026): esta rota só produz application/problem+json; com Accept
+        // application/json sozinho o Inter responde 406 antes de olhar o pedido.
+        $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/pagar', ['pagarCom' => $method],
+            'application/json, application/problem+json');
         if ($response['status'] >= 200 && $response['status'] < 300) {
             return;
         }
@@ -321,9 +325,9 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras
     }
 
     /** @return array{status:int, body:string} */
-    private function call(string $method, string $path, ?array $json = null): array
+    private function call(string $method, string $path, ?array $json = null, string $accept = 'application/json'): array
     {
-        $headers = ['Authorization' => 'Bearer ' . $this->token(), 'Accept' => 'application/json'];
+        $headers = ['Authorization' => 'Bearer ' . $this->token(), 'Accept' => $accept];
         if ($json !== null) {
             $headers['Content-Type'] = 'application/json';
         }

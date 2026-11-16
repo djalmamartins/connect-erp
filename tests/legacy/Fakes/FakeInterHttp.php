@@ -68,6 +68,10 @@ final class FakeInterHttp implements InterHttp
                 return ['status' => 202, 'body' => ''];
             }
             if ($method === 'POST' && $action === '/pagar') {
+                if (!str_contains((string)($headers['Accept'] ?? ''), 'application/problem+json')) {
+                    // Como o sandbox real: a rota só produz problem+json.
+                    return ['status' => 406, 'body' => json_encode(['title' => 'Falha', 'violacoes' => [['razao' => 'Specified Accept Types [application/json] not supported.', 'propriedade' => '']]])];
+                }
                 $paid = json_decode((string)$body, true);
                 if (!in_array($paid['pagarCom'] ?? null, ['BOLETO', 'PIX'], true)) {
                     return ['status' => 400, 'body' => '{"title":"pagarCom inválido"}'];
