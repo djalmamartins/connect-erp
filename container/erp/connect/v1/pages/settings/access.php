@@ -70,7 +70,7 @@ $this->insert('components/layout/page-head', [
                             <td><?= $this->e((string)$u['email']) ?></td>
                             <td><?php if ($u['condominium_ids'] === []): ?><span class="erp-muted">Nenhum</span><?php else: ?><div class="erp-chips"><?php foreach ($u['condominium_ids'] as $cid): if (!isset($scopeCondominiums[$cid])) continue; ?>
                                 <span class="erp-chip"><?= $this->e($scopeCondominiums[$cid]) ?><?php if ($canManageAccess): ?> <button type="button" data-access-post data-api="<?= $this->e($api('/partner-users/' . (int)$u['user_id'] . '/condominiums/revoke')) ?>" data-body="<?= $this->e(json_encode(['condominium_id' => $cid])) ?>"
-                                    data-confirm="Revogar o acesso de <?= $this->e($u['name']) ?> a <?= $this->e($scopeCondominiums[$cid]) ?>?" data-done="Acesso revogado." aria-label="Revogar <?= $this->e($scopeCondominiums[$cid]) ?>">×</button><?php endif; ?></span>
+                                    data-confirm="Revogar o acesso de <?= $this->e($u['name']) ?> a <?= $this->e($scopeCondominiums[$cid]) ?>?" data-confirm-undo="sim" data-confirm-undo-text="Dá para dar o acesso de novo nesta tela." data-confirm-tone="danger" data-done="Acesso revogado." aria-label="Revogar <?= $this->e($scopeCondominiums[$cid]) ?>">×</button><?php endif; ?></span>
                             <?php endforeach; ?></div><?php endif; ?></td>
                             <?php if ($canManageAccess): ?><td class="is-num">
                                 <?php if ($active && $available !== []): ?>
@@ -81,7 +81,7 @@ $this->insert('components/layout/page-head', [
                                     </form>
                                 <?php endif; ?>
                                 <button type="button" class="erp-btn erp-btn--sm erp-btn--ghost" data-access-post data-api="<?= $this->e($api('/partner-users/' . (int)$u['user_id'] . '/unlink')) ?>" data-body="{}"
-                                    data-confirm="Desvincular <?= $this->e($u['name']) ?>? A conta perde o papel de parceiro e todo o acesso a condomínios." data-done="Usuário desvinculado.">Desvincular</button>
+                                    data-confirm="Desvincular <?= $this->e($u['name']) ?>? A conta perde o papel de parceiro e todo o acesso a condomínios." data-confirm-undo="sim" data-confirm-undo-text="Para voltar, vincule a conta de novo e libere os condomínios." data-confirm-tone="danger" data-done="Usuário desvinculado.">Desvincular</button>
                             </td><?php endif; ?>
                         </tr><?php endforeach; ?></tbody>
                     </table></div>
@@ -99,7 +99,7 @@ $this->insert('components/layout/page-head', [
                             <span class="erp-muted">Nenhum usuário comum livre para vincular. Crie a conta em Studio › Usuários, sem papel.</span>
                         <?php endif; ?>
                         <button type="button" class="erp-btn erp-btn--sm erp-btn--danger" data-access-post data-api="<?= $this->e($api('/partner-agencies/' . (int)$ag['id'] . '/deactivate')) ?>" data-body="{}"
-                            data-confirm="Desativar <?= $this->e($ag['name']) ?>? Todos os usuários dela perdem o acesso." data-done="Imobiliária desativada.">Desativar imobiliária</button>
+                            data-confirm="Desativar <?= $this->e($ag['name']) ?>? Todos os usuários dela perdem o acesso." data-confirm-tone="danger" data-done="Imobiliária desativada.">Desativar imobiliária</button>
                     </div>
                 <?php endif; ?>
             </section>
@@ -134,7 +134,7 @@ $this->insert('components/layout/page-head', [
                         <td class="erp-nowrap"><?= $this->e(RS::brDate($i['created_at'], true)) ?></td><td class="erp-nowrap"><?= $this->e(RS::brDate($i['expires_at'], true)) ?></td>
                         <td><span class="erp-badge erp-badge--<?= $tone ?>"><?= $label ?></span><?= $i['accepted_at'] ? '<br><span class="erp-muted">em ' . $this->e(RS::brDate((string)$i['accepted_at'], true)) . '</span>' : '' ?></td>
                         <?php if ($canManageAccess): ?><td class="is-num"><?php if ($i['status'] === 'pending'): ?><button type="button" class="erp-btn erp-btn--sm" data-access-post data-api="<?= $this->e($api('/resident-invitations/' . (int)$i['id'] . '/revoke')) ?>" data-body="{}"
-                            data-confirm="Revogar o convite de <?= $this->e($i['name']) ?>?" data-done="Convite revogado." aria-label="Revogar o convite de <?= $this->e($i['name']) ?>">Revogar</button><?php else: ?><span class="erp-muted">—</span><?php endif; ?></td><?php endif; ?>
+                            data-confirm="Revogar o convite de <?= $this->e($i['name']) ?>?" data-confirm-undo="sim" data-confirm-undo-text="O link enviado deixa de funcionar; dá para mandar um convite novo." data-confirm-tone="danger" data-done="Convite revogado." aria-label="Revogar o convite de <?= $this->e($i['name']) ?>">Revogar</button><?php else: ?><span class="erp-muted">—</span><?php endif; ?></td><?php endif; ?>
                     </tr><?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>

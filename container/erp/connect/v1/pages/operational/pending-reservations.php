@@ -51,7 +51,7 @@ $this->insert('components/layout/page-head', [
                     <a class="erp-btn erp-btn--sm" href="<?= $this->e($reservationsRoute . '/' . $id) ?>" aria-label="Abrir a reserva de <?= $this->e($label) ?>">Abrir</a>
                     <?php if ($canDecideReservations): ?>
                         <form method="post" action="<?= $this->e($route . '/' . $id . '/confirmar') ?>" data-erp-loading><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary" aria-label="Confirmar a reserva de <?= $this->e($label) ?>"><?= $icon('check', 'erp-icon--sm') ?>Confirmar</button></form>
-                        <form method="post" action="<?= $this->e($route . '/' . $id . '/recusar') ?>" data-erp-confirm="Recusar a reserva de <?= $this->e($label) ?>? O horário fica livre para outra reserva."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm" aria-label="Recusar a reserva de <?= $this->e($label) ?>">Recusar</button></form>
+                        <form method="post" action="<?= $this->e($route . '/' . $id . '/recusar') ?>" data-erp-confirm="Recusar a reserva de <?= $this->e($label) ?>? O horário fica livre para outra reserva." data-confirm-undo="nao" data-confirm-undo-text="Para voltar, o morador precisa pedir a reserva de novo."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm" aria-label="Recusar a reserva de <?= $this->e($label) ?>">Recusar</button></form>
                     <?php endif; ?>
                 </div></td>
             </tr><?php endforeach; ?></tbody>

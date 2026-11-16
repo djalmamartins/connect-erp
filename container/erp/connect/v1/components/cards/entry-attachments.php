@@ -25,7 +25,7 @@ $inline = \Source\Controllers\Erp\Connect\EntryAttachmentScreens::INLINE;
                     <span class="erp-list__meta" style="display:flex;gap:4px;align-items:center">
                         <a class="erp-icon-button" href="<?= $this->e($href) ?>" aria-label="Baixar <?= $this->e($item['original_name']) ?>"><?= $icon('download', 'erp-icon--sm') ?></a>
                         <?php if ($attachments['canManage']): ?>
-                            <form method="post" action="<?= $this->e($href . '/excluir') ?>" style="display:inline" onsubmit="return confirm('Remover este anexo do lançamento? O arquivo continua no Disco Virtual.')">
+                            <form method="post" action="<?= $this->e($href . '/excluir') ?>" style="display:inline" data-erp-confirm="Remover este anexo do lançamento? O arquivo continua guardado no Disco Virtual." data-confirm-undo="sim" data-confirm-undo-text="Dá para anexar o mesmo arquivo de novo." data-confirm-action="Remover anexo" data-confirm-tone="danger">
                                 <?= csrf_input() ?><input type="hidden" name="voltar" value="<?= $this->e($attachments['back']) ?>">
                                 <button type="submit" class="erp-icon-button" aria-label="Remover <?= $this->e($item['original_name']) ?>"><?= $icon('trash', 'erp-icon--sm') ?></button>
                             </form>

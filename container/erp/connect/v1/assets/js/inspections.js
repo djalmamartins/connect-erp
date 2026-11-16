@@ -80,7 +80,7 @@
     input.addEventListener('change', function () {
       if (!input.files || !input.files.length) { return; }
       if (input.files[0].size > 15 * 1024 * 1024) {
-        alert('A foto passa de 15 MB. Tire outra com resolução menor.');
+        window.ErpUI.alert({ title: 'Foto grande demais', message: 'A foto passa de 15 MB e não foi anexada. Tire outra com resolução menor e escolha de novo.' });
         input.value = '';
         return;
       }
@@ -101,7 +101,7 @@
         form.querySelector('[name="latitude"]').value = pos.coords.latitude.toFixed(7);
         form.querySelector('[name="longitude"]').value = pos.coords.longitude.toFixed(7);
         here.disabled = false;
-      }, function (msg) { alert(msg); here.disabled = false; });
+      }, function (msg) { window.ErpUI.alert({ title: 'Não deu para pegar a posição', message: msg + '\nNada foi alterado: dá para digitar a latitude e a longitude à mão.' }); here.disabled = false; });
     });
   }
 })();

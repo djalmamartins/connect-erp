@@ -65,7 +65,7 @@ $this->insert('components/layout/page-head', [
                     <td class="erp-nowrap"><?= $this->e($stamp($n['processed_at'] ?? $n['created_at'])) ?><?php if ($n['status'] === 'pending' && $n['available_at']): ?><br><span class="erp-muted">próxima <?= $this->e($stamp($n['available_at'])) ?></span><?php endif; ?></td>
                     <td class="is-num"><div class="erp-table__actions">
                         <a class="erp-btn erp-btn--sm" href="<?= $this->e($link(['aviso' => $id])) ?>#trilha" aria-label="Ver a trilha do aviso nº <?= $id ?>"<?= ($queueDetail['id'] ?? null) === $id ? ' aria-current="true"' : '' ?>>Trilha</a>
-                        <?php if ($canRetry && $retryable($n)): ?><form method="post" action="<?= $this->e($route . '/' . $id . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= $id ?>? Ele volta para a fila com as tentativas zeradas."><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary" aria-label="Reenviar o aviso nº <?= $id ?>">Reenviar</button></form><?php endif; ?>
+                        <?php if ($canRetry && $retryable($n)): ?><form method="post" action="<?= $this->e($route . '/' . $id . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= $id ?>? Ele volta para a fila com as tentativas zeradas." data-confirm-undo="nao" data-confirm-undo-text="Depois que sair, o envio não volta." data-confirm-tone="primary"><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary" aria-label="Reenviar o aviso nº <?= $id ?>">Reenviar</button></form><?php endif; ?>
                     </div></td>
                 </tr><?php endforeach; ?></tbody>
             </table></div>
@@ -93,7 +93,7 @@ $this->insert('components/layout/page-head', [
                 </ul>
             <?php endif; ?>
             <?php if ($canRetry && $retryable($d)): ?>
-                <form method="post" action="<?= $this->e($route . '/' . (int)$d['id'] . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= (int)$d['id'] ?>? Ele volta para a fila com as tentativas zeradas." style="margin-top:16px"><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--primary erp-btn--block">Reenviar aviso</button></form>
+                <form method="post" action="<?= $this->e($route . '/' . (int)$d['id'] . '/reenviar') ?>" data-erp-confirm="Reenviar o aviso nº <?= (int)$d['id'] ?>? Ele volta para a fila com as tentativas zeradas." data-confirm-undo="nao" data-confirm-undo-text="Depois que sair, o envio não volta." data-confirm-tone="primary" style="margin-top:16px"><?= csrf_input() ?><button type="submit" class="erp-btn erp-btn--primary erp-btn--block">Reenviar aviso</button></form>
             <?php endif; ?>
             <a class="erp-btn erp-btn--block" style="margin-top:8px" href="<?= $this->e($link(['aviso' => null])) ?>">Fechar a trilha</a>
         </aside>
