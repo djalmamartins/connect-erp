@@ -39,7 +39,7 @@ final class BillingLetter
     /** Linhas que cabem na coluna do demonstrativo da parte interna (medido no dompdf: ~105 mm a ~3,5 mm por linha, com folga). */
     public const COLUMN_LINES = 28;
 
-    private const BANKS = ['077' => 'Banco Inter', '341' => 'Itaú', '001' => 'Banco do Brasil', '237' => 'Bradesco', '104' => 'Caixa', '033' => 'Santander',
+    private const BANKS = ['077' => 'Banco Inter', '403' => 'Cora', '341' => 'Itaú', '001' => 'Banco do Brasil', '237' => 'Bradesco', '104' => 'Caixa', '033' => 'Santander',
         '756' => 'Sicoob', '748' => 'Sicredi', '260' => 'Nubank'];
 
     private PDO $pdo;

@@ -1183,11 +1183,11 @@
       });
     });
 
-    /* Sandbox do Inter: simula o pagamento no banco e consulta; a baixa passa pela conciliação. */
+    /* Ambiente de teste do Inter e da Cora: simula o pagamento no banco e consulta; a baixa passa pela conciliação. */
     $$('[data-charge-simulate]', root).forEach(function (button) {
       button.addEventListener('click', function () {
         ErpUI.confirm({ title: 'Simular o pagamento do boleto ' + button.getAttribute('data-label') + '?', tone: 'warning',
-          message: 'É só no ambiente de testes do Inter: nenhum dinheiro de verdade se move.\nO banco marca o boleto como pago e a conta a receber é baixada como paga no ERP.',
+          message: 'É só no ambiente de testes do banco: nenhum dinheiro de verdade se move.\nO banco marca o boleto como pago e a conta a receber é baixada como paga no ERP.',
           undo: false, undoText: 'A baixa fica registrada como se o morador tivesse pago.', confirmLabel: 'Simular pagamento' }).then(function (yes) {
           if (!yes) return;
           busy(button, true);
@@ -1338,8 +1338,8 @@
     });
     $$('[data-bank-credential-remove]', root).forEach(function (button) {
       button.addEventListener('click', function () {
-        ErpUI.confirm({ title: 'Remover a credencial do Inter da conta ' + button.getAttribute('data-label') + '?', tone: 'danger',
-          message: 'O certificado e a chave guardados no cofre são apagados, e a conta volta para o banco de testes interno.\nOs boletos já emitidos continuam no Inter.',
+        ErpUI.confirm({ title: 'Remover a credencial do banco da conta ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'O certificado e a chave guardados no cofre são apagados, e a conta volta para o banco de testes interno.\nOs boletos já emitidos continuam no banco.',
           undo: true, undoText: 'Para voltar, cadastre a credencial de novo nesta tela.', confirmLabel: 'Remover credencial' }).then(function (yes) {
           if (!yes) return;
           busy(button, true);
@@ -1350,6 +1350,17 @@
       });
     });
     if (!form) return;
+    /* Cora (ADR 0322) não usa client secret: o campo some e deixa de ser obrigatório. */
+    var accountSelect = $('[data-bank-credential-account]', form);
+    var secretField = $('[data-bank-credential-secret]', form);
+    var needsSecret = function () { var opt = accountSelect && accountSelect.options[accountSelect.selectedIndex]; return !opt || opt.getAttribute('data-needs-secret') !== '0'; };
+    var syncSecret = function () {
+      if (!secretField) return;
+      var need = needsSecret();
+      secretField.hidden = !need;
+      $('[name="client_secret"]', form).required = need;
+    };
+    if (accountSelect) { accountSelect.addEventListener('change', syncSecret); syncSecret(); }
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       if (!form.reportValidity()) return;
@@ -1363,7 +1374,7 @@
       Promise.all(files.map(readB64)).then(function (encoded) {
         return call('POST', api + '/' + $('[name="bank_account_id"]', form).value, {
           client_id: $('[name="client_id"]', form).value.trim(),
-          client_secret: $('[name="client_secret"]', form).value,
+          client_secret: needsSecret() ? $('[name="client_secret"]', form).value : '',
           files: encoded,
           save_anyway: $('[name="save_anyway"]', form).checked
         });
@@ -1373,7 +1384,7 @@
         $('[name="client_secret"]', form).value = '';
         input.value = '';
         show(d.connected ? 'success' : 'warning', '<strong>' + esc(d.message) + '</strong> Certificado vence em ' + esc((d.certificate_expires_on || '').split('-').reverse().join('/')) + '.' +
-          '<br>Endereço do aviso de pagamento (webhook), mostrado só agora. Cadastre no Inter e não compartilhe:<br><code data-bank-webhook-url>' + esc(d.webhook_url) + '</code> ' +
+          '<br>Endereço do aviso de pagamento (webhook), mostrado só agora. Guarde para quando o servidor tiver endereço público e não compartilhe:<br><code data-bank-webhook-url>' + esc(d.webhook_url) + '</code> ' +
           '<button type="button" class="erp-btn erp-btn--sm" data-bank-webhook-copy>Copiar</button>');
         var copy = $('[data-bank-webhook-copy]', result);
         if (copy) copy.addEventListener('click', function () { if (navigator.clipboard) navigator.clipboard.writeText(d.webhook_url).then(function () { toast('Endereço copiado.', 'success'); }); });

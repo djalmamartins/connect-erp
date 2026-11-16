@@ -6,18 +6,21 @@ namespace Source\Services\Erp\Banking;
 
 use InvalidArgumentException;
 use PDO;
+use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\CurlInterHttp;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 
 /**
  * Catálogo de adaptadores bancários (ADR 0035 e 0156). O sandbox não precisa de credencial; o
- * Inter (ADR 0156, só sandbox do Inter) é montado por conta bancária com as credenciais do cofre
+ * Inter (ADR 0156, só sandbox do Inter) e a Cora (ADR 0322, só stage) são montados por conta bancária com as credenciais do cofre
  * (forAccount). Nome desconhecido = InvalidArgumentException, nunca um adaptador padrão silencioso.
  */
 final class BankAdapters
 {
     public const DEFAULT = 'sandbox';
-    public const NAMES = ['sandbox', InterBankAdapter::NAME];
+    public const NAMES = ['sandbox', InterBankAdapter::NAME, CoraBankAdapter::NAME];
+    /** Adaptadores de banco de verdade (credencial no cofre, consulta automática, extrato). */
+    public const REAL = [InterBankAdapter::NAME, CoraBankAdapter::NAME];
 
     /** @var array<string, BankAdapter> adaptadores trocados nos testes */
     private static array $overrides = [];
@@ -29,7 +32,7 @@ final class BankAdapters
         }
         return match ($name) {
             'sandbox' => new SandboxBankAdapter(),
-            InterBankAdapter::NAME => throw new InvalidArgumentException('O adaptador do Inter depende da conta bancária (use forAccount).'),
+            InterBankAdapter::NAME, CoraBankAdapter::NAME => throw new InvalidArgumentException('O adaptador do banco depende da conta bancária (use forAccount).'),
             default => throw new InvalidArgumentException("Adaptador bancário '{$name}' não está disponível."),
         };
     }
@@ -47,6 +50,11 @@ final class BankAdapters
         if ($name === InterBankAdapter::NAME) {
             $secrets = (new BankCredentials($pdo))->secrets((int)$account['id']);
             return new InterBankAdapter($secrets + ['account_number' => (string)($account['account_number'] ?? '')], new CurlInterHttp());
+        }
+        if ($name === CoraBankAdapter::NAME) {
+            // Cora (ADR 0322): só o ambiente de teste (stage).
+            $secrets = (new BankCredentials($pdo))->secrets((int)$account['id']);
+            return new CoraBankAdapter($secrets + ['account_number' => (string)($account['account_number'] ?? '')], new CurlInterHttp());
         }
         throw new InvalidArgumentException("Adaptador bancário '{$name}' não está disponível.");
     }

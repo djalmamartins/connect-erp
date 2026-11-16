@@ -169,8 +169,8 @@ final class BankCharges
     }
 
     /**
-     * Sandbox do Inter (ADR 0156, homologação): simula o pagamento no banco e consulta o título, que passa
-     * pela mesma baixa e conciliação do webhook. Só para boleto registrado de conta Inter.
+     * Sandbox do Inter (ADR 0156) e stage da Cora (ADR 0322), homologação: simula o pagamento no banco e consulta
+     * o título, que passa pela mesma baixa e conciliação do webhook. Só para boleto registrado desses bancos.
      */
     public function simulatePayment(User $user, int $chargeId, string $method = 'BOLETO'): array
     {
@@ -179,14 +179,17 @@ final class BankCharges
             throw new DomainException('Só boleto registrado pode ter o pagamento simulado.');
         }
         $adapter = $this->adapterOf($charge);
-        if (!$adapter instanceof Inter\InterBankAdapter) {
-            throw new DomainException('A simulação de pagamento existe só no sandbox do Inter.');
+        if (!$adapter instanceof BankPaymentSimulator) {
+            throw new DomainException('A simulação de pagamento existe só no ambiente de teste do Inter e da Cora.');
         }
+        $bankName = BankCredentials::BANK_NAMES[$adapter->name()] ?? 'banco';
         try {
             $adapter->simulatePayment($charge['external_id'] === null ? null : (string)$charge['external_id'], $method);
         } catch (\RuntimeException $error) {
             AppLogger::exception($error, 'erp', ['event_type' => 'bank_charge_simulate_failed', 'charge_id' => $chargeId]);
-            throw new DomainException('O Inter não respondeu à simulação. Tente de novo em instantes (o sandbox funciona de segunda a sexta, das 8h às 20h).');
+            throw new DomainException($adapter instanceof Inter\InterBankAdapter
+                ? 'O Inter não respondeu à simulação. Tente de novo em instantes (o sandbox funciona de segunda a sexta, das 8h às 20h).'
+                : 'O ' . $bankName . ' não respondeu à simulação. Tente de novo em instantes.');
         }
         Audit::record('update', 'erp_bank_charges', $chargeId, null, ['simulated_payment' => $method]);
         return $this->refresh($user, $chargeId);
@@ -518,7 +521,7 @@ final class BankCharges
             'our_number' => (string)$row['our_number'], 'amount_cents' => (int)$row['amount_cents'], 'due_on' => (string)$row['due_on'],
             'external_id' => $row['external_id'], 'digitable_line' => $row['digitable_line'], 'barcode' => $row['barcode'],
             'bank_our_number' => $row['bank_our_number'] ?? null, 'pix_copy_paste' => $row['pix_copy_paste'] ?? null,
-            'pdf_available' => ($row['adapter'] ?? '') === 'inter' && !empty($row['external_id']) && in_array($row['status'], ['registered', 'paid'], true),
+            'pdf_available' => in_array($row['adapter'] ?? '', BankAdapters::REAL, true) && !empty($row['external_id']) && in_array($row['status'], ['registered', 'paid'], true),
             'last_error' => $row['last_error'], 'paid_cents' => $row['paid_cents'] !== null ? (int)$row['paid_cents'] : null,
             'paid_on' => $row['paid_on'], 'registered_at' => $row['registered_at'], 'cancelled_at' => $row['cancelled_at'],
         ];
