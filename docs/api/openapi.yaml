@@ -1291,6 +1291,23 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: 'Pago, recusado, já cancelado ou cancelamento não confirmado pelo banco' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /bank-charges/{id}/simulate-payment:
+    post:
+      operationId: simulateBankChargePayment
+      summary: Só sandbox do Inter - simula o pagamento no banco e consulta o boleto; a baixa passa pela conciliação (erp.bank_charges.manage)
+      description: 'Homologação (ADR 0156). Caminho do Inter INFERIDO (POST /cobranca/v3/cobrancas/{codigoSolicitacao}/pagar com pagarCom).'
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { method: { type: string, enum: [BOLETO, PIX], default: BOLETO } } } } }
+      responses:
+        '200': { description: 'Boleto depois da consulta (pago quando o banco confirma)', content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/BankCharge' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Boleto não registrado, conta que não é do Inter ou banco sem resposta' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Forma inválida ou simulação recusada pelo Inter' }
   /bank-charges/{id}/pdf:
     get:
       operationId: getBankChargePdf

@@ -184,6 +184,21 @@ final class InterBankAdapterTest extends TestCase
         }
     }
 
+    public function testSimulatedPaymentOnlyWithRequestIdAndKnownMethod(): void
+    {
+        $id = (string)$this->adapter->registerCharge($this->charge())['external_id'];
+        $this->adapter->simulatePayment($id, 'PIX');
+        self::assertSame('paid', $this->adapter->getCharge('0000000001', $id)['event']['kind'] ?? null);
+        foreach ([[null, 'BOLETO'], [$id, 'CHEQUE']] as [$bad, $method]) {
+            try {
+                $this->adapter->simulatePayment($bad, $method);
+                self::fail('Deveria recusar.');
+            } catch (InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     public function testOnlySandboxAndCompleteCredentials(): void
     {
         try {

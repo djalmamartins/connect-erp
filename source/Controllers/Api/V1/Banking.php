@@ -23,6 +23,7 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges/{id}/refresh                         consulta no banco
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
  *  GET  /api/v1/bank-charges/{id}/pdf                             PDF do boleto (Inter, ADR 0156)
+ *  POST /api/v1/bank-charges/{id}/simulate-payment {method}       só sandbox do Inter: simula o pagamento e consulta
  *  GET  /api/v1/bank-remittances?condominium_id=&from=&to=&status=&page=  remessas: lotes por conta e dia (AP-037)
  *  GET  /api/v1/bank-returns?condominium_id=&bank_account_id=&page=  arquivos importados (paginado)
  *  POST /api/v1/bank-returns {bank_account_id, filename, content} importa retorno (texto)
@@ -69,6 +70,16 @@ final class Banking
         $user = $this->authorize('manage');
         if ($user !== null) {
             $this->run(200, fn () => (new BankCharges())->cancel($user, (int)$this->int($data['id'] ?? null)));
+        }
+    }
+
+    /** Sandbox do Inter: simula o pagamento e consulta (ADR 0156). Corpo {method: BOLETO|PIX}. */
+    public function simulatePayment(array $data): void
+    {
+        [$user, $body] = $this->write();
+        if ($user !== null) {
+            $method = strtoupper(is_string($body['method'] ?? null) ? $body['method'] : 'BOLETO');
+            $this->run(200, fn () => (new BankCharges())->simulatePayment($user, (int)$this->int($data['id'] ?? null), $method));
         }
     }
 

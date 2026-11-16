@@ -44,7 +44,11 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 - [ ] Token obtido (`testar`).
 - [ ] Emitir boleto com pagador PF e PJ; conferir linha digitável, Pix e PDF.
 - [ ] Conferir os nomes de campo do contrato inferido (multa/mora, `numDiasAgenda`, `mensagem`).
-- [ ] Simular pagamento no sandbox e ver a baixa chegar pelo webhook.
+- [x] Token obtido com a aplicação do portal de sandbox (16/11/2026).
+- [x] Boleto registrado no sandbox com linha digitável, Pix e PDF (16/11/2026); pagador sem CPF recusado antes do banco.
+- [ ] Simular pagamento: botão **Simular pagamento** em Cobrança > Boletos (só conta Inter, boleto registrado)
+  chama `POST /cobranca/v3/cobrancas/{codigoSolicitacao}/pagar` com `pagarCom` (INFERIDO) e consulta o boleto.
+- [ ] Ver a baixa chegar pelo webhook (precisa de endereço público).
 - [ ] Cancelar boleto; conferir `CANCELADO` e o motivo.
 - [ ] Erro de validação (CPF inválido, vencimento passado) aparece como Recusado com a mensagem do banco.
 - [ ] Reenvio do mesmo webhook não duplica; webhook com segredo errado = 404.

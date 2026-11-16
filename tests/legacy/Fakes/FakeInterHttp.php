@@ -57,7 +57,7 @@ final class FakeInterHttp implements InterHttp
                 'dataSituacao' => '2026-11-10', 'request' => $data];
             return ['status' => 200, 'body' => json_encode(['codigoSolicitacao' => $id])];
         }
-        if (preg_match('#^/cobranca/v3/cobrancas/([^/]+)(/pdf|/cancelar)?$#', $path, $m)) {
+        if (preg_match('#^/cobranca/v3/cobrancas/([^/]+)(/pdf|/cancelar|/pagar)?$#', $path, $m)) {
             $id = rawurldecode($m[1]);
             if (!isset($this->charges[$id])) {
                 return ['status' => 404, 'body' => '{"title":"Cobrança não encontrada"}'];
@@ -66,6 +66,14 @@ final class FakeInterHttp implements InterHttp
             if ($method === 'POST' && $action === '/cancelar') {
                 $this->charges[$id]['situacao'] = 'CANCELADO';
                 return ['status' => 202, 'body' => ''];
+            }
+            if ($method === 'POST' && $action === '/pagar') {
+                $paid = json_decode((string)$body, true);
+                if (!in_array($paid['pagarCom'] ?? null, ['BOLETO', 'PIX'], true)) {
+                    return ['status' => 400, 'body' => '{"title":"pagarCom inválido"}'];
+                }
+                $this->set($id, 'RECEBIDO', (string)$this->charges[$id]['valorNominal']);
+                return ['status' => 204, 'body' => ''];
             }
             if ($method === 'GET' && $action === '/pdf') {
                 return ['status' => 200, 'body' => json_encode(['pdf' => base64_encode("%PDF-1.4\n% boleto sintético\n")])];
