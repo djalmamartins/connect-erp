@@ -103,7 +103,7 @@ final class SettingsScreens
             $attrs['min'] = (string)$setting['min'];
         }
         if ($setting['max'] !== null) {
-            $attrs[$setting['type'] === 'text' ? 'maxlength' : 'max'] = (string)$setting['max'];
+            $attrs[in_array($setting['type'], ['text', 'textarea'], true) ? 'maxlength' : 'max'] = (string)$setting['max'];
         }
         if ($setting['type'] === 'text' && $setting['min'] !== null) {
             unset($attrs['min']);
@@ -116,6 +116,7 @@ final class SettingsScreens
             'decimal' => ['tag' => 'input', 'type' => 'number', 'attrs' => $attrs + ['step' => 'any'], 'value' => (string)$value],
             'money' => ['tag' => 'input', 'type' => 'text', 'attrs' => ['inputmode' => 'decimal', 'pattern' => '^\d{1,9}([.,]\d{1,2})?$'], 'value' => number_format(((int)$value) / 100, 2, ',', '')],
             'email' => ['tag' => 'input', 'type' => 'email', 'attrs' => ['maxlength' => '190'], 'value' => (string)$value],
+            'textarea' => ['tag' => 'textarea', 'type' => 'textarea', 'attrs' => $attrs + ['rows' => '6'], 'value' => (string)$value],
             default => ['tag' => 'input', 'type' => 'text', 'attrs' => $attrs, 'value' => (string)$value],
         };
     }

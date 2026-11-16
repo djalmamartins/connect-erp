@@ -25,7 +25,10 @@ use Source\Support\QrCode;
  * 2. parte interna: cabeçalho (conta, competência, emissão, vencimento e valor), destinatário, rateio do boleto,
  *    demonstrativo do mês anterior (o mesmo da prestação de contas, ADR 0314), resumo das contas bancárias,
  *    inadimplência, área de avisos e a ficha do boleto com linha digitável e código de barras (ITF-25);
- * 3. folha de continuação só quando o demonstrativo não cabe inteiro na parte interna (detail diferente de 'items').
+ *
+ * Ajustes de 16/11 à tarde (ADR 0318): nunca mais que as duas folhas; o demonstrativo é sempre um resumo (receitas em
+ * cotas por conta, despesas por conta, encolhendo para grupos e totais quando não cabe), bancos, fundos e
+ * inadimplência à direita; textos da aba externa e da área de avisos vêm dos parâmetros (ErpSettings, letter.*).
  *
  * Tudo vem do sistema: o boleto registrado (erp_bank_charges), a conta a receber e a fatura de origem, o pagador
  * (mesma regra do registro no banco), as regras de cobrança e o livro caixa do mês anterior. Só lê; a geração
@@ -33,16 +36,8 @@ use Source\Support\QrCode;
  */
 final class BillingLetter
 {
-    /** Canais impressos na aba externa (modelo externa.pdf de 16/11). Passam para a tela de avisos na etapa 2. */
-    public const CHANNELS = [
-        ['icon' => 'phone', 'title' => 'Atendimento Geral (Telefone e WhatsApp)', 'value' => '31 97147-2258', 'hint' => 'De segunda a sexta-feira de 08h30 às 17h30'],
-        ['icon' => 'money', 'title' => 'Financeiro (Telefone e WhatsApp)', 'value' => '31 93618-0510', 'hint' => 'De segunda a sexta-feira de 08h30 às 17h30'],
-        ['icon' => 'alert', 'title' => 'Emergência (Apenas ligações)', 'value' => '31 99653-3740', 'hint' => 'Para situações urgentes fora do horário comercial'],
-    ];
-    public const SOCIAL = ['site' => 'www.connectcondominios.com.br', 'instagram' => '@connectcondominios', 'facebook' => '/connectcondominios'];
-
-    /** Linhas que cabem em cada coluna do demonstrativo na parte interna (medido no dompdf: ~110 mm a ~3,5 mm por linha, com folga). */
-    public const COLUMN_LINES = 27;
+    /** Linhas que cabem na coluna do demonstrativo da parte interna (medido no dompdf: ~105 mm a ~3,5 mm por linha, com folga). */
+    public const COLUMN_LINES = 28;
 
     private const BANKS = ['077' => 'Banco Inter', '341' => 'Itaú', '001' => 'Banco do Brasil', '237' => 'Bradesco', '104' => 'Caixa', '033' => 'Santander',
         '756' => 'Sicoob', '748' => 'Sicredi', '260' => 'Nubank'];
@@ -134,37 +129,103 @@ final class BillingLetter
     }
 
     /**
-     * Quanto do demonstrativo cabe na parte interna (regra pura): 'items' (cada pagamento), 'accounts' (total por
-     * conta), 'groups' (só os grupos) ou 'totals' (só receitas e despesas). Fora de 'items', o detalhe completo vai
-     * para a folha de continuação. Conta as linhas como o modelo imprime: a coluna da esquerda tem a composição do
-     * boleto e as receitas; a da direita, as despesas, o resultado, as contas bancárias e a inadimplência.
+     * Resumo do demonstrativo para a carta (regra pura): receitas por conta com as cotas ("6 cotas de 650,00", agrupando os
+     * recebimentos pelo valor; só quando a conta tem mais de um), despesas por conta, e os grupos com o total.
+     *
+     * @return array{receita:array, despesa:array, result_cents:int}
      */
-    public static function detailLevel(array $demonstrative, int $rateioRows = 1, int $banks = 1, int $limit = self::COLUMN_LINES): string
+    public static function summary(array $demonstrative): array
     {
-        $count = static function (array $section, string $level): int {
-            $n = 1;   // título "( + ) Receitas"
-            foreach ($section['groups'] ?? [] as $group) {
-                if ($level === 'totals') {
-                    break;
+        $out = ['result_cents' => (int)($demonstrative['result_cents'] ?? 0)];
+        foreach (['receita', 'despesa'] as $nature) {
+            $section = $demonstrative[$nature] ?? ['total_cents' => 0, 'groups' => []];
+            $groups = [];
+            foreach ($section['groups'] ?? [] as $g) {
+                $accounts = [];
+                foreach ($g['accounts'] as $a) {
+                    $quotas = [];
+                    if ($nature === 'receita' && count($a['items']) > 1) {
+                        foreach ($a['items'] as $it) {
+                            $quotas[(int)$it['amount_cents']] = ($quotas[(int)$it['amount_cents']] ?? 0) + 1;
+                        }
+                        uksort($quotas, static fn (int $x, int $y): int => [$quotas[$y], $y] <=> [$quotas[$x], $x]);
+                        $quotas = array_map(static fn (int $amount, int $count): array => ['count' => $count, 'amount_cents' => $amount, 'total_cents' => $count * $amount],
+                            array_keys($quotas), array_values($quotas));
+                    }
+                    $accounts[] = ['name' => (string)$a['name'], 'total_cents' => (int)$a['total_cents'], 'quotas' => $quotas];
                 }
-                $n += 2;   // grupo + total do grupo
+                $groups[] = ['name' => (string)$g['name'], 'total_cents' => (int)$g['total_cents'], 'accounts' => $accounts];
+            }
+            $out[$nature] = ['total_cents' => (int)($section['total_cents'] ?? 0), 'groups' => $groups];
+        }
+        return $out;
+    }
+
+    /**
+     * Quanto do resumo cabe na coluna da esquerda (regra pura), que leva a composição do boleto, as receitas, as despesas
+     * e o resultado. Receitas: 'quotas' → 'accounts' → 'groups' → 'totals'; despesas: 'accounts' → 'groups' → 'totals'.
+     * Encolhe primeiro o lado maior. Nunca cria folha a mais: no pior caso ficam só os totais.
+     *
+     * @return array{receita:string, despesa:string}
+     */
+    public static function fit(array $summary, int $rateioRows = 1, int $limit = self::COLUMN_LINES): array
+    {
+        $lines = static function (array $section, string $level): int {
+            if ($level === 'totals') {
+                return 0;
+            }
+            $n = 0;
+            foreach ($section['groups'] ?? [] as $g) {
+                $n++;   // grupo (com o total na mesma linha)
                 if ($level === 'groups') {
                     continue;
                 }
-                foreach ($group['accounts'] as $account) {
-                    $n += 1 + ($level === 'items' ? count($account['items']) : 0);
+                foreach ($g['accounts'] as $a) {
+                    $n += 1 + ($level === 'quotas' ? count($a['quotas']) : 0);
                 }
             }
-            return $n + 1;   // total da seção
+            return $n;
         };
-        $left = 5 + $rateioRows;     // títulos, cabeçalho e total da composição + título do demonstrativo
-        $right = 10 + $banks;        // resultado (3), título e cabeçalho/total das contas (3), inadimplência (3) + respiro
-        foreach (['items', 'accounts', 'groups'] as $level) {
-            if ($left + $count($demonstrative['receita'] ?? [], $level) <= $limit && $right + $count($demonstrative['despesa'] ?? [], $level) <= $limit) {
-                return $level;
+        $fixed = 4 + $rateioRows + 2 + 2 + 3;   // composição (título, cabeçalho, total, respiro) + títulos/totais das receitas e despesas + resultado
+        $rev = ['quotas', 'accounts', 'groups', 'totals'];
+        $exp = ['accounts', 'groups', 'totals'];
+        $r = 0;
+        $d = 0;
+        while ($fixed + $lines($summary['receita'] ?? [], $rev[$r]) + $lines($summary['despesa'] ?? [], $exp[$d]) > $limit) {
+            $canR = $r < count($rev) - 1;
+            $canD = $d < count($exp) - 1;
+            if (!$canR && !$canD) {
+                break;
+            }
+            $sizeR = $lines($summary['receita'] ?? [], $rev[$r]);
+            $sizeD = $lines($summary['despesa'] ?? [], $exp[$d]);
+            if ($canR && (!$canD || $sizeR >= $sizeD)) {
+                $r++;
+            } else {
+                $d++;
             }
         }
-        return 'totals';
+        return ['receita' => $rev[$r], 'despesa' => $exp[$d]];
+    }
+
+    /**
+     * Texto livre dos parâmetros em blocos (regra pura): "# " subtítulo, "! " destaque, "- " item de lista, "~ " letra
+     * miúda; o resto é parágrafo. Linhas vazias somem.
+     *
+     * @return list<array{kind:string, text:string}>
+     */
+    public static function blocks(string $text): array
+    {
+        $out = [];
+        foreach (preg_split('/\R/u', $text) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            $kind = match (mb_substr($line, 0, 2)) { '# ' => 'title', '! ' => 'highlight', '- ' => 'item', '~ ' => 'small', default => 'text' };
+            $out[] = ['kind' => $kind, 'text' => $kind === 'text' ? $line : trim(mb_substr($line, 2))];
+        }
+        return $out;
     }
 
     /** Competência anterior (regra pura): "2026-01" → "2025-12". */
@@ -175,7 +236,7 @@ final class BillingLetter
 
     /**
      * Dados da carta a partir de um boleto (registrado ou pago, com linha digitável). $notice = área de avisos
-     * (title, body, image), ou null para o texto padrão.
+     * (title, body, image); null usa os parâmetros letter.notice_* do condomínio (vazios = sem área de avisos).
      */
     public function build(User $user, int $chargeId, ?array $notice = null): array
     {
@@ -208,6 +269,13 @@ final class BillingLetter
         $competence = (string)($entry['invoice_competence'] ?: $entry['competence'] ?: substr((string)$entry['due_on'], 0, 7));
         $previous = self::previousCompetence($competence);
         $statement = (new AccountabilityDocument($this->pdo, $this->scope, $this->theme))->build($user, $condominiumId, $previous, true);
+        $funds = Accountability::funds((new AccountingReports($this->pdo, $this->scope))->ledger($user, $condominiumId, $statement['from'], $statement['to'], 'competence', '8'));
+        $setting = fn (string $key): string => (string)ErpSettings::value($this->pdo, $condominiumId, $key);
+        $notice ??= ['title' => $setting('letter.notice_title'), 'body' => $setting('letter.notice_body')];
+        if (trim((string)($notice['title'] ?? '')) === '' && trim((string)($notice['body'] ?? '')) === '' && empty($notice['image'])) {
+            $notice = null;
+        }
+        $summary = self::summary($statement['demonstrative']);
         $asOf = min((string)$statement['to'], date('Y-m-d'));
         $delinquency = (new Agreements($this->pdo, $this->scope))->delinquency($user, $condominiumId, $asOf);
         $rule = (new BillingRules($this->pdo))->rule($condominiumId);
@@ -233,6 +301,7 @@ final class BillingLetter
                 'id' => (int)$charge['id'], 'our_number' => (string)$charge['our_number'], 'status' => (string)$charge['status'],
                 'due_on' => (string)$charge['due_on'], 'amount_cents' => (int)$charge['amount_cents'],
                 'digitable_line' => self::formatDigitable($charge['digitable_line']), 'barcode' => (string)($charge['barcode'] ?? ''),
+                'pix' => trim((string)($charge['pix_copy_paste'] ?? '')),
                 'bank_code' => (string)$charge['bank_code'], 'bank_name' => self::BANKS[(string)$charge['bank_code']] ?? ('Banco ' . $charge['bank_code']),
                 'issued_on' => substr((string)($charge['registered_at'] ?? $charge['created_at']), 0, 10),
             ],
@@ -245,8 +314,11 @@ final class BillingLetter
             'address' => $address,
             'rateio' => $rateio,
             'statement' => ['competence' => $previous, 'label' => CashBookDocument::monthLabel($previous), 'from' => $statement['from'], 'to' => $statement['to'],
-                'demonstrative' => $statement['demonstrative'], 'banks' => $statement['banks'], 'closed' => $statement['closed'],
-                'detail' => self::detailLevel($statement['demonstrative'], count($rateio), count($statement['banks']))],
+                'summary' => $summary, 'fit' => self::fit($summary, count($rateio)), 'banks' => $statement['banks'], 'funds' => $funds, 'closed' => $statement['closed']],
+            'flap' => [
+                'left' => ['title' => $setting('letter.flap_left_title'), 'blocks' => self::blocks($setting('letter.flap_left_body'))],
+                'right' => ['title' => $setting('letter.flap_right_title'), 'blocks' => self::blocks($setting('letter.flap_right_body'))],
+            ],
             'delinquency' => ['as_of' => $asOf, 'units' => (int)$delinquency['totals']['units'], 'amount_cents' => (int)$delinquency['totals']['amount_cents']],
             'instructions' => self::instructions((int)$rule['fine_bp'], (int)$rule['monthly_interest_bp']),
             'notice' => $notice,
@@ -260,8 +332,8 @@ final class BillingLetter
             'letter' => $letter, 'forPdf' => $forPdf, 'issuer' => ListDocument::issuer(), 'logo' => ListDocument::logo(),
             'floral' => self::asset($this->theme . 'assets/images/billing/floral-cinza.png', 'image/png'),
             'barcode' => self::barcodeSvg($letter['charge']['barcode']),
-            'appLink' => $appLink, 'qr' => self::qr($appLink),
-            'channels' => self::CHANNELS, 'social' => self::SOCIAL,
+            'pixQr' => ($letter['charge']['pix'] ?? '') !== '' ? self::qr((string)$letter['charge']['pix'], 'QR code do Pix') : '',
+            'appLink' => $appLink, 'qr' => self::qr($appLink, 'Acesse o aplicativo'),
         ]);
     }
 
@@ -314,9 +386,9 @@ final class BillingLetter
         return is_file($path) ? 'data:' . $mime . ';base64,' . base64_encode((string)file_get_contents($path)) : '';
     }
 
-    private static function qr(string $link): string
+    private static function qr(string $content, string $label): string
     {
-        $svg = QrCode::svg($link, 240, 'Acesse o aplicativo');
+        $svg = QrCode::svg($content, 240, $label);
         return $svg !== null ? 'data:image/svg+xml;base64,' . base64_encode($svg) : '';
     }
 

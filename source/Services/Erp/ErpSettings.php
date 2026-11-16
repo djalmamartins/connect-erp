@@ -33,7 +33,7 @@ use Source\Support\AuditMask;
 final class ErpSettings
 {
     /**
-     * key => [página, grupo, rótulo, tipo, padrão, escopo, limites]. tipo: int|bool|money|decimal|text|email|enum.
+     * key => [página, grupo, rótulo, tipo, padrão, escopo, limites]. tipo: int|bool|money|decimal|text|textarea|email|enum.
      * escopo: condominium (a Connect define o padrão e o condomínio pode mudar) ou global (só a Connect).
      */
     public const CATALOG = [
@@ -47,6 +47,16 @@ final class ErpSettings
         'app.collection_cooldown_days' => ['page' => 'AP-155', 'group' => 'Notificações do aplicativo', 'label' => 'Dias entre avisos de cobrança da mesma unidade', 'type' => 'int', 'default' => 7, 'scope' => 'global', 'min' => 1, 'max' => 90],
         // ADR 0402: chave geral das notas fiscais (NFS-e). Desligada, nenhum pedido de nota é aceito e nada é emitido.
         'nfse.enabled' => ['page' => 'AP-157', 'group' => 'Financeiro', 'label' => 'Notas fiscais (NFS-e) ligadas: permitir solicitar e emitir notas', 'type' => 'bool', 'default' => false, 'scope' => 'global'],
+        // ADR 0318: textos da carta de cobrança impressa. A aba externa vale para todos; o aviso da parte interna, por condomínio.
+        // Marcação simples nas linhas: "# " subtítulo, "! " destaque (telefone), "- " item de lista, "~ " letra miúda.
+        'letter.flap_left_title' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (esquerda): título', 'type' => 'text', 'default' => 'Nossos canais de atendimento', 'scope' => 'global', 'max' => 60],
+        'letter.flap_left_body' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (esquerda): texto', 'type' => 'textarea', 'scope' => 'global', 'max' => 900,
+            'default' => "# Atendimento Geral (Telefone e WhatsApp)\n! 31 97147-2258\n~ De segunda a sexta-feira de 08h30 às 17h30\n# Financeiro (Telefone e WhatsApp)\n! 31 93618-0510\n~ De segunda a sexta-feira de 08h30 às 17h30\n# Emergência (Apenas ligações)\n! 31 99653-3740\n~ Para situações urgentes fora do horário comercial\nSite: www.connectcondominios.com.br · Instagram: @connectcondominios"],
+        'letter.flap_right_title' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (direita): título', 'type' => 'text', 'default' => 'Aplicativo do condômino', 'scope' => 'global', 'max' => 60],
+        'letter.flap_right_body' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (direita): texto (o QR code do aplicativo fica embaixo)', 'type' => 'textarea', 'scope' => 'global', 'max' => 600,
+            'default' => "Acesse pelo celular ou computador para:\n- ver e copiar seus boletos\n- abrir chamados e ocorrências\n- acompanhar comunicados\n- consultar a prestação de contas\n~ Primeiro acesso: peça o convite ao Financeiro."],
+        'letter.notice_title' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · avisos da parte interna: título', 'type' => 'text', 'default' => '', 'scope' => 'condominium', 'max' => 80],
+        'letter.notice_body' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · avisos da parte interna: texto', 'type' => 'textarea', 'default' => '', 'scope' => 'condominium', 'max' => 300],
         'finance.default_due_day' => ['page' => 'AP-157', 'group' => 'Financeiro', 'label' => 'Dia de vencimento padrão das faturas', 'type' => 'int', 'default' => 10, 'scope' => 'condominium', 'min' => 1, 'max' => 28],
         'statement.show_open_entries' => ['page' => 'AP-158', 'group' => 'Demonstrativo', 'label' => 'Mostrar contas em aberto no demonstrativo', 'type' => 'bool', 'default' => true, 'scope' => 'condominium'],
         'statement.group_by' => ['page' => 'AP-158', 'group' => 'Demonstrativo', 'label' => 'Agrupar o demonstrativo por', 'type' => 'enum', 'default' => 'chart', 'scope' => 'condominium',
@@ -103,6 +113,12 @@ final class ErpSettings
             case 'email':
                 $text = is_string($value) ? trim($value) : '';
                 return $text === '' || filter_var($text, FILTER_VALIDATE_EMAIL) ? mb_strtolower($text) : throw $fail();
+            case 'textarea':
+                // Várias linhas: mantém a quebra de linha e tira os outros caracteres de controle e as linhas vazias repetidas.
+                $text = is_string($value) ? str_replace(["\r\n", "\r"], "\n", $value) : '';
+                $text = trim((string)preg_replace(["/[^\P{C}\n]+/u", "/[ \t]+\n/", "/\n{3,}/"], ['', "\n", "\n\n"], $text));
+                $length = mb_strlen($text);
+                return $length < ($spec['min'] ?? 0) || $length > ($spec['max'] ?? 600) ? throw $fail() : $text;
             default:
                 $text = is_string($value) ? trim((string)preg_replace('/[\p{C}]+/u', '', $value)) : '';
                 $length = mb_strlen($text);
