@@ -4,7 +4,7 @@
  * para o tutorial completo na Central de Ajuda. Texto de Source\Services\Help\PageGuides (a mesma
  * fonte da seção "O que acontece por trás" do artigo).
  *
- * Visual (retornos do Djalma, 15/11/2026): caixa verde-clara de borda fina, título pequeno com ícone,
+ * Visual (retornos do Djalma, 15–16/11/2026): nasce fechada (só o título) e a pessoa decide abrir; caixa verde-clara de borda fina, título pequeno com ícone,
  * texto curto, até 3 itens e "Abrir tutorial completo". O título recolhe a caixa; o X fecha e ela não
  * volta mais naquela tela, neste navegador (erp.js, localStorage). Em Configurações > Administrativo,
  * "Mostrar o quadro Sobre esta tela" (admin.page_intro) desliga para todos.
@@ -33,7 +33,7 @@ $introHelp = \Source\Services\Environments::url('site', '/suporte/tela/' . rawur
 $introItems = array_slice($introGuide['por_tras'], 0, 3);
 ?>
 <div class="erp-page-intro" data-erp-intro="<?= $this->e($introCode) ?>">
-    <details class="erp-page-intro__box" open>
+    <details class="erp-page-intro__box">
         <summary class="erp-page-intro__summary"><?= $icon('help', 'erp-icon--sm') ?><span>Sobre esta tela</span></summary>
         <div class="erp-page-intro__body">
             <p><?= $introRenderer->inline($introGuide['faz']) ?></p>

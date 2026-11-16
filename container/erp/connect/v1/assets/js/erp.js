@@ -3518,14 +3518,14 @@
   });
 
   /* "Sobre esta tela" (ADR 0309) ------------------------------------------
-   * O título recolhe (e continua recolhida); o X fecha e não volta mais naquela tela, neste navegador. */
+   * Nasce fechada; quem abre pelo título deixa aberta naquela tela. O X fecha e não volta mais naquela tela, neste navegador. */
   $$('[data-erp-intro]').forEach(function (box) {
     var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
     var details = $('details', box);
     var state = storage.get(key);
     if (state === 'dismissed') { box.hidden = true; return; }
     if (details) {
-      if (state === 'closed') { details.open = false; }
+      if (state === 'open') { details.open = true; }
       details.addEventListener('toggle', function () { storage.set(key, details.open ? 'open' : 'closed'); });
     }
     var close = $('[data-erp-intro-close]', box);
