@@ -371,6 +371,14 @@ $assert(str_contains($html, 'R$ 96.320,00') && !str_contains($html, '/fechamento
 $html = $closingPage(null, [$closingRow(['status' => 'closed']), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false, 'all');
 $assert(str_contains($html, '1 de 2 fechados') && str_contains($html, 'Edifício Dois') && str_contains($html, 'escolha um condomínio na barra superior') && !str_contains($html, 'method="post" action="' . $erpRoot . '/financeiro'), 'AP-030: em Todos lista cada condomínio e pede para escolher um antes de fechar');
 
+// ADR 0313: mês anterior em aberto vira alerta com link e trava o botão Fechar; em "Todos" aparece por condomínio.
+$html = $closingPage(7, [$closingRow(['pending_before' => ['2026-08', '2026-09']])], true, 'order');
+$assert(str_contains($html, 'data-closing-order') && str_contains($html, 'Há 2 meses anteriores em aberto') && str_contains($html, '?competencia=2026-08">08/2026</a>') && (bool)preg_match('~<button type="submit" class="erp-btn erp-btn--primary" disabled~', $html), 'AP-030: meses anteriores abertos alertam e travam o Fechar');
+$html = $closingPage(7, [$closingRow()], true);
+$assert(!str_contains($html, 'data-closing-order') && !(bool)preg_match('~erp-btn--primary" disabled~', $html), 'AP-030: sem mês anterior aberto, sem alerta');
+$html = $closingPage(null, [$closingRow(['pending_before' => ['2026-09']]), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false);
+$assert(str_contains($html, '1 condomínio(s) com mês anterior em aberto') && str_contains($html, 'antes: 09/2026'), 'AP-030: em Todos mostra quem tem mês anterior aberto');
+
 // Faturas (AP-032) com dados reais ($invoices de Panel::invoiceData, ADR 0033): lista, ações pela API e estados.
 $invoiceRow = static fn (array $over = []): array => $over + [
     'id' => 5, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'invoice_type_id' => 2, 'type_name' => 'Taxa <condominial>',

@@ -150,6 +150,37 @@ final class MonthClosingIntegrationTest extends TestCase
         $closings->status($outsider, $this->alpha, '2026-11');
     }
 
+    /** ADR 0313: não fecha com mês anterior em aberto (com lançamento ou reaberto); mês vazio não conta. */
+    public function testClosesInOrderAndListsPendingMonths(): void
+    {
+        $this->entry('receita', $this->fee, '100,00', '2026-08');
+        $this->entry('receita', $this->fee, '100,00', '2026-09');
+        $this->entry('receita', $this->fee, '100,00', '2026-11');
+        $this->service->save($this->admin, 'entries', $this->input('receita', $this->fee, '100,00', '2026-07', $this->beta));
+        $closings = new MonthClosing($this->pdo);
+
+        self::assertSame(['2026-08', '2026-09'], $closings->pendingBefore($this->admin, $this->alpha, '2026-11'), 'Outubro sem lançamento não conta.');
+        $rows = array_column($closings->overview($this->admin, null, '2026-11')['rows'], 'pending_before', 'condominium_id');
+        self::assertSame([['2026-08', '2026-09'], ['2026-07']], [$rows[$this->alpha], $rows[$this->beta]], 'Cada condomínio com os seus meses.');
+        try {
+            $closings->close($this->admin, $this->alpha, '2026-11');
+            self::fail('Fechou novembro com agosto e setembro abertos.');
+        } catch (DomainException $exception) {
+            self::assertStringContainsString('08/2026, 09/2026', $exception->getMessage());
+        }
+        self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_month_closings WHERE competence = '2026-11'")->fetchColumn(), 'Recusa não grava nada.');
+
+        $closings->close($this->admin, $this->alpha, '2026-08');
+        $closings->close($this->admin, $this->alpha, '2026-09');
+        self::assertSame('closed', $closings->close($this->admin, $this->alpha, '2026-11')['status'], 'Na ordem, fecha.');
+
+        $closings->reopen($this->admin, $this->alpha, '2026-09', 'Ajuste de valor');
+        self::assertSame(['2026-09'], $closings->pendingBefore($this->admin, $this->alpha, '2026-12'), 'Mês reaberto volta a contar como pendente.');
+        $this->entry('receita', $this->fee, '100,00', '2026-12');
+        $this->expectException(DomainException::class);
+        $closings->close($this->admin, $this->alpha, '2026-12');
+    }
+
     private function assertLocked(callable $call, string $message): void
     {
         try {
