@@ -166,7 +166,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 | # | Etapa | O que entra | Tamanho | Depende de | Quando |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Este plano | análise e documento | — | — | 16/11 (feito) |
-| 1 | Limpeza | fechar issues #1/#2/#3/#10/#11, atualizar `PENDENCIAS.md`, decidir o PR #538 | 1 dia | ok do Djalma no #538 | 20/11 |
+| 1 | Limpeza | issues #1/#2/#3/#10/#11 fechadas e `PENDENCIAS.md` revisado (16/11); PR #538 segue com a frente do Talk | 1 dia | — | 16/11 (feito) |
 | 2 | Revisão do Djalma | lista que ele traz depois de 19/11 + pendências do modelo 8 e da prestação de contas | ~1 semana | a lista | 20–27/11 |
 | 3 | Sandbox dos bancos | itens que faltam do Inter; Cora inteiro quando a credencial chegar | 2–3 dias | credencial Cora; sandbox Inter seg–sex 8h–20h | 23–27/11 |
 | 4 | Servidor de produção | Cloud Startup: domínios, HTTPS, deploy por Git/SSH, cron no lugar do scheduler, segredos novos, e-mail, roteiro de implantação/reversão | ~1 semana | plano contratado e domínio | 30/11–04/12 |
