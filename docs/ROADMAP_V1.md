@@ -110,6 +110,14 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 ### 3.5 Backup e recuperação
 - O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,
   incluindo `storage/private/documents`), **cifrado**, copiado para fora da Hostinger, guardando 30 dias + 12 meses.
+- **Destino fora da Hostinger: o OneDrive de 1 TB do Djalma** (16/11/2026). Envio com `rclone` (um binário só, roda pelo SSH e cron
+  da hospedagem) com cifragem do próprio rclone (`crypt`): a Microsoft só vê arquivos embaralhados. O Djalma autoriza o rclone na
+  conta Microsoft uma vez; a senha da cifragem fica no `.env` do servidor e numa cópia guardada por ele, fora do Git.
+- **PDFs:** quase todos já são gerados na hora do pedido e não ocupam disco (boletos vêm do banco, listas, prestação de contas,
+  carta de cobrança, livro-caixa, documentos da unidade). Ficam gravados só o relatório de vistoria (anexo do e-mail), as propostas
+  do Studio e um cache de 24 h do PDF público da prestação de contas. O relatório de vistoria pode passar a ser gerado só para o envio
+  (tarefa pequena). O que ocupa espaço de verdade são os arquivos enviados (notas, comprovantes, fotos, anexos), que não dá para gerar
+  de novo e vão para o backup.
 - **Testar a restauração** num servidor vazio e anotar o tempo. Sem isso o backup não conta.
 
 ### 3.6 Monitoramento
@@ -168,7 +176,7 @@ na ordem 4 → 5 → 6.
 3. **Aprovação de produção do Inter**: certificado da integração no Internet Banking e ok para o primeiro boleto real.
 4. **Condomínio piloto** e os dados reais dele.
 5. **LGPD**: encarregado, revisão dos textos e do contrato com os condomínios (advogado).
-6. **Armazenamento externo do backup** (ex.: outro provedor de nuvem) e **SMTP** de produção.
+6. **Backup no OneDrive** (autorizar o rclone uma vez e guardar a senha da cifragem) e **SMTP** de produção.
 7. **Talk dentro do ERP**: entra na v1.0 ou logo depois (o tamanho sai da análise da frente própria).
 8. **Lista de revisão** de depois de 19/11.
 9. Confirmar o que fica para a v1.1: app nas lojas, NFS-e automática, AP-031, Itaú/CNAB, Cora produção.
