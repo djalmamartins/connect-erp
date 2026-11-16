@@ -74,9 +74,27 @@ final class TwoFactorService
         return $payload === false ? null : $this->box()->decrypt((string)$payload, $this->context($userId));
     }
 
-    public function provisioningUri(int $userId, string $secret, string $account, string $issuer = 'Connect ERP'): string
+    /**
+     * Nome e ícone que o aplicativo autenticador mostra (revisão de 15/11, item 24, ADR 0315): o da empresa,
+     * "Connect Condomínios", e não o nome do sistema. Vale para ERP, Studio e aplicativo do morador. Quem já
+     * cadastrou segue com o nome antigo no aplicativo até cadastrar de novo; o código continua o mesmo.
+     */
+    public const ISSUER = 'Connect Condomínios';
+    public const ICON = '/assets/images/icon-512.png';
+
+    public function provisioningUri(int $userId, string $secret, string $account, string $issuer = self::ISSUER): string
     {
-        return $this->totp->uri($secret, $account, $issuer);
+        return $this->totp->uri($secret, $account, $issuer, self::iconUrl());
+    }
+
+    /** Endereço público do ícone da Connect; null quando não dá para montar (CLI sem tema). */
+    public static function iconUrl(): ?string
+    {
+        try {
+            return function_exists('themeApp') ? themeApp(self::ICON) : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

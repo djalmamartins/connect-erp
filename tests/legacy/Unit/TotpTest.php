@@ -65,5 +65,16 @@ final class TotpTest extends TestCase
         $uri = (new Totp())->uri(self::RFC_SECRET, 'ana@connect.test', 'Connect ERP');
         self::assertStringStartsWith('otpauth://totp/Connect%20ERP:ana%40connect.test?', $uri);
         self::assertStringContainsString('secret=' . self::RFC_SECRET, $uri);
+        self::assertStringNotContainsString('image=', $uri);
+    }
+
+    public function testConnectCondominiosIsTheNameShownInTheAuthenticator(): void
+    {
+        $uri = (new Totp())->uri(self::RFC_SECRET, 'ana@connect.test', \Source\Services\TwoFactorService::ISSUER, 'https://www.connect.test/icon.png');
+        self::assertStringStartsWith('otpauth://totp/Connect%20Condom%C3%ADnios:ana%40connect.test?', $uri);
+        self::assertStringContainsString('issuer=Connect%20Condom%C3%ADnios', $uri);
+        self::assertStringContainsString('image=https%3A%2F%2Fwww.connect.test%2Ficon.png', $uri);
+        self::assertStringNotContainsString('image=', (new Totp())->uri(self::RFC_SECRET, 'ana@connect.test', 'X', 'http://inseguro/icon.png'), 'Só https.');
+        self::assertStringNotContainsString("'Connect ERP'", (string)file_get_contents(dirname(__DIR__, 3) . '/source/Services/TwoFactorService.php'));
     }
 }

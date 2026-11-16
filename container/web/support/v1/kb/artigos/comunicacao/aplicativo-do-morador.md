@@ -26,7 +26,7 @@ O aplicativo do morador é o site **app.connect.lab**, feito para o celular. O m
 
 ## Verificação em duas etapas (opcional)
 
-O morador não mexe com o dinheiro do condomínio, por isso a verificação em duas etapas é **opcional** para ele, mesmo quando é obrigatória para a equipe. Se quiser mais proteção, ele liga em **Perfil > Verificação em duas etapas**: lê o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro), digita o código de 6 números e guarda os códigos de recuperação. Daí em diante o código é pedido ao entrar, no site e no aplicativo do celular. Para desligar, ele digita o código atual na mesma tela.
+O morador não mexe com o dinheiro do condomínio, por isso a verificação em duas etapas é **opcional** para ele, mesmo quando é obrigatória para a equipe. Se quiser mais proteção, ele liga em **Perfil > Verificação em duas etapas**: lê o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro), digita o código de 6 números e guarda os códigos de recuperação. No autenticador, a conta aparece como **Connect Condomínios**. Daí em diante o código é pedido ao entrar, no site e no aplicativo do celular. Para desligar, ele digita o código atual na mesma tela.
 
 >! Quem é da equipe e também mora no condomínio continua com a verificação obrigatória, porque a mesma conta entra no ERP.
 

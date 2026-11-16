@@ -781,8 +781,10 @@ $html = $agreementPage('AP-117', 'pages/collections/desk', ['deskUnit' => $deskR
     'promise_on' => '2026-11-05', 'promise_cents' => 50000, 'next_action_on' => '2026-11-08', 'note' => "Disse que <paga>\nsexta", 'open_cents' => 185000, 'created_by' => 1, 'created_at' => '2026-11-01 10:00:00']]] + $deskData, 'unit');
 $assert(str_contains($html, 'id="atender"') && str_contains($html, 'data-contact-form data-api="https://' . $smokeHost . '/api/v1/collection-contacts" data-unit="5"') && str_contains($html, 'Disse que &lt;paga&gt;<br />') && str_contains($html, 'Ana &lt;S&gt;')
     && str_contains($html, '(R$ 500,00)') && str_contains($html, '?abrir=5#abrir-caso') && str_contains($html, 'aria-current="true"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html), 'AP-117: histórico e registrar contato');
+$assert(strpos($html, 'Histórico de atendimento') < strpos($html, 'data-contact-form') && str_contains($html, 'data-contact-template') && str_contains($html, 'data-contact-empty hidden')
+    && str_contains($html, '<td data-row-last>') && str_contains($html, 'data-row-next') && str_contains($html, 'contact-next-hint'), 'AP-117: histórico em destaque antes do formulário e ganchos para salvar sem recarregar');
 $html = $agreementPage('AP-117', 'pages/collections/desk', ['collCanManage' => false, 'deskUnit' => $deskRow(), 'deskContacts' => []] + $deskData);
-$assert(!str_contains($html, 'data-contact-form') && !str_contains($html, '?abrir=') && str_contains($html, 'Nenhum contato registrado'), 'AP-117: sem permissão só consulta');
+$assert(!str_contains($html, 'data-contact-form') && !str_contains($html, '?abrir=') && str_contains($html, 'Nenhum contato registrado') && !str_contains($html, 'data-contact-empty hidden'), 'AP-117: sem permissão só consulta');
 
 $caseRow = static fn (array $over = []): array => $over + ['id' => 9, 'condominium_id' => 1, 'condominium_name' => 'Residencial Aurora', 'unit_id' => 6, 'unit_label' => 'Apto 102', 'lawyer_id' => 3, 'lawyer_name' => 'Dra. <Lima>',
     'status' => 'filed', 'status_label' => 'Ajuizado', 'case_number' => '0001234-56.2026.8.26.0100', 'court' => '2ª Vara Cível', 'opened_on' => '2026-10-01', 'claimed_cents' => 185000, 'closed_on' => null, 'close_reason' => null,

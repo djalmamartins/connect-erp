@@ -8,7 +8,7 @@ menu: Cobrança > Atendimento Cobrança
 icone: list-outline
 situacao: funciona
 relacionados: acordos, inadimplentes-unidade, parcelas-de-acordo
-palavras: atendimento cobrança, cobrança, AP-117
+palavras: atendimento cobrança, cobrança, histórico, lembrete, próxima ação, AP-117
 rascunho: nao
 ---
 
@@ -37,9 +37,17 @@ Colunas: **Unidade**, **Em aberto**, **Último contato** e **Próxima ação**.
 ## Como atender
 
 1. Clique em {{Atender}} na unidade do topo da fila.
-2. Veja as contas em aberto e o histórico de contatos.
-3. Registre o contato: o que foi conversado, a promessa de pagamento (se houver) e a próxima ação.
-4. A unidade volta para a fila na data da próxima ação.
+2. Leia o **Histórico de atendimento**, em destaque logo no alto do painel, antes de ligar: ele mostra os contatos anteriores, do mais novo ao mais antigo.
+3. Registre o contato: o que foi conversado, a promessa de pagamento (se houver) e a próxima ação. Clique em {{Registrar contato}}.
+4. A tela não recarrega: o contato entra no topo do histórico, a linha da unidade na fila mostra o novo último contato e o formulário fica limpo para o próximo.
+
+## Lembrete da próxima ação
+
+Quando o contato tem **Próxima ação**, no dia marcado o sistema avisa no sino (as notificações no alto da tela) de quem registrou o contato, com o link direto para o atendimento da unidade. Se essa pessoa não puder mais atender o condomínio (saiu da equipe ou perdeu o acesso), o aviso vai para a equipe da Connect que atende aquele condomínio.
+
+- Vale só o contato mais novo da unidade: se você atendeu de novo e marcou outra data, o lembrete antigo não sai.
+- Cada contato é lembrado uma vez. Uma ação de até 7 dias atrás que ainda não foi lembrada (por exemplo, com o sistema parado) sai como **atrasada**.
+- O lembrete é só para a equipe: nada vai para o morador.
 
 ## Quem pode usar
 

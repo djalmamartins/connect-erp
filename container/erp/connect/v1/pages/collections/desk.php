@@ -2,8 +2,9 @@
 /**
  * Atendimento de cobrança (AP-117; ADR 0080 e 0076) com dados reais: a fila das unidades em atraso
  * (promessa quebrada, próxima ação vencida, sem contato e maior atraso primeiro) e, em ?unidade=ID, o
- * histórico de contatos com o registro de um novo (POST /api/v1/collection-contacts). O histórico não
- * se edita nem se apaga. erp.js: data-erp-collections.
+ * histórico de contatos em destaque antes do registro de um novo (POST /api/v1/collection-contacts). Salvar
+ * põe o contato no histórico e na fila sem recarregar (ADR 0315). O histórico não se edita nem se apaga.
+ * erp.js: data-erp-collections.
  * @var array $currentPage @var ?int $collContext @var ?string $collError @var bool $collCanManage
  * @var array $desk @var ?array $deskUnit @var ?list<array> $deskContacts
  */
@@ -56,8 +57,8 @@ $this->insert('components/layout/page-head', [
                             <?php if ($r['promise_broken']): ?><br><span class="erp-badge erp-badge--danger">Promessa quebrada</span><?php endif; ?>
                             <?php if ($r['legal_case'] !== null): ?><br><a class="erp-badge erp-badge--warning" href="<?= $this->e(erp_url($caseRoute . '?caso=' . (int)$r['legal_case']['id'])) ?>">Caso judicial: <?= $this->e(Collections::CASE_STATUSES[$r['legal_case']['status']] ?? $r['legal_case']['status']) ?></a><?php endif; ?></td>
                         <td class="is-num erp-nowrap"><?= $this->e($brl((int)$r['amount_cents'])) ?><br><span class="erp-muted"><?= (int)$r['entries'] ?> conta(s) · <?= (int)$r['max_days_late'] ?> dia(s)</span></td>
-                        <td><?php if ($last === null): ?><span class="erp-muted">Sem contato</span><?php else: ?><?= $this->e($date($last['at'])) ?> · <?= $this->e(Collections::CHANNELS[$last['channel']] ?? $last['channel']) ?><br><span class="erp-muted"><?= $this->e(Collections::OUTCOMES[$last['outcome']] ?? $last['outcome']) ?><?= $last['promise_on'] ? ' para ' . $this->e($date($last['promise_on'])) : '' ?></span><?php endif; ?></td>
-                        <td class="erp-nowrap"><?php if ($last !== null && $last['next_action_on']): ?><span<?= $r['action_due'] ? ' class="erp-panel-negative"' : '' ?>><?= $this->e($date($last['next_action_on'])) ?><?= $r['action_due'] ? ' (vencida)' : '' ?></span><?php else: ?><span class="erp-muted">—</span><?php endif; ?></td>
+                        <td<?= $selected ? ' data-row-last' : '' ?>><?php if ($last === null): ?><span class="erp-muted">Sem contato</span><?php else: ?><?= $this->e($date($last['at'])) ?> · <?= $this->e(Collections::CHANNELS[$last['channel']] ?? $last['channel']) ?><br><span class="erp-muted"><?= $this->e(Collections::OUTCOMES[$last['outcome']] ?? $last['outcome']) ?><?= $last['promise_on'] ? ' para ' . $this->e($date($last['promise_on'])) : '' ?></span><?php endif; ?></td>
+                        <td class="erp-nowrap"<?= $selected ? ' data-row-next' : '' ?>><?php if ($last !== null && $last['next_action_on']): ?><span<?= $r['action_due'] ? ' class="erp-panel-negative"' : '' ?>><?= $this->e($date($last['next_action_on'])) ?><?= $r['action_due'] ? ' (vencida)' : '' ?></span><?php else: ?><span class="erp-muted">—</span><?php endif; ?></td>
                         <td class="is-num"><?php if ($uid !== null): ?><a class="erp-btn erp-btn--sm<?= $selected ? '' : ' erp-btn--primary' ?>" href="<?= $this->e($route . '?unidade=' . (int)$uid) ?>#atender" aria-label="Atender a unidade <?= $this->e((string)$r['unit_label']) ?>"<?= $selected ? ' aria-current="true"' : '' ?>>Atender</a><?php else: ?><span class="erp-muted">Sem unidade</span><?php endif; ?></td>
                     </tr><?php endforeach; ?></tbody>
                 </table></div>
@@ -72,6 +73,18 @@ $this->insert('components/layout/page-head', [
                 <?php elseif ($collCanManage && $u['amount_cents'] > 0): ?>
                     <p><a href="<?= $this->e(erp_url($caseRoute . '?abrir=' . $uid)) ?>#abrir-caso">Abrir caso judicial para acompanhamento</a></p>
                 <?php endif; ?>
+                <section class="erp-coll-history-box" aria-labelledby="contact-history-title">
+                    <h3 class="erp-panel-subtitle" id="contact-history-title">Histórico de atendimento</h3>
+                    <p class="erp-field__hint" data-contact-empty<?= $deskContacts === [] ? '' : ' hidden' ?>>Nenhum contato registrado com esta unidade.</p>
+                    <ul class="erp-list erp-coll-history" data-contact-history aria-live="polite">
+                        <?php foreach ($deskContacts ?? [] as $c): ?>
+                            <li><span class="erp-list__icon"><?= $icon('user', 'erp-icon--sm') ?></span><div class="erp-list__body"><strong><?= $this->e($c['outcome_label']) ?><?= $c['promise_on'] ? ' para ' . $this->e($date($c['promise_on'])) . ($c['promise_cents'] !== null ? ' (' . $this->e($brl((int)$c['promise_cents'])) . ')' : '') : '' ?></strong>
+                                <small><?= $this->e(Collections::CHANNELS[$c['channel']] ?? $c['channel']) ?><?= $c['contact_name'] ? ' · ' . $this->e((string)$c['contact_name']) : '' ?> · em aberto <?= $this->e($brl((int)$c['open_cents'])) ?><?= $c['next_action_on'] ? ' · próxima ação ' . $this->e($date($c['next_action_on'])) : '' ?></small>
+                                <span class="erp-coll-note"><?= nl2br($this->e($c['note'])) ?></span></div><span class="erp-list__meta"><?= $this->e($stamp($c['created_at'])) ?></span></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <template data-contact-template><li class="is-new"><span class="erp-list__icon"><?= $icon('user', 'erp-icon--sm') ?></span><div class="erp-list__body"><strong data-slot="title"></strong><small data-slot="meta"></small><span class="erp-coll-note" data-slot="note"></span></div><span class="erp-list__meta" data-slot="at"></span></li></template>
+                </section>
                 <?php if ($collCanManage): ?>
                     <form class="erp-form" data-contact-form data-api="<?= $this->e(url('/api/v1/collection-contacts')) ?>" data-unit="<?= $uid ?>" aria-labelledby="contact-title" novalidate>
                         <h3 class="erp-panel-subtitle" id="contact-title">Registrar contato</h3>
@@ -81,25 +94,13 @@ $this->insert('components/layout/page-head', [
                             <div class="erp-field erp-col-12"><label for="contact-name">Com quem falou (opcional)</label><input class="erp-input" id="contact-name" name="contact_name" maxlength="160"></div>
                             <div class="erp-field erp-col-6" data-contact-promise hidden><label for="contact-promise-on">Data prometida</label><input class="erp-input" type="date" id="contact-promise-on" name="promise_on" min="<?= $today ?>" max="<?= $maxPromise ?>"></div>
                             <div class="erp-field erp-col-6" data-contact-promise hidden><label for="contact-promise-cents">Valor prometido (opcional)</label><input data-erp-money class="erp-input" id="contact-promise-cents" name="promise_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"></div>
-                            <div class="erp-field erp-col-6"><label for="contact-next">Próxima ação (opcional)</label><input class="erp-input" type="date" id="contact-next" name="next_action_on" min="<?= $today ?>" max="<?= $maxNext ?>"></div>
+                            <div class="erp-field erp-col-6"><label for="contact-next">Próxima ação (opcional)</label><input class="erp-input" type="date" id="contact-next" name="next_action_on" min="<?= $today ?>" max="<?= $maxNext ?>" aria-describedby="contact-next-hint"><p class="erp-field__hint" id="contact-next-hint">No dia, o lembrete aparece no sino de quem registrou o contato.</p></div>
                             <div class="erp-field erp-col-12"><label for="contact-note">Nota</label><textarea class="erp-textarea" id="contact-note" name="note" minlength="5" maxlength="1000" required placeholder="O que foi conversado"></textarea></div>
                         </div>
                         <p class="erp-field__hint">O contato fica no histórico com o valor em aberto de hoje. Não se edita nem se apaga.</p>
                         <div data-form-error aria-live="assertive"></div>
                         <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary">Registrar contato</button></div>
                     </form>
-                <?php endif; ?>
-                <h3 class="erp-panel-subtitle">Histórico</h3>
-                <?php if ($deskContacts === []): ?>
-                    <p class="erp-field__hint">Nenhum contato registrado com esta unidade.</p>
-                <?php else: ?>
-                    <ul class="erp-list erp-coll-history">
-                        <?php foreach ($deskContacts as $c): ?>
-                            <li><span class="erp-list__icon"><?= $icon('user', 'erp-icon--sm') ?></span><div class="erp-list__body"><strong><?= $this->e($c['outcome_label']) ?><?= $c['promise_on'] ? ' para ' . $this->e($date($c['promise_on'])) . ($c['promise_cents'] !== null ? ' (' . $this->e($brl((int)$c['promise_cents'])) . ')' : '') : '' ?></strong>
-                                <small><?= $this->e(Collections::CHANNELS[$c['channel']] ?? $c['channel']) ?><?= $c['contact_name'] ? ' · ' . $this->e((string)$c['contact_name']) : '' ?> · em aberto <?= $this->e($brl((int)$c['open_cents'])) ?><?= $c['next_action_on'] ? ' · próxima ação ' . $this->e($date($c['next_action_on'])) : '' ?></small>
-                                <span class="erp-coll-note"><?= nl2br($this->e($c['note'])) ?></span></div><span class="erp-list__meta"><?= $this->e($stamp($c['created_at'])) ?></span></li>
-                        <?php endforeach; ?>
-                    </ul>
                 <?php endif; ?>
                 <a class="erp-btn erp-btn--block" style="margin-top:8px" href="<?= $this->e($route) ?>">Fechar</a>
             </aside>
