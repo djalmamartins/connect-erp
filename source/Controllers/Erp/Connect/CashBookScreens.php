@@ -99,7 +99,7 @@ final class CashBookScreens
         $this->deliver(function (array $book, CashBookDocument $document): void {
             $pdf = $document->pdf($book);
             header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="' . CashBook::filename($book) . '"');
+            header('Content-Disposition: inline; filename="' . CashBook::filename($book) . '"');
             header('Content-Length: ' . strlen($pdf));
             header('Cache-Control: private, no-store');
             echo $pdf;

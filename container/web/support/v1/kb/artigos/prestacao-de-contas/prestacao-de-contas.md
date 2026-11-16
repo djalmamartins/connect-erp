@@ -44,7 +44,7 @@ Marque **Ocultar unidade** nos filtros e clique em {{Gerar}} para mostrar os val
 
 ## O documento da prestação de contas (PDF)
 
-A tabela **Prestações de contas dos últimos meses** lista os 12 últimos meses do condomínio, com a situação do fechamento e quantos pagamentos houve. Em cada mês, **Visualizar** abre o documento no navegador (para conferir e imprimir) e **PDF** baixa o arquivo. No alto da tela, {{Visualizar documento}} e {{Baixar PDF}} fazem o mesmo para o mês escolhido.
+A tabela **Prestações de contas dos últimos meses** lista os 12 últimos meses do condomínio, com a situação do fechamento e quantos pagamentos houve. Em cada mês, **Visualizar** abre o documento como página (para conferir e imprimir) e **PDF** abre o arquivo PDF numa aba do navegador; de lá você decide se baixa. No alto da tela, {{Visualizar documento}} e {{Abrir PDF}} fazem o mesmo para o mês escolhido.
 
 O documento segue o padrão da Connect (cabeçalho com a Connect, o condomínio e a data; rodapé com o site e o número da página) e traz, cada parte numa página:
 

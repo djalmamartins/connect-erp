@@ -87,7 +87,7 @@ final class AccountabilityScreens
         $this->deliver(function (array $doc, AccountabilityDocument $service): void {
             $pdf = $service->pdf($doc);
             header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="' . AccountabilityDocument::filename($doc) . '"');
+            header('Content-Disposition: inline; filename="' . AccountabilityDocument::filename($doc) . '"');
             header('Content-Length: ' . strlen($pdf));
             header('Cache-Control: private, no-store');
             header('X-Content-Type-Options: nosniff');

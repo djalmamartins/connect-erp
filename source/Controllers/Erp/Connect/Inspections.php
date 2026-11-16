@@ -250,7 +250,7 @@ final class Inspections extends Controller
         }
         $pdf = (new InspectionReport($this->service))->pdf($user, $inspection);
         header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="' . InspectionReport::filename($inspection) . '"');
+        header('Content-Disposition: inline; filename="' . InspectionReport::filename($inspection) . '"');
         header('Content-Length: ' . strlen($pdf));
         echo $pdf;
     }

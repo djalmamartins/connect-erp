@@ -210,10 +210,7 @@ final class AccountabilityDocument
         $dompdf->loadHtml($this->html($doc, true), 'UTF-8');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
-        $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
-        $canvas->page_text(28, $canvas->get_height() - 26, ListDocument::issuer()['site'], $font, 7.5, [0.36, 0.42, 0.39]);
-        $canvas->page_text($canvas->get_width() - 40, $canvas->get_height() - 26, '{PAGE_NUM}', $font, 7.5, [0.36, 0.42, 0.39]);
+        ListDocument::footer($dompdf, false);
         return (string)$dompdf->output();
     }
 

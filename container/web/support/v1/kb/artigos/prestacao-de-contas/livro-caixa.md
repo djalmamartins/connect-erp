@@ -26,7 +26,7 @@ rota: /prestacao-de-contas/livro-caixa
 condominio: residencial-jardim-das-acacias
 legenda: Livro caixa do mês
 1: main form[method=get] | Escolha do mês
-2: main .erp-page-head__actions :is(a,button):has-text("Baixar PDF") | Botão {{Baixar PDF}}
+2: main .erp-page-head__actions :is(a,button):has-text("Abrir PDF") | Botão {{Abrir PDF}}
 3: main .erp-page-head__actions :is(a,button):has-text("Pacote com anexos") | Botão {{Pacote com anexos}}
 ```
 
@@ -34,7 +34,7 @@ legenda: Livro caixa do mês
 
 1. Confira o condomínio na barra superior.
 2. A tela abre no mês anterior (o que costuma ser entregue). Para outro, escolha o **Mês** e clique em {{Gerar}}. A tela mostra o saldo anterior, as entradas, as saídas, o saldo final e cada movimento.
-3. Clique em {{Baixar PDF}} para o livro pronto, ou em {{Pacote com anexos}} para um arquivo ZIP com o PDF e todos os anexos numerados (pasta `anexos`).
+3. Clique em {{Abrir PDF}} para ver o livro pronto numa aba do navegador (de lá você imprime ou baixa), ou em {{Pacote com anexos}} para um arquivo ZIP com o PDF e todos os anexos numerados (pasta `anexos`).
 4. Para imprimir direto do navegador, use {{Imprimir}}.
 
 > As fotos (JPG, PNG, WebP) entram dentro do PDF, uma por página, no fim do livro. Anexos em PDF ou XML não cabem dentro de outro PDF: o índice dos anexos diz que estão no pacote, com o nome do arquivo.
