@@ -36,6 +36,10 @@ export GIT_MERGE_AUTOEDIT=no
 
 project=$(cd "$(dirname "$0")/.." && pwd)
 cd "$project" || exit 1
+# Um script de cada vez: outro testar-main.sh ou lab-atualizar.sh rodando junto derruba os testes deste.
+# shellcheck source=tools/trava-testes.sh
+source "$project/tools/trava-testes.sh"
+trava_pegar "testar-main.sh" || exit 1
 
 stamp=$(date +%Y%m%d-%H%M%S)
 logs="$project/.local/logs/testar-main-$stamp"
@@ -59,6 +63,7 @@ phpunit_line() {
 }
 
 finish() {
+  trava_soltar
   say "RESUMO"
   printf '%-34s %-9s %s\n' "Etapa" "Estado" "Detalhe"
   printf '%-34s %-9s %s\n' "-----" "------" "-------"

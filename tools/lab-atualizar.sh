@@ -13,6 +13,11 @@ set -euo pipefail
 
 project=$(cd "$(dirname "$0")/.." && pwd)
 cd "$project"
+# Um script de cada vez: rodar junto com o testar-main.sh derruba os testes dos dois (16/11).
+# shellcheck source=tools/trava-testes.sh
+source "$project/tools/trava-testes.sh"
+trava_pegar "lab-atualizar.sh" || exit 1
+trap trava_soltar EXIT
 # MIGRATE_UNTIL=AAAAMMDD_NNNN segura migrations de uma fatia ainda em desenvolvimento.
 until_prefix=${MIGRATE_UNTIL-}
 until_arg=()
