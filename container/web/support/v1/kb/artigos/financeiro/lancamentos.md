@@ -66,6 +66,17 @@ recorte: main form:not([method=get])
 - **Observações**.
 - **Situação** (obrigatório): Opções: Válido e Cancelado.
 
+## Lançar para várias unidades de uma vez
+
+Quando a mesma conta vale para mais de uma unidade (ex.: controle do portão para as unidades 01 e 303), faça um cadastro só:
+
+1. Escolha a primeira unidade no campo **Unidade**.
+2. Em **Lançar também para outras unidades**, marque as demais. A lista mostra só as unidades do condomínio escolhido.
+3. Escolha como fica o valor: **Valor para cada unidade** (cada uma recebe o valor informado) ou **Dividir o valor entre as unidades** (o valor informado é o total; os centavos que sobram ficam com as primeiras).
+4. Clique em {{Salvar}}. Sai um lançamento para cada unidade, com os mesmos dados, e cada um pode ser alterado depois sozinho.
+
+> Se alguma unidade não puder receber o lançamento (de outro condomínio, inativa ou mês fechado), nada é gravado e o erro diz qual unidade conferir.
+
 ## Anexar nota fiscal e comprovante
 
 Depois de salvar, o lançamento mostra o quadro **Notas e comprovantes**, ao lado do formulário.

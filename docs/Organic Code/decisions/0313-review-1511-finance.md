@@ -1,6 +1,6 @@
-# 0313 — Revisão de 15/11, etapa 4: fechamento mensal em ordem
+# 0313 — Revisão de 15/11, etapa 4: fechamento mensal em ordem e lançamento para várias unidades
 
-- Status: Aceito (parte 1)
+- Status: Aceito (partes 1 e 2)
 - Data: 16/11/2026
 - Issue: #543 (revisão de 15/11, etapa 4)
 - Relacionadas: ADR 0031 (fechamento mensal), 0100 (concorrência), 0181 (conferência antes de fechar), 0205 (fechamento em lote)
@@ -27,9 +27,22 @@ mês imediatamente anterior, e o fechamento não recusava nada.
 5. **Reabrir** continua livre (com motivo): o mês reaberto volta a contar como pendente para os meses seguintes que
    ainda não foram fechados. Os meses seguintes já fechados continuam fechados.
 
+6. **Várias unidades num único cadastro** (parte 2, item 15): lançamentos, contas a pagar e contas a receber, só ao
+   criar, têm "Lançar também para outras unidades" (caixas com as unidades do condomínio escolhido). O serviço
+   `EntryUnits` grava um lançamento por unidade, a principal primeiro, cada um pelo motor de cadastros (condomínio,
+   unidade, fechamento mensal e auditoria como no cadastro normal), tudo ou nada e até 100 unidades. Valor: `each` (o
+   informado para cada unidade, padrão) ou `split` (o informado é o total, dividido; os centavos que sobram vão para as
+   primeiras). INFERIDO: o Djalma não disse se o valor é por unidade ou total; o exemplo (controle do portão) é por
+   unidade. Não há vínculo entre os lançamentos gerados: cada um se altera e se baixa sozinho, como os da fatura.
+   API: o mesmo `POST` do cadastro aceita `extra_unit_ids` e `unit_amount_mode`; responde 201 com o primeiro em `data` e
+   todos em `meta.created_ids`.
+
 ## Testes
 
 - `tests/legacy/Integration/MonthClosingIntegrationTest.php`: meses pendentes por condomínio, mês vazio fora, recusa
   sem gravar, fechar na ordem e mês reaberto pendente.
 - `tests/legacy/Unit/ClosingReadinessTest.php`: `previous_open` como erro, com o mês na mensagem.
 - Render smoke: alerta com link e botão travado, sem alerta quando não há pendência, e a visão "Todos".
+- `tests/legacy/Integration/EntryUnitsTest.php`: um por unidade, valor por unidade e dividido, auditoria de cada um,
+  e recusas sem gravar (unidade de outro condomínio, sem a primeira unidade, total pequeno demais, mês fechado).
+- Render smoke: outras unidades marcadas, escapadas, modo do valor e erro no resumo; nada ao editar.

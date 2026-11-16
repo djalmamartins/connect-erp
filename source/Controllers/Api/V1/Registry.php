@@ -135,6 +135,12 @@ final class Registry
             return;
         }
         try {
+            if (\Source\Services\Erp\EntryUnits::applies($slug, $body, $id)) {
+                // Várias unidades num único cadastro (ADR 0313): data = o primeiro; meta.created_ids = todos, na ordem.
+                $records = (new \Source\Services\Erp\EntryUnits())->create($user, $slug, $body);
+                JsonResponse::send(201, ['data' => $records[0], 'meta' => ['created_ids' => array_map(static fn (array $r): int => (int)$r['id'], $records)]]);
+                return;
+            }
             $record = (new RegistryService())->save($user, $slug, $body, $id);
             JsonResponse::send($id === null ? 201 : 200, ['data' => $record]);
         } catch (RegistryNotFound) {

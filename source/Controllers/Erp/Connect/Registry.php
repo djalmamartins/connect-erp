@@ -130,8 +130,14 @@ final class Registry extends Controller
             return;
         }
         $service = new RegistryService();
+        $many = \Source\Services\Erp\EntryUnits::applies($slug, $data, $id);
         try {
-            $service->save($user, $slug, $data, $id);
+            if ($many) {
+                // Várias unidades num único cadastro (ADR 0313): um lançamento por unidade, tudo ou nada.
+                $many = count((new \Source\Services\Erp\EntryUnits(null, null, $service))->create($user, $slug, $data));
+            } else {
+                $service->save($user, $slug, $data, $id);
+            }
         } catch (RegistryNotFound) {
             $this->notFound($user, $definition);
             return;
@@ -144,7 +150,8 @@ final class Registry extends Controller
             return;
         }
         $label = self::upperFirst($definition['entity']);
-        (new Message())->success($id === null ? "{$label} cadastrad{$definition['gender']} com sucesso." : "{$label} atualizad{$definition['gender']} com sucesso.")->flash();
+        (new Message())->success(is_int($many) ? "{$many} lançamentos cadastrados, um para cada unidade escolhida."
+            : ($id === null ? "{$label} cadastrad{$definition['gender']} com sucesso." : "{$label} atualizad{$definition['gender']} com sucesso."))->flash();
         redirect(erp_url($definition['route']));
     }
 
@@ -223,6 +230,7 @@ final class Registry extends Controller
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
             'unitOccupants' => $definition['slug'] === 'units' && $id !== null ? self::occupantsData($user, $id) : null,
+            'entryUnits' => $id === null && $canManage && in_array($definition['slug'], \Source\Services\Erp\EntryUnits::SLUGS, true),
         ]));
     }
 
