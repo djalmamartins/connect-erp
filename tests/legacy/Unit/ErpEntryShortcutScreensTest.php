@@ -25,9 +25,9 @@ final class ErpEntryShortcutScreensTest extends TestCase
     {
         $catalog = require dirname(__DIR__, 3) . '/' . self::THEME . 'components/layout/catalog.php';
         self::assertSame($catalog['pages']['AP-024']['route'], array_keys(EntryShortcutScreens::NEW_ENTRY_ROUTES)[0]);
-        self::assertSame($catalog['pages']['AP-025']['route'], array_keys(EntryShortcutScreens::NEW_ENTRY_ROUTES)[1]);
+        self::assertCount(1, EntryShortcutScreens::NEW_ENTRY_ROUTES, 'Lançar receita tem tela própria (ADR 0313).');
+        self::assertSame('pages/finance/new-revenue', EntryShortcutScreens::PAGES['AP-025']);
         self::assertSame($catalog['pages']['AP-022']['route'] . '/novo', EntryShortcutScreens::NEW_ENTRY_ROUTES['/financeiro/lancar-despesa']);
-        self::assertSame($catalog['pages']['AP-023']['route'] . '/novo', EntryShortcutScreens::NEW_ENTRY_ROUTES['/financeiro/lancar-receita']);
         $routes = $this->file(self::THEME . 'routes.php');
         self::assertStringContainsString('EntryShortcutScreens::NEW_ENTRY_ROUTES as $erpFrom => $erpTo', $routes);
         self::assertStringContainsString("isset(\\Source\\Controllers\\Erp\\Connect\\EntryShortcutScreens::NEW_ENTRY_ROUTES[\$page['route']])", $routes);

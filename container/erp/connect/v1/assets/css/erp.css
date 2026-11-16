@@ -1026,3 +1026,5 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-entry-units__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 12px; max-height: 220px; overflow: auto; padding: 4px 0; }
 .erp-entry-units__mode { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; }
 .erp-entry-units.is-invalid { border-color: var(--erp-danger); }
+.erp-revenue-units td .erp-input { max-width: 160px; margin-left: auto; }
+.erp-revenue-units tbody { max-height: 420px; }

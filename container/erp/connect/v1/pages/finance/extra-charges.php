@@ -87,7 +87,7 @@ $this->insert('components/layout/page-head', [
                         <div class="erp-field erp-col-3"><label for="charge-competence">Competência</label><input class="erp-input" type="month" id="charge-competence" name="competence" value="<?= date('Y-m') ?>" required></div>
                         <div class="erp-field erp-col-3"><label for="charge-due">Vencimento</label><input class="erp-input" type="date" id="charge-due" name="due_on" min="<?= date('Y-m-d') ?>" required></div>
                         <?php if (!$fine): ?>
-                            <div class="erp-field erp-col-3"><label for="charge-method">Cálculo</label><select class="erp-select" id="charge-method" name="method" data-charge-method><?php foreach (EntryShortcuts::METHODS as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
+                            <div class="erp-field erp-col-3"><label for="charge-method">Cálculo</label><select class="erp-select" id="charge-method" name="method" data-charge-method><?php foreach (array_diff_key(EntryShortcuts::METHODS, ["custom" => 1]) as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
                         <?php endif; ?>
                         <div class="erp-field erp-col-3"><label for="charge-amount" data-charge-amount-label><?= $fine ? 'Valor (R$)' : 'Valor por unidade (R$)' ?></label><input data-erp-money class="erp-input" id="charge-amount" name="amount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$" required></div>
                         <?php if ($fine): ?>

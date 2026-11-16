@@ -494,6 +494,8 @@ $route->post("/entries/cancel", "EntryCancellation:store", null, \Source\Support
 $route->post("/suppliers/deactivate", "SupplierDeactivation:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges", "EntryShortcuts:charges", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges", "EntryShortcuts:storeCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Nova Receita (AP-025, ADR 0313): rateio, valor de cada unidade, fundo de reserva, cobrar de e repetição.
+$route->post("/revenues", "EntryShortcuts:storeRevenue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/extra-charges/{id}", "EntryShortcuts:charge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/extra-charges/{id}/cancel", "EntryShortcuts:cancelCharge", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-transfers", "EntryShortcuts:transfers", null, \Source\Support\Middleware\ApiAuthenticated::class);
