@@ -37,6 +37,7 @@ $schema = static function (array $field) use ($q): string {
         'phone' => '{ type: [string, "null"], description: ' . $q('DDD e número; resposta só com dígitos.') . ' }',
         'plate' => '{ type: [string, "null"], pattern: "^[A-Z]{3}\\\\d[A-Z0-9]\\\\d{2}$" }',
         'oab' => '{ type: [string, "null"], examples: ["SP 123456"] }',
+        'cib' => '{ type: [string, "null"], pattern: "^[0-9A-Z]{8}$", description: ' . $q('Código CIB: 7 caracteres + DV; aceita com traço, resposta sem.') . ' }',
         default => '{ type: [string, "null"], maxLength: ' . (int)($field['max'] ?? ($field['type'] === 'longtext' ? 2000 : 160)) . ' }',
     };
 };

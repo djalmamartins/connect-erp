@@ -1471,6 +1471,15 @@ foreach ([['ocupadas', false], ['vazias', true]] as [$flagValue, $vacant]) {
         && str_contains($html, '>' . ($vacant ? 'Vazia' : 'Ocupada') . '</td>') && str_contains($html, 'Exibindo <strong>101–200</strong> de <strong>250</strong> itens')
         && str_contains($html, '<option value="100" selected>100</option>') && str_contains($html, 'ocupacao=' . $flagValue) && str_contains($html, 'q=homepag%65'), "AP-006: lista com Ocupação {$flagValue} e itens por página (ADR 0310)");
 }
+// Configuração em massa (ADR 0311): marcação e modal com "Manter como está"; sem gravar ou sem condomínio, nada.
+$assert(str_contains($html, 'data-unit-bulk-item') && str_contains($html, 'data-unit-bulk-all') && str_contains($html, 'id="unit-bulk-settings"') && str_contains($html, 'data-condominium="7"')
+    && substr_count($html, 'Manter como está</option>') === 10 && str_contains($html, 'name="due_day__clear"') && str_contains($html, 'name="postage_cents" inputmode="decimal" data-erp-money')
+    && str_contains($html, 'Nenhuma (tirar)'), 'AP-006: configuração das unidades em massa (ADR 0311)');
+foreach ([['canManage' => false], ['filters' => ['condominium_id' => null] + $unitFilters]] as $variant) {
+    $html = $render('pages/registry/index', $layoutData->invoke($panel, $user, 'AP-006', $variant + ['definition' => $unitsDef, 'result' => ['data' => [$unitRow(1, '101', false)], 'total' => 1, 'page' => 1, 'per_page' => 50, 'pages' => 1],
+        'filters' => $unitFilters, 'filterField' => 'type', 'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Unidades'));
+    $assert(!str_contains($html, 'data-unit-bulk') && !str_contains($html, 'unit-bulk-settings'), 'AP-006: sem permissão ou sem condomínio, sem configuração em massa');
+}
 
 // Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
 $html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));

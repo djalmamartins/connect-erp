@@ -59,7 +59,9 @@ recorte: main form:not([method=get])
 - **Andar**.
 - **Fração ideal**: Entre 0 e 1, ex.: 0,012500.
 - **Área privativa (m²)**.
+- **Código CIB**: Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito.
 - **Unidade vazia**: Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).
+- **Configurações de cobrança**: dia padrão de vencimento, isenta de rateio, bloquear unificação de boletos, valor e responsável pelo porte postal, responsável pela cobrança, endereço do boleto (prédio ou Correios), para quem vai o e-mail e as leituras de gás, água e energia elétrica.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 
@@ -67,6 +69,14 @@ recorte: main form:not([method=get])
 
 - {{Fração ideal e área}}: abre a grade para preencher a fração ideal e a área privativa de todas as unidades juntas.
 - {{Cadastro rápido}}: gera todas as unidades de uma vez pela sequência de andares (ex.: 101 a 1208, 8 por andar), com pré-visualização antes de criar.
+
+## Configurar unidades em massa
+
+Com um condomínio escolhido, cada linha da lista tem uma caixa de marcação. Marque as unidades (ou a caixa do título, para marcar todas da página) e clique em {{Configurar unidades em massa}}.
+
+No quadro que abre, cada campo começa em **Manter como está**. Troque só o que quer mudar, como o dia de vencimento, a isenção de rateio, as leituras ou a imobiliária, e clique em {{Aplicar às unidades marcadas}}. No dia de vencimento, marque **Tirar** para deixar as unidades sem dia padrão.
+
+> Para mudar mais de uma página de unidades, aumente **Itens por página** antes de marcar.
 
 ## Pesquisar e filtrar
 
@@ -104,6 +114,9 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - Uma unidade com pessoas, veículos, lançamentos ou outros registros ativos ligados a ela não pode ser excluída. Inative-a: ela sai das cobranças novas e o histórico continua.
 - A marca **Unidade vazia** é da equipe: o sistema não a muda sozinho. Ela aparece na coluna **Ocupação**, no filtro de mesmo nome e no painel da unidade.
 - A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.
+- Na **configuração em massa**, só muda o que você escolher; o que ficar em **Manter como está** continua como está em cada unidade. Ou todas as unidades marcadas mudam, ou nenhuma, e cada unidade alterada fica com a mudança no histórico.
+- Unidade **isenta de rateio** fica fora das faturas geradas para o condomínio todo; o valor é dividido entre as outras.
+- O **código CIB** tem 8 caracteres (7 e o dígito) e não pode repetir em outra unidade. O sistema confere o formato; o dígito não é conferido porque a regra dele não é pública.
 - Antes de gravar, o sistema confere os campos obrigatórios e se o condomínio escolhido está no seu acesso. Se algo estiver errado, nada é gravado e o formulário mostra o que corrigir.
 - Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou), que você vê no próprio registro.
 - Excluir não apaga de verdade: o registro sai das listas, mas continua guardado com o histórico. Por isso, para quem saiu ou deixou de valer, prefira mudar a **Situação** para inativo.

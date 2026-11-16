@@ -5588,6 +5588,33 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida, ou manutenção recusada (errors e _maintenance); nada é gravado' }
+  /units/bulk-settings:
+    get:
+      operationId: unitBulkSettingsOptions
+      summary: Campos aceitos pela configuração das unidades em massa e imobiliárias ativas (erp.units.manage, ADR 0311)
+      security: [{ session: [] }]
+      responses:
+        '200': { description: '{ data: { settings[], max_units, agencies[{ id, name }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: applyUnitBulkSettings
+      summary: Aplica as configurações escolhidas às unidades marcadas, tudo ou nada, com auditoria por unidade (erp.units.manage, ADR 0311)
+      description: >-
+        Só os campos enviados em settings mudam (o que ficou em "Manter como está" não vai). Cada valor passa pela mesma
+        regra do cadastro da unidade. partner_agency_id null tira a imobiliária. Unidade excluída ou de outro condomínio = 422.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [condominium_id, unit_ids, settings], properties: { condominium_id: { type: integer }, unit_ids: { type: array, minItems: 1, maxItems: 2000, items: { type: integer } }, settings: { type: object, minProperties: 1, properties: { due_day: { type: [integer, 'null'], minimum: 1, maximum: 31 }, apportionment_exempt: { type: boolean }, postage_cents: { type: string, description: 'Valor em reais, ex.: 2,50 (gravado em centavos)' }, postage_payer: { type: string, enum: [ambos, proprietario, inquilino] }, reads_gas: { type: boolean }, reads_water: { type: boolean }, reads_power: { type: boolean }, block_bill_merge: { type: boolean }, billing_responsible: { type: string, enum: [nao_definido, proprietario, inquilino] }, bill_address: { type: string, enum: [predio, correios] }, bill_email_to: { type: string, enum: [responsavel, proprietario, inquilino, ambos] }, partner_agency_id: { type: [integer, 'null'] } } } } } } }
+      responses:
+        '200': { description: '{ data: { updated, unchanged } }' }
+        '400': { description: Corpo JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /units/move-out:
     post:
       operationId: unitMoveOut

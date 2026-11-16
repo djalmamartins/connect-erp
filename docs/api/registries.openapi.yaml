@@ -41,7 +41,19 @@ components:
         floor: { type: [string, "null"], maxLength: 10 }
         ideal_fraction: { type: [number, "null"], minimum: 0, maximum: 1 }
         private_area: { type: [number, "null"], minimum: 0, maximum: 99999999.99 }
+        cib: { type: [string, "null"], pattern: "^[0-9A-Z]{8}$", description: 'Código CIB: 7 caracteres + DV; aceita com traço, resposta sem.' }
         is_vacant: { type: boolean }
+        due_day: { type: [integer, "null"], minimum: 1, maximum: 31 }
+        apportionment_exempt: { type: boolean }
+        block_bill_merge: { type: boolean }
+        postage_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
+        postage_payer: { type: [string, "null"], enum: ['ambos', 'proprietario', 'inquilino'] }
+        billing_responsible: { type: [string, "null"], enum: ['nao_definido', 'proprietario', 'inquilino'] }
+        bill_address: { type: [string, "null"], enum: ['predio', 'correios'] }
+        bill_email_to: { type: [string, "null"], enum: ['responsavel', 'proprietario', 'inquilino', 'ambos'] }
+        reads_gas: { type: boolean }
+        reads_water: { type: boolean }
+        reads_power: { type: boolean }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
     Units:
