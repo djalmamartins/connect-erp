@@ -29,6 +29,8 @@ final class FakeInterHttp implements InterHttp
     public mixed $balance = 1500.25;
     /** A aplicação não tem o escopo extrato.read: o pedido de token com ele volta 403. */
     public bool $refuseStatementScope = false;
+    /** Quantas consultas do extrato/saldo seguidas o Inter limita (429). */
+    public int $rateLimited = 0;
     /** Escopos pedidos em cada token. @var list<string> */
     public array $tokenScopes = [];
     private int $sequence = 0;
@@ -61,6 +63,10 @@ final class FakeInterHttp implements InterHttp
         }
         if (($headers['Authorization'] ?? '') === '' || !str_starts_with($headers['Authorization'], 'Bearer tok-')) {
             return ['status' => 401, 'body' => '{}'];
+        }
+        if ($method === 'GET' && str_starts_with($path, '/banking/v2/') && $this->rateLimited > 0) {
+            $this->rateLimited--;
+            return ['status' => 429, 'body' => ''];
         }
         if ($method === 'GET' && $path === '/banking/v2/extrato/completo') {
             parse_str((string)parse_url($url, PHP_URL_QUERY), $query);

@@ -59,6 +59,8 @@ final class Imports
             JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
             return;
         }
+        // O Inter limita consultas por minuto: o adaptador espera e repete, o que pode passar de 30 s.
+        @set_time_limit(120);
         $this->run(201, fn () => (new \Source\Services\Erp\Banking\BankStatementFetch())->preview($user, $body));
     }
 
