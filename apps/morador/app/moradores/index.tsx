@@ -43,7 +43,9 @@ export default function Moradores() {
   async function block(m: HouseholdMember) {
     const ok = await dialog.confirm({
       title: `Bloquear ${m.name.split(' ')[0]}?`,
-      message: 'O vínculo de inquilino termina hoje e a pessoa perde o acesso ao app do condomínio. A administração fica sabendo. Isso não pode ser desfeito pelo app.',
+      message: 'O vínculo de inquilino termina hoje e a pessoa perde o acesso ao app do condomínio. A administração fica sabendo.',
+      undo: false,
+      undoText: 'Pelo app, só cadastrando o inquilino de novo.',
       confirm: 'Bloquear inquilino',
       icon: 'lock-closed',
     });

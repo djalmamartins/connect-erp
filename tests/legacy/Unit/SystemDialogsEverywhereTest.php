@@ -80,6 +80,27 @@ final class SystemDialogsEverywhereTest extends TestCase
         }
     }
 
+    /** A distribuição do Organic V2 é gerada fora do repo: a sincronização precisa manter o ajuste (ADR 0321). */
+    public function testOrganicDistributionUsesTheSystemDialog(): void
+    {
+        foreach (['organic.js', 'organic.min.js', 'organic.global.js', 'organic.global.min.js'] as $dist) {
+            $js = $this->file('container/shared/assets/organic/' . $dist);
+            self::assertSame(2, substr_count($js, 'window.ConnectDialog?window.ConnectDialog.confirm('), $dist . ': reaplique o ajuste do ADR 0321 depois de sincronizar o Organic');
+        }
+    }
+
+    /** App React Native: janela própria (Dialog.tsx), dizendo se dá para desfazer; recado rápido por cima dela. */
+    public function testNativeAppDialogSaysWhetherItCanBeUndone(): void
+    {
+        $dialog = $this->file('apps/morador/src/ui/Dialog.tsx');
+        self::assertStringContainsString("{current.undo ? 'Dá para desfazer.' : 'Não dá para desfazer.'}", $dialog);
+        self::assertStringContainsString('{current ? toastView : null}', $dialog);
+        self::assertStringNotContainsString('Alert.alert', $dialog);
+        foreach (['app/visitantes.tsx', 'app/reservas.tsx', 'app/(tabs)/perfil.tsx', 'src/ui/LockScreen.tsx'] as $screen) {
+            self::assertMatchesRegularExpression('/\{ undo: (true|false), text: /', $this->file('apps/morador/' . $screen), $screen);
+        }
+    }
+
     public function testNoticesStayAboveTheModals(): void
     {
         $notice = $this->file('container/shared/assets/js/connect-notice.js');

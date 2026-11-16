@@ -17,6 +17,10 @@ type Request = {
   confirm: string;
   /** Sem cancelar = aviso de um botão só. */
   cancel?: string;
+  /** Dá para desfazer? Mostra a faixa verde ("Dá para desfazer.") ou vermelha ("Não dá para desfazer."). ADR 0321. */
+  undo?: boolean;
+  /** Complemento da faixa (ex.: "Para voltar, cadastre de novo."). */
+  undoText?: string;
   /** Várias opções (ex.: Tirar foto / Escolher da galeria). No lugar do botão principal. */
   options?: ChoiceOption[];
   /** Índice da opção escolhida (o botão principal é 0) ou null se cancelou. */
@@ -50,7 +54,7 @@ function open(r: Omit<Request, 'resolve'>): Promise<number | null> {
 
 export const dialog = {
   /** Pergunta antes de uma ação. Resolve true se a pessoa confirmou. */
-  confirm: (o: { title: string; message?: string; confirm: string; cancel?: string; tone?: DialogTone; icon?: IconName }) =>
+  confirm: (o: { title: string; message?: string; confirm: string; cancel?: string; tone?: DialogTone; icon?: IconName; undo?: boolean; undoText?: string }) =>
     open({ tone: 'danger', cancel: 'Voltar', ...o }).then((c) => c === 0),
   /** Aviso com um botão (Entendi). */
   notice: async (o: { title: string; message?: string; tone?: DialogTone; icon?: IconName; confirm?: string }) => {
@@ -123,6 +127,16 @@ export function DialogHost() {
   const scale = fade.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
   const toastY = toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-80, 0] });
 
+  // O recado rápido fica acima de tudo: com uma janela aberta, ele é desenhado dentro dela (ADR 0321).
+  const toastView = toast ? (
+    <Animated.View pointerEvents="none" style={[styles.toast, { top: insets.top + 8, opacity: toastAnim, transform: [{ translateY: toastY }] }]}>
+      <Ionicons name="checkmark-circle" size={18} color={colors.onBrand} />
+      <Text style={styles.toastText} accessibilityLiveRegion="polite">
+        {toast}
+      </Text>
+    </Animated.View>
+  ) : null;
+
   return (
     <>
       <Modal visible={!!current} transparent animationType="none" statusBarTranslucent onRequestClose={() => close(null)}>
@@ -138,6 +152,15 @@ export function DialogHost() {
               </View>
               <Text style={styles.title}>{current.title}</Text>
               {current.message ? <Text style={styles.message}>{current.message}</Text> : null}
+              {current.undo !== undefined ? (
+                <View style={[styles.undo, { backgroundColor: current.undo ? colors.successSoft : colors.dangerSoft }]}>
+                  <Ionicons name={current.undo ? 'arrow-undo' : 'lock-closed'} size={16} color={current.undo ? '#0b5a40' : '#8a1c13'} />
+                  <Text style={[styles.undoText, { color: current.undo ? '#0b5a40' : '#8a1c13' }]}>
+                    <Text style={styles.undoStrong}>{current.undo ? 'Dá para desfazer.' : 'Não dá para desfazer.'}</Text>
+                    {current.undoText ? ' ' + current.undoText : ''}
+                  </Text>
+                </View>
+              ) : null}
               <View style={styles.buttons}>
                 {current.options ? (
                   current.options.map((o, i) => (
@@ -169,15 +192,9 @@ export function DialogHost() {
             </Animated.View>
           ) : null}
         </View>
+        {current ? toastView : null}
       </Modal>
-      {toast ? (
-        <Animated.View pointerEvents="none" style={[styles.toast, { top: insets.top + 8, opacity: toastAnim, transform: [{ translateY: toastY }] }]}>
-          <Ionicons name="checkmark-circle" size={18} color={colors.onBrand} />
-          <Text style={styles.toastText} accessibilityLiveRegion="polite">
-            {toast}
-          </Text>
-        </Animated.View>
-      ) : null}
+      {toast && !current ? toastView : null}
     </>
   );
 }
@@ -203,6 +220,9 @@ const styles = StyleSheet.create({
   icon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: space[3] },
   title: { fontFamily: fonts.bold, fontSize: 19, color: colors.text, textAlign: 'center' },
   message: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.muted, textAlign: 'center', marginTop: space[2] },
+  undo: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: space[3], paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14 },
+  undoText: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19 },
+  undoStrong: { fontFamily: fonts.bold },
   buttons: { alignSelf: 'stretch', gap: space[1], marginTop: space[5] },
   primary: { height: 50, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   primaryText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.onBrand },
@@ -230,7 +250,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radius.pill,
     backgroundColor: colors.sidebar,
-    zIndex: 100,
+    zIndex: 99999,
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 12,
