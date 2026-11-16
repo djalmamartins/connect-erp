@@ -2823,6 +2823,7 @@
         if (s.fraction_sum != null) parts.push('soma das frações ' + num(s.fraction_sum * 100, 4) + '%');
         if (s.consumption != null) parts.push('consumo ' + num(s.consumption, 3));
         if (kind === 'ofx') { parts.push('entradas ' + brl(s.credits_cents || 0), 'saídas ' + brl(s.debits_cents || 0)); if (s.already) parts.push(s.already + ' já importada(s)'); }
+        if (data.skipped_bank_lines) parts.push(data.skipped_bank_lines + ' lançamento(s) do banco ignorado(s) por data ou valor ilegível');
         if (s.replace) parts.push(s.replace + ' substitui(em) leitura lançada');
         if (kind === 'nfe' && s.access_key) {
           parts.unshift('NF-e ' + (s.number || '') + (s.series ? '/' + s.series : '') + ' de ' + (s.issuer || 'emitente') + (s.issuer_document ? ' (' + s.issuer_document + ')' : '') + (s.issued_on ? ', emitida em ' + day(s.issued_on) : ''));
