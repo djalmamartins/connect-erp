@@ -29,7 +29,7 @@ legenda: Tela Lançar Receita
 ## Como lançar
 
 1. Escolha o condomínio na barra superior.
-2. Preencha **Descrição do lançamento**, **Conta da receita**, **Vencimento**, **Valor** e **Incluir na fatura de** (o mês de competência). **Centro de custo** e **Documento** são opcionais.
+2. Preencha **Descrição do lançamento**, **Conta da receita**, **Vencimento**, **Valor** e **Incluir na fatura de** (o mês de competência). **Centro de custo**, **Conta relacionada** e **Documento** são opcionais. A **Conta relacionada** liga a receita à conta que ela cobre (por exemplo, "Rateio de obra" ligado à despesa de obras); ela aparece na ficha de cada conta gerada e pode ser trocada depois.
 3. Em **Rateio**, escolha:
    - **Sem rateio (receita do condomínio)**: sai uma conta a receber sem unidade.
    - **Cobrar de todas as unidades**: todas as unidades ativas, menos as isentas de rateio.
@@ -37,7 +37,7 @@ legenda: Tela Lançar Receita
 4. Com rateio, escolha o **Cálculo**: valor fixo por unidade, total dividido igualmente, total pela fração ideal ou **Valor de cada unidade** (a tabela abre um campo de valor por unidade).
 5. Em **Cobrar de**, deixe o responsável pela cobrança da unidade ou escolha o proprietário ou o inquilino. Se a unidade não tiver a pessoa no papel escolhido, vale o responsável.
 6. Para o fundo de reserva, marque **Incluir taxa de fundo de reserva**, informe o percentual (até 30%) e a conta do fundo. Sai uma conta a mais por unidade, com o percentual sobre o valor dela.
-7. Para repetir, marque **Repetir lançamento** e escolha quantos meses (até 24). Cada mês sai com a competência e o vencimento do mês seguinte; com **Mostrar "(1/N)" na descrição**, a descrição ganha a parcela.
+7. Para repetir, marque **Repetir lançamento** e escolha quantos meses (até 24). Cada mês sai com a competência e o vencimento do mês seguinte; com **Mostrar "(1/N)" na descrição**, a descrição ganha a parcela. Para continuar uma série já começada, preencha **Índice inicial da repetição** e **Total de repetições**: com índice 4, total 10 e 7 meses, as descrições vão de (4/10) a (10/10).
 8. Clique em {{Salvar}}. As contas aparecem em [Contas a receber](artigo:contas-a-receber) e, com rateio, em [Cobranças extras](artigo:cobrancas-extras), onde podem ser canceladas juntas.
 
 ```tela lancar-receita-form

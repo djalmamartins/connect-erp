@@ -29,14 +29,20 @@ use Source\Support\Audit;
  * - Anexos no mesmo envio (ADR 0323): a tela manda cada arquivo depois do lançamento para todas as contas geradas
  *   (POST /api/v1/entry-attachments, EntryAttachments::attachMany), uma cópia só no Disco Virtual.
  *
- * PENDENTE: tipo da fatura (o modelo agrupa a conta numa fatura de um tipo, num boleto só com a taxa do mês; aqui
- * cada conta tem o próprio boleto) e conta relacionada (sentido no modelo não confirmado). Decisão com o Djalma.
+ * - Conta relacionada (ADR 0329, INFERIDO do modelo): conta analítica do plano (do padrão ou do condomínio) que a receita
+ *   cobre, gravada em todas as contas principais (as do fundo de reserva ficam sem ela).
+ * - Índices da repetição (ADR 0329): "(i/N)" começa no índice inicial e termina no total, para continuar uma série
+ *   já começada (ex.: 4/10 a 10/10). Sem eles, 1 até o número de meses.
+ *
+ * PENDENTE (Djalma escolheu fazer depois, 16/11): tipo da fatura, o rateio no mesmo boleto da fatura da unidade
+ * (hoje cada conta tem o próprio boleto).
  */
 final class RevenueLaunch
 {
     public const APPORTION = ['none' => 'Sem rateio (receita do condomínio)', 'all' => 'Cobrar de todas as unidades', 'chosen' => 'Cobrar das unidades escolhidas'];
     public const PAYERS = ['responsible' => 'Responsável pela cobrança da unidade', 'owner' => 'Proprietário', 'tenant' => 'Inquilino'];
     public const MAX_REPEAT = 24;
+    public const MAX_INDEX = 999;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -75,6 +81,36 @@ final class RevenueLaunch
     }
 
     /**
+     * Índices da repetição (regra pura): inicial padrão 1; total padrão = inicial + meses - 1 e nunca menor que isso.
+     * @return array{0:int, 1:int}
+     */
+    public static function indexes(mixed $start, mixed $total, int $repeat): array
+    {
+        $first = self::optionalInt($start) ?? 1;
+        if ($first < 1 || $first > self::MAX_INDEX) {
+            throw new InvalidArgumentException('O índice inicial da repetição vai de 1 a ' . self::MAX_INDEX . '.');
+        }
+        $last = $first + $repeat - 1;
+        $all = self::optionalInt($total) ?? $last;
+        if ($all < $last || $all > self::MAX_INDEX) {
+            throw new InvalidArgumentException("O total de repetições precisa ser de {$last} a " . self::MAX_INDEX . ' (o índice inicial mais os meses lançados).');
+        }
+        return [$first, $all];
+    }
+
+    private static function optionalInt(mixed $value): ?int
+    {
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return null;
+        }
+        $int = filter_var(is_string($value) ? trim($value) : $value, FILTER_VALIDATE_INT);
+        if ($int === false) {
+            throw new InvalidArgumentException('Os índices da repetição precisam ser números inteiros.');
+        }
+        return $int;
+    }
+
+    /**
      * @return array{entries:list<int>, charges:list<int>, months:int}
      */
     public function launch(User $user, array $input): array
@@ -92,7 +128,9 @@ final class RevenueLaunch
         if ($repeat === false) {
             throw new InvalidArgumentException('Repita de 1 a ' . self::MAX_REPEAT . ' vezes.');
         }
-        $label = !empty($input['repeat_label']) && $repeat > 1;
+        [$firstIndex, $totalIndex] = self::indexes($input['repeat_start'] ?? null, $input['repeat_total'] ?? null, $repeat);
+        $label = !empty($input['repeat_label']) && $totalIndex > 1;
+        $related = $this->relatedAccount($condominium, $input['related_account_id'] ?? null);
         $reserve = $apportion === 'none' ? null : self::reservePercent($input['reserve_percent'] ?? null);
         $reserveAccount = (int)(filter_var($input['reserve_account_id'] ?? null, FILTER_VALIDATE_INT) ?: 0);
         if ($reserve !== null && $reserveAccount < 1) {
@@ -122,9 +160,9 @@ final class RevenueLaunch
         try {
             for ($i = 0; $i < $repeat; $i++) {
                 [$month, $due] = self::shift($competence, $dueOn, $i);
-                $text = $label ? mb_substr($description, 0, 110) . ' (' . ($i + 1) . '/' . $repeat . ')' : $description;
+                $text = $label ? mb_substr($description, 0, 110) . ' (' . ($firstIndex + $i) . '/' . $totalIndex . ')' : $description;
                 if ($apportion === 'none') {
-                    $entries[] = (int)$this->registry->save($user, 'receivables', array_intersect_key($input, array_flip(['condominium_id', 'chart_account_id', 'cost_center_id', 'amount_cents', 'document_number', 'notes']))
+                    $entries[] = (int)$this->registry->save($user, 'receivables', array_intersect_key($input, array_flip(['condominium_id', 'chart_account_id', 'cost_center_id', 'related_account_id', 'amount_cents', 'document_number', 'notes']))
                         + ['description' => $text, 'competence' => $month, 'due_on' => $due, 'status' => 'active'])['id'];
                     continue;
                 }
@@ -133,6 +171,9 @@ final class RevenueLaunch
                 $charge = $this->shortcuts->createCharge($user, $base + ['description' => $text, 'chart_account_id' => $input['chart_account_id'] ?? null,
                     'method' => $input['method'] ?? null, 'amount_cents' => $input['amount_cents'] ?? null, 'unit_amounts' => $input['unit_amounts'] ?? null]);
                 $charges[] = (int)$charge['id'];
+                if ($related !== null) {
+                    $this->pdo->prepare('UPDATE erp_entries SET related_account_id = ? WHERE extra_charge_id = ?')->execute([$related, (int)$charge['id']]);
+                }
                 if ($reserve !== null) {
                     $shares = [];
                     foreach ($charge['entries'] as $entry) {
@@ -163,6 +204,34 @@ final class RevenueLaunch
             Audit::record('update', 'erp_extra_charges', $charges[0], null, ['_revenue_payer' => $payer, 'charges' => $charges]);
         }
         return ['entries' => $entries, 'charges' => $charges, 'months' => $repeat];
+    }
+
+    /** Conta relacionada: vazia = nenhuma; senão analítica, ativa, de receita ou despesa, do padrão ou deste condomínio. */
+    private function relatedAccount(int $condominium, mixed $value): ?int
+    {
+        $id = self::optionalId($value);
+        if ($id === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_chart_accounts WHERE id = ? AND kind = 'analitica' AND status = 'active' AND deleted_at IS NULL
+            AND (condominium_id IS NULL OR condominium_id = ?)");
+        $stmt->execute([$id, $condominium]);
+        if ($stmt->fetchColumn() === false) {
+            throw new InvalidArgumentException('Escolha uma conta relacionada analítica e ativa do plano de contas.');
+        }
+        return $id;
+    }
+
+    private static function optionalId(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || $value === 0 || $value === '0') {
+            return null;
+        }
+        $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($id === false) {
+            throw new InvalidArgumentException('Escolha uma conta relacionada analítica e ativa do plano de contas.');
+        }
+        return $id;
     }
 
     /** @return list<int> unidades ativas do condomínio que recebem rateio (sem as isentas, ADR 0311) */

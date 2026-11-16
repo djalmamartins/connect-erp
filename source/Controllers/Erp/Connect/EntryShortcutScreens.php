@@ -55,6 +55,7 @@ final class EntryShortcutScreens
                 $refs = $registry->references($user, RegistryService::definition('receivables'));
                 $data['revenueAccounts'] = self::forContext($refs['chart_account_id'] ?? [], $context);
                 $data['revenueCostCenters'] = self::forContext($refs['cost_center_id'] ?? [], $context);
+                $data['revenueRelatedAccounts'] = self::forContext($refs['related_account_id'] ?? [], $context);
                 $data['revenueUnits'] = $context === null ? [] : self::revenueUnits($registry->units($user), $context);
                 $data['revenueCanApportion'] = Access::can('erp.invoices.manage', $user);
             } elseif ($id === 'AP-026') {

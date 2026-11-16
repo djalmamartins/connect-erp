@@ -96,6 +96,35 @@ final class RevenueLaunchTest extends TestCase
         $launch->launch($this->user, $this->input(['condominium_id' => $this->beta, 'apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '10,00']));
     }
 
+    public function testRelatedAccountAndRepeatIndexes(): void
+    {
+        $this->pdo->exec("INSERT INTO erp_chart_accounts (code, name, nature, kind) VALUES ('2.05', 'Obras', 'despesa', 'analitica'), ('2', 'Despesas', 'despesa', 'sintetica')");
+        $works = (int)$this->pdo->query("SELECT id FROM erp_chart_accounts WHERE code = '2.05'")->fetchColumn();
+        $launch = new RevenueLaunch($this->pdo);
+        $result = $launch->launch($this->user, $this->input(['apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '50,00', 'reserve_percent' => '10',
+            'reserve_account_id' => $this->fund, 'related_account_id' => $works, 'repeat' => 2, 'repeat_label' => true, 'repeat_start' => '4', 'repeat_total' => '10']));
+        $rows = $this->pdo->query('SELECT description, related_account_id, chart_account_id FROM erp_entries WHERE id IN (' . implode(',', $result['entries']) . ') ORDER BY competence, chart_account_id, unit_id')->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertSame(['Taxa da portaria (4/10) — 101', $works], [$rows[0]['description'], (int)$rows[0]['related_account_id']]);
+        self::assertNull($rows[2]['related_account_id'], 'Fundo de reserva fica sem a conta relacionada.');
+        self::assertSame('Taxa da portaria (5/10) — 101', $rows[4]['description']);
+
+        $single = $launch->launch($this->user, $this->input(['apportion' => 'none', 'amount_cents' => '10,00', 'related_account_id' => (string)$works, 'repeat' => 1, 'repeat_label' => true, 'repeat_start' => 3, 'repeat_total' => 3]));
+        $row = $this->pdo->query('SELECT description, related_account_id FROM erp_entries WHERE id = ' . $single['entries'][0])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['Taxa da portaria (3/3)', $works], [$row['description'], (int)$row['related_account_id']], 'Última parcela de uma série.');
+
+        self::assertSame([1, 2], RevenueLaunch::indexes(null, '', 2));
+        self::assertSame([7, 12], RevenueLaunch::indexes('7', null, 6));
+        $synthetic = (int)$this->pdo->query("SELECT id FROM erp_chart_accounts WHERE code = '2'")->fetchColumn();
+        foreach ([['repeat_start' => 0], ['repeat_start' => 'a'], ['repeat' => 3, 'repeat_start' => 5, 'repeat_total' => 6], ['related_account_id' => $synthetic], ['related_account_id' => 999999]] as $bad) {
+            try {
+                $launch->launch($this->user, $this->input($bad + ['apportion' => 'none', 'amount_cents' => '10,00']));
+                self::fail('Aceitou: ' . json_encode($bad));
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     private function input(array $over): array
     {
         return $over + ['condominium_id' => $this->alpha, 'description' => 'Taxa da portaria', 'chart_account_id' => $this->fee, 'competence' => '2027-01', 'due_on' => '2027-01-31'];

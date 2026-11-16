@@ -574,6 +574,12 @@ final class Definitions
                         'hint' => 'Conta de receita ou despesa (ex.: 2.04.01 Manutenção elétrica)'],
                     'cost_center_id' => ['label' => 'Centro de custo', 'type' => 'ref', 'span' => 6, 'ref' => 'cost_centers', 'ref_label' => ['code', 'name'],
                         'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.'],
+                    // Conta relacionada (Nova Receita, modelo 8, ADR 0329): a conta que o lançamento cobre ou à qual se refere
+                    // (ex.: "Rateio de obra" ligado à despesa de obras). Opcional, só informativa nos relatórios.
+                    'related_account_id' => ['label' => 'Conta relacionada', 'type' => 'ref', 'span' => 6, 'ref' => 'chart',
+                        'ref_where' => ['kind' => 'analitica', 'nature' => ['receita', 'despesa']], 'ref_label' => ['code', 'name'],
+                        'ref_message' => 'Escolha uma conta analítica de receita ou despesa do plano de contas.',
+                        'hint' => 'Opcional: a despesa ou receita a que este lançamento se refere'],
                     'due_on' => ['label' => 'Vencimento', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],
                     'paid_on' => ['label' => 'Pago em', 'type' => 'date', 'span' => 3, 'list' => true, 'hint' => 'Vazio enquanto estiver em aberto'],
                     'bank_account_id' => ['label' => 'Conta bancária', 'type' => 'ref', 'span' => 6, 'ref' => 'bank_accounts', 'ref_label' => ['name', 'bank_code', 'account_number'],
@@ -597,7 +603,7 @@ final class Definitions
         // Lançamentos fixos (AP-021, ADR 0027): modelos que geram o lançamento de cada competência
         // (RecurringEntries::generate). Mesmas regras de conta e natureza dos lançamentos.
         $recurring = $definitions['entries']['fields'];
-        unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number'], $recurring['unit_id']);
+        unset($recurring['competence'], $recurring['due_on'], $recurring['paid_on'], $recurring['document_number'], $recurring['unit_id'], $recurring['related_account_id']);
         $recurring['bank_account_id']['hint'] = 'Conta sugerida; o lançamento gerado nasce em aberto';
         $recurring['day_of_month'] = ['label' => 'Dia do vencimento', 'type' => 'int', 'required' => true, 'min' => 1, 'max_value' => 28, 'span' => 3, 'list' => true, 'hint' => '1 a 28'];
         $recurring['starts_competence'] = ['label' => 'Primeira competência', 'type' => 'text', 'required' => true, 'max' => 7, 'span' => 3, 'list' => true, 'month' => true,
