@@ -34,8 +34,8 @@ use Source\Support\Audit;
  * - Índices da repetição (ADR 0329): "(i/N)" começa no índice inicial e termina no total, para continuar uma série
  *   já começada (ex.: 4/10 a 10/10). Sem eles, 1 até o número de meses.
  *
- * PENDENTE (Djalma escolheu fazer depois, 16/11): tipo da fatura, o rateio no mesmo boleto da fatura da unidade
- * (hoje cada conta tem o próprio boleto).
+ * - Tipo da fatura (ADR 0331): com rateio, as contas (e as do fundo) ficam marcadas com o tipo escolhido e entram no
+ *   boleto da fatura da unidade daquele tipo e competência quando ele for emitido (BankCharges). Vazio = boleto próprio.
  */
 final class RevenueLaunch
 {
@@ -131,6 +131,7 @@ final class RevenueLaunch
         [$firstIndex, $totalIndex] = self::indexes($input['repeat_start'] ?? null, $input['repeat_total'] ?? null, $repeat);
         $label = !empty($input['repeat_label']) && $totalIndex > 1;
         $related = $this->relatedAccount($condominium, $input['related_account_id'] ?? null);
+        $invoiceType = $apportion === 'none' ? null : $this->invoiceType($condominium, $input['invoice_type_id'] ?? null);
         $reserve = $apportion === 'none' ? null : self::reservePercent($input['reserve_percent'] ?? null);
         $reserveAccount = (int)(filter_var($input['reserve_account_id'] ?? null, FILTER_VALIDATE_INT) ?: 0);
         if ($reserve !== null && $reserveAccount < 1) {
@@ -187,6 +188,9 @@ final class RevenueLaunch
             if ($apportion !== 'none' && $payer !== 'responsible') {
                 $this->setPayer($charges, $payer);
             }
+            if ($apportion !== 'none' && $invoiceType !== null) {
+                $this->pdo->prepare('UPDATE erp_entries SET bundle_invoice_type_id = ? WHERE extra_charge_id IN (' . implode(',', $charges) . ')')->execute([$invoiceType]);
+            }
             if ($apportion !== 'none') {
                 $in = implode(',', $charges);
                 $entries = array_map('intval', $this->pdo->query("SELECT id FROM erp_entries WHERE extra_charge_id IN ({$in}) ORDER BY id")->fetchAll(PDO::FETCH_COLUMN));
@@ -222,16 +226,40 @@ final class RevenueLaunch
         return $id;
     }
 
-    private static function optionalId(mixed $value): ?int
+    /** Tipo da fatura (ADR 0331): vazio = boleto próprio; senão ativo, do padrão ou deste condomínio. */
+    private function invoiceType(int $condominium, mixed $value): ?int
+    {
+        $id = self::optionalId($value, 'Escolha um tipo de fatura ativo do condomínio.');
+        if ($id === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_invoice_types WHERE id = ? AND status = 'active' AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = ?)");
+        $stmt->execute([$id, $condominium]);
+        if ($stmt->fetchColumn() === false) {
+            throw new InvalidArgumentException('Escolha um tipo de fatura ativo do condomínio.');
+        }
+        return $id;
+    }
+
+    private static function optionalId(mixed $value, string $message = 'Escolha uma conta relacionada analítica e ativa do plano de contas.'): ?int
     {
         if ($value === null || $value === '' || $value === 0 || $value === '0') {
             return null;
         }
         $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($id === false) {
-            throw new InvalidArgumentException('Escolha uma conta relacionada analítica e ativa do plano de contas.');
+            throw new InvalidArgumentException($message);
         }
         return $id;
+    }
+
+    /** Tipos de fatura ativos do condomínio e do padrão, mensais primeiro (o primeiro é o padrão da tela). @return list<array{id:int, label:string}> */
+    public static function invoiceTypes(PDO $pdo, int $condominium): array
+    {
+        $stmt = $pdo->prepare("SELECT id, name FROM erp_invoice_types WHERE status = 'active' AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = ?)
+            ORDER BY recurrence = 'mensal' DESC, condominium_id IS NULL, name, id");
+        $stmt->execute([$condominium]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['name']], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /** @return list<int> unidades ativas do condomínio que recebem rateio (sem as isentas, ADR 0311) */

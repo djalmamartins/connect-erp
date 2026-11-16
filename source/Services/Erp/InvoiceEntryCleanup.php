@@ -47,7 +47,7 @@ final class InvoiceEntryCleanup
     public const MAX_ENTRIES = 500;
 
     /** Tabelas que, ligadas à conta, impedem a inativação (coluna entry_id). */
-    public const LINKS = ['erp_agreement_originals', 'erp_bank_charges', 'erp_legal_case_entries', 'erp_unit_document_entries', 'erp_bank_statement_lines',
+    public const LINKS = ['erp_agreement_originals', 'erp_bank_charges', 'erp_bank_charge_entries', 'erp_legal_case_entries', 'erp_unit_document_entries', 'erp_bank_statement_lines',
         'erp_check_copies'];
 
     private PDO $pdo;

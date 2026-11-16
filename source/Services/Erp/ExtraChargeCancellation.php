@@ -138,7 +138,7 @@ final class ExtraChargeCancellation
                 $boletos = [];
                 if ($entryIds !== []) {
                     $states = implode(',', array_fill(0, count(self::ACTIVE_BANK_CHARGE), '?'));
-                    $stmt = $this->pdo->prepare('SELECT DISTINCT entry_id FROM erp_bank_charges WHERE status IN (' . $states . ') AND entry_id IN ('
+                    $stmt = $this->pdo->prepare('SELECT DISTINCT entry_id FROM ' . \Source\Services\Erp\Banking\BankCharges::COVERAGE . ' cv WHERE status IN (' . $states . ') AND entry_id IN ('
                         . implode(',', array_fill(0, count($entryIds), '?')) . ')');
                     $stmt->execute(array_merge(self::ACTIVE_BANK_CHARGE, $entryIds));
                     $boletos = array_flip(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));

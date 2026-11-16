@@ -28,10 +28,20 @@ use Source\Support\AppLogger;
  * - Escopo por condomínio (ADR-002): fora do escopo = RegistryNotFound (404). Tudo auditado.
  * - Adaptador da conta bancária (ADR 0156): sandbox ou Inter. Consulta que traz pagamento ou baixa
  *   do banco vira evento e passa pela mesma conciliação do retorno (BankReturns::recordEvent).
+ * - Boleto único (ADR 0331): o boleto da conta de uma fatura leva junto as contas da mesma unidade e competência
+ *   marcadas com o tipo daquela fatura (bundle_invoice_type_id, ex.: rateio da Nova Receita), em aberto e sem boleto
+ *   próprio. O valor é a soma; o vencimento é o da fatura; o pagamento baixa todas (erp_bank_charge_entries).
  */
 final class BankCharges
 {
     public const STATUSES = ['pending' => 'Aguardando banco', 'registered' => 'Registrado', 'rejected' => 'Recusado', 'paid' => 'Pago', 'cancelled' => 'Cancelado'];
+
+    /**
+     * Todas as contas cobertas por boleto (ADR 0331), como tabela derivada (entry_id, charge_id, status): a principal
+     * de cada boleto e as que entraram junto. Usar no lugar de erp_bank_charges nas travas por conta a receber.
+     */
+    public const COVERAGE = '(SELECT entry_id, id AS charge_id, status FROM erp_bank_charges
+        UNION ALL SELECT ce.entry_id, ce.charge_id, c.status FROM erp_bank_charge_entries ce JOIN erp_bank_charges c ON c.id = ce.charge_id)';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -61,11 +71,12 @@ final class BankCharges
             throw new DomainException('Esta conta a receber já foi paga.');
         }
         $account = $this->bankAccount($bankAccountId, (int)$entry['condominium_id']);
-        $existing = $this->activeFor($entryId);
+        $existing = $this->activeFor($entryId) ?? $this->bundledIn($entryId);
         if ($existing !== null) {
             return $this->present($existing);
         }
         $adapter = BankAdapters::forAccount($account, $this->pdo);
+        $companions = [];
 
         $this->pdo->beginTransaction();
         try {
@@ -73,27 +84,40 @@ final class BankCharges
             $stmt = $this->pdo->prepare('SELECT COALESCE(MAX(CAST(our_number AS UNSIGNED)), 0) FROM erp_bank_charges WHERE bank_account_id = :b');
             $stmt->execute(['b' => $bankAccountId]);
             $ourNumber = self::formatOurNumber((int)$stmt->fetchColumn() + 1);
+            if ($this->bundledIn($entryId) !== null) {
+                throw new DomainException('Esta conta já entrou no boleto da fatura da unidade.');
+            }
+            $companions = $this->companions($entry);
+            $total = (int)$entry['amount_cents'] + array_sum(array_column($companions, 'amount_cents'));
             $this->pdo->prepare("INSERT INTO erp_bank_charges (condominium_id, bank_account_id, entry_id, adapter, status, our_number, amount_cents, due_on, created_by)
                 VALUES (:c, :b, :e, :a, 'pending', :n, :v, :d, :u)")->execute([
                 'c' => $entry['condominium_id'], 'b' => $bankAccountId, 'e' => $entryId, 'a' => $adapter->name(),
-                'n' => $ourNumber, 'v' => $entry['amount_cents'], 'd' => $entry['due_on'], 'u' => (int)$user->id,
+                'n' => $ourNumber, 'v' => $total, 'd' => $entry['due_on'], 'u' => (int)$user->id,
             ]);
             $chargeId = (int)$this->pdo->lastInsertId();
+            $link = $this->pdo->prepare('INSERT INTO erp_bank_charge_entries (charge_id, entry_id, amount_cents) VALUES (:c, :e, :v)');
+            foreach ($companions as $companion) {
+                $link->execute(['c' => $chargeId, 'e' => (int)$companion['id'], 'v' => (int)$companion['amount_cents']]);
+            }
             $this->pdo->commit();
-        } catch (PDOException $error) {
-            $this->pdo->rollBack();
-            if (($error->errorInfo[1] ?? null) === 1062 && ($again = $this->activeFor($entryId)) !== null) {
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            if ($error instanceof PDOException && ($error->errorInfo[1] ?? null) === 1062 && ($again = $this->activeFor($entryId)) !== null) {
                 return $this->present($again);   // pedido concorrente criou o título primeiro
             }
             throw $error;
         }
-        Audit::record('create', 'erp_bank_charges', $chargeId, null, ['status' => 'pending', 'entry_id' => $entryId, 'our_number' => $ourNumber]);
+        Audit::record('create', 'erp_bank_charges', $chargeId, null, ['status' => 'pending', 'entry_id' => $entryId, 'our_number' => $ourNumber,
+            'bundled_entries' => array_map(static fn (array $c): int => (int)$c['id'], $companions)]);
+        $description = (string)$entry['description'] . ($companions === [] ? '' : ' + ' . count($companions) . (count($companions) === 1 ? ' cobrança' : ' cobranças'));
         $rule = (new BillingRules($this->pdo))->rule((int)$entry['condominium_id']);
 
         try {
             $result = $adapter->registerCharge([
-                'our_number' => $ourNumber, 'amount_cents' => (int)$entry['amount_cents'], 'due_on' => (string)$entry['due_on'],
-                'payer_name' => $entry['unit_label'], 'description' => (string)$entry['description'],
+                'our_number' => $ourNumber, 'amount_cents' => $total, 'due_on' => (string)$entry['due_on'],
+                'payer_name' => $entry['unit_label'], 'description' => mb_substr($description, 0, 160),
                 'bank_code' => (string)$account['bank_code'], 'branch' => (string)$account['branch'],
                 'account_number' => (string)$account['account_number'], 'wallet' => $account['wallet'],
                 'payer' => $this->payer($entry), 'fine_bp' => $rule['fine_bp'], 'monthly_interest_bp' => $rule['monthly_interest_bp'],
@@ -238,7 +262,8 @@ final class BankCharges
         $count->execute($params);
         $total = (int)$count->fetchColumn();
         $offset = ($page - 1) * $perPage;
-        $stmt = $this->pdo->prepare("SELECT ch.* FROM erp_bank_charges ch WHERE {$where} ORDER BY ch.due_on DESC, ch.id DESC LIMIT {$perPage} OFFSET {$offset}");
+        $stmt = $this->pdo->prepare("SELECT ch.*, (SELECT COUNT(*) FROM erp_bank_charge_entries ce WHERE ce.charge_id = ch.id) AS bundled_count
+            FROM erp_bank_charges ch WHERE {$where} ORDER BY ch.due_on DESC, ch.id DESC LIMIT {$perPage} OFFSET {$offset}");
         $stmt->execute($params);
         return ['data' => array_map(fn (array $r): array => $this->present($r), $stmt->fetchAll(PDO::FETCH_ASSOC)),
             'total' => $total, 'page' => $page, 'per_page' => $perPage, 'pages' => (int)ceil($total / $perPage)];
@@ -246,7 +271,7 @@ final class BankCharges
 
     public function find(User $user, int $chargeId): array
     {
-        return $this->present($this->row($user, $chargeId));
+        return $this->present($this->row($user, $chargeId)) + ['bundled' => $this->bundledEntries($chargeId)];
     }
 
     /** Grava a resposta do banco num título ainda pendente ou registrado. */
@@ -487,6 +512,47 @@ final class BankCharges
         return $account;
     }
 
+    /** Boleto ativo (aguardando, registrado ou pago) em que a conta entrou junto com a fatura (ADR 0331). */
+    private function bundledIn(int $entryId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT c.* FROM erp_bank_charge_entries ce JOIN erp_bank_charges c ON c.id = ce.charge_id
+            WHERE ce.entry_id = :e AND c.active_key = 1 LIMIT 1');
+        $stmt->execute(['e' => $entryId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Contas que entram no boleto da conta de fatura (ADR 0331): mesma unidade e competência, marcadas com o tipo da
+     * fatura, receita ativa em aberto e sem boleto ativo (próprio ou junto de outro). Conta fora de fatura: nenhuma.
+     * @return list<array{id:int|string, amount_cents:int|string}>
+     */
+    private function companions(array $entry): array
+    {
+        if ($entry['invoice_item_id'] === null || $entry['unit_id'] === null) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare("SELECT e.id, e.amount_cents FROM erp_entries e
+            JOIN erp_invoice_items it ON it.id = :item JOIN erp_invoices i ON i.id = it.invoice_id
+            WHERE e.condominium_id = :c AND e.unit_id = :u AND e.competence = :m AND e.bundle_invoice_type_id = i.invoice_type_id
+              AND e.id <> :id AND e.nature = 'receita' AND e.status = 'active' AND e.paid_on IS NULL AND e.deleted_at IS NULL
+              AND NOT EXISTS (SELECT 1 FROM " . self::COVERAGE . " cv WHERE cv.entry_id = e.id AND cv.status IN ('pending','registered','paid'))
+            ORDER BY e.id FOR UPDATE");
+        $stmt->execute(['item' => (int)$entry['invoice_item_id'], 'c' => (int)$entry['condominium_id'], 'u' => (int)$entry['unit_id'],
+            'm' => (string)$entry['competence'], 'id' => (int)$entry['id']]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array{entry_id:int, amount_cents:int, description:string}> contas que entraram junto no boleto */
+    public function bundledEntries(int $chargeId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT ce.entry_id, ce.amount_cents, e.description FROM erp_bank_charge_entries ce JOIN erp_entries e ON e.id = ce.entry_id
+            WHERE ce.charge_id = :c ORDER BY ce.entry_id');
+        $stmt->execute(['c' => $chargeId]);
+        return array_map(static fn (array $r): array => ['entry_id' => (int)$r['entry_id'], 'amount_cents' => (int)$r['amount_cents'], 'description' => (string)$r['description']],
+            $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     private function activeFor(int $entryId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_charges WHERE entry_id = :e AND active_key = 1 LIMIT 1');
@@ -524,6 +590,7 @@ final class BankCharges
             'pdf_available' => in_array($row['adapter'] ?? '', BankAdapters::REAL, true) && !empty($row['external_id']) && in_array($row['status'], ['registered', 'paid'], true),
             'last_error' => $row['last_error'], 'paid_cents' => $row['paid_cents'] !== null ? (int)$row['paid_cents'] : null,
             'paid_on' => $row['paid_on'], 'registered_at' => $row['registered_at'], 'cancelled_at' => $row['cancelled_at'],
+            'bundled_count' => (int)($row['bundled_count'] ?? 0),
         ];
     }
 }

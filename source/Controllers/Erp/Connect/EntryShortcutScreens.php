@@ -56,6 +56,7 @@ final class EntryShortcutScreens
                 $data['revenueAccounts'] = self::forContext($refs['chart_account_id'] ?? [], $context);
                 $data['revenueCostCenters'] = self::forContext($refs['cost_center_id'] ?? [], $context);
                 $data['revenueRelatedAccounts'] = self::forContext($refs['related_account_id'] ?? [], $context);
+                $data['revenueInvoiceTypes'] = $context === null ? [] : \Source\Services\Erp\RevenueLaunch::invoiceTypes(\Source\Core\Connect::getInstance(), $context);
                 $data['revenueUnits'] = $context === null ? [] : self::revenueUnits($registry->units($user), $context);
                 $data['revenueCanApportion'] = Access::can('erp.invoices.manage', $user);
             } elseif ($id === 'AP-026') {

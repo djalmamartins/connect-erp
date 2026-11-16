@@ -92,6 +92,7 @@ final class LabSampleYearRemovalTest extends TestCase
                 reversal_reason TEXT, created_by INTEGER)",
             'CREATE TABLE erp_agreement_originals (id INTEGER PRIMARY KEY, agreement_id INTEGER REFERENCES erp_agreements (id), entry_id INTEGER REFERENCES erp_entries (id), amount_cents INTEGER)',
             'CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, entry_id INTEGER REFERENCES erp_entries (id), status TEXT)',
+            'CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_unit_documents (id INTEGER PRIMARY KEY, status TEXT)',
             'CREATE TABLE erp_unit_document_entries (document_id INTEGER, entry_id INTEGER REFERENCES erp_entries (id))',
             'CREATE TABLE erp_notification_outbox (id INTEGER PRIMARY KEY, condominium_id INTEGER, event_type TEXT, event_key TEXT UNIQUE, subject_table TEXT, subject_id INTEGER,

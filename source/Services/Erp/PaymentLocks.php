@@ -52,7 +52,7 @@ final class PaymentLocks
         $marks = implode(',', array_fill(0, count($entryIds), '?'));
         $out = [];
         foreach ([['reconciled', self::RECONCILED, "SELECT entry_id FROM erp_bank_statement_lines WHERE status = 'matched' AND entry_id IN ({$marks})"],
-            ['bank_confirmed', self::BANK_CONFIRMED, "SELECT entry_id FROM erp_bank_charges WHERE status = 'paid' AND entry_id IN ({$marks})"]] as [$code, $message, $sql]) {
+            ['bank_confirmed', self::BANK_CONFIRMED, "SELECT entry_id FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " cv WHERE status = 'paid' AND entry_id IN ({$marks})"]] as [$code, $message, $sql]) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($entryIds);
             foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $id) {

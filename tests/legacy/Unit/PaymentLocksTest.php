@@ -21,13 +21,15 @@ final class PaymentLocksTest extends TestCase
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->exec('CREATE TABLE erp_bank_statement_lines (id INTEGER PRIMARY KEY, status TEXT, entry_id INTEGER)');
         $pdo->exec('CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, status TEXT, entry_id INTEGER)');
+        $pdo->exec('CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)');
         $pdo->exec("INSERT INTO erp_bank_statement_lines (status, entry_id) VALUES ('matched', 1), ('matched', 3), ('ignored', 4), ('unmatched', NULL)");
         $pdo->exec("INSERT INTO erp_bank_charges (status, entry_id) VALUES ('paid', 2), ('paid', 3), ('cancelled', 5), ('registered', 6)");
+        $pdo->exec('INSERT INTO erp_bank_charge_entries (charge_id, entry_id, amount_cents) VALUES (1, 7, 100), (3, 8, 100)');   // boleto único (ADR 0331)
 
-        $locks = PaymentLocks::find($pdo, [1, 2, 3, 4, 5, 6, 7, '2']);
+        $locks = PaymentLocks::find($pdo, [1, 2, 3, 4, 5, 6, 7, 8, '2']);
         ksort($locks);
-        self::assertSame([1 => 'reconciled', 2 => 'bank_confirmed', 3 => 'reconciled'], array_map(static fn (array $l): string => $l['code'], $locks),
-            'Conciliação vem primeiro; linha ignorada, boleto cancelado ou só registrado não travam.');
+        self::assertSame([1 => 'reconciled', 2 => 'bank_confirmed', 3 => 'reconciled', 7 => 'bank_confirmed'], array_map(static fn (array $l): string => $l['code'], $locks),
+            'Conciliação vem primeiro; conta que entrou junto num boleto pago trava; linha ignorada, boleto cancelado ou só registrado não travam.');
         self::assertSame(PaymentLocks::RECONCILED, $locks[1]['message']);
         self::assertSame(PaymentLocks::BANK_CONFIRMED, $locks[2]['message']);
         self::assertSame([], PaymentLocks::find($pdo, []));

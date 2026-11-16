@@ -183,7 +183,7 @@ final class UnitOccupantChange
     private function moveInvoices(int $unitId, array $request, int|string|null $oldId, int $newId, string $since): array
     {
         $stmt = $this->pdo->prepare("SELECT e.id, e.competence, e.payer_resident_id,
-                EXISTS(SELECT 1 FROM erp_bank_charges b WHERE b.entry_id = e.id AND b.status IN ('pending','registered','paid')) AS has_boleto
+                EXISTS(SELECT 1 FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " b WHERE b.entry_id = e.id AND b.status IN ('pending','registered','paid')) AS has_boleto
             FROM erp_entries e WHERE e.unit_id = ? AND e.nature = 'receita' AND e.status = 'active' AND e.paid_on IS NULL AND e.deleted_at IS NULL FOR UPDATE");
         $stmt->execute([$unitId]);
         $month = substr($since, 0, 7);
