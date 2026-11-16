@@ -24,6 +24,7 @@ use Source\Support\Access;
  *  POST /api/v1/bank-charges/{id}/cancel                          cancela
  *  GET  /api/v1/bank-charges/{id}/pdf                             PDF do boleto (Inter, ADR 0156)
  *  POST /api/v1/bank-charges/{id}/simulate-payment {method}       só sandbox do Inter: simula o pagamento e consulta
+ *  POST /api/v1/invoices/{id}/bank-charges {bank_account_id, limit} boletos de toda a fatura, em lotes (remaining)
  *  GET  /api/v1/bank-remittances?condominium_id=&from=&to=&status=&page=  remessas: lotes por conta e dia (AP-037)
  *  GET  /api/v1/bank-returns?condominium_id=&bank_account_id=&page=  arquivos importados (paginado)
  *  POST /api/v1/bank-returns {bank_account_id, filename, content} importa retorno (texto)
@@ -80,6 +81,19 @@ final class Banking
         if ($user !== null) {
             $method = strtoupper(is_string($body['method'] ?? null) ? $body['method'] : 'BOLETO');
             $this->run(200, fn () => (new BankCharges())->simulatePayment($user, (int)$this->int($data['id'] ?? null), $method));
+        }
+    }
+
+    /** Boletos de todas as contas a receber em aberto de uma fatura emitida, em lotes (a tela repete até remaining = 0). */
+    public function issueInvoice(array $data): void
+    {
+        [$user, $body] = $this->write();
+        if ($user !== null) {
+            $limit = (int)($this->int($body['limit'] ?? null) ?? 20);
+            $this->run(200, fn () => (new BankCharges())->issueForInvoice($user, (int)$this->int($data['id'] ?? null),
+                (int)$this->int($body['bank_account_id'] ?? null), $limit, static function (): void {
+                    usleep(300000);
+                }));
         }
     }
 

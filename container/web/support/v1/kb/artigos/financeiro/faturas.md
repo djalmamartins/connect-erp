@@ -62,6 +62,14 @@ Na lista, abra a fatura preparada. Confira o valor de cada unidade, ajuste o que
 
 >> Tudo sobre a cobrança: [Boletos](artigo:boletos) e [Acordos](artigo:acordos).
 
+## Gerar todos os boletos de uma vez
+
+Depois de emitir a fatura, clique em **Gerar boletos** na linha dela. Escolha a conta bancária do condomínio (por exemplo, a do Banco Inter) e confirme. O sistema emite um boleto para cada unidade com a conta a receber em aberto e ainda sem boleto, mostrando o andamento até terminar.
+
+- Unidade sem CPF/CNPJ do responsável ou sem endereço completo do condomínio fica como **recusada**, com o motivo, e não para as outras. Corrija o cadastro e emita o boleto dela em [[Cobrança > Boletos]].
+- Unidade que já tem boleto não ganha outro.
+- Os boletos aparecem em [[Cobrança > Boletos]], com Pix e PDF quando o banco oferece.
+
 ## Como usar
 
 Os botões no alto da tela são {{Preparar fatura}}.

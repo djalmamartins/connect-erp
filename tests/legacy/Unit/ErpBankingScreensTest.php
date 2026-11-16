@@ -55,7 +55,7 @@ final class ErpBankingScreensTest extends TestCase
     {
         foreach (['assets/js/erp.js', 'assets/erp.min.js'] as $file) {
             $js = $this->file('container/erp/connect/v1/' . $file);
-            foreach (['[data-erp-bank-charges]', "'/refresh'", "'/cancel'", "'/simulate-payment'", '[data-erp-bank-return]', 'readAsText', '[data-erp-bank-divergences]', "'/resolve'", 'X-CSRF-Token'] as $needle) {
+            foreach (['[data-erp-bank-charges]', "'/refresh'", "'/cancel'", "'/simulate-payment'", "'/bank-charges'", '[data-invoice-boletos]', '[data-erp-bank-return]', 'readAsText', '[data-erp-bank-divergences]', "'/resolve'", 'X-CSRF-Token'] as $needle) {
                 self::assertStringContainsString($needle, $js, "$file: $needle");
             }
         }

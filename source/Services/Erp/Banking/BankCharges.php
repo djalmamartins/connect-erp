@@ -106,6 +106,53 @@ final class BankCharges
     }
 
     /** Consulta no banco um título pendente (ou registrado) e grava a resposta. */
+    /**
+     * Boletos de uma fatura emitida de uma vez (pedido do Djalma, 16/11/2026): emite um boleto para cada conta a
+     * receber da fatura que ainda está em aberto e sem boleto, em lotes de $limit para caber no tempo de uma
+     * requisição (a tela repete até remaining = 0). Cada boleto é independente: recusado ou sem resposta não para
+     * os outros. Conta que já teve boleto recusado fica fora (corrigir o cadastro e emitir pela tela de boletos),
+     * para o lote não repetir a mesma recusa para sempre. Escopo pela fatura (fora = 404).
+     *
+     * @return array{processed:list<array>, counts:array{registered:int, pending:int, rejected:int}, remaining:int, skipped_rejected:int}
+     */
+    public function issueForInvoice(User $user, int $invoiceId, int $bankAccountId, int $limit = 20, ?\Closure $pause = null): array
+    {
+        $invoice = (new \Source\Services\Erp\Invoices($this->pdo, $this->scope))->find($user, $invoiceId);
+        if ($invoice['status'] !== 'issued') {
+            throw new DomainException('Só fatura emitida tem contas a receber para gerar boletos.');
+        }
+        $this->bankAccount($bankAccountId, (int)$invoice['condominium_id']);
+        $pending = function (bool $count, int $limit = 0) use ($invoiceId): mixed {
+            $sql = "FROM erp_invoice_items it JOIN erp_entries e ON e.invoice_item_id = it.id AND e.deleted_at IS NULL
+                WHERE it.invoice_id = :i AND e.paid_on IS NULL AND e.status = 'active'
+                  AND NOT EXISTS (SELECT 1 FROM erp_bank_charges c WHERE c.entry_id = e.id)";
+            $stmt = $this->pdo->prepare($count ? "SELECT COUNT(*) {$sql}" : "SELECT e.id, it.unit_label {$sql} ORDER BY it.unit_label, it.id LIMIT " . max(1, min($limit, 50)));
+            $stmt->execute(['i' => $invoiceId]);
+            return $count ? (int)$stmt->fetchColumn() : $stmt->fetchAll(PDO::FETCH_ASSOC);
+        };
+        $processed = [];
+        $counts = ['registered' => 0, 'pending' => 0, 'rejected' => 0];
+        foreach ($pending(false, $limit) as $i => $row) {
+            if ($i > 0 && $pause !== null) {
+                $pause();
+            }
+            $charge = $this->issue($user, (int)$row['id'], $bankAccountId);
+            $status = (string)$charge['status'];
+            if (isset($counts[$status])) {
+                $counts[$status]++;
+            }
+            $processed[] = ['entry_id' => (int)$row['id'], 'unit_label' => (string)$row['unit_label'], 'charge_id' => (int)$charge['id'],
+                'our_number' => (string)$charge['our_number'], 'status' => $status, 'status_label' => $charge['status_label'] ?? $status,
+                'error' => $charge['last_error'] ?? null];
+        }
+        $stmt = $this->pdo->prepare("SELECT COUNT(DISTINCT e.id) FROM erp_invoice_items it JOIN erp_entries e ON e.invoice_item_id = it.id AND e.deleted_at IS NULL
+            JOIN erp_bank_charges c ON c.entry_id = e.id
+            WHERE it.invoice_id = :i AND e.paid_on IS NULL AND e.status = 'active' AND c.status = 'rejected'
+              AND NOT EXISTS (SELECT 1 FROM erp_bank_charges a WHERE a.entry_id = e.id AND a.status IN ('pending','registered','paid'))");
+        $stmt->execute(['i' => $invoiceId]);
+        return ['processed' => $processed, 'counts' => $counts, 'remaining' => $pending(true), 'skipped_rejected' => (int)$stmt->fetchColumn()];
+    }
+
     public function refresh(User $user, int $chargeId): array
     {
         $charge = $this->row($user, $chargeId);

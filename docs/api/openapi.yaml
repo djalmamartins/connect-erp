@@ -1206,6 +1206,24 @@ paths:
         '409': { description: 'Não está em preparação, já emitida ou competência fechada' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Um lançamento não passou nas regras (fields)' }
+  /invoices/{id}/bank-charges:
+    post:
+      operationId: issueInvoiceBankCharges
+      summary: Gera os boletos de todas as contas a receber em aberto e sem boleto de uma fatura emitida, em lotes (erp.bank_charges.manage)
+      description: 'Cada boleto é independente; recusado não para os outros. Conta que já teve boleto (inclusive recusado) fica fora do lote. A tela repete até remaining = 0.'
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [bank_account_id], properties: { bank_account_id: { type: integer }, limit: { type: integer, minimum: 1, maximum: 50, default: 20 } } } } }
+      responses:
+        '200': { description: Lote processado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { processed: { type: array, items: { type: object, properties: { entry_id: { type: integer }, unit_label: { type: string }, charge_id: { type: integer }, our_number: { type: string }, status: { type: string }, status_label: { type: string }, error: { type: [string, 'null'] } } } }, counts: { type: object, properties: { registered: { type: integer }, pending: { type: integer }, rejected: { type: integer } } }, remaining: { type: integer }, skipped_rejected: { type: integer } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Fatura não emitida' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Conta bancária de outro condomínio ou inativa' }
   /invoices/{id}/cancel:
     post:
       operationId: cancelInvoice
