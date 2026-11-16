@@ -40,6 +40,7 @@ No alto do painel aparece **Unidade vazia** ou **Unidade ocupada**, conforme a m
 1. No bloco **Pessoas**, clique no nome do proprietário, inquilino ou morador.
 2. Abre a ficha com CPF/CNPJ, telefone, e-mail, início e fim do vínculo, se recebe boleto e comunicados por e-mail, o endereço da unidade, as outras unidades da pessoa nos seus condomínios e as observações.
 3. A ficha é só para consulta: nada pode ser alterado nela. Para corrigir um dado, clique em {{Abrir cadastro para alterar}}.
+4. Na mesma ficha, {{Termo de entrada}} e {{Termo de saída}} abrem o termo da pessoa pronto para imprimir e assinar, com o nome, o CPF/CNPJ, a unidade e a data já preenchidos.
 
 > Clique no telefone ou no e-mail para ligar ou escrever direto.
 

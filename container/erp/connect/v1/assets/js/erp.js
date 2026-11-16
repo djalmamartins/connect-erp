@@ -3028,6 +3028,22 @@
     refresh();
   });
 
+  /* Termo de entrada/saída (ADR 0311): clicar numa palavra-chave insere no ponto do cursor do texto. */
+  $$('form[data-erp-move-term]').forEach(function (form) {
+    var area = form.elements.body;
+    if (!area) return;
+    $$('[data-move-term-keyword]', form).forEach(function (button) {
+      button.addEventListener('click', function () {
+        var word = button.getAttribute('data-move-term-keyword');
+        var start = area.selectionStart != null ? area.selectionStart : area.value.length;
+        var end = area.selectionEnd != null ? area.selectionEnd : start;
+        area.value = area.value.slice(0, start) + word + area.value.slice(end);
+        area.focus();
+        area.selectionStart = area.selectionEnd = start + word.length;
+      });
+    });
+  });
+
   /* Fração ideal e área em grade (AP-167, ADR 0140): divide e grava pela API /api/v1/unit-measures. */
   $$('[data-erp-unit-measures]').forEach(function (root) {
     var api = root.getAttribute('data-api');

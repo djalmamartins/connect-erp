@@ -42,6 +42,7 @@ ob_start(); ?>
     <?php // AP-006: cadastro rápido e fração ideal/área em grade (ADR 0140).
     if (($definition['page'] ?? '') === 'AP-006'): ?>
         <a class="erp-btn" href="<?= erp_url('/configuracoes/fracao-ideal') ?>">Fração ideal e área</a>
+        <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url(\Source\Controllers\Erp\Connect\UnitMoveTermScreen::ROUTE) ?>"><?= $icon('file', 'erp-icon--sm') ?>Termo de entrada/saída</a><?php endif; ?>
         <?php if ($canManage): ?><a class="erp-btn" href="<?= erp_url('/condominios/unidades/cadastro-rapido') ?>"><?= $icon('sparkle', 'erp-icon--sm') ?>Cadastro rápido</a><?php endif; ?>
     <?php endif; ?>
     <?php if ($canManage): ?><a class="erp-btn erp-btn--primary" href="<?= erp_url($route . '/novo') ?>"><?= $icon('plus', 'erp-icon--sm') ?><?= $this->e($article . ' ' . $definition['entity']) ?></a><?php endif; ?>

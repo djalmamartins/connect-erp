@@ -1443,7 +1443,7 @@ $assert(str_contains($html, 'data-erp-unit-panel') && str_contains($html, 'R$ 82
 $assert(str_contains($html, 'data-erp-modal-open="person-card-1"') && str_contains($html, '<dialog class="erp-modal erp-modal--wide erp-person-card" id="person-card-1"')
     && str_contains($html, '529.982.247-25') && str_contains($html, 'href="tel:+5511999990000"') && str_contains($html, '(11) 99999-0000') && str_contains($html, '01/03/2024')
     && str_contains($html, 'Sala 7') && str_contains($html, 'Edifício Beta') && str_contains($html, 'Prefere &lt;WhatsApp&gt;') && str_contains($html, 'Rua das Flores, 10')
-    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
+    && str_contains($html, '/cadastros/proprietarios-e-inquilinos/1') && str_contains($html, 'data-move-term-link="saida"') && str_contains($html, 'pessoa=1&amp;tipo=entrada') && !preg_match('/<dialog[^>]*person-card-1.*?<(input|select|textarea|form)\b.*?<\/dialog>/s', $html), 'AP-003: ficha da pessoa somente leitura');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => null]));
 $assert(str_contains($html, 'Escolha uma unidade') && !str_contains($html, 'data-erp-unit-panel'), 'AP-003: sem unidade escolhida pede a escolha');
 $html = $agreementPage('AP-003', 'pages/condominiums/unit-panel', $unitData(['unitPanel' => null, 'unitPanelSelected' => 99, 'unitPanelError' => 'Unidade não encontrada no seu escopo de condomínios.']));
@@ -1480,6 +1480,24 @@ foreach ([['canManage' => false], ['filters' => ['condominium_id' => null] + $un
         'filters' => $unitFilters, 'filterField' => 'type', 'condominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'canManage' => true, 'flash' => null], 'Unidades'));
     $assert(!str_contains($html, 'data-unit-bulk') && !str_contains($html, 'unit-bulk-settings'), 'AP-006: sem permissão ou sem condomínio, sem configuração em massa');
 }
+
+// Termo de entrada e de saída (ADR 0311): edição com palavras-chave e termo para imprimir.
+$termCurrent = ['condominium_id' => 7, 'kind' => 'saida', 'body' => "Texto <b>@morador</b>", 'source' => 'general', 'updated_at' => null];
+$html = $render('pages/condominiums/move-terms', $layoutData->invoke($panel, $user, 'AP-006', ['termCondominiums' => [['id' => 7, 'name' => 'Residencial Exemplo']], 'termCondominium' => 7,
+    'termKind' => 'saida', 'termGlobal' => true, 'termCurrent' => $termCurrent, 'termDraft' => null, 'termError' => null, 'flash' => null], 'Termo de entrada/saída'));
+$assert(str_contains($html, 'data-erp-move-term') && str_contains($html, '<option value="geral">Geral (Connect)</option>') && str_contains($html, '<option value="saida" selected>')
+    && str_contains($html, 'Texto &lt;b&gt;@morador&lt;/b&gt;</textarea>') && str_contains($html, 'data-move-term-keyword="@linhaAssinatura"') && str_contains($html, 'usa o texto geral da Connect')
+    && str_contains($html, 'name="condominium_id" value="7"'), 'AP-006: texto do termo de entrada/saída (ADR 0311)');
+$html = $render('pages/condominiums/move-terms', $layoutData->invoke($panel, $user, 'AP-006', ['termCondominiums' => [], 'termCondominium' => null,
+    'termKind' => 'entrada', 'termGlobal' => false, 'termCurrent' => null, 'termDraft' => null, 'termError' => null, 'flash' => null], 'Termo de entrada/saída'));
+$assert(!str_contains($html, 'data-erp-move-term') && !str_contains($html, 'Geral (Connect)</option>') && str_contains($html, 'Escolha um condomínio'), 'AP-006: termo sem condomínio e sem acesso geral');
+$html = $render('pages/condominiums/move-term', $layoutData->invoke($panel, $user, 'AP-006', ['moveTerm' => ['kind' => 'entrada', 'title' => 'Termo de entrada', 'source' => 'default',
+    'html' => Source\Services\Erp\UnitMoveTerms::fill("Eu, @morador.\n\n@linhaAssinatura", ['morador' => 'Ana <i>']), 'condominium' => 'Residencial <Exemplo>', 'unit' => '101', 'person' => 'Ana', 'created_on' => '2026-11-16'],
+    'moveTermError' => null, 'moveTermUnit' => 5], 'Termo de entrada'));
+$assert(str_contains($html, 'data-erp-print') && str_contains($html, '<p>Eu, Ana &lt;i&gt;.</p>') && str_contains($html, 'erp-move-term__sign') && str_contains($html, 'Residencial &lt;Exemplo&gt;')
+    && str_contains($html, 'painel-da-unidade?unidade=5'), 'AP-006: termo de entrada para imprimir');
+$html = $render('pages/condominiums/move-term', $layoutData->invoke($panel, $user, 'AP-006', ['moveTerm' => null, 'moveTermError' => 'Unidade não encontrada no seu acesso.', 'moveTermUnit' => null], 'Termo'));
+$assert(!str_contains($html, 'data-erp-print') && str_contains($html, 'Unidade não encontrada no seu acesso.'), 'AP-006: termo fora do escopo');
 
 // Cadastro rápido de unidades e fração ideal/área em grade (ADR 0140).
 $html = $render('pages/condominiums/unit-batch', $layoutData->invoke($panel, $user, 'AP-006', ['batchCondominiums' => [['id' => 7, 'name' => 'Residencial <Exemplo>']], 'batchSelected' => 7, 'batchTypes' => Source\Services\Erp\UnitBatch::TYPES], 'Cadastro rápido de unidades'));
