@@ -47,7 +47,7 @@ final class ErpSettings
         'app.collection_cooldown_days' => ['page' => 'AP-155', 'group' => 'Notificações do aplicativo', 'label' => 'Dias entre avisos de cobrança da mesma unidade', 'type' => 'int', 'default' => 7, 'scope' => 'global', 'min' => 1, 'max' => 90],
         // ADR 0402: chave geral das notas fiscais (NFS-e). Desligada, nenhum pedido de nota é aceito e nada é emitido.
         'nfse.enabled' => ['page' => 'AP-157', 'group' => 'Financeiro', 'label' => 'Notas fiscais (NFS-e) ligadas: permitir solicitar e emitir notas', 'type' => 'bool', 'default' => false, 'scope' => 'global'],
-        // ADR 0318: textos da carta de cobrança impressa. A aba externa vale para todos; o aviso da parte interna, por condomínio.
+        // ADR 0319: textos da carta de cobrança impressa. A aba externa vale para todos; o aviso da parte interna, por condomínio.
         // Marcação simples nas linhas: "# " subtítulo, "! " destaque (telefone), "- " item de lista, "~ " letra miúda.
         'letter.flap_left_title' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (esquerda): título', 'type' => 'text', 'default' => 'Nossos canais de atendimento', 'scope' => 'global', 'max' => 60],
         'letter.flap_left_body' => ['page' => 'AP-157', 'group' => 'Carta de cobrança', 'label' => 'Carta de cobrança · aba externa (esquerda): texto', 'type' => 'textarea', 'scope' => 'global', 'max' => 900,

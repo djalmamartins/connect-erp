@@ -26,7 +26,7 @@ use Source\Support\QrCode;
  *    demonstrativo do mês anterior (o mesmo da prestação de contas, ADR 0314), resumo das contas bancárias,
  *    inadimplência, área de avisos e a ficha do boleto com linha digitável e código de barras (ITF-25);
  *
- * Ajustes de 16/11 à tarde (ADR 0318): nunca mais que as duas folhas; o demonstrativo é sempre um resumo (receitas em
+ * Ajustes de 16/11 à tarde (ADR 0319): nunca mais que as duas folhas; o demonstrativo é sempre um resumo (receitas em
  * cotas por conta, despesas por conta, encolhendo para grupos e totais quando não cabe), bancos, fundos e
  * inadimplência à direita; textos da aba externa e da área de avisos vêm dos parâmetros (ErpSettings, letter.*).
  *
