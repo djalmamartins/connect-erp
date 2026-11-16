@@ -30,6 +30,9 @@ final class AccountabilityDocument
 {
     /** Meses na lista da tela. */
     public const MONTHS = 12;
+    /** Contas do plano usadas pelas colunas do relatório de lançamentos (ADR 0167 e 0169). */
+    public const RESERVE_CODE = '8.2';
+    public const SURPLUS_CODE = '9.1';
     public const COUNCIL_ROLES = ['fiscal', 'consultivo', 'subsindico'];
 
     private PDO $pdo;
@@ -172,6 +175,7 @@ final class AccountabilityDocument
                 $expenses[] = $line + ['annexes' => $annexesByLine[(int)$line['seq']] ?? []];
             }
         }
+        $expenses = $this->withFunds($condominiumId, $expenses);
         $place = implode(' / ', array_filter([trim((string)($condo['city'] ?? '')), trim((string)($condo['district'] ?? ''))]));
         return [
             'condominium' => $book['condominium'] + [
@@ -185,6 +189,8 @@ final class AccountabilityDocument
             'banks' => $book['banks'],
             'expenses' => $expenses,
             'expense_total_cents' => array_sum(array_column($expenses, 'amount_cents')),
+            'surplus_total_cents' => array_sum(array_column($expenses, 'surplus_cents')),
+            'reserve_total_cents' => array_sum(array_column($expenses, 'reserve_cents')),
             'missing_proof' => count($book['missing_proof']),
         ];
     }
@@ -212,6 +218,47 @@ final class AccountabilityDocument
         $dompdf->render();
         ListDocument::footer($dompdf, false);
         return (string)$dompdf->output();
+    }
+
+    /**
+     * Quanto de cada despesa saiu das sobras de rateio e do fundo de reserva (revisão de 15/11, colunas do PDF de
+     * outubro, ADR 0320). Vem dos lançamentos patrimoniais ligados à despesa (ADR 0169): "usar o fundo" debita 8.2
+     * Fundo de reserva (ou subconta) e "usar as sobras" debita 9.1 Resultados acumulados. O estorno credita a mesma
+     * conta, então original e estorno se anulam.
+     * @param list<array{linked_entry_id:int|string, debit_code:string, credit_code:string, amount_cents:int|string}> $rows
+     * @return array<int, array{surplus_cents:int, reserve_cents:int}> por despesa
+     */
+    public static function fundsByExpense(array $rows): array
+    {
+        $in = static fn (string $code, string $root): bool => $code === $root || str_starts_with($code, $root . '.');
+        $out = [];
+        foreach ($rows as $row) {
+            $entry = (int)$row['linked_entry_id'];
+            $amount = (int)$row['amount_cents'];
+            $out[$entry] ??= ['surplus_cents' => 0, 'reserve_cents' => 0];
+            foreach (['reserve_cents' => self::RESERVE_CODE, 'surplus_cents' => self::SURPLUS_CODE] as $key => $root) {
+                $out[$entry][$key] += ($in((string)$row['debit_code'], $root) ? $amount : 0) - ($in((string)$row['credit_code'], $root) ? $amount : 0);
+            }
+        }
+        return $out;
+    }
+
+    /** @param list<array> $expenses @return list<array> as despesas com surplus_cents e reserve_cents */
+    private function withFunds(int $condominiumId, array $expenses): array
+    {
+        $ids = array_values(array_filter(array_map(static fn (array $l): int => (int)($l['entry_id'] ?? 0), $expenses)));
+        $funds = [];
+        if ($ids !== []) {
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->pdo->prepare("SELECT pe.linked_entry_id, d.code AS debit_code, c.code AS credit_code, pe.amount_cents
+                FROM erp_patrimonial_entries pe
+                JOIN erp_chart_accounts d ON d.id = pe.debit_account_id
+                JOIN erp_chart_accounts c ON c.id = pe.credit_account_id
+                WHERE pe.condominium_id = ? AND pe.linked_entry_id IN ({$marks})");
+            $stmt->execute(array_merge([$condominiumId], $ids));
+            $funds = self::fundsByExpense($stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+        return array_map(static fn (array $l): array => $l + ($funds[(int)($l['entry_id'] ?? 0)] ?? ['surplus_cents' => 0, 'reserve_cents' => 0]), $expenses);
     }
 
     /** Nome do arquivo (regra pura): prestacao-de-contas-<condomínio>-<AAAA-MM>.pdf */

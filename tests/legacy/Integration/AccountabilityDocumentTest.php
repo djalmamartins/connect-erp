@@ -72,6 +72,23 @@ final class AccountabilityDocumentTest extends TestCase
         imagepng($image, $tmp);
         $attachments->attach($this->admin, $water, ['name' => 'conta-copasa.png', 'tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK], 'conta');
 
+        // Colunas Sobras de rateio e Fundo de reserva (ADR 0320): lançamentos patrimoniais ligados à despesa.
+        $patrimonial = function (string $code, string $nature): int {
+            $id = (int)$this->pdo->query("SELECT id FROM erp_chart_accounts WHERE code = '{$code}' AND deleted_at IS NULL ORDER BY id LIMIT 1")->fetchColumn();
+            if ($id > 0) {
+                return $id;
+            }
+            $this->pdo->prepare("INSERT INTO erp_chart_accounts (code, name, nature, kind) VALUES (?, ?, ?, 'analitica')")->execute([$code, 'Conta ' . $code, $nature]);
+            return (int)$this->pdo->lastInsertId();
+        };
+        [$reserve, $surplus, $result] = [$patrimonial('8.2', 'liability'), $patrimonial('9.1', 'equity'), $patrimonial('9.2', 'equity')];
+        $use = $this->pdo->prepare("INSERT INTO erp_patrimonial_entries (condominium_id, entry_date, description, amount_cents, debit_account_id, credit_account_id, linked_entry_id)
+            VALUES (?, '2026-10-13', 'Uso', ?, ?, ?, ?)");
+        $use->execute([$this->alpha, 50000, $reserve, $result, $water]);
+        $use->execute([$this->alpha, 10000, $surplus, $result, $water]);
+        $use->execute([$this->alpha, 7000, $reserve, $result, $water]);
+        $use->execute([$this->alpha, 7000, $result, $reserve, $water]);   // estorno: anula o de 70,00
+
         $theme = dirname(__DIR__, 3) . '/container/erp/connect/v1';
         $service = new AccountabilityDocument($this->pdo, null, $theme, new CashBookDocument($attachments, $theme));
         $doc = $service->build($this->admin, $this->alpha, '2026-10');
@@ -85,6 +102,8 @@ final class AccountabilityDocumentTest extends TestCase
         self::assertSame(['Água e esgoto', 'Energia elétrica'], array_column($demo['despesa']['groups'][0]['accounts'], 'name'));
         self::assertSame(['Cemig', 'Copasa'], array_column($doc['expenses'], 'description'), 'Despesas pagas no mês, pela data.');
         self::assertCount(1, $doc['expenses'][1]['annexes']);
+        self::assertSame([[0, 0], [10000, 50000]], array_map(static fn (array $l): array => [$l['surplus_cents'], $l['reserve_cents']], $doc['expenses']));
+        self::assertSame([10000, 50000], [$doc['surplus_total_cents'], $doc['reserve_total_cents']]);
 
         $hidden = $service->build($this->admin, $this->alpha, '2026-10', true);
         self::assertSame('Taxa de condomínio', $hidden['demonstrative']['receita']['groups'][0]['accounts'][0]['items'][0]['description'], 'Ocultar unidade.');
@@ -93,7 +112,7 @@ final class AccountabilityDocumentTest extends TestCase
         $html = $service->html($doc);
         foreach (['PRESTAÇÃO DE CONTAS', 'TERMO DE ABERTURA', 'Condomínio do Bloco 10', '08.922.856/0001-26', 'PARECER SOBRE PRESTAÇÃO DE CONTAS', 'Síndico(a): Ana Síndica',
             'Conselheiro(a): Bruno Conselheiro', 'Relatório demonstrativo financeiro de contas de 01/10/2026 até 31/10/2026', 'Total Grupo', '2.008,22', 'RESUMO DAS CONTAS',
-            'Banco conta corrente', 'Relatório de lançamentos de 01/10/2026 até 31/10/2026', 'conta-copasa.png', 'CNPJ: 43.346.552/0001-69'] as $needle) {
+            'Banco conta corrente', 'Relatório de lançamentos de 01/10/2026 até 31/10/2026', 'Sobras de Rateio (R$)', 'Fundo de Reserva (R$)', '500,00', 'conta-copasa.png', 'CNPJ: 43.346.552/0001-69'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
         }
         self::assertStringNotContainsString('Cemig de novembro', $html);
