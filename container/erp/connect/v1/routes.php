@@ -77,6 +77,9 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/prestacao-de-contas/livro-caixa/pdf", "CashBookScreens:pdf");
     $route->get("/prestacao-de-contas/livro-caixa/pacote", "CashBookScreens:package");
     $route->get("/prestacao-de-contas/livro-caixa/imprimir", "CashBookScreens:printView");
+    // Prestação de contas no padrão do PDF de outubro (revisão de 15/11 item 21, ADR 0314).
+    $route->get("/prestacao-de-contas/prestacao-de-contas/documento", "AccountabilityScreens:document");
+    $route->get("/prestacao-de-contas/prestacao-de-contas/pdf", "AccountabilityScreens:documentPdf");
     // Link público da prestação de contas para os moradores (ADR 0301): gerar, enviar e revogar pelo livro caixa.
     $route->post("/prestacao-de-contas/livro-caixa/link", "CashBookScreens:generateLink");
     $route->post("/prestacao-de-contas/livro-caixa/link/{id}/enviar", "CashBookScreens:sendLink");

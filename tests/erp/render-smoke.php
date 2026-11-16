@@ -1282,6 +1282,16 @@ $assert(str_contains($html, 'Outubro de 2026') && str_contains($html, 'Mês em a
     && str_contains($html, 'erp-report-synthetic') && !str_contains($html, 'Interface proposta'), 'AP-101: pacote do mês');
 $html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityNeedsCondo' => true, 'accountability' => null] + $pcData);
 $assert(str_contains($html, 'Escolha um condomínio') && !str_contains($html, 'name="mes"'), 'AP-101: pede o condomínio');
+// Lista dos meses e documento no padrão do PDF de outubro (ADR 0314, item 21) e ocultar unidade (item 19).
+$html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityMonths' => [['competence' => '2026-11', 'label' => 'novembro de 2026', 'status' => 'open', 'payments' => 3],
+    ['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
+$assert(str_contains($html, 'data-accountability-months') && str_contains($html, 'Novembro de 2026') && str_contains($html, '>Fechado</span>') && str_contains($html, 'aria-current="true"')
+    && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/documento?mes=2026-10') && str_contains($html, '/prestacao-de-contas/prestacao-de-contas/pdf?mes=2026-10')
+    && str_contains($html, 'Visualizar documento') && str_contains($html, 'Baixar PDF') && str_contains($html, 'name="ocultar_unidade"') && str_contains($html, 'Apto &lt;101&gt;'), 'AP-101: meses, documento e PDF (ADR 0314)');
+$_GET['ocultar_unidade'] = '1';
+$html = $agreementPage('AP-101', 'pages/reports/accountability', ['accountabilityMonths' => [['competence' => '2026-10', 'label' => 'outubro de 2026', 'status' => 'closed', 'payments' => 12]]] + $pcData);
+unset($_GET['ocultar_unidade']);
+$assert(!str_contains($html, 'Apto &lt;101&gt;') && str_contains($html, 'pdf?mes=2026-10&amp;ocultar_unidade=1') && str_contains($html, 'name="ocultar_unidade" value="1" checked'), 'AP-101: ocultar unidade (ADR 0314)');
 $assert($PC::month('2026-13', '2026-11-10') === '2026-10' && $PC::month('2026-11', '2026-11-10') === '2026-11' && $PC::month('2026-12', '2026-11-10') === '2026-10'
     && $PC::month(null, '2026-01-05') === '2025-12' && $PC::monthLabel('2026-03') === 'Março de 2026', 'prestação de contas: mês');
 

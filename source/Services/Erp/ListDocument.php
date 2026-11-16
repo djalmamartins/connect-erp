@@ -290,7 +290,7 @@ final class ListDocument
     }
 
     /** @return array{name:string, document:string, address:string, site:string} */
-    private static function issuer(): array
+    public static function issuer(): array
     {
         $issuer = self::ISSUER;
         $street = defined('CONF_SITE_ADDR_STREET') ? trim((string)CONF_SITE_ADDR_STREET) : '';
@@ -308,7 +308,7 @@ final class ListDocument
         return $issuer;
     }
 
-    private static function logo(): string
+    public static function logo(): string
     {
         $path = dirname(__DIR__, 3) . '/container/web/default/v1/assets/images/logo-connect-condominios.svg';
         return is_file($path) ? 'data:image/svg+xml;base64,' . base64_encode((string)file_get_contents($path)) : '';

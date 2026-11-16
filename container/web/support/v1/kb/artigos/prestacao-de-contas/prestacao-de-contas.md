@@ -42,6 +42,20 @@ legenda: Tela Prestação de contas
 
 Marque **Ocultar unidade** nos filtros e clique em {{Gerar}} para mostrar os valores sem dizer qual unidade pagou ou deve, por exemplo para mandar ao grupo dos moradores. A coluna Unidade sai da lista de inadimplência, na tela e na impressão.
 
+## O documento da prestação de contas (PDF)
+
+A tabela **Prestações de contas dos últimos meses** lista os 12 últimos meses do condomínio, com a situação do fechamento e quantos pagamentos houve. Em cada mês, **Visualizar** abre o documento no navegador (para conferir e imprimir) e **PDF** baixa o arquivo. No alto da tela, {{Visualizar documento}} e {{Baixar PDF}} fazem o mesmo para o mês escolhido.
+
+O documento segue o padrão da Connect (cabeçalho com a Connect, o condomínio e a data; rodapé com o site e o número da página) e traz, cada parte numa página:
+
+1. **Capa** com o condomínio e o período.
+2. **Termo de abertura** com a razão social, o endereço, o município e o CNPJ do condomínio.
+3. **Parecer do síndico e do conselho**, com os nomes do cadastro [[Cadastros > Síndico e conselho]] e as linhas para assinar.
+4. **Demonstrativo financeiro**: receitas e despesas pagas no mês por grupo e conta, com o total de cada grupo, o resumo (receitas, despesas e resultado) e o **resumo das contas** bancárias (saldo anterior, entradas, saídas e saldo atual).
+5. **Relatório de lançamentos**: as despesas pagas no mês e, para cada uma, a linha do lançamento seguida dos comprovantes anexados. Imagens entram dentro do PDF; anexo em PDF aparece citado (ele fica no pacote do livro caixa).
+
+Com **Ocultar unidade** marcado, o documento também sai sem a unidade nas receitas.
+
 ## Quem pode usar
 
 Exige as permissões **erp.entries.view** e **erp.chart.view**. Cada pessoa só vê os condomínios vinculados à própria conta.

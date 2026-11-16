@@ -1,6 +1,6 @@
-# 0314 — Revisão de 15/11, etapa 5: download em PDF e Excel, ocultar unidade e inadimplentes com data inicial
+# 0314 — Revisão de 15/11, etapa 5: download em PDF e Excel, ocultar unidade, inadimplentes com data inicial e prestação de contas
 
-- Status: Aceito (parte 1, item 18; parte 2, item 20; parte 3, item 19)
+- Status: Aceito (parte 1, item 18; parte 2, item 20; parte 3, itens 19 e 21)
 - Data: 16/11/2026
 - Issue: #544 (revisão de 15/11, etapa 5)
 - Relacionadas: ADR 0081 (CSV dos relatórios), 0087 (limite de exportação, B5), 0174 (PDF com dompdf), 0310 (itens por página)
@@ -51,6 +51,29 @@ arquivo ficar igual ao modelo quando impresso.
    caixa não aparece em relatórios que são da unidade (rateio, inadimplentes por unidade, lista de unidades), onde
    tirar a unidade deixaria a lista sem sentido. A prestação de contas nova (item 21) leva a mesma opção.
 
+8. **Prestação de contas igual ao PDF de outubro** (parte 3, item 21): na tela Prestação de contas (AP-101):
+   - **lista dos meses**: os 12 últimos meses, com a situação do fechamento, quantos pagamentos houve e os botões
+     Visualizar e PDF;
+   - **visualização**: `GET /prestacao-de-contas/prestacao-de-contas/documento?mes=AAAA-MM` abre o documento no
+     navegador, para conferir e imprimir;
+   - **PDF**: `.../pdf?mes=AAAA-MM` baixa o arquivo (dompdf, A4 deitado). Cada parte começa numa página nova, com o
+     cabeçalho do modelo 3. As partes são capa, termo de abertura, parecer do síndico e conselho, demonstrativo e
+     relatório de lançamentos.
+   - O **termo de abertura** usa os dados do condomínio.
+   - O **parecer** traz o síndico e os conselheiros fiscal, consultivo e subsíndico ativos no mês (cadastro Síndico e
+     conselho), com linhas para assinar.
+   - O **demonstrativo** mostra as receitas e despesas pagas no mês por grupo (a conta-pai do plano) e conta, com
+     total do grupo e total geral. Depois vêm o resumo e o resumo das contas bancárias.
+   - O **relatório de lançamentos** lista as despesas pagas no mês. Cada uma vem depois numa página, com a linha do
+     lançamento e os comprovantes: imagem dentro do PDF, e anexo em PDF citado, porque o dompdf não junta PDFs.
+   - Tudo sai do livro caixa do mês (`CashBook`, ADR 0174). Serviço `AccountabilityDocument`, só leitura.
+   - Segurança: mesma permissão da tela (erp.entries.view e erp.chart.view), condomínio da barra, limite de 30 por 10
+     minutos e auditoria (`export`, `accountability-document`).
+   - Ocultar unidade tira a unidade das receitas do demonstrativo.
+   - PENDENTE: as colunas "Sobras de rateio" e "Fundo de reserva" do relatório de lançamentos do modelo (o sistema não
+     separa esses valores por despesa) e juntar os anexos em PDF dentro do mesmo arquivo.
+   - INFERIDO: "Lançamento" na linha do comprovante é o vencimento.
+
 ## Testes
 
 - `tests/legacy/Unit/ListDocumentTest.php`: formato, título, nome do arquivo, célula protegida e número; PDF com o
@@ -64,3 +87,6 @@ arquivo ficar igual ao modelo quando impresso.
 - `ErpCollectionReportScreensTest`: CSV com `from`. Render smoke: campo opcional e "vencidas desde" no cabeçalho.
 - `ListDocumentTest`: arquivo sem a coluna Unidade com `hide_unit`. `ErpReportScreensTest`: `hide_unit=1` no CSV, colunas
   da tela sem a unidade e caixa só nos demonstrativos. Render smoke: caixa marcada, sem a coluna e lista de unidades sem a caixa.
+- `tests/legacy/Integration/AccountabilityDocumentTest.php`: grupos e contas do demonstrativo, totais, receita com a
+  unidade e sem ela (ocultar), síndico e conselho, despesas do mês com o comprovante dentro do PDF, as partes do
+  documento, a lista dos meses e o escopo. Render smoke: lista dos meses, Visualizar, PDF e ocultar unidade na AP-101.
