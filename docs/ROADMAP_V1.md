@@ -111,7 +111,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
   não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar
   nos PDFs grandes e nas importações, medir no piloto. **Feito em 17/11 (ADR 0362):** o `deploy-check` avisa com
-  `memory_limit` abaixo de 256M ou envio de arquivo abaixo de 50M; a medição real continua no piloto.
+  `memory_limit` abaixo de 256M ou envio de arquivo abaixo de 50M; a medição real continua no piloto. **ADR 0363:** envio
+  acima do `post_max_size` avisa o limite (413 na API, volta com aviso na tela) em vez de "sessão expirada".
 
 ### 3.5 Backup e recuperação
 - O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,

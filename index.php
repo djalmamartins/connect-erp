@@ -26,6 +26,8 @@ if (talk_host() && !str_starts_with((string)parse_url((string)($_SERVER['REQUEST
     require moves_container_path('talk', 'connect') . '/app.php';
     exit;
 }
+// Envio acima do post_max_size (ADR 0363): o PHP descarta o corpo inteiro; avisa o limite em vez de "sessão expirada".
+\Source\Support\OversizedPost::handle();
 $route = new Router(url(), ":");
 
 $route->namespace(null);
