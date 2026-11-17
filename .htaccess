@@ -16,6 +16,17 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
 RewriteRule ^storage/(?:backups|cache|cert|database|logs|private|sessions|temp|tmp)(?:/|$) - [F,L,NC]
 
+# Defesa extra para quando a pasta pública do subdomínio é a própria pasta do projeto (ADR 0338):
+# pastas e arquivos ocultos (.git, .local com os backups do banco, .github, .claude), menos o .well-known do SSL;
+# pastas de ferramentas, documentação, migrations e apps; e o código dos temas (só os assets são públicos).
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule (?:^|/)\. - [F,L]
+RewriteRule ^(?:apps|database|docker|docs|tools)(?:/|$) - [F,L,NC]
+RewriteRule ^container/(?!(?:.*/)?assets/).*\.(?:php|sql|md|json|ya?ml|sh|lock|txt)$ - [F,L,NC]
+<FilesMatch "\.(?:sql|gz|sh|ya?ml|lock|py|log|bak)$|^(?:CLAUDE\.md|compose\.yaml)$">
+    Require all denied
+</FilesMatch>
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]

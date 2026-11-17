@@ -26,6 +26,9 @@ Se faltar extensão, trocar no hPanel (Avançado > Configuração do PHP). Anota
 
 Todos apontam para o mesmo front controller do sistema; o roteamento por host é o mesmo do laboratório
 (`*.connect.lab`). SSL grátis do hPanel em todos. O código fica **fora** de `public_html`; só a pasta pública é exposta.
+Como o `index.php` e os assets moram na raiz do projeto, a pasta pública costuma ser a própria pasta do projeto: o
+`.htaccess` barra `.git`, `.local` (backups), `tools`, `docs`, `database` e o código dos temas (ADR 0338). Depois de
+implantar, conferir: `curl -I https://erp.connectcondominios.com.br/.git/config` precisa responder 403.
 
 ## 3. Primeira implantação
 
