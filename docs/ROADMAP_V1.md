@@ -152,7 +152,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **App do morador em 17/11 (ADR 0342):** 11 rotas, nada da unidade vizinha nem de outro condomínio.
   **Imobiliárias em 17/11 (ADR 0343):** viam e respondiam os chamados do condomínio; corrigido, só os próprios.
   **XSS em 17/11 (ADR 0344):** 270 telas do ERP renderizadas com texto com HTML em todos os campos; nada sai cru.
-  Pendente: XSS no que o navegador monta a partir da API (JavaScript), Help Desk, site e app do morador.
+  **Help Desk e JavaScript do ERP em 17/11 (ADR 0345):** fila e ficha do chamado escapam tudo; `erp.js` usa `esc()` em todo texto da API.
+  Pendente: XSS no site, na Central de Ajuda e no app web do morador.
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.
