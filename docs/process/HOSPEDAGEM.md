@@ -36,7 +36,7 @@ implantar, conferir com `php tools/hosting/smoke-http.php --domain=connectcondom
 ```bash
 cd ~ && git clone https://github.com/djalmamartins/connect-erp.git connect && cd connect
 composer install --no-dev --optimize-autoloader
-cp .env.example .env && chmod 600 .env     # preencher: APP_ENV=production, APP_URL, MOVESOS_DB_*, ERP_DEMO_DATA=false
+cp .env.production.example .env && chmod 600 .env   # preencher tudo marcado com <...> (ADR 0357)
 php tools/bank-credentials.php gerar-chave # CONNECT_BANK_VAULT_KEY nova (nunca a do laboratório)
 php service/commands/deploy-check.php
 composer db:migrate
