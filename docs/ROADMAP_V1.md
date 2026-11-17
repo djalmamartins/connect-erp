@@ -150,7 +150,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **IDOR nas 27 rotas GET com id em 17/11 (ADR 0340):** nenhum registro de outro condomínio entregue; teste de integração cobre as futuras.
   **IDOR nas 52 ações que alteram e downloads em 17/11 (ADR 0341):** todas recusam o outro condomínio.
   **App do morador em 17/11 (ADR 0342):** 11 rotas, nada da unidade vizinha nem de outro condomínio.
-  Pendente: acesso das imobiliárias parceiras; XSS nas telas.
+  **Imobiliárias em 17/11 (ADR 0343):** viam e respondiam os chamados do condomínio; corrigido, só os próprios.
+  Pendente: XSS nas telas.
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.

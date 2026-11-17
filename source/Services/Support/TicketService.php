@@ -217,7 +217,7 @@ final class TicketService
      */
     public function listFor(User $user, array $filters = [], int $limit = 100): array
     {
-        $ids = $this->scope()->allowedIds($user);
+        $ids = self::seesCondominium($user) ? $this->scope()->allowedIds($user) : [];
         $terms = [];
         $params = ['me' => (int)$user->id, 'me2' => (int)$user->id];
         $visible = ['t.created_by = :me', 't.requester_id = :me2'];
@@ -278,6 +278,16 @@ final class TicketService
     }
 
     /** Um chamado visível para o usuário (mesma regra de listFor), ou null. */
+    /**
+     * Ver os chamados do condomínio (não só os próprios). A imobiliária parceira tem erp.access e acesso a condomínios, mas a
+     * consulta dela é só a tela própria com dados mascarados (ADR 0090); chamados trazem nomes, conversas e anexos, então ela
+     * vê só os que ela mesma abriu (ADR 0343).
+     */
+    public static function seesCondominium(User $user): bool
+    {
+        return (string)(Access::role($user)->slug ?? '') !== \Source\Services\Erp\PartnerAccess::PARTNER_ROLE;
+    }
+
     public function findFor(User $user, int $id): ?array
     {
         $stmt = $this->pdo()->prepare(self::SELECT . ' WHERE t.id = :id');
@@ -287,7 +297,7 @@ final class TicketService
             return null;
         }
         $mine = (int)($row['created_by'] ?? 0) === (int)$user->id || (int)($row['requester_id'] ?? 0) === (int)$user->id;
-        if (!$mine && ($row['condominium_id'] === null || !$this->scope()->canAccess($user, (int)$row['condominium_id']))) {
+        if (!$mine && ($row['condominium_id'] === null || !self::seesCondominium($user) || !$this->scope()->canAccess($user, (int)$row['condominium_id']))) {
             return null;
         }
         return self::present($row);

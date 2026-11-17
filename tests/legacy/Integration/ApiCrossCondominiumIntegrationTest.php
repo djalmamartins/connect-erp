@@ -214,6 +214,52 @@ final class ApiCrossCondominiumIntegrationTest extends TestCase
         self::assertSame([], $unproven, 'Controle positivo falhou: a fixture não prova a recusa nessas rotas.');
     }
 
+    /**
+     * Imobiliária parceira (ADR 0343): papel erp_partner (só erp.access e erp.partner.view) com acesso concedido ao próprio
+     * Beta. Mesmo dentro do condomínio concedido, nenhuma rota de leitura com id nem ação que altera pode responder 2xx:
+     * a consulta do parceiro é só a tela própria, com dados mascarados (ADR 0090).
+     */
+    public function testPartnerAgencyReachesNoRecordEvenInGrantedCondominium(): void
+    {
+        $this->pdo->exec("INSERT IGNORE INTO access_roles (name, slug, level, description) VALUES ('Imobiliária parceira', 'erp_partner', 1, 'teste')");
+        $this->pdo->exec("INSERT IGNORE INTO access_role_permissions (role_id, permission_id) SELECT r.id, p.id FROM access_roles r JOIN access_permissions p
+            WHERE r.slug = 'erp_partner' AND p.slug IN ('erp.access', 'erp.partner.view')");
+        $partnerId = $this->createUser(['level' => 1]);
+        $this->pdo->prepare("INSERT INTO access_user_roles (user_id, role_id) SELECT ?, id FROM access_roles WHERE slug = 'erp_partner'")->execute([$partnerId]);
+        (new CondominiumScope($this->pdo))->grant($partnerId, $this->beta);
+        $this->pdo->exec("UPDATE settings SET access_erp = 1");
+        $partner = (new User())->findById($partnerId);
+
+        $made = ['erp_units' => $this->betaUnit, 'erp_entries' => $this->betaEntry, 'erp_bank_accounts' => $this->betaAccount];
+        $calls = [];
+        foreach (self::ROUTES as $route => [$controller, $action, $table]) {
+            $calls[$route] = ['GET', $controller, $action, ['id' => (string)($table === null ? $this->beta : ($made[$table] ??= $this->row($table, self::FIXTURE[$table] ?? [])))]];
+        }
+        foreach (self::WRITE_ROUTES as $route => [$method, $controller, $action, $table, $second]) {
+            $data = ['id' => (string)($table === null ? $this->beta : ($made[$table] ??= $this->row($table, self::FIXTURE[$table] ?? [])))];
+            if ($second !== null) {
+                $data['item'] = $data['attachment'] = (string)($made[$second] ??= $this->row($second, []));
+            }
+            $calls[$route] = [$method, $controller, $action, $data];
+        }
+        $reached = [];
+        foreach ($calls as $route => [$method, $controller, $action, $data]) {
+            $status = $this->call($partner, $controller, $action, $data, $method);
+            if (!in_array($status, [401, 403, 404], true)) {
+                $reached[] = $route . ' => ' . $status;
+            }
+        }
+        self::assertCount(count(self::ROUTES) + count(self::WRITE_ROUTES), $calls);
+        self::assertSame([], $reached, 'A imobiliária parceira chegou a um registro fora da consulta própria.');
+
+        // Chamado que a própria imobiliária abriu continua visível para ela; o do condomínio, não.
+        $own = $this->row('studio_support_tickets', ['created_by' => $partnerId]);
+        $tickets = new \Source\Services\Support\TicketService($this->pdo);
+        self::assertNotNull($tickets->findFor($partner, $own));
+        self::assertNull($tickets->findFor($partner, (int)$made['studio_support_tickets']));
+        self::assertSame([$own], array_map(static fn (array $t): int => (int)$t['id'], $tickets->listFor($partner)));
+    }
+
     /** @param int|array<string, string> $id */
     private function call(User $user, string $controller, string $action, int|array $id, string $method = 'GET'): int
     {
