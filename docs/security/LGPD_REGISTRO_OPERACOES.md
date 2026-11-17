@@ -26,7 +26,7 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 | 7 | Assembleias e conselho | condôminos, síndico, conselheiros | nome, documento, e-mail, telefone, presença, voto | `erp_assembly_attendance`, `erp_board_members` | convocar, registrar presença e votos, ata | art. 7º, II (Código Civil e convenção) | permanente (a ata é documento do condomínio) |
 | 8 | Funcionários do condomínio | funcionários | nome, documento, e-mail, telefone | `erp_employees` | gestão do condomínio | art. 7º, V e II | 5 anos após o desligamento (INFERIDO; folha fora do sistema) |
 | 9 | Fornecedores, advogados, imobiliárias, contatos | pessoas de contato e autônomos | nome, CPF/CNPJ, e-mail, telefone, chave Pix | `erp_suppliers`, `erp_lawyers`, `erp_partner_agencies`, `erp_useful_contacts`, `condominiums` | pagar, contratar, contatar | art. 7º, V | 5 anos após o último pagamento |
-| 10 | App do morador | moradores com conta | e-mail, senha (hash), foto, aparelho, 2FA | `users`, `erp_resident_app_profiles`, `erp_resident_app_tokens`, `erp_resident_invitations` | acesso ao portal | art. 7º, V | enquanto a conta existir; foto apagada ao remover |
+| 10 | App do morador | moradores com conta | e-mail, senha (hash), foto, aparelho, 2FA | `users`, `erp_resident_app_profiles`, `erp_resident_app_tokens`, `erp_resident_invitations` | acesso ao portal | art. 7º, V | enquanto a conta existir; foto e perfil apagados ao excluir a conta (ADR 0377) |
 | 11 | Chamados e Central de Ajuda | moradores, visitantes do site, equipe | nome, e-mail, telefone, mensagens, anexos | `studio_support_tickets`, `studio_support_ticket_messages`, `studio_support_ticket_attachments` | atender pedidos e ocorrências | art. 7º, V e IX | 5 anos (INFERIDO); anonimização junto com o morador |
 | 12 | Vistorias | quem recebe o relatório | e-mail | `inspection_report_deliveries` | enviar o relatório | art. 7º, V | PDF apagado após envio (ADR 0335); registro do envio, PENDENTE |
 | 13 | E-mails e avisos | todos que recebem e-mail | nome, e-mail | `mail_queue`, `erp_notification_outbox` | entregar avisos e boletos | art. 7º, V | **PENDENTE**: hoje sem limpeza; proposta de 6 meses |
@@ -39,7 +39,7 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 | Quem | O que recebe | Por quê |
 | --- | --- | --- |
 | Hostinger (hospedagem) | tudo (banco e arquivos) | onde o sistema roda |
-| Microsoft (OneDrive da Connect) | backup cifrado; documentos do condomínio (planejado) | backup e Disco Virtual |
+| Microsoft (OneDrive da Connect) | backup cifrado; com `DOCUMENT_STORAGE=onedrive`, documentos, fotos de vistoria e fotos dos moradores (ADR 0373/0374) | backup e arquivos do sistema |
 | Banco Inter e Cora | nome, CPF/CNPJ, endereço e valor do pagador | registrar boleto e Pix |
 | Provedor de e-mail (SMTP) | nome, e-mail, conteúdo do aviso | entregar e-mail |
 | WhatsApp (Meta), pelo Talk | telefone e mensagem | atendimento |

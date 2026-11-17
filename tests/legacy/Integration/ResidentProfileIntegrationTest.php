@@ -87,6 +87,31 @@ final class ResidentProfileIntegrationTest extends TestCase
         self::assertNull($profiles->photo($user));
     }
 
+    /** ADR 0377 (LGPD): excluir a conta apaga a foto e o perfil; a foto de outra conta fica. */
+    public function testDeletingTheAccountRemovesThePhotoAndTheProfile(): void
+    {
+        $user = $this->createUser();
+        $other = $this->createUser();
+        $this->profiles()->storePhoto($user, $this->upload(300, 300));
+        $this->profiles()->storePhoto($other, $this->upload(300, 300));
+        $file = (string)$this->profiles()->photo($user);
+        self::assertFileExists($file);
+
+        $this->profiles()->forgetAccount($user);
+        self::assertFileDoesNotExist($file);
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_resident_app_profiles WHERE user_id = ' . $user)->fetchColumn());
+        self::assertNotNull($this->profiles()->photo($other));
+        $this->profiles()->forgetAccount($user);   // de novo: nada a fazer
+
+        // Pela exclusão de verdade (Usuários do Sistema): o perfil da conta sai junto.
+        $third = $this->createUser();
+        $this->profiles()->complete($third);
+        $model = (new \Source\Models\User())->findById($third);
+        self::assertNotNull($model);
+        self::assertTrue($model->destroy());
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_resident_app_profiles WHERE user_id = ' . $third)->fetchColumn());
+    }
+
     public function testWelcomeIsShownUntilCompletedAndCompletingTwiceKeepsTheDate(): void
     {
         $user = $this->createUser();
