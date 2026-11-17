@@ -14,6 +14,8 @@ use Source\Services\Erp\Antivirus\ScanStatus;
 use Source\Services\Erp\Antivirus\UploadScanPolicy;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
+use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\LocalDocumentStore;
 
 /**
  * Disco Virtual (AP-122, ADR 0047): arquivos do condomínio por pasta.
@@ -52,17 +54,17 @@ final class VirtualDisk
 
     private PDO $pdo;
     private CondominiumScope $scope;
-    private string $root;
+    private DocumentStore $store;
     /** Testes e importações locais: aceita arquivo que não veio de upload HTTP. */
     private bool $acceptLocalFiles;
     private ?UploadScanPolicy $scan;
 
     public function __construct(?PDO $pdo = null, ?CondominiumScope $scope = null, ?string $root = null, bool $acceptLocalFiles = false,
-        ?UploadScanPolicy $scan = null)
+        ?UploadScanPolicy $scan = null, ?DocumentStore $store = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
-        $this->root = rtrim($root ?? self::defaultRoot(), '/');
+        $this->store = $store ?? new LocalDocumentStore($root ?? self::defaultRoot());   // ADR 0370
         $this->acceptLocalFiles = $acceptLocalFiles;
         $this->scan = $scan;
     }
@@ -139,13 +141,9 @@ final class VirtualDisk
         $scanStatus = ($this->scan ??= new UploadScanPolicy())->check($temporary, ['condominium_id' => $condominium, 'sha256' => $sha]);
 
         $relative = sprintf('%d/%s/%s.%s', $condominium, date('Y'), bin2hex(random_bytes(16)), $extension);
-        $target = $this->root . '/' . $relative;
-        $this->prepareDirectory(dirname($target));
-        $stored = $fromHttp ? move_uploaded_file($temporary, $target) : copy($temporary, $target);
-        if (!$stored) {
+        if (!$this->store->put($relative, $temporary, $fromHttp)) {
             throw new \RuntimeException('Não foi possível guardar o arquivo.');
         }
-        @chmod($target, 0640);
         try {
             $this->pdo->prepare('INSERT INTO erp_documents (condominium_id, folder, title, original_name, path, mime, size_bytes, sha256, uploaded_by, scan_status, scanned_at)
                 VALUES (:c, :f, :t, :o, :p, :m, :s, :h, :u, :ss, :sa)')->execute([
@@ -153,7 +151,7 @@ final class VirtualDisk
                 'ss' => $scanStatus, 'sa' => $scanStatus === ScanStatus::UNSCANNED ? null : date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $error) {
-            @unlink($target);   // sem registro, o arquivo recém-copiado não fica órfão
+            $this->store->delete($relative);   // sem registro, o arquivo recém-copiado não fica órfão
             throw $error;
         }
         $id = (int)$this->pdo->lastInsertId();
@@ -302,8 +300,7 @@ final class VirtualDisk
         if (!preg_match('~^\d+/\d{4}/[a-f0-9]{32}\.[a-z0-9]{1,5}$~', $relative)) {
             return null;
         }
-        $path = $this->root . '/' . $relative;
-        return is_file($path) ? $path : null;
+        return $this->store->path($relative);
     }
 
     private function row(User $user, int $documentId): array
@@ -315,18 +312,6 @@ final class VirtualDisk
             throw new RegistryNotFound();
         }
         return $row;
-    }
-
-    private function prepareDirectory(string $directory): void
-    {
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Não foi possível preparar a pasta do Disco Virtual.');
-        }
-        // Defesa extra caso a pasta storage fique dentro da raiz pública do Apache.
-        $base = dirname($this->root);
-        if (is_dir($base) && !is_file($base . '/.htaccess')) {
-            @file_put_contents($base . '/.htaccess', "Require all denied\n");
-        }
     }
 
     private function present(array $row): array
