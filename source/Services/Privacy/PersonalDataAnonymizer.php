@@ -20,7 +20,11 @@ use Source\Services\CondominiumScope;
  * - convites pendentes do portal: revogados;
  * - visitantes com o mesmo documento: nome anonimizado, documento, telefone e anotações apagados, inativos;
  * - veículos e animais ligados pelo nome: dono/tutor anonimizado e anotações apagadas (placa, modelo, espécie ficam);
- * - chamados: nome, e-mail e telefone de quem abriu apagados (o texto do chamado fica, é registro do atendimento).
+ * - chamados: nome, e-mail e telefone de quem abriu apagados (o texto do chamado fica, é registro do atendimento);
+ * - portaria (entradas e saídas, visitas previstas), mudanças, reservas, lista de espera e contatos de cobrança (ADR 0351):
+ *   nome anonimizado, documento e anotações apagados (datas, unidade e valores ficam).
+ * Cargos no conselho e presença em assembleia não mudam: são parte da ata e do mandato (guarda do condomínio); aparecem
+ * na prévia em "kept".
  * Contas a receber, boletos, acordos e prestação de contas não mudam (guarda obrigatória da contabilidade e do condomínio).
  *
  * Recusa (DomainException, nada muda) quando algum cadastro ainda está ativo sem data de saída no passado (a pessoa ainda
@@ -62,7 +66,8 @@ final class PersonalDataAnonymizer
         }
         $found = (new PersonalDataExport($this->pdo))->collect($condominiumIds, $document, $email);
         $residents = $found['residents']['rows'];
-        if ($residents === [] && $found['visitors']['rows'] === [] && $found['tickets']['rows'] === []) {
+        if ($residents === [] && $found['visitors']['rows'] === [] && $found['tickets']['rows'] === [] && $found['access_logs']['rows'] === []
+            && $found['visit_forecasts']['rows'] === []) {
             throw new DomainException('Nada encontrado para essa busca nos seus condomínios.');
         }
         $blockers = self::blockers($residents, $found['receivables']['rows'], $today);
@@ -73,7 +78,14 @@ final class PersonalDataAnonymizer
             'vehicles' => array_map('intval', array_column($found['vehicles']['rows'], 'id')),
             'pets' => array_map('intval', array_column($found['pets']['rows'], 'id')),
             'tickets' => array_map('intval', array_column($found['tickets']['rows'], 'id')),
-            'kept' => ['receivables' => count($found['receivables']['rows'])],
+            'access_logs' => array_map('intval', array_column($found['access_logs']['rows'], 'id')),
+            'visit_forecasts' => array_map('intval', array_column($found['visit_forecasts']['rows'], 'id')),
+            'moves' => array_map('intval', array_column($found['moves']['rows'], 'id')),
+            'reservations' => array_map('intval', array_column($found['reservations']['rows'], 'id')),
+            'waitlist' => array_map('intval', array_column($found['waitlist']['rows'], 'id')),
+            'collection_contacts' => array_map('intval', array_column($found['collection_contacts']['rows'], 'id')),
+            'kept' => ['receivables' => count($found['receivables']['rows']), 'board_members' => count($found['board_members']['rows']),
+                'assembly_attendance' => count($found['assembly_attendance']['rows'])],
         ];
         $result = ['confirmed' => false, 'blockers' => $blockers, 'plan' => $plan];
         if (!$confirm) {
@@ -141,6 +153,21 @@ final class PersonalDataAnonymizer
         }
         foreach ($plan['pets'] as $id) {
             $this->pdo->prepare('UPDATE erp_pets SET tutor_name = ?, notes = NULL, updated_at = ? WHERE id = ?')->execute([self::LABEL, $now, $id]);
+        }
+        $simple = [
+            'access_logs' => 'UPDATE erp_access_logs SET person_name = ?, person_document = NULL, notes = NULL, updated_at = ? WHERE id = ?',
+            'visit_forecasts' => 'UPDATE erp_visit_forecasts SET visitor_name = ?, visitor_document = NULL, notes = NULL, updated_at = ? WHERE id = ?',
+            'moves' => 'UPDATE erp_moves SET resident_name = ?, notes = NULL, updated_at = ? WHERE id = ?',
+            'reservations' => 'UPDATE erp_reservations SET resident_name = ?, notes = NULL, updated_at = ? WHERE id = ?',
+            'waitlist' => 'UPDATE erp_waitlist SET resident_name = ?, notes = NULL, updated_at = ? WHERE id = ?',
+        ];
+        foreach ($simple as $group => $sql) {
+            foreach ($plan[$group] ?? [] as $id) {
+                $this->pdo->prepare($sql)->execute([self::LABEL, $now, $id]);
+            }
+        }
+        foreach ($plan['collection_contacts'] ?? [] as $id) {
+            $this->pdo->prepare('UPDATE erp_collection_contacts SET contact_name = ?, note = NULL WHERE id = ?')->execute([self::LABEL, $id]);
         }
         foreach ($plan['tickets'] as $id) {
             $this->pdo->prepare('UPDATE studio_support_tickets SET requester_name = ?, requester_email = NULL, requester_phone = NULL WHERE id = ?')

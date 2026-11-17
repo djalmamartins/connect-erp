@@ -3161,7 +3161,7 @@ paths:
                 document: { type: string, description: CPF ou CNPJ, com ou sem máscara }
                 email: { type: string, format: email }
       responses:
-        '200': { description: '{ data: { criteria { document, email }, generated_at, residents { rows[], truncated }, invitations, visitors, vehicles, pets, receivables, tickets, account { rows[], truncated } | null, total } }' }
+        '200': { description: '{ data: { criteria { document, email }, generated_at, residents { rows[], truncated }, invitations, visitors, vehicles, pets, receivables, tickets, access_logs, visit_forecasts, board_members, moves, reservations, waitlist, assembly_attendance, collection_contacts (ADR 0351), account { rows[], truncated } | null, total } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
@@ -3191,7 +3191,7 @@ paths:
                 reason: { type: string, minLength: 10, maxLength: 500 }
                 confirm: { type: boolean }
       responses:
-        '200': { description: '{ data: { confirmed, blockers[{ code, id, message }], plan { residents[], invitations[], visitors[], vehicles[], pets[], tickets[], kept { receivables } } } }' }
+        '200': { description: '{ data: { confirmed, blockers[{ code, id, message }], plan { residents[], invitations[], visitors[], vehicles[], pets[], tickets[], access_logs[], visit_forecasts[], moves[], reservations[], waitlist[], collection_contacts[], kept { receivables, board_members, assembly_attendance } } } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { description: Nada encontrado, ou a pessoa ainda mora/paga ou tem conta em aberto. }

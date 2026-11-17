@@ -35,6 +35,22 @@ final class PersonalDataExportTest extends TestCase
                 tutor_name TEXT, vaccinated INTEGER, notes TEXT, status TEXT, deleted_at TEXT)',
             'CREATE TABLE studio_support_tickets (id INTEGER PRIMARY KEY, protocol TEXT, subject TEXT, message TEXT, area TEXT, origin TEXT, condominium_id INTEGER, unit_id INTEGER,
                 requester_name TEXT, requester_email TEXT, requester_phone TEXT, access_token TEXT, status TEXT, created_at TEXT, resolved_at TEXT)',
+            'CREATE TABLE erp_access_logs (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, person_name TEXT, person_document TEXT, kind TEXT, plate TEXT,
+                entered_on TEXT, entered_time TEXT, left_time TEXT, notes TEXT, status TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_visit_forecasts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, visitor_name TEXT, visitor_document TEXT, expected_on TEXT,
+                expected_until TEXT, notes TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_board_members (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, role TEXT, name TEXT, document TEXT, unit_label TEXT,
+                term_starts_on TEXT, term_ends_on TEXT, email TEXT, phone TEXT, notes TEXT, status TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_moves (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, resident_name TEXT, kind TEXT, scheduled_on TEXT, period TEXT, notes TEXT,
+                status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_reservations (id INTEGER PRIMARY KEY, condominium_id INTEGER, common_area_id INTEGER, unit_id INTEGER, resident_name TEXT, reserved_on TEXT,
+                starts_time TEXT, ends_time TEXT, fee_cents INTEGER, notes TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_waitlist (id INTEGER PRIMARY KEY, condominium_id INTEGER, common_area_id INTEGER, unit_id INTEGER, resident_name TEXT, desired_on TEXT, notes TEXT,
+                called_at TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_assemblies (id INTEGER PRIMARY KEY, condominium_id INTEGER, title TEXT, first_call_at TEXT)',
+            'CREATE TABLE erp_assembly_attendance (id INTEGER PRIMARY KEY, assembly_id INTEGER, unit_id INTEGER, attendee_name TEXT, is_proxy INTEGER, checked_in_at TEXT)',
+            'CREATE TABLE erp_collection_contacts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, channel TEXT, outcome TEXT, contact_name TEXT, promise_on TEXT,
+                promise_cents INTEGER, next_action_on TEXT, note TEXT, created_at TEXT)',
             'CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT, document TEXT, password TEXT, status TEXT, created_at TEXT, updated_at TEXT)',
         ] as $sql) {
             $this->pdo->exec($sql);
@@ -112,5 +128,37 @@ final class PersonalDataExportTest extends TestCase
         $data = (new PersonalDataExport($this->pdo))->collect([], self::CPF, 'jose@exemplo.test', true);
         self::assertSame(0, $data['total']);
         self::assertSame([], $data['residents']['rows']);
+    }
+
+    /** ADR 0351: portaria, conselho e registros que guardam só o nome digitado na unidade. */
+    public function testFindsGatehouseBoardAndNameOnlyRecords(): void
+    {
+        $cpf = self::CPF;
+        $this->pdo->exec("INSERT INTO erp_access_logs (id, condominium_id, unit_id, person_name, person_document, notes, status) VALUES
+            (1, 1, 102, 'José', '{$cpf}', 'nota interna', 'active'), (2, 1, 102, 'Outro', '11144477735', NULL, 'active'), (3, 2, 201, 'José', '{$cpf}', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO erp_visit_forecasts (id, condominium_id, unit_id, visitor_name, visitor_document, status) VALUES (1, 1, 102, 'José', '529.982.247-25', 'active')");
+        $this->pdo->exec("INSERT INTO erp_board_members (id, condominium_id, role, name, document, email, notes, status) VALUES
+            (1, 1, 'sindico', 'José da Silva', NULL, 'jose@exemplo.test', 'nota interna', 'active'), (2, 1, 'conselheiro', 'Maria', '11144477735', NULL, NULL, 'active')");
+        $this->pdo->exec("INSERT INTO erp_moves (id, condominium_id, unit_id, resident_name, notes, status) VALUES (1, 1, 101, 'jose da silva', 'nota interna', 'active'), (2, 1, 101, 'Ana', NULL, 'active'), (3, 1, 102, 'José da Silva', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO erp_reservations (id, condominium_id, unit_id, resident_name, status) VALUES (1, 1, 101, 'José da Silva', 'active')");
+        $this->pdo->exec("INSERT INTO erp_waitlist (id, condominium_id, unit_id, resident_name, status) VALUES (1, 1, 101, 'JOSÉ DA SILVA', 'active')");
+        $this->pdo->exec("INSERT INTO erp_assemblies (id, condominium_id, title) VALUES (1, 1, 'AGO'), (2, 2, 'AGE')");
+        $this->pdo->exec("INSERT INTO erp_assembly_attendance (id, assembly_id, unit_id, attendee_name) VALUES (1, 1, 101, 'José da Silva'), (2, 2, 101, 'José da Silva')");
+        $this->pdo->exec("INSERT INTO erp_collection_contacts (id, condominium_id, unit_id, contact_name, note) VALUES (1, 1, 101, 'José da Silva', 'nota interna'), (2, 1, 101, 'Síndico', NULL)");
+
+        $data = (new PersonalDataExport($this->pdo))->collect([1], $cpf, 'jose@exemplo.test');
+        $ids = static fn (string $group): array => array_map('intval', array_column($data[$group]['rows'], 'id'));
+        self::assertSame([1], $ids('access_logs'), 'pelo documento, só no escopo');
+        self::assertSame([1], $ids('visit_forecasts'), 'documento formatado também');
+        self::assertSame([1], $ids('board_members'), 'pelo e-mail');
+        self::assertSame([1], $ids('moves'), 'mesmo nome na mesma unidade');
+        self::assertSame([1], $ids('reservations'));
+        self::assertSame([1], $ids('waitlist'));
+        self::assertSame([1], $ids('assembly_attendance'), 'assembleia do condomínio do escopo');
+        self::assertSame([1], $ids('collection_contacts'));
+        self::assertSame(16, $data['total']);
+        $json = (string)json_encode($data);
+        self::assertStringNotContainsString('nota interna', $json);
+        self::assertStringNotContainsString('"note"', $json);
     }
 }

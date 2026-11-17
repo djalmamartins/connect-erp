@@ -21,7 +21,11 @@ use Source\Support\Erp\BrDocument;
  * - veículos e animais da mesma unidade cujo dono/tutor tem o mesmo nome do cadastro (o cadastro antigo guarda só o nome);
  * - contas a receber em que a pessoa é a pagadora gravada (erp_entries.payer_resident_id);
  * - chamados do Help Desk abertos com o mesmo e-mail;
- * - a conta de acesso (users) com o mesmo e-mail ou documento, sem senha, sem segredo de 2FA e sem tokens.
+ * - a conta de acesso (users) com o mesmo e-mail ou documento, sem senha, sem segredo de 2FA e sem tokens;
+ * - pelo documento (ADR 0351): entradas e saídas da portaria, visitas previstas e cargos no conselho/síndico (este também
+ *   pelo e-mail);
+ * - pelo nome do cadastro na mesma unidade (ADR 0351): mudanças, reservas, lista de espera, presença em assembleia e
+ *   contatos de cobrança, que guardam só o nome digitado.
  *
  * Somente leitura. Não sai senha, hash, token, segredo nem anotação interna (notes). Escopo (ADR-002): só condomínios que
  * quem pede acessa; a conta de acesso só aparece se ela tiver algum vínculo dentro desse escopo ou se quem pede tiver acesso
@@ -30,6 +34,17 @@ use Source\Support\Erp\BrDocument;
 final class PersonalDataExport
 {
     public const MAX_ROWS = 500;
+
+    /** Grupos acrescentados no ADR 0351 (portaria, conselho e registros que guardam só o nome). */
+    public const EXTRA_GROUPS = ['access_logs', 'visit_forecasts', 'board_members', 'moves', 'reservations', 'waitlist', 'assembly_attendance', 'collection_contacts'];
+
+    /** Registros com o nome solto na unidade: tabela => [coluna do nome, colunas do relatório (sem anotações)]. */
+    private const BY_NAME = [
+        'moves' => ['erp_moves', 'resident_name', 'id, condominium_id, unit_id, resident_name, kind, scheduled_on, period, status, created_at, deleted_at'],
+        'reservations' => ['erp_reservations', 'resident_name', 'id, condominium_id, common_area_id, unit_id, resident_name, reserved_on, starts_time, ends_time, fee_cents, status, created_at, deleted_at'],
+        'waitlist' => ['erp_waitlist', 'resident_name', 'id, condominium_id, common_area_id, unit_id, resident_name, desired_on, called_at, status, created_at, deleted_at'],
+        'collection_contacts' => ['erp_collection_contacts', 'contact_name', 'id, condominium_id, unit_id, channel, outcome, contact_name, promise_on, promise_cents, next_action_on, created_at'],
+    ];
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -81,7 +96,7 @@ final class PersonalDataExport
             'generated_at' => date('c'),
             'residents' => $empty, 'invitations' => $empty, 'visitors' => $empty, 'vehicles' => $empty, 'pets' => $empty,
             'receivables' => $empty, 'tickets' => $empty, 'account' => null,
-        ];
+        ] + array_fill_keys(self::EXTRA_GROUPS, $empty);
         if ($ids === []) {
             return $result + ['total' => 0];
         }
@@ -131,10 +146,36 @@ final class PersonalDataExport
                 FROM studio_support_tickets WHERE condominium_id IN ({$in}) AND LOWER(requester_email) IN (" . implode(',', array_fill(0, count($emails), '?')) . ') ORDER BY id', $emails);
         }
 
+        if ($documents !== []) {
+            $marks = implode(',', array_fill(0, count($documents), '?'));
+            $result['access_logs'] = $this->rows("SELECT id, condominium_id, unit_id, person_name, person_document, kind, plate, entered_on, entered_time, left_time, status, deleted_at
+                FROM erp_access_logs WHERE condominium_id IN ({$in}) AND person_document IN ({$marks}) ORDER BY id", $documents);
+            $result['visit_forecasts'] = $this->rows("SELECT id, condominium_id, unit_id, visitor_name, visitor_document, expected_on, expected_until, status, created_at, deleted_at
+                FROM erp_visit_forecasts WHERE condominium_id IN ({$in}) AND visitor_document IN ({$marks}) ORDER BY id", $documents);
+        }
+        $boardMatch = [];
+        $boardParams = [];
+        if ($documents !== []) {
+            $boardMatch[] = 'document IN (' . implode(',', array_fill(0, count($documents), '?')) . ')';
+            $boardParams = $documents;
+        }
+        if ($email !== null) {
+            $boardMatch[] = 'LOWER(email) = ?';
+            $boardParams[] = $email;
+        }
+        $result['board_members'] = $this->rows("SELECT id, condominium_id, unit_id, role, name, document, unit_label, term_starts_on, term_ends_on, email, phone, status, deleted_at
+            FROM erp_board_members WHERE condominium_id IN ({$in}) AND (" . implode(' OR ', $boardMatch) . ') ORDER BY id', $boardParams);
+        if ($residents['rows'] !== []) {
+            foreach ($this->byName($residents['rows'], $in) as $group => $rows) {
+                $result[$group] = $rows;
+            }
+        }
+
         $result['account'] = $this->account($document, $email, $residents['rows'], $globalAccess);
         $result['total'] = count($result['residents']['rows']) + count($result['invitations']['rows']) + count($result['visitors']['rows'])
             + count($result['vehicles']['rows']) + count($result['pets']['rows']) + count($result['receivables']['rows'])
-            + count($result['tickets']['rows']) + ($result['account'] !== null ? 1 : 0);
+            + count($result['tickets']['rows']) + ($result['account'] !== null ? 1 : 0)
+            + array_sum(array_map(static fn (string $g): int => count($result[$g]['rows']), self::EXTRA_GROUPS));
         return $result;
     }
 
@@ -170,6 +211,40 @@ final class PersonalDataExport
         }
         $cut = static fn (array $rows): array => ['rows' => array_slice(array_values($rows), 0, self::MAX_ROWS), 'truncated' => count($rows) > self::MAX_ROWS];
         return [$cut($vehicles), $cut($pets)];
+    }
+
+    /**
+     * Registros que guardam só o nome digitado (mudança, reserva, espera, cobrança, presença em assembleia): os da mesma
+     * unidade do cadastro com o mesmo nome (sem acento e caixa não importam). Cadastro sem unidade não entra.
+     *
+     * @param list<array<string, mixed>> $residents
+     * @return array<string, array{rows:list<array<string,mixed>>, truncated:bool}>
+     */
+    private function byName(array $residents, string $in): array
+    {
+        $found = array_fill_keys(array_merge(array_keys(self::BY_NAME), ['assembly_attendance']), []);
+        foreach ($residents as $r) {
+            $name = self::normalizeName((string)$r['name']);
+            if ($name === '' || $r['unit_id'] === null) {
+                continue;
+            }
+            $where = [(int)$r['condominium_id'], (int)$r['unit_id']];
+            foreach (self::BY_NAME as $group => [$table, $column, $columns]) {
+                foreach ($this->rows("SELECT {$columns} FROM {$table} WHERE condominium_id = ? AND condominium_id IN ({$in}) AND unit_id = ? ORDER BY id", $where)['rows'] as $row) {
+                    if (self::normalizeName((string)$row[$column]) === $name) {
+                        $found[$group][(int)$row['id']] = $row;
+                    }
+                }
+            }
+            foreach ($this->rows("SELECT t.id, a.condominium_id, t.assembly_id, a.title AS assembly, a.first_call_at, t.unit_id, t.attendee_name, t.is_proxy, t.checked_in_at
+                    FROM erp_assembly_attendance t JOIN erp_assemblies a ON a.id = t.assembly_id
+                    WHERE a.condominium_id = ? AND a.condominium_id IN ({$in}) AND t.unit_id = ? ORDER BY t.id", $where)['rows'] as $row) {
+                if (self::normalizeName((string)$row['attendee_name']) === $name) {
+                    $found['assembly_attendance'][(int)$row['id']] = $row;
+                }
+            }
+        }
+        return array_map(static fn (array $rows): array => ['rows' => array_slice(array_values($rows), 0, self::MAX_ROWS), 'truncated' => count($rows) > self::MAX_ROWS], $found);
     }
 
     /**

@@ -10,7 +10,10 @@ $this->layout('default');
 $route = erp_url($currentPage['route']);
 $day = static fn (?string $v): string => $v ? date('d/m/Y', (int)strtotime($v)) : '—';
 $groups = ['residents' => 'Cadastros de morador, proprietário ou inquilino', 'invitations' => 'Convites do portal do morador', 'visitors' => 'Visitantes',
-    'vehicles' => 'Veículos', 'pets' => 'Animais', 'receivables' => 'Contas a receber (pagador)', 'tickets' => 'Chamados do Help Desk'];
+    'vehicles' => 'Veículos', 'pets' => 'Animais', 'receivables' => 'Contas a receber (pagador)', 'tickets' => 'Chamados do Help Desk',
+    'access_logs' => 'Entradas e saídas na portaria', 'visit_forecasts' => 'Visitas previstas', 'board_members' => 'Conselho e síndico',
+    'moves' => 'Mudanças', 'reservations' => 'Reservas', 'waitlist' => 'Lista de espera', 'assembly_attendance' => 'Presença em assembleia',
+    'collection_contacts' => 'Contatos de cobrança'];
 $relations = ['owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro'];
 $hidden = static function () use ($privacyDocument, $privacyEmail): string {
     $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -89,7 +92,7 @@ $this->insert('components/layout/page-head', [
     <?php if ($blockers !== []): ?>
         <div class="erp-alert erp-alert--warning" role="note"><?= $icon('alert') ?><div><strong>Ainda não dá para anonimizar.</strong><ul><?php foreach ($blockers as $b): ?><li><?= $this->e($b['message']) ?></li><?php endforeach; ?></ul>Encerre o vínculo com a data de saída e quite ou baixe as contas em aberto antes.</div></div>
     <?php else: ?>
-        <p>Vai mudar: <?= count($plan['residents']) ?> cadastro(s), <?= count($plan['invitations']) ?> convite(s) pendente(s), <?= count($plan['visitors']) ?> visitante(s), <?= count($plan['vehicles']) ?> veículo(s), <?= count($plan['pets']) ?> animal(is) e <?= count($plan['tickets']) ?> chamado(s). Ficam guardadas <?= (int)($plan['kept']['receivables'] ?? 0) ?> conta(s) a receber.</p>
+        <p>Vai mudar: <?= count($plan['residents']) ?> cadastro(s), <?= count($plan['invitations']) ?> convite(s) pendente(s), <?= count($plan['visitors']) ?> visitante(s), <?= count($plan['vehicles']) ?> veículo(s), <?= count($plan['pets']) ?> animal(is), <?= count($plan['tickets']) ?> chamado(s), <?= count($plan['access_logs'] ?? []) + count($plan['visit_forecasts'] ?? []) ?> registro(s) da portaria e <?= count($plan['moves'] ?? []) + count($plan['reservations'] ?? []) + count($plan['waitlist'] ?? []) + count($plan['collection_contacts'] ?? []) ?> de mudança, reserva, espera ou cobrança. Ficam guardadas <?= (int)($plan['kept']['receivables'] ?? 0) ?> conta(s) a receber, <?= (int)($plan['kept']['board_members'] ?? 0) ?> cargo(s) no conselho e <?= (int)($plan['kept']['assembly_attendance'] ?? 0) ?> presença(s) em assembleia (atas).</p>
         <form method="post" action="<?= $this->e($route . '/anonimizar') ?>" class="erp-form" data-erp-confirm="Anonimizar os dados dessa pessoa? Nome, documento, e-mail e telefone serão apagados do sistema." data-confirm-undo="nao" data-confirm-undo-text="Não tem volta: os dados só voltam pelo backup.">
             <?= csrf_input() ?><?= $hidden() ?>
             <div class="erp-field"><label for="privacy-reason">Motivo</label><input class="erp-input" id="privacy-reason" name="reason" required minlength="10" maxlength="500" placeholder="Ex.: pedido do titular por e-mail em 16/11/2026"></div>
