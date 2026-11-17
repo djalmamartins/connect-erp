@@ -45,7 +45,11 @@ cp .env.production.example .env && chmod 600 .env   # preencher tudo marcado com
 php tools/bank-credentials.php gerar-chave # CONNECT_BANK_VAULT_KEY nova (nunca a do laboratório)
 php service/commands/deploy-check.php
 composer db:migrate
+php tools/hosting/criar-admin.php --email=<seu e-mail> --nome=<nome> --sobrenome=<sobrenome> --cpf=<cpf>   # ADR 0380
 ```
+
+O `criar-admin` mostra a senha uma vez só e só funciona enquanto não houver administrador; as outras contas saem pela tela
+Usuários do Sistema.
 
 **Atenção (ADR 0379):** num banco vazio, `composer db:migrate` ainda falha, porque as tabelas base (`users`, `access_*`,
 `settings`...) vêm do banco antigo do laboratório e não de migration. Antes da primeira implantação, rode no Mac

@@ -25,8 +25,7 @@ migration: o laboratório as tem desde o banco antigo do Organic Code, e os test
    tabelas com quantidade de linhas para `database/base/tables.txt`. Nenhum dado pessoal sai; os arquivos podem ir para o
    Git.
 2. **(PENDENTE, depende do passo 1 rodar no Mac)** Com a estrutura real: migration base `database/base/schema.sql`
-   aplicada antes das migrations, dados mínimos de catálogo (papéis e permissões, módulos) e um comando para criar o
-   primeiro administrador com 2FA. A lista `tables.txt` separa catálogo de dado de condomínio.
+   aplicada antes das migrations, dados mínimos de catálogo (papéis e permissões, módulos). O primeiro administrador saiu no ADR 0380. A lista `tables.txt` separa catálogo de dado de condomínio.
 3. **(PENDENTE)** Job no CI de instalação limpa: banco vazio → estrutura base → `db:migrate` → `deploy-check`.
 
 ## Testes
