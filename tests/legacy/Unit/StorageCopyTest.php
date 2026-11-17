@@ -93,6 +93,14 @@ final class StorageCopyTest extends TestCase
         DocumentStores::oneDrive('documents', ['ONEDRIVE_DRIVE_ID' => ''] + $env, $http);
     }
 
+    public function testScriptChecksTheConnectionBeforeCopying(): void
+    {
+        $script = (string)file_get_contents(dirname(__DIR__, 3) . '/tools/hosting/onedrive-copy.php');
+        self::assertLessThan(strpos($script, 'StorageCopy::run('), strpos($script, '->probe()'));
+        $check = (string)file_get_contents(dirname(__DIR__, 3) . '/service/commands/deploy-check.php');
+        self::assertStringContainsString("DocumentStores::oneDrive('documents', \$storageEnv)->probe()", $check);
+    }
+
     public function testScriptRefusesWithoutOneDriveKeys(): void
     {
         $cmd = 'env -u ONEDRIVE_TENANT_ID MOVESOS_DB_HOST=127.0.0.1 MOVESOS_DB_NAME=x MOVESOS_DB_USER=x MOVESOS_DB_PASS=x '

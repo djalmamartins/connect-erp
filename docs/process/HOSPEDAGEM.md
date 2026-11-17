@@ -173,10 +173,11 @@ moradores no OneDrive empresarial da Connect (precisa da conta Microsoft 365 Bus
    e copie o `id`.
 5. No `.env` do servidor (mantenha `DOCUMENT_STORAGE=local` até o passo 6): `ONEDRIVE_TENANT_ID`, `ONEDRIVE_CLIENT_ID`,
    `ONEDRIVE_CLIENT_SECRET`, `ONEDRIVE_DRIVE_ID` e `ONEDRIVE_FOLDER=ConnectERP`. Depois da troca, rode
-   `php service/commands/deploy-check.php`: faltando chave, ele acusa e os arquivos continuam no servidor.
+   `php service/commands/deploy-check.php`: faltando chave, ele acusa e os arquivos continuam no servidor; com as chaves
+   completas, ele também confere autorização, permissão e drive no OneDrive (ADR 0378).
 6. Antes de trocar para `onedrive`, copie os arquivos que já estão no servidor (ADR 0376), com as chaves do OneDrive
    já no `.env` e `DOCUMENT_STORAGE=local`:
-   `php tools/hosting/onedrive-copy.php --dry-run` (conta) e depois `php tools/hosting/onedrive-copy.php` (envia; se
-   algum falhar, rode de novo: só o que faltou sobe). Com tudo copiado, troque para `DOCUMENT_STORAGE=onedrive`. A pasta
+   `php tools/hosting/onedrive-copy.php --dry-run` (conta; já confere a ligação) e depois `php tools/hosting/onedrive-copy.php`
+   (envia; se algum falhar, rode de novo: só o que faltou sobe). Com tudo copiado, troque para `DOCUMENT_STORAGE=onedrive`. A pasta
    local não é apagada. A cópia de leitura fica em `storage/cache/onedrive/` e a faxina diária apaga o que ficou 7 dias
    sem uso (ADR 0375).

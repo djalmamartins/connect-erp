@@ -150,6 +150,36 @@ final class OneDriveDocumentStoreTest extends TestCase
         unlink($source);
     }
 
+    /** ADR 0378: conferência da ligação para o deploy-check e a cópia. */
+    public function testProbeExplainsWhatIsWrong(): void
+    {
+        $answers = [200 => null, 403 => 'Files.ReadWrite.All', 404 => 'ONEDRIVE_DRIVE_ID', 500 => 'HTTP 500'];
+        foreach ($answers as $status => $expected) {
+            $graph = new class ($status) implements GraphTransport {
+                public array $urls = [];
+
+                public function __construct(private int $status)
+                {
+                }
+
+                public function send(string $method, string $url, array $headers = [], ?string $body = null): array
+                {
+                    $this->urls[] = $url;
+                    return str_contains($url, 'oauth2')
+                        ? ['status' => 200, 'body' => '{"access_token":"tok","expires_in":3600}', 'location' => '']
+                        : ['status' => $this->status, 'body' => '{}', 'location' => ''];
+                }
+            };
+            $problem = (new OneDriveDocumentStore('t', 'c', 's', 'drive!1', 'F', $this->cache, $graph))->probe();
+            $expected === null ? self::assertNull($problem) : self::assertStringContainsString($expected, (string)$problem);
+            self::assertSame(OneDriveDocumentStore::GRAPH . '/drives/drive%211?$select=id', $graph->urls[1]);
+        }
+        $this->graph->tokenStatus = 401;
+        $problem = (string)$this->store()->probe();
+        self::assertStringContainsString('Autorização do OneDrive recusada', $problem);
+        self::assertStringNotContainsString('segredo', $problem, 'o segredo nunca aparece');
+    }
+
     public function testOnlyFollowsHttpsRedirects(): void
     {
         self::assertTrue(OneDriveDocumentStore::trusted('https://x.sharepoint.com/download?token=1'));

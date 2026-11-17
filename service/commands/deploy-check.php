@@ -52,6 +52,16 @@ if (!is_file($envFile)) {
             } catch (\Throwable $error) {
                 $warn('Banco não respondeu: contas de teste e 2FA da equipe não foram conferidos.');
             }
+            // OneDrive ligado (ADR 0378): confere autorização, permissão e drive antes de abrir.
+            $storageEnv = array_map('strval', $env);
+            if (\Source\Support\Storage\DocumentStores::mode($storageEnv) === 'onedrive' && \Source\Support\Storage\DocumentStores::missing($storageEnv) === []) {
+                $problem = \Source\Support\Storage\DocumentStores::oneDrive('documents', $storageEnv)->probe();
+                if ($problem === null) {
+                    $ok('OneDrive respondeu (autorização, permissão e drive)');
+                } else {
+                    $ready['errors'][] = 'OneDrive: ' . $problem;
+                }
+            }
             array_map($fail, $ready['errors']);
             array_map($warn, $ready['warnings']);
             $ready['errors'] === [] && $ready['warnings'] === [] && $ok('Conferência de produção sem pendências');
