@@ -168,6 +168,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - Atender pedido do titular: exportar dados de uma pessoa e anonimizar quem saiu, respeitando os prazos legais de guarda
   financeira. Hoje não existe essa função; criar uma versão simples (tela na equipe, não autoatendimento).
 - Registro das operações de tratamento (planilha) e regra de retenção dos logs.
+  **Feito em 17/11 (ADR 0350):** `docs/security/LGPD_REGISTRO_OPERACOES.md` com 16 operações, suboperadores, medidas e prazos; teste falha se surgir tabela com dado pessoal fora dele. Faltam do Djalma/advogado: confirmar bases legais e papéis, e os prazos PENDENTES (portaria, e-mails, Talk, `system_audit_logs`).
 
 ### 3.9 Dados reais e piloto
 - **[Djalma]** escolher o condomínio piloto e mandar os dados reais: unidades, moradores, saldos iniciais, inadimplência, contas fixas.
