@@ -36,6 +36,12 @@ if (!is_file($envFile)) {
         if (is_file($root . '/vendor/autoload.php')) {
             require_once $root . '/vendor/autoload.php';
             $ready = \Source\Support\DeployReadiness::env(array_map('strval', $env), time());
+            // Limites do PHP (ADR 0362): lidos aqui no CLI; o site usa a mesma configuração do hPanel.
+            $limits = [];
+            foreach (['memory_limit', 'upload_max_filesize', 'post_max_size', 'file_uploads'] as $directive) {
+                $limits[$directive] = ini_get($directive);
+            }
+            $ready['warnings'] = array_merge($ready['warnings'], \Source\Support\DeployReadiness::php($limits));
             try {
                 $pdo = \Source\Core\Connect::getInstance();
                 if ($pdo instanceof \PDO) {
