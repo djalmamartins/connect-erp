@@ -49,6 +49,44 @@ final class ResidentProfileIntegrationTest extends TestCase
         return ['tmp_name' => $file, 'error' => UPLOAD_ERR_OK, 'size' => filesize($file)];
     }
 
+    /** ADR 0372: a foto vai para o DocumentStore; trocar e apagar passam por ele. */
+    public function testPhotoGoesThroughTheDocumentStore(): void
+    {
+        $store = new class implements \Source\Support\Storage\DocumentStore {
+            /** @var array<string, string> */
+            public array $files = [];
+
+            public function put(string $relative, string $source, bool $move): bool
+            {
+                $this->files[$relative] = (string)file_get_contents($source);
+                return !$move;
+            }
+
+            public function path(string $relative): ?string
+            {
+                return isset($this->files[$relative]) ? '/cache/' . $relative : null;
+            }
+
+            public function delete(string $relative): void
+            {
+                unset($this->files[$relative]);
+            }
+        };
+        $user = $this->createUser();
+        $profiles = new ResidentProfile($this->pdo, $this->root, $store);
+        $profiles->storePhoto($user, $this->upload(600, 400));
+        $first = array_keys($store->files);
+        self::assertCount(1, $first);
+        self::assertSame('/cache/' . $first[0], $profiles->photo($user));
+        self::assertDirectoryDoesNotExist($this->root, 'nada gravado direto no disco');
+        $profiles->storePhoto($user, $this->upload(400, 400, 'jpg'));
+        self::assertCount(1, $store->files, 'a foto antiga sai do armazenamento');
+        self::assertNotSame($first, array_keys($store->files));
+        $profiles->deletePhoto($user);
+        self::assertSame([], $store->files);
+        self::assertNull($profiles->photo($user));
+    }
+
     public function testWelcomeIsShownUntilCompletedAndCompletingTwiceKeepsTheDate(): void
     {
         $user = $this->createUser();
