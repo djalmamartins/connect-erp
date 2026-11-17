@@ -75,6 +75,7 @@ final class OneDriveDocumentStore implements DocumentStore
         }
         $cached = $this->cache . '/' . $relative;
         if (is_file($cached)) {
+            @touch($cached);   // a faxina apaga o que ficou 7 dias sem uso (ADR 0375)
             return $cached;
         }
         try {

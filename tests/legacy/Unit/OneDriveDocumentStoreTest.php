@@ -89,7 +89,11 @@ final class OneDriveDocumentStoreTest extends TestCase
         self::assertSame($this->cache . '/7/2026/a.pdf', $path);
         self::assertSame('%PDF-1.4 conteúdo', file_get_contents((string)$path));
         $calls = count($this->graph->calls);
+        touch((string)$path, time() - 3 * 86400);
+        clearstatcache();
         self::assertSame($path, $store->path('7/2026/a.pdf'), 'segunda leitura vem do cache');
+        clearstatcache();
+        self::assertGreaterThan(time() - 60, filemtime((string)$path), 'usar renova a data para a faxina (ADR 0375)');
         self::assertCount($calls, $this->graph->calls);
 
         $tokens = array_filter($this->graph->calls, static fn(array $c): bool => str_contains($c['url'], 'oauth2'));

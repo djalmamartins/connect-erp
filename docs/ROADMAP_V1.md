@@ -138,7 +138,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Passo 2 (ADR 0371):** fotos de vistoria pelo mesmo armazenamento. **Passo 3 (ADR 0372):** foto do morador.
   **Passo 4 (ADR 0373):** armazenamento do OneDrive pelo Microsoft Graph, testado com Graph falso. **Passo 5 (ADR 0374):**
   `DOCUMENT_STORAGE=local|onedrive` no `.env`, conferido no deploy-check; roteiro do Entra ID em HOSPEDAGEM.md §10. Falta:
-  copiar os arquivos já existentes para o OneDrive, limpeza do cache e a conta da Connect **[Djalma]**.
+  copiar os arquivos já existentes para o OneDrive e a conta da Connect **[Djalma]**. **Cache (ADR 0375):** a faxina
+  diária apaga a cópia local sem uso há 7 dias.
   Conta: **OneDrive empresarial da Connect** (Microsoft 365 Business, conta no domínio `connectcondominios.com.br`), não o pessoal
   do Djalma: os dados ficam em nome da empresa, o acesso do sistema é por aplicativo registrado (não depende da senha de uma pessoa)
   e o contrato de tratamento de dados da Microsoft cobre a LGPD. O backup cifrado pode ir para a mesma conta.
