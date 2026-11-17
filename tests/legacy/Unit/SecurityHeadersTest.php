@@ -34,4 +34,26 @@ final class SecurityHeadersTest extends TestCase
         self::assertStringContainsString('frame-ancestors *', $support);
         self::assertStringContainsString("header_remove('X-Frame-Options')", $support, 'o widget do Help Desk abre dentro de outros sites');
     }
+
+    public function testPrivateHostsAndPathsAreNotIndexed(): void
+    {
+        foreach ([['erp.connectcondominios.com.br', '/'], ['APP.connectcondominios.com.br', '/inicio'], ['studio.connect.lab', '/studio'],
+            ['talk.connectcondominios.com.br', '/'], ['www.connectcondominios.com.br', '/api/v1/health'], ['www.connect.lab', '/app'],
+            ['www.connect.lab', '/app/boletos'], ['connectcondominios.com.br', '/ops/404']] as [$host, $path]) {
+            self::assertSame('noindex, nofollow', SecurityHeaders::headers(false, $host, $path)['X-Robots-Tag'] ?? null, $host . $path);
+        }
+        foreach ([['www.connectcondominios.com.br', '/'], ['connectcondominios.com.br', '/suporte/artigo/boletos'],
+            ['www.connect.lab', '/apple'], ['www.connect.lab', '/blog/application']] as [$host, $path]) {
+            self::assertArrayNotHasKey('X-Robots-Tag', SecurityHeaders::headers(false, $host, $path), $host . $path);
+        }
+    }
+
+    public function testRobotsTxtKeepsCrawlersOutOfPrivatePaths(): void
+    {
+        $robots = (string)file_get_contents(dirname(__DIR__, 3) . '/robots.txt');
+        foreach (['User-agent: *', 'Disallow: /api/', 'Disallow: /app/', 'Disallow: /ops/'] as $line) {
+            self::assertStringContainsString($line, $robots);
+        }
+        self::assertDoesNotMatchRegularExpression('~^Disallow: /\s*$~m', $robots, 'o site e a Central de Ajuda continuam indexados');
+    }
 }
