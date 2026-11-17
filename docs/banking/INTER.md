@@ -38,7 +38,8 @@ Situação: **só sandbox do Inter**. Produção depende de homologação e apro
 4. `php tools/bank-credentials.php testar --conta=ID` (só token, não emite nada).
 5. Cadastrar no Inter o endereço do webhook mostrado no passo 3.
 6. Proxy (nginx) na rota `/api/v1/webhooks/bank/`: exigir certificado de cliente do Inter (`ssl_verify_client`)
-   e liberar só os IPs informados pelo banco. Limite de corpo 256 KB.
+   e liberar só os IPs informados pelo banco. Limite de corpo 256 KB. Na hospedagem sem proxy próprio, os IPs vão em
+   `BANK_WEBHOOK_ALLOWED_IPS` no `.env` (ADR 0360).
 
 ## Homologação no sandbox (checklist)
 
