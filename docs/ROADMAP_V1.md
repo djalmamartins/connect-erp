@@ -165,6 +165,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Cabeçalhos em 17/11 (ADR 0355):** nenhuma tela abre dentro de outro site, nosniff, Referrer-Policy e HSTS em toda resposta.
   **HTTPS em 17/11 (ADR 0364):** em produção, `http://` vai para `https://` antes de abrir a sessão; só no domínio do `APP_URL`.
   **Busca em 17/11 (ADR 0365):** ERP, app, Studio, Talk e API com `X-Robots-Tag: noindex` e `/robots.txt`; só o site e a Central de Ajuda aparecem no Google.
+  **Erros fora da tela em 17/11 (ADR 0366):** com `APP_DEBUG=false`, aviso do PHP não sai na página (caminho do servidor) e o cabeçalho com a versão do PHP sai.
   Pendente: Content-Security-Policy que limita scripts (depois do piloto).
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
   **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
