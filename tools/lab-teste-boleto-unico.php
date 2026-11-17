@@ -21,6 +21,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Source\Core\Connect;
 use Source\Models\User;
+use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Banking\BankCharges;
 use Source\Services\Erp\Invoices;
 use Source\Services\Erp\LabSampleData;
@@ -54,8 +55,15 @@ $userId = (int)$pdo->query('SELECT id FROM users WHERE level >= 5 ORDER BY level
 $user = (new User())->findById($userId);
 
 $unit = (int)$pdo->query("SELECT id FROM erp_units WHERE condominium_id = {$condo} AND status = 'active' AND deleted_at IS NULL AND block_bill_merge = 0 ORDER BY id LIMIT 1")->fetchColumn();
-$type = $pdo->query("SELECT id, name FROM erp_invoice_types WHERE status = 'active' AND deleted_at IS NULL AND recurrence = 'mensal' AND (condominium_id IS NULL OR condominium_id = {$condo}) ORDER BY condominium_id IS NULL, id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$type = $pdo->query("SELECT id, name FROM erp_invoice_types WHERE status = 'active' AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = {$condo}) ORDER BY recurrence <> 'mensal', condominium_id IS NULL, id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 $chart = (int)$pdo->query("SELECT id FROM erp_chart_accounts WHERE nature = 'receita' AND kind = 'analitica' AND status = 'active' AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = {$condo}) ORDER BY code LIMIT 1")->fetchColumn();
+if (!is_array($type) && $chart > 0 && $userId > 0) {
+    // Condomínio sem tipo de fatura: cria um só para o teste (pode ser apagado depois em Cadastros > Tipos de fatura).
+    $created = (new RegistryService($pdo))->save($user, 'invoice_types', ['condominium_id' => $condo, 'name' => 'TESTE boleto único (sandbox)',
+        'chart_account_id' => $chart, 'recurrence' => 'mensal', 'default_amount_cents' => '50,00']);
+    $type = ['id' => (int)$created['id'], 'name' => 'TESTE boleto único (sandbox)'];
+    echo "Condomínio sem tipo de fatura ativo: criado o tipo {$type['id']} só para o teste.\n";
+}
 if ($unit < 1 || !is_array($type) || $chart < 1 || $userId < 1) {
     fwrite(STDERR, "Faltam dados: unidade {$unit}, tipo " . json_encode($type) . ", conta {$chart}, usuário {$userId}.\n");
     exit(1);
