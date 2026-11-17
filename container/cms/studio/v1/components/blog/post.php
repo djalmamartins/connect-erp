@@ -12,7 +12,7 @@
             <label>Título do artigo *<input id="post-title" name="title" maxlength="140" minlength="5" value="<?= htmlspecialchars($post->title ?? '') ?>" placeholder="Um título claro e interessante" required><small><span data-title-count>0</span>/140 caracteres</small></label>
             <label>Endereço amigável<input id="post-uri" name="uri" maxlength="180" value="<?= htmlspecialchars($post->uri ?? '') ?>" placeholder="gerado-automaticamente-pelo-titulo"><small><?= url('/artigos/') ?><span data-uri-preview><?= htmlspecialchars($post->uri ?? 'titulo-do-artigo') ?></span></small></label>
             <label>Resumo *<textarea id="post-subtitle" name="subtitle" rows="4" maxlength="300" minlength="10" placeholder="Resumo exibido nas listagens e nos mecanismos de busca" required><?= htmlspecialchars($post->subtitle ?? '') ?></textarea><small><span data-subtitle-count>0</span>/300 caracteres</small></label>
-            <label>Conteúdo *<textarea class="mce" data-organic-editor data-editor-height="620" id="post-content" name="content" rows="22" required><?= $post->content ?? '' ?></textarea></label>
+            <label>Conteúdo *<textarea class="mce" data-organic-editor data-editor-height="620" id="post-content" name="content" rows="22" required><?= htmlspecialchars((string)($post->content ?? ''), ENT_QUOTES) ?></textarea></label>
             <div class="studio-reading-info"><ion-icon name="time-outline"></ion-icon><span>Tempo estimado: <strong data-reading-time><?= reading_time($post->content ?? '') ?></strong> min de leitura</span></div>
         </section>
         <aside class="studio-post-sidebar">

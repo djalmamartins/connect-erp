@@ -345,7 +345,7 @@ class Studio extends Controller
             $post->title = $title;
             $post->uri = str_slug(trim(strip_tags($data["uri"] ?? "")) ?: $title);
             $post->subtitle = $subtitle;
-            $post->content = $content;
+            $post->content = \Source\Support\RichHtml::clean($content);
             $post->category = $categoryId;
             $post->author = $authorId;
             $post->status = $status;
@@ -760,7 +760,7 @@ class Studio extends Controller
             $page = $page ?: new Page();
             $page->title = trim(strip_tags($data["title"] ?? ""));
             $page->uri = str_slug(trim(strip_tags($data["uri"] ?? $page->title)));
-            $page->content = $data["content"] ?? "";
+            $page->content = \Source\Support\RichHtml::clean((string)($data["content"] ?? ""));
             $page->author = $user->id;
             $page->status = in_array(($data["status"] ?? "draft"), ["post", "draft", "trash"], true) ? $data["status"] : "draft";
             $page->post_at = !empty($data["post_at"]) ? date("Y-m-d H:i:s", strtotime($data["post_at"])) : date("Y-m-d H:i:s");
@@ -1533,7 +1533,7 @@ class Studio extends Controller
             $article->title = $title;
             $article->uri = str_slug(trim(strip_tags($data["uri"] ?? "")) ?: $title);
             $article->summary = $summary;
-            $article->content = $content;
+            $article->content = \Source\Support\RichHtml::clean($content);
             $article->status = ($data["status"] ?? "draft") === "published" ? "published" : "draft";
             $article->published_at = !empty($data["published_at"]) ? date("Y-m-d H:i:s", strtotime($data["published_at"])) : date("Y-m-d H:i:s");
             $libraryCover = $this->safeMediaSelection((string)($data["library_cover"] ?? ""));
@@ -1586,7 +1586,7 @@ class Studio extends Controller
             $slide = $slide ?: new AppSlides();
             $slide->title = trim(strip_tags($data["title"] ?? ""));
             $slide->uri = str_slug($slide->title);
-            $slide->content = $data["content"] ?? "";
+            $slide->content = \Source\Support\RichHtml::clean((string)($data["content"] ?? ""));
             $slide->author = $user->id;
             $slide->status = in_array(($data["status"] ?? "draft"), ["post", "draft", "trash"], true) ? $data["status"] : "draft";
             $slide->position = in_array(($data["position"] ?? "left"), ["left", "center", "right"], true) ? $data["position"] : "left";

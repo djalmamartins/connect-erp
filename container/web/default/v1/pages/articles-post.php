@@ -74,7 +74,7 @@ $authorPhoto = ($author && $author->photo() ? image($author->photo(), 120, 120) 
             </div>
 
             <div class="article-text">
-                <?= html_entity_decode($post->content); ?>
+                <?= \Source\Support\RichHtml::clean(html_entity_decode((string)$post->content)); ?>
             </div>
         </article>
 
