@@ -28,7 +28,8 @@ Todos apontam para o mesmo front controller do sistema; o roteamento por host é
 (`*.connect.lab`). SSL grátis do hPanel em todos. O código fica **fora** de `public_html`; só a pasta pública é exposta.
 Como o `index.php` e os assets moram na raiz do projeto, a pasta pública costuma ser a própria pasta do projeto: o
 `.htaccess` barra `.git`, `.local` (backups), `tools`, `docs`, `database` e o código dos temas (ADR 0338). Depois de
-implantar, conferir: `curl -I https://erp.connectcondominios.com.br/.git/config` precisa responder 403.
+implantar, conferir com `php tools/hosting/smoke-http.php --domain=connectcondominios.com.br` (ADR 0356): páginas,
+`/api/v1/health`, HTTPS, pastas barradas (`.git/config` precisa responder 403 ou 404) e cabeçalhos de segurança.
 
 ## 3. Primeira implantação
 
@@ -85,6 +86,7 @@ cd ~/connect && bash tools/hosting/backup.sh
 git fetch origin && git checkout <commit-novo>
 composer install --no-dev --optimize-autoloader && composer db:migrate
 php service/commands/deploy-check.php
+php tools/hosting/smoke-http.php --domain=connectcondominios.com.br   # ADR 0356; código 1 = algo falhou
 ```
 
 Reversão: `git checkout <commit-anterior>` e, se uma migration quebrou dados, restaurar o backup do passo 1.
