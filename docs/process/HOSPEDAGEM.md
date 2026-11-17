@@ -113,6 +113,10 @@ Faxina diária (ADR 0336, `cron.sh dia`): os logs `storage/logs/movesos-*.log` s
 depois de 6 meses; o espaço usado é medido e o vigia avisa ao passar de 85% de `HOSTING_DISK_LIMIT_GB`. O vigia também
 avisa quando o certificado HTTPS do `APP_URL` vence em menos de 15 dias. Testar sem mexer: `php tools/hosting/housekeeping.php --dry-run`.
 
+Certificado dos bancos (ADR 0352): o vigia avisa 30 dias antes de vencer o certificado do Inter ou da Cora enviado em
+Configurações › Integrações, e de novo no dia em que vence. Sem ele a emissão e a consulta dos boletos param. Para trocar:
+gerar o certificado novo no internet banking e enviar pela mesma tela.
+
 ## 9. Teste de carga dos limites de tentativas (ADR 0348)
 
 Depois da primeira implantação, e antes de abrir para os moradores, rodar do Mac contra o servidor novo (ainda sem

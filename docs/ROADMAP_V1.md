@@ -139,8 +139,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - **Feito em 16/11 (ADR 0333):** sinal de vida de cada grupo do cron, `/api/v1/health` com as rotinas e vigia de hora em hora
   que avisa por e-mail (`ALERT_EMAIL`). Falta o Djalma escolher o e-mail e criar o monitor externo (roteiro em HOSPEDAGEM.md §8).
 - Rotação dos logs, disco e uso de memória; aviso de certificado HTTPS e de certificado do banco perto de vencer.
-  **Feito em 17/11 (ADR 0336):** logs por 6 meses, disco e certificado HTTPS no vigia. Falta: memória (medir no piloto) e
-  certificado do banco.
+  **Feito em 17/11 (ADR 0336):** logs por 6 meses, disco e certificado HTTPS no vigia. **Feito em 17/11 (ADR 0352):**
+  certificado do Inter e da Cora no vigia, 30 dias antes e quando vencer. Falta: memória (medir no piloto).
 
 ### 3.7 Segurança
 - Revisão final antes de abrir ao público: acesso cruzado entre condomínios, IDOR, upload, XSS, CSRF nas rotas novas desde 11/11.
