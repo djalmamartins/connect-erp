@@ -63,6 +63,37 @@ final class HostingMonitorTest extends TestCase
         self::assertStringContainsString('erp.exemplo (1)', $mail['subject']);
     }
 
+    public function testBankCertificateWarnsBeforeAndAfterExpiry(): void
+    {
+        $day = 86400;
+        $row = static fn (int $id, ?string $on): array => ['id' => $id, 'adapter' => 'inter', 'environment' => 'production',
+            'certificate_expires_on' => $on, 'account' => 'Conta <Inter>', 'condominium' => 'Ed. Aurora'];
+        $now = self::NOW;
+        $rows = [
+            $row(1, date('Y-m-d', $now + 40 * $day)),
+            $row(2, date('Y-m-d', $now + 10 * $day)),
+            $row(3, date('Y-m-d', $now - 2 * $day)),
+            $row(4, null),
+            $row(5, date('Y-m-d H:i:s', $now + 29 * $day)),
+        ];
+        $problems = HostingWatchdog::bankCertProblems($rows, $now);
+        self::assertSame(['bankcert:2', 'bankcert-expired:3', 'bankcert:5'], array_keys($problems));
+        self::assertStringContainsString('Banco Inter (produção, Ed. Aurora · Conta <Inter>) vence em 10 dia(s)', $problems['bankcert:2']);
+        self::assertStringContainsString('venceu em', $problems['bankcert-expired:3']);
+        self::assertStringContainsString('Configurações › Integrações', $problems['bankcert:2']);
+        $cora = HostingWatchdog::bankCertProblems([['id' => 9, 'adapter' => 'cora', 'environment' => 'sandbox', 'certificate_expires_on' => date('Y-m-d', $now), 'account' => null, 'condominium' => null]], $now);
+        self::assertSame(['bankcert:9'], array_keys($cora));
+        self::assertStringContainsString('Cora (teste) vence em 0 dia(s)', $cora['bankcert:9']);
+
+        // A contagem de dias muda todo dia, mas a chave não: o e-mail não repete a cada hora.
+        $sent = ['hash' => HostingWatchdog::hash($problems), 'sent_at' => $now];
+        self::assertFalse(HostingWatchdog::due(HostingWatchdog::bankCertProblems($rows, $now + $day), $sent, $now + 3600));
+        // Quando vence de fato, a chave muda e sai aviso novo.
+        self::assertTrue(HostingWatchdog::due(HostingWatchdog::bankCertProblems($rows, $now + 11 * $day), $sent, $now + 11 * $day));
+        $watchdog = (string)file_get_contents(dirname(__DIR__, 3) . '/tools/hosting/watchdog.php');
+        self::assertStringContainsString('HostingWatchdog::bankCertProblems(', $watchdog);
+    }
+
     public function testCronWritesHeartbeatAndRunsWatchdog(): void
     {
         $cron = (string)file_get_contents(dirname(__DIR__, 3) . '/tools/hosting/cron.sh');

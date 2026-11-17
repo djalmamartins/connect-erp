@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Vigia da hospedagem (ADR 0333): php tools/hosting/watchdog.php [--dry-run]
  * Roda de hora em hora pelo tools/hosting/cron.sh (grupo "hora"). Lê o sinal de vida das rotinas do cron, conta os avisos
- * da fila que falharam nas últimas 24 horas, o disco perto do limite do plano e o certificado HTTPS (ADR 0336) e manda um e-mail para ALERT_EMAIL quando algo muda (ou a cada 12 horas
+ * da fila que falharam nas últimas 24 horas, o disco perto do limite do plano, o certificado HTTPS (ADR 0336) e o certificado dos bancos (ADR 0352) e manda um e-mail para ALERT_EMAIL quando algo muda (ou a cada 12 horas
  * enquanto continuar). Sem ALERT_EMAIL, ou com --dry-run, só escreve no log do cron. Não envia nada para morador.
  */
 
@@ -32,6 +32,21 @@ try {
     $problemsExtra = ['database' => 'O banco de dados não respondeu ao vigia.'];
 }
 $problems = HostingWatchdog::problems(HostingHealth::evaluate(HostingHealth::read(), $now), $failed) + ($problemsExtra ?? []);
+
+// Certificado do Inter e da Cora (ADR 0352): 30 dias antes e quando vencer.
+if (!isset($problemsExtra)) {
+    try {
+        $rows = \Source\Core\Connect::getInstance()->query("SELECT c.id, c.adapter, c.environment, c.certificate_expires_on,
+                a.name AS account, co.name AS condominium
+            FROM erp_bank_credentials c
+            LEFT JOIN erp_bank_accounts a ON a.id = c.bank_account_id
+            LEFT JOIN condominiums co ON co.id = a.condominium_id
+            WHERE c.certificate_expires_on IS NOT NULL")->fetchAll(\PDO::FETCH_ASSOC);
+        $problems += HostingWatchdog::bankCertProblems($rows, $now);
+    } catch (\Throwable $error) {
+        // Sem a tabela (instalação antiga) o vigia segue com o resto.
+    }
+}
 
 // Disco (medido pela faxina diária) e certificado HTTPS do site (ADR 0336).
 $usage = @file_get_contents(dirname(__DIR__, 2) . '/storage/temp/disk-usage');

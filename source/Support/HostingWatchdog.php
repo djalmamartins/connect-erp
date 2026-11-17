@@ -43,6 +43,41 @@ final class HostingWatchdog
         return $out;
     }
 
+    /** Dias de antecedência para avisar do certificado do banco (o Inter e a Cora emitem por 1 ano; a troca leva dias). */
+    public const BANK_CERT_WARN_DAYS = 30;
+
+    /**
+     * Certificados dos bancos (mTLS do Inter e da Cora, ADR 0352) vencidos ou perto de vencer. Sem o certificado válido a
+     * emissão e a consulta dos boletos param. Chave estável por credencial e situação (vence/venceu), para o e-mail sair
+     * de novo quando vencer de fato.
+     *
+     * @param list<array{id:int|string, adapter:string, environment:string, certificate_expires_on:?string, account:?string, condominium:?string}> $credentials
+     * @return array<string, string>
+     */
+    public static function bankCertProblems(array $credentials, int $now): array
+    {
+        $out = [];
+        $today = strtotime(date('Y-m-d', $now));
+        foreach ($credentials as $c) {
+            $expires = (string)($c['certificate_expires_on'] ?? '');
+            if ($expires === '' || ($at = strtotime(substr($expires, 0, 10))) === false) {
+                continue;
+            }
+            $days = (int)floor(($at - $today) / 86400);
+            if ($days >= self::BANK_CERT_WARN_DAYS) {
+                continue;
+            }
+            $bank = ['inter' => 'Banco Inter', 'cora' => 'Cora'][strtolower((string)$c['adapter'])] ?? (string)$c['adapter'];
+            $where = trim(implode(' · ', array_filter([(string)($c['condominium'] ?? ''), (string)($c['account'] ?? '')])));
+            $env = (string)$c['environment'] === 'production' ? 'produção' : 'teste';
+            $label = sprintf('%s (%s%s)', $bank, $env, $where !== '' ? ', ' . $where : '');
+            $out[($days < 0 ? 'bankcert-expired:' : 'bankcert:') . (int)$c['id']] = $days < 0
+                ? sprintf('O certificado do %s venceu em %s. Sem ele os boletos não são emitidos nem consultados. Gere outro no banco e envie em Configurações › Integrações.', $label, date('d/m/Y', $at))
+                : sprintf('O certificado do %s vence em %d dia(s) (%s). Gere outro no banco e envie em Configurações › Integrações antes disso.', $label, $days, date('d/m/Y', $at));
+        }
+        return $out;
+    }
+
     /**
      * @param array<string, string> $problems
      * @param array{hash?:string, sent_at?:int} $state o último aviso enviado
