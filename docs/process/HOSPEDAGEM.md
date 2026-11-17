@@ -56,11 +56,11 @@ reaproveitadas (`docs/migration/PENDENCIAS.md` item 7).
 7 * * * *   bash /home/USUARIO/connect/tools/hosting/cron.sh hora
 0 7 * * *   bash /home/USUARIO/connect/tools/hosting/cron.sh dia
 30 3 * * *  bash /home/USUARIO/connect/tools/hosting/cron.sh backup
-* * * * *   php /home/USUARIO/connect/tools/talk-worker.php
 ```
 
-A última linha é o worker do Connect Talk (ADR 0349): envia as mensagens da fila, os agendamentos e as campanhas e
-roda 55 s por minuto. Os e-mails da fila saem pelo SMTP quando o `.env` tem `ERP_MAIL_DELIVERY=production` (ADR 0358);
+O Connect Talk **não roda na hospedagem** (Djalma, 17/11/2026, ADR 0359): volta a ser o projeto separado
+(`djalmamartins/talk`), inteiro num Raspberry Pi no escritório com nobreak, e conversa com o ERP pelas rotas `/talk/...` da API, com o token `ctk_` (ADR 0308). Por isso não
+há cron do `tools/talk-worker.php` no hPanel. Os e-mails da fila saem pelo SMTP quando o `.env` tem `ERP_MAIL_DELIVERY=production` (ADR 0358);
 o `cron.sh` lê do `.env` essa chave, `MAIL_QUEUE_SEND` e `PHP_BIN`.
 
 Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `bash`. Logs em `storage/logs/cron-*.log`.
