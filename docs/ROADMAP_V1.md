@@ -71,6 +71,10 @@ uma em 10 minutos e fechar. `#46` (decisões antes do banco real) fica aberta at
 | Proxy do webhook: `ssl_verify_client` com a CA do Inter, IPs do banco, corpo até 256 KB | configurar no servidor |
 
 ### 3.4 Servidor e implantação: Hostinger Cloud Startup (decisão do Djalma, 16/11/2026)
+**Bloqueio achado em 17/11 (ADR 0379):** o banco de produção começa vazio e `composer db:migrate` falha, porque as tabelas
+base (`users`, `access_*`, `settings`...) nunca vieram de migration. Passo 1 feito: `tools/lab-exportar-esquema.sh` exporta
+a estrutura do laboratório sem dados. **[Djalma]** rodar no Mac; depois, instalação limpa com catálogos e primeiro
+administrador, e um job de instalação limpa no CI.
 Hoje não existe nada de produção. O alvo é a hospedagem **Cloud Startup** (Hostinger, painel hPanel), não uma VPS. Ela traz PHP
 selecionável, MariaDB, SSH, Composer, Git, cron, SSL grátis, e-mail e backup diário do próprio provedor. Ela **não** tem Docker,
 root, processo rodando o tempo todo nem configuração própria do servidor web (é LiteSpeed com `.htaccess`). Conferir no hPanel
