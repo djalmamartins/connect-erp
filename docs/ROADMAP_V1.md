@@ -44,15 +44,17 @@ Se o servidor ou a aprovação do Inter atrasarem, tudo anda junto: cada semana 
 | Item | Situação | Para a v1.0? |
 | --- | --- | --- |
 | AP-031 Pagamentos (Bancos) | sem backend; depende de pagamento por API no banco | **não** (v1.1; pagar fornecedor pelo internet banking no início) |
-| Pendências do modelo 8 (Nova Receita): conta relacionada, tipo da fatura, anexos no envio | aberto desde a etapa 4 de 15/11 | sim, pequeno |
-| Prestação de contas: colunas Sobras de rateio e Fundo de reserva, juntar anexos PDF | aberto desde a etapa 5 de 15/11 | sim |
+| Pendências do modelo 8 (Nova Receita): conta relacionada, tipo da fatura, anexos no envio | **feito** (ADR 0323, 0329 e 0331: anexos, conta relacionada, repetição e boleto único) | sim |
+| Prestação de contas: colunas Sobras de rateio e Fundo de reserva, juntar anexos PDF | **feito** (ADR 0323) | sim |
 | Lista de revisão do Djalma prometida para depois de 19/11 | ainda não chegou | sim |
-| **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | a dimensionar numa frente própria; o PR #538 (API entre dois sistemas, ADR 0308) deve ser revisto ou fechado | a decidir |
+| **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | **etapas 1 e 2 feitas** (ADR 0324 e 0349: Talk no ERP, WhatsApp num Raspberry Pi e worker pelo cron); dados do titular no Talk (ADR 0353) | sim |
 | NFS-e etapas 2 e 3 (certificado A1, envio à API Nacional, nota do condomínio) | dependem de dados fiscais e da norma de dez/2026 | **não** (emitir manualmente no início) |
 | Itaú e CNAB 240 genérico | não iniciados | **não** (v1.1) |
 | `docs/specs/pages/ap-*.md` com campos PENDENTE | documentação desatualizada | não bloqueia |
 
 ### 3.2 Issues antigas abertas (provavelmente já resolvidas)
+**Feito em 16/11 (etapa 1):** `#1`, `#2`, `#3`, `#10` e `#11` fechadas; `docs/migration/PENDENCIAS.md` revisado.
+
 `#1` (commits só no Mac), `#2` (Fase 1 integração/smoke), `#3` (studio.min.css), `#10` (frontend dourado; o ERP mudou para o
 visual verde, 08/11) e `#11` (links `/login`). O trabalho dessas issues foi feito ou substituído em PRs posteriores. Conferir cada
 uma em 10 minutos e fechar. `#46` (decisões antes do banco real) fica aberta até a produção do Inter. `#400` vira o PR #538.
