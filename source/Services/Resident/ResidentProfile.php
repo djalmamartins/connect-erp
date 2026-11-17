@@ -101,6 +101,22 @@ final class ResidentProfile
         }
     }
 
+    /**
+     * Conta excluída (ADR 0377, LGPD): apaga a foto do armazenamento e a linha do perfil. Sem foto, só a linha.
+     */
+    public function forgetAccount(int $userId): void
+    {
+        $row = $this->row($userId);
+        if ($row === null) {
+            return;
+        }
+        $relative = $this->photoRelative($row);
+        if ($relative !== null) {
+            $this->store->delete($relative);
+        }
+        $this->pdo->prepare('DELETE FROM erp_resident_app_profiles WHERE user_id = :user')->execute(['user' => $userId]);
+    }
+
     /** Recorte central quadrado (regra pura): [x, y, lado] da área da imagem original que vira a foto. */
     public static function squareCrop(int $width, int $height): array
     {
