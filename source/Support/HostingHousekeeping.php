@@ -18,11 +18,32 @@ final class HostingHousekeeping
     public const KEEP_DAYS = 183;
     public const DISK_WARN = 0.85;
     public const CERT_WARN_DAYS = 15;
+    /** Cópia local do OneDrive (ADR 0375): sai depois de 7 dias sem uso; envio interrompido (.part), depois de 1 dia. */
+    public const CACHE_DAYS = 7;
 
     /**
      * @param list<string> $names nomes dos arquivos de storage/logs
      * @return array{compress:list<string>, delete:list<string>}
      */
+    /**
+     * Arquivos do cache do OneDrive a apagar (ADR 0375). O path() do armazenamento renova a data a cada uso.
+     *
+     * @param array<string, int> $files caminho => data de modificação
+     * @return list<string>
+     */
+    public static function cachePlan(array $files, int $now): array
+    {
+        $delete = [];
+        foreach ($files as $path => $modified) {
+            $limit = str_ends_with($path, '.part') ? 86400 : self::CACHE_DAYS * 86400;
+            if ($now - $modified > $limit) {
+                $delete[] = $path;
+            }
+        }
+        sort($delete);
+        return $delete;
+    }
+
     public static function logPlan(array $names, string $today): array
     {
         $plan = ['compress' => [], 'delete' => []];

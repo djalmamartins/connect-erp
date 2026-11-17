@@ -176,4 +176,5 @@ moradores no OneDrive empresarial da Connect (precisa da conta Microsoft 365 Bus
    faltando chave, ele acusa e os arquivos continuam no servidor.
 6. Os arquivos que já estão no servidor precisam ser copiados para `ConnectERP/documents`, `ConnectERP/inspections` e
    `ConnectERP/resident-photos` com a mesma árvore de pastas **antes** de trocar para `onedrive` (passo de migração ainda
-   a fazer). A cópia local de leitura fica em `storage/cache/onedrive/` e pode ser apagada a qualquer momento.
+   a fazer). A cópia local de leitura fica em `storage/cache/onedrive/` e pode ser apagada a qualquer momento; a faxina
+   diária já apaga o que ficou 7 dias sem uso (ADR 0375).

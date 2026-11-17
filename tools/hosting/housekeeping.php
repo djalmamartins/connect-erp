@@ -40,6 +40,26 @@ if (!$dryRun) {
     }
 }
 
+// Cache do OneDrive (ADR 0375): cópias locais sem uso há 7 dias e envios interrompidos saem; o original fica no OneDrive.
+$cache = $root . '/storage/cache/onedrive';
+$cached = [];
+if (is_dir($cache)) {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cache, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if ($file->isFile() && !$file->isLink()) {
+            $cached[$file->getPathname()] = (int)$file->getMTime();
+        }
+    }
+}
+$plan['cache'] = HostingHousekeeping::cachePlan($cached, time());
+$done['cache'] = 0;
+if (!$dryRun) {
+    foreach ($plan['cache'] as $path) {
+        if (str_starts_with($path, $cache . '/') && @unlink($path)) {
+            $done['cache']++;
+        }
+    }
+}
+
 $usedKb = null;
 $du = trim((string)@shell_exec('du -sk ' . escapeshellarg($root) . ' 2>/dev/null'));
 if (preg_match('/^(\d+)/', $du, $m)) {
