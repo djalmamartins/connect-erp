@@ -70,4 +70,7 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 1. Confirmar papéis (condomínio controlador, Connect operadora) e incluir no contrato com cada condomínio.
 2. Nomear o encarregado e publicar o canal do titular.
 3. Prazos marcados como PENDENTE: portaria, e-mails, Talk e `system_audit_logs`.
-4. Texto da política de privacidade do site e do app (§3.8 do ROADMAP).
+4. Desde 17/11/2026 (ADR 0359) o Talk em uso roda no projeto separado, num Raspberry Pi no escritório: os dados dele
+   ficam no Pi, fora do relatório e da anonimização do ERP. Pedido de titular precisa ser atendido também lá (**PENDENTE**
+   no projeto `djalmamartins/talk`).
+5. Texto da política de privacidade do site e do app (§3.8 do ROADMAP).

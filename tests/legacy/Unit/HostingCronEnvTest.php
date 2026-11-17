@@ -57,9 +57,11 @@ final class HostingCronEnvTest extends TestCase
             'o ambiente vale sobre o .env');
     }
 
-    public function testHostingGuideHasTheTalkWorker(): void
+    public function testHostingGuideHasNoTalkWorkerCron(): void
     {
+        // O Talk voltou para o projeto separado no Raspberry Pi do escritório (ADR 0359): nada de worker no hPanel.
         $guide = (string)file_get_contents(dirname(__DIR__, 3) . '/docs/process/HOSPEDAGEM.md');
-        self::assertStringContainsString('tools/talk-worker.php', $guide);
+        self::assertDoesNotMatchRegularExpression('~^\*.*talk-worker\.php~m', $guide);
+        self::assertStringContainsString('ADR 0359', $guide);
     }
 }
