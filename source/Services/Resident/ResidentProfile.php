@@ -9,6 +9,7 @@ use Source\Core\Connect;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Support\Audit;
 use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\DocumentStores;
 use Source\Support\Storage\LocalDocumentStore;
 
 /**
@@ -36,7 +37,8 @@ final class ResidentProfile
     public function __construct(?PDO $pdo = null, ?string $root = null, ?DocumentStore $store = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
-        $this->store = $store ?? new LocalDocumentStore($root ?? dirname(__DIR__, 3) . '/storage/private/resident-photos');
+        $local = dirname(__DIR__, 3) . '/storage/private/resident-photos';
+        $this->store = $store ?? ($root !== null ? new LocalDocumentStore($root) : DocumentStores::make('resident-photos', $local));
     }
 
     /** @return array{completed: bool, has_photo: bool} */

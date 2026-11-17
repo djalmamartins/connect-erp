@@ -157,3 +157,23 @@ php tools/hosting/load-test-limits.php --base=https://erp.connectcondominios.com
 Esperado: no primeiro, `aceitos` igual a 6 (limite por conta); no segundo, até 30 (limite por IP no banco; o contador em
 arquivo corta em 40). O seu IP fica bloqueado por 15 minutos depois do teste. Não rodar contra o servidor com moradores
 usando: quem estiver no mesmo IP do teste também fica bloqueado.
+
+## 10. Arquivos no OneDrive da Connect (ADR 0373/0374)
+
+Padrão: `DOCUMENT_STORAGE=local` (pasta privada do servidor). Para guardar os documentos, fotos de vistoria e fotos dos
+moradores no OneDrive empresarial da Connect (precisa da conta Microsoft 365 Business no domínio):
+
+1. Entra ID (portal.azure.com > Microsoft Entra ID > Registros de aplicativo > Novo registro): nome "Connect ERP
+   arquivos", conta só desta organização. Anote o **ID do diretório (locatário)** e o **ID do aplicativo (cliente)**.
+2. Certificados e segredos > Novo segredo do cliente (24 meses). Copie o **valor** na hora (ele não aparece de novo) e
+   anote no calendário a data de troca.
+3. Permissões de API > Microsoft Graph > Permissões de aplicativo > `Files.ReadWrite.All` > Conceder consentimento de
+   administrador.
+4. ID do drive: no Graph Explorer, com a conta da Connect, `GET https://graph.microsoft.com/v1.0/users/<e-mail>/drive`
+   e copie o `id`.
+5. No `.env` do servidor: `DOCUMENT_STORAGE=onedrive`, `ONEDRIVE_TENANT_ID`, `ONEDRIVE_CLIENT_ID`,
+   `ONEDRIVE_CLIENT_SECRET`, `ONEDRIVE_DRIVE_ID` e `ONEDRIVE_FOLDER=ConnectERP`. Rode `php service/commands/deploy-check.php`:
+   faltando chave, ele acusa e os arquivos continuam no servidor.
+6. Os arquivos que já estão no servidor precisam ser copiados para `ConnectERP/documents`, `ConnectERP/inspections` e
+   `ConnectERP/resident-photos` com a mesma árvore de pastas **antes** de trocar para `onedrive` (passo de migração ainda
+   a fazer). A cópia local de leitura fica em `storage/cache/onedrive/` e pode ser apagada a qualquer momento.

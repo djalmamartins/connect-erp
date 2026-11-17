@@ -105,6 +105,12 @@ final class DeployReadiness
         if (count($keys) === 2 && count(array_unique($keys)) === 1) {
             $errors[] = 'CONNECT_2FA_KEY e CONNECT_BANK_VAULT_KEY não podem ser a mesma chave.';
         }
+        $storage = \Source\Support\Storage\DocumentStores::mode($env);
+        if ($storage === '') {
+            $errors[] = 'DOCUMENT_STORAGE precisa ser local ou onedrive (ADR 0374).';
+        } elseif ($storage === 'onedrive' && ($missing = \Source\Support\Storage\DocumentStores::missing($env)) !== []) {
+            $errors[] = 'DOCUMENT_STORAGE=onedrive sem ' . implode(', ', $missing) . ': os arquivos continuariam no servidor.';
+        }
         $talk = $get('TALK_KEY');
         if ($talk !== '' && in_array($talk, $keys, true)) {
             $errors[] = 'TALK_KEY não pode repetir a chave do 2FA ou do cofre dos bancos.';

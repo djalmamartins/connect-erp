@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Source\Services\Inspections;
 
 use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\DocumentStores;
 use Source\Support\Storage\LocalDocumentStore;
 
 /**
@@ -30,8 +31,8 @@ final class PhotoStorage
     /** $root continua sendo a pasta local (cache dos relatórios em PDF); $store é onde as fotos ficam. */
     public function __construct(?string $root = null, ?DocumentStore $store = null)
     {
+        $this->store = $store ?? ($root !== null ? new LocalDocumentStore($root) : DocumentStores::make('inspections', self::defaultRoot()));
         $this->root = rtrim($root ?? self::defaultRoot(), '/');
-        $this->store = $store ?? new LocalDocumentStore($this->root);
     }
 
     public static function defaultRoot(): string
