@@ -24,3 +24,34 @@ jobs:
         run: php tests/erp/render-smoke.php
       - name: ERP render smoke on the ERP host
         run: SMOKE_HOST=erp.connect.lab php tests/erp/render-smoke.php
+  # Integração num MariaDB de verdade (ADR 0369): o job acima roda só os testes de unidade sem banco.
+  php-integration:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      MOVESOS_TEST_DB_HOST: 127.0.0.1
+      MOVESOS_TEST_DB_PORT: 3306
+      MOVESOS_TEST_DB_USER: root
+      MOVESOS_TEST_DB_PASS: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, dom, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, simplexml, zip
+          tools: composer:v2
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Unit tests with MariaDB
+        run: composer test:unit
+      - name: Integration tests with MariaDB
+        run: composer test:integration
