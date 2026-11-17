@@ -67,6 +67,16 @@ final class OversizedPost
         return str_starts_with($path, '/') && !str_starts_with($path, '//') ? $path : '/';
     }
 
+    /**
+     * Corpo do 413. A API lê error.message; a Central de Ajuda e o widget do Help Desk leem success/message.
+     *
+     * @return array{success: false, message: string, error: array{code: string, message: string}}
+     */
+    public static function jsonBody(string $message): array
+    {
+        return ['success' => false, 'message' => $message, 'error' => ['code' => 'payload_too_large', 'message' => $message]];
+    }
+
     /** Chamado no index.php: responde e encerra quando o envio foi descartado. */
     public static function handle(): void
     {
@@ -79,7 +89,7 @@ final class OversizedPost
             'event_type' => 'post_too_large', 'content_length' => (int)($_SERVER['CONTENT_LENGTH'] ?? 0), 'limit' => $limit,
         ]);
         if (self::wantsJson($_SERVER)) {
-            JsonResponse::send(413, ['error' => ['code' => 'payload_too_large', 'message' => $message]]);
+            JsonResponse::send(413, self::jsonBody($message));
             exit;
         }
         (new Message())->warning($message)->flash();
