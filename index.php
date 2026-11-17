@@ -1,6 +1,8 @@
 <?php
 ob_start();
 require __DIR__ . "/vendor/autoload.php";
+// Sem debug, erro do PHP não aparece na tela nem a versão do PHP no cabeçalho (ADR 0366).
+\Source\Support\ErrorDisplay::apply(CONF_APP_DEBUG);
 
 /**
  * BOOTSTRAP
