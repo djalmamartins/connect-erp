@@ -116,7 +116,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - **PDFs:** quase todos já são gerados na hora do pedido e não ocupam disco (boletos vêm do banco, listas, prestação de contas,
   carta de cobrança, livro-caixa, documentos da unidade). Ficam gravados só o relatório de vistoria (anexo do e-mail), as propostas
   do Studio e um cache de 24 h do PDF público da prestação de contas. O relatório de vistoria pode passar a ser gerado só para o envio
-  (tarefa pequena). O que ocupa espaço de verdade são os arquivos enviados (notas, comprovantes, fotos, anexos), que não dá para gerar
+  (tarefa pequena; **feito em 16/11, ADR 0335**: o PDF é apagado no dia seguinte ao envio). O que ocupa espaço de verdade são os arquivos enviados (notas, comprovantes, fotos, anexos), que não dá para gerar
   de novo e vão para o backup.
 - **Documentos dos condomínios no OneDrive** (pedido do Djalma, 16/11/2026): os arquivos do Disco Virtual (e depois fotos de vistoria,
   anexos e importações) passam a morar numa pasta do OneDrive, uma subpasta por condomínio, e o ERP lê de lá pela API da Microsoft

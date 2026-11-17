@@ -50,8 +50,9 @@ case "$group" in
         jobs=("$php_bin tools/bank-charges-sync.php 200" "$php_bin tools/hosting/watchdog.php")
         ;;
     dia)
-        # Avisos do checklist de chegada e lembretes do atendimento de cobrança (ADR 0315).
-        jobs=("$php_bin service/jobs/onboarding-alerts.php" "$php_bin tools/collection-reminders.php")
+        # Avisos do checklist de chegada e lembretes do atendimento de cobrança (ADR 0315); PDFs de vistoria já
+        # enviados por e-mail (ADR 0335).
+        jobs=("$php_bin service/jobs/onboarding-alerts.php" "$php_bin tools/collection-reminders.php" "$php_bin tools/inspection-reports-cleanup.php")
         ;;
     backup)
         jobs=("bash tools/hosting/backup.sh")
