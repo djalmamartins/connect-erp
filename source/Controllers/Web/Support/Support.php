@@ -119,6 +119,7 @@ class Support extends Controller
     public function widget(): void
     {
         header("Content-Security-Policy: frame-ancestors *");
+        header_remove('X-Frame-Options'); // o widget é feito para outros sites (ADR 0355)
         echo $this->view->render('pages/widget', ['siteName' => CONF_SITE_NAME, 'widgetToken' => $this->widgetToken()]);
     }
 

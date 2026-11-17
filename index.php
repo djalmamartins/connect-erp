@@ -15,6 +15,9 @@ use Source\Support\AppLogger;
 $logger = AppLogger::bootstrap();
 $session = new Session();
 
+// Cabeçalhos de segurança de toda resposta (ADR 0355): sem moldura de outro site, nosniff, HSTS fora do lab.
+\Source\Support\SecurityHeaders::send(is_local_host());
+
 /**
  * CONNECT TALK (ADR 0324): o atendimento por WhatsApp mora no host talk.<domínio>, com o front controller próprio em
  * container/talk. Só a troca de ambiente (/ambiente/...) passa pelo roteador do ERP nesse host.
