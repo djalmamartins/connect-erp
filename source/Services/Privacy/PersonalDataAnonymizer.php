@@ -23,6 +23,9 @@ use Source\Services\CondominiumScope;
  * - chamados: nome, e-mail e telefone de quem abriu apagados (o texto do chamado fica, é registro do atendimento);
  * - portaria (entradas e saídas, visitas previstas), mudanças, reservas, lista de espera e contatos de cobrança (ADR 0351):
  *   nome anonimizado, documento e anotações apagados (datas, unidade e valores ficam).
+ * - Connect Talk (ADR 0353, só para quem acessa todos os condomínios): o contato perde nome, telefone e a cópia do cadastro
+ *   (o telefone vira "anon-{id}"), as anotações da equipe sobre ele são apagadas e os envios de campanha e da fila perdem
+ *   o telefone. As mensagens ficam, como o texto do chamado (registro do atendimento).
  * Cargos no conselho e presença em assembleia não mudam: são parte da ata e do mandato (guarda do condomínio); aparecem
  * na prévia em "kept".
  * Contas a receber, boletos, acordos e prestação de contas não mudam (guarda obrigatória da contabilidade e do condomínio).
@@ -48,7 +51,7 @@ final class PersonalDataAnonymizer
     /** @param array<string, mixed> $input */
     public function run(User $user, array $input): array
     {
-        return $this->apply($this->scope->allowedIds($user), $input, date('Y-m-d'));
+        return $this->apply($this->scope->allowedIds($user), $input, date('Y-m-d'), $this->scope->hasGlobalAccess($user));
     }
 
     /**
@@ -56,7 +59,7 @@ final class PersonalDataAnonymizer
      * @param array<string, mixed> $input document, email, reason, confirm
      * @return array<string, mixed>
      */
-    public function apply(array $condominiumIds, array $input, string $today): array
+    public function apply(array $condominiumIds, array $input, string $today, bool $globalAccess = false): array
     {
         [$document, $email] = PersonalDataExport::criteria($input['document'] ?? null, $input['email'] ?? null);
         $reason = trim((string)($input['reason'] ?? ''));
@@ -64,7 +67,7 @@ final class PersonalDataAnonymizer
         if ($confirm && (mb_strlen($reason) < 10 || mb_strlen($reason) > 500)) {
             throw new InvalidArgumentException('Informe o motivo (de 10 a 500 caracteres), por exemplo o número do pedido do titular.');
         }
-        $found = (new PersonalDataExport($this->pdo))->collect($condominiumIds, $document, $email);
+        $found = (new PersonalDataExport($this->pdo))->collect($condominiumIds, $document, $email, $globalAccess);
         $residents = $found['residents']['rows'];
         if ($residents === [] && $found['visitors']['rows'] === [] && $found['tickets']['rows'] === [] && $found['access_logs']['rows'] === []
             && $found['visit_forecasts']['rows'] === []) {
@@ -84,8 +87,10 @@ final class PersonalDataAnonymizer
             'reservations' => array_map('intval', array_column($found['reservations']['rows'], 'id')),
             'waitlist' => array_map('intval', array_column($found['waitlist']['rows'], 'id')),
             'collection_contacts' => array_map('intval', array_column($found['collection_contacts']['rows'], 'id')),
+            'talk_contacts' => array_map('intval', array_column($found['talk_contacts']['rows'], 'id')),
+            'talk_campaign_recipients' => array_map('intval', array_column($found['talk_campaign_recipients']['rows'], 'id')),
             'kept' => ['receivables' => count($found['receivables']['rows']), 'board_members' => count($found['board_members']['rows']),
-                'assembly_attendance' => count($found['assembly_attendance']['rows'])],
+                'assembly_attendance' => count($found['assembly_attendance']['rows']), 'talk_messages' => count($found['talk_messages']['rows'])],
         ];
         $result = ['confirmed' => false, 'blockers' => $blockers, 'plan' => $plan];
         if (!$confirm) {
@@ -168,6 +173,16 @@ final class PersonalDataAnonymizer
         }
         foreach ($plan['collection_contacts'] ?? [] as $id) {
             $this->pdo->prepare('UPDATE erp_collection_contacts SET contact_name = ?, note = NULL WHERE id = ?')->execute([self::LABEL, $id]);
+        }
+        foreach ($plan['talk_contacts'] ?? [] as $id) {
+            $this->pdo->prepare("UPDATE talk_outbox SET to_phone = '' WHERE status IN ('sent', 'failed')
+                AND message_id IN (SELECT m.id FROM talk_messages m JOIN talk_conversations c ON c.id = m.conversation_id WHERE c.contact_id = ?)")->execute([$id]);
+            $this->pdo->prepare('DELETE FROM talk_contact_notes WHERE contact_id = ?')->execute([$id]);
+            $this->pdo->prepare('UPDATE talk_contacts SET name = ?, phone = ?, erp_person_id = NULL, erp_snapshot = NULL, updated_at = ? WHERE id = ?')
+                ->execute([self::LABEL . ' #' . $id, 'anon-' . $id, $now, $id]);
+        }
+        foreach ($plan['talk_campaign_recipients'] ?? [] as $id) {
+            $this->pdo->prepare('UPDATE talk_campaign_recipients SET phone = ?, name = NULL, params = NULL WHERE id = ?')->execute(['anon-' . $id, $id]);
         }
         foreach ($plan['tickets'] as $id) {
             $this->pdo->prepare('UPDATE studio_support_tickets SET requester_name = ?, requester_email = NULL, requester_phone = NULL WHERE id = ?')

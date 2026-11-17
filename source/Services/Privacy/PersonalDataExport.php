@@ -9,6 +9,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Talk\Support\Phone;
 use Source\Support\Erp\BrDocument;
 
 /**
@@ -25,7 +26,10 @@ use Source\Support\Erp\BrDocument;
  * - pelo documento (ADR 0351): entradas e saídas da portaria, visitas previstas e cargos no conselho/síndico (este também
  *   pelo e-mail);
  * - pelo nome do cadastro na mesma unidade (ADR 0351): mudanças, reservas, lista de espera, presença em assembleia e
- *   contatos de cobrança, que guardam só o nome digitado.
+ *   contatos de cobrança, que guardam só o nome digitado;
+ * - no Connect Talk (ADR 0353), pelos telefones dos cadastros e do conselho encontrados: contato, conversas, mensagens e
+ *   envios de campanha. O Talk atende todos os condomínios juntos (não tem condominium_id), então só entra para quem tem
+ *   acesso a todos os condomínios.
  *
  * Somente leitura. Não sai senha, hash, token, segredo nem anotação interna (notes). Escopo (ADR-002): só condomínios que
  * quem pede acessa; a conta de acesso só aparece se ela tiver algum vínculo dentro desse escopo ou se quem pede tiver acesso
@@ -37,6 +41,9 @@ final class PersonalDataExport
 
     /** Grupos acrescentados no ADR 0351 (portaria, conselho e registros que guardam só o nome). */
     public const EXTRA_GROUPS = ['access_logs', 'visit_forecasts', 'board_members', 'moves', 'reservations', 'waitlist', 'assembly_attendance', 'collection_contacts'];
+
+    /** Connect Talk (ADR 0353): só com acesso a todos os condomínios. */
+    public const TALK_GROUPS = ['talk_contacts', 'talk_conversations', 'talk_messages', 'talk_campaign_recipients'];
 
     /** Registros com o nome solto na unidade: tabela => [coluna do nome, colunas do relatório (sem anotações)]. */
     private const BY_NAME = [
@@ -96,7 +103,7 @@ final class PersonalDataExport
             'generated_at' => date('c'),
             'residents' => $empty, 'invitations' => $empty, 'visitors' => $empty, 'vehicles' => $empty, 'pets' => $empty,
             'receivables' => $empty, 'tickets' => $empty, 'account' => null,
-        ] + array_fill_keys(self::EXTRA_GROUPS, $empty);
+        ] + array_fill_keys(self::EXTRA_GROUPS, $empty) + array_fill_keys(self::TALK_GROUPS, $empty);
         if ($ids === []) {
             return $result + ['total' => 0];
         }
@@ -171,11 +178,17 @@ final class PersonalDataExport
             }
         }
 
+        if ($globalAccess) {
+            foreach ($this->talk(array_merge($residents['rows'], $result['board_members']['rows'])) as $group => $rows) {
+                $result[$group] = $rows;
+            }
+        }
+
         $result['account'] = $this->account($document, $email, $residents['rows'], $globalAccess);
         $result['total'] = count($result['residents']['rows']) + count($result['invitations']['rows']) + count($result['visitors']['rows'])
             + count($result['vehicles']['rows']) + count($result['pets']['rows']) + count($result['receivables']['rows'])
             + count($result['tickets']['rows']) + ($result['account'] !== null ? 1 : 0)
-            + array_sum(array_map(static fn (string $g): int => count($result[$g]['rows']), self::EXTRA_GROUPS));
+            + array_sum(array_map(static fn (string $g): int => count($result[$g]['rows']), array_merge(self::EXTRA_GROUPS, self::TALK_GROUPS)));
         return $result;
     }
 
@@ -245,6 +258,45 @@ final class PersonalDataExport
             }
         }
         return array_map(static fn (array $rows): array => ['rows' => array_slice(array_values($rows), 0, self::MAX_ROWS), 'truncated' => count($rows) > self::MAX_ROWS], $found);
+    }
+
+    /**
+     * Connect Talk pelos telefones dos cadastros encontrados (com e sem DDI e o 9º dígito, como o próprio Talk procura).
+     * Sem anotações internas da equipe nem dados do canal.
+     *
+     * @param list<array<string, mixed>> $people
+     * @return array<string, array{rows:list<array<string,mixed>>, truncated:bool}>
+     */
+    private function talk(array $people): array
+    {
+        $empty = ['rows' => [], 'truncated' => false];
+        $out = array_fill_keys(self::TALK_GROUPS, $empty);
+        $phones = [];
+        foreach ($people as $p) {
+            $phone = trim((string)($p['phone'] ?? ''));
+            if (strlen((string)preg_replace('/\D+/', '', $phone)) >= 8) {
+                $phones = array_merge($phones, Phone::candidates($phone));
+            }
+        }
+        $phones = array_values(array_unique(array_filter($phones)));
+        if ($phones === []) {
+            return $out;
+        }
+        $marks = implode(',', array_fill(0, count($phones), '?'));
+        $out['talk_contacts'] = $this->rows("SELECT id, phone, name, erp_snapshot, created_at, updated_at, blocked_at, opt_out_at
+            FROM talk_contacts WHERE phone IN ({$marks}) ORDER BY id", $phones);
+        $contactIds = array_map(static fn (array $c): int => (int)$c['id'], $out['talk_contacts']['rows']);
+        $out['talk_campaign_recipients'] = $this->rows('SELECT id, campaign_id, contact_id, phone, name, status, sent_at, replied_at
+            FROM talk_campaign_recipients WHERE phone IN (' . $marks . ')' . ($contactIds !== [] ? ' OR contact_id IN (' . implode(',', $contactIds) . ')' : '') . ' ORDER BY id', $phones);
+        if ($contactIds === []) {
+            return $out;
+        }
+        $cin = implode(',', $contactIds);
+        $out['talk_conversations'] = $this->rows("SELECT id, protocol, contact_id, status, subject, helpdesk_ticket_id, opened_at, closed_at, last_message_at
+            FROM talk_conversations WHERE contact_id IN ({$cin}) ORDER BY id");
+        $out['talk_messages'] = $this->rows("SELECT m.id, m.conversation_id, m.direction, m.type, m.body, m.media_name, m.created_at
+            FROM talk_messages m JOIN talk_conversations c ON c.id = m.conversation_id WHERE c.contact_id IN ({$cin}) ORDER BY m.id");
+        return $out;
     }
 
     /**

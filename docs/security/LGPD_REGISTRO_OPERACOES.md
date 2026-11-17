@@ -61,7 +61,9 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
   conselho (`erp_board_members`, por documento ou e-mail) e os registros que guardam só o nome na unidade (`erp_moves`,
   reservas, lista de espera, presença em assembleia e contatos de cobrança). A anonimização apaga nome e documento nesses
   registros, menos no conselho e na presença em assembleia, que fazem parte das atas.
-- **PENDENTE:** o Talk (`talk_contacts`) ainda fica fora do relatório; a busca lá é pelo telefone.
+- Desde o ADR 0353 o relatório cobre também o Connect Talk (contato, conversas, mensagens e campanhas), achado pelos
+  telefones dos cadastros encontrados, só para quem acessa todos os condomínios. A anonimização apaga nome e telefone do
+  contato e mantém as mensagens, como registro do atendimento.
 
 ## 5. Decisões pendentes (Djalma e advogado)
 

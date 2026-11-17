@@ -51,6 +51,15 @@ final class PersonalDataExportTest extends TestCase
             'CREATE TABLE erp_assembly_attendance (id INTEGER PRIMARY KEY, assembly_id INTEGER, unit_id INTEGER, attendee_name TEXT, is_proxy INTEGER, checked_in_at TEXT)',
             'CREATE TABLE erp_collection_contacts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, channel TEXT, outcome TEXT, contact_name TEXT, promise_on TEXT,
                 promise_cents INTEGER, next_action_on TEXT, note TEXT, created_at TEXT)',
+            'CREATE TABLE talk_contacts (id INTEGER PRIMARY KEY, phone TEXT UNIQUE, name TEXT, erp_person_id INTEGER, erp_snapshot TEXT, created_at TEXT, updated_at TEXT,
+                blocked_at TEXT, opt_out_at TEXT)',
+            'CREATE TABLE talk_contact_notes (id INTEGER PRIMARY KEY, contact_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT)',
+            'CREATE TABLE talk_conversations (id INTEGER PRIMARY KEY, protocol TEXT, contact_id INTEGER, status TEXT, subject TEXT, helpdesk_ticket_id INTEGER,
+                opened_at TEXT, closed_at TEXT, last_message_at TEXT)',
+            'CREATE TABLE talk_messages (id INTEGER PRIMARY KEY, conversation_id INTEGER, direction TEXT, type TEXT, body TEXT, media_name TEXT, created_at TEXT)',
+            'CREATE TABLE talk_outbox (id INTEGER PRIMARY KEY, message_id INTEGER, to_phone TEXT, status TEXT)',
+            'CREATE TABLE talk_campaign_recipients (id INTEGER PRIMARY KEY, campaign_id INTEGER, contact_id INTEGER, phone TEXT, name TEXT, params TEXT, status TEXT,
+                sent_at TEXT, replied_at TEXT)',
             'CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT, document TEXT, password TEXT, status TEXT, created_at TEXT, updated_at TEXT)',
         ] as $sql) {
             $this->pdo->exec($sql);
@@ -161,4 +170,32 @@ final class PersonalDataExportTest extends TestCase
         self::assertStringNotContainsString('nota interna', $json);
         self::assertStringNotContainsString('"note"', $json);
     }
+
+    /** ADR 0353: Connect Talk pelos telefones dos cadastros, só para quem acessa todos os condomínios. */
+    public function testFindsTalkByPhoneOnlyWithGlobalAccess(): void
+    {
+        $this->pdo->exec("UPDATE erp_residents SET phone = '(31) 99876-5432' WHERE id = 10");
+        $this->pdo->exec("INSERT INTO talk_contacts (id, phone, name, erp_snapshot) VALUES (1, '5531998765432', 'José', '{\"unidade\":\"A-101\"}'), (2, '553188887777', 'Outra pessoa', NULL)");
+        $this->pdo->exec("INSERT INTO talk_contact_notes (id, contact_id, body) VALUES (1, 1, 'nota interna da equipe')");
+        $this->pdo->exec("INSERT INTO talk_conversations (id, protocol, contact_id, status) VALUES (1, 'T-1', 1, 'closed'), (2, 'T-2', 2, 'open')");
+        $this->pdo->exec("INSERT INTO talk_messages (id, conversation_id, direction, type, body) VALUES (1, 1, 'in', 'text', 'Bom dia, sou do A-101'), (2, 2, 'in', 'text', 'outra conversa')");
+        $this->pdo->exec("INSERT INTO talk_outbox (id, message_id, to_phone, status) VALUES (1, 1, '5531998765432', 'sent'), (2, 2, '553188887777', 'sent')");
+        $this->pdo->exec("INSERT INTO talk_campaign_recipients (id, campaign_id, contact_id, phone, name, params, status) VALUES
+            (1, 1, NULL, '31998765432', 'José', '{\"nome\":\"José\"}', 'sent'), (2, 1, 2, '553188887777', 'Outra pessoa', NULL, 'sent')");
+
+        $export = new PersonalDataExport($this->pdo);
+        $scoped = $export->collect([1], self::CPF, null);
+        foreach (PersonalDataExport::TALK_GROUPS as $group) {
+            self::assertSame([], $scoped[$group]['rows'], 'sem acesso a todos os condomínios o Talk não entra: ' . $group);
+        }
+        $data = $export->collect([1], self::CPF, null, true);
+        $ids = static fn (string $group): array => array_map('intval', array_column($data[$group]['rows'], 'id'));
+        self::assertSame([1], $ids('talk_contacts'), 'telefone com DDI e máscara diferentes');
+        self::assertSame([1], $ids('talk_conversations'));
+        self::assertSame([1], $ids('talk_messages'));
+        self::assertSame([1], $ids('talk_campaign_recipients'), 'telefone sem DDI na campanha');
+        self::assertSame($scoped['total'] + 4, $data['total']);
+        self::assertStringNotContainsString('nota interna da equipe', (string)json_encode($data));
+    }
+
 }
