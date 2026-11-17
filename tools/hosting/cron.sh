@@ -17,12 +17,24 @@ set -u
 project=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$project" || exit 1
 group=${1:-}
-php_bin=${PHP_BIN:-php}
 log_dir="$project/storage/logs"
 mkdir -p "$log_dir"
 log="$log_dir/cron-${group:-sem-grupo}.log"
 
 failures=0
+
+# O cron não carrega o .env (ADR 0358): MAIL_QUEUE_SEND, PHP_BIN e ERP_MAIL_DELIVERY vêm de lá quando não estão no ambiente.
+env_value() {
+    [ -f "$project/.env" ] || return 0
+    { grep -E "^[[:space:]]*$1=" "$project/.env" || true; } | tail -n 1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+}
+for key in MAIL_QUEUE_SEND ERP_MAIL_DELIVERY PHP_BIN; do
+    if [ -z "${!key:-}" ]; then
+        value=$(env_value "$key")
+        if [ -n "$value" ]; then export "$key=$value"; fi
+    fi
+done
+php_bin=${PHP_BIN:-php}
 
 run() {
     local started
@@ -38,9 +50,10 @@ run() {
 
 case "$group" in
     minuto)
-        # Fila de avisos do ERP (ADR 0055). Envio da mail_queue só com MAIL_QUEUE_SEND=1 no .env do cron.
+        # Fila de avisos do ERP (ADR 0055). A mail_queue só sai pelo SMTP com MAIL_QUEUE_SEND=1 ou, na produção,
+        # com ERP_MAIL_DELIVERY=production (ADR 0358); no lab fica só no log.
         jobs=("$php_bin tools/notifications-dispatch.php 50")
-        if [ "${MAIL_QUEUE_SEND:-0}" = "1" ]; then
+        if [ "${MAIL_QUEUE_SEND:-0}" = "1" ] || [ "${ERP_MAIL_DELIVERY:-}" = "production" ]; then
             jobs+=("$php_bin service/jobs/sendEmail.php")
         fi
         ;;
