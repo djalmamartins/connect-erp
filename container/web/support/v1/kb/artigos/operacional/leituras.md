@@ -4,7 +4,7 @@ titulo: Lançar as leituras do mês
 resumo: Lance as leituras do mês de todos os relógios de uma vez, confira o consumo e o valor de cada unidade e gere as contas a receber do consumo.
 categoria: operacional
 rota: /operacional/leituras
-menu: Operacional > Leituras e consumo > Leituras
+menu: Leituras > Leituras
 icone: list-outline
 situacao: funciona
 relacionados: importacao-de-leituras, relogios, tarifas, configuracoes
@@ -16,7 +16,7 @@ Lance as leituras do mês de todos os relógios de uma vez, confira o consumo e 
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Leituras e consumo > Leituras]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Leituras > Leituras]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela leituras
 rota: /operacional/leituras

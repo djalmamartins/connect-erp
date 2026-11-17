@@ -4,7 +4,7 @@ titulo: Visitas previstas
 resumo: Visitas avisadas pela unidade com antecedência, para a portaria liberar na data sem precisar interfonar.
 categoria: operacional
 rota: /operacional/previsao-de-visita
-menu: Operacional > Portaria > Previsão de Visita
+menu: Portaria > Previsão de Visita
 icone: list-outline
 situacao: funciona
 relacionados: gerenciamento, registro-de-acessos, achados-e-perdidos, entregas
@@ -16,7 +16,7 @@ Visitas avisadas pela unidade com antecedência, para a portaria liberar na data
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Previsão de Visita]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Portaria > Previsão de Visita]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela previsao-de-visita
 rota: /operacional/previsao-de-visita

@@ -4,7 +4,7 @@ titulo: Entregas na portaria
 resumo: Encomendas recebidas pela portaria para cada unidade. Quando o morador retirar, informe a retirada para dar baixa.
 categoria: operacional
 rota: /operacional/entregas
-menu: Operacional > Portaria > Entregas
+menu: Portaria > Entregas
 icone: list-outline
 situacao: funciona
 relacionados: achados-e-perdidos, registros-de-entregas, registro-de-acessos, previsao-de-visita
@@ -16,7 +16,7 @@ Encomendas recebidas pela portaria para cada unidade. Quando o morador retirar, 
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Entregas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Portaria > Entregas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela entregas
 rota: /operacional/entregas

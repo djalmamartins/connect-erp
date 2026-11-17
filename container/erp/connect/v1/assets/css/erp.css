@@ -153,6 +153,10 @@ p { margin: 0; }
 .erp-sidebar__profile:hover { background: var(--erp-sidebar-hover); text-decoration: none; }
 .erp-sidebar__profile strong { display: block; color: var(--erp-sidebar-strong); font-size: 13px; }
 .erp-sidebar__profile small { color: var(--erp-sidebar-muted); font-size: 12px; }
+/* Troca entre o menu novo e o de antes (ADR 0358). */
+.erp-sidebar__menu-mode { margin: 0; }
+.erp-sidebar__menu-mode button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: var(--erp-radius-md); background: transparent; color: var(--erp-sidebar-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.erp-sidebar__menu-mode button:hover, .erp-sidebar__menu-mode button:focus-visible { background: var(--erp-sidebar-hover); color: var(--erp-sidebar-strong); }
 .erp-avatar { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--erp-sidebar-accent); color: var(--erp-sidebar); font-weight: 700; font-size: 14px; }
 .erp-backdrop { display: none; }
 

@@ -4,7 +4,7 @@ titulo: Portarias
 resumo: As portarias de cada condomínio: presencial, remota ou híbrida, os turnos e o responsável.
 categoria: operacional
 rota: /operacional/gerenciamento
-menu: Operacional > Portaria > Gerenciamento
+menu: Portaria > Gerenciamento
 icone: list-outline
 situacao: funciona
 relacionados: previsao-de-visita, registro-de-acessos, achados-e-perdidos, entregas
@@ -16,7 +16,7 @@ As portarias de cada condomínio: presencial, remota ou híbrida, os turnos e o 
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Gerenciamento]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Portaria > Gerenciamento]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela gerenciamento
 rota: /operacional/gerenciamento

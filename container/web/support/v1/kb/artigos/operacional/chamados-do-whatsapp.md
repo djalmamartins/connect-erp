@@ -4,7 +4,7 @@ titulo: Chamados que chegam pelo WhatsApp (Connect Talk)
 resumo: Toda conversa atendida no Connect Talk vira um chamado do Help Desk, com o nome, o condomínio e a unidade do morador puxados do cadastro do ERP. Veja como reconhecer esses chamados e como ligar o Talk ao ERP.
 categoria: operacional
 rota: /operacional/chamados
-menu: Operacional > Rotina > Chamados
+menu: Agenda > Atendimento > Chamados
 icone: chatbubbles-outline
 situacao: guia
 relacionados: chamados, proprietarios-e-inquilinos, usuarios-do-sistema
@@ -37,7 +37,7 @@ O Talk procura o telefone em [[Cadastros > Proprietários e inquilinos]]. Só en
 
 ## O chamado no Help Desk
 
-Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Operacional > Rotina > Chamados]] ele aparece com:
+Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
 
 - origem **WhatsApp (Connect Talk)** (use o filtro de origem para ver só esses);
 - o nome do cadastro do ERP, o condomínio, a unidade e o telefone de quem escreveu;
