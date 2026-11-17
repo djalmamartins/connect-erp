@@ -32,6 +32,23 @@ if (!is_file($envFile)) {
     if (($env['APP_ENV'] ?? '') === 'production') {
         filter_var($env['APP_DEBUG'] ?? true, FILTER_VALIDATE_BOOL) ? $fail('APP_DEBUG deve ser false em produção.') : $ok('Debug desativado');
         str_starts_with((string)($env['APP_URL'] ?? ''), 'https://') ? $ok('APP_URL usa HTTPS') : $warn('Use HTTPS na APP_URL de produção.');
+        // Conferência de produção (ADR 0354): .env e, se o banco responder, contas de teste, 2FA da equipe e bancos.
+        if (is_file($root . '/vendor/autoload.php')) {
+            require_once $root . '/vendor/autoload.php';
+            $ready = \Source\Support\DeployReadiness::env(array_map('strval', $env), time());
+            try {
+                $pdo = \Source\Core\Connect::getInstance();
+                if ($pdo instanceof \PDO) {
+                    $db = \Source\Support\DeployReadiness::database($pdo);
+                    $ready = ['errors' => array_merge($ready['errors'], $db['errors']), 'warnings' => array_merge($ready['warnings'], $db['warnings'])];
+                }
+            } catch (\Throwable $error) {
+                $warn('Banco não respondeu: contas de teste e 2FA da equipe não foram conferidos.');
+            }
+            array_map($fail, $ready['errors']);
+            array_map($warn, $ready['warnings']);
+            $ready['errors'] === [] && $ready['warnings'] === [] && $ok('Conferência de produção sem pendências');
+        }
     } else {
         $warn('APP_ENV ainda não está definido como production.');
     }

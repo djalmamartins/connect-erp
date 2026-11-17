@@ -41,6 +41,10 @@ php service/commands/deploy-check.php
 composer db:migrate
 ```
 
+O `deploy-check` com `APP_ENV=production` (ADR 0354) para com erro se o `.env` estiver inseguro (debug, dados de
+exemplo, endereço do laboratório, `CONNECT_2FA_KEY` ou `CONNECT_BANK_VAULT_KEY` ausente ou repetida) ou se houver conta de
+teste no banco, e avisa do que o roteiro ainda pede (2FA obrigatório, `ALERT_EMAIL`, e-mail, equipe sem 2FA).
+
 Não subir `apps/` nem `node_modules` (limite de 2 milhões de inodes). Credenciais históricas do laboratório não são
 reaproveitadas (`docs/migration/PENDENCIAS.md` item 7).
 
