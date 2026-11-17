@@ -104,7 +104,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   (`PENDENCIAS.md` item 7).
 - Roteiro de implantação e de reversão: `deploy-check.php`, migrations, smoke HTTP, volta para a versão anterior.
   **Feito em 17/11 (ADR 0354 e 0356):** `deploy-check` confere o `.env` e o banco de produção; `tools/hosting/smoke-http.php`
-  confere os 4 endereços por HTTP depois de publicar (HOSPEDAGEM.md §3 e §6).
+  confere os 4 endereços por HTTP depois de publicar (HOSPEDAGEM.md §3 e §6). **Feito em 17/11 (ADR 0361):**
+  `tools/hosting/update.sh` faz backup, atualiza, confere e volta sozinho para a versão anterior se o `deploy-check` falhar.
 - E-mail: o e-mail da própria hospedagem ou um SMTP transacional, com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
 - Recursos do plano (informados pelo Djalma em 16/11/2026): até 4 núcleos, 4 GB de RAM, 100 GB de disco, 2 milhões de inodes,
   banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
