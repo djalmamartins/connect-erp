@@ -29,7 +29,8 @@ envio passar do `post_max_size`, o sistema avisa o limite em MB em vez de "sess�
 | `app.connectcondominios.com.br` | app web do morador |
 
 Todos apontam para o mesmo front controller do sistema; o roteamento por host é o mesmo do laboratório
-(`*.connect.lab`). SSL grátis do hPanel em todos. O código fica **fora** de `public_html`; só a pasta pública é exposta.
+(`*.connect.lab`). SSL grátis do hPanel em todos. Com `APP_ENV=production`, o próprio sistema manda `http://` para `https://` (301; 308 em
+POST) no mesmo endereço do domínio do `APP_URL` (ADR 0364); `CONNECT_FORCE_HTTPS=false` desliga se der laço. O código fica **fora** de `public_html`; só a pasta pública é exposta.
 Como o `index.php` e os assets moram na raiz do projeto, a pasta pública costuma ser a própria pasta do projeto: o
 `.htaccess` barra `.git`, `.local` (backups), `tools`, `docs`, `database` e o código dos temas (ADR 0338). Depois de
 implantar, conferir com `php tools/hosting/smoke-http.php --domain=connectcondominios.com.br` (ADR 0356): páginas,
