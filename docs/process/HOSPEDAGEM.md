@@ -112,3 +112,17 @@ caminho, idade ou erro.
 Faxina diária (ADR 0336, `cron.sh dia`): os logs `storage/logs/movesos-*.log` são compactados depois de 2 dias e apagados
 depois de 6 meses; o espaço usado é medido e o vigia avisa ao passar de 85% de `HOSTING_DISK_LIMIT_GB`. O vigia também
 avisa quando o certificado HTTPS do `APP_URL` vence em menos de 15 dias. Testar sem mexer: `php tools/hosting/housekeeping.php --dry-run`.
+
+## 9. Teste de carga dos limites de tentativas (ADR 0348)
+
+Depois da primeira implantação, e antes de abrir para os moradores, rodar do Mac contra o servidor novo (ainda sem
+moradores) para conferir que os limites de login seguram tentativas simultâneas:
+
+```
+php tools/hosting/load-test-limits.php --base=https://erp.connectcondominios.com.br --path=/login --total=100 --parallel=20
+php tools/hosting/load-test-limits.php --base=https://erp.connectcondominios.com.br --path=/login --total=150 --parallel=20 --vary-email
+```
+
+Esperado: no primeiro, `aceitos` igual a 6 (limite por conta); no segundo, até 30 (limite por IP no banco; o contador em
+arquivo corta em 40). O seu IP fica bloqueado por 15 minutos depois do teste. Não rodar contra o servidor com moradores
+usando: quem estiver no mesmo IP do teste também fica bloqueado.

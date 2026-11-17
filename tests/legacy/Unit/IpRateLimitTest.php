@@ -79,4 +79,27 @@ final class IpRateLimitTest extends TestCase
         $limit = new IpRateLimit('/proc/nao-existe/rate-limit');
         self::assertFalse($limit->hit('k', '192.0.2.1', 0, 60));
     }
+
+    /** Teste de carga (ADR 0348): 10 processos ao mesmo tempo, 30 pedidos cada; o contador não perde pedidos e o limite é exato. */
+    public function testConcurrentProcessesNeverExceedTheLimit(): void
+    {
+        $source = dirname(__DIR__, 3) . '/source/Support/IpRateLimit.php';
+        $code = 'require ' . var_export($source, true) . '; $l = new Source\\Support\\IpRateLimit(' . var_export($this->dir, true) . '); $ok = 0;'
+            . ' for ($i = 0; $i < 30; $i++) { if (!$l->hit("login", "203.0.113.9", 100, 600)) { $ok++; } } echo $ok;';
+        $processes = [];
+        for ($p = 0; $p < 10; $p++) {
+            $processes[] = proc_open([PHP_BINARY, '-r', $code], [1 => ['pipe', 'w']], $pipes);
+            $outputs[$p] = $pipes[1];
+        }
+        $allowed = 0;
+        foreach ($processes as $p => $process) {
+            $allowed += (int)stream_get_contents($outputs[$p]);
+            fclose($outputs[$p]);
+            proc_close($process);
+        }
+        self::assertSame(100, $allowed);
+        $files = glob($this->dir . '/*') ?: [];
+        self::assertCount(1, $files);
+        self::assertSame(300, json_decode((string)file_get_contents($files[0]), true)['count']);
+    }
 }
