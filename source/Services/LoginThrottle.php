@@ -62,6 +62,39 @@ final class LoginThrottle
         return hash_hmac('sha256', $value, 'connect-throttle|' . $key);
     }
 
+    /**
+     * Trava a conta enquanto a tentativa é conferida (ADR 0348). Sem isto, pedidos simultâneos para a mesma conta passam
+     * todos pelo blocked() antes de qualquer fail() ser gravado: no teste de carga, 50 ao mesmo tempo fizeram 10 tentativas
+     * contra o limite de 6. Usa GET_LOCK do MariaDB (vale para a conexão e some se ela cair). Só a conta é travada: o IP
+     * de uma portaria ou escritório não fica em fila. Banco indisponível ou espera esgotada: segue sem a trava (o limite
+     * continua valendo, só com a folga de antes). Devolve a função que solta a trava.
+     */
+    public function hold(array $subjects, int $wait = 10): \Closure
+    {
+        $name = isset($subjects['account']) ? 'connect_throttle_' . substr((string)$subjects['account'], 0, 40) : null;
+        $locked = false;
+        try {
+            if ($name !== null && $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+                $stmt = $this->pdo()->prepare('SELECT GET_LOCK(:name, :wait)');
+                $stmt->execute(['name' => $name, 'wait' => max(0, $wait)]);
+                $locked = (int)$stmt->fetchColumn() === 1;
+            }
+        } catch (\Throwable $error) {
+            $this->unavailable($error);
+        }
+        return function () use (&$locked, $name): void {
+            if (!$locked) {
+                return;
+            }
+            $locked = false;
+            try {
+                $this->pdo()->prepare('SELECT RELEASE_LOCK(:name)')->execute(['name' => $name]);
+            } catch (\Throwable) {
+                // A conexão caiu: o MariaDB já soltou a trava.
+            }
+        };
+    }
+
     /** true quando a conta ou o IP passou do limite de falhas na janela. */
     public function blocked(string $scope, array $subjects, ?int $now = null): bool
     {

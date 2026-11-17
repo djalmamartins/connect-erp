@@ -158,31 +158,36 @@ class Auth extends Model
         $userId = (int)$pending->user;
         $throttle ??= new LoginThrottle();
         $subjects = self::twoFactorSubjects($userId);
-        if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
-            $this->message->error(self::THROTTLED_MESSAGE);
-            return false;
+        $release = $throttle->hold($subjects);
+        try {
+            if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
+                $this->message->error(self::THROTTLED_MESSAGE);
+                return false;
+            }
+            $code = trim($code);
+            $valid = preg_match('/^\d{6}$/', preg_replace('/\s/', '', $code) ?? '')
+                ? $twoFactor->verify($userId, $code)
+                : $twoFactor->verifyRecoveryCode($userId, $code);
+            if (!$valid) {
+                $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
+                $session = new Session();
+                $pending->attempts = (int)$pending->attempts + 1;
+                $session->set(self::PENDING_2FA, (array)$pending);
+                $this->message->error("Código de verificação inválido.");
+                return false;
+            }
+            $user = (new User())->findById($userId);
+            if (!$user) {
+                self::cancelTwoFactor();
+                $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
+                return false;
+            }
+            $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
+            $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
+            return true;
+        } finally {
+            $release();
         }
-        $code = trim($code);
-        $valid = preg_match('/^\d{6}$/', preg_replace('/\s/', '', $code) ?? '')
-            ? $twoFactor->verify($userId, $code)
-            : $twoFactor->verifyRecoveryCode($userId, $code);
-        if (!$valid) {
-            $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
-            $session = new Session();
-            $pending->attempts = (int)$pending->attempts + 1;
-            $session->set(self::PENDING_2FA, (array)$pending);
-            $this->message->error("Código de verificação inválido.");
-            return false;
-        }
-        $user = (new User())->findById($userId);
-        if (!$user) {
-            self::cancelTwoFactor();
-            $this->message->error("Sua verificação expirou. Entre novamente com e-mail e senha.");
-            return false;
-        }
-        $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
-        $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
-        return true;
     }
 
     /**
@@ -200,27 +205,32 @@ class Auth extends Model
         $twoFactor ??= new TwoFactorService();
         $throttle ??= new LoginThrottle();
         $subjects = self::twoFactorSubjects((int)$pending->user);
-        if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
-            $this->message->error(self::THROTTLED_MESSAGE);
-            return null;
+        $release = $throttle->hold($subjects);
+        try {
+            if ($throttle->blocked(LoginThrottle::TWO_FACTOR, $subjects)) {
+                $this->message->error(self::THROTTLED_MESSAGE);
+                return null;
+            }
+            $codes = $twoFactor->confirm((int)$pending->user, $code);
+            if ($codes === null) {
+                $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
+                $pending->attempts = (int)$pending->attempts + 1;
+                (new Session())->set(self::PENDING_2FA, (array)$pending);
+                $this->message->error("Código de verificação inválido.");
+                return null;
+            }
+            $user = (new User())->findById((int)$pending->user);
+            if (!$user) {
+                self::cancelTwoFactor();
+                return null;
+            }
+            $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
+            $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
+            (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED_AT_LOGIN);
+            return $codes;
+        } finally {
+            $release();
         }
-        $codes = $twoFactor->confirm((int)$pending->user, $code);
-        if ($codes === null) {
-            $throttle->fail(LoginThrottle::TWO_FACTOR, $subjects);
-            $pending->attempts = (int)$pending->attempts + 1;
-            (new Session())->set(self::PENDING_2FA, (array)$pending);
-            $this->message->error("Código de verificação inválido.");
-            return null;
-        }
-        $user = (new User())->findById((int)$pending->user);
-        if (!$user) {
-            self::cancelTwoFactor();
-            return null;
-        }
-        $throttle->clear(LoginThrottle::TWO_FACTOR, $subjects);
-        $this->finishLogin($user, (string)$pending->email, (bool)$pending->save);
-        (new TwoFactorNotice())->send($user, TwoFactorNotice::ENABLED_AT_LOGIN);
-        return $codes;
     }
 
     /**
@@ -320,35 +330,40 @@ class Auth extends Model
         self::cancelTwoFactor();
         $throttle ??= new LoginThrottle();
         $subjects = LoginThrottle::subjects(self::throttleAccount($email), ClientIp::resolve());
-        if ($throttle->blocked(LoginThrottle::LOGIN, $subjects)) {
-            $this->message->error(self::THROTTLED_MESSAGE);
-            return false;
-        }
-        $user = $this->attempt($email, $password, $level);
-        if (!$user) {
-            $throttle->fail(LoginThrottle::LOGIN, $subjects);
-            AppLogger::log('notice', 'Tentativa de autenticação não concluída', ['event_type' => 'authentication_failed', 'code' => 'AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($email))), 'status' => 'resolved'], 'authentication');
-            return false;
-        }
+        $release = $throttle->hold($subjects);
+        try {
+            if ($throttle->blocked(LoginThrottle::LOGIN, $subjects)) {
+                $this->message->error(self::THROTTLED_MESSAGE);
+                return false;
+            }
+            $user = $this->attempt($email, $password, $level);
+            if (!$user) {
+                $throttle->fail(LoginThrottle::LOGIN, $subjects);
+                AppLogger::log('notice', 'Tentativa de autenticação não concluída', ['event_type' => 'authentication_failed', 'code' => 'AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($email))), 'status' => 'resolved'], 'authentication');
+                return false;
+            }
 
-        $throttle->clear(LoginThrottle::LOGIN, $subjects);
-        $mode = $this->secondFactorMode((int)$user->id, $twoFactor ?? new TwoFactorService());
-        if ($mode === "unavailable") {
-            $this->message->error("O acesso está temporariamente indisponível. Tente novamente em alguns minutos.");
-            return false;
-        }
-        if ($mode !== null) {
-            // Senha correta, mas a sessão só é elevada depois do segundo fator.
-            (new Session())->regenerate()->set(self::PENDING_2FA, [
-                "user" => (int)$user->id, "mode" => $mode, "expires" => time() + self::PENDING_TTL,
-                "attempts" => 0, "save" => $save, "email" => $email,
-            ]);
-            $this->message->info($mode === "verify" ? "Informe o código do seu aplicativo autenticador." : "Configure a autenticação em dois fatores para continuar.");
-            return null;
-        }
+            $throttle->clear(LoginThrottle::LOGIN, $subjects);
+            $mode = $this->secondFactorMode((int)$user->id, $twoFactor ?? new TwoFactorService());
+            if ($mode === "unavailable") {
+                $this->message->error("O acesso está temporariamente indisponível. Tente novamente em alguns minutos.");
+                return false;
+            }
+            if ($mode !== null) {
+                // Senha correta, mas a sessão só é elevada depois do segundo fator.
+                (new Session())->regenerate()->set(self::PENDING_2FA, [
+                    "user" => (int)$user->id, "mode" => $mode, "expires" => time() + self::PENDING_TTL,
+                    "attempts" => 0, "save" => $save, "email" => $email,
+                ]);
+                $this->message->info($mode === "verify" ? "Informe o código do seu aplicativo autenticador." : "Configure a autenticação em dois fatores para continuar.");
+                return null;
+            }
 
-        $this->finishLogin($user, $email, $save);
-        return true;
+            $this->finishLogin($user, $email, $save);
+            return true;
+        } finally {
+            $release();
+        }
     }
 
     /** "verify" (2FA ativo), "setup" (obrigatório e não configurado), "unavailable" (obrigatório sem tabela) ou null. */

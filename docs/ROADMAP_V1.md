@@ -157,6 +157,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **App do morador em 17/11 (ADR 0347):** 27 telas do app web renderizadas com texto com HTML em todos os campos; nada sai cru. O app de celular (React Native) não usa `dangerouslySetInnerHTML` nem HTML em WebView.
   Pendente: Content-Security-Policy no site (depois da hospedagem).
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
+  **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.
 

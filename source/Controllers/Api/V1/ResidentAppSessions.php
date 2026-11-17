@@ -68,11 +68,19 @@ final class ResidentAppSessions
         }
         $throttle = new LoginThrottle();
         $subjects = LoginThrottle::subjects(Auth::throttleAccount($login), ClientIp::resolve());
-        if ($throttle->blocked(LoginThrottle::FORGET, $subjects)) {
+        $release = $throttle->hold($subjects);
+        try {
+            $blocked = $throttle->blocked(LoginThrottle::FORGET, $subjects);
+            if (!$blocked) {
+                $throttle->fail(LoginThrottle::FORGET, $subjects);
+            }
+        } finally {
+            $release();
+        }
+        if ($blocked) {
             JsonResponse::send(429, ['error' => ['code' => 'too_many_attempts', 'message' => 'Muitos pedidos. Aguarde alguns minutos e tente de novo.']]);
             return;
         }
-        $throttle->fail(LoginThrottle::FORGET, $subjects);
         try {
             (new Auth())->forget($login);
         } catch (\Throwable $error) {
