@@ -15,6 +15,8 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
 RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
 RewriteRule ^storage/(?:backups|cache|cert|database|logs|private|sessions|temp|tmp)(?:/|$) - [F,L,NC]
+# Anexos de chamados só pela rota /api/v1/ticket-attachments/{id}, que confere quem pode ver (ADR 0339).
+RewriteRule ^storage/(?:files|images)/(?:.*/)?(?:public-)?ticket- - [F,L,NC]
 
 # Defesa extra para quando a pasta pública do subdomínio é a própria pasta do projeto (ADR 0338):
 # pastas e arquivos ocultos (.git, .local com os backups do banco, .github, .claude), menos o .well-known do SSL;

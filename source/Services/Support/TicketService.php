@@ -314,10 +314,10 @@ final class TicketService
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $files = [];
         if ($rows !== []) {
-            $attachments = $this->pdo()->prepare('SELECT message_id, file_path, original_name FROM studio_support_ticket_attachments WHERE ticket_id = :ticket AND message_id IS NOT NULL ORDER BY id');
+            $attachments = $this->pdo()->prepare('SELECT id, message_id, original_name FROM studio_support_ticket_attachments WHERE ticket_id = :ticket AND message_id IS NOT NULL ORDER BY id');
             $attachments->execute(['ticket' => $ticketId]);
             foreach ($attachments->fetchAll(PDO::FETCH_ASSOC) as $file) {
-                $files[(int)$file['message_id']][] = ['name' => (string)$file['original_name'], 'url' => url('/' . ltrim((string)$file['file_path'], '/'))];
+                $files[(int)$file['message_id']][] = ['name' => (string)$file['original_name'], 'url' => TicketAttachmentAccess::url((int)$file['id'])];
             }
         }
         $messages = [];

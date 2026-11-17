@@ -616,6 +616,7 @@ $route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAut
 $route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets/{id}", "Tickets:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets/{id}/messages", "Tickets:messages", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/ticket-attachments/{id}", "TicketAttachments:show", null, \Source\Support\Middleware\ResidentApiAuthenticated::class); // ADR 0339: ResidentApiAuthenticated aceita sessão ou Bearer
 $route->get("/help/articles", "Help:articles", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets/{id}/messages", "Tickets:reply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Aplicativo do morador (ADR 0302): tudo preso ao vínculo morador-unidade e à matriz do portal.
