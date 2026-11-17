@@ -153,7 +153,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Imobiliárias em 17/11 (ADR 0343):** viam e respondiam os chamados do condomínio; corrigido, só os próprios.
   **XSS em 17/11 (ADR 0344):** 270 telas do ERP renderizadas com texto com HTML em todos os campos; nada sai cru.
   **Help Desk e JavaScript do ERP em 17/11 (ADR 0345):** fila e ficha do chamado escapam tudo; `erp.js` usa `esc()` em todo texto da API.
-  Pendente: XSS no site, na Central de Ajuda e no app web do morador.
+  **Site e Central de Ajuda em 17/11 (ADR 0346):** blog, páginas e matérias saíam no site com o HTML do Studio sem limpeza (um script colado no editor rodava para o visitante); agora o HTML passa por `RichHtml::clean` ao salvar e ao mostrar.
+  Pendente: XSS no app web do morador.
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.

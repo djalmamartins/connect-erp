@@ -22,7 +22,7 @@
             <?php if ($meta['menu'] !== ''): ?>
                 <p class="hc-where"><?= \Source\Services\Help\Icons::svg('navigate-outline') ?>No sistema: <?= (new \Source\Services\Help\ArticleRenderer(static fn () => null))->inline('[[' . $meta['menu'] . ']]') ?></p>
             <?php endif; ?>
-            <div class="hc-prose"><?= $article->content ?></div>
+            <div class="hc-prose"><?= \Source\Support\RichHtml::clean($article->content) ?></div>
             <section class="hc-vote" aria-labelledby="hc-vote-title">
                 <small>Feedback</small>
                 <h2 id="hc-vote-title">Gostou ou foi útil este conteúdo?</h2>
