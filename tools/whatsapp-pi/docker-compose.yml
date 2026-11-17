@@ -1,0 +1,70 @@
+# Motor do WhatsApp por QR Code do Connect Talk num Raspberry Pi (ou em qualquer Linux com Docker).
+# Só o motor fica aqui: o Talk roda dentro do ERP, no Cloud Startup. Quem instala é o instalar.sh,
+# que também gera o .env ao lado deste arquivo. Ver README.md.
+#
+#   whatsapp     Evolution API (Baileys), a mesma versão testada no Talk; só escuta na rede interna e em 127.0.0.1
+#   whatsapp-db  Postgres com as sessões dos números (perder o volume = ler o QR Code de novo)
+#   tunnel       Cloudflare Tunnel: publica https://<EVOLUTION_HOST> sem abrir porta no roteador
+name: connect-whatsapp
+
+x-logs: &logs
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }   # não enche o SSD com log
+
+services:
+  whatsapp:
+    image: evoapicloud/evolution-api:v2.3.6
+    restart: unless-stopped
+    <<: *logs
+    environment:
+      SERVER_URL: https://${EVOLUTION_HOST:?preencha EVOLUTION_HOST no .env}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?preencha EVOLUTION_API_KEY no .env}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:${DB_PASSWORD:?preencha DB_PASSWORD no .env}@whatsapp-db:5432/evolution?schema=public
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      DEL_INSTANCE: "false"
+      CONFIG_SESSION_PHONE_CLIENT: Connect Talk
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      LOG_LEVEL: ERROR,WARN
+      TZ: America/Sao_Paulo
+    ports:
+      - "127.0.0.1:8080:8080"   # só para o teste local do instalar.sh; de fora, só pelo túnel
+    volumes:
+      - whatsapp_instances:/evolution/instances
+    depends_on: { whatsapp-db: { condition: service_healthy } }
+
+  whatsapp-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    <<: *logs
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: evolution
+    volumes:
+      - whatsapp_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "evolution"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    restart: unless-stopped
+    <<: *logs
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?preencha CLOUDFLARE_TUNNEL_TOKEN no .env}
+    depends_on: [whatsapp]
+
+volumes:
+  whatsapp_instances:
+  whatsapp_db:

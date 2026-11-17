@@ -7,7 +7,7 @@ namespace MovesOSTests\Integration;
 use MovesOSTests\TestCase;
 
 /**
- * Registro das operações de tratamento (LGPD art. 37, ADR 0349): toda tabela do banco com coluna de dado pessoal (nome de
+ * Registro das operações de tratamento (LGPD art. 37, ADR 0350): toda tabela do banco com coluna de dado pessoal (nome de
  * pessoa, documento, e-mail, telefone, placa, IP, foto) precisa aparecer em docs/security/LGPD_REGISTRO_OPERACOES.md. Uma
  * migration nova com dado pessoal faz este teste falhar até o registro ser atualizado.
  */

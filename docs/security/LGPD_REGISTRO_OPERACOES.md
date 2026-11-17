@@ -1,6 +1,6 @@
 # Registro das operações de tratamento de dados pessoais (LGPD, art. 37)
 
-Versão 1, de 17/11/2026, montada a partir do código e do banco do Connect ERP (ADR 0349). Este registro **não substitui a
+Versão 1, de 17/11/2026, montada a partir do código e do banco do Connect ERP (ADR 0350). Este registro **não substitui a
 revisão do advogado**. As bases legais e os prazos marcados como **INFERIDO** são propostas técnicas. Quem decide é a Connect,
 com o advogado e o encarregado (DPO), que ainda não foi nomeado (ROADMAP §3.8).
 
