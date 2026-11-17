@@ -144,6 +144,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 
 ### 3.7 Segurança
 - Revisão final antes de abrir ao público: acesso cruzado entre condomínios, IDOR, upload, XSS, CSRF nas rotas novas desde 11/11.
+  **CSRF feito em 17/11 (ADR 0337):** todos os POSTs de página conferidos, nenhum sem CSRF; teste estático cobre as rotas futuras.
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.
