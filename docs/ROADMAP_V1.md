@@ -110,7 +110,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - Recursos do plano (informados pelo Djalma em 16/11/2026): até 4 núcleos, 4 GB de RAM, 100 GB de disco, 2 milhões de inodes,
   banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
   não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar
-  nos PDFs grandes e nas importações, medir no piloto.
+  nos PDFs grandes e nas importações, medir no piloto. **Feito em 17/11 (ADR 0362):** o `deploy-check` avisa com
+  `memory_limit` abaixo de 256M ou envio de arquivo abaixo de 50M; a medição real continua no piloto.
 
 ### 3.5 Backup e recuperação
 - O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,

@@ -15,6 +15,9 @@ curl -sI https://cdpj.partners.bancointer.com.br | head -1   # saída liberada p
 
 Se faltar extensão, trocar no hPanel (Avançado > Configuração do PHP). Anotar aqui o resultado.
 
+Na mesma tela, deixar `memory_limit` em 256M ou mais, `upload_max_filesize` em 50M ou mais (o maior arquivo que o sistema
+aceita) e `post_max_size` maior que ele. O `deploy-check` avisa se algum ficar abaixo (ADR 0362).
+
 ## 2. Domínios
 
 | Subdomínio | Pasta pública |
