@@ -13,6 +13,8 @@ use Source\Support\Access;
 use Source\Support\AppLogger;
 
 $logger = AppLogger::bootstrap();
+// Produção: http:// vai para https:// antes de abrir a sessão (ADR 0364).
+\Source\Support\HttpsRedirect::handle();
 $session = new Session();
 
 // Cabeçalhos de segurança de toda resposta (ADR 0355): sem moldura de outro site, nosniff, HSTS fora do lab.

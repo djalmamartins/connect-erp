@@ -6,7 +6,7 @@ if (is_file($environmentFile)) {
     // quebrava com '(' num comentário '#' (testar-main.sh, 10/11).
     $environment = parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($environmentFile)), false, INI_SCANNER_RAW) ?: [];
     $allowedEnvironmentKeys = [
-        "APP_ENV", "APP_DEBUG", "APP_URL", "ALERT_EMAIL", "HOSTING_DISK_LIMIT_GB",
+        "APP_ENV", "APP_DEBUG", "APP_URL", "CONNECT_FORCE_HTTPS", "ALERT_EMAIL", "HOSTING_DISK_LIMIT_GB",
         // Central de Ajuda e rotinas (ADR 0357): sem elas aqui, a hospedagem (que só tem o .env) nunca as recebia.
         "CONNECT_ERP_URL", "CONNECT_SUPPORT_HOURS", "CONNECT_JOB_HOST",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
