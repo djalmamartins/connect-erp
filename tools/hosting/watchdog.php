@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Vigia da hospedagem (ADR 0333): php tools/hosting/watchdog.php [--dry-run]
  * Roda de hora em hora pelo tools/hosting/cron.sh (grupo "hora"). Lê o sinal de vida das rotinas do cron, conta os avisos
- * da fila que falharam nas últimas 24 horas e manda um e-mail para ALERT_EMAIL quando algo muda (ou a cada 12 horas
+ * da fila que falharam nas últimas 24 horas, o disco perto do limite do plano e o certificado HTTPS (ADR 0336) e manda um e-mail para ALERT_EMAIL quando algo muda (ou a cada 12 horas
  * enquanto continuar). Sem ALERT_EMAIL, ou com --dry-run, só escreve no log do cron. Não envia nada para morador.
  */
 
@@ -18,6 +18,7 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use Source\Support\Email;
 use Source\Support\HostingHealth;
+use Source\Support\HostingHousekeeping;
 use Source\Support\HostingWatchdog;
 
 $dryRun = in_array('--dry-run', $argv, true);
@@ -31,6 +32,21 @@ try {
     $problemsExtra = ['database' => 'O banco de dados não respondeu ao vigia.'];
 }
 $problems = HostingWatchdog::problems(HostingHealth::evaluate(HostingHealth::read(), $now), $failed) + ($problemsExtra ?? []);
+
+// Disco (medido pela faxina diária) e certificado HTTPS do site (ADR 0336).
+$usage = @file_get_contents(dirname(__DIR__, 2) . '/storage/temp/disk-usage');
+if (is_string($usage) && preg_match('/^\d+ (\d+)/', $usage, $m)) {
+    $limit = (float)(getenv('HOSTING_DISK_LIMIT_GB') ?: 100);
+    if (($disk = HostingHousekeeping::diskProblem((int)$m[1], $limit)) !== null) {
+        $problems['disk'] = $disk;
+    }
+}
+$appUrl = (string)getenv('APP_URL');
+$appHost = (string)(parse_url($appUrl, PHP_URL_HOST) ?: '');
+if (str_starts_with($appUrl, 'https://') && $appHost !== '' && !str_ends_with($appHost, '.lab')
+    && ($cert = HostingHousekeeping::certProblem(HostingHousekeeping::certDaysLeft($appHost, $now), $appHost)) !== null) {
+    $problems['cert'] = $cert;
+}
 
 $stateFile = dirname(__DIR__, 2) . '/storage/temp/watchdog-state.json';
 $state = is_file($stateFile) ? (json_decode((string)file_get_contents($stateFile), true) ?: []) : [];

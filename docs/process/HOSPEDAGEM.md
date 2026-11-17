@@ -105,3 +105,7 @@ falharam). Dois vigias leem esse sinal:
 Prazos: minuto 10 min, hora 2h10, dia e backup 26 h. Rotina que nunca rodou aparece como `unknown` e não dispara alarme
 (lab, ou antes de configurar o cron). O `/health` mostra só as palavras (`ready`, `failing`, `stale`, `unknown`), sem
 caminho, idade ou erro.
+
+Faxina diária (ADR 0336, `cron.sh dia`): os logs `storage/logs/movesos-*.log` são compactados depois de 2 dias e apagados
+depois de 6 meses; o espaço usado é medido e o vigia avisa ao passar de 85% de `HOSTING_DISK_LIMIT_GB`. O vigia também
+avisa quando o certificado HTTPS do `APP_URL` vence em menos de 15 dias. Testar sem mexer: `php tools/hosting/housekeeping.php --dry-run`.

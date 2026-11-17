@@ -51,8 +51,8 @@ case "$group" in
         ;;
     dia)
         # Avisos do checklist de chegada e lembretes do atendimento de cobrança (ADR 0315); PDFs de vistoria já
-        # enviados por e-mail (ADR 0335).
-        jobs=("$php_bin service/jobs/onboarding-alerts.php" "$php_bin tools/collection-reminders.php" "$php_bin tools/inspection-reports-cleanup.php")
+        # enviados por e-mail (ADR 0335); faxina dos logs e medida do disco (ADR 0336).
+        jobs=("$php_bin service/jobs/onboarding-alerts.php" "$php_bin tools/collection-reminders.php" "$php_bin tools/inspection-reports-cleanup.php" "$php_bin tools/hosting/housekeeping.php")
         ;;
     backup)
         jobs=("bash tools/hosting/backup.sh")
