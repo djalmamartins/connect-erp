@@ -160,6 +160,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.
+  **Feito em 17/11 (ADR 0354):** o `deploy-check` em produção acusa conta de teste, equipe sem 2FA, dados de exemplo,
+  debug, endereço do laboratório, chaves ausentes ou repetidas e banco em ambiente de teste.
 
 ### 3.8 LGPD
 - Política de privacidade e termos de uso atualizados para ERP e app do morador (o site tem a página `privacy`, mas o texto é antigo).
