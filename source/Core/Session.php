@@ -20,6 +20,9 @@ class Session
         if (!session_id()) {
             $forwardedProto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
             $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $forwardedProto === 'https';
+            // Só aceita id de sessão criado pelo próprio servidor (ADR 0367): um id inventado por terceiro vira um novo.
+            ini_set('session.use_strict_mode', '1');
+            ini_set('session.use_only_cookies', '1');
             session_set_cookie_params([
                 'lifetime' => 0,
                 'path' => '/',
