@@ -57,6 +57,19 @@ final class DocumentStores
         if (self::mode($env) !== 'onedrive' || self::missing($env) !== []) {
             return new LocalDocumentStore($localRoot);
         }
+        return self::oneDrive($area, $env, $http);
+    }
+
+    /**
+     * OneDrive da área mesmo com DOCUMENT_STORAGE=local: a cópia dos arquivos existentes (ADR 0376) roda antes da troca.
+     *
+     * @param array<string, string> $env
+     */
+    public static function oneDrive(string $area, array $env, ?GraphTransport $http = null): OneDriveDocumentStore
+    {
+        if (!in_array($area, self::AREAS, true) || self::missing($env) !== []) {
+            throw new \InvalidArgumentException('OneDrive incompleto no .env: ' . implode(', ', self::missing($env)));
+        }
         return new OneDriveDocumentStore(trim($env['ONEDRIVE_TENANT_ID']), trim($env['ONEDRIVE_CLIENT_ID']), trim($env['ONEDRIVE_CLIENT_SECRET']),
             trim($env['ONEDRIVE_DRIVE_ID']), trim($env['ONEDRIVE_FOLDER'], " /") . '/' . $area,
             dirname(__DIR__, 3) . '/storage/cache/onedrive/' . $area, $http ?? new CurlGraphTransport());
