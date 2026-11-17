@@ -40,6 +40,17 @@ final class OversizedPostTest extends TestCase
         self::assertFalse(OversizedPost::wantsJson(['REQUEST_URI' => '/disco', 'HTTP_ACCEPT' => 'text/html']));
     }
 
+    public function testJsonBodyServesTheApiAndTheHelpDeskWidget(): void
+    {
+        $body = OversizedPost::jsonBody('limite');
+        self::assertSame('payload_too_large', $body['error']['code']);
+        self::assertSame('limite', $body['error']['message'], 'erp.js lê error.message');
+        self::assertFalse($body['success']);
+        self::assertSame('limite', $body['message'], 'support.js e o widget leem message');
+        $source = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Support/OversizedPost.php');
+        self::assertStringContainsString('JsonResponse::send(413, self::jsonBody($message));', $source);
+    }
+
     public function testGoesBackOnlyToTheSameHost(): void
     {
         $server = ['HTTP_HOST' => 'erp.connect.lab', 'REQUEST_URI' => '/disco/enviar?a=1'];

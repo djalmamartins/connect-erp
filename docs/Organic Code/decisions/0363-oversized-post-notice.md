@@ -33,3 +33,10 @@ pessoa repetia o mesmo envio sem entender. O Connect Talk já tratava esse caso 
 ## Riscos
 
 - O webhook dos bancos com corpo acima do `post_max_size` recebe 413 (o banco reenvia); os corpos reais têm poucos KB.
+
+## Adendo (17/11/2026, tarde)
+
+A Central de Ajuda (`support.js`) e o widget do Help Desk (até 3 anexos de 5 MB) leem `success` e `message`, não
+`error.message`: com o 413 mostravam só "Não foi possível enviar.". O corpo do 413 passa a levar os dois formatos
+(`OversizedPost::jsonBody`): `{"success":false,"message":"...","error":{"code":"payload_too_large","message":"..."}}`.
+O ERP (`erp.js`, `sendMultipart`) já lia `error.message` e não muda. Teste: `OversizedPostTest::testJsonBodyServesTheApiAndTheHelpDeskWidget`.
