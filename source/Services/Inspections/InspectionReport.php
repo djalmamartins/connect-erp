@@ -76,6 +76,7 @@ final class InspectionReport
 
     /**
      * Coloca o relatório na fila de e-mail (mail_queue) com o PDF anexado e registra cada envio.
+     * O PDF gravado em reports/ é só para a fila; InspectionReportCleanup apaga no dia seguinte (ADR 0335).
      * Só para vistorias concluídas.
      *
      * @param list<string> $recipients e-mails já validados por InspectionService::recipients()
