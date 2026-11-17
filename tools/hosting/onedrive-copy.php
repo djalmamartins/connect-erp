@@ -9,7 +9,7 @@ declare(strict_types=1);
  *   php tools/hosting/onedrive-copy.php --dry-run   conta o que falta subir, sem enviar
  *   php tools/hosting/onedrive-copy.php             envia; pode ser interrompido e rodado de novo
  *
- * Saída 0: tudo copiado; 1: algum arquivo falhou (rode de novo); 2: OneDrive incompleto no .env.
+ * Saída 0: tudo copiado; 1: algum arquivo falhou (rode de novo); 2: OneDrive incompleto no .env ou sem ligação.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -27,6 +27,11 @@ $root = dirname(__DIR__, 2);
 $env = DocumentStores::environment();
 if (($missing = DocumentStores::missing($env)) !== []) {
     fwrite(STDERR, 'Falta no .env: ' . implode(', ', $missing) . " (HOSPEDAGEM.md §10).\n");
+    exit(2);
+}
+// Confere a ligação antes de começar (ADR 0378): sem isso, cada arquivo falharia um por um.
+if (($problem = DocumentStores::oneDrive('documents', $env)->probe()) !== null) {
+    fwrite(STDERR, 'OneDrive: ' . $problem . "\n");
     exit(2);
 }
 $folders = ['documents' => 'storage/private/documents', 'inspections' => 'storage/private/inspections', 'resident-photos' => 'storage/private/resident-photos'];

@@ -113,6 +113,25 @@ final class OneDriveDocumentStore implements DocumentStore
         }
     }
 
+    /**
+     * Confere a ligação com o OneDrive (ADR 0378): autorização do aplicativo, permissão e id do drive. null = tudo certo;
+     * senão, o motivo em português, sem o segredo.
+     */
+    public function probe(): ?string
+    {
+        try {
+            $answer = $this->http->send('GET', self::GRAPH . '/drives/' . rawurlencode($this->driveId) . '?$select=id', $this->auth());
+        } catch (\Throwable $error) {
+            return $error->getMessage();
+        }
+        return match (true) {
+            $answer['status'] === 200 => null,
+            in_array($answer['status'], [401, 403], true) => 'O aplicativo não tem permissão no drive (HTTP ' . $answer['status'] . '): confira Files.ReadWrite.All e o consentimento do administrador.',
+            in_array($answer['status'], [400, 404], true) => 'Drive não encontrado (HTTP ' . $answer['status'] . '): confira ONEDRIVE_DRIVE_ID.',
+            default => 'OneDrive respondeu HTTP ' . $answer['status'] . '.',
+        };
+    }
+
     /** Só segue redirecionamento HTTPS (o Graph manda para *.sharepoint.com ou *.1drv.com). */
     public static function trusted(string $url): bool
     {
