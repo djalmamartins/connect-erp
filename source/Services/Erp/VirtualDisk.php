@@ -15,6 +15,7 @@ use Source\Services\Erp\Antivirus\UploadScanPolicy;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Support\Audit;
 use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\DocumentStores;
 use Source\Support\Storage\LocalDocumentStore;
 
 /**
@@ -64,7 +65,7 @@ final class VirtualDisk
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->scope = $scope ?? new CondominiumScope($this->pdo);
-        $this->store = $store ?? new LocalDocumentStore($root ?? self::defaultRoot());   // ADR 0370
+        $this->store = $store ?? ($root !== null ? new LocalDocumentStore($root) : DocumentStores::make('documents', self::defaultRoot()));   // ADR 0370/0374
         $this->acceptLocalFiles = $acceptLocalFiles;
         $this->scan = $scan;
     }
