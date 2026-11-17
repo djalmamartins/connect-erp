@@ -7,7 +7,7 @@ Roteiro da etapa 4 de `docs/ROADMAP_V1.md` (ADR 0325). Nada aqui usa credencial 
 
 ```bash
 php -v                                   # 8.2 ou superior
-php -m | grep -Ei 'intl|pdo_mysql|openssl|fileinfo|mbstring|gd|zip'
+php -m | grep -Ei 'intl|pdo_mysql|openssl|fileinfo|mbstring|gd|zip|curl|dom|simplexml'   # composer check-platform-reqs confere tudo
 mariadb-dump --version || mysqldump --version
 which flock git composer
 curl -sI https://cdpj.partners.bancointer.com.br | head -1   # saída liberada para o banco
