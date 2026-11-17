@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Source\Services\Inspections;
 
+use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\LocalDocumentStore;
+
 /**
  * Fotos de evidência da vistoria, fora do acesso público (storage/private/inspections).
  *
@@ -11,6 +14,7 @@ namespace Source\Services\Inspections;
  * getimagesize), a imagem é decodificada pelo GD, girada pela orientação EXIF, reduzida
  * a no máximo 1600 px e gravada de novo como JPEG. Isso descarta metadados (EXIF com
  * modelo do aparelho e GPS, LGPD) e qualquer conteúdo que não seja imagem.
+ * Grava, lê e apaga pelo DocumentStore (ADR 0371), como o Disco Virtual (ADR 0370).
  */
 final class PhotoStorage
 {
@@ -21,10 +25,13 @@ final class PhotoStorage
     private const MAX_PIXELS = 50000000; // evita estouro de memória com imagens gigantes
 
     private string $root;
+    private DocumentStore $store;
 
-    public function __construct(?string $root = null)
+    /** $root continua sendo a pasta local (cache dos relatórios em PDF); $store é onde as fotos ficam. */
+    public function __construct(?string $root = null, ?DocumentStore $store = null)
     {
         $this->root = rtrim($root ?? self::defaultRoot(), '/');
+        $this->store = $store ?? new LocalDocumentStore($this->root);
     }
 
     public static function defaultRoot(): string
@@ -73,21 +80,27 @@ final class PhotoStorage
         $image = $this->resize($image);
 
         $relative = sprintf('%d/%d/%s.jpg', $condominiumId, $inspectionId, bin2hex(random_bytes(16)));
-        $target = $this->root . '/' . $relative;
-        $this->prepareDirectory(dirname($target));
         $width = imagesx($image);
         $height = imagesy($image);
-        $written = imagejpeg($image, $target, self::QUALITY);
-        unset($image); // imagedestroy() é no-op desde o PHP 8.0 e deprecated no 8.5
-        if (!$written || !is_file($target)) {
-            throw new InspectionError('storage_failed', 'Não foi possível guardar a foto.', 500);
+        $encoded = tempnam(sys_get_temp_dir(), 'photo');
+        try {
+            $written = $encoded !== false && imagejpeg($image, $encoded, self::QUALITY);
+            unset($image); // imagedestroy() é no-op desde o PHP 8.0 e deprecated no 8.5
+            if (!$written || !$this->store->put($relative, $encoded, false)) {
+                throw new InspectionError('storage_failed', 'Não foi possível guardar a foto.', 500);
+            }
+            $bytes = (int)filesize($encoded);
+            $sha = (string)hash_file('sha256', $encoded);
+        } finally {
+            if ($encoded !== false) {
+                @unlink($encoded);
+            }
         }
-        @chmod($target, 0640);
         return [
             'path' => $relative,
             'mime' => 'image/jpeg',
-            'size_bytes' => (int)filesize($target),
-            'sha256' => (string)hash_file('sha256', $target),
+            'size_bytes' => $bytes,
+            'sha256' => $sha,
             'width' => $width,
             'height' => $height,
         ];
@@ -99,27 +112,13 @@ final class PhotoStorage
         if (!preg_match('~^\d+/\d+/[a-f0-9]{32}\.jpg$~', $relative)) {
             return null;
         }
-        $path = $this->root . '/' . $relative;
-        return is_file($path) ? $path : null;
+        return $this->store->path($relative);
     }
 
     public function delete(string $relative): void
     {
-        $path = $this->absolute($relative);
-        if ($path !== null) {
-            @unlink($path);
-        }
-    }
-
-    private function prepareDirectory(string $directory): void
-    {
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
-            throw new InspectionError('storage_failed', 'Não foi possível preparar a pasta das fotos.', 500);
-        }
-        // Defesa extra caso a pasta storage fique dentro da raiz pública do Apache.
-        $base = dirname($this->root);
-        if (is_dir($base) && !is_file($base . '/.htaccess')) {
-            @file_put_contents($base . '/.htaccess', "Require all denied\n");
+        if ($this->absolute($relative) !== null) {
+            $this->store->delete($relative);
         }
     }
 
