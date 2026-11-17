@@ -26,7 +26,7 @@ if (is_file($environmentFile)) {
         "ERP_DEMO_DATA", "ERP_DEMO_DB", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
         // Cobrança bancária (ADR 0156): chave do cofre das credenciais e base pública do endereço do webhook.
         // Sem elas aqui, o Apache do lab não recebe a chave e o Inter não abre a credencial.
-        "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL",
+        "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL", "BANK_WEBHOOK_ALLOWED_IPS",
         // Connect Talk dentro do ERP (ADR 0308/0324): cofre dos canais, endereço público, arquivos, Jack e WhatsApp.
         "TALK_ALLOWED_IPS", "TALK_KEY", "TALK_ENV", "TALK_URL", "TALK_STORAGE", "TALK_RATING", "TALK_HTTP_TIMEOUT",
         "TALK_JACK_MODE", "TALK_JACK_WAIT_SECONDS", "TALK_JACK_MAX_WAIT_SECONDS", "TALK_JACK_TYPING_SECONDS",

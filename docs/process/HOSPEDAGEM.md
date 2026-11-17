@@ -99,8 +99,10 @@ Reversão: `git checkout <commit-anterior>` e, se uma migration quebrou dados, r
 ## 7. Webhook dos bancos
 
 Sem proxy próprio não dá para exigir o certificado do banco. A rota `/api/v1/webhooks/bank/{banco}/{segredo}` continua
-protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa; a lista de IPs do banco vai
-no `.htaccess` do subdomínio do ERP. A consulta de hora em hora (`cron.sh hora`) dá a baixa mesmo se o webhook falhar.
+protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa. A lista de IPs do banco vai
+no `.env`, em `BANK_WEBHOOK_ALLOWED_IPS` (IPs ou faixas CIDR separados por vírgula, ADR 0360): chamada de fora da lista
+recebe 404, como se o endereço não existisse, e fica no log como `bank_webhook_ip_blocked`. Preencher com os IPs que o
+Inter e a Cora informarem; vazio aceita qualquer origem. A consulta de hora em hora (`cron.sh hora`) dá a baixa mesmo se o webhook falhar.
 
 ## 8. Monitoramento (ADR 0333)
 
