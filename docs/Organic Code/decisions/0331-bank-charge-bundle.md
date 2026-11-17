@@ -20,7 +20,8 @@ tem "Incluir rateio na fatura de" e "Tipo da fatura" (INFERIDO: o rateio vai na 
    ativo. Valor do título = soma; vencimento = o da fatura; descrição "+ N cobranças". As contas a mais ficam em
    `erp_bank_charge_entries` (a principal continua em `erp_bank_charges.entry_id`).
 3. Pedir o boleto de uma conta que entrou junto devolve o boleto da fatura. Rateio lançado depois do boleto da fatura
-   emitido tem boleto próprio (o título registrado no banco não muda de valor).
+   emitido tem boleto próprio (o título registrado no banco não muda de valor). Unidade com "Bloquear unificação de
+   boletos" (ADR 0311) também: cada conta sai com o próprio boleto (adendo de 17/11/2026).
 4. Pagamento (retorno, webhook ou consulta): baixa todas as contas do boleto, tudo ou nada; se alguma estiver
    cancelada, baixada à mão ou em mês fechado, vira divergência e nada é baixado.
 5. Travas por conta (cancelamento, reagendamento, acordo, troca de morador, estorno de baixa do banco, cobrança extra)

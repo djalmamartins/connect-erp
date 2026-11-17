@@ -31,6 +31,7 @@ use Source\Support\AppLogger;
  * - Boleto único (ADR 0331): o boleto da conta de uma fatura leva junto as contas da mesma unidade e competência
  *   marcadas com o tipo daquela fatura (bundle_invoice_type_id, ex.: rateio da Nova Receita), em aberto e sem boleto
  *   próprio. O valor é a soma; o vencimento é o da fatura; o pagamento baixa todas (erp_bank_charge_entries).
+ *   Unidade com "Bloquear unificação de boletos" fica fora: cada conta sai com o próprio boleto.
  */
 final class BankCharges
 {
@@ -531,6 +532,11 @@ final class BankCharges
     {
         if ($entry['invoice_item_id'] === null || $entry['unit_id'] === null) {
             return [];
+        }
+        $blocked = $this->pdo->prepare('SELECT block_bill_merge FROM erp_units WHERE id = :u');
+        $blocked->execute(['u' => (int)$entry['unit_id']]);
+        if ((int)$blocked->fetchColumn() === 1) {
+            return [];   // "Bloquear unificação de boletos" na unidade (ADR 0311): cada conta com o próprio boleto
         }
         $stmt = $this->pdo->prepare("SELECT e.id, e.amount_cents FROM erp_entries e
             JOIN erp_invoice_items it ON it.id = :item JOIN erp_invoices i ON i.id = it.invoice_id

@@ -143,7 +143,7 @@ final class Definitions
                     // Configurações de cobrança (revisão de 15/11, etapa 2, ADR 0311; as mesmas da configuração em massa).
                     'due_day' => ['label' => 'Dia padrão de vencimento', 'type' => 'int', 'min' => 1, 'max_value' => 31, 'span' => 3, 'hint' => 'Mês sem esse dia: vence no último dia do mês'],
                     'apportionment_exempt' => ['label' => 'Unidade isenta de rateio', 'type' => 'bool', 'span' => 3, 'hint' => 'Fica fora das faturas geradas para o condomínio todo'],
-                    'block_bill_merge' => ['label' => 'Bloquear unificação de boletos', 'type' => 'bool', 'span' => 6, 'hint' => 'Fica fora do boleto único de várias unidades'],
+                    'block_bill_merge' => ['label' => 'Bloquear unificação de boletos', 'type' => 'bool', 'span' => 6, 'hint' => 'Cada conta da unidade sai com boleto próprio, sem juntar rateio e fundo ao boleto da fatura'],
                     'postage_cents' => ['label' => 'Valor porte postal', 'type' => 'money', 'default' => 0, 'span' => 3, 'hint' => 'Zero = não cobra'],
                     'postage_payer' => ['label' => 'Responsável pelo porte postal', 'type' => 'select', 'default' => 'ambos', 'span' => 3, 'options' => ['ambos' => 'Ambos', 'proprietario' => 'Proprietário', 'inquilino' => 'Inquilino']],
                     'billing_responsible' => ['label' => 'Responsável pela cobrança', 'type' => 'select', 'default' => 'nao_definido', 'span' => 3, 'options' => ['nao_definido' => 'Não definido', 'proprietario' => 'Proprietário', 'inquilino' => 'Inquilino'], 'hint' => 'Os boletos saem em nome dele'],

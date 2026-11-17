@@ -61,7 +61,7 @@ recorte: main form:not([method=get])
 - **Área privativa (m²)**.
 - **Código CIB**: Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito.
 - **Unidade vazia**: Marque quando ninguém mora na unidade (sem proprietário residente nem inquilino).
-- **Configurações de cobrança**: dia padrão de vencimento, isenta de rateio, bloquear unificação de boletos, valor e responsável pelo porte postal, responsável pela cobrança, endereço do boleto (prédio ou Correios), para quem vai o e-mail e as leituras de gás, água e energia elétrica.
+- **Configurações de cobrança**: dia padrão de vencimento, isenta de rateio, bloquear unificação de boletos (a unidade recebe um boleto para cada conta, sem juntar o rateio ao boleto da fatura), valor e responsável pelo porte postal, responsável pela cobrança, endereço do boleto (prédio ou Correios), para quem vai o e-mail e as leituras de gás, água e energia elétrica.
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
 

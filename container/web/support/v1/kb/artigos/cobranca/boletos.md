@@ -57,7 +57,7 @@ Uma receita rateada pela [Nova Receita](artigo:lancar-receita) com um **Tipo da 
 
 Quando o banco confirma o pagamento, todas as contas do boleto são baixadas juntas. Enquanto o boleto estiver ativo, as contas que entraram nele não podem ser canceladas nem renegociadas sozinhas: cancele o boleto antes.
 
-> Se o boleto da fatura já tinha sido emitido quando o rateio foi lançado, o rateio sai com boleto próprio.
+> Se o boleto da fatura já tinha sido emitido quando o rateio foi lançado, o rateio sai com boleto próprio. O mesmo vale para a unidade marcada com **Bloquear unificação de boletos** no cadastro.
 
 >! Enquanto o banco estiver em modo de teste, os boletos são de homologação e não valem para pagamento.
 

@@ -87,8 +87,11 @@ final class BankChargeBundleTest extends TestCase
             $this->pdo->query('SELECT paid_on FROM erp_entries WHERE id IN (' . implode(',', $ids) . ') ORDER BY id')->fetchAll(\PDO::FETCH_COLUMN))), 'O pagamento baixa as três contas.');
         self::assertSame('bank_confirmed', PaymentLocks::find($this->pdo, [$rateio101])[$rateio101]['code'] ?? null, 'Baixa do banco trava o estorno do rateio também.');
 
+        $this->pdo->exec("UPDATE erp_units SET block_bill_merge = 1 WHERE id = {$this->units['102']}");
         $alone = $charges->issue($this->admin, (int)$byUnit[$this->units['102']], $this->bank);
-        self::assertSame(58800, $alone['amount_cents'], 'A outra unidade também leva o rateio dela.');
+        self::assertSame(50000, $alone['amount_cents'], 'Unidade com unificação bloqueada: a fatura sai sozinha.');
+        $rateio102 = (int)$this->pdo->query("SELECT id FROM erp_entries WHERE unit_id = {$this->units['102']} AND amount_cents = 8000")->fetchColumn();
+        self::assertSame(8000, $charges->issue($this->admin, $rateio102, $this->bank)['amount_cents'], 'E o rateio dela tem boleto próprio.');
     }
 
     public function testWithoutTypeOrAfterTheInvoiceBoletoTheRateioKeepsItsOwnBoleto(): void
