@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MovesOSTests\Integration;
 
 use MovesOSTests\TestCase;
-use PDO;
 use Source\Models\Auth;
 use Source\Models\User;
+use MovesOSTests\Fakes\ScopeTestInput;
 use Source\Services\CondominiumScope;
 
 /**
@@ -21,6 +21,8 @@ use Source\Services\CondominiumScope;
  */
 final class ApiCrossCondominiumIntegrationTest extends TestCase
 {
+    use ScopeFixtures;
+
     /** rota => [controller, ação, tabela]; a tabela recebe a linha do Beta. */
     private const ROUTES = [
         'GET /condominiums/{id}' => ['Condominiums', 'show', null],
@@ -259,81 +261,12 @@ final class ApiCrossCondominiumIntegrationTest extends TestCase
         return (new User())->findById($id);
     }
 
-    /** Linha mínima no Beta: colunas obrigatórias sem padrão recebem valores neutros. @param array<string, mixed> $values */
+    /** Linha mínima no Beta (ScopeFixtures). @param array<string, mixed> $values */
     private function row(string $table, array $values): int
     {
-        $cols = $this->pdo->prepare("SELECT column_name, data_type, column_type, character_maximum_length, is_nullable, column_default, extra
-            FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? ORDER BY ordinal_position");
-        $cols->execute([$table]);
-        $row = [];
-        foreach ($cols->fetchAll(PDO::FETCH_ASSOC) as $c) {
-            $name = (string)$c['column_name'];
-            if (str_contains((string)$c['extra'], 'auto_increment') || str_contains((string)$c['extra'], 'GENERATED')) {
-                continue;
-            }
-            if ($name === 'condominium_id') {
-                $row[$name] = $this->beta;
-            } elseif ($name === 'unit_id' && isset($this->betaUnit)) {
-                $row[$name] = $this->betaUnit;
-            } elseif ($name === 'entry_id' && isset($this->betaEntry)) {
-                $row[$name] = $this->betaEntry;
-            } elseif ($name === 'invoice_type_id' && isset($this->betaInvoiceType)) {
-                $row[$name] = $this->betaInvoiceType;
-            } elseif (str_ends_with($name, 'bank_account_id') && isset($this->betaAccount)) {
-                $row[$name] = $this->betaAccount;
-            } elseif ($c['is_nullable'] === 'NO' && $c['column_default'] === null) {
-                $row[$name] = match ((string)$c['data_type']) {
-                    'tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'decimal', 'float', 'double' => 1,
-                    'date' => date('Y-m-d'),
-                    'datetime', 'timestamp' => date('Y-m-d H:i:s'),
-                    'time' => '10:00:00',
-                    'year' => (int)date('Y'),
-                    'enum' => preg_match("/^enum\\('([^']*)'/", (string)$c['column_type'], $m) ? $m[1] : '',
-                    'json', 'longtext' => '{}',
-                    default => $name === 'competence' ? date('Y-m') : substr($name . bin2hex(random_bytes(3)), 0, max(1, min(20, (int)($c['character_maximum_length'] ?? 20)))),
-                };
-            }
-        }
-        $row = $values + $row;
-        $this->pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        $names = array_keys($row);
-        $this->pdo->prepare('INSERT INTO `' . $table . '` (`' . implode('`, `', $names) . '`) VALUES (' . implode(', ', array_fill(0, count($names), '?')) . ')')
-            ->execute(array_values($row));
-        $id = (int)$this->pdo->lastInsertId();
-        $this->pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
-        return $id;
-    }
-}
-
-/** php://input do teste (ADR 0341): devolve o corpo combinado; os demais php:// não são usados pelas ações chamadas. */
-final class ScopeTestInput
-{
-    public static string $body = '';
-    /** @var resource|null */
-    public $context;
-    private int $position = 0;
-
-    public function stream_open(string $path, string $mode, int $options, ?string &$opened): bool
-    {
-        $this->position = 0;
-        return $path === 'php://input';
-    }
-
-    public function stream_read(int $count): string
-    {
-        $chunk = substr(self::$body, $this->position, $count);
-        $this->position += strlen($chunk);
-        return $chunk;
-    }
-
-    public function stream_eof(): bool
-    {
-        return $this->position >= strlen(self::$body);
-    }
-
-    /** @return array<string, int> */
-    public function stream_stat(): array
-    {
-        return ['size' => strlen(self::$body)];
+        return $this->scopeRow($table, $values, array_filter([
+            'condominium_id' => $this->beta, 'unit_id' => $this->betaUnit ?? null, 'entry_id' => $this->betaEntry ?? null,
+            'invoice_type_id' => $this->betaInvoiceType ?? null, '*bank_account_id' => $this->betaAccount ?? null,
+        ]));
     }
 }
