@@ -87,14 +87,23 @@ Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `
 ## 6. Atualizar uma versão
 
 ```bash
-cd ~/connect && bash tools/hosting/backup.sh
-git fetch origin && git checkout <commit-novo>
-composer install --no-dev --optimize-autoloader && composer db:migrate
-php service/commands/deploy-check.php
-php tools/hosting/smoke-http.php --domain=connectcondominios.com.br   # ADR 0356; código 1 = algo falhou
+cd ~/connect && bash tools/hosting/update.sh <commit-novo> --domain=connectcondominios.com.br
 ```
 
-Reversão: `git checkout <commit-anterior>` e, se uma migration quebrou dados, restaurar o backup do passo 1.
+O script (ADR 0361) faz, em ordem: recusa se algum arquivo versionado foi mexido no servidor; anota o commit atual em
+`.local/deploy/previous`; backup (`backup.sh`); `git fetch` e checkout do commit novo; `composer install --no-dev`;
+`deploy-check`; `composer db:migrate`; conferência por HTTP (`smoke-http.php`, ADR 0356). Tudo fica em
+`storage/logs/deploy.log`. Códigos de saída:
+
+| Código | O que aconteceu | O que fazer |
+| --- | --- | --- |
+| 0 | versão nova no ar | nada |
+| 1 | `composer install` ou `deploy-check` falhou | **o script já voltou** para o commit anterior; o banco não mudou. Corrigir o `.env` ou o código e repetir |
+| 2 | a migration falhou | o banco pode ter mudado em parte: restaurar o backup do passo 1 (§5) e rodar `bash tools/hosting/update.sh <commit-anterior>` |
+| 3 | a conferência por HTTP falhou | ver o que falhou; para voltar o código, `bash tools/hosting/update.sh <commit-anterior>` (com migration nova, restaurar o backup antes) |
+| 4, 5, 6 | arquivo mexido no servidor, backup falhou ou commit não encontrado | nada foi feito; resolver e repetir |
+
+O commit anterior aparece na saída e fica em `.local/deploy/previous`.
 
 ## 7. Webhook dos bancos
 
