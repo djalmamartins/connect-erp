@@ -47,6 +47,11 @@ php service/commands/deploy-check.php
 composer db:migrate
 ```
 
+**Atenção (ADR 0379):** num banco vazio, `composer db:migrate` ainda falha, porque as tabelas base (`users`, `access_*`,
+`settings`...) vêm do banco antigo do laboratório e não de migration. Antes da primeira implantação, rode no Mac
+`bash tools/lab-exportar-esquema.sh` (só estrutura, sem dados) e envie `database/base/` num PR; a partir dele sai a
+instalação limpa (estrutura base, catálogos e primeiro administrador).
+
 O `deploy-check` com `APP_ENV=production` (ADR 0354) para com erro se o `.env` estiver inseguro (debug, dados de
 exemplo, endereço do laboratório, `CONNECT_2FA_KEY` ou `CONNECT_BANK_VAULT_KEY` ausente ou repetida) ou se houver conta de
 teste no banco, e avisa do que o roteiro ainda pede (2FA obrigatório, `ALERT_EMAIL`, e-mail, equipe sem 2FA).
