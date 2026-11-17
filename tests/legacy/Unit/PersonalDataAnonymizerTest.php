@@ -53,6 +53,15 @@ final class PersonalDataAnonymizerTest extends TestCase
             'CREATE TABLE erp_assembly_attendance (id INTEGER PRIMARY KEY, assembly_id INTEGER, unit_id INTEGER, attendee_name TEXT, is_proxy INTEGER, checked_in_at TEXT)',
             'CREATE TABLE erp_collection_contacts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, channel TEXT, outcome TEXT, contact_name TEXT, promise_on TEXT,
                 promise_cents INTEGER, next_action_on TEXT, note TEXT, created_at TEXT)',
+            'CREATE TABLE talk_contacts (id INTEGER PRIMARY KEY, phone TEXT UNIQUE, name TEXT, erp_person_id INTEGER, erp_snapshot TEXT, created_at TEXT, updated_at TEXT,
+                blocked_at TEXT, opt_out_at TEXT)',
+            'CREATE TABLE talk_contact_notes (id INTEGER PRIMARY KEY, contact_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT)',
+            'CREATE TABLE talk_conversations (id INTEGER PRIMARY KEY, protocol TEXT, contact_id INTEGER, status TEXT, subject TEXT, helpdesk_ticket_id INTEGER,
+                opened_at TEXT, closed_at TEXT, last_message_at TEXT)',
+            'CREATE TABLE talk_messages (id INTEGER PRIMARY KEY, conversation_id INTEGER, direction TEXT, type TEXT, body TEXT, media_name TEXT, created_at TEXT)',
+            'CREATE TABLE talk_outbox (id INTEGER PRIMARY KEY, message_id INTEGER, to_phone TEXT, status TEXT)',
+            'CREATE TABLE talk_campaign_recipients (id INTEGER PRIMARY KEY, campaign_id INTEGER, contact_id INTEGER, phone TEXT, name TEXT, params TEXT, status TEXT,
+                sent_at TEXT, replied_at TEXT)',
             'CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT, document TEXT, password TEXT, status TEXT, created_at TEXT, updated_at TEXT)',
         ] as $sql) {
             $this->pdo->exec($sql);
@@ -145,7 +154,7 @@ final class PersonalDataAnonymizerTest extends TestCase
 
         $preview = (new PersonalDataAnonymizer($this->pdo))->apply([1], ['document' => $cpf], self::TODAY);
         self::assertSame([1], $preview['plan']['access_logs']);
-        self::assertSame(['receivables' => 1, 'board_members' => 1, 'assembly_attendance' => 1], $preview['plan']['kept']);
+        self::assertSame(['receivables' => 1, 'board_members' => 1, 'assembly_attendance' => 1, 'talk_messages' => 0], $preview['plan']['kept']);
 
         (new PersonalDataAnonymizer($this->pdo))->apply([1], ['document' => $cpf, 'reason' => 'Pedido do titular nº 13', 'confirm' => true], self::TODAY);
         $row = fn (string $sql): array => array_values($this->pdo->query($sql)->fetch(PDO::FETCH_ASSOC));
@@ -160,4 +169,35 @@ final class PersonalDataAnonymizerTest extends TestCase
         self::assertSame(['José da Silva', $cpf], $row('SELECT name, document FROM erp_board_members WHERE id = 1'), 'mandato fica');
         self::assertSame(['José da Silva'], $row('SELECT attendee_name FROM erp_assembly_attendance WHERE id = 1'), 'presença na ata fica');
     }
+
+    /** ADR 0353: no Talk o contato perde nome e telefone, as anotações somem e as mensagens ficam. */
+    public function testAnonymizesTalkOnlyWithGlobalAccess(): void
+    {
+        $this->leave();
+        $this->pdo->exec("UPDATE erp_residents SET phone = '(31) 99876-5432' WHERE id = 10");
+        $this->pdo->exec("INSERT INTO talk_contacts (id, phone, name, erp_snapshot) VALUES (1, '5531998765432', 'José', '{\"unidade\":\"A-101\"}'), (2, '553188887777', 'Outra pessoa', NULL)");
+        $this->pdo->exec("INSERT INTO talk_contact_notes (id, contact_id, body) VALUES (1, 1, 'nota interna da equipe')");
+        $this->pdo->exec("INSERT INTO talk_conversations (id, protocol, contact_id, status) VALUES (1, 'T-1', 1, 'closed'), (2, 'T-2', 2, 'open')");
+        $this->pdo->exec("INSERT INTO talk_messages (id, conversation_id, direction, type, body) VALUES (1, 1, 'in', 'text', 'Bom dia, sou do A-101'), (2, 2, 'in', 'text', 'outra conversa')");
+        $this->pdo->exec("INSERT INTO talk_outbox (id, message_id, to_phone, status) VALUES (1, 1, '5531998765432', 'sent'), (2, 2, '553188887777', 'sent')");
+        $this->pdo->exec("INSERT INTO talk_campaign_recipients (id, campaign_id, contact_id, phone, name, params, status) VALUES
+            (1, 1, NULL, '31998765432', 'José', '{\"nome\":\"José\"}', 'sent'), (2, 1, 2, '553188887777', 'Outra pessoa', NULL, 'sent')");
+
+        $input = ['document' => self::CPF, 'reason' => 'Pedido do titular nº 14', 'confirm' => true];
+        $scoped = (new PersonalDataAnonymizer($this->pdo))->apply([1], ['document' => self::CPF], self::TODAY);
+        self::assertSame([], $scoped['plan']['talk_contacts']);
+        $out = (new PersonalDataAnonymizer($this->pdo))->apply([1], $input, self::TODAY, true);
+        self::assertSame([1], $out['plan']['talk_contacts']);
+        self::assertSame(1, $out['plan']['kept']['talk_messages']);
+        $row = fn (string $sql): array => array_values($this->pdo->query($sql)->fetch(PDO::FETCH_ASSOC));
+        self::assertSame(['Titular anonimizado #1', 'anon-1', null, null], $row('SELECT name, phone, erp_person_id, erp_snapshot FROM talk_contacts WHERE id = 1'));
+        self::assertSame(['Outra pessoa', '553188887777'], $row('SELECT name, phone FROM talk_contacts WHERE id = 2'));
+        self::assertSame('0', (string)$this->pdo->query('SELECT COUNT(*) FROM talk_contact_notes')->fetchColumn());
+        self::assertSame(['Bom dia, sou do A-101'], $row('SELECT body FROM talk_messages WHERE id = 1'), 'registro do atendimento fica');
+        self::assertSame([''], $row('SELECT to_phone FROM talk_outbox WHERE id = 1'));
+        self::assertSame(['553188887777'], $row('SELECT to_phone FROM talk_outbox WHERE id = 2'));
+        self::assertSame(['anon-1', null, null], $row('SELECT phone, name, params FROM talk_campaign_recipients WHERE id = 1'));
+        self::assertSame(['553188887777'], $row('SELECT phone FROM talk_campaign_recipients WHERE id = 2'));
+    }
+
 }
