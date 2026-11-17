@@ -17,12 +17,13 @@ final class HtaccessExposureTest extends TestCase
     private const BLOCKED = ['.git/config', '.local/backups/connect-erp-db-20261116.sql.gz', '.github/workflows/quality.yml', '.claude/rules/security.md',
         '.env', 'tools/hosting/backup.sh', 'tools/help.php', 'docs/ROADMAP_V1.md', 'database/migrations/x.sql', 'apps/morador/package.json',
         'source/Boot/Config.php', 'vendor/autoload.php', 'storage/logs/movesos-2026-11-16.log', 'storage/private/inspections/1.jpg',
+        'storage/files/2026/11/ticket-12-ab12cd34.pdf', 'storage/images/2026/11/public-ticket-7-ab12cd34.jpg',
         'container/erp/connect/v1/routes.php', 'container/web/support/v1/kb/categorias.json', 'container/web/support/v1/kb/artigos/a.md',
         'container/cms/studio/v1/components/proposals/database/001_create_proposals.sql', 'Container/erp/connect/v1/routes.PHP'];
 
     private const PUBLIC = ['.well-known/acme-challenge/abc', 'container/erp/connect/v1/assets/erp.min.css', 'container/talk/connect/v1/favicon.ico',
         'container/talk/connect/v1/manifest.webmanifest', 'container/web/default/v1/assets/images/manifest.json',
-        'container/shared/assets/organic/organic.min.css', 'storage/images/cache/foto.jpg', 'erp/condominios', 'api/v1/health', 'index.php'];
+        'container/shared/assets/organic/organic.min.css', 'storage/images/cache/foto.jpg', 'storage/files/2026/11/boleto-modelo.pdf', 'erp/condominios', 'api/v1/health', 'index.php'];
 
     /** @return list<array{pattern:string, nocase:bool, cond:?string}> */
     private static function forbidRules(): array

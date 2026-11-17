@@ -7777,6 +7777,26 @@ paths:
         '404': { description: Não encontrado ou fora do escopo }
         '419': { description: CSRF inválido }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } } }
+  /ticket-attachments/{id}:
+    get:
+      operationId: downloadTicketAttachment
+      tags: [Tickets]
+      summary: Baixa um anexo de chamado, só para quem pode ver o chamado
+      description: >-
+        ADR 0339. A equipe do Help Desk (support.manage) baixa qualquer anexo, inclusive o das notas internas. Os demais
+        só baixam anexos de mensagens públicas de chamados que veem (os seus ou os do condomínio no escopo). Qualquer
+        recusa responde 404, sem dizer se o anexo existe. É a url que vem em attachments[].url da conversa do chamado.
+      security: [{ session: [] }, { residentApp: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: O arquivo, como download (Content-Disposition attachment, nosniff, no-store)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { description: Não encontrado, sem permissão ou arquivo ausente }
   /help/articles:
     get:
       operationId: suggestHelpArticles

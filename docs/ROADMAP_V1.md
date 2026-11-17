@@ -146,7 +146,8 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - Revisão final antes de abrir ao público: acesso cruzado entre condomínios, IDOR, upload, XSS, CSRF nas rotas novas desde 11/11.
   **CSRF feito em 17/11 (ADR 0337):** todos os POSTs de página conferidos, nenhum sem CSRF; teste estático cobre as rotas futuras.
   **Pastas internas bloqueadas em 17/11 (ADR 0338):** `.git`, backups locais, `tools`, `docs` e código dos temas davam 200.
-  Pendente: anexos do Help Desk servidos sem login em `storage/files` (proposta: rota autenticada).
+  **Anexos dos chamados só com login em 17/11 (ADR 0339):** rota `/api/v1/ticket-attachments/{id}` e endereço direto bloqueado.
+  Pendente: acesso cruzado entre condomínios e IDOR nas rotas da API, XSS nas telas.
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
 - Antivírus de upload: hoje desligado por padrão (ADR 0098); decidir ligar em produção.
 - Contas: só usuários reais, sem conta de teste, todos com 2FA.
