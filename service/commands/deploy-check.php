@@ -10,7 +10,8 @@ $fail = static function (string $message) use (&$errors): void { $errors[] = $me
 $warn = static function (string $message) use (&$warnings): void { $warnings[] = $message; echo "[aviso] {$message}\n"; };
 
 version_compare(PHP_VERSION, '8.2.0', '>=') ? $ok('PHP ' . PHP_VERSION) : $fail('PHP 8.2 ou superior é obrigatório.');
-foreach (['pdo', 'pdo_mysql', 'intl', 'mbstring', 'json', 'openssl', 'fileinfo'] as $extension) {
+// Mesma lista do require ext-* do composer.json (ADR 0368; DeployExtensionsTest confere).
+foreach (['pdo', 'pdo_mysql', 'intl', 'mbstring', 'json', 'openssl', 'fileinfo', 'curl', 'dom', 'simplexml', 'gd', 'zip'] as $extension) {
     extension_loaded($extension) ? $ok("Extensão {$extension}") : $fail("Extensão PHP ausente: {$extension}");
 }
 foreach (['vendor/autoload.php', 'container/cms/studio/v1/assets/studio.min.css', 'container/cms/studio/v1/assets/studio.min.js'] as $file) {
