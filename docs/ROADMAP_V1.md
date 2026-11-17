@@ -135,8 +135,9 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   Tamanho estimado: ~1 semana, junto da etapa 5, para o piloto já começar com os documentos no OneDrive.
   **Passo 1 feito em 17/11 (ADR 0370):** o Disco Virtual grava e lê por uma interface de armazenamento (hoje só o disco local);
   o OneDrive entra como outra implementação quando a conta da Connect existir.
-  **Passo 2 (ADR 0371):** fotos de vistoria pelo mesmo armazenamento. **Passo 3 (ADR 0372):** foto do morador. Falta só a
-  implementação do OneDrive (conta da Connect).
+  **Passo 2 (ADR 0371):** fotos de vistoria pelo mesmo armazenamento. **Passo 3 (ADR 0372):** foto do morador.
+  **Passo 4 (ADR 0373):** armazenamento do OneDrive pelo Microsoft Graph, testado com Graph falso, ainda desligado. Falta
+  ligar pelo `.env` e a conta da Connect.
   Conta: **OneDrive empresarial da Connect** (Microsoft 365 Business, conta no domínio `connectcondominios.com.br`), não o pessoal
   do Djalma: os dados ficam em nome da empresa, o acesso do sistema é por aplicativo registrado (não depende da senha de uma pessoa)
   e o contrato de tratamento de dados da Microsoft cobre a LGPD. O backup cifrado pode ir para a mesma conta.
