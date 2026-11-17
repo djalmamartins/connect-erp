@@ -57,9 +57,11 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 
 - **Acesso:** relatório por CPF/CNPJ ou e-mail, em Configurações > Dados pessoais (ADR 0328).
 - **Eliminação ou anonimização** de quem saiu, respeitando a guarda financeira (ADR 0330).
-- **PENDENTE:** o relatório e a anonimização ainda não cobrem portaria (`erp_access_logs`, `erp_visit_forecasts`),
-  mudanças (`erp_moves`), reservas e espera, assembleias e conselho, contatos de cobrança e o Talk. Essas linhas guardam
-  o nome solto, sem ligação com o cadastro, e a busca precisa ser por nome ou documento.
+- Desde o ADR 0351 o relatório cobre também a portaria (`erp_access_logs`, `erp_visit_forecasts`, pelo documento), o
+  conselho (`erp_board_members`, por documento ou e-mail) e os registros que guardam só o nome na unidade (`erp_moves`,
+  reservas, lista de espera, presença em assembleia e contatos de cobrança). A anonimização apaga nome e documento nesses
+  registros, menos no conselho e na presença em assembleia, que fazem parte das atas.
+- **PENDENTE:** o Talk (`talk_contacts`) ainda fica fora do relatório; a busca lá é pelo telefone.
 
 ## 5. Decisões pendentes (Djalma e advogado)
 

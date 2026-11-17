@@ -37,6 +37,22 @@ final class PersonalDataAnonymizerTest extends TestCase
                 tutor_name TEXT, vaccinated INTEGER, notes TEXT, status TEXT, updated_at TEXT, deleted_at TEXT)',
             'CREATE TABLE studio_support_tickets (id INTEGER PRIMARY KEY, protocol TEXT, subject TEXT, message TEXT, area TEXT, origin TEXT, condominium_id INTEGER, unit_id INTEGER,
                 requester_name TEXT, requester_email TEXT, requester_phone TEXT, access_token TEXT, status TEXT, created_at TEXT, resolved_at TEXT)',
+            'CREATE TABLE erp_access_logs (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, person_name TEXT, person_document TEXT, kind TEXT, plate TEXT,
+                entered_on TEXT, entered_time TEXT, left_time TEXT, notes TEXT, status TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_visit_forecasts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, visitor_name TEXT, visitor_document TEXT, expected_on TEXT,
+                expected_until TEXT, notes TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_board_members (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, role TEXT, name TEXT, document TEXT, unit_label TEXT,
+                term_starts_on TEXT, term_ends_on TEXT, email TEXT, phone TEXT, notes TEXT, status TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_moves (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, resident_name TEXT, kind TEXT, scheduled_on TEXT, period TEXT, notes TEXT,
+                status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_reservations (id INTEGER PRIMARY KEY, condominium_id INTEGER, common_area_id INTEGER, unit_id INTEGER, resident_name TEXT, reserved_on TEXT,
+                starts_time TEXT, ends_time TEXT, fee_cents INTEGER, notes TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_waitlist (id INTEGER PRIMARY KEY, condominium_id INTEGER, common_area_id INTEGER, unit_id INTEGER, resident_name TEXT, desired_on TEXT, notes TEXT,
+                called_at TEXT, status TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)',
+            'CREATE TABLE erp_assemblies (id INTEGER PRIMARY KEY, condominium_id INTEGER, title TEXT, first_call_at TEXT)',
+            'CREATE TABLE erp_assembly_attendance (id INTEGER PRIMARY KEY, assembly_id INTEGER, unit_id INTEGER, attendee_name TEXT, is_proxy INTEGER, checked_in_at TEXT)',
+            'CREATE TABLE erp_collection_contacts (id INTEGER PRIMARY KEY, condominium_id INTEGER, unit_id INTEGER, channel TEXT, outcome TEXT, contact_name TEXT, promise_on TEXT,
+                promise_cents INTEGER, next_action_on TEXT, note TEXT, created_at TEXT)',
             'CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT, document TEXT, password TEXT, status TEXT, created_at TEXT, updated_at TEXT)',
         ] as $sql) {
             $this->pdo->exec($sql);
@@ -110,5 +126,38 @@ final class PersonalDataAnonymizerTest extends TestCase
     {
         $this->expectException(DomainException::class);
         (new PersonalDataAnonymizer($this->pdo))->apply([1], ['email' => 'ninguem@exemplo.test'], self::TODAY);
+    }
+
+    /** ADR 0351: portaria, mudanças, reservas, espera e cobrança anonimizadas; conselho e presença em assembleia ficam. */
+    public function testAnonymizesGatehouseAndNameOnlyRecordsButKeepsMinutes(): void
+    {
+        $this->leave();
+        $cpf = self::CPF;
+        $this->pdo->exec("INSERT INTO erp_access_logs (id, condominium_id, unit_id, person_name, person_document, plate, notes, status) VALUES (1, 1, 102, 'José', '{$cpf}', 'ABC1D23', 'nota', 'active'), (2, 2, 201, 'José', '{$cpf}', NULL, NULL, 'active')");
+        $this->pdo->exec("INSERT INTO erp_visit_forecasts (id, condominium_id, unit_id, visitor_name, visitor_document, notes, status) VALUES (1, 1, 102, 'José', '{$cpf}', 'nota', 'active')");
+        $this->pdo->exec("INSERT INTO erp_moves (id, condominium_id, unit_id, resident_name, notes, status) VALUES (1, 1, 101, 'José da Silva', 'nota', 'done'), (2, 1, 101, 'Ana', NULL, 'done')");
+        $this->pdo->exec("INSERT INTO erp_reservations (id, condominium_id, unit_id, resident_name, fee_cents, status) VALUES (1, 1, 101, 'jose da silva', 5000, 'active')");
+        $this->pdo->exec("INSERT INTO erp_waitlist (id, condominium_id, unit_id, resident_name, status) VALUES (1, 1, 101, 'José da Silva', 'served')");
+        $this->pdo->exec("INSERT INTO erp_collection_contacts (id, condominium_id, unit_id, contact_name, promise_cents, note) VALUES (1, 1, 101, 'José da Silva', 1000, 'prometeu pagar')");
+        $this->pdo->exec("INSERT INTO erp_board_members (id, condominium_id, role, name, document, status) VALUES (1, 1, 'conselheiro', 'José da Silva', '{$cpf}', 'inactive')");
+        $this->pdo->exec("INSERT INTO erp_assemblies (id, condominium_id, title) VALUES (1, 1, 'AGO')");
+        $this->pdo->exec("INSERT INTO erp_assembly_attendance (id, assembly_id, unit_id, attendee_name) VALUES (1, 1, 101, 'José da Silva')");
+
+        $preview = (new PersonalDataAnonymizer($this->pdo))->apply([1], ['document' => $cpf], self::TODAY);
+        self::assertSame([1], $preview['plan']['access_logs']);
+        self::assertSame(['receivables' => 1, 'board_members' => 1, 'assembly_attendance' => 1], $preview['plan']['kept']);
+
+        (new PersonalDataAnonymizer($this->pdo))->apply([1], ['document' => $cpf, 'reason' => 'Pedido do titular nº 13', 'confirm' => true], self::TODAY);
+        $row = fn (string $sql): array => array_values($this->pdo->query($sql)->fetch(PDO::FETCH_ASSOC));
+        self::assertSame(['Titular anonimizado', null, null, 'ABC1D23'], $row('SELECT person_name, person_document, notes, plate FROM erp_access_logs WHERE id = 1'));
+        self::assertSame(['José', $cpf], $row('SELECT person_name, person_document FROM erp_access_logs WHERE id = 2'), 'outro condomínio fora do escopo');
+        self::assertSame(['Titular anonimizado', null, null], $row('SELECT visitor_name, visitor_document, notes FROM erp_visit_forecasts WHERE id = 1'));
+        self::assertSame(['Titular anonimizado', null], $row('SELECT resident_name, notes FROM erp_moves WHERE id = 1'));
+        self::assertSame(['Ana'], $row('SELECT resident_name FROM erp_moves WHERE id = 2'));
+        self::assertSame(['Titular anonimizado', '5000'], array_map(static fn ($v) => $v === null ? null : (string)$v, $row('SELECT resident_name, fee_cents FROM erp_reservations WHERE id = 1')));
+        self::assertSame(['Titular anonimizado'], $row('SELECT resident_name FROM erp_waitlist WHERE id = 1'));
+        self::assertSame(['Titular anonimizado', null, '1000'], array_map(static fn ($v) => $v === null ? null : (string)$v, $row('SELECT contact_name, note, promise_cents FROM erp_collection_contacts WHERE id = 1')));
+        self::assertSame(['José da Silva', $cpf], $row('SELECT name, document FROM erp_board_members WHERE id = 1'), 'mandato fica');
+        self::assertSame(['José da Silva'], $row('SELECT attendee_name FROM erp_assembly_attendance WHERE id = 1'), 'presença na ata fica');
     }
 }

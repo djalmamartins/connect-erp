@@ -26,7 +26,7 @@ Confira a identidade de quem pediu. O pedido precisa vir da própria pessoa (o t
 
 1. Preencha **CPF ou CNPJ**, **E-mail** ou os dois.
 2. Clique em {{Buscar}}.
-3. A tela mostra quantos registros existem em cada lugar: cadastros de morador, proprietário ou inquilino, convites do portal, visitantes, veículos, animais, contas a receber, chamados e conta de acesso. Logo abaixo vem a lista dos cadastros.
+3. A tela mostra quantos registros existem em cada lugar: cadastros de morador, proprietário ou inquilino, convites do portal, visitantes, veículos, animais, contas a receber, chamados, entradas e saídas da portaria, visitas previstas, conselho e síndico, mudanças, reservas, lista de espera, presença em assembleia, contatos de cobrança e conta de acesso. Logo abaixo vem a lista dos cadastros.
 4. Para entregar à pessoa, clique em {{Baixar relatório (JSON)}}. O arquivo traz todos os dados encontrados, sem senha e sem anotações internas.
 
 O CPF e o e-mail não ficam na barra de endereço. O histórico do sistema registra só que a busca aconteceu.
@@ -40,7 +40,7 @@ A anonimização aparece para quem também pode gerenciar usuários.
 3. Escreva o **Motivo** (de 10 a 500 caracteres), por exemplo "pedido do titular por e-mail em 16/11/2026".
 4. Clique em {{Anonimizar}} e confirme.
 
-Nome, documento, e-mail e telefone viram "Titular anonimizado" nos cadastros, visitantes, veículos, animais e chamados. Os convites pendentes são cancelados. As contas a receber, os boletos, os acordos e a prestação de contas continuam guardados, porque o condomínio precisa manter a contabilidade.
+Nome, documento, e-mail e telefone viram "Titular anonimizado" nos cadastros, visitantes, veículos, animais, chamados, entradas e saídas da portaria, visitas previstas, mudanças, reservas, lista de espera e contatos de cobrança. Os convites pendentes são cancelados. As contas a receber, os boletos, os acordos e a prestação de contas continuam guardados, porque o condomínio precisa manter a contabilidade. Os cargos no conselho e a presença nas assembleias também ficam, porque fazem parte das atas.
 
 > Não tem volta. Os dados só voltam restaurando o backup.
 
@@ -56,7 +56,7 @@ Nesses casos a tela mostra o motivo e o botão {{Anonimizar}} não aparece.
 Quando você usa esta tela, o sistema faz o seguinte:
 
 - A busca vai pelo CPF/CNPJ e/ou pelo e-mail e não fica na barra de endereço. O histórico do sistema guarda só um código da busca, nunca o CPF ou o e-mail.
-- Anonimizar troca nome, documento, e-mail e telefone por "Titular anonimizado" nos cadastros, visitantes, veículos, animais e chamados. As contas a receber e a prestação de contas continuam guardadas.
+- Anonimizar troca nome, documento, e-mail e telefone por "Titular anonimizado" nos cadastros, visitantes, veículos, animais, chamados, portaria, mudanças, reservas, lista de espera e contatos de cobrança. As contas a receber, a prestação de contas, o conselho e as atas continuam guardados.
 - Não dá para anonimizar quem ainda mora (cadastro ativo sem data de saída no passado) nem quem tem conta em aberto como pagador.
 - Não tem volta: os dados só voltam restaurando o backup.
 - Consultar exige a permissão de dados pessoais; anonimizar exige também a de gerenciar usuários.
