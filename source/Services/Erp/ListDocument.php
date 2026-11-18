@@ -216,6 +216,7 @@ final class ListDocument
 
     private static function pdf(array $table, array $meta): string
     {
+        \Source\Support\PdfTime::extend();
         // Lotes de folhas (ADR 0383): cada lote é um Dompdf separado, liberado antes do próximo, e os lotes são juntados
         // com o FPDI. A memória fica no tamanho de um lote, não da lista inteira; a numeração continua de um lote ao outro.
         $rows = array_slice($table['rows'], 0, self::MAX_PDF_ROWS);

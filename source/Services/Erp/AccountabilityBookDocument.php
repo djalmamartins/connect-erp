@@ -92,6 +92,7 @@ final class AccountabilityBookDocument
 
     public function pdf(array $view, string $base): string
     {
+        \Source\Support\PdfTime::extend();
         $options = new Options();
         $options->set('tempDir', sys_get_temp_dir());
         $options->set('chroot', $this->theme);
