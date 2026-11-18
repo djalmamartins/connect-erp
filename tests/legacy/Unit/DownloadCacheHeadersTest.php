@@ -44,4 +44,19 @@ final class DownloadCacheHeadersTest extends TestCase
         self::assertGreaterThanOrEqual(20, $checked, 'o teste deixou de achar os downloads');
         self::assertSame([], $missing, 'Download sem Cache-Control private');
     }
+
+    /**
+     * ADR 0393: anexo enviado por alguém (tipo vindo do envio) sai com CSP sandbox, como o Disco Virtual e os anexos dos
+     * lançamentos: mesmo se o navegador abrir em vez de baixar, nada roda como página do sistema.
+     */
+    public function testUploadedFilesAreServedSandboxed(): void
+    {
+        $root = dirname(__DIR__, 3);
+        foreach (['source/Controllers/Api/V1/TicketAttachments.php', 'source/Controllers/Api/V1/ResidentApp.php', 'source/Controllers/Api/V1/VirtualDisk.php',
+            'source/Controllers/Api/V1/EntryAttachments.php', 'source/Controllers/Erp/Connect/EntryAttachmentScreens.php',
+            'source/Controllers/Web/Connect/AccountabilityLinkPublic.php'] as $file) {
+            $code = (string)file_get_contents($root . '/' . $file);
+            self::assertMatchesRegularExpression('/Content-Security-Policy:[^\n]*sandbox/', $code, $file);
+        }
+    }
 }

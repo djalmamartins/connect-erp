@@ -187,6 +187,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Envios de arquivo em 18/11 (ADR 0388):** tipo pelo conteúdo e lista fechada em todos; a mídia do Talk e o PDF das propostas abriam pelo endereço direto sem login, agora 403; nenhum `.php`, `.html` ou `.svg` abre de `storage/`.
   **Imagens públicas em 18/11 (ADR 0389):** fotos enviadas ao Studio, ao condomínio e aos chamados perdem o EXIF (GPS, aparelho) e ficam na orientação certa; as antigas, com `tools/hosting/limpar-exif.php` (ADR 0390).
   **Downloads em 18/11 (ADR 0391):** proposta, planilha de usuários, vistoria, link público da prestação de contas e relatório do Talk saíam sem `Cache-Control: private`; agora todos, com teste para as rotas futuras.
+  **Sandbox em 18/11 (ADR 0393):** anexos dos chamados e documentos do app do morador saem com `sandbox`, como o Disco Virtual.
   Pendente: Content-Security-Policy que limita scripts (depois do piloto).
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
   **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
