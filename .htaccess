@@ -14,7 +14,11 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 </FilesMatch>
 
 RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
-RewriteRule ^storage/(?:backups|cache|cert|database|logs|private|sessions|temp|tmp)(?:/|$) - [F,L,NC]
+RewriteRule ^storage/(?:backups|cache|cert|database|logs|media|output|private|sessions|talk|temp|tmp|uploads)(?:/|$) - [F,L,NC]
+# Propostas comerciais (nome, e-mail e telefone do interessado) só pela rota do Studio com login (ADR 0388).
+RewriteRule ^storage/files/proposals(?:/|$) - [F,L,NC]
+# Nada enviado vira página ou script: em storage/ só ficam imagens e documentos (ADR 0388).
+RewriteRule ^storage/.*\.(?:php\d*|phtml|phar|pht|s?html?|xht(?:ml)?|svgz?|m?js)$ - [F,L,NC]
 # Anexos de chamados só pela rota /api/v1/ticket-attachments/{id}, que confere quem pode ver (ADR 0339).
 RewriteRule ^storage/(?:files|images)/(?:.*/)?(?:public-)?ticket- - [F,L,NC]
 
