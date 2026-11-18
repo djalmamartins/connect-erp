@@ -98,6 +98,7 @@ final class CashBookDocument
 
     public function pdf(array $book): string
     {
+        \Source\Support\PdfTime::extend();
         $options = new Options();
         $options->set('tempDir', sys_get_temp_dir());
         $options->set('chroot', $this->theme);

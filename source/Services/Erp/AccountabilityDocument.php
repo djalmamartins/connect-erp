@@ -213,6 +213,7 @@ final class AccountabilityDocument
      */
     public function pdf(array $doc): string
     {
+        \Source\Support\PdfTime::extend();
         $doc = $this->mergeable($doc);
         $anchors = [];
         $options = new Options();
