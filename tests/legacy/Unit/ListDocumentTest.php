@@ -100,4 +100,41 @@ final class ListDocumentTest extends TestCase
             self::assertStringContainsString("Content-Disposition: inline; filename=", (string)file_get_contents($root . '/source/Controllers/' . $controller), $controller);
         }
     }
+
+    /** @return list<list<string>> */
+    private static function rows(int $count): array
+    {
+        $rows = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $rows[] = ['Bloco A - ' . $i, 'Morador ' . $i, '(31) 99999-' . str_pad((string)$i, 4, '0', STR_PAD_LEFT), '1234,56', '10/11/2026'];
+        }
+        return $rows;
+    }
+
+    public function testEachSheetIsItsOwnTableWithTheSameHeader(): void
+    {
+        $html = ListDocument::html(['header' => ['Unidade', 'Nome', 'Telefone', 'Valor', 'Vencimento'], 'rows' => self::rows(ListDocument::PDF_ROWS_PER_SHEET * 2 + 1)], ['title' => 'T']);
+        self::assertSame(3, substr_count($html, '<table class="list'), 'Uma tabela por folha (ADR 0383).');
+        self::assertSame(3, substr_count($html, '<thead>'), 'Cada folha com o cabeçalho do modelo 3.');
+        self::assertSame(2, substr_count($html, '<table class="list next">'), 'Da segunda em diante começa em folha nova.');
+        self::assertStringContainsString('table.next{page-break-before:always}', $html);
+        self::assertSame(1, substr_count(ListDocument::html(['header' => ['A'], 'rows' => []], ['title' => 'T']), '<table class="list'));
+    }
+
+    public function testLongListRendersInBatchesWithContinuousPagesAndBoundedMemory(): void
+    {
+        $count = ListDocument::PDF_ROWS_PER_SHEET * ListDocument::PDF_SHEETS_PER_BATCH * 4 + 5;
+        $table = ['header' => ['Unidade', 'Nome', 'Telefone', 'Valor', 'Vencimento'], 'rows' => self::rows($count)];
+        $before = memory_get_usage();
+        memory_reset_peak_usage();
+        $pdf = ListDocument::render('pdf', $table, ['title' => 'Inadimplentes', 'date' => '18/11/2026']);
+        $used = (memory_get_peak_usage() - $before) / 1048576;
+        // Antes: uma tabela só num Dompdf; 2.000 linhas gastavam 1,2 GB e 5.000 estouravam 2 GB (ADR 0383).
+        self::assertLessThan(64, $used, sprintf('PDF de %d linhas usou %.1f MB', $count, $used));
+        self::assertStringStartsWith('%PDF-', $pdf);
+        $sheets = (int)ceil($count / ListDocument::PDF_ROWS_PER_SHEET);
+        self::assertSame($sheets, preg_match_all('~/Type\s*/Page[^s]~', $pdf), 'Os lotes juntos têm todas as folhas.');
+        $parser = new \setasign\Fpdi\Fpdi();
+        self::assertSame($sheets, $parser->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($pdf)));
+    }
 }

@@ -6,6 +6,8 @@ namespace Source\Services\Erp;
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 use InvalidArgumentException;
 use PDO;
 use Source\Core\Connect;
@@ -28,6 +30,10 @@ final class ListDocument
     public const LABELS = ['pdf' => 'PDF', 'xlsx' => 'Excel', 'csv' => 'CSV'];
     /** Linhas no PDF (o Excel e o CSV levam tudo o que a consulta trouxe). */
     public const MAX_PDF_ROWS = 5000;
+    /** Linhas que cabem numa folha A4 deitada com o cabeçalho do modelo 3 (texto de uma linha por célula). */
+    public const PDF_ROWS_PER_SHEET = 17;
+    /** Folhas por Dompdf: lotes de 340 linhas ficam perto de 50 MB e 1 s (ADR 0383). */
+    public const PDF_SHEETS_PER_BATCH = 20;
     /** Cabeçalhos que "Ocultar unidade" tira do arquivo. */
     public const UNIT_HEADERS = ['Unidade'];
 
@@ -148,12 +154,12 @@ final class ListDocument
     }
 
     /** HTML do PDF (público para o teste conferir o que vai no documento). */
-    public static function html(array $table, array $meta): string
+    public static function html(array $table, array $meta, ?int $cut = null): string
     {
         $e = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $issuer = self::issuer();
         $rows = array_slice($table['rows'], 0, self::MAX_PDF_ROWS);
-        $cut = count($table['rows']) - count($rows);
+        $cut ??= count($table['rows']) - count($rows);
         $numeric = [];
         foreach ($table['header'] as $i => $label) {
             $numeric[$i] = $rows !== [] && array_filter($rows, static fn (array $r): bool => ($r[$i] ?? '') !== '' && self::number(self::plain((string)$r[$i])) === null) === [];
@@ -168,7 +174,7 @@ final class ListDocument
             . '.issuer strong{display:block;font-size:14.5px;letter-spacing:.2px;color:#222;margin-bottom:2px}'
             . '.date{text-align:right;margin:5px 0 0;font-size:9.5px;color:#222}.head{text-align:center;margin:2px 0 12px;color:#222}'
             . '.head .condo{font-size:11px;font-weight:bold}.head .title{font-size:11px;font-weight:bold;margin-top:6px}'
-            . 'table.list{width:100%;border-collapse:collapse}thead{display:table-header-group}'
+            . 'table.list{width:100%;border-collapse:collapse}table.next{page-break-before:always}thead{display:table-header-group}'
             . 'table.list th{text-align:left;font-weight:bold;color:#222;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6;padding:6px 8px}'
             . 'table.list td{padding:7px 8px;border-bottom:1px solid #dedede;vertical-align:middle}tr{page-break-inside:avoid}'
             . '.list td.sheet{padding:0;border:0}.num{text-align:right;white-space:nowrap}.empty,.cut{text-align:center;color:#666;padding:14px}</style></head><body>';
@@ -179,22 +185,29 @@ final class ListDocument
         $sheetHead .= '<div class="date">' . $e($meta['date'] ?? date('d/m/Y')) . '</div><div class="head">'
             . '<div class="condo">' . $e((string)($meta['condominium'] ?? 'Todos os condomínios')) . '</div>'
             . '<div class="title">' . $e($meta['title']) . '</div></div>';
-        $html .= '<table class="list"><thead><tr><td class="sheet" colspan="' . max(1, count($table['header'])) . '">' . $sheetHead . '</td></tr><tr>';
+        $head = '<thead><tr><td class="sheet" colspan="' . max(1, count($table['header'])) . '">' . $sheetHead . '</td></tr><tr>';
         foreach ($table['header'] as $i => $label) {
-            $html .= '<th' . ($numeric[$i] ? ' class="num"' : '') . '>' . $e((string)$label) . '</th>';
+            $head .= '<th' . ($numeric[$i] ? ' class="num"' : '') . '>' . $e((string)$label) . '</th>';
         }
-        $html .= '</tr></thead><tbody>';
-        foreach ($rows as $row) {
-            $html .= '<tr>';
-            foreach ($table['header'] as $i => $label) {
-                $html .= '<td' . ($numeric[$i] ? ' class="num"' : '') . '>' . $e(self::plain((string)($row[$i] ?? ''))) . '</td>';
+        $head .= '</tr></thead>';
+        // Uma tabela por folha (ADR 0383): o Dompdf gasta memória e tempo que crescem mais que a quantidade de linhas
+        // numa tabela só (2.000 linhas: 1,2 GB e 98 s; 5.000 estourava 2 GB). Blocos de PDF_ROWS_PER_SHEET linhas, cada um
+        // com o mesmo cabeçalho e começando numa folha nova, deixam o custo proporcional e a folha igual à de antes.
+        $chunks = $rows === [] ? [[]] : array_chunk($rows, self::PDF_ROWS_PER_SHEET);
+        foreach ($chunks as $index => $chunk) {
+            $html .= '<table class="list' . ($index > 0 ? ' next' : '') . '">' . $head . '<tbody>';
+            foreach ($chunk as $row) {
+                $html .= '<tr>';
+                foreach ($table['header'] as $i => $label) {
+                    $html .= '<td' . ($numeric[$i] ? ' class="num"' : '') . '>' . $e(self::plain((string)($row[$i] ?? ''))) . '</td>';
+                }
+                $html .= '</tr>';
             }
-            $html .= '</tr>';
+            if ($chunk === []) {
+                $html .= '<tr><td class="empty" colspan="' . max(1, count($table['header'])) . '">Nenhum registro.</td></tr>';
+            }
+            $html .= '</tbody></table>';
         }
-        if ($rows === []) {
-            $html .= '<tr><td class="empty" colspan="' . max(1, count($table['header'])) . '">Nenhum registro.</td></tr>';
-        }
-        $html .= '</tbody></table>';
         if ($cut > 0) {
             $html .= '<p class="cut">' . $cut . ' linha(s) a mais não couberam no PDF. Baixe em Excel para ver tudo.</p>';
         }
@@ -203,17 +216,46 @@ final class ListDocument
 
     private static function pdf(array $table, array $meta): string
     {
+        // Lotes de folhas (ADR 0383): cada lote é um Dompdf separado, liberado antes do próximo, e os lotes são juntados
+        // com o FPDI. A memória fica no tamanho de um lote, não da lista inteira; a numeração continua de um lote ao outro.
+        $rows = array_slice($table['rows'], 0, self::MAX_PDF_ROWS);
+        $batch = self::PDF_ROWS_PER_SHEET * self::PDF_SHEETS_PER_BATCH;
+        if (count($rows) <= $batch) {
+            return self::dompdf($table, $meta, 0);
+        }
+        $cut = count($table['rows']) - count($rows);
+        $fpdi = new Fpdi();
+        $fpdi->SetAutoPageBreak(false);
+        $offset = 0;
+        $parts = array_chunk($rows, $batch);
+        foreach ($parts as $index => $part) {
+            // A linha "N linha(s) a mais não couberam" só no último lote.
+            $pdf = self::dompdf(['header' => $table['header'], 'rows' => $part], $meta, $offset, $index === count($parts) - 1 ? $cut : 0);
+            $pages = $fpdi->setSourceFile(StreamReader::createByString($pdf));
+            for ($page = 1; $page <= $pages; $page++) {
+                $template = $fpdi->importPage($page);
+                $size = $fpdi->getTemplateSize($template);
+                $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $fpdi->useTemplate($template);
+            }
+            $offset += $pages;
+            unset($pdf);
+        }
+        return $fpdi->Output('S');
+    }
+
+    private static function dompdf(array $table, array $meta, int $pageOffset, ?int $cut = null): string
+    {
         $options = new Options();
         $options->set('tempDir', sys_get_temp_dir());
         $options->set('isRemoteEnabled', false);
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(self::html($table, $meta), 'UTF-8');
+        $dompdf->loadHtml(self::html($table, $meta, $cut), 'UTF-8');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
-        $canvas = $dompdf->getCanvas();
-        self::footer($dompdf);
+        self::footer($dompdf, true, true, $pageOffset);
         return (string)$dompdf->output();
     }
 
@@ -221,7 +263,7 @@ final class ListDocument
      * Rodapé em cada página: linha escura, o site à esquerda e o número da página à direita. Nas listas (modelo 3) em
      * negrito itálico; na prestação de contas (PDF de outubro) em texto normal ($emphasis = false).
      */
-    public static function footer(Dompdf $dompdf, bool $emphasis = true, bool $pageNumber = true): void
+    public static function footer(Dompdf $dompdf, bool $emphasis = true, bool $pageNumber = true, int $pageOffset = 0): void
     {
         $canvas = $dompdf->getCanvas();
         $metrics = $dompdf->getFontMetrics();
@@ -232,8 +274,8 @@ final class ListDocument
         if (!$pageNumber) {
             return;   // a numeração vem depois, na junção com os comprovantes (AccountabilityDocument::merge)
         }
-        $canvas->page_script(static function (int $page, int $pages, $canvas, $metrics) use ($font, $width, $height): void {
-            $text = (string)$page;
+        $canvas->page_script(static function (int $page, int $pages, $canvas, $metrics) use ($font, $width, $height, $pageOffset): void {
+            $text = (string)($page + $pageOffset);
             $canvas->text($width - 30 - $metrics->getTextWidth($text, $font, 8), $height - 30, $text, $font, 8, [0.07, 0.07, 0.07]);
         });
     }
