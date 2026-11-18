@@ -104,14 +104,9 @@ $charges = new BankCharges($pdo);
 $charge = $charges->issue($user, $entry, $accountId);
 echo 'Emissão: ' . $charge['status'] . ', código do banco ' . ($charge['external_id'] ?? '-') . ', erro: ' . ($charge['last_error'] ?? '') . "\n";
 if (empty($charge['external_id']) && $charge['status'] === 'pending') {
-    // O motivo da falha fica no log (bank_charge_register_failed); mostra a última linha dele para não precisar procurar.
-    foreach (array_reverse(glob(dirname(__DIR__) . '/storage/logs/movesos-*.log') ?: []) as $log) {
-        $lines = array_values(array_filter(file($log) ?: [], static fn (string $l): bool => str_contains($l, 'bank_charge_register_failed')));
-        if ($lines !== []) {
-            echo 'Log: ' . trim((string)end($lines)) . "\n";
-            break;
-        }
-    }
+    // O motivo da falha fica na tabela app_log (bank_charge_register_failed); mostra a última para não precisar procurar.
+    $log = $pdo->query("SELECT last_seen_at, msg, context_json FROM app_log WHERE event_type = 'bank_charge_register_failed' ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    echo 'Log: ' . (is_array($log) ? implode(' | ', $log) : 'nenhum registro') . "\n";
     fwrite(STDERR, "Inter não confirmou a emissão; não consulto de novo. Mande a linha do log acima.\n");
     exit(2);
 }
