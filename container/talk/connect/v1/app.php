@@ -462,6 +462,7 @@ try {
             $csvBody = $app['reports']->exportCsv($me, $_GET);
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="atendimentos-' . preg_replace('/[^0-9-]/', '', (string) ($_GET['from'] ?? '')) . '-' . preg_replace('/[^0-9-]/', '', (string) ($_GET['to'] ?? '')) . '.csv"');
+            header('Cache-Control: private, no-store'); // ADR 0391
             echo $csvBody;
             exit;
         }

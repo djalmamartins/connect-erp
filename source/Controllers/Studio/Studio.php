@@ -249,6 +249,7 @@ class Studio extends Controller
         if (!$root || !$file || !is_file($file) || !str_starts_with($file, $root . DIRECTORY_SEPARATOR)) { redirect('/studio/ops/404'); return; }
         header('Content-Type: application/pdf'); header('Content-Length: ' . filesize($file));
         header('Content-Disposition: inline; filename="proposta-' . (int)$response->id . '.pdf"');
+        header('Cache-Control: private, no-store'); // ADR 0391: nome, e-mail e telefone do interessado
         readfile($file);
     }
 
@@ -1051,6 +1052,7 @@ class Studio extends Controller
             $exportUsers = (new User())->find($termsSql, $paramsSql)->order("first_name,last_name")->fetch(true) ?: [];
             header("Content-Type: text/csv; charset=UTF-8");
             header('Content-Disposition: attachment; filename="usuarios-movesos-' . date('Y-m-d') . '.csv"');
+            header('Cache-Control: private, no-store'); // ADR 0391
             $output = fopen("php://output", "wb");
             fwrite($output, "\xEF\xBB\xBF");
             fputcsv($output, ["Nome", "E-mail", "Telefone", "Perfil", "Status", "Cadastro"], ";", '"', "");
