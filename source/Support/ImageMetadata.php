@@ -53,6 +53,94 @@ final class ImageMetadata
         return $written;
     }
 
+    /**
+     * A imagem leva metadados? JPEG: segmento APP1 (EXIF ou XMP); PNG: blocos eXIf, tEXt, iTXt ou zTXt; WebP: EXIF ou XMP.
+     * Serve para a limpeza das imagens antigas regravar só o que precisa (regravar JPEG de novo perde qualidade).
+     */
+    public static function hasMetadata(string $file): bool
+    {
+        $head = (string)@file_get_contents($file, false, null, 0, 262144);
+        if (str_starts_with($head, "\xFF\xD8")) {
+            $offset = 2;
+            while ($offset + 4 <= strlen($head) && $head[$offset] === "\xFF") {
+                $marker = ord($head[$offset + 1]);
+                if ($marker === 0xDA || $marker === 0xD9) { // começo da imagem: não há mais metadados
+                    return false;
+                }
+                $length = unpack('n', substr($head, $offset + 2, 2))[1];
+                if ($marker === 0xE1) {
+                    return true;
+                }
+                $offset += 2 + $length;
+            }
+            return false;
+        }
+        if (str_starts_with($head, "\x89PNG\r\n\x1A\n")) {
+            // Os blocos de texto podem vir depois da imagem (IDAT): percorre o arquivo todo pelos cabeçalhos dos blocos.
+            $handle = @fopen($file, 'rb');
+            if ($handle === false) {
+                return false;
+            }
+            try {
+                fseek($handle, 8);
+                while (strlen($chunk = (string)fread($handle, 8)) === 8) {
+                    $length = unpack('N', substr($chunk, 0, 4))[1];
+                    $type = substr($chunk, 4, 4);
+                    if (in_array($type, ['eXIf', 'tEXt', 'iTXt', 'zTXt'], true)) {
+                        return true;
+                    }
+                    if ($type === 'IEND' || fseek($handle, $length + 4, SEEK_CUR) !== 0) {
+                        return false;
+                    }
+                }
+                return false;
+            } finally {
+                fclose($handle);
+            }
+        }
+        if (str_starts_with($head, 'RIFF') && substr($head, 8, 4) === 'WEBP') {
+            return str_contains($head, 'EXIF') || str_contains($head, 'XMP ');
+        }
+        return false;
+    }
+
+    /**
+     * Limpa as imagens antigas de uma pasta (ADR 0390): só JPEG, PNG e WebP com metadados. Com $apply = false só conta.
+     *
+     * @return array{checked: int, with_metadata: int, cleaned: int, failed: list<string>}
+     */
+    public static function cleanFolder(string $root, bool $apply): array
+    {
+        $result = ['checked' => 0, 'with_metadata' => 0, 'cleaned' => 0, 'failed' => []];
+        if (!is_dir($root)) {
+            return $result;
+        }
+        $types = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($files as $file) {
+            $mime = $types[strtolower($file->getExtension())] ?? null;
+            if (!$file->isFile() || $file->isLink() || $mime === null) {
+                continue;
+            }
+            $result['checked']++;
+            $path = $file->getPathname();
+            if (!self::hasMetadata($path)) {
+                continue;
+            }
+            $result['with_metadata']++;
+            if (!$apply) {
+                continue;
+            }
+            $detected = strtolower((string)(new \finfo(FILEINFO_MIME_TYPE))->file($path));
+            if ($detected === $mime && self::strip($path, $mime)) {
+                $result['cleaned']++;
+            } else {
+                $result['failed'][] = substr($path, strlen(rtrim($root, '/')) + 1);
+            }
+        }
+        return $result;
+    }
+
     /** Ângulo para o imagerotate a partir da orientação do EXIF (regra pura). */
     public static function angle(int $orientation): int
     {
