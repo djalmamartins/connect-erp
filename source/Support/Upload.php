@@ -122,6 +122,11 @@ class Upload
             if (!$image || empty($image['mime']) || strtolower((string)$image['mime']) !== $detectedMime) {
                 return false;
             }
+            // ADR 0389: sem GPS, data e aparelho do EXIF nas imagens que ficam públicas.
+            if (!ImageMetadata::strip($temporary, $detectedMime)) {
+                return false;
+            }
+            $size = (int)filesize($temporary);
         }
 
         // O uploader de terceiros consulta este campo; substituímos o valor não confiável do navegador.

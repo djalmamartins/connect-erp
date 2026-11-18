@@ -129,12 +129,7 @@ final class PhotoStorage
             return $image;
         }
         $exif = @exif_read_data($file);
-        $angle = match ((int)($exif['Orientation'] ?? 1)) {
-            3 => 180,
-            6 => -90,
-            8 => 90,
-            default => 0,
-        };
+        $angle = \Source\Support\ImageMetadata::angle((int)(is_array($exif) ? ($exif['Orientation'] ?? 1) : 1));
         if ($angle === 0) {
             return $image;
         }
