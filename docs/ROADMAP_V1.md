@@ -102,7 +102,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   segredo do endereço e pela consulta de cada título no banco antes de dar baixa (`BankWebhook.php`); a lista de IPs do banco vai no
   `.env` em `BANK_WEBHOOK_ALLOWED_IPS` (**feito em 17/11, ADR 0360**; falta só preencher com os IPs que o banco informar). A consulta de hora em hora segue como garantia se o webhook falhar.
 - **Antivírus de upload** (ClamAV, ADR 0098) não existe nessa hospedagem: fica desligado, com os limites de tipo e tamanho.
-- **Saída com certificado (mTLS) para o Inter e a Cora** usa o cURL do PHP e deve funcionar; testar logo no começo da etapa 4.
+- **Saída com certificado (mTLS) para o Inter e a Cora** usa o cURL do PHP e deve funcionar; testar logo no começo da etapa 4. Teste: `php tools/bank-credentials.php testar --conta=ID` (Inter ou Cora, ADR 0392; HOSPEDAGEM.md §7).
 - `APP_ENV=production`, `ERP_DEMO_DATA=false`, `.env` fora da pasta pública, sem rotas de laboratório.
 - Segredos só no `.env` do servidor: `CONNECT_BANK_VAULT_KEY` nova, senhas novas do banco. **Rotacionar toda credencial histórica**
   (`PENDENCIAS.md` item 7).

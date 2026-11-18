@@ -178,8 +178,35 @@ final class BankCredentialSetup
     public function test(User $user, int $bankAccountId): array
     {
         $account = $this->account($user, $bankAccountId);
-        $bank = self::bankOf((string)$account['bank_code']);
         $this->throttle($user);
+        return $this->probe($account);
+    }
+
+    /**
+     * Mesmo teste, pelo terminal do servidor (ADR 0392): `php tools/bank-credentials.php testar --conta=ID`. Sem usuário,
+     * porque quem tem o terminal já tem o .env; escolhe o banco pelo código da conta (Inter ou Cora), como a tela.
+     *
+     * @return array{connected:bool, message:string, bank:string}
+     */
+    public function testFromTerminal(int $bankAccountId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_accounts WHERE id = :id AND deleted_at IS NULL');
+        $stmt->execute(['id' => $bankAccountId]);
+        $account = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($account)) {
+            throw new RegistryNotFound('Conta bancária não encontrada.');
+        }
+        if (!in_array((string)$account['bank_code'], BankCredentials::ADAPTERS, true)) {
+            throw new InvalidArgumentException('Só contas do Banco Inter (código 077) e da Cora (código 403) aceitam esta integração por enquanto.');
+        }
+        return $this->probe($account) + ['bank' => self::bankOf((string)$account['bank_code'])];
+    }
+
+    /** @return array{connected:bool, message:string} */
+    private function probe(array $account): array
+    {
+        $bankAccountId = (int)$account['id'];
+        $bank = self::bankOf((string)$account['bank_code']);
         try {
             $this->adapter($bank, $this->credentials->secrets($bankAccountId) + ['account_number' => (string)($account['account_number'] ?? '')])->checkAuthentication();
             return ['connected' => true, 'message' => self::okMessage($bank)];
