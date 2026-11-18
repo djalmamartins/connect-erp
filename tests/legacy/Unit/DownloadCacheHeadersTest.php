@@ -13,9 +13,6 @@ use PHPUnit\Framework\TestCase;
  */
 final class DownloadCacheHeadersTest extends TestCase
 {
-    /** Controladores antigos sem rota (aguardam a decisão de apagar); não respondem a nenhum endereço. */
-    private const DEAD = ['source/Controllers/Erp/V1/'];
-
     public function testEveryDownloadIsPrivate(): void
     {
         $root = dirname(__DIR__, 3);
@@ -25,7 +22,7 @@ final class DownloadCacheHeadersTest extends TestCase
             $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root . '/' . $base, \FilesystemIterator::SKIP_DOTS));
             foreach ($files as $file) {
                 $relative = substr($file->getPathname(), strlen($root) + 1);
-                if ($file->getExtension() !== 'php' || array_filter(self::DEAD, static fn (string $d): bool => str_starts_with($relative, $d)) !== []) {
+                if ($file->getExtension() !== 'php') {
                     continue;
                 }
                 $lines = file($file->getPathname()) ?: [];
