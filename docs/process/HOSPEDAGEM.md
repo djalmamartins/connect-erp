@@ -130,6 +130,10 @@ O commit anterior aparece na saída e fica em `.local/deploy/previous`.
 
 ## 7. Webhook dos bancos
 
+Antes de tudo, confira que a hospedagem consegue falar com o banco usando o certificado (mTLS pelo cURL do PHP):
+`php tools/bank-credentials.php testar --conta=ID` pede só um token ao banco da conta (sandbox do Inter ou stage da Cora),
+sem emitir nada. Saída 0 = o banco respondeu; 1 = mostra o motivo (ADR 0392).
+
 Sem proxy próprio não dá para exigir o certificado do banco. A rota `/api/v1/webhooks/bank/{banco}/{segredo}` continua
 protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa. A lista de IPs do banco vai
 no `.env`, em `BANK_WEBHOOK_ALLOWED_IPS` (IPs ou faixas CIDR separados por vírgula, ADR 0360): chamada de fora da lista
