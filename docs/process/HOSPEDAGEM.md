@@ -43,18 +43,19 @@ cd ~ && git clone https://github.com/djalmamartins/connect-erp.git connect && cd
 composer install --no-dev --optimize-autoloader
 cp .env.production.example .env && chmod 600 .env   # preencher tudo marcado com <...> (ADR 0357)
 php tools/bank-credentials.php gerar-chave # CONNECT_BANK_VAULT_KEY nova (nunca a do laboratório)
-php service/commands/deploy-check.php
-composer db:migrate
+composer db:install    # banco vazio: estrutura base, catálogos, configuração e migrations (ADR 0396)
 php tools/hosting/criar-admin.php --email=<seu e-mail> --nome=<nome> --sobrenome=<sobrenome> --cpf=<cpf>   # ADR 0380
+php service/commands/deploy-check.php
 ```
 
 O `criar-admin` mostra a senha uma vez só e só funciona enquanto não houver administrador; as outras contas saem pela tela
 Usuários do Sistema.
 
-**Atenção (ADR 0379):** num banco vazio, `composer db:migrate` ainda falha, porque as tabelas base (`users`, `access_*`,
-`settings`...) vêm do banco antigo do laboratório e não de migration. Antes da primeira implantação, rode no Mac
-`bash tools/lab-exportar-esquema.sh` (só estrutura, sem dados) e envie `database/base/` num PR; a partir dele sai a
-instalação limpa (estrutura base, catálogos e primeiro administrador).
+**Banco vazio (ADR 0379 e 0396):** `composer db:install` só roda num banco sem nenhuma tabela. Carrega a estrutura
+exportada do laboratório (`database/base/schema.sql`, sem dados), os catálogos das migrations antigas (papéis, permissões,
+versões), a configuração inicial (`settings`, com o `APP_URL`) e as migrations atuais. Nas atualizações seguintes, só
+`composer db:migrate`. Se o laboratório ganhar tabela nova fora de migration, rode de novo no Mac
+`bash tools/lab-exportar-esquema.sh` e mande `database/base/` num PR.
 
 O `deploy-check` com `APP_ENV=production` (ADR 0354) para com erro se o `.env` estiver inseguro (debug, dados de
 exemplo, endereço do laboratório, `CONNECT_2FA_KEY` ou `CONNECT_BANK_VAULT_KEY` ausente ou repetida) ou se houver conta de
