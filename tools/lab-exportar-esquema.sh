@@ -11,10 +11,13 @@
 # Testes: DUMP_CMD e COUNT_CMD substituem o docker compose.
 set -euo pipefail
 project=$(cd "$(dirname "$0")/.." && pwd)
+# O docker compose roda de dentro da pasta do projeto: o caminho do Mac tem espaço ("/Volumes/MAC HD/...") e não pode
+# entrar no texto do comando, que passa pelo eval.
+cd "$project"
 out="$project/database/base"
 mkdir -p "$out"
-dump=${DUMP_CMD:-"docker compose --project-directory $project exec -T legacy-db sh -c 'mariadb-dump --no-data --skip-dump-date --skip-comments --routines --triggers -u\"\$MARIADB_USER\" -p\"\$MARIADB_PASSWORD\" \"\$MARIADB_DATABASE\"'"}
-count=${COUNT_CMD:-"docker compose --project-directory $project exec -T legacy-db sh -c 'mariadb -N -u\"\$MARIADB_USER\" -p\"\$MARIADB_PASSWORD\" \"\$MARIADB_DATABASE\" -e \"SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name\"'"}
+dump=${DUMP_CMD:-"docker compose exec -T legacy-db sh -c 'mariadb-dump --no-data --skip-dump-date --skip-comments --routines --triggers -u\"\$MARIADB_USER\" -p\"\$MARIADB_PASSWORD\" \"\$MARIADB_DATABASE\"'"}
+count=${COUNT_CMD:-"docker compose exec -T legacy-db sh -c 'mariadb -N -u\"\$MARIADB_USER\" -p\"\$MARIADB_PASSWORD\" \"\$MARIADB_DATABASE\" -e \"SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name\"'"}
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT

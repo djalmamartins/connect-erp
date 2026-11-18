@@ -13,7 +13,7 @@ final class LabSchemaExportTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->dir = sys_get_temp_dir() . '/schema-' . bin2hex(random_bytes(4));
+        $this->dir = sys_get_temp_dir() . '/schema com espaço-' . bin2hex(random_bytes(4)); // o Mac fica em "/Volumes/MAC HD/..."
         mkdir($this->dir . '/tools', 0777, true);
         copy(dirname(__DIR__, 3) . '/tools/lab-exportar-esquema.sh', $this->dir . '/tools/lab-exportar-esquema.sh');
     }
@@ -27,7 +27,7 @@ final class LabSchemaExportTest extends TestCase
     private function export(string $dump): array
     {
         file_put_contents($this->dir . '/dump.sql', $dump);
-        $cmd = 'cd ' . escapeshellarg($this->dir) . ' && DUMP_CMD=' . escapeshellarg('cat ' . $this->dir . '/dump.sql')
+        $cmd = 'cd ' . escapeshellarg($this->dir) . ' && DUMP_CMD=' . escapeshellarg('cat ' . escapeshellarg($this->dir . '/dump.sql'))
             . ' COUNT_CMD=' . escapeshellarg("printf 'users\\t3\\nerp_units\\t\\n'") . ' bash tools/lab-exportar-esquema.sh 2>&1';
         exec($cmd, $out, $code);
         return [$code, implode("\n", $out)];
@@ -51,6 +51,23 @@ final class LabSchemaExportTest extends TestCase
         [$code, $out] = $this->export("CREATE TABLE `users` (`id` int);\nINSERT INTO `users` VALUES (1);\n");
         self::assertSame(3, $code, $out);
         self::assertFileDoesNotExist($this->dir . '/database/base/schema.sql', 'nada gravado');
+    }
+
+    public function testDefaultCommandWorksInAFolderWithSpaces(): void
+    {
+        mkdir($this->dir . '/bin');
+        $fake = "#!/usr/bin/env bash\necho \"\$PWD|\$*\" >> " . escapeshellarg($this->dir . '/docker.log')
+            . "\ncase \"\$*\" in *mariadb-dump*) echo 'CREATE TABLE `users` (`id` int);';; *) printf 'users\\t1\\n';; esac\n";
+        file_put_contents($this->dir . '/bin/docker', $fake);
+        chmod($this->dir . '/bin/docker', 0755);
+        exec('cd /tmp && PATH=' . escapeshellarg($this->dir . '/bin') . ':"$PATH" bash ' . escapeshellarg($this->dir . '/tools/lab-exportar-esquema.sh') . ' 2>&1', $out, $code);
+        self::assertSame(0, $code, implode("\n", $out));
+        $calls = file($this->dir . '/docker.log', FILE_IGNORE_NEW_LINES) ?: [];
+        self::assertCount(2, $calls);
+        foreach ($calls as $call) {
+            self::assertStringStartsWith($this->dir . '|compose exec -T legacy-db ', $call, 'roda da pasta do projeto, sem o caminho no comando');
+        }
+        self::assertStringContainsString('CREATE TABLE `users`', (string)file_get_contents($this->dir . '/database/base/schema.sql'));
     }
 
     public function testDefaultDumpHasNoData(): void
