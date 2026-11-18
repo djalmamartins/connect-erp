@@ -9,6 +9,7 @@ use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Support\TicketError;
+use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkHelpdesk;
 use Source\Services\Talk\TalkTokens;
 use Source\Support\Access;
@@ -200,5 +201,82 @@ final class TalkIntegrationTest extends TestCase
         } catch (TicketError $error) {
             self::assertSame(404, $error->status());
         }
+    }
+
+    /** Boleto registrado de uma conta a receber (ADR 0386). */
+    private function charge(int $condominium, ?int $unit, string $due, string $status = 'registered', ?string $paidOn = null, string $competence = '2026-11'): int
+    {
+        static $chart = [], $bank = [];
+        if (!isset($chart[$condominium])) {
+            $this->pdo->prepare("INSERT INTO erp_chart_accounts (code, name, nature, kind) VALUES (?, 'Taxa', 'receita', 'analitica')")->execute(['1.' . $condominium . '.' . random_int(100, 999)]);
+            $chart[$condominium] = (int)$this->pdo->lastInsertId();
+            $this->pdo->prepare("INSERT INTO erp_bank_accounts (condominium_id, name, bank_code, branch, account_number) VALUES (?, 'Movimento', '077', '0001', '1234-5')")->execute([$condominium]);
+            $bank[$condominium] = (int)$this->pdo->lastInsertId();
+        }
+        $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, unit_id, nature, chart_account_id, description, amount_cents, competence, due_on, paid_on)
+            VALUES (?, ?, 'receita', ?, 'Taxa de condomínio', 65000, ?, ?, ?)")->execute([$condominium, $unit, $chart[$condominium], $competence, $due, $paidOn]);
+        $entry = (int)$this->pdo->lastInsertId();
+        $this->pdo->prepare("INSERT INTO erp_bank_charges (condominium_id, bank_account_id, entry_id, adapter, status, our_number, amount_cents, due_on, digitable_line, pix_copy_paste)
+            VALUES (?, ?, ?, 'sandbox', ?, ?, 65000, ?, '00190.00009 01234.567890', '000201PIX')")->execute([$condominium, $bank[$condominium], $entry, $status, (string)$entry, $due]);
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    public function testSecondCopyOnlyWithTheResidentsPhoneAndOpenRegisteredCharges(): void
+    {
+        $talk = new TalkCharges($this->pdo);
+        $due = [$this->charge($this->alpha, $this->unit, '2026-11-10'), $this->charge($this->alpha, $this->unit, '2026-12-10', 'registered', null, '2026-12'),
+            $this->charge($this->alpha, $this->unit, '2026-10-10', 'registered', null, '2026-10')];
+        $this->charge($this->alpha, $this->unit, '2026-09-01', 'registered', null, '2026-09');   // vencido há mais de 60 dias
+        $this->charge($this->alpha, $this->unit, '2026-11-05', 'registered', '2026-11-05');      // já pago
+        $this->charge($this->alpha, $this->unit, '2026-11-06', 'cancelled');
+        $this->charge($this->alpha, $this->unit, '2026-11-07', 'pending');
+        $this->charge($this->alpha, $this->unit, '2026-11-08', 'registered', null, '2026-11');   // quarto do limite de 3? vem antes de 10/11
+        $out = $talk->open($this->agent, $this->resident, '+55 (31) 99999-8888', '2026-11-18');
+        self::assertCount(TalkCharges::MAX_ITEMS, $out, 'No máximo 3, pelo vencimento.');
+        self::assertSame(['2026-10-10', '2026-11-08', '2026-11-10'], array_column($out, 'due_on'));
+        self::assertSame([$due[2], $due[0]], [$out[0]['id'], $out[2]['id']]);
+        self::assertSame(['Alpha', 65000, '00190.00009 01234.567890', '000201PIX'], [$out[0]['condominium'], $out[0]['amount_cents'], $out[0]['digitable_line'], $out[0]['pix_copy_paste']]);
+        self::assertMatchesRegularExpression('~/boletos/\d+$~', $out[0]['portal_url']);
+        self::assertCount(3, $talk->open($this->agent, $this->resident, '3199998888', '2026-11-18'), 'Sem o nono dígito também confere.');
+
+        $notFound = function (callable $call): void {
+            try {
+                $call();
+                self::fail('Devia ser 404.');
+            } catch (TicketError $error) {
+                self::assertSame(404, $error->status());
+                self::assertSame('Morador não encontrado.', $error->getMessage(), 'Não diz o motivo.');
+            }
+        };
+        $notFound(fn () => $talk->open($this->agent, $this->resident, '31988887777', '2026-11-18'));        // telefone de outra pessoa
+        $notFound(fn () => $talk->open($this->agent, $this->betaResident, '5531999998888', '2026-11-18'));  // outro condomínio
+        $notFound(fn () => $talk->open($this->agent, $this->resident + 1, '31999998888', '2026-11-18'));    // inquilino com vínculo encerrado
+        $tenant = $this->pdo->prepare("INSERT INTO erp_residents (condominium_id, unit_id, unit_label, relationship, name, phone, status) VALUES (?, ?, 'A - 101', 'tenant', 'Inquilina', '31977776666', 'active')");
+        $tenant->execute([$this->alpha, $this->unit]);
+        $notFound(fn () => $talk->open($this->agent, (int)$this->pdo->lastInsertId(), '31977776666', '2026-11-18'));  // inquilino fica de fora
+        $notFound(fn () => $talk->open(null, $this->resident, '31999998888', '2026-11-18'));
+
+        try {
+            $talk->open($this->agent, $this->resident, '123', '2026-11-18');
+            self::fail('Telefone curto.');
+        } catch (TicketError $error) {
+            self::assertSame([422, 'phone'], [$error->status(), $error->field]);
+        }
+
+        $audits = $this->pdo->query("SELECT context_json FROM system_audit_logs WHERE entity = 'erp_bank_charges' ORDER BY id")->fetchAll(\PDO::FETCH_COLUMN);
+        self::assertGreaterThanOrEqual(7, count($audits), 'Toda consulta vai para a auditoria.');
+        self::assertStringNotContainsString('99999', implode(' ', $audits), 'Telefone mascarado na auditoria.');
+        self::assertStringContainsString('second_copy', $audits[0]);
+    }
+
+    public function testSecondCopyIsEmptyWithoutOpenCharges(): void
+    {
+        self::assertSame([], (new TalkCharges($this->pdo))->open($this->agent, $this->resident, '31999998888', '2026-11-18'));
+    }
+
+    public function testChargesRouteIsBehindTheTalkToken(): void
+    {
+        $index = (string)file_get_contents(dirname(__DIR__, 3) . '/index.php');
+        self::assertStringContainsString('$route->get("/talk/charges", "Talk:charges", null, \\Source\\Support\\Middleware\\TalkApiAuthenticated::class);', $index);
     }
 }

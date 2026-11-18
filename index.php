@@ -71,6 +71,7 @@ $route->get("/talk/people", "Talk:people", null, \Source\Support\Middleware\Talk
 $route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

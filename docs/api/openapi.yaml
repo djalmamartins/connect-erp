@@ -7631,6 +7631,48 @@ paths:
         '200': { description: Chamado resolvido, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/TalkTicket' } } } } } }
         '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Chamado não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/charges:
+    get:
+      operationId: talkCharges
+      tags: [Talk]
+      summary: 2ª via dos boletos em aberto do morador (ADR 0386)
+      description: >-
+        Usado pela assistente do Talk quando o morador pede o boleto pelo WhatsApp. Exige o morador e o telefone dele (os 8
+        últimos dígitos têm de ser os do cadastro); qualquer outra situação é 404 sem dizer o motivo. Só proprietário ou
+        responsável financeiro, só boletos registrados e em aberto vencidos há no máximo 60 dias, no máximo 3. Cada consulta
+        vai para a auditoria com o telefone mascarado. Sem boleto em aberto, lista vazia.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: phone, in: query, required: true, schema: { type: string, maxLength: 30 }, description: Telefone com DDD, com ou sem 55 }
+      responses:
+        '200':
+          description: Boletos em aberto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    maxItems: 3
+                    items:
+                      type: object
+                      required: [id, condominium, unit, competence, due_on, amount_cents, digitable_line, pix_copy_paste, portal_url]
+                      properties:
+                        id: { type: integer }
+                        condominium: { type: string }
+                        unit: { type: string }
+                        competence: { type: string, example: '2026-11' }
+                        due_on: { type: string, format: date }
+                        amount_cents: { type: integer }
+                        digitable_line: { type: [string, 'null'] }
+                        pix_copy_paste: { type: [string, 'null'] }
+                        portal_url: { type: string, description: Página do boleto no aplicativo do morador (exige login) }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Morador não encontrado ou telefone não confere, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Sem morador ou telefone, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: Muitas consultas, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /tickets:
     get:
       operationId: listTickets
