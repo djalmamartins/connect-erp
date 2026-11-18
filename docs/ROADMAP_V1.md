@@ -189,6 +189,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Downloads em 18/11 (ADR 0391):** proposta, planilha de usuários, vistoria, link público da prestação de contas e relatório do Talk saíam sem `Cache-Control: private`; agora todos, com teste para as rotas futuras.
   **Sandbox em 18/11 (ADR 0393):** anexos dos chamados e documentos do app do morador saem com `sandbox`, como o Disco Virtual.
   **Código antigo em 18/11 (ADR 0394):** 10 controladores do ERP antigo sem rota apagados (senha igual ao e-mail, CPF em pasta pública), com o ok do Djalma.
+  **Logo SVG em 18/11 (ADR 0395):** o bloqueio de `.svg` do ADR 0388 quebrava o logo SVG enviado pelo Studio; agora só esse arquivo abre, com sandbox.
   Pendente: Content-Security-Policy que limita scripts (depois do piloto).
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
   **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
