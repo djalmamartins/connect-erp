@@ -26,7 +26,7 @@ if ($domain === '') {
     exit(2);
 }
 
-$dns = \Source\Support\MailDns::check($domain, isset($options['dkim-seletor']) ? (string)$options['dkim-seletor'] : null,
+$dns = \Source\Support\MailDns::check($domain, isset($options['dkim-seletor']) ? (string)$options['dkim-seletor'] : ((string)getenv('MAIL_DKIM_SELECTOR') ?: null),
     \Source\Support\MailDns::resolver());
 echo "DNS de e-mail de {$domain}:\n";
 if ((@dns_get_record($domain, DNS_NS) ?: []) === []) {
