@@ -95,6 +95,7 @@ final class AccountabilityLinkPublic
         header('Content-Type: ' . $file['mime']);
         header('Content-Length: ' . $file['size']);
         header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($file['name']));
+        header('Cache-Control: private, no-store'); // ADR 0391
         header("Content-Security-Policy: default-src 'none'; img-src 'self'; object-src 'self'; plugin-types application/pdf; sandbox");
         readfile($file['path']);
     }
@@ -132,6 +133,7 @@ final class AccountabilityLinkPublic
         header('Content-Type: application/pdf');
         header('Content-Length: ' . strlen($pdf));
         header('Content-Disposition: attachment; filename="' . AccountabilityBookDocument::filename($view) . '"');
+        header('Cache-Control: private, no-store'); // ADR 0391
         header("Content-Security-Policy: default-src 'none'; sandbox");
         echo $pdf;
     }
