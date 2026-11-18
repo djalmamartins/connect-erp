@@ -36,3 +36,9 @@ tem "Incluir rateio na fatura de" e "Tipo da fatura" (INFERIDO: o rateio vai na 
 - Juros e multa por atraso são do título inteiro (regra de cobrança do condomínio), não por conta.
 - Testes: `BankChargeBundleTest` (soma, vencimento, boleto do rateio = o da fatura, trava de cancelamento, baixa de
   todas, trava de estorno, rateio tardio com boleto próprio, sem tipo, tipo inválido); `PaymentLocksTest`.
+
+## Adendo (18/11/2026): boleto sem o código da solicitação
+
+No teste do sandbox no lab (boleto 299), o Inter respondeu 500 na emissão e o título ficou pendente sem `codigoSolicitacao`, travando as três contas. Agora o adaptador do Inter procura a cobrança pelo nosso número (`GET /cobranca/v3/cobrancas?seuNumero=...`, últimos 60 dias por emissão; contrato INFERIDO, conferir na homologação):
+- **Consulta:** se achar, grava o código e segue normal; se o Inter responder sem nenhuma, o título continua pendente com a orientação de cancelar no ERP e emitir de novo.
+- **Cancelamento:** se achar, cancela no banco; se o Inter responder sem nenhuma, cancela só no ERP (não há título no banco). Se a busca falhar, nada muda e o aviso de conferir no Internet Banking continua.
