@@ -102,6 +102,19 @@ echo "Fatura {$draft['id']} emitida; conta da unidade {$entry}\n";
 
 $charges = new BankCharges($pdo);
 $charge = $charges->issue($user, $entry, $accountId);
+echo 'Emissão: ' . $charge['status'] . ', código do banco ' . ($charge['external_id'] ?? '-') . ', erro: ' . ($charge['last_error'] ?? '') . "\n";
+if (empty($charge['external_id']) && $charge['status'] === 'pending') {
+    // O motivo da falha fica no log (bank_charge_register_failed); mostra a última linha dele para não precisar procurar.
+    foreach (array_reverse(glob(dirname(__DIR__) . '/storage/logs/movesos-*.log') ?: []) as $log) {
+        $lines = array_values(array_filter(file($log) ?: [], static fn (string $l): bool => str_contains($l, 'bank_charge_register_failed')));
+        if ($lines !== []) {
+            echo 'Log: ' . trim((string)end($lines)) . "\n";
+            break;
+        }
+    }
+    fwrite(STDERR, "Inter não confirmou a emissão; não consulto de novo. Mande a linha do log acima.\n");
+    exit(2);
+}
 for ($i = 0; $i < 6 && $charge['status'] === 'pending'; $i++) {
     sleep(5);
     $charge = $charges->refresh($user, (int)$charge['id']);
