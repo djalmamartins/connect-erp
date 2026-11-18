@@ -111,7 +111,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   confere os 4 endereços por HTTP depois de publicar (HOSPEDAGEM.md §3 e §6). **Feito em 17/11 (ADR 0361):**
   `tools/hosting/update.sh` faz backup, atualiza, confere e volta sozinho para a versão anterior se o `deploy-check` falhar.
 - E-mail: o e-mail da própria hospedagem ou um SMTP transacional, com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
-  **Feito em 17/11 (ADR 0381):** `tools/hosting/email-teste.php` confere SPF, DKIM e DMARC do domínio e manda um e-mail de teste.
+  **Feito em 17/11 (ADR 0381):** `tools/hosting/email-teste.php` confere SPF, DKIM e DMARC do domínio e manda um e-mail de teste. O `deploy-check` avisa se o DNS de e-mail mudar (ADR 0382).
 - Recursos do plano (informados pelo Djalma em 16/11/2026): até 4 núcleos, 4 GB de RAM, 100 GB de disco, 2 milhões de inodes,
   banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
   não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar

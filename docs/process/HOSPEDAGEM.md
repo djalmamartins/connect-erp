@@ -80,7 +80,8 @@ o `cron.sh` lê do `.env` essa chave, `MAIL_QUEUE_SEND` e `PHP_BIN`.
 **Conferir o e-mail (ADR 0381)** depois de criar a conta de e-mail no hPanel e preencher o SMTP no `.env`:
 `php tools/hosting/email-teste.php --para=seu@email --dkim-seletor=SELETOR` (o seletor aparece no hPanel, em E-mails >
 Autenticação). Ele mostra o que falta no DNS (SPF, DKIM, DMARC) e manda um e-mail de teste; conferir se chegou fora do spam.
-Comece o DMARC com `p=none` e passe para `quarantine` depois de algumas semanas sem falha.
+Anote o seletor em `MAIL_DKIM_SELECTOR` no `.env`: o `deploy-check` passa a avisar a cada atualização se o DNS de e-mail
+mudar (ADR 0382). Comece o DMARC com `p=none` e passe para `quarantine` depois de algumas semanas sem falha.
 
 Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `bash`. Logs em `storage/logs/cron-*.log`.
 

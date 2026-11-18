@@ -26,7 +26,7 @@ final class MailDns
         $items = [self::lookup('SPF', $txt($domain), self::spf(...)), self::lookup('DMARC', $txt('_dmarc.' . $domain), self::dmarc(...))];
         $selector = trim((string)$dkimSelector);
         if ($selector === '') {
-            $items[] = ['name' => 'DKIM', 'status' => 'warning', 'message' => 'Não conferido: informe --dkim-seletor (o hPanel mostra o seletor em E-mails > Autenticação).'];
+            $items[] = ['name' => 'DKIM', 'status' => 'warning', 'message' => 'Não conferido: informe o seletor em MAIL_DKIM_SELECTOR no .env ou --dkim-seletor (o hPanel mostra o seletor em E-mails > Autenticação).'];
         } elseif (!preg_match('/^[a-z0-9][a-z0-9._-]{0,62}$/i', $selector)) {
             $items[] = ['name' => 'DKIM', 'status' => 'error', 'message' => 'Seletor DKIM inválido.'];
         } else {
@@ -96,6 +96,34 @@ final class MailDns
             }
         }
         return ['name' => 'DKIM', 'status' => 'error', 'message' => "Sem chave DKIM em {$selector}._domainkey: ative o DKIM no hPanel e confira o seletor."];
+    }
+
+    /**
+     * Avisos do deploy-check (ADR 0382): com o envio ligado (ERP_MAIL_DELIVERY=production), confere o domínio do remetente.
+     * Sempre aviso, nunca erro: o DNS pode demorar a propagar e não deve impedir a publicação nem disparar a volta de versão.
+     *
+     * @param array<string, string> $env
+     * @param callable(string): ?list<string> $txt
+     * @return list<string>
+     */
+    public static function deployWarnings(array $env, callable $txt): array
+    {
+        if (($env['ERP_MAIL_DELIVERY'] ?? '') !== 'production') {
+            return [];
+        }
+        $from = trim((string)($env['MOVESOS_SMTP_FROM_ADDRESS'] ?? ''));
+        if (filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
+            return ['MOVESOS_SMTP_FROM_ADDRESS vazio ou inválido: o DNS de e-mail (SPF, DKIM, DMARC) não foi conferido.'];
+        }
+        $selector = trim((string)($env['MAIL_DKIM_SELECTOR'] ?? ''));
+        $result = self::check(substr($from, strrpos($from, '@') + 1), $selector === '' ? null : $selector, $txt);
+        $warnings = [];
+        foreach ($result['items'] as $item) {
+            if ($item['status'] !== 'ok') {
+                $warnings[] = "E-mail ({$item['name']}): {$item['message']} Detalhes: php tools/hosting/email-teste.php --so-dns.";
+            }
+        }
+        return $warnings;
     }
 
     /** Resolvedor real: TXT público pelo DNS do servidor. Registros longos vêm em pedaços e são juntados. */

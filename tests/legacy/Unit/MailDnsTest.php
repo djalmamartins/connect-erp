@@ -96,4 +96,36 @@ final class MailDnsTest extends TestCase
             self::assertStringContainsString('consultar o DNS', $item['message']);
         }
     }
+
+    public function testDeployWarningsOnlyWhenDeliveryIsOnAndNeverErrors(): void
+    {
+        $asked = [];
+        $spy = static function (string $name) use (&$asked): array {
+            $asked[] = $name;
+            return [];
+        };
+        self::assertSame([], MailDns::deployWarnings(['ERP_MAIL_DELIVERY' => 'log', 'MOVESOS_SMTP_FROM_ADDRESS' => 'a@b.com.br'], $spy));
+        self::assertSame([], $asked, 'Envio desligado não consulta o DNS.');
+        self::assertStringContainsString('MOVESOS_SMTP_FROM_ADDRESS', MailDns::deployWarnings(['ERP_MAIL_DELIVERY' => 'production',
+            'MOVESOS_SMTP_FROM_ADDRESS' => '<avisos@connectcondominios.com.br>'], $spy)[0], 'Marcador do modelo não é e-mail.');
+
+        $env = ['ERP_MAIL_DELIVERY' => 'production', 'MOVESOS_SMTP_FROM_ADDRESS' => 'avisos@connectcondominios.com.br', 'MAIL_DKIM_SELECTOR' => 'h1'];
+        $warnings = MailDns::deployWarnings($env, $spy);
+        self::assertCount(3, $warnings);
+        self::assertStringStartsWith('E-mail (SPF):', $warnings[0]);
+        self::assertContains('h1._domainkey.connectcondominios.com.br', $asked, 'O seletor vem do .env.');
+
+        $complete = self::zone([
+            'connectcondominios.com.br' => ['v=spf1 include:_spf.mail.hostinger.com ~all'],
+            '_dmarc.connectcondominios.com.br' => ['v=DMARC1; p=quarantine'],
+            'h1._domainkey.connectcondominios.com.br' => ['v=DKIM1; p=MIIB'],
+        ]);
+        self::assertSame([], MailDns::deployWarnings($env, $complete));
+    }
+
+    public function testDeployCheckUsesItAsWarning(): void
+    {
+        $script = (string)file_get_contents(dirname(__DIR__, 3) . '/service/commands/deploy-check.php');
+        self::assertStringContainsString("\$ready['warnings'] = array_merge(\$ready['warnings'], \\Source\\Support\\MailDns::deployWarnings(", $script);
+    }
 }

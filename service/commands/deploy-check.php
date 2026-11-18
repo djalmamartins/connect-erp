@@ -62,6 +62,8 @@ if (!is_file($envFile)) {
                     $ready['errors'][] = 'OneDrive: ' . $problem;
                 }
             }
+            // DNS de e-mail (ADR 0382): SPF, DKIM e DMARC do remetente, só como aviso.
+            $ready['warnings'] = array_merge($ready['warnings'], \Source\Support\MailDns::deployWarnings($storageEnv, \Source\Support\MailDns::resolver()));
             array_map($fail, $ready['errors']);
             array_map($warn, $ready['warnings']);
             $ready['errors'] === [] && $ready['warnings'] === [] && $ok('Conferência de produção sem pendências');
