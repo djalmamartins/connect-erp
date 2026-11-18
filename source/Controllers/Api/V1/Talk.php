@@ -8,6 +8,7 @@ use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Support\TicketError;
+use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkHelpdesk;
 use Source\Support\AppLogger;
 
@@ -19,6 +20,7 @@ use Source\Support\AppLogger;
  *   POST /api/v1/talk/tickets                 201 novo, 200 se o protocolo do Talk já tem chamado
  *   POST /api/v1/talk/tickets/{id}/transfer
  *   POST /api/v1/talk/tickets/{id}/close
+ *   GET  /api/v1/talk/charges?resident_id=77&phone=5531999998888   2ª via do boleto (ADR 0386)
  */
 final class Talk
 {
@@ -34,6 +36,22 @@ final class Talk
             return;
         }
         $this->run('talk_people_failed', static fn (): array => [200, (new TalkHelpdesk())->people($agent, $phones)]);
+    }
+
+    public function charges(): void
+    {
+        $agent = $this->agent();
+        if ($agent === null) {
+            return;
+        }
+        // Dado de cobrança: limite próprio, além do limite de falhas do token (o Talk pede no máximo um por mensagem).
+        if (request_limit_ip('talk_charges', 60, 60)) {
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_requests', 'message' => 'Muitas consultas de boleto. Tente de novo em um minuto.']]);
+            return;
+        }
+        $resident = (int)($_GET['resident_id'] ?? 0);
+        $phone = mb_substr((string)($_GET['phone'] ?? ''), 0, 30);
+        $this->run('talk_charges_failed', static fn (): array => [200, (new TalkCharges())->open($agent, $resident, $phone)]);
     }
 
     public function open(): void
