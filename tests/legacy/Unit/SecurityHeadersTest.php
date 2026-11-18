@@ -15,7 +15,7 @@ final class SecurityHeadersTest extends TestCase
         $prod = SecurityHeaders::headers(false);
         self::assertSame('nosniff', $prod['X-Content-Type-Options']);
         self::assertSame('SAMEORIGIN', $prod['X-Frame-Options']);
-        self::assertSame("frame-ancestors 'self'", $prod['Content-Security-Policy']);
+        self::assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'self'", $prod['Content-Security-Policy'], 'sem host, sem form-action');
         self::assertSame('strict-origin-when-cross-origin', $prod['Referrer-Policy']);
         self::assertStringContainsString('camera=(self)', $prod['Permissions-Policy'], 'a vistoria usa a câmera');
         self::assertSame('max-age=31536000', $prod['Strict-Transport-Security']);
@@ -55,5 +55,19 @@ final class SecurityHeadersTest extends TestCase
             self::assertStringContainsString($line, $robots);
         }
         self::assertDoesNotMatchRegularExpression('~^Disallow: /\s*$~m', $robots, 'o site e a Central de Ajuda continuam indexados');
+    }
+
+    public function testCspLimitsPluginsBaseAndFormsToOurDomainWithoutTouchingScripts(): void
+    {
+        $csp = SecurityHeaders::headers(false, 'erp.connectcondominios.com.br', '/')['Content-Security-Policy'];
+        self::assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' connectcondominios.com.br *.connectcondominios.com.br", $csp);
+        self::assertStringNotContainsString('script-src', $csp, 'scripts ficam para depois do piloto (ADR 0387)');
+        self::assertStringNotContainsString('default-src', $csp);
+        foreach (['www.connectcondominios.com.br' => 'connectcondominios.com.br', 'connectcondominios.com.br' => 'connectcondominios.com.br',
+            'APP.Connect.Lab:8443' => 'connect.lab', 'studio.connect.lab' => 'connect.lab', 'connect.lab' => 'connect.lab',
+            'outro.connectcondominios.com.br' => 'outro.connectcondominios.com.br', '' => '', 'x"; script-src *' => '', 'localhost' => ''] as $host => $base) {
+            self::assertSame($base, SecurityHeaders::baseDomain($host), $host);
+        }
+        self::assertStringNotContainsString('form-action', SecurityHeaders::csp('x"; script-src *'), 'host estranho não entra no cabeçalho');
     }
 }
