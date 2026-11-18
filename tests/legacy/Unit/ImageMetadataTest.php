@@ -114,4 +114,36 @@ final class ImageMetadataTest extends TestCase
         self::assertStringNotContainsString('GPS-SEGREDO-456', (string)file_get_contents($path));
         self::assertSame(20, getimagesize($path)[0]);
     }
+
+    public function testDetectsMetadataAndCleansOnlyOldImagesThatHaveIt(): void
+    {
+        $exif = $this->jpegWithExif('GPS-ANTIGA-789');
+        mkdir($this->dir . '/images/2025/03', 0700, true);
+        rename($exif, $old = $this->dir . '/images/2025/03/antiga.jpg');
+        $plain = imagecreatetruecolor(8, 8);
+        imagejpeg($plain, $clean = $this->dir . '/images/2025/03/limpa.jpg');
+        imagepng($plain, $this->dir . '/images/2025/03/fake.jpg'); // PNG com nome de JPEG, sem metadados
+        $pngText = 'Comment' . "\0" . 'X';
+        ob_start();
+        imagepng($plain);
+        $png = (string)ob_get_clean();
+        file_put_contents($wrong = $this->dir . '/images/2025/03/troca.webp', substr($png, 0, -12) . pack('N', strlen($pngText)) . 'tEXt' . $pngText . pack('N', crc32('tEXt' . $pngText)) . substr($png, -12));
+        file_put_contents($this->dir . '/images/2025/03/anim.gif', 'GIF89a');
+        $cleanBytes = (string)file_get_contents($clean);
+
+        self::assertTrue(ImageMetadata::hasMetadata($old));
+        self::assertFalse(ImageMetadata::hasMetadata($clean));
+        self::assertTrue(ImageMetadata::hasMetadata($wrong));
+
+        $count = ImageMetadata::cleanFolder($this->dir . '/images', false);
+        self::assertSame(['checked' => 4, 'with_metadata' => 2, 'cleaned' => 0, 'failed' => []], $count);
+        self::assertStringContainsString('GPS-ANTIGA-789', (string)file_get_contents($old), 'a contagem não muda nada');
+
+        $done = ImageMetadata::cleanFolder($this->dir . '/images', true);
+        self::assertSame(['checked' => 4, 'with_metadata' => 2, 'cleaned' => 1, 'failed' => ['2025/03/troca.webp']], $done);
+        self::assertStringNotContainsString('GPS-ANTIGA-789', (string)file_get_contents($old));
+        self::assertFalse(ImageMetadata::hasMetadata($old));
+        self::assertSame($cleanBytes, file_get_contents($clean), 'imagem sem metadados não é regravada');
+        self::assertSame(['checked' => 0, 'with_metadata' => 0, 'cleaned' => 0, 'failed' => []], ImageMetadata::cleanFolder($this->dir . '/nao-existe', true));
+    }
 }
