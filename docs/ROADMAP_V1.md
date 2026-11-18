@@ -117,7 +117,9 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar
   nos PDFs grandes e nas importações, medir no piloto. **Feito em 17/11 (ADR 0362):** o `deploy-check` avisa com
   `memory_limit` abaixo de 256M ou envio de arquivo abaixo de 50M; a medição real continua no piloto. **ADR 0383:** o PDF das listas
-  gastava 1,2 GB com 2.000 linhas (5.000 estourava 2 GB); agora sai em lotes e fica perto de 70 MB. **ADR 0363:** envio
+  gastava 1,2 GB com 2.000 linhas (5.000 estourava 2 GB); agora sai em lotes e fica perto de 70 MB.
+  **ADR 0384:** o livro-caixa gasta ~135 MB com 400 lançamentos no mês e ~550 MB com 1.000 (fotos dos anexos pesam pouco);
+  o `deploy-check` passa a pedir `memory_limit` de 512M. **ADR 0363:** envio
   acima do `post_max_size` avisa o limite (413 na API, volta com aviso na tela) em vez de "sessão expirada".
 
 ### 3.5 Backup e recuperação

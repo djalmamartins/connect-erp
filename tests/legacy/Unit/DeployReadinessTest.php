@@ -99,6 +99,9 @@ final class DeployReadinessTest extends TestCase
             self::assertStringStartsWith($directive, $warnings[$i]);
             self::assertStringContainsString('hPanel', $warnings[$i]);
         }
+        // ADR 0384: 256M já não basta para o livro-caixa de um mês cheio (1.000 lançamentos ~550 MB).
+        self::assertStringContainsString('512M', DeployReadiness::php(['memory_limit' => '256M'] + $good)[0] ?? '');
+        self::assertSame([], DeployReadiness::php(['memory_limit' => '1G'] + $good));
         $post = DeployReadiness::php(['upload_max_filesize' => '100M', 'post_max_size' => '64M'] + $good);
         self::assertCount(1, $post, 'post_max_size menor que o upload');
         self::assertStringStartsWith('post_max_size', $post[0]);

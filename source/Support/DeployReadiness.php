@@ -29,8 +29,11 @@ final class DeployReadiness
     /** Maior arquivo que o sistema aceita (mídia do Studio, Upload::MEDIA_MAX_BYTES). */
     public const REQUIRED_UPLOAD_BYTES = 52428800;
 
-    /** Memória mínima por processo para os PDFs e as importações. */
-    public const REQUIRED_MEMORY_BYTES = 268435456;
+    /**
+     * Memória mínima por processo para os PDFs e as importações. 512M desde o ADR 0384: o livro-caixa (uma tabela só no
+     * Dompdf) gasta ~135 MB com 400 lançamentos no mês e ~550 MB com 1.000.
+     */
+    public const REQUIRED_MEMORY_BYTES = 536870912;
 
     /**
      * @param array<string, string|false> $ini valores de ini_get (memory_limit, upload_max_filesize, post_max_size, file_uploads)
@@ -42,7 +45,7 @@ final class DeployReadiness
         $where = ' Ajustar no hPanel (Avançado > Configuração do PHP), que vale para o site.';
         $memory = self::bytes($ini['memory_limit'] ?? '');
         if ($memory !== -1 && $memory < self::REQUIRED_MEMORY_BYTES) {
-            $warnings[] = 'memory_limit do PHP abaixo de 256M: PDFs grandes e importações podem parar no meio.' . $where;
+            $warnings[] = 'memory_limit do PHP abaixo de 512M: o livro-caixa de um mês cheio, outros PDFs grandes e importações podem parar no meio.' . $where;
         }
         if (!filter_var($ini['file_uploads'] ?? '1', FILTER_VALIDATE_BOOL)) {
             $warnings[] = 'file_uploads do PHP está desligado: nenhum anexo ou foto é recebido.' . $where;
