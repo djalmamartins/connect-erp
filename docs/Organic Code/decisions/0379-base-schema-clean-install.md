@@ -1,6 +1,6 @@
 # ADR 0379 — Estrutura base para a instalação limpa da produção
 
-- Status: Aceito (passo 1); passos 2 e 3 PENDENTES
+- Status: Aceito; passos 2 e 3 feitos no ADR 0396 (18/11/2026)
 - Data: 17/11/2026
 - Relacionados: HOSPEDAGEM.md §3 (primeira implantação), ADR 0369 (integração no CI)
 
