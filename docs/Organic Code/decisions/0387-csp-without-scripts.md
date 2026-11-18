@@ -24,5 +24,6 @@ escapa da limpeza (os testes de XSS dos ADRs 0344 a 0347 são a primeira barreir
 ## Consequências
 - Nenhuma tela muda: nenhum formulário do sistema posta para fora do domínio (conferido nos `action=` dos temas).
 - Se um dia algum formulário precisar postar para um banco ou outro serviço, o endereço entra no `form-action`.
+- Origem sem porta só vale na porta padrão (conferido no Chromium): o laboratório numa porta própria (ex.: `erp.connect.lab:8443`) leva a mesma porta no `form-action`.
 - `script-src` continua pendente para depois do piloto.
 - Testes: `SecurityHeadersTest` (cabeçalho completo, domínio base, host estranho fora do cabeçalho, sem `script-src`).

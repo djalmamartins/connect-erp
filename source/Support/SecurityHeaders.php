@@ -53,7 +53,9 @@ final class SecurityHeaders
     {
         $policy = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
         $base = self::baseDomain($host);
-        return $base !== '' ? $policy . "; form-action 'self' {$base} *.{$base}" : $policy;
+        // Sem porta, a origem só vale na porta padrão; o laboratório numa porta própria leva a mesma porta.
+        $port = preg_match('/:(\d{1,5})$/', trim($host), $m) ? ':' . $m[1] : '';
+        return $base !== '' ? $policy . "; form-action 'self' {$base}{$port} *.{$base}{$port}" : $policy;
     }
 
     public static function indexable(string $host, string $path): bool

@@ -69,5 +69,7 @@ final class SecurityHeadersTest extends TestCase
             self::assertSame($base, SecurityHeaders::baseDomain($host), $host);
         }
         self::assertStringNotContainsString('form-action', SecurityHeaders::csp('x"; script-src *'), 'host estranho não entra no cabeçalho');
+        // Conferido no Chromium: origem sem porta só vale na porta padrão; o lab numa porta própria precisa dela.
+        self::assertStringEndsWith("form-action 'self' connect.lab:8443 *.connect.lab:8443", SecurityHeaders::csp('erp.connect.lab:8443'));
     }
 }
