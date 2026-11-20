@@ -16,6 +16,8 @@ use Source\Support\ClientIp;
  * ("Authorization: Bearer ctk_..."), sem sessão, sem cookie e sem CSRF. Sessão de navegador não vale aqui.
  * O usuário do token fica só nesta requisição (Auth::actingAs), para a auditoria e para o escopo de condomínios.
  * Lista de IPs opcional em TALK_ALLOWED_IPS; falhas de token contam no limite por IP (429).
+ * ADR 0601: o token pode ter validade e IPs próprios, tem limite de TalkTokens::RATE pedidos por minuto (429) e
+ * cada rota confere o escopo dele (TalkTokens::allows, no controlador).
  */
 final class TalkApiAuthenticated
 {
@@ -33,15 +35,22 @@ final class TalkApiAuthenticated
             JsonResponse::send(429, ['error' => ['code' => 'too_many_requests', 'message' => 'Muitas tentativas com token inválido. Tente mais tarde.']]);
             return false;
         }
-        $user = $tokens->authenticate(TalkTokens::bearerFrom(ResidentAppSessions::authorizationHeader()));
-        if ($user === null) {
+        TalkTokens::setCurrent(null);
+        $token = $tokens->resolve(TalkTokens::bearerFrom(ResidentAppSessions::authorizationHeader()), $ip);
+        if ($token === null) {
             $tokens->fail($ip);
             AppLogger::log('notice', 'Token do Connect Talk recusado', ['event_type' => 'talk_token_rejected', 'origin' => 'talk'], 'authorization');
             header('WWW-Authenticate: Bearer');
             JsonResponse::send(401, ['error' => ['code' => 'unauthenticated', 'message' => 'Token de integração ausente ou inválido.']]);
             return false;
         }
-        Auth::actingAs($user);
+        if (TalkTokens::overRate($token['id'])) {
+            header('Retry-After: ' . TalkTokens::RATE[1]);
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_requests', 'message' => 'Limite de ' . TalkTokens::RATE[0] . ' pedidos por minuto deste token. Tente de novo em um minuto.']]);
+            return false;
+        }
+        TalkTokens::setCurrent($token);
+        Auth::actingAs($token['user']);
         return true;
     }
 }

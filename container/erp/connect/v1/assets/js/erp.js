@@ -1396,6 +1396,62 @@
     });
   });
 
+  /* AP-171 (ADR 0601): tokens de acesso do Connect Talk. O token em claro volta UMA vez, na resposta do POST, e só
+     fica nesta caixa até a página recarregar. Escopo de escrita marcado pede confirmação. */
+  $$('[data-erp-integration-tokens]').forEach(function (root) {
+    var call = apiClient(root);
+    var api = root.getAttribute('data-api');
+    var form = $('[data-integration-token-form]', root);
+    var result = $('[data-integration-token-result]', root);
+    $$('[data-integration-token-revoke]', root).forEach(function (button) {
+      button.addEventListener('click', function () {
+        ErpUI.confirm({ title: 'Revogar o token ' + button.getAttribute('data-label') + '?', tone: 'danger',
+          message: 'O sistema que usa este token para de entrar na API na hora.\nPara voltar, crie outro token e troque no Connect Talk.',
+          undo: false, confirmLabel: 'Revogar token' }).then(function (yes) {
+          if (!yes) return;
+          busy(button, true);
+          call('POST', api + '/' + button.getAttribute('data-integration-token-revoke') + '/revoke', {})
+            .then(function () { toast('Token revogado.', 'success'); reload(); })
+            .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+        });
+      });
+    });
+    if (!form) return;
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var scopes = $$('[name="scopes"]', form).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+      if (!scopes.length) { toast('Escolha pelo menos um escopo.', 'warning'); return; }
+      var writes = $$('[name="scopes"][data-write-scope]', form).some(function (c) { return c.checked; });
+      var go = writes ? ErpUI.confirm({ title: 'Criar token com escrita?', tone: 'warning',
+        message: 'Com escrita, o sistema que tiver o token pode abrir, responder, transferir e encerrar chamados no Help Desk.',
+        undo: true, undoText: 'Dá para revogar o token a qualquer momento nesta tela.', confirmLabel: 'Criar com escrita' }) : Promise.resolve(true);
+      go.then(function (yes) {
+        if (!yes) return;
+        var button = $('[type="submit"]', form);
+        busy(button, true);
+        if (result) result.hidden = true;
+        call('POST', api, {
+          name: $('[name="name"]', form).value.trim(),
+          user_id: parseInt($('[name="user_id"]', form).value, 10),
+          expires_in_days: parseInt($('[name="expires_in_days"]', form).value, 10),
+          allowed_ips: $('[name="allowed_ips"]', form).value.trim(),
+          scopes: scopes
+        }).then(function (json) {
+          busy(button, false);
+          var d = json.data || {};
+          result.className = 'erp-alert erp-alert--success';
+          result.innerHTML = '<div><strong>Token criado.</strong> Copie agora: ele não aparece de novo. Cole no .env do Connect Talk como <code>ERP_API_TOKEN</code>.<br>' +
+            '<code data-integration-token-value>' + esc(d.token) + '</code> <button type="button" class="erp-btn erp-btn--sm" data-integration-token-copy>Copiar</button>' +
+            '<br>Depois de copiar, recarregue a página para ver o token na lista.</div>';
+          result.hidden = false;
+          var copy = $('[data-integration-token-copy]', result);
+          if (copy) copy.addEventListener('click', function () { if (navigator.clipboard) navigator.clipboard.writeText(d.token).then(function () { toast('Token copiado.', 'success'); }); });
+        }).catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+      });
+    });
+  });
+
   /* AP-038: fila de divergências do retorno; "revisada" grava uma nota (5 a 255 caracteres). */
   $$('[data-erp-bank-divergences]').forEach(function (root) {
     var call = apiClient(root);

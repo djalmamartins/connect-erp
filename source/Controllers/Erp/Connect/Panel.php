@@ -622,6 +622,16 @@ final class Panel extends Controller
                 \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'bank_credentials_screen_failed']);
             }
         }
+        // Tokens de acesso das integrações (ADR 0601): lista para quem vê, criar e revogar para quem gerencia.
+        $data['integrationTokens'] = null;
+        $data['canManageIntegrationTokens'] = Access::can('erp.settings.manage', $user);
+        try {
+            $tokens = new \Source\Services\Talk\TalkTokens();
+            $data['integrationTokens'] = ['tokens' => $tokens->list(), 'scopes' => \Source\Controllers\Api\V1\IntegrationTokens::scopes(),
+                'users' => $data['canManageIntegrationTokens'] ? $tokens->eligibleUsers() : []];
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integration_tokens_screen_failed']);
+        }
         return $data;
     }
 

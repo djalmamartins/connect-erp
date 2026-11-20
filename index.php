@@ -72,6 +72,7 @@ $route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\Talk
 $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/me", "Talk:me", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -121,6 +122,9 @@ $route->get("/bank-charges/{id}/letter", "Banking:letter", null, \Source\Support
 $route->post("/bank-charges/{id}/simulate-payment", "Banking:simulatePayment", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-remittances", "Banking:remittances", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Credencial do banco pela tela Integrações (ADR 0158): pacote do banco, teste e cofre; só sandbox.
+$route->get("/integration-tokens", "IntegrationTokens:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/integration-tokens", "IntegrationTokens:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/integration-tokens/{id}/revoke", "IntegrationTokens:revoke", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/bank-credentials", "BankCredentialsApi:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-credentials/{id}", "BankCredentialsApi:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/bank-credentials/{id}/test", "BankCredentialsApi:test", null, \Source\Support\Middleware\ApiAuthenticated::class);

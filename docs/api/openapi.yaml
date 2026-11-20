@@ -33,8 +33,11 @@ components:
       scheme: bearer
       description: >-
         Token de integração do Connect Talk (ADR 0308), formato ctk_ + 64 hexadecimais, gerado no terminal do servidor
-        por tools/talk-token.php. Vale só nas rotas /talk; sem sessão, sem cookie e sem CSRF. O token é de um usuário
-        de integração comum (permissão support.manage) e herda o escopo de condomínios dele.
+        por tools/talk-token.php ou na tela Configurações › Integrações (ADR 0601). Vale só nas rotas /talk; sem sessão,
+        sem cookie e sem CSRF. O token é de um usuário de integração comum (permissão support.manage) e herda o escopo de
+        condomínios dele. Cada rota pede um escopo (people.read, charges.read, tickets.write, condominiums.read,
+        residents.read); sem ele = 403 insufficient_scope. Validade e IPs opcionais por token; limite de 120 pedidos
+        por minuto por token (429 com Retry-After).
   schemas:
     UnitBatchInput:
       type: object
@@ -1437,6 +1440,45 @@ paths:
         '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { bank_account_id: { type: integer }, bank_account_name: { type: string }, sent_on: { type: string, format: date }, adapter: { type: string }, mode: { type: string }, charges_count: { type: integer }, total_cents: { type: integer }, confirmed_count: { type: integer }, pending_count: { type: integer }, rejected_count: { type: integer }, cancelled_count: { type: integer }, status: { type: string, enum: [confirmed, sent, rejected] }, status_label: { type: string } } } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /integration-tokens:
+    get:
+      operationId: listIntegrationTokens
+      summary: Tokens de acesso das integrações (Connect Talk), escopos e usuários de integração possíveis (erp.settings.view)
+      description: ADR 0601. Sem o hash nem o token. users = ativos com support.manage.
+      security: [{ session: [] }]
+      responses:
+        '200': { description: 'Tokens', content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { tokens: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, user_id: { type: integer }, user: { type: string }, hint: { type: string }, scopes: { type: array, items: { type: string } }, created_at: { type: string }, expires_at: { type: [string, 'null'] }, allowed_ips: { type: [string, 'null'] }, last_used_at: { type: [string, 'null'] }, last_ip: { type: [string, 'null'] }, revoked_at: { type: [string, 'null'] }, revoke_reason: { type: [string, 'null'] } } } }, scopes: { type: array, items: { type: object, properties: { scope: { type: string }, label: { type: string }, kind: { type: string, enum: [read, write] } } } }, users: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, email: { type: string } } } } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createIntegrationToken
+      summary: Cria um token do Connect Talk; o token volta só nesta resposta (erp.settings.manage)
+      description: ADR 0601. Vai para a auditoria (sem o token). Validade em dias (0 = sem validade). IPs separados por vírgula.
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [name, user_id, scopes], properties: { name: { type: string, minLength: 3, maxLength: 80 }, user_id: { type: integer }, scopes: { type: array, minItems: 1, items: { type: string, enum: [condominiums.read, people.read, residents.read, charges.read, tickets.write] } }, expires_in_days: { type: integer, enum: [0, 30, 90, 180, 365], default: 0 }, allowed_ips: { type: [string, 'null'], maxLength: 255 } } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { token: { type: string, pattern: '^ctk_[0-9a-f]{64}$' }, item: { type: object } } } } } } } }
+        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: 'Usuário sem support.manage, nome, validade, escopo ou IP inválido' }
+  /integration-tokens/{id}/revoke:
+    post:
+      operationId: revokeIntegrationToken
+      summary: Revoga o token na hora (erp.settings.manage)
+      security: [{ session: [], csrf: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { reason: { type: string, maxLength: 80 } } } } }
+      responses:
+        '200': { description: Revogado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, revoked: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Token não encontrado ou já revogado }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
   /bank-credentials:
     get:
       operationId: listBankCredentials
@@ -7674,6 +7716,35 @@ paths:
         '404': { description: Morador não encontrado ou telefone não confere, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '422': { description: Sem morador ou telefone, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { description: Muitas consultas, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/me:
+    get:
+      operationId: talkMe
+      tags: [Talk]
+      summary: O próprio token do Talk (ADR 0601)
+      description: >-
+        Nome, escopos, validade, limite de pedidos e condomínios que o usuário de integração atende. Não pede escopo.
+        Serve para o Talk conferir, ao ligar, se o token está certo e o que ele pode pedir.
+      security: [{ talkIntegration: [] }]
+      responses:
+        '200':
+          description: O token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [id, name, scopes, expires_at, rate_limit, condominiums]
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+                      scopes: { type: array, items: { type: string, enum: [condominiums.read, people.read, residents.read, charges.read, tickets.write] } }
+                      expires_at: { type: [string, 'null'], description: 'AAAA-MM-DD HH:MM:SS; null = sem validade' }
+                      rate_limit: { type: object, properties: { requests: { type: integer, example: 120 }, seconds: { type: integer, example: 60 } } }
+                      condominiums: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string } } } }
+        '401': { description: Token ausente, inválido, revogado, vencido ou de IP fora da lista, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: Passou do limite do token (Retry-After), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /tickets:
     get:
       operationId: listTickets
