@@ -82,7 +82,7 @@ Colunas: **Nome da área**, **Condomínio**, **Reserva**, **Capacidade (pessoas)
 
 Quando você usa esta tela, o sistema faz o seguinte:
 
-- O tipo de reserva decide o caminho do pedido: em área **Livre**, a reserva feita pela equipe já nasce confirmada; em área que **Exige aprovação**, a reserva espera em [[Operacional > Agendamentos Pendentes]] até alguém confirmar. O pedido feito pelo morador no aplicativo sempre espera a aprovação, mesmo em área livre.
+- O tipo de reserva decide o caminho do pedido: em área **Livre**, a reserva feita pela equipe já nasce confirmada; em área que **Exige aprovação**, a reserva espera em [[Agenda > Áreas comuns > Agendamentos Pendentes]] até alguém confirmar. O pedido feito pelo morador no aplicativo sempre espera a aprovação, mesmo em área livre.
 - Área **Bloqueada** ou **Não reservável** recusa qualquer reserva nova, e o sistema confere o horário de funcionamento da área.
 - A **taxa de reserva** vale para as reservas da área quando a reserva não informa outro valor; a cobrança da taxa é feita depois, como cobrança extra da unidade.
 - Não pode haver duas áreas com o mesmo nome no mesmo condomínio.

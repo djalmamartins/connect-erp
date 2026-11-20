@@ -4,7 +4,7 @@ titulo: Contratos com fornecedores
 resumo: Contratos do condomínio com fornecedores: objeto, vigência, valor mensal, reajuste e o contrato assinado no Disco Virtual. O vencimento próximo aparece nos alertas.
 categoria: operacional
 rota: /operacional/contratos
-menu: Operacional > Rotina > Contratos
+menu: Agenda > Contratos e seguros > Contratos
 icone: list-outline
 situacao: funciona
 relacionados: seguros, agendamentos, lista-de-espera, configuracoes
@@ -16,7 +16,7 @@ Contratos do condomínio com fornecedores: objeto, vigência, valor mensal, reaj
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Contratos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Contratos e seguros > Contratos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela contratos
 rota: /operacional/contratos

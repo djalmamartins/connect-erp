@@ -89,9 +89,13 @@ final class HelpScaffold
     public function article(string $code, array $page, string $category, string $slug, ?array $registry, bool $draft): string
     {
         $inv = $this->inventory[$code] ?? [];
-        $group = $this->catalog['groups'][$page['group']]['label'] ?? '';
+        // Caminho do menu novo (ADR 0398), que é o padrão da sidebar; o grupo do catálogo é só o endereço.
+        $nav = \Source\Services\Erp\ErpNav::build($this->catalog, \Source\Services\Erp\ErpNav::DEFAULT_MODE);
+        $navGroup = \Source\Services\Erp\ErpNav::groupOf($nav, $code) ?? $page['group'];
+        $section = \Source\Services\Erp\ErpNav::sectionOf($nav, $code);
+        $group = $nav[$navGroup]['label'] ?? ($this->catalog['groups'][$page['group']]['label'] ?? '');
         $name = $page['name'];
-        $menu = $page['group'] === 'dashboard' ? 'Dashboard' : trim($group . ($page['section'] !== '' ? ' > ' . $page['section'] : '') . ' > ' . $name);
+        $menu = $page['group'] === 'dashboard' ? 'Dashboard' : trim($group . ($section !== '' ? ' > ' . $section : '') . ' > ' . $name);
         $lead = trim((string)($inv['lead'] ?? '')) ?: ($registry['lead'] ?? '') ?: trim((string)($page['note'] ?? ''));
         $situation = $this->situations[$code] ?? 'funciona';
         $title = $this->title($page, $registry);

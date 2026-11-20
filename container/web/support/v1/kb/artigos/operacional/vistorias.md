@@ -4,7 +4,7 @@ titulo: Vistorias nos condomínios
 resumo: Registra as visitas presenciais aos condomínios, com check-in pelo GPS do celular, checklist do que foi verificado, fotos e o relatório final.
 categoria: operacional
 rota: /operacional/vistorias
-menu: Operacional > Rotina > Vistorias
+menu: Agenda > Atendimento > Vistorias
 icone: list-outline
 situacao: funciona
 relacionados: chamados, manutencoes, ocorrencias, reservas-areas-comuns
@@ -16,7 +16,7 @@ Registra as visitas presenciais aos condomínios, com check-in pelo GPS do celul
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Vistorias]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Atendimento > Vistorias]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela vistorias
 rota: /operacional/vistorias

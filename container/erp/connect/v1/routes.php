@@ -39,6 +39,8 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/seguranca", "Security:update");
     $route->get("/seguranca/codigos", "Panel:recoveryCodes");
     $route->post("/contexto/condominio", "Panel:setCondominium");
+    // Menu novo ou atual (ADR 0398).
+    $route->post("/preferencias/menu", "Panel:setMenu");
 
     $route->get("/dashboard", "Panel:dashboard");
 

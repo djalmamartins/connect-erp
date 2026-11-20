@@ -4,7 +4,7 @@ titulo: Regras de mudança
 resumo: Define as regras de mudança de cada condomínio: dias e horários permitidos, antecedência mínima do pedido e taxa.
 categoria: operacional
 rota: /operacional/configuracoes
-menu: Operacional > Rotina > Configurações
+menu: Agenda > Mudanças > Configurações
 icone: list-outline
 situacao: funciona
 relacionados: agendamentos, contratos, seguros, lista-de-espera
@@ -16,7 +16,7 @@ Define as regras de mudança de cada condomínio: dias e horários permitidos, a
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Configurações]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Mudanças > Configurações]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela configuracoes
 rota: /operacional/configuracoes

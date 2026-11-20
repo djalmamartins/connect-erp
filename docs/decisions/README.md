@@ -403,5 +403,6 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0395](../Organic%20Code/decisions/0395-studio-svg-logo-sandboxed.md) | Logo SVG do Studio volta a abrir, com sandbox | Aceito |
 | [0396](../Organic%20Code/decisions/0396-clean-install-command.md) | Instalação limpa do banco da produção (composer db:install) | Aceito |
 | [0397](../Organic%20Code/decisions/0397-email-layout-connect.md) | Layout único dos e-mails na identidade Connect | Aceito |
+| [0398](../Organic%20Code/decisions/0398-menu-agenda-portaria-leituras.md) | Menu novo com Agenda, Portaria e Leituras, guardando o menu atual | Aceito |
 | [0399](../Organic%20Code/decisions/0399-realizze-base-sitemap-seo.md) | Base do Realizze conferida: sitemap.xml, dados da empresa para o Google e miniatura sem derrubar a página | Aceito |
 | [0600](../Organic%20Code/decisions/0600-boleto-per-payer.md) | Boleto único por responsável (várias unidades do mesmo dono) | Aceito |

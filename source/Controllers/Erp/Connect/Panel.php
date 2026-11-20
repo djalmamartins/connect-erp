@@ -14,6 +14,7 @@ use Source\Services\Erp\Banking\BankCharges;
 use Source\Services\Erp\BillingRules;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
+use Source\Services\Erp\ErpNav;
 use Source\Services\Erp\FinancialReports;
 use Source\Services\Erp\Invoices;
 use Source\Services\Erp\MeterReadings;
@@ -967,6 +968,31 @@ final class Panel extends Controller
     }
 
     /**
+     * POST /preferencias/menu — troca entre o menu novo e o atual (ADR 0398). Guarda a escolha num cookie do
+     * navegador por um ano e volta para a mesma tela. Só aceita os modos conhecidos.
+     */
+    public function setMenu(?array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $back = (string)($data['back'] ?? '');
+        $back = str_starts_with($back, '/') && !str_starts_with($back, '//') && !preg_match('/[\x00-\x20\\\\?#]/', $back) ? $back : '/dashboard';
+        if (!csrf_verify($data ?? [])) {
+            $this->message->error('Sessão expirada. Atualize a página e tente novamente.')->flash();
+            redirect(erp_url($back));
+            return;
+        }
+        $mode = (string)($data['menu'] ?? '');
+        if (in_array($mode, ErpNav::MODES, true) && !headers_sent()) {
+            $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+            setcookie(ErpNav::COOKIE, $mode, ['expires' => time() + 31536000, 'path' => '/', 'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax']);
+        }
+        redirect(erp_url($back));
+    }
+
+    /**
      * POST /contexto/condominio — troca o condomínio em contexto na navbar (ADR 0030). Só
      * aceita um condomínio do escopo do usuário (CondominiumScope); 0 volta para "todos".
      * Redireciona para a mesma tela com o slug do condomínio escolhido na URL. Em telas de
@@ -1070,6 +1096,10 @@ final class Panel extends Controller
         $page = $pageId !== null ? ($this->catalog['pages'][$pageId] ?? null) : null;
         $group = $page['group'] ?? ($extra['hubGroup'] ?? null);
         $title ??= $page['name'] ?? 'Connect ERP';
+        // Menu lateral (ADR 0398): novo ou atual, escolhido pela pessoa; o endereço da página não muda.
+        $navMode = ErpNav::mode();
+        $nav = ErpNav::build($this->catalog, $navMode);
+        $navGroup = ErpNav::groupOf($nav, $pageId) ?? (isset($nav[(string)$group]) ? $group : null);
         $icons = require self::THEME . 'components/layout/icons.php';
         $dashboard = DemoData::get('dashboard');
 
@@ -1081,7 +1111,11 @@ final class Panel extends Controller
             'currentPageId' => $pageId,
             'currentPage' => $page,
             'currentGroup' => $group,
-            'breadcrumbs' => $this->breadcrumbs($page, $group, $title),
+            'nav' => $nav,
+            'navMode' => $navMode,
+            'navGroup' => $navGroup,
+            'navSection' => ErpNav::sectionOf($nav, $pageId),
+            'breadcrumbs' => $this->breadcrumbs($page, $group, $title, $nav, $pageId),
             'demo' => DemoData::enabled(),
             // Sino (ADR 0142): as notificações reais da pessoa, as mesmas do Studio e do Help Desk.
             // Sem banco (smoke de renderização) cai nas de demonstração, quando ligadas.
@@ -1179,8 +1213,23 @@ final class Panel extends Controller
     }
 
     /** @return list<array{label: string, href: ?string}> */
-    private function breadcrumbs(?array $page, ?string $group, string $title): array
+    private function breadcrumbs(?array $page, ?string $group, string $title, array $nav = [], ?string $pageId = null): array
     {
+        // Página que o menu escolhido mostra em outro grupo (ADR 0398): a migalha segue o menu, sem link para a
+        // visão geral antiga ("Agenda > Áreas comuns > Reservas", e não "Operacional > Rotina > Reservas").
+        $navGroup = ErpNav::groupOf($nav, $pageId);
+        if ($page !== null && $navGroup !== null && $navGroup !== $page['group']) {
+            $crumbs = [['label' => 'Início', 'href' => '/dashboard'], ['label' => $nav[$navGroup]['label'], 'href' => null]];
+            $section = ErpNav::sectionOf($nav, $pageId);
+            if ($section !== '') {
+                $crumbs[] = ['label' => $section, 'href' => null];
+            }
+            if ($title !== $page['name']) {
+                $crumbs[] = ['label' => $page['name'], 'href' => $page['route']];
+            }
+            $crumbs[] = ['label' => $title, 'href' => null];
+            return $crumbs;
+        }
         $crumbs = [['label' => 'Início', 'href' => '/dashboard']];
         if ($page !== null && $page['group'] === 'dashboard') {
             return [['label' => 'Início', 'href' => null]];
