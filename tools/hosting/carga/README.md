@@ -1,4 +1,4 @@
-# Teste de carga (ADR 0600)
+# Teste de carga (ADR 0611)
 
 Mede quantas pessoas o sistema aguenta ao mesmo tempo. **Só numa máquina de teste com dados fictícios.**
 Nunca contra a produção, o banco do laboratório do Mac nem sistemas de terceiros.

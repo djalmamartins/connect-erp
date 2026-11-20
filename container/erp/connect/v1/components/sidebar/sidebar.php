@@ -6,18 +6,27 @@
  *
  * @var array $catalog
  * @var ?string $currentGroup
+ * @var ?array $nav       grupos do menu (ErpNav::build), ADR 0398
+ * @var ?string $navMode   'novo' ou 'atual'
+ * @var ?string $navGroup  grupo do menu da página atual
  * @var ?string $currentPageId
  * @var callable $icon
  * @var callable $anchor
  * @var callable $canSee  esconde páginas sem a permissão própria (a rota valida de novo)
  */
+// Menu novo ou atual (ADR 0398): os grupos vêm de ErpNav; o catálogo continua dando nome e endereço de cada página.
+$navMode ??= \Source\Services\Erp\ErpNav::mode();
+$nav ??= \Source\Services\Erp\ErpNav::build($catalog, $navMode);
+$navGroup ??= \Source\Services\Erp\ErpNav::groupOf($nav, $currentPageId) ?? (isset($nav[(string)$currentGroup]) ? $currentGroup : null);
 $pagesByGroup = [];
-foreach ($catalog['pages'] as $id => $page) {
-    if ($canSee($id)) {
-        $pagesByGroup[$page['group']][$id] = $page;
+foreach ($nav as $groupKey => $group) {
+    foreach ($group['items'] as [$id, $section]) {
+        if (isset($catalog['pages'][$id]) && $canSee($id)) {
+            $pagesByGroup[$groupKey][$id] = ['section' => $section] + $catalog['pages'][$id];
+        }
     }
 }
-$currentSection = $currentPageId !== null ? ($catalog['pages'][$currentPageId]['section'] ?? null) : null;
+$currentSection = $currentPageId !== null ? \Source\Services\Erp\ErpNav::sectionOf($nav, $currentPageId) : null;
 $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 1));
 ?>
 <aside class="erp-sidebar" id="erp-sidebar" aria-label="Navegação do ERP">
@@ -44,16 +53,20 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         </nav>
     </details>
     <nav class="erp-nav" aria-label="Menu principal">
-        <?php foreach ($catalog['groups'] as $groupKey => $group):
+        <?php foreach ($nav as $groupKey => $group):
             $pages = $pagesByGroup[$groupKey] ?? [];
-            $isActive = $currentGroup === $groupKey;
+            if ($pages === [] && $groupKey !== 'dashboard') {
+                continue;
+            }
+            $isActive = $navGroup === $groupKey;
             if ($groupKey === 'dashboard'): ?>
                 <a class="erp-nav__link" href="<?= erp_url('/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
                 <?php continue;
             endif;
             $long = count($pages) > 14;
-            $hubHref = $group['prefix'];
-            $hasHub = !in_array($group['prefix'], array_column($catalog['pages'], 'route'), true); ?>
+            // Visão geral só nos grupos que também são módulo do catálogo (Agenda, Portaria e Leituras não têm).
+            $hubHref = $group['hub'];
+            $hasHub = $hubHref !== null && !in_array($hubHref, array_column($catalog['pages'], 'route'), true); ?>
             <details class="erp-nav__group" data-erp-group="<?= $this->e($groupKey) ?>"<?= $isActive ? ' open' : '' ?>>
                 <summary<?= $isActive ? ' class="is-active"' : '' ?> title="<?= $this->e($group['label']) ?>"><?= $icon($group['icon']) ?><span class="erp-nav__label"><?= $this->e($group['label']) ?></span></summary>
                 <div class="erp-nav__sub">
@@ -91,6 +104,12 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <?php endforeach; ?>
     </nav>
     <div class="erp-sidebar__foot">
+        <form class="erp-sidebar__menu-mode" method="post" action="<?= erp_url('/preferencias/menu') ?>">
+            <?= csrf_input() ?>
+            <input type="hidden" name="back" value="<?= $this->e(\Source\Support\Erp\CondominiumContext::relativePath()) ?>">
+            <input type="hidden" name="menu" value="<?= $navMode === 'atual' ? 'novo' : 'atual' ?>">
+            <button type="submit" title="<?= $navMode === 'atual' ? 'Voltar para o menu novo, com Agenda, Portaria e Leituras' : 'Usar o menu de antes, com o grupo Operacional' ?>"><?= $icon('menu', 'erp-icon--sm') ?><span class="erp-nav__label"><?= $navMode === 'atual' ? 'Usar o menu novo' : 'Usar o menu antigo' ?></span></button>
+        </form>
         <a class="erp-sidebar__profile" href="<?= erp_url('/configuracoes') ?>" title="Minha conta">
             <span class="erp-avatar" aria-hidden="true"><?= $this->e($initial) ?></span>
             <div><strong><?= $this->e(trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''))) ?></strong><small>Connect · administradora</small></div>

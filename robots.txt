@@ -2,3 +2,5 @@ User-agent: *
 Disallow: /api/
 Disallow: /app/
 Disallow: /ops/
+
+Sitemap: https://www.connectcondominios.com.br/sitemap.xml

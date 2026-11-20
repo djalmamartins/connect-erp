@@ -922,30 +922,16 @@ body.studio-modal-open { overflow: hidden }
 .studio-v2 .studio-ticket-history article small { color: var(--studio-muted); font-size: .69rem }
 
 /* --------------------------------------------------------------------------
-   Organic Editor — toolbar alinhada aos controles e papel sempre branco
+   Moves Editor (ADR 0601) — moldura do editor alinhada aos campos do Studio
    -------------------------------------------------------------------------- */
-.studio-v2 .studio-organic-editor { width: 100%; min-width: 0; overflow: hidden; border: 1px solid var(--studio-border); border-radius: var(--studio-radius); background: #fff }
-.studio-v2 .moves-organic-toolbar { position: sticky; top: 0; z-index: 20; display: flex; width: 100%; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px 10px; overflow-x: auto; border: 0; border-bottom: 1px solid var(--studio-border); border-radius: 0; background: #fff }
-.studio-v2 .moves-organic-toolbar select { width: auto; height: 34px; min-height: 34px; min-width: 138px; padding: 0 30px 0 10px; border-radius: var(--studio-radius-sm); color: #303746; font-size: .78rem; font-weight: 600 }
-.studio-v2 .moves-organic-tool { display: inline-flex; width: 34px; min-width: 34px; height: 34px; min-height: 34px; align-items: center; justify-content: center; gap: 5px; margin: 0; padding: 0; border: 0; border-radius: var(--studio-radius-sm); background: transparent; color: #4b5565; font-size: .78rem; font-weight: 700; line-height: 1; cursor: pointer; transition: background-color var(--studio-ease), color var(--studio-ease) }
-.studio-v2 .moves-organic-tool ion-icon { width: 18px; height: 18px; font-size: 18px; pointer-events: none }
-.studio-v2 .moves-organic-tool:hover,
-.studio-v2 .moves-organic-tool.is-active,
-.studio-v2 .moves-organic-tool[aria-pressed="true"] { background: var(--studio-primary-soft); color: var(--studio-primary) }
-.studio-v2 .moves-organic-tool:focus-visible { outline: 2px solid var(--studio-primary); outline-offset: 1px }
-.studio-v2 .moves-organic-tool-label:empty { display: none }
-.studio-v2 .moves-organic-tool.is-loading { opacity: .55; pointer-events: none }
-.studio-v2 .studio-organic-editor,
-.studio-v2 .studio-organic-editor > .organic-editor,
-.studio-v2 .studio-organic-editor > .organic-editor[data-mode="email"],
-.studio-v2 .studio-organic-editor .organic-workspace,
-.studio-v2 .studio-organic-editor .organic-document-page { background: #fff !important; color: #20242d !important; color-scheme: light !important }
-.studio-v2 .studio-organic-editor > .organic-editor { width: 100%; max-width: none; min-height: 620px; margin: 0; padding: 24px; overflow-x: hidden; border: 0; border-radius: 0; box-shadow: none }
-.studio-v2 .studio-organic-editor > .organic-editor[data-mode="email"] { min-height: 560px; padding: clamp(28px, 4vw, 48px); line-height: 1.7 }
-.studio-v2 .studio-organic-editor .organic-document-page { width: min(100%, 840px) !important; min-height: 760px; margin: 0 auto 20px; padding: clamp(30px, 5vw, 62px); border: 1px solid #e1e4e9; box-shadow: 0 6px 20px rgb(23 32 56 / 6%) }
-.studio-v2 #post-content-mount,
-.studio-v2 .studio-post-content .organic-editor { border: 1px solid #dfe3e8 !important; border-radius: var(--studio-radius-sm); background: #fff !important; box-shadow: none !important; color: #1d2433 !important }
-.studio-v2 .moves-organic-fullscreen { position: fixed !important; inset: 0; z-index: 3000; overflow: auto; margin: 0 !important; padding: 16px !important; border-radius: 0; background: #eef0f3 }
+.studio-v2 .moves-editor-host { margin: 6px 0 12px }
+.studio-v2 .moves-editor-host .moves-editor { border: 1px solid #dfe3e8; border-radius: var(--studio-radius-sm); overflow: hidden }
+.studio-v2 .studio-rich-text { overflow-wrap: anywhere }
+.studio-v2 .studio-rich-text > :first-child { margin-top: 0 }
+.studio-v2 .studio-rich-text > :last-child { margin-bottom: 0 }
+.studio-v2 .studio-rich-text p, .studio-v2 .studio-rich-text ul, .studio-v2 .studio-rich-text ol, .studio-v2 .studio-rich-text blockquote { margin: 0 0 .6em }
+.studio-v2 .studio-rich-text ul, .studio-v2 .studio-rich-text ol { padding-left: 1.4em }
+.studio-v2 .studio-rich-text a { color: var(--studio-primary); text-decoration: underline }
 
 /* --------------------------------------------------------------------------
    Legado ainda acessível (telas não migradas)
@@ -1031,15 +1017,6 @@ html[data-theme="dark"] .studio-v2 .message,
 html[data-theme="dark"] .studio-v2 .studio-alert { color: var(--studio-text) }
 html[data-theme="dark"] .studio-v2 .studio-agenda-event { color: #e8d9f1 }
 html[data-theme="dark"] .studio-v2 .studio-settings-save { background: rgb(30 27 34 / 95%) }
-html[data-theme="dark"] .studio-v2 .studio-organic-editor,
-html[data-theme="dark"] .studio-v2 .studio-organic-editor > .organic-editor,
-html[data-theme="dark"] .studio-v2 .studio-organic-editor > .organic-editor[data-mode="email"],
-html[data-theme="dark"] .studio-v2 .studio-organic-editor .organic-workspace,
-html[data-theme="dark"] .studio-v2 .studio-organic-editor .organic-document-page,
-html[data-theme="dark"] .studio-v2 #post-content-mount,
-html[data-theme="dark"] .studio-v2 .studio-post-content .organic-editor { background: #fff !important; color: #20242d !important; caret-color: #20242d !important; color-scheme: light !important }
-html[data-theme="dark"] .studio-v2 .studio-organic-editor a { color: var(--studio-primary) !important }
-html[data-theme="dark"] .studio-v2 .moves-organic-toolbar select { background-color: #f3f4f7; color: #303746 }
 
 /* Help Desk: mesmos componentes com a identidade azul; os demais tokens de
    cor primária ficam em admin.css junto com a regra do ambiente. */
@@ -1151,8 +1128,6 @@ html[data-theme="dark"] .studio-v2 .moves-organic-toolbar select { background-co
     .studio-v2 .studio-testimonial-stats { grid-template-columns: 1fr !important }
     .studio-v2 .studio-library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .studio-v2 .studio-footer { align-items: flex-start; flex-direction: column }
-    .studio-v2 .studio-organic-editor > .organic-editor { min-height: 520px; padding: 10px }
-    .studio-v2 .studio-organic-editor .organic-document-page { min-height: 580px; padding: 24px 19px }
 }
 @media (prefers-reduced-motion: reduce) {
     .studio-v2 *, .studio-v2 *::before, .studio-v2 *::after { animation-duration: .01ms !important; transition-duration: .01ms !important }

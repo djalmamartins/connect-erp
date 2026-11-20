@@ -1,5 +1,5 @@
 /**
- * Teste de carga misto (ADR 0600): moradores no app nativo (70%), no app web (25%), visitantes do site e da Central de
+ * Teste de carga misto (ADR 0611): moradores no app nativo (70%), no app web (25%), visitantes do site e da Central de
  * Ajuda (4,5%) e a equipe no ERP (0,5%), subindo em degraus (STEP pessoas a cada RAMP, segurando HOLD).
  * Só contra o lab ou uma máquina de teste com dados fictícios (tools/hosting/carga/README.md). Nunca contra produção.
  *

@@ -69,7 +69,7 @@ final class AppLogger
             }
             // Fora da produção, processa uma pequena parte da fila ao fim de cada requisição web, para os e-mails
             // saírem no laboratório sem o cron. Na produção o cron envia a fila a cada minuto (ADR 0358) e a página
-            // não espera o SMTP: com poucos processos PHP, um envio lento prendia quem estava navegando (ADR 0600).
+            // não espera o SMTP: com poucos processos PHP, um envio lento prendia quem estava navegando (ADR 0611).
             if (PHP_SAPI !== 'cli' && class_exists(Email::class) && self::sendsMailInline()) {
                 try {
                     (new Email())->sendQueue(5, 5);
@@ -84,7 +84,7 @@ final class AppLogger
 
     /**
      * A fila de e-mail sai no fim da página só quando nenhum cron a envia: na produção (ERP_MAIL_DELIVERY=production)
-     * o tools/hosting/cron.sh roda o service/jobs/sendEmail.php a cada minuto (ADR 0358 e 0600).
+     * o tools/hosting/cron.sh roda o service/jobs/sendEmail.php a cada minuto (ADR 0358 e 0611).
      */
     public static function sendsMailInline(?string $delivery = null): bool
     {

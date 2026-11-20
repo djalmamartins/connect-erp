@@ -1614,7 +1614,8 @@
       var condo = parseInt(ruleForm.getAttribute('data-condominium') || '0', 10);
       var body = { condominium_id: condo > 0 ? condo : null, fine_bp: bp($('[name="fine_pct"]', ruleForm).value), monthly_interest_bp: bp($('[name="interest_pct"]', ruleForm).value),
         price_index: $('[name="price_index"]', ruleForm).value, breach_days_late: parseInt($('[name="breach_days_late"]', ruleForm).value, 10),
-        breach_open_installments: parseInt($('[name="breach_open_installments"]', ruleForm).value, 10) };
+        breach_open_installments: parseInt($('[name="breach_open_installments"]', ruleForm).value, 10),
+        merge_owner_units: !!($('[name="merge_owner_units"]', ruleForm) || {}).checked };
       ErpUI.confirm(condo > 0
         ? { title: 'Salvar a regra própria deste condomínio?', message: 'Ela passa a valer nos encargos calculados a partir de agora. Os encargos já calculados não mudam.', undo: true, undoText: 'Dá para alterar a regra de novo quando quiser.', confirmLabel: 'Salvar regra' }
         : { title: 'Salvar o padrão da Connect?', message: 'Ele vale para todos os condomínios que não têm regra própria, nos encargos calculados a partir de agora.', undo: true, undoText: 'Dá para alterar o padrão de novo quando quiser.', confirmLabel: 'Salvar padrão' }
@@ -2952,8 +2953,12 @@
 
     $$('[data-comm-count]', root).forEach(function (field) {
       var out = document.getElementById(field.getAttribute('data-comm-count'));
-      var max = parseInt(field.getAttribute('maxlength'), 10);
-      var update = function () { out.textContent = field.value.length.toLocaleString('pt-BR') + ' de ' + max.toLocaleString('pt-BR'); };
+      var max = parseInt(field.getAttribute('maxlength') || field.getAttribute('data-max-length'), 10);
+      var update = function () {
+        // Com o Moves Editor (ADR 0610) conta o texto visível, sem a formatação.
+        var rich = window.MovesEditors ? window.MovesEditors.textLength(field.id) : null;
+        out.textContent = (rich === null ? field.value.length : rich).toLocaleString('pt-BR') + ' de ' + max.toLocaleString('pt-BR');
+      };
       field.addEventListener('input', update);
       update();
     });
@@ -3795,7 +3800,10 @@
     var template = $('[data-erp-ticket-template]', form);
     if (template) {
       template.addEventListener('change', function () {
-        if (template.value) { text.value = (text.value ? text.value + '\n\n' : '') + template.value; template.value = ''; text.focus(); }
+        if (!template.value) return;
+        // Moves Editor (ADR 0610): a resposta rápida entra na posição do cursor; sem o editor, no fim do texto.
+        if (!(window.MovesEditors && window.MovesEditors.insert(text.id, template.value))) { text.value = (text.value ? text.value + '\n\n' : '') + template.value; text.focus(); }
+        template.value = '';
       });
     }
     form.addEventListener('submit', function () { time.value = String(seconds); });

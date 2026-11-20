@@ -3,7 +3,7 @@ Options -Indexes
 
 RewriteEngine On
 
-# Desempenho (ADR 0600): texto comprimido e arquivos estáticos guardados no navegador.
+# Desempenho (ADR 0611): texto comprimido e arquivos estáticos guardados no navegador.
 # A LiteSpeed da hospedagem lê estas mesmas regras. As páginas e a API continuam sem cache (o PHP manda no-store).
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml application/manifest+json font/ttf font/otf

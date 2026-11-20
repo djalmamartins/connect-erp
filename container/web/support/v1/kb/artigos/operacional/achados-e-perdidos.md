@@ -4,7 +4,7 @@ titulo: Achados e perdidos
 resumo: Itens encontrados no condomínio, onde estão guardados e a quem foram devolvidos.
 categoria: operacional
 rota: /operacional/achados-e-perdidos
-menu: Operacional > Portaria > Achados e Perdidos
+menu: Portaria > Achados e Perdidos
 icone: list-outline
 situacao: funciona
 relacionados: registro-de-acessos, entregas, previsao-de-visita, registros-de-entregas
@@ -16,7 +16,7 @@ Itens encontrados no condomínio, onde estão guardados e a quem foram devolvido
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Achados e Perdidos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Portaria > Achados e Perdidos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela achados-e-perdidos
 rota: /operacional/achados-e-perdidos

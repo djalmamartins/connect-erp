@@ -1,10 +1,10 @@
 ---
 codigo: AP-112
 titulo: Registrar ocorrências
-resumo: Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Operacional > Chamados.
+resumo: Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Agenda > Atendimento > Chamados.
 categoria: operacional
 rota: /operacional/ocorrencias
-menu: Operacional > Rotina > Ocorrências
+menu: Agenda > Atendimento > Ocorrências
 icone: list-outline
 situacao: funciona
 relacionados: chamados, lancar-multa-avulsa, relatorio-de-ocorrencias, manutencoes
@@ -12,15 +12,15 @@ palavras: ocorrências, operacional, AP-112
 rascunho: nao
 ---
 
-Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Operacional > Chamados.
+Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Agenda > Atendimento > Chamados.
 
 ## A ocorrência é um chamado
 
-Ao salvar uma ocorrência nova, aqui ou pelo aplicativo do morador, o sistema abre o chamado no Help Desk na mesma hora, com o condomínio, a unidade, o assunto, a descrição e a prioridade. A situação da ocorrência acompanha o chamado: aberto = Aberta; em atendimento ou aguardando = Em andamento; resolvido ou fechado = Resolvida. Para mudar a situação, atualize o chamado. Para ver só as ocorrências na lista de chamados, use o filtro **Só ocorrências** em [[Operacional > Chamados]].
+Ao salvar uma ocorrência nova, aqui ou pelo aplicativo do morador, o sistema abre o chamado no Help Desk na mesma hora, com o condomínio, a unidade, o assunto, a descrição e a prioridade. A situação da ocorrência acompanha o chamado: aberto = Aberta; em atendimento ou aguardando = Em andamento; resolvido ou fechado = Resolvida. Para mudar a situação, atualize o chamado. Para ver só as ocorrências na lista de chamados, use o filtro **Só ocorrências** em [[Agenda > Atendimento > Chamados]].
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Ocorrências]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Atendimento > Ocorrências]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela ocorrencias
 rota: /operacional/ocorrencias

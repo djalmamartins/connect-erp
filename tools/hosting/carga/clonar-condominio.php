@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Dados fictícios para o teste de carga (ADR 0600). Copia um condomínio de exemplo (padrão: o Lafayette de
+ * Dados fictícios para o teste de carga (ADR 0611). Copia um condomínio de exemplo (padrão: o Lafayette de
  * tools/lab-lafayette.php) N vezes, com ids deslocados de 1.000.000 em 1.000.000, e cria uma conta de morador
  * (moradorN@carga.lab, senha Carga@2026) para cada morador ativo das cópias.
  *

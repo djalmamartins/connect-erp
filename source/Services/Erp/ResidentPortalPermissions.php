@@ -44,13 +44,13 @@ final class ResidentPortalPermissions
         return $flag;
     }
 
-    /** @var array<string, array<string, bool>> funções ligadas por condomínio, só durante uma requisição web (ADR 0600) */
+    /** @var array<string, array<string, bool>> funções ligadas por condomínio, só durante uma requisição web (ADR 0611) */
     private static array $loaded = [];
 
     /**
      * Para o portal: a função está ligada neste condomínio? Qualquer dúvida = false (fail-closed).
      * Uma tela do app pergunta por várias funções; na web, a primeira pergunta lê as 10 de uma vez e as outras usam
-     * a mesma leitura (eram ~20 consultas por pedido, ADR 0600). No terminal e nos testes sempre lê do banco.
+     * a mesma leitura (eram ~20 consultas por pedido, ADR 0611). No terminal e nos testes sempre lê do banco.
      */
     public static function enabled(PDO $pdo, int $condominiumId, string $feature): bool
     {

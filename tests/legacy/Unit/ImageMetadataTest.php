@@ -50,7 +50,8 @@ final class ImageMetadataTest extends TestCase
     public function testJpegLosesExifAndKeepsOrientation(): void
     {
         $file = $this->jpegWithExif('GPS-SEGREDO-123');
-        self::assertSame(6, (int)(exif_read_data($file)['Orientation'] ?? 0), 'fixture sem EXIF');
+        self::assertSame(6, ImageMetadata::orientation($file), 'fixture sem EXIF');
+        self::assertSame(6, ImageMetadata::jpegOrientation((string)file_get_contents($file)), 'leitura sem a extensão exif');
         self::assertStringContainsString('GPS-SEGREDO-123', (string)file_get_contents($file));
 
         self::assertTrue(ImageMetadata::strip($file, 'image/jpeg'));
@@ -96,6 +97,8 @@ final class ImageMetadataTest extends TestCase
         self::assertFalse(ImageMetadata::strip($this->dir . '/sumiu.png', 'image/png'));
         self::assertFalse(ImageMetadata::strip($gif, 'image/svg+xml'));
         self::assertSame([0, 180, -90, 90, 0], array_map([ImageMetadata::class, 'angle'], [1, 3, 6, 8, 99]));
+        self::assertSame(1, ImageMetadata::jpegOrientation('não é jpeg'));
+        self::assertSame(1, ImageMetadata::jpegOrientation("\xFF\xD8\xFF\xE1\x00\x08Exif\0\0"), 'EXIF cortado');
     }
 
     public function testUploadImageStoresTheCleanCopy(): void

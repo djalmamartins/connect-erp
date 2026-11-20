@@ -153,6 +153,10 @@ p { margin: 0; }
 .erp-sidebar__profile:hover { background: var(--erp-sidebar-hover); text-decoration: none; }
 .erp-sidebar__profile strong { display: block; color: var(--erp-sidebar-strong); font-size: 13px; }
 .erp-sidebar__profile small { color: var(--erp-sidebar-muted); font-size: 12px; }
+/* Troca entre o menu novo e o de antes (ADR 0398). */
+.erp-sidebar__menu-mode { margin: 0; }
+.erp-sidebar__menu-mode button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: var(--erp-radius-md); background: transparent; color: var(--erp-sidebar-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.erp-sidebar__menu-mode button:hover, .erp-sidebar__menu-mode button:focus-visible { background: var(--erp-sidebar-hover); color: var(--erp-sidebar-strong); }
 .erp-avatar { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--erp-sidebar-accent); color: var(--erp-sidebar); font-weight: 700; font-size: 14px; }
 .erp-backdrop { display: none; }
 
@@ -1061,3 +1065,13 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 /* Atalhos da lista de lançamentos (ADR 0313, modelo 7) */
 .erp-entry-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
 .erp-entry-shortcuts__sep { flex: 1 1 8px; }
+
+/* Texto formatado do Moves Editor nas conversas e comunicados (ADR 0610). */
+.erp-rich-text { overflow-wrap: anywhere; }
+.erp-rich-text > :first-child { margin-top: 0; }
+.erp-rich-text > :last-child { margin-bottom: 0; }
+.erp-rich-text p, .erp-rich-text ul, .erp-rich-text ol, .erp-rich-text blockquote, .erp-rich-text pre { margin: 0 0 .6em; }
+.erp-rich-text ul, .erp-rich-text ol { padding-left: 1.4em; }
+.erp-rich-text blockquote { padding-left: .8em; border-left: 3px solid #cfdcd5; color: #4d5b55; }
+.erp-rich-text a { color: #07884c; text-decoration: underline; }
+.moves-editor-host + .erp-field__error, .erp-field .moves-editor-host { margin-top: 4px; }

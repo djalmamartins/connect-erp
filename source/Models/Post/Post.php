@@ -68,7 +68,7 @@ class Post extends Model
             return null;
         }
         // Lista de posts no site: cada post pedia a mesma categoria de novo (N+1). Na web, uma leitura por categoria
-        // por requisição (ADR 0600); no terminal e nos testes, sempre do banco.
+        // por requisição (ADR 0611); no terminal e nos testes, sempre do banco.
         if (PHP_SAPI === 'cli') {
             return (new Category())->findById($this->category);
         }

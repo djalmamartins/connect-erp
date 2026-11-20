@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use PHPUnit\Framework\TestCase;
 use Source\Support\AppLogger;
 
-/** ADR 0600: o que o teste de carga mostrou que pesava não pode voltar. */
+/** ADR 0611: o que o teste de carga mostrou que pesava não pode voltar. */
 final class PerformanceGuardsTest extends TestCase
 {
     private static function file(string $path): string
