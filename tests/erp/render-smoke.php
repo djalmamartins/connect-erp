@@ -553,6 +553,7 @@ $assert(Source\Controllers\Erp\Connect\Panel::ownTemplate('AP-079', ['trialBalan
 $billingRule = Source\Services\Erp\LateCharges::DEFAULT_RULE + ['condominium_id' => null, 'source' => 'default'];
 $html = $agreementPage('AP-165', 'pages/finance/billing-rules', ['billingRule' => $billingRule, 'priceIndexes' => [['competence' => '2026-10', 'rate_percent' => 0.44], ['competence' => '2026-09', 'rate_percent' => -0.1]], 'canManageBilling' => true], 'manage');
 $common($html, 'AP-165', 'Índices');
+$assert(str_contains($html, 'name="merge_owner_units"') && str_contains($html, 'Cada unidade tem o seu boleto.'), 'AP-165: chave do boleto único por responsável, desligada por padrão');
 $assert(str_contains($html, 'data-erp-billing data-rules-api="https://' . $smokeHost . '/api/v1/billing-rules"') && (bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'value="2.00"') && str_contains($html, 'value="1.00"') && str_contains($html, 'Padrão da Connect') && str_contains($html, '0,44%') && str_contains($html, '-0,10%') && str_contains($html, 'data-index-import') && str_contains($html, 'Salvar regra'), 'AP-165: regra padrão, índices e formulários para quem gerencia');
 $html = $agreementPage('AP-165', 'pages/finance/billing-rules', ['billingRule' => $billingRule, 'priceIndexes' => [], 'canManageBilling' => false]);
 $assert(!str_contains($html, 'Salvar regra') && !str_contains($html, 'data-index-form') && str_contains($html, 'disabled') && str_contains($html, 'Nenhum mês do IPCA lançado'), 'AP-165: sem erp.billing_rules.manage só consulta');
@@ -885,7 +886,7 @@ $common($html, 'AP-137', 'Cobrança');
 $assert(str_contains($html, 'R$ 1.850,00') && str_contains($html, 'data-days="122"') && str_contains($html, 'Avisada nos últimos 7 dias')
     && str_contains($html, 'Ninguém recebe cobrança por e-mail') && str_contains($html, '2 pessoa(s)') && str_contains($html, 'name="referencia" value="2026-11-09"')
     && !str_contains($html, 'data-announce-form') && str_contains($html, 'Avisos enviados'), 'AP-137: unidades em atraso e avisadas');
-// ADR 0600: o aviso de cobrança manual por e-mail foi desligado; a tela explica o aviso automático.
+// ADR 0601: o aviso de cobrança manual por e-mail foi desligado; a tela explica o aviso automático.
 $assert(!str_contains($html, 'Enviar aviso de cobrança') && !str_contains($html, 'name="min_days_late"') && !str_contains($html, 'name="unit_ids"')
     && str_contains($html, 'data-resident-email-policy') && str_contains($html, '10, 15, 30, 45 e 60 dias'), 'AP-137: sem envio manual, com o aviso automático explicado');
 $html = $agreementPage('AP-137', 'pages/communication/announcements', ['collectionUnits' => [], 'commError' => 'Data de referência inválida ou futura. Mostrando a de hoje.'] + $collData);

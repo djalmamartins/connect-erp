@@ -40,8 +40,8 @@ class Web extends Controller
      */
     public function home(): void
     {
-
-        $head = $this->seo->render(
+        // Página inicial leva os dados da empresa para o Google (JSON-LD, ADR 0399).
+        $head = $this->seo->business()->render(
             CONF_SITE_NAME . " - " . CONF_SITE_TITLE,
             CONF_SITE_DESC,
             url(),
@@ -61,6 +61,16 @@ class Web extends Controller
                 ->limit(4)
                 ->fetch(true) ?? [],
         ]);
+    }
+
+    /**
+     * Mapa do site para o Google: páginas públicas, artigos e Central de Ajuda (ADR 0399).
+     */
+    public function sitemap(): void
+    {
+        header("Content-Type: application/xml; charset=utf-8");
+        header("Cache-Control: public, max-age=3600");
+        echo \Source\Support\Sitemap::fromDatabase()->render();
     }
 
     public function sales(): void

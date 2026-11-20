@@ -46,7 +46,7 @@ final class AnnouncementsIntegrationTest extends TestCase
     {
         $created = $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Limpeza da caixa d’água',
             'body' => "A água será cortada no dia 20, das 8h às 12h.\nObrigado."]);
-        // ADR 0600: o comunicado fica no app; não vai por e-mail ao morador (o aviso nasce cancelado, como histórico).
+        // ADR 0601: o comunicado fica no app; não vai por e-mail ao morador (o aviso nasce cancelado, como histórico).
         self::assertSame([2, 0, 2], [$created['units_count'], $created['delivery']['pending'], $created['delivery']['cancelled']]);
         self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
         self::assertSame([], $this->queued);
@@ -62,7 +62,7 @@ final class AnnouncementsIntegrationTest extends TestCase
         self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Agendado não sai antes da hora.');
 
         $cancelled = $this->announcements->cancel($this->admin, $created['id'], 'Assembleia adiada');
-        self::assertSame(['cancelled', 0, 1], [$cancelled['status'], $cancelled['stopped'], $cancelled['delivery']['cancelled']], 'ADR 0600: já nasce sem e-mail.');
+        self::assertSame(['cancelled', 0, 1], [$cancelled['status'], $cancelled['stopped'], $cancelled['delivery']['cancelled']], 'ADR 0601: já nasce sem e-mail.');
         $this->pdo->exec('UPDATE erp_notification_outbox SET available_at = NOW()');
         self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Cancelado não sai.');
         self::assertSame([], $this->queued);
@@ -75,7 +75,7 @@ final class AnnouncementsIntegrationTest extends TestCase
         }
     }
 
-    /** ADR 0600: o aviso de cobrança manual por e-mail foi desligado; o de atraso é automático (ResidentChargeNotices). */
+    /** ADR 0601: o aviso de cobrança manual por e-mail foi desligado; o de atraso é automático (ResidentChargeNotices). */
     public function testCollectionReminderIsDisabled(): void
     {
         $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');

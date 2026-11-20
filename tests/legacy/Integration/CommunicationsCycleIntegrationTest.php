@@ -54,14 +54,14 @@ final class CommunicationsCycleIntegrationTest extends TestCase
         }
         $announcements = new Announcements($this->pdo);
 
-        // 1. Comunicado geral para todas: fica no app; nenhum e-mail ao morador (ADR 0600).
+        // 1. Comunicado geral para todas: fica no app; nenhum e-mail ao morador (ADR 0601).
         $general = $announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Obras na fachada', 'body' => "Andaimes de 20 a 30.\nObrigado."]);
         self::assertSame(3, $general['units_count']);
         self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
         self::assertSame([], $this->queued);
         self::assertSame(['sent' => 0, 'cancelled' => 3], array_intersect_key($announcements->find($this->admin, $general['id'])['delivery'], ['sent' => 0, 'cancelled' => 0]));
 
-        // 2. Aviso de cobrança manual desligado (ADR 0600): o de atraso é automático.
+        // 2. Aviso de cobrança manual desligado (ADR 0601): o de atraso é automático.
         try {
             $announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
             self::fail('Aviso de cobrança manual devia estar desligado.');

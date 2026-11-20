@@ -12,7 +12,7 @@ use Source\Services\Erp\ResidentChargeNotices;
 use Source\Services\Erp\ResidentEmailPolicy as Policy;
 use Source\Support\MailTemplate;
 
-/** Morador recebe só cinco e-mails (ADR 0600): regras puras, modelos e ligações no código. */
+/** Morador recebe só cinco e-mails (ADR 0601): regras puras, modelos e ligações no código. */
 final class ResidentEmailPolicyTest extends TestCase
 {
     private function file(string $path): string

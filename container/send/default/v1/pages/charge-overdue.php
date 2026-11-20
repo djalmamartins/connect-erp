@@ -1,6 +1,6 @@
 <?php
 /**
- * Boleto em atraso (ADR 0600): sai com 10, 15, 30, 45 e 60 dias de atraso, uma vez em cada marco.
+ * Boleto em atraso (ADR 0601): sai com 10, 15, 30, 45 e 60 dias de atraso, uma vez em cada marco.
  * Variáveis: $first_name, $unit_label, $condominium, $items, $amount, $due_on, $description, $days_late, $lines, $app_link.
  */
 $single = (int)($items ?? 1) === 1;

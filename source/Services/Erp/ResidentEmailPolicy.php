@@ -7,7 +7,7 @@ namespace Source\Services\Erp;
 use DateTimeImmutable;
 
 /**
- * Quais e-mails o morador recebe (ADR 0600, pedido do Djalma em 20/11/2026). Só estes, mais nada:
+ * Quais e-mails o morador recebe (ADR 0601, pedido do Djalma em 20/11/2026). Só estes, mais nada:
  *  1. boleto no dia do vencimento (charge.due_today);
  *  2. prestação de contas do mês, que sai entre os dias 5 e 10 (accountability.published);
  *  3. aviso de atraso com 10, 15, 30, 45 e 60 dias (charge.overdue);
@@ -32,7 +32,7 @@ final class ResidentEmailPolicy
     public const ACCOUNTABILITY_FROM_DAY = 5;
     public const ACCOUNTABILITY_TO_DAY = 10;
 
-    public const DISABLED_REASON = 'E-mail desligado para o morador (ADR 0600): ele só recebe boleto no vencimento, atraso com 10/15/30/45/60 dias, prestação de contas, convite e senha.';
+    public const DISABLED_REASON = 'E-mail desligado para o morador (ADR 0601): ele só recebe boleto no vencimento, atraso com 10/15/30/45/60 dias, prestação de contas, convite e senha.';
 
     public static function allows(string $eventType): bool
     {

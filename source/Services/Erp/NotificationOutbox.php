@@ -16,7 +16,7 @@ final class NotificationOutbox
 {
     /**
      * Tipos de aviso (ADR 0054, 0056 e 0059); cada um tem modelo e regra de destinatários no NotificationDispatcher.
-     * Só os de ResidentEmailPolicy::ALLOWED viram e-mail (ADR 0600); os outros são gravados já cancelados, como histórico.
+     * Só os de ResidentEmailPolicy::ALLOWED viram e-mail (ADR 0601); os outros são gravados já cancelados, como histórico.
      */
     public const EVENTS = ['waitlist.called', 'invoice.issued', 'bank_charge.issued', 'agreement.created', 'agreement.breached', 'reservation.approved',
         'announcement.published', 'collection.reminder', 'resident.invitation', 'accountability.published', 'charge.due_today', 'charge.overdue'];
@@ -47,7 +47,7 @@ final class NotificationOutbox
         if (!in_array($eventType, self::EVENTS, true)) {
             throw new InvalidArgumentException("Evento de notificação desconhecido: {$eventType}.");
         }
-        // E-mails do morador limitados (ADR 0600): aviso que não é um dos permitidos fica só no histórico, já cancelado.
+        // E-mails do morador limitados (ADR 0601): aviso que não é um dos permitidos fica só no histórico, já cancelado.
         $off = !ResidentEmailPolicy::allows($eventType);
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO erp_notification_outbox (condominium_id, event_type, event_key, subject_table, subject_id, payload_json, created_by, available_at,
                 status, last_error, processed_at)

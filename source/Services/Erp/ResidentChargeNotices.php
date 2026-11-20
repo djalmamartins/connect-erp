@@ -10,7 +10,7 @@ use Source\Core\Connect;
 use Source\Services\Erp\Banking\BankCharges;
 
 /**
- * Avisos automáticos de cobrança ao morador (ADR 0600). Roda uma vez por dia pelo cron (tools/resident-charge-emails.php):
+ * Avisos automáticos de cobrança ao morador (ADR 0601). Roda uma vez por dia pelo cron (tools/resident-charge-emails.php):
  *  - boleto que vence hoje: um e-mail "vence hoje" por unidade, com a linha digitável quando houver boleto;
  *  - boleto em atraso com 10, 15, 30, 45 ou 60 dias: um e-mail de atraso por unidade.
  *

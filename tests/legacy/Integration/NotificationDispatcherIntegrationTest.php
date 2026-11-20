@@ -32,7 +32,7 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         $this->area = $service->save($this->admin, 'common_areas', ['condominium_id' => $this->alpha, 'name' => 'Salão', 'booking_mode' => 'approval'])['id'];
         $service->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $this->unit, 'relationship' => 'owner',
             'name' => 'Bia Moradora', 'document' => self::validCpf(), 'email' => 'bia@morador.test']);
-        // Aviso genérico dos testes: boleto em atraso (ADR 0600), que só vai a quem autorizou cobrança por e-mail.
+        // Aviso genérico dos testes: boleto em atraso (ADR 0601), que só vai a quem autorizou cobrança por e-mail.
         $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');
     }
 
@@ -136,7 +136,7 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'reservation.approved'")->fetchColumn());
 
         $service->save($this->admin, 'reservations', ['status' => 'confirmed'] + $input, $reservation['id']);
-        // ADR 0600: a reserva aprovada fica no histórico, já cancelada; o morador não recebe e-mail.
+        // ADR 0601: a reserva aprovada fica no histórico, já cancelada; o morador não recebe e-mail.
         self::assertSame('cancelled', $this->pdo->query("SELECT status FROM erp_notification_outbox WHERE event_type = 'reservation.approved'")->fetchColumn());
         self::assertSame(0, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['processed']);
         self::assertSame([], $this->queued);

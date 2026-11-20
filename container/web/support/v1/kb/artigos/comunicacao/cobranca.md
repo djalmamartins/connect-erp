@@ -29,7 +29,7 @@ legenda: Tela Cobrança
 
 ## Aviso automático por e-mail
 
-O morador recebe por e-mail só o que a Connect decidiu (ADR 0600):
+O morador recebe por e-mail só o que a Connect decidiu (ADR 0601):
 
 - o boleto **no dia do vencimento**, avisando que vence hoje;
 - o **aviso de atraso com 10, 15, 30, 45 e 60 dias**;

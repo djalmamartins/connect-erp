@@ -32,9 +32,9 @@ final class Announcements
 {
     public const MAX_SCHEDULE_DAYS = 60;
     public const COLLECTION_COOLDOWN_DAYS = 7;
-    /** ADR 0600: o aviso de cobrança manual por e-mail foi desligado. */
+    /** ADR 0601: o aviso de cobrança manual por e-mail foi desligado. */
     public const COLLECTION_DISABLED = 'O aviso de cobrança manual por e-mail foi desligado. O morador recebe sozinho o aviso de atraso com 10, 15, 30, 45 e 60 dias.';
-    /** ADR 0600: comunicado não vai mais por e-mail ao morador; fica no app. */
+    /** ADR 0601: comunicado não vai mais por e-mail ao morador; fica no app. */
     public const EMAIL_OFF_NOTICE = 'Comunicado não vai mais por e-mail ao morador: fica no app e no portal.';
     public const MAX_BODY = 5000;
     /** Teto de unidades escolhidas num lote (comunicado e aviso de cobrança). */
@@ -163,7 +163,7 @@ final class Announcements
     public function collection(User $user, array $input): array
     {
         $condominium = $this->condominium($user, $input['condominium_id'] ?? null);
-        // E-mails do morador limitados (ADR 0600): o aviso de atraso agora é automático, com 10, 15, 30, 45 e 60 dias.
+        // E-mails do morador limitados (ADR 0601): o aviso de atraso agora é automático, com 10, 15, 30, 45 e 60 dias.
         throw new DomainException(self::COLLECTION_DISABLED);
         $asOf = is_string($input['as_of'] ?? null) && $input['as_of'] !== '' ? $input['as_of'] : date('Y-m-d');
         if ($asOf > date('Y-m-d')) {

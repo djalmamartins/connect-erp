@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Avisos de cobrança por e-mail ao morador (ADR 0600): uma vez por dia, pelo cron do servidor, de manhã:
+ * Avisos de cobrança por e-mail ao morador (ADR 0601): uma vez por dia, pelo cron do servidor, de manhã:
  *   php tools/resident-charge-emails.php [AAAA-MM-DD]
  *
  * Boleto que vence hoje e boleto com 10, 15, 30, 45 ou 60 dias de atraso entram na fila de avisos. Cada boleto é

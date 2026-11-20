@@ -450,7 +450,7 @@ final class TicketService
                 $notification->view = 0;
                 $notification->save();
             }
-            // Morador (sem ERP nem Help Desk) não recebe e-mail do chamado (ADR 0600): vê no sino e no app.
+            // Morador (sem ERP nem Help Desk) não recebe e-mail do chamado (ADR 0601): vê no sino e no app.
             if ($link !== null && is_email((string)$recipient->email)) {
                 $body = (new MailTemplate())->render('notice', [
                     'subject' => $title,
@@ -468,7 +468,7 @@ final class TicketService
             }
         }
         // Solicitante sem conta que veio do site: só o e-mail, sem link de sistema. Morador informado no ERP não recebe
-        // e-mail do chamado (ADR 0600).
+        // e-mail do chamado (ADR 0601).
         if ($ticket['requester']['user_id'] === null && ($row['origin'] ?? '') === 'site' && is_email((string)$ticket['requester']['email'])) {
             $name = (string)($ticket['requester']['name'] ?? '');
             $body = (new MailTemplate())->render('notice', [

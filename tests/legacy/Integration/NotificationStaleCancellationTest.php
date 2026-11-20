@@ -32,7 +32,7 @@ final class NotificationStaleCancellationTest extends TestCase
 
     public function testCancelsStalePendingEvents(): void
     {
-        $type = ResidentEmailPolicy::ALLOWED[0];   // ADR 0600: só os permitidos ficam pendentes
+        $type = ResidentEmailPolicy::ALLOWED[0];   // ADR 0601: só os permitidos ficam pendentes
         $old = $this->event($type, 10);
         $recent = $this->event($type, 1);
         $older = $this->event(ResidentEmailPolicy::ALLOWED[count(ResidentEmailPolicy::ALLOWED) - 1], 40);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Boleto que vence hoje (ADR 0600). Um e-mail por unidade no dia do vencimento.
+ * Boleto que vence hoje (ADR 0601). Um e-mail por unidade no dia do vencimento.
  * Variáveis: $first_name, $unit_label, $condominium, $items, $amount, $due_on, $description, $digitable_line, $lines, $app_link.
  */
 $single = (int)($items ?? 1) === 1;

@@ -1,4 +1,4 @@
--- E-mails do morador limitados (ADR 0600): marca de cada boleto já avisado, para o mesmo aviso nunca sair duas vezes.
+-- E-mails do morador limitados (ADR 0601): marca de cada boleto já avisado, para o mesmo aviso nunca sair duas vezes.
 -- item_type/item_id: o boleto (erp_bank_charges) ou, sem boleto, a conta a receber (erp_entries).
 -- milestone: 0 = aviso do dia do vencimento; 10, 15, 30, 45, 60 = dias de atraso.
 -- Sem FK: é só controle de envio e não trava a exclusão do condomínio ou da conta.

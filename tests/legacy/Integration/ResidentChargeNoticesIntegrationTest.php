@@ -15,7 +15,7 @@ use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\ResidentChargeNotices;
 use Source\Services\Erp\ResidentEmailPolicy;
 
-/** Morador recebe só cinco e-mails (ADR 0600): boleto no vencimento, atraso nos marcos, sem repetir e o resto desligado. */
+/** Morador recebe só cinco e-mails (ADR 0601): boleto no vencimento, atraso nos marcos, sem repetir e o resto desligado. */
 final class ResidentChargeNoticesIntegrationTest extends TestCase
 {
     private int $alpha;

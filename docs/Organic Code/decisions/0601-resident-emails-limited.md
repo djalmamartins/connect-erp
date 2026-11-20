@@ -1,4 +1,4 @@
-# 0600 — Morador recebe só cinco e-mails
+# 0601 — Morador recebe só cinco e-mails
 
 - Status: Aceito
 - Data: 20/11/2026

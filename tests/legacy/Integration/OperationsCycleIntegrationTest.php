@@ -70,7 +70,7 @@ final class OperationsCycleIntegrationTest extends TestCase
         self::assertSame($waiting, $call['waitlist_id']);
         self::assertSame(0, $cards()['waitlist_to_call']);
 
-        // 3. Os dois avisos ficam no histórico, já cancelados: o morador não recebe esses e-mails (ADR 0600).
+        // 3. Os dois avisos ficam no histórico, já cancelados: o morador não recebe esses e-mails (ADR 0601).
         $events = $this->pdo->query("SELECT event_type FROM erp_notification_outbox WHERE condominium_id = {$this->alpha} ORDER BY id")->fetchAll(\PDO::FETCH_COLUMN);
         self::assertSame(['reservation.approved', 'waitlist.called'], $events);
         self::assertSame(['cancelled'], array_values(array_unique($this->pdo->query("SELECT status FROM erp_notification_outbox WHERE condominium_id = {$this->alpha}")->fetchAll(\PDO::FETCH_COLUMN))));

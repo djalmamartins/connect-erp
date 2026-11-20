@@ -33,7 +33,7 @@ final class NotificationQueueHealthTest extends TestCase
     {
         $types = NotificationOutbox::EVENTS;
         $outbox = new NotificationOutbox($this->pdo);
-        $allowed = ResidentEmailPolicy::ALLOWED;   // ADR 0600: só os permitidos ficam pendentes
+        $allowed = ResidentEmailPolicy::ALLOWED;   // ADR 0601: só os permitidos ficam pendentes
         foreach ([[$allowed[0], 'erp_announcements', 1], [$allowed[0], 'erp_announcements', 2], [$allowed[count($allowed) - 1], 'erp_invoices', 3]] as [$type, $table, $subject]) {
             self::assertTrue($outbox->record($type, "health-test:{$type}:{$subject}:" . bin2hex(random_bytes(4)), $this->condominium, $table, $subject,
                 ['unit_label' => 'Apto 101 Fulano'], (int)$this->admin->id));

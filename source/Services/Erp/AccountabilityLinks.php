@@ -368,7 +368,7 @@ final class AccountabilityLinks
         $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $outbox = new NotificationOutbox($this->pdo);
         $count = 0;
-        // E-mail do morador entre os dias 5 e 10 (ADR 0600): antes do dia 5 fica agendado para o dia 5.
+        // E-mail do morador entre os dias 5 e 10 (ADR 0601): antes do dia 5 fica agendado para o dia 5.
         $sendAt = ResidentEmailPolicy::accountabilitySendAt(new \DateTimeImmutable());
         $this->pdo->beginTransaction();
         try {
