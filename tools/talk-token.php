@@ -11,6 +11,9 @@ declare(strict_types=1);
  *       atender (todos, com erp.condominiums.all, ou os liberados um a um). Recomendado: um usuário só para a
  *       integração, por exemplo "Connect Talk (integração)".
  *
+ *       [--escopos=people.read,charges.read,tickets.write]  (padrão: os três, o que o Talk sempre usou; ADR 0623)
+ *       Também dá para criar e revogar na tela Configurações › Integrações, com validade e IPs.
+ *
  *   php tools/talk-token.php listar
  *   php tools/talk-token.php revogar --id=ID [--motivo=texto]
  */
@@ -59,7 +62,8 @@ try {
                 $fail('O usuário não tem a permissão ' . TalkTokens::PERMISSION . ' (atender chamados). Dê um papel com ela antes.');
             }
             $condominiums = count((new CondominiumScope(Connect::getInstance()))->allowedIds($user));
-            $created = $tokens->create((int)$user->id, (string)($options['nome'] ?? 'Connect Talk'));
+            $scopes = isset($options['escopos']) ? TalkTokens::normalizeScopes($options['escopos']) : null;
+            $created = $tokens->create((int)$user->id, (string)($options['nome'] ?? 'Connect Talk'), null, $scopes);
             fwrite(STDOUT, 'Token #' . $created['id'] . ' criado para ' . $user->fullName() . " ({$condominiums} condomínio(s) no escopo)." . PHP_EOL . PHP_EOL);
             fwrite(STDOUT, 'ERP_API_TOKEN=' . $created['token'] . PHP_EOL . PHP_EOL);
             fwrite(STDOUT, 'Cole a linha no .env do Connect Talk, junto com ERP_API_URL=https://<endereço do ERP>/api/v1.' . PHP_EOL);
@@ -71,8 +75,9 @@ try {
 
         case 'listar':
             foreach ($tokens->list() as $row) {
-                fwrite(STDOUT, sprintf("#%d  %s  usuário %s (#%d)  final ...%s  criado %s  último uso %s  %s\n", $row['id'], $row['name'], $row['user'], $row['user_id'],
-                    $row['hint'], $row['created_at'], $row['last_used_at'] ?? 'nunca', $row['revoked_at'] !== null ? 'REVOGADO ' . $row['revoked_at'] : 'ativo'));
+                fwrite(STDOUT, sprintf("#%d  %s  usuário %s (#%d)  final ...%s  escopos %s  criado %s  vence %s  último uso %s  %s\n", $row['id'], $row['name'], $row['user'], $row['user_id'],
+                    $row['hint'], implode(',', $row['scopes']), $row['created_at'], $row['expires_at'] ?? 'nunca', $row['last_used_at'] ?? 'nunca',
+                    $row['revoked_at'] !== null ? 'REVOGADO ' . $row['revoked_at'] : 'ativo'));
             }
             break;
 

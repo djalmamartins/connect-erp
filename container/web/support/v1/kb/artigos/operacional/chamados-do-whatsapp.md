@@ -62,9 +62,9 @@ O Talk que roda no escritório conversa com o ERP pela API:
 
 
 1. Crie em [[Configurações > Acesso > Usuários do Sistema]] um usuário só para a integração, por exemplo "Connect Talk (integração)", com um papel que tenha a permissão de atender chamados (`support.manage`) e acesso aos condomínios que o Talk vai atender.
-2. No terminal do servidor do ERP, gere o token: `php tools/talk-token.php criar --usuario=email-do-usuario`. Ele aparece **uma vez só**.
+2. Em [[Configurações > Aplicativo e notificações > Integrações]], no quadro **Tokens de acesso (Connect Talk)**, crie o token: escolha o usuário de integração, a validade e os escopos (o que o Talk pode ver ou fazer). Para o Talk abrir e encerrar chamados, marque também **Abrir, responder, transferir e encerrar chamados**. O token aparece **uma vez só**, com o botão Copiar.
 3. No `.env` do Talk, preencha `ERP_API_URL` com o endereço da API do ERP (termina em `/api/v1`) e `ERP_API_TOKEN` com o token. Nunca coloque o token no Git.
-4. Para ver os tokens: `php tools/talk-token.php listar`. Para cortar o acesso na hora: `php tools/talk-token.php revogar --id=N`.
+4. No mesmo quadro você vê o último uso de cada token e o revoga na hora. Pelo terminal do servidor também dá: `php tools/talk-token.php listar` e `php tools/talk-token.php revogar --id=N`.
 
 > Se o ERP ficar fora do ar, o Talk continua atendendo; o chamado só não é aberto naquele momento.
 

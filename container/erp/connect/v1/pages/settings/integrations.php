@@ -6,7 +6,10 @@
  * Banco Inter (ADR 0158) e Cora (ADR 0322): quem tem erp.settings.manage e erp.bank_accounts.manage envia o pacote do
  * banco (ZIP ou certificado e chave), o client ID e, só no Inter, o secret para /api/v1/bank-credentials/{id}
  * (erp.js, data-erp-bank-credentials). O banco sai do código da conta: 077 = Inter, 403 = Cora.
+ * Tokens de acesso (ADR 0623): quem tem erp.settings.manage cria e revoga o token do Connect Talk, com escopos,
+ * validade e IPs, por /api/v1/integration-tokens (erp.js, data-erp-integration-tokens). O token aparece uma vez.
  * @var array $currentPage @var array $integrations @var ?list<array> $bankCredentialAccounts @var bool $canManageBankCredentials
+ * @var ?array $integrationTokens @var bool $canManageIntegrationTokens
  */
 $this->layout('default');
 $bank = $integrations['bank'] ?? ['adapters' => [], 'note' => ''];
@@ -22,6 +25,9 @@ $queueRoute = erp_url('/configuracoes/fila-de-avisos');
 $diskPage = $catalog['pages']['AP-122'] ?? null;
 $bankCredentialAccounts ??= null;
 $canManageBankCredentials ??= false;
+$integrationTokens ??= null;
+$canManageIntegrationTokens ??= false;
+$brDateTime = static fn (?string $d): string => $d !== null && preg_match('/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/', $d, $m) === 1 ? $m[3] . '/' . $m[2] . '/' . $m[1] . ' ' . $m[4] . ':' . $m[5] : '—';
 $accountsPage = $catalog['pages']['CN-003'] ?? null;
 $brDate = static fn (?string $d): string => $d !== null && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $d, $m) === 1 ? $m[3] . '/' . $m[2] . '/' . $m[1] : '—';
 
@@ -123,6 +129,59 @@ $this->insert('components/layout/page-head', [
         <?php else: ?>
             <p class="erp-field__hint"><?= $icon('lock', 'erp-icon--sm') ?> Enviar a credencial exige as permissões de gerenciar configurações e contas bancárias.</p>
         <?php endif; ?>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($integrationTokens !== null): $scopeLabels = array_column($integrationTokens['scopes'], 'label', 'scope'); ?>
+<section class="erp-card" aria-labelledby="int-tokens-title" data-erp-integration-tokens data-api="<?= $this->e(url('/api/v1/integration-tokens')) ?>">
+    <?= csrf_input() ?>
+    <div class="erp-card__head"><div><h2 id="int-tokens-title">Tokens de acesso (Connect Talk)</h2><p>O Connect Talk entra na API do ERP com um token. Cada token tem escopos (o que ele pode ver ou fazer), é de um usuário de integração e só enxerga os condomínios desse usuário.</p></div></div>
+    <?php if ($integrationTokens['tokens'] === []): ?>
+        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('lock') ?></span><strong>Nenhum token criado</strong><p>Crie um token abaixo e cole no Connect Talk como ERP_API_TOKEN.</p></div>
+    <?php else: ?>
+        <div class="erp-table-wrap" role="region" aria-labelledby="int-tokens-title" tabindex="0"><table class="erp-table">
+            <thead><tr><th scope="col">Token</th><th scope="col">Usuário de integração</th><th scope="col">Escopos</th><th scope="col">Validade</th><th scope="col">Último uso</th><th scope="col">Situação</th><?php if ($canManageIntegrationTokens): ?><th scope="col"><span class="erp-sr-only">Ações</span></th><?php endif; ?></tr></thead>
+            <tbody>
+            <?php foreach ($integrationTokens['tokens'] as $tok): $expired = $tok['expires_at'] !== null && strtotime($tok['expires_at']) <= time(); ?>
+                <tr data-integration-token-row="<?= (int)$tok['id'] ?>">
+                    <td><strong><?= $this->e($tok['name']) ?></strong> <span class="erp-muted">final <?= $this->e($tok['hint']) ?></span></td>
+                    <td><?= $this->e($tok['user']) ?></td>
+                    <td><?php foreach ($tok['scopes'] as $scope): ?><span class="erp-badge erp-badge--plain" title="<?= $this->e($scopeLabels[$scope] ?? $scope) ?>"><?= $this->e($scope) ?></span> <?php endforeach; ?></td>
+                    <td><?= $tok['expires_at'] === null ? 'Sem validade' : $this->e($brDate($tok['expires_at'])) ?></td>
+                    <td><?= $tok['last_used_at'] === null ? 'Nunca' : $this->e($brDateTime($tok['last_used_at'])) ?><?= $tok['last_ip'] !== null ? '<br><span class="erp-muted">IP ' . $this->e($tok['last_ip']) . '</span>' : '' ?></td>
+                    <td><?php if ($tok['revoked_at'] !== null): ?><span class="erp-badge erp-badge--danger">Revogado</span><?php elseif ($expired): ?><span class="erp-badge erp-badge--warning">Vencido</span><?php else: ?><span class="erp-badge erp-badge--success">Ativo</span><?php endif; ?></td>
+                    <?php if ($canManageIntegrationTokens): ?>
+                    <td class="erp-table__actions"><?php if ($tok['revoked_at'] === null): ?><button type="button" class="erp-btn erp-btn--sm erp-btn--ghost" data-integration-token-revoke="<?= (int)$tok['id'] ?>" data-label="<?= $this->e($tok['name']) ?>"><?= $icon('trash', 'erp-icon--sm') ?>Revogar</button><?php endif; ?></td>
+                    <?php endif; ?>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+    <?php endif; ?>
+    <?php if ($canManageIntegrationTokens): ?>
+        <?php if ($integrationTokens['users'] === []): ?>
+            <p class="erp-field__hint"><?= $icon('info', 'erp-icon--sm') ?> Para criar um token, cadastre antes um usuário ativo com a permissão de atender chamados (support.manage), por exemplo "Connect Talk (integração)", e libere os condomínios que ele vai atender.</p>
+        <?php else: ?>
+        <form data-integration-token-form autocomplete="off">
+            <div class="erp-form__grid">
+                <div class="erp-field erp-col-4"><label for="tok-name">Nome</label><input class="erp-input" id="tok-name" name="name" required minlength="3" maxlength="80" value="Connect Talk"></div>
+                <div class="erp-field erp-col-4"><label for="tok-user">Usuário de integração</label><select class="erp-select" id="tok-user" name="user_id" required><?php foreach ($integrationTokens['users'] as $u): ?><option value="<?= (int)$u['id'] ?>"><?= $this->e($u['name'] . ' · ' . $u['email']) ?></option><?php endforeach; ?></select></div>
+                <div class="erp-field erp-col-4"><label for="tok-expiry">Validade</label><select class="erp-select" id="tok-expiry" name="expires_in_days"><option value="0">Sem validade (até revogar)</option><option value="30">30 dias</option><option value="90">90 dias</option><option value="180">6 meses</option><option value="365" selected>1 ano</option></select></div>
+                <fieldset class="erp-field erp-col-8"><legend>Escopos</legend>
+                    <?php foreach ($integrationTokens['scopes'] as $sc): ?>
+                        <label class="erp-check"><input type="checkbox" name="scopes" value="<?= $this->e($sc['scope']) ?>"<?= $sc['kind'] === 'read' ? ' checked' : ' data-write-scope' ?>> <?= $this->e($sc['label']) ?> <span class="erp-muted">(<?= $sc['kind'] === 'read' ? 'leitura' : 'escrita' ?>)</span></label>
+                    <?php endforeach; ?>
+                    <p class="erp-field__hint">Leitura vem marcada. Escrita deixa o Talk mexer nos chamados; marque só se ele for abrir e responder chamados.</p>
+                </fieldset>
+                <div class="erp-field erp-col-4"><label for="tok-ips">IPs permitidos</label><input class="erp-input" id="tok-ips" name="allowed_ips" maxlength="255" spellcheck="false" placeholder="Vazio = qualquer IP"><p class="erp-field__hint">Separados por vírgula. Com o Talk atrás do Cloudflare Tunnel, deixe vazio.</p></div>
+            </div>
+            <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('plus', 'erp-icon--sm') ?>Criar token</button></div>
+        </form>
+        <div class="erp-alert" role="status" data-integration-token-result hidden></div>
+        <?php endif; ?>
+    <?php else: ?>
+        <p class="erp-field__hint"><?= $icon('lock', 'erp-icon--sm') ?> Criar e revogar tokens exige a permissão de gerenciar configurações.</p>
     <?php endif; ?>
 </section>
 <?php endif; ?>

@@ -184,7 +184,7 @@ final class PageGuides
         return count(array_intersect($codes, array_unique(array_merge(array_keys(self::all()), array_keys(self::summaries())))));
     }
 
-    /** Arquivo gerado por `php tools/help.php resumos` a partir dos artigos (ADR 0623). */
+    /** Arquivo gerado por `php tools/help.php resumos` a partir dos artigos (ADR 0624). */
     public const SUMMARIES_FILE = __DIR__ . '/page-summaries.php';
 
     /** @var array<string, array{faz:string,artigo:string,topicos:list<array{id:string,title:string}>}>|null */
@@ -260,7 +260,7 @@ final class PageGuides
         }
         ksort($out, SORT_NATURAL);
         return "<?php\n\ndeclare(strict_types=1);\n\n"
-            . "/*\n * GERADO por `php tools/help.php resumos` (ADR 0623). Não edite à mão: mude o resumo ou as seções do\n"
+            . "/*\n * GERADO por `php tools/help.php resumos` (ADR 0624). Não edite à mão: mude o resumo ou as seções do\n"
             . " * artigo em container/web/support/v1/kb/artigos/ e rode o comando de novo. O `check` confere.\n */\n\n"
             . 'return ' . self::export($out) . ";\n";
     }

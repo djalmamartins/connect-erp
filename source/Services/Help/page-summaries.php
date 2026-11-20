@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * GERADO por `php tools/help.php resumos` (ADR 0623). Não edite à mão: mude o resumo ou as seções do
+ * GERADO por `php tools/help.php resumos` (ADR 0624). Não edite à mão: mude o resumo ou as seções do
  * artigo em container/web/support/v1/kb/artigos/ e rode o comando de novo. O `check` confere.
  */
 
@@ -2911,6 +2911,10 @@ return [
             [
                 'id' => 'o-que-a-lista-mostra',
                 'title' => 'O que a lista mostra',
+            ],
+            [
+                'id' => 'tokens-de-acesso-connect-talk',
+                'title' => 'Tokens de acesso (Connect Talk)',
             ],
         ],
     ],
