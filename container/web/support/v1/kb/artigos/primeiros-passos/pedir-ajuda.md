@@ -30,9 +30,13 @@ legenda: Página inicial da Central de Ajuda
 
 ## Falar com o atendimento
 
-- **Conversar no chat**: abre uma janela no canto da tela, onde você descreve o problema e recebe o número do protocolo. Na mesma janela dá para acompanhar um protocolo já aberto.
+- **Botão do SAC**: o ícone de fone no canto da tela abre o atendimento, onde você abre um chamado e recebe o número do protocolo. Na mesma janela dá para acompanhar um protocolo já aberto, falar no WhatsApp e pesquisar na Central de Ajuda.
 - **WhatsApp**: para uma conversa rápida, quando o número estiver disponível.
 - **Deixe a sua mensagem**: o formulário no fim da página inicial.
+
+## Quem está online no SAC
+
+Em dia útil, das 8h às 18h, o botão do SAC mostra quem da equipe está atendendo naquele momento, com o primeiro nome e a foto, e o aviso **online**. Só aparece quem autorizou. Fora do horário, ninguém aparece online: a janela avisa **Estamos fora do horário**, e o chamado que você deixar é respondido no próximo dia útil.
 
 ## Abrir um chamado pela mensagem
 
@@ -44,7 +48,7 @@ legenda: Página inicial da Central de Ajuda
 ```tela ajuda-mensagem
 rota: /!/suporte
 sessao: nenhuma
-legenda: Formulário que abre um chamado no Help Desk
+legenda: Formulário que abre um chamado no SAC
 recorte: #mensagem
 1: #mensagem input[name=name] | Seu nome
 2: #mensagem input[name=email] | E-mail para a resposta

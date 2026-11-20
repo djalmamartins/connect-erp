@@ -81,7 +81,7 @@ $contact = \Source\Services\Help\SupportContact::data();
 <section class="hc-wrap hc-contact" id="mensagem" aria-labelledby="hc-message-title">
     <div class="hc-contact__form">
         <h2 id="hc-message-title">Deixe a sua mensagem</h2>
-        <p class="hc-muted">Vamos te responder o quanto antes. A mensagem vira um chamado no nosso Help Desk, com protocolo.</p>
+        <p class="hc-muted">Vamos te responder o quanto antes. A mensagem vira um chamado no nosso SAC, com protocolo.</p>
         <div class="hc-feedback<?= $sent ? ' is-success' : '' ?>" data-hc-feedback role="status" aria-live="polite"><?= $sent ? 'Recebemos a sua mensagem. O protocolo é ' . htmlspecialchars($sent) . ' e a resposta chega no seu e-mail.' : '' ?></div>
         <form class="hc-form" action="<?= url('/suporte/mensagem') ?>" method="post" data-hc-message novalidate>
             <input type="hidden" name="widget_token" value="<?= htmlspecialchars($formToken) ?>">

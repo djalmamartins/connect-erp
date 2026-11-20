@@ -9,7 +9,7 @@ $isSetup = $mode === 'setup';
 $loginBack = $next === '/app' ? app_url('/login') : url($next . '/login');
 [$loginEyebrow, $loginLead] = match ($next) {
     '/erp' => ['CONNECT ERP', 'Mais uma etapa para entrar na gestão dos condomínios'],
-    '/helpdesk' => ['MOVES HELP DESK', 'Mais uma etapa para entrar no Help Desk'],
+    '/helpdesk' => ['SAC CONNECT', 'Mais uma etapa para entrar no SAC'],
     '/app' => ['CONNECT MORADOR', 'Mais uma etapa para entrar no aplicativo do morador'],
     default => ['MOVESOS', 'Mais uma etapa para entrar na sua conta'],
 };

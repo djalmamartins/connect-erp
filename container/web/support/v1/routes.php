@@ -5,6 +5,7 @@ $route->group("/suporte");
 $route->get("/", "Support:home");
 $route->get("/buscar", "Support:search");
 $route->get("/widget", "Support:widget");
+$route->get("/widget/equipe", "Support:widgetTeam");
 $route->post("/widget/abrir", "Support:widgetCreate");
 $route->post("/widget/acompanhar", "Support:widgetLookup");
 $route->post("/avaliar/{id}", "Support:vote");

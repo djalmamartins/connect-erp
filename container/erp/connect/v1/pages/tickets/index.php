@@ -25,13 +25,13 @@ $requesterOther = ($old['requester'] ?? 'me') === 'other';
 $selectedCondo = (int)($old['condominium_id'] ?? 0);
 $selectedUnit = (int)($old['unit_id'] ?? 0);
 ob_start(); ?>
-    <?php if ($helpdeskUrl !== null): ?><a class="erp-btn" href="<?= $this->e($helpdeskUrl) ?>"><?= $icon('help', 'erp-icon--sm') ?>Fila do Help Desk</a><?php endif; ?>
+    <?php if ($helpdeskUrl !== null): ?><a class="erp-btn" href="<?= $this->e($helpdeskUrl) ?>"><?= $icon('help', 'erp-icon--sm') ?>Fila do SAC</a><?php endif; ?>
     <button class="erp-btn erp-btn--primary" type="button" data-erp-modal-open="tk-new"><?= $icon('plus', 'erp-icon--sm') ?>Abrir chamado</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Atendimento',
     'pageTitle' => 'Chamados',
-    'pageLead' => 'A fila do Help Desk dos seus condomínios: priorize, distribua e acompanhe cada atendimento.',
+    'pageLead' => 'A fila do SAC dos seus condomínios: priorize, distribua e acompanhe cada atendimento.',
     'pageActions' => $actions,
 ]);
 ?>
@@ -134,7 +134,7 @@ $slaLabel = static function (array $ticket): array {
     </header>
     <?php if ($tickets === []): ?>
         <div style="padding:0 var(--erp-space-5) var(--erp-space-5)">
-            <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'help', 'emptyTitle' => 'Nenhum chamado encontrado', 'emptyText' => 'Os chamados abertos aqui, no Help Desk, no site ou pela API aparecem nesta lista.']); ?>
+            <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'help', 'emptyTitle' => 'Nenhum chamado encontrado', 'emptyText' => 'Os chamados abertos aqui, no SAC, no site ou pela API aparecem nesta lista.']); ?>
         </div>
     <?php else: ?>
         <div class="erp-table-wrap">
@@ -163,7 +163,7 @@ $slaLabel = static function (array $ticket): array {
 <dialog class="erp-modal erp-modal--wide" id="tk-new" aria-labelledby="tk-new-title"<?= $errors !== [] ? ' data-erp-modal-auto' : '' ?>>
 <form class="erp-form" id="abrir" method="post" action="<?= erp_url($base) ?>" novalidate>
     <div class="erp-modal__head">
-        <div><h2 id="tk-new-title">Abrir chamado</h2><p class="erp-muted">O chamado cai na fila do Help Desk e a equipe é avisada na hora.</p></div>
+        <div><h2 id="tk-new-title">Abrir chamado</h2><p class="erp-muted">O chamado cai na fila do SAC e a equipe é avisada na hora.</p></div>
         <button type="button" class="erp-icon-button" data-erp-modal-close aria-label="Fechar"><?= $icon('close') ?></button>
     </div>
     <?= csrf_input() ?>
@@ -248,7 +248,7 @@ $slaLabel = static function (array $ticket): array {
     </div>
     <div class="erp-modal__foot">
         <button type="button" class="erp-btn" data-erp-modal-close>Cancelar</button>
-        <button class="erp-btn erp-btn--primary" type="submit"><?= $icon('check', 'erp-icon--sm') ?>Enviar para o Help Desk</button>
+        <button class="erp-btn erp-btn--primary" type="submit"><?= $icon('check', 'erp-icon--sm') ?>Enviar para o SAC</button>
     </div>
 </form>
 </dialog>

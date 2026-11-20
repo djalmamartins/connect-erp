@@ -48,7 +48,7 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 
 ## Chamados e ocorrências
 
-No **Resolva fácil**, {{Chamado}} abre um pedido ou uma dúvida para a administração, e {{Ocorrência}} registra um problema no condomínio, como barulho, vazamento ou algo quebrado. A ocorrência também pede a data do fato. Os dois viram chamado do Help Desk e recebem um número de protocolo.
+No **Resolva fácil**, {{Chamado}} abre um pedido ou uma dúvida para a administração, e {{Ocorrência}} registra um problema no condomínio, como barulho, vazamento ou algo quebrado. A ocorrência também pede a data do fato. Os dois viram chamado do SAC e recebem um número de protocolo.
 
 Em **Unidade > Consultar chamados** fica a lista **Meus registros**, com os chamados e as ocorrências da pessoa. Dá para filtrar entre Todos, Chamados e Ocorrências. Tocando num registro, abre a conversa: as mensagens do morador ficam à direita, em verde, e as da administração ficam à esquerda. A resposta é escrita embaixo. Um chamado fechado não aceita mais mensagens, e para continuar o assunto é preciso abrir outro. A situação "Aguardando você" quer dizer que a administração espera uma resposta do morador.
 

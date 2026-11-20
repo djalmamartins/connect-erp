@@ -47,8 +47,8 @@ $actions = [
 
 <?php if (!empty($supportSummary)): $priorityLabels = \Source\Services\Support\TicketService::PRIORITY_LABELS; $statusLabels = \Source\Services\Support\TicketService::STATUS_LABELS; ?>
 <section class="cx-card cx-support" aria-labelledby="cx-support-title">
-    <header class="cx-card__head"><div><h2 id="cx-support-title">Atendimento</h2><p>Fila do Help Desk, com os chamados que chegam do ERP, do site e da API</p></div>
-        <div class="studio-page-actions"><?php if (!empty($erpLink)): ?><a class="studio-btn ghost" href="<?= htmlspecialchars($erpLink) ?>"><ion-icon name="business-outline"></ion-icon>Abrir o ERP</a><?php endif; ?><?php if (!empty($helpdeskLink)): ?><a class="studio-btn primary" href="<?= htmlspecialchars($helpdeskLink) ?>"><ion-icon name="headset-outline"></ion-icon>Fila do Help Desk</a><?php endif; ?></div></header>
+    <header class="cx-card__head"><div><h2 id="cx-support-title">Atendimento</h2><p>Fila do SAC, com os chamados que chegam do ERP, do site e da API</p></div>
+        <div class="studio-page-actions"><?php if (!empty($erpLink)): ?><a class="studio-btn ghost" href="<?= htmlspecialchars($erpLink) ?>"><ion-icon name="business-outline"></ion-icon>Abrir o ERP</a><?php endif; ?><?php if (!empty($helpdeskLink)): ?><a class="studio-btn primary" href="<?= htmlspecialchars($helpdeskLink) ?>"><ion-icon name="headset-outline"></ion-icon>Fila do SAC</a><?php endif; ?></div></header>
     <div class="cx-support__counts">
         <a href="<?= url('/helpdesk/tickets') ?>"><strong><?= $fmt((int)$supportSummary['open']) ?></strong><span>Novos e em atendimento</span></a>
         <a href="<?= url('/helpdesk/tickets?due=overdue') ?>" class="<?= $supportSummary['overdue'] > 0 ? 'is-alert' : '' ?>"><strong><?= $fmt((int)$supportSummary['overdue']) ?></strong><span>SLA vencido</span></a>

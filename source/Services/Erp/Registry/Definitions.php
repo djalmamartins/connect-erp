@@ -968,7 +968,7 @@ final class Definitions
             'page' => 'AP-112', 'table' => 'erp_occurrences', 'route' => '/operacional/ocorrencias',
             'api' => 'occurrences', 'permission' => 'erp.occurrences', 'label' => 'Ocorrências',
             'entity' => 'ocorrência', 'gender' => 'a', 'scope' => 'required', 'group' => 'operacional',
-            'lead' => 'Ocorrências do condomínio (barulho, vazamento, dano). Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Chamados.',
+            'lead' => 'Ocorrências do condomínio (barulho, vazamento, dano). Toda ocorrência já nasce como chamado no SAC: o atendimento e a situação ficam no chamado, em Chamados.',
             'status' => ['active' => 'Aberta', 'running' => 'Em andamento', 'done' => 'Resolvida'],
             'fields' => [
                 'condominium_id' => $condo,

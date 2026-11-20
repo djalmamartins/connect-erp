@@ -37,7 +37,7 @@ final class Environments
     private const ENVIRONMENTS = [
         'studio' => ['label' => 'Studio', 'description' => 'Gestão de conteúdo e operação', 'icon' => 'grid-outline', 'host' => 'studio', 'path' => '/studio/dash', 'permission' => 'studio.access', 'auth' => true],
         'erp' => ['label' => 'ERP', 'description' => 'Gestão administrativa', 'icon' => 'business-outline', 'host' => 'erp', 'path' => '/dashboard', 'permission' => 'erp.access', 'auth' => true],
-        'helpdesk' => ['label' => 'Help Desk', 'description' => 'Atendimento e chamados', 'icon' => 'headset-outline', 'host' => 'studio', 'path' => '/helpdesk/tickets', 'permission' => 'support.manage', 'auth' => true],
+        'helpdesk' => ['label' => 'SAC', 'description' => 'Atendimento e chamados', 'icon' => 'headset-outline', 'host' => 'studio', 'path' => '/helpdesk/tickets', 'permission' => 'support.manage', 'auth' => true],
         'residents' => ['label' => 'Moradores', 'description' => 'Aplicativo do morador', 'icon' => 'home-outline', 'host' => 'app', 'path' => '/', 'permission' => 'app.access', 'auth' => true],
         'talk' => ['label' => 'Talk', 'description' => 'Atendimento por WhatsApp', 'icon' => 'chatbubbles-outline', 'host' => 'talk', 'path' => '/', 'permission' => 'talk.access', 'auth' => true],
         'site' => ['label' => 'Site', 'description' => 'Site institucional', 'icon' => 'globe-outline', 'host' => 'site', 'path' => '/', 'permission' => 'site.access', 'auth' => false],

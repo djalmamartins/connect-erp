@@ -10,6 +10,7 @@
  * @var array<string,string> $errors @var array<string,mixed> $old
  * @var ?array<string,mixed> $schedule chamado escolhido em "Agendar"
  * @var string $longDate @var string $base @var bool $self
+ * @var ?bool $sacPublic null quando a pessoa não atende chamados (ADR 0629)
  */
 use Source\Services\Erp\MyDay;
 
@@ -259,6 +260,18 @@ $this->insert('components/layout/page-head', [
         <?php endif; ?>
     </section>
 </div>
+
+<?php if ($self && isset($sacPublic)): ?>
+    <form class="md-sac" method="post" action="<?= erp_url($base . '/sac') ?>">
+        <?= $back() ?>
+        <input type="hidden" name="public" value="<?= $sacPublic ? '0' : '1' ?>">
+        <span class="md-sac__text"><?= $icon('users', 'erp-icon--sm') ?>
+            <span><strong>Balão do SAC no site</strong><small><?= $sacPublic
+                ? 'Você aparece como online (primeiro nome e foto) quando está no sistema, em dia útil e no horário.'
+                : 'Você atende normalmente, mas não aparece no balão do site. Se quiser, autorize mostrar seu primeiro nome e foto.' ?></small></span></span>
+        <button class="erp-btn erp-btn--sm<?= $sacPublic ? '' : ' erp-btn--primary' ?>" type="submit"><?= $sacPublic ? 'Não aparecer mais' : 'Autorizar aparecer' ?></button>
+    </form>
+<?php endif; ?>
 
 <dialog class="erp-modal" id="md-new" aria-labelledby="md-new-title"<?= $errors !== [] || $schedule !== null ? ' data-erp-modal-auto' : '' ?>>
 <form class="erp-form" id="novo-compromisso" method="post" action="<?= erp_url($base . '/compromissos') ?>" novalidate>

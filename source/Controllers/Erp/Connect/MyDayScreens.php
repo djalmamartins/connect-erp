@@ -12,6 +12,7 @@ use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\MyDay;
 use Source\Services\Erp\MyDayError;
+use Source\Services\Support\SacDesk;
 use Source\Support\Access;
 
 /**
@@ -76,6 +77,8 @@ final class MyDayScreens extends Controller
             'base' => self::BASE,
             'self' => (int)$owner->id === (int)$user->id,
             // "Agendar" num chamado da lista abre o formulário já preenchido com ele.
+            // Balão do SAC (ADR 0629): só quem atende escolhe se aparece como online no site.
+            'sacPublic' => $this->sacPublic($user),
             'schedule' => array_values(array_filter($day['to_schedule'], static fn (array $t): bool => $t['id'] === (int)($_GET['agendar'] ?? 0)))[0] ?? null,
         ], 'Meu Dia'));
     }
@@ -124,7 +127,39 @@ final class MyDayScreens extends Controller
         redirect($this->backUrl($_POST));
     }
 
+    /** POST /meu-dia/sac: a própria pessoa autoriza (ou retira) aparecer no balão do SAC do site. */
+    public function sac(): void
+    {
+        $user = $this->guardPost();
+        if ($user === null) {
+            return;
+        }
+        if (!Access::can('support.manage', $user)) {
+            $this->flash('danger', 'Só quem atende chamados aparece no balão do SAC.');
+            redirect($this->backUrl($_POST));
+            return;
+        }
+        $public = ($_POST['public'] ?? '') === '1';
+        (new SacDesk())->setPublic($user, $public);
+        $this->flash('success', $public ? 'Pronto: quando você estiver no sistema, o site mostra seu primeiro nome e foto no balão do SAC.' : 'Pronto: você não aparece mais no balão do SAC.');
+        redirect($this->backUrl($_POST));
+    }
+
     /* ---------------------------------------------------------------- internos */
+
+    /** null: a pessoa não atende chamados (sem a escolha na tela). */
+    private function sacPublic(User $user): ?bool
+    {
+        if (!Access::can('support.manage', $user)) {
+            return null;
+        }
+        try {
+            return (new SacDesk())->isPublic($user);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
 
     /** Volta para o mesmo dia, pessoa e visão de onde o formulário saiu (só valores validados). */
     private function backUrl(array $input): string

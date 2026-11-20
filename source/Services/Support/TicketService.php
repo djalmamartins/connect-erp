@@ -42,7 +42,7 @@ final class TicketService
     /** Filtro "tipo" da lista de chamados (ADR 0305): só as ocorrências, ou os outros chamados. */
     public const KIND_LABELS = ['occurrence' => 'Ocorrências', 'other' => 'Outros chamados'];
 
-    public const ORIGIN_LABELS = ['helpdesk' => 'Help Desk', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
+    public const ORIGIN_LABELS = ['helpdesk' => 'SAC', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
     public const PRIORITY_LABELS = ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'urgent' => 'Urgente'];
     public const STATUS_LABELS = ['open' => 'Aberto', 'in_progress' => 'Em atendimento', 'waiting_customer' => 'Aguardando cliente', 'resolved' => 'Resolvido', 'closed' => 'Fechado'];
@@ -494,7 +494,7 @@ final class TicketService
                     : "O seu chamado {$protocol} ({$ticket['subject']}) agora está {$statusLabel}."],
                 'quote' => $kind === 'reply' ? (string)$text : '',
                 'note' => 'Para responder, use este e-mail ou fale com a administradora informando o protocolo.',
-                'footer_note' => 'Mensagem do Help Desk da ' . (defined('CONF_SITE_NAME') ? CONF_SITE_NAME : 'Connect') . '. Você pode responder a este e-mail.',
+                'footer_note' => 'Mensagem do SAC da ' . (defined('CONF_SITE_NAME') ? CONF_SITE_NAME : 'Connect') . '. Você pode responder a este e-mail.',
             ]);
             (new Email())->bootstrap("[{$protocol}] {$title}", $body, (string)$ticket['requester']['email'], $name !== '' ? $name : (string)$ticket['requester']['email'])
                 ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'));
@@ -568,7 +568,7 @@ final class TicketService
                     'first_name' => (string)$recipient->first_name,
                     'paragraphs' => ["{$title} ({$ticket['subject']}):"],
                     'quote' => $message,
-                    'button_label' => 'Abrir no Help Desk',
+                    'button_label' => 'Abrir no SAC',
                     'button_link' => (string)$link,
                 ]);
                 (new Email())->bootstrap("[{$ticket['protocol']}] {$title}", $body, $recipient->email, $recipient->fullName())
@@ -748,7 +748,7 @@ final class TicketService
                         ['Prioridade', $priorityLabel],
                         ['Prazo de atendimento', date_fmt($dueAt, 'd/m/Y H:i')],
                     ],
-                    'button_label' => 'Abrir chamado no Help Desk',
+                    'button_label' => 'Abrir chamado no SAC',
                     'button_link' => (string)$link,
                 ]);
                 (new Email())->bootstrap("[{$protocol}] Novo chamado: {$data['subject']}", $body, $recipient->email, $recipient->fullName())

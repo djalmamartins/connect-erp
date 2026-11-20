@@ -117,7 +117,7 @@ final class Tickets extends Controller
             redirect(erp_url(self::BASE . '#abrir'));
             return;
         }
-        $this->flash(['type' => 'success', 'text' => "Chamado {$opened['protocol']} aberto. A equipe do Help Desk já foi avisada.", 'protocol' => $opened['protocol'], 'ticket_id' => $opened['id']]);
+        $this->flash(['type' => 'success', 'text' => "Chamado {$opened['protocol']} aberto. A equipe do SAC já foi avisada.", 'protocol' => $opened['protocol'], 'ticket_id' => $opened['id']]);
         redirect(erp_url(self::BASE));
     }
 
@@ -189,7 +189,7 @@ final class Tickets extends Controller
             redirect($back . '#responder');
             return;
         }
-        $this->flash(['type' => 'success', 'text' => $result['status'] === 'open' ? 'Mensagem enviada e chamado reaberto. A equipe foi avisada.' : 'Mensagem enviada. A equipe do Help Desk foi avisada.']);
+        $this->flash(['type' => 'success', 'text' => $result['status'] === 'open' ? 'Mensagem enviada e chamado reaberto. A equipe foi avisada.' : 'Mensagem enviada. A equipe do SAC foi avisada.']);
         redirect($back . '#conversa');
     }
 

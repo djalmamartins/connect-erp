@@ -132,6 +132,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->get("/meu-dia", "MyDayScreens:index");
     $route->post("/meu-dia/compromissos", "MyDayScreens:store");
     $route->post("/meu-dia/compromissos/{id}/situacao", "MyDayScreens:status");
+    $route->post("/meu-dia/sac", "MyDayScreens:sac");
 
     $route->get("/operacional/vistorias", "Inspections:index");
     $route->get("/operacional/vistorias/nova", "Inspections:create");
