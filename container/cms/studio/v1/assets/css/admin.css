@@ -11091,3 +11091,20 @@ html[data-theme="dark"] .studio-v2[data-environment="helpdesk"] .studio-system-p
 .studio-v2 .studio-ticket-audit {
     scroll-margin-top: 92px;
 }
+
+/* Configurações: aviso de valor vindo do .env e linha do e-mail de teste (ADR 0602). */
+.studio-settings-env {
+    color: #8a5a00;
+    font-weight: 600
+}
+
+.studio-settings-form .studio-check {
+    margin: 12px 0
+}
+
+.studio-settings-form label.studio-check {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px
+}

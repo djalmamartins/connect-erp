@@ -4,7 +4,7 @@ titulo: Registro de acessos da portaria
 resumo: Entradas e saídas registradas pela portaria: visitantes, prestadores, entregadores e moradores, com data e hora.
 categoria: operacional
 rota: /operacional/registro-de-acessos
-menu: Operacional > Portaria > Registro de Acessos
+menu: Portaria > Registro de Acessos
 icone: list-outline
 situacao: funciona
 relacionados: previsao-de-visita, achados-e-perdidos, gerenciamento, entregas
@@ -16,7 +16,7 @@ Entradas e saídas registradas pela portaria: visitantes, prestadores, entregado
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Registro de Acessos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Portaria > Registro de Acessos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela registro-de-acessos
 rota: /operacional/registro-de-acessos

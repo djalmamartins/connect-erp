@@ -4,7 +4,7 @@ titulo: Tarifas de consumo
 resumo: Faixas progressivas de tarifa por tipo de medidor e vigência, usadas para calcular o valor das leituras. Sem condomínio vale o padrão da Connect; a tarifa do condomínio substitui o padrão.
 categoria: operacional
 rota: /operacional/tarifas
-menu: Operacional > Leituras e consumo > Tarifas
+menu: Leituras > Tarifas
 icone: list-outline
 situacao: funciona
 relacionados: leituras, relogios, gerenciamento, previsao-de-visita
@@ -16,7 +16,7 @@ Faixas progressivas de tarifa por tipo de medidor e vigência, usadas para calcu
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Leituras e consumo > Tarifas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Leituras > Tarifas]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela tarifas
 rota: /operacional/tarifas

@@ -4,7 +4,7 @@ titulo: Registros de Entregas
 resumo: O histórico das encomendas da portaria, com filtros e resumo, e a baixa da retirada com o nome de quem retirou.
 categoria: operacional
 rota: /operacional/registros-de-entregas
-menu: Operacional > Portaria > Registros de Entregas
+menu: Portaria > Registros de Entregas
 icone: cube-outline
 situacao: funciona
 relacionados: entregas
@@ -18,7 +18,7 @@ Mostra as encomendas que chegaram na portaria: a unidade, o destinatário, a tra
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Portaria > Registros de Entregas]].
+No menu lateral, abra [[Portaria > Registros de Entregas]].
 
 ```tela registros-de-entregas
 rota: /operacional/registros-de-entregas

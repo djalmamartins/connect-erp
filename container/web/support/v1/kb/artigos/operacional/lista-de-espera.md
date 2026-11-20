@@ -4,7 +4,7 @@ titulo: Lista de espera das áreas comuns
 resumo: Quem quer uma área comum numa data já reservada entra na lista de espera, pela ordem de inscrição. Se a reserva for cancelada ou recusada, o primeiro da lista é avisado por e-mail.
 categoria: operacional
 rota: /operacional/lista-de-espera
-menu: Operacional > Rotina > Lista de espera
+menu: Agenda > Áreas comuns > Lista de espera
 icone: list-outline
 situacao: funciona
 relacionados: agendamentos-pendentes, seguros, reservas-areas-comuns, contratos
@@ -16,7 +16,7 @@ Quem quer uma área comum numa data já reservada entra na lista de espera, pela
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Lista de espera]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Áreas comuns > Lista de espera]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela lista-de-espera
 rota: /operacional/lista-de-espera
