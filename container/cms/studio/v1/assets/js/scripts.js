@@ -394,3 +394,50 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
+/*
+ * Padrão de campo (ADR 0629): os rótulos da mesma linha ficam com a mesma altura. Assim, quando um
+ * rótulo quebra em duas linhas, os campos da linha continuam alinhados. O texto solto do <label>
+ * ganha um <span class="studio-field-label"> para poder medir.
+ */
+(function () {
+    var grids = document.querySelectorAll(".studio-fields-two, .studio-fields-three, .studio-grid, .studio-form-grid");
+    if (!grids.length) return;
+    var labelOf = function (field) {
+        var el = field.matches("label") ? field : field.querySelector(":scope > label, :scope > .studio-label");
+        if (!el) return null;
+        if (el !== field) return el;
+        var first = el.firstChild;
+        if (first && first.nodeType === 3 && first.textContent.trim() !== "") {
+            var span = document.createElement("span");
+            span.className = "studio-field-label";
+            el.insertBefore(span, first);
+            span.appendChild(first);
+            return span;
+        }
+        return el.querySelector(":scope > .studio-field-label");
+    };
+    var align = function (grid) {
+        var rows = {};
+        Array.prototype.forEach.call(grid.children, function (field) {
+            var label = labelOf(field);
+            if (!label) return;
+            label.style.minHeight = "";
+            if (!field.offsetParent) return;
+            var top = Math.round(field.getBoundingClientRect().top);
+            (rows[top] = rows[top] || []).push(label);
+        });
+        Object.keys(rows).forEach(function (top) {
+            var row = rows[top];
+            if (row.length < 2) return;
+            var max = Math.max.apply(null, row.map(function (l) { return l.getBoundingClientRect().height; }));
+            row.forEach(function (l) { if (l.getBoundingClientRect().height < max - 0.5) l.style.minHeight = max + "px"; });
+        });
+    };
+    if ("ResizeObserver" in window) {
+        var observer = new ResizeObserver(function (entries) { entries.forEach(function (entry) { align(entry.target); }); });
+        grids.forEach(function (grid) { observer.observe(grid); });
+    } else {
+        grids.forEach(align);
+    }
+})();
