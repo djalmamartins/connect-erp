@@ -403,3 +403,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0395](../Organic%20Code/decisions/0395-studio-svg-logo-sandboxed.md) | Logo SVG do Studio volta a abrir, com sandbox | Aceito |
 | [0396](../Organic%20Code/decisions/0396-clean-install-command.md) | Instalação limpa do banco da produção (composer db:install) | Aceito |
 | [0397](../Organic%20Code/decisions/0397-email-layout-connect.md) | Layout único dos e-mails na identidade Connect | Aceito |
+| [0600](../Organic%20Code/decisions/0600-performance-load-test.md) | Desempenho para muitos moradores ao mesmo tempo (consulta dos boletos do app, fila de e-mail fora da página, compressão e cache) e teste de carga | Aceito |

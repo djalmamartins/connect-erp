@@ -44,16 +44,36 @@ final class ResidentPortalPermissions
         return $flag;
     }
 
-    /** Para o portal: a função está ligada neste condomínio? Qualquer dúvida = false (fail-closed). */
+    /** @var array<string, array<string, bool>> funções ligadas por condomínio, só durante uma requisição web (ADR 0600) */
+    private static array $loaded = [];
+
+    /**
+     * Para o portal: a função está ligada neste condomínio? Qualquer dúvida = false (fail-closed).
+     * Uma tela do app pergunta por várias funções; na web, a primeira pergunta lê as 10 de uma vez e as outras usam
+     * a mesma leitura (eram ~20 consultas por pedido, ADR 0600). No terminal e nos testes sempre lê do banco.
+     */
     public static function enabled(PDO $pdo, int $condominiumId, string $feature): bool
     {
         if (!isset(self::FEATURES[$feature]) || $condominiumId < 1) {
             return false;
         }
         try {
-            $stmt = $pdo->prepare('SELECT enabled FROM erp_resident_portal_permissions WHERE condominium_id = :c AND feature = :f');
-            $stmt->execute(['c' => $condominiumId, 'f' => $feature]);
-            return (int)$stmt->fetchColumn() === 1;
+            if (PHP_SAPI === 'cli') {
+                $stmt = $pdo->prepare('SELECT enabled FROM erp_resident_portal_permissions WHERE condominium_id = :c AND feature = :f');
+                $stmt->execute(['c' => $condominiumId, 'f' => $feature]);
+                return (int)$stmt->fetchColumn() === 1;
+            }
+            $key = spl_object_id($pdo) . ':' . $condominiumId;
+            if (!isset(self::$loaded[$key])) {
+                $stmt = $pdo->prepare('SELECT feature, enabled FROM erp_resident_portal_permissions WHERE condominium_id = :c');
+                $stmt->execute(['c' => $condominiumId]);
+                $map = [];
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $map[(string)$row['feature']] = (int)$row['enabled'] === 1;
+                }
+                self::$loaded[$key] = $map;
+            }
+            return self::$loaded[$key][$feature] ?? false;
         } catch (\Throwable) {
             return false;
         }
@@ -86,6 +106,7 @@ final class ResidentPortalPermissions
         $before = self::enabled($this->pdo, $condominiumId, $feature);
         $this->pdo->prepare('INSERT INTO erp_resident_portal_permissions (condominium_id, feature, enabled, updated_by) VALUES (:c, :f, :e, :u)
             ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), updated_by = VALUES(updated_by)')->execute(['c' => $condominiumId, 'f' => $feature, 'e' => $enabled ? 1 : 0, 'u' => (int)$admin->id]);
+        self::$loaded = [];
         if ($before !== $enabled) {
             Audit::record('update', 'erp_resident_portal_permissions', $condominiumId, ['feature' => $feature, 'enabled' => $before], ['feature' => $feature, 'enabled' => $enabled]);
         }

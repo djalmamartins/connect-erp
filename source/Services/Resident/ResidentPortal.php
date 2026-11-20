@@ -82,8 +82,9 @@ final class ResidentPortal
                 'overdue_cents' => (int)($row['overdue'] ?? 0), 'next_due_on' => $row['next_due'] ?? null, 'next_entry_id' => null, 'next_code' => null];
             // A conta em aberto mais antiga: é dela a "2ª via" e o "Copiar código" do cartão do Início.
             $next = $this->pdo->prepare("SELECT e.id, b.digitable_line, b.pix_copy_paste FROM erp_entries e
-                LEFT JOIN erp_bank_charges b ON b.active_key = 1 AND (b.entry_id = e.id OR b.id = (SELECT ce.charge_id FROM erp_bank_charge_entries ce
-                JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1 WHERE ce.entry_id = e.id LIMIT 1))
+                LEFT JOIN erp_bank_charges b ON b.id = COALESCE((SELECT d.id FROM erp_bank_charges d WHERE d.entry_id = e.id AND d.active_key = 1 LIMIT 1),
+                (SELECT ce.charge_id FROM erp_bank_charge_entries ce JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1
+                WHERE ce.entry_id = e.id LIMIT 1))
                 WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.status = 'active'
                   AND e.deleted_at IS NULL AND e.paid_on IS NULL ORDER BY e.due_on, e.id LIMIT 1");
             $next->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id']]);
@@ -125,8 +126,9 @@ final class ResidentPortal
         $stmt = $this->pdo->prepare("SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.status, e.agreement_role,
                 b.id AS charge_id, b.status AS charge_status, b.adapter, b.external_id, b.digitable_line, b.barcode, b.pix_copy_paste
             FROM erp_entries e
-            LEFT JOIN erp_bank_charges b ON b.active_key = 1 AND (b.entry_id = e.id OR b.id = (SELECT ce.charge_id FROM erp_bank_charge_entries ce
-                JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1 WHERE ce.entry_id = e.id LIMIT 1))
+            LEFT JOIN erp_bank_charges b ON b.id = COALESCE((SELECT d.id FROM erp_bank_charges d WHERE d.entry_id = e.id AND d.active_key = 1 LIMIT 1),
+                (SELECT ce.charge_id FROM erp_bank_charge_entries ce JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1
+                WHERE ce.entry_id = e.id LIMIT 1))
             WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
               AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original'))
               AND e.due_on BETWEEN :f AND :t
@@ -245,8 +247,9 @@ final class ResidentPortal
                 c.name AS condominium_name, c.document AS condominium_document
             FROM erp_entries e
             JOIN condominiums c ON c.id = e.condominium_id
-            LEFT JOIN erp_bank_charges b ON b.active_key = 1 AND (b.entry_id = e.id OR b.id = (SELECT ce.charge_id FROM erp_bank_charge_entries ce
-                JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1 WHERE ce.entry_id = e.id LIMIT 1))
+            LEFT JOIN erp_bank_charges b ON b.id = COALESCE((SELECT d.id FROM erp_bank_charges d WHERE d.entry_id = e.id AND d.active_key = 1 LIMIT 1),
+                (SELECT ce.charge_id FROM erp_bank_charge_entries ce JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1
+                WHERE ce.entry_id = e.id LIMIT 1))
             WHERE e.id = :id AND e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
               AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original'))");
         $stmt->execute(['id' => $entryId, 'u' => $link['unit_id'], 'c' => $link['condominium_id']]);

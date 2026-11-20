@@ -1431,7 +1431,6 @@ flowchart LR
 |---|---|---|---|
 | [`Models/Address`](../../source/Models/Address.php) | Model | — | — |
 | [`Models/Auth`](../../source/Models/Auth.php) | Connect, Model, Session, AppCondominium, AppCorporations, AppLog, LoginThrottle, PasswordResetService … | — | 5 |
-| [`Models/Banking/AppBankInter`](../../source/Models/Banking/AppBankInter.php) | — | — | — |
 | [`Models/Banking/Banking`](../../source/Models/Banking/Banking.php) | Model | — | — |
 | [`Models/Brief/AppBrief`](../../source/Models/Brief/AppBrief.php) | Model | brief | — |
 | [`Models/Corporation/AppCondominium`](../../source/Models/Corporation/AppCondominium.php) | Model, Session, Address | — | — |

@@ -64,10 +64,20 @@ class Post extends Model
      */
     public function category(): ?Category
     {
-        if ($this->category) {
+        if (!$this->category) {
+            return null;
+        }
+        // Lista de posts no site: cada post pedia a mesma categoria de novo (N+1). Na web, uma leitura por categoria
+        // por requisição (ADR 0600); no terminal e nos testes, sempre do banco.
+        if (PHP_SAPI === 'cli') {
             return (new Category())->findById($this->category);
         }
-        return null;
+        static $categories = [];
+        $id = (int)$this->category;
+        if (!array_key_exists($id, $categories)) {
+            $categories[$id] = (new Category())->findById($id);
+        }
+        return $categories[$id];
     }
 
     /**
