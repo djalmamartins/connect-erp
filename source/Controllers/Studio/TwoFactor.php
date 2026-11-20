@@ -95,6 +95,7 @@ final class TwoFactor extends Controller
             "mode" => $pending->mode,
             "setup" => $setup,
             "next" => $next,
+            "loginEnvironment" => match ($next) { "/erp" => "erp", "/helpdesk" => "helpdesk", "/app" => "app", default => "studio" },
         ]);
     }
 

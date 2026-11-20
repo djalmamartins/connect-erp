@@ -36,7 +36,17 @@ legenda: Tela de entrada do Connect ERP
 
 ## Verificação em duas etapas
 
-Para a equipe, o login também pede o código de 6 números de um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro). Ao ligar, você lê o QR code na tela **Segurança** do seu perfil. No aplicativo, a conta aparece com o nome **Connect Condomínios**; nos aplicativos que mostram ícone, aparece também o símbolo da Connect.
+Para a equipe, o login também pede o código de 6 números de um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou outro). Ao ligar, você lê o QR code na tela **Segurança** do seu perfil.
+
+Depois da senha, a tela continua a mesma e só o formulário muda: aparecem **6 quadradinhos**, um para cada número.
+
+1. Abra o aplicativo autenticador no celular.
+2. Digite os 6 números. Cada número vai para o próximo quadradinho sozinho; se preferir, cole o código inteiro no primeiro.
+3. Ao completar o sexto número, o sistema confere sozinho. Se errar, os quadradinhos ficam vazios para digitar de novo. Para corrigir um número, use a tecla de apagar: ela volta para o quadradinho anterior.
+
+Sem o celular? Clique em **Usar código de recuperação** e digite um dos códigos que você guardou ao ligar a verificação (cada um vale uma vez só).
+
+>! A Connect nunca pede este código por telefone, e-mail ou WhatsApp. Se você não tentou entrar agora, não digite o código, troque a sua senha e avise a administração. No aplicativo, a conta aparece com o nome **Connect Condomínios**; nos aplicativos que mostram ícone, aparece também o símbolo da Connect.
 
 > Se você ligou antes dessa mudança, o aplicativo continua mostrando o nome antigo. O código é o mesmo e funciona normalmente. Para trocar o nome, renomeie a conta no próprio aplicativo.
 
