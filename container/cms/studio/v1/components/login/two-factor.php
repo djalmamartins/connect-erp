@@ -1,6 +1,6 @@
 <?php
 /**
- * Segunda etapa do login (ADR 0603): a mesma moldura da tela de login (foto, painel e cartão),
+ * Segunda etapa do login (ADR 0620): a mesma moldura da tela de login (foto, painel e cartão),
  * com dicas de segurança no lugar dos textos de apresentação e o código em 6 campos.
  * Serve ERP, Studio, Help Desk e app do morador na web ($next).
  */
