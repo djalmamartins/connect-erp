@@ -199,6 +199,11 @@ foreach ($erpBases as $erpIndex => $erpBase) {
         $route->get($page['route'], static function () use ($pageId): void {
             (new Panel())->page($pageId);
         }, $erpName('erp.' . strtolower($pageId)));
+        // Paginação com endereço amigável (pedido do Djalma, 20/11/2026): /cobranca/boletos/p/12 em vez de ?pagina=12.
+        $route->get($page['route'] . '/p/{page}', static function (array $data) use ($pageId): void {
+            $_GET['pagina'] = max(1, (int)(filter_var($data['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1));
+            (new Panel())->page($pageId);
+        });
     }
 
     // Depois das páginas do catálogo: /condominios/{id} não pode capturar /condominios/unidades etc.
