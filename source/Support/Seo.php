@@ -89,6 +89,42 @@ class Seo
     }
 
     /**
+     * Dados da empresa para o Google (JSON-LD), lidos de Configurações do Studio (ADR 0399). Com
+     * endereço completo vira LocalBusiness (aparece no mapa e na busca local); sem endereço, Organization.
+     * Os perfis sociais já configurados no construtor entram como "sameAs".
+     */
+    public function business(?string $logo = null): self
+    {
+        $name = trim((string)CONF_SITE_NAME);
+        if ($name === "") {
+            return $this;
+        }
+        $siteUrl = url();
+        $logo = $logo ?: site_logo_url();
+        $street = trim(implode(", ", array_filter([trim((string)CONF_SITE_ADDR_STREET), trim((string)CONF_SITE_ADDR_NUMBER), trim((string)CONF_SITE_ADDR_COMPLEMENT)])));
+        $city = trim((string)CONF_SITE_ADDR_CITY);
+        $zip = trim((string)CONF_SITE_ADDR_ZIPCODE);
+
+        if ($street !== "" && $city !== "" && $zip !== "") {
+            $address = [
+                "streetAddress" => $street,
+                "addressLocality" => $city,
+                "postalCode" => $zip,
+                "addressCountry" => "BR",
+            ];
+            if (trim((string)CONF_SITE_ADDR_STATE) !== "") {
+                $address["addressRegion"] = trim((string)CONF_SITE_ADDR_STATE);
+            }
+            $phone = trim((string)CONF_SITE_PHONE);
+            $this->optimizer->localBusiness($name, $siteUrl, $logo, $address, $phone !== "" ? $phone : null);
+            return $this;
+        }
+
+        $this->optimizer->organization($name, $siteUrl, $logo, trim((string)CONF_SITE_DESC) ?: null);
+        return $this;
+    }
+
+    /**
     * @return MovesSeo
      */
     public function optimizer(): MovesSeo
