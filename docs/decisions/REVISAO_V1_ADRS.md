@@ -19,7 +19,7 @@ de Ajuda, segurança (0337–0348, 0355, 0364–0367, 0387–0393), LGPD (0328, 
 | 0156, 0158, 0318 | Banco Inter (boleto, credencial pela tela, extrato) | certificado de produção no Internet Banking e ok para o 1º boleto real; webhook precisa do endereço público | **sim** |
 | 0322 | Cora (2º banco) | credencial de teste (stage) | não (v1.1, se o piloto usar Inter) |
 | 0370–0378 | Documentos no OneDrive (`DOCUMENT_STORAGE=onedrive`) | conta Microsoft 365 da Connect e o aplicativo no Azure | não obrigatório: `local` funciona |
-| 0098, 0161 | Antivírus no upload (`ERP_AV_MODE=off`) | serviço de antivírus na hospedagem (a Hostinger não oferece clamd) | não |
+| 0098, 0161 | Antivírus no upload (`ERP_AV_MODE=off`) | serviço de antivírus acessível pela hospedagem (INFERIDO: hospedagem compartilhada costuma não ter clamd; conferir) | não |
 | 0402 | Honorários e pedido de NFS-e (chave desligada) | dados fiscais da Connect; etapas 2 e 3 dependem da norma de dez/2026 | etapa 1 sim, emissão manual |
 | 0302, 0147 | Portal do morador, função por função por condomínio | ligar no condomínio piloto | **sim** (app web) |
 | 0303 | App nativo do morador | contas Apple/Google, ícones e textos de loja | não (v1.1) |
