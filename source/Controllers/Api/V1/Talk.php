@@ -10,6 +10,7 @@ use Source\Models\User;
 use Source\Services\Support\TicketError;
 use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkHelpdesk;
+use Source\Services\Talk\TalkTokens;
 use Source\Support\AppLogger;
 
 /**
@@ -21,12 +22,23 @@ use Source\Support\AppLogger;
  *   POST /api/v1/talk/tickets/{id}/transfer
  *   POST /api/v1/talk/tickets/{id}/close
  *   GET  /api/v1/talk/charges?resident_id=77&phone=5531999998888   2ª via do boleto (ADR 0386)
+ *   GET  /api/v1/talk/me                      o próprio token: nome, escopos, validade, condomínios (ADR 0623)
+ * Cada rota pede um escopo do token (TalkTokens::SCOPES); sem ele = 403 insufficient_scope.
  */
 final class Talk
 {
+    public function me(): void
+    {
+        $token = TalkTokens::current();
+        if ($this->agent(null) === null || $token === null) {
+            return;
+        }
+        $this->run('talk_me_failed', static fn (): array => [200, (new TalkTokens())->describe($token)]);
+    }
+
     public function people(): void
     {
-        $agent = $this->agent();
+        $agent = $this->agent('people.read');
         if ($agent === null) {
             return;
         }
@@ -40,7 +52,7 @@ final class Talk
 
     public function charges(): void
     {
-        $agent = $this->agent();
+        $agent = $this->agent('charges.read');
         if ($agent === null) {
             return;
         }
@@ -56,7 +68,7 @@ final class Talk
 
     public function open(): void
     {
-        $agent = $this->agent();
+        $agent = $this->agent('tickets.write');
         if ($agent === null) {
             return;
         }
@@ -68,7 +80,7 @@ final class Talk
 
     public function transfer(array $data): void
     {
-        $agent = $this->agent();
+        $agent = $this->agent('tickets.write');
         if ($agent === null) {
             return;
         }
@@ -77,7 +89,7 @@ final class Talk
 
     public function close(array $data): void
     {
-        $agent = $this->agent();
+        $agent = $this->agent('tickets.write');
         if ($agent === null) {
             return;
         }
@@ -109,11 +121,17 @@ final class Talk
         return is_array($body) ? $body : [];
     }
 
-    private function agent(): ?User
+    /** Usuário do token, se o token tiver o escopo da rota (null = sem escopo exigido). */
+    private function agent(?string $scope): ?User
     {
         $user = Auth::user();
-        if ($user === null) {
+        if ($user === null || TalkTokens::current() === null) {
             JsonResponse::send(401, ['error' => ['code' => 'unauthenticated', 'message' => 'Token de integração ausente ou inválido.']]);
+            return null;
+        }
+        if ($scope !== null && !TalkTokens::allows($scope)) {
+            JsonResponse::send(403, ['error' => ['code' => 'insufficient_scope', 'message' => 'Este token não tem o escopo ' . $scope . '.', 'scope' => $scope]]);
+            return null;
         }
         return $user;
     }
