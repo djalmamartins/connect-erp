@@ -11,9 +11,9 @@ $movesRoot = dirname(__DIR__, 3);
 $themeRoot = moves_container_path("studio", "default");
 
 $css = new CSS();
-// O Studio possui identidade e componentes próprios. Do Organic preservamos
-// exclusivamente o CSS do editor de conteúdo.
-foreach ([$themeRoot . "/assets/vendor/organic-editor/organic-editor.min.css", $themeRoot . "/assets/css/studio-icons.css", $themeRoot . "/assets/css/admin.css", $themeRoot . "/assets/css/studio-system.css"] as $asset) {
+// O Studio possui identidade e componentes próprios. O editor de conteúdo é o
+// Moves Editor compartilhado (container/shared/assets/moves-editor, ADR 0601).
+foreach ([$themeRoot . "/assets/css/studio-icons.css", $themeRoot . "/assets/css/admin.css", $themeRoot . "/assets/css/studio-system.css"] as $asset) {
     if (is_file($asset)) $css->add($asset);
 }
 $cssTarget = $themeRoot . "/assets/studio.min.css";

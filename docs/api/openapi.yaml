@@ -63,7 +63,8 @@ components:
         id: { type: integer }
         protocol: { type: string, example: CH261109A1B2 }
         subject: { type: string }
-        message: { type: string }
+        message: { type: string, description: Texto puro (sem marcação), também para o app e o WhatsApp }
+        message_html: { type: string, description: 'HTML limpo do Moves Editor (ADR 0610); texto antigo vem em parágrafos escapados' }
         area: { type: string, enum: [general, technical, financial] }
         origin: { type: string, enum: [helpdesk, erp, site, residents, api, talk] }
         category: { type: string, nullable: true }
@@ -7850,7 +7851,8 @@ paths:
                         id: { type: integer }
                         author: { type: string }
                         from_team: { type: boolean }
-                        message: { type: string }
+                        message: { type: string, description: Texto puro (sem marcação) }
+                        message_html: { type: string, description: HTML limpo do Moves Editor (ADR 0610) }
                         internal: { type: boolean }
                         created_at: { type: string }
                         attachments: { type: array, items: { type: object, properties: { name: { type: string }, url: { type: string } } } }

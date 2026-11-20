@@ -77,7 +77,7 @@ $this->insert('components/layout/page-head', [
         </div>
         <div class="erp-field erp-col-12">
             <label for="tk-message">Descrição <span aria-hidden="true" style="color:var(--erp-danger)">*</span></label>
-            <textarea class="erp-textarea" id="tk-message" name="message" rows="5" required<?= $invalid('message', 'tk-message') ?>><?= $this->e($value('message')) ?></textarea>
+            <textarea class="erp-textarea" data-moves-editor="basic" id="tk-message" name="message" rows="5" required<?= $invalid('message', 'tk-message') ?>><?= $this->e($value('message')) ?></textarea>
             <span class="erp-field__error" id="tk-message-error"><?= $this->e($error('message')) ?></span>
         </div>
         <div class="erp-field erp-col-6">

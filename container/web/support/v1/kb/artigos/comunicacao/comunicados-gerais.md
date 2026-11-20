@@ -28,7 +28,7 @@ legenda: Tela Comunicados Gerais
 
 ## Novo comunicado
 
-Cada unidade vira um aviso na fila. O texto sai como você escrever, sem formatação.
+Cada unidade vira um aviso na fila. O **Texto** usa o [editor de texto](artigo:editor-de-texto): negrito, listas e links vão no e-mail; no aplicativo do morador o texto chega sem formatação.
 
 1. Preencha **Assunto** e **Texto**.
 2. Clique em {{Enviar comunicado}}.

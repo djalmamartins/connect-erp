@@ -3009,8 +3009,12 @@
 
     $$('[data-comm-count]', root).forEach(function (field) {
       var out = document.getElementById(field.getAttribute('data-comm-count'));
-      var max = parseInt(field.getAttribute('maxlength'), 10);
-      var update = function () { out.textContent = field.value.length.toLocaleString('pt-BR') + ' de ' + max.toLocaleString('pt-BR'); };
+      var max = parseInt(field.getAttribute('maxlength') || field.getAttribute('data-max-length'), 10);
+      var update = function () {
+        // Com o Moves Editor (ADR 0610) conta o texto visível, sem a formatação.
+        var rich = window.MovesEditors ? window.MovesEditors.textLength(field.id) : null;
+        out.textContent = (rich === null ? field.value.length : rich).toLocaleString('pt-BR') + ' de ' + max.toLocaleString('pt-BR');
+      };
       field.addEventListener('input', update);
       update();
     });
@@ -3852,7 +3856,10 @@
     var template = $('[data-erp-ticket-template]', form);
     if (template) {
       template.addEventListener('change', function () {
-        if (template.value) { text.value = (text.value ? text.value + '\n\n' : '') + template.value; template.value = ''; text.focus(); }
+        if (!template.value) return;
+        // Moves Editor (ADR 0610): a resposta rápida entra na posição do cursor; sem o editor, no fim do texto.
+        if (!(window.MovesEditors && window.MovesEditors.insert(text.id, template.value))) { text.value = (text.value ? text.value + '\n\n' : '') + template.value; text.focus(); }
+        template.value = '';
       });
     }
     form.addEventListener('submit', function () { time.value = String(seconds); });
