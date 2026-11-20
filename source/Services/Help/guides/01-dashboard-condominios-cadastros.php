@@ -70,7 +70,7 @@ return [
     'AP-008' => [
         'faz' => 'Cadastra o salão de festas, a churrasqueira, a academia e as outras áreas que os moradores podem usar, com as regras da reserva: se é livre, exige aprovação ou está bloqueada, capacidade, taxa e regras de uso.',
         'por_tras' => [
-            'O tipo de reserva decide o caminho do pedido: em área **Livre**, a reserva feita pela equipe já nasce confirmada; em área que **Exige aprovação**, a reserva espera em [[Operacional > Agendamentos Pendentes]] até alguém confirmar. O pedido feito pelo morador no aplicativo sempre espera a aprovação, mesmo em área livre.',
+            'O tipo de reserva decide o caminho do pedido: em área **Livre**, a reserva feita pela equipe já nasce confirmada; em área que **Exige aprovação**, a reserva espera em [[Agenda > Áreas comuns > Agendamentos Pendentes]] até alguém confirmar. O pedido feito pelo morador no aplicativo sempre espera a aprovação, mesmo em área livre.',
             'Área **Bloqueada** ou **Não reservável** recusa qualquer reserva nova, e o sistema confere o horário de funcionamento da área.',
             'A **taxa de reserva** vale para as reservas da área quando a reserva não informa outro valor; a cobrança da taxa é feita depois, como cobrança extra da unidade.',
             'Não pode haver duas áreas com o mesmo nome no mesmo condomínio.',

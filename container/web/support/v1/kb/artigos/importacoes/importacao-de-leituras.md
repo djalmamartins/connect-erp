@@ -4,7 +4,7 @@ titulo: Importar leituras de consumo
 resumo: Importa de uma planilha as leituras de água, gás ou energia por relógio e competência. Leitura já lançada na mesma competência é substituída, se ainda não foi cobrada.
 categoria: importacoes
 rota: /importacoes/importacao-de-leituras
-menu: Importações > Importação de Leituras
+menu: Leituras > Importação de Leituras
 icone: cloud-upload-outline
 situacao: funciona
 relacionados: extrato-bancario-ofx, importacao-nf-e-xml, inadimplentes-planilha, fracoes-ideais-planilha
@@ -16,7 +16,7 @@ Importa de uma planilha as leituras de água, gás ou energia por relógio e com
 
 ## Onde fica
 
-No menu lateral, abra [[Importações > Importação de Leituras]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Leituras > Importação de Leituras]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela importacao-de-leituras
 rota: /importacoes/importacao-de-leituras

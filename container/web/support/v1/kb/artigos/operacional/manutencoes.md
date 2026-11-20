@@ -4,7 +4,7 @@ titulo: Manutenções preventivas e corretivas
 resumo: Agenda as manutenções do condomínio, com o serviço, o fornecedor, a data prevista e a periodicidade (mensal, anual). Ao concluir, registre a data em Concluída em.
 categoria: operacional
 rota: /operacional/manutencoes
-menu: Operacional > Rotina > Manutenções
+menu: Agenda > Atendimento > Manutenções
 icone: list-outline
 situacao: funciona
 relacionados: chamados, ocorrencias, vistorias, reservas-areas-comuns
@@ -16,7 +16,7 @@ Agenda as manutenções do condomínio, com o serviço, o fornecedor, a data pre
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Manutenções]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Atendimento > Manutenções]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela manutencoes
 rota: /operacional/manutencoes
