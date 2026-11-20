@@ -34,8 +34,36 @@ final class MailTemplate
         if (!$this->exists($name)) {
             throw new \RuntimeException("Template de e-mail não encontrado: {$name}.");
         }
-        $defaults = ['site_name' => defined('CONF_SITE_NAME') ? CONF_SITE_NAME : 'Connect'];
-        return (new View($this->root . '/'))->render("pages/{$name}", $data + $defaults);
+        return (new View($this->root . '/'))->render("pages/{$name}", $data + self::defaults());
+    }
+
+    /**
+     * Dados da moldura (layout Connect, ADR 0397): logo, site, política de privacidade e a identificação
+     * da Connect no rodapé (LGPD e CDC: quem envia, CNPJ, endereço e contato). Campo vazio não aparece.
+     *
+     * @return array<string, string>
+     */
+    public static function defaults(): array
+    {
+        $const = static fn (string $name): string => defined($name) ? trim((string)constant($name)) : '';
+        $site = $const('CONF_URL_SSL');
+        $street = trim($const('CONF_SITE_ADDR_STREET') . ($const('CONF_SITE_ADDR_NUMBER') !== '' ? ', ' . $const('CONF_SITE_ADDR_NUMBER') : ''));
+        $city = trim($const('CONF_SITE_ADDR_CITY') . ($const('CONF_SITE_ADDR_STATE') !== '' ? ' - ' . $const('CONF_SITE_ADDR_STATE') : ''), ' -');
+        $address = implode(', ', array_filter([$street, $const('CONF_SITE_ADDR_DISTRICT'), $city], static fn (string $part): bool => $part !== ''));
+        if ($address !== '' && $const('CONF_SITE_ADDR_ZIPCODE') !== '') {
+            $address .= ', CEP ' . $const('CONF_SITE_ADDR_ZIPCODE');
+        }
+        $cnpj = trim((string)(getenv('CONNECT_CNPJ') ?: ''));
+        return [
+            'site_name' => $const('CONF_SITE_NAME') !== '' ? $const('CONF_SITE_NAME') : 'Connect',
+            'site_url' => $site,
+            'logo_url' => function_exists('moves_container_url') ? moves_container_url('send', 'default', 'assets/images/logo-connect.png') : '',
+            'privacy_url' => $site !== '' ? $site . '/politica-de-privacidade' : '',
+            'company_cnpj' => $cnpj,
+            'company_address' => $address,
+            'company_phone' => $const('CONF_SITE_PHONE'),
+            'company_email' => $const('CONF_MAIL_SUPPORT'),
+        ];
     }
 
     private static function validName(string $name): bool

@@ -9,6 +9,8 @@ if (is_file($environmentFile)) {
         "APP_ENV", "APP_DEBUG", "APP_URL", "CONNECT_FORCE_HTTPS", "ALERT_EMAIL", "HOSTING_DISK_LIMIT_GB",
         // Central de Ajuda e rotinas (ADR 0357): sem elas aqui, a hospedagem (que só tem o .env) nunca as recebia.
         "CONNECT_ERP_URL", "CONNECT_SUPPORT_HOURS", "CONNECT_JOB_HOST",
+        // CNPJ da Connect no rodapé dos e-mails (ADR 0397).
+        "CONNECT_CNPJ",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
         "MOVESOS_ENV", "MOVESOS_DB_HOST", "MOVESOS_DB_PORT",
         "MOVESOS_DB_USER", "MOVESOS_DB_PASS", "MOVESOS_DB_NAME",

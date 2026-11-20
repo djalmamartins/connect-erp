@@ -3,6 +3,5 @@
 $this->layout('default', ['subject' => $subject ?? 'Comunicado do condomínio', 'preheader' => 'Comunicado da administração do condomínio.']);
 ?>
 <p style="margin:0 0 16px;">Olá, <?= $this->e($first_name) ?>.</p>
-<p style="margin:0 0 8px;font-weight:600;"><?= $this->e($subject ?? '') ?></p>
 <p style="margin:0 0 16px;"><?= nl2br($this->e($body ?? '')) ?></p>
-<p style="margin:0;font-size:13px;color:#5b6878;">Comunicado do <?= $this->e($condominium) ?>. Para deixar de receber comunicados por e-mail, fale com a administração.</p>
+<?php $this->insert('partials/note', ['text' => "Comunicado do {$condominium}. Para deixar de receber comunicados por e-mail, fale com a administração."]); ?>
