@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="<?= themeStudio('/assets/studio.min.css', 'default') . '?v=' . filemtime($studioCss) ?>">
     <?php /* Camada visual do ERP sobre os componentes do Studio e do Help Desk (ADR 0026). */ $connectShellCss=dirname(__DIR__).'/assets/css/connect-shell.css'; ?>
     <link rel="stylesheet" href="<?= themeStudio('/assets/css/connect-shell.css', 'default') . '?v=' . filemtime($connectShellCss) ?>">
+    <?php /* Visual do Moves OS no Studio (ADR 0621); as regras só valem em data-environment="studio". */ $movesOsCss=dirname(__DIR__).'/assets/css/moves-os.css'; ?>
+    <link rel="stylesheet" href="<?= themeStudio('/assets/css/moves-os.css', 'default') . '?v=' . filemtime($movesOsCss) ?>">
     <?php /* Favicon por ambiente: Studio roxo, Help Desk azul (favicons por sistema, 15/11/2026). */
     $faviconName=preg_match('~/helpdesk(?:/|$)~',(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? ''))?'favicon-helpdesk':'favicon-studio'; ?>
     <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/'.$faviconName.'.svg', 'default') ?>">
