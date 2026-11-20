@@ -37,6 +37,8 @@ if (is_file($environmentFile)) {
         "TALK_ALLOWED_IPS", "TALK_KEY", "TALK_ENV", "TALK_URL", "TALK_STORAGE", "TALK_RATING", "TALK_HTTP_TIMEOUT",
         "TALK_JACK_MODE", "TALK_JACK_WAIT_SECONDS", "TALK_JACK_MAX_WAIT_SECONDS", "TALK_JACK_TYPING_SECONDS",
         "TALK_QUEUE_WARN_MINUTES", "TALK_QUEUE_LATE_MINUTES", "EVOLUTION_URL", "EVOLUTION_API_KEY", "EVOLUTION_WEBHOOK_URL",
+        // Site (ADR 0600): GA4 só depois do aceite no banner de cookies (vazio = nenhum rastreador) e links reais das lojas.
+        "SITE_GA4_ID", "APP_PLAY_STORE_URL", "APP_APPLE_STORE_URL",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {

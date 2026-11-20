@@ -239,6 +239,18 @@
                     </div>
 
 
+                    <!-- LGPD (ADR 0600): ciência da política obrigatória; novidades à parte, opcional e desmarcada -->
+                    <div class="proposal-form-group proposal-form-group-full proposal-consents">
+                        <label class="proposal-consent">
+                            <input type="checkbox" name="privacy" value="1" required>
+                            <span>Li a <a href="<?= url('/politica-de-privacidade') ?>" target="_blank" rel="noopener">Política de Privacidade</a> e sei que meus dados serão usados para responder a esta solicitação. <span aria-hidden="true">*</span></span>
+                        </label>
+                        <label class="proposal-consent">
+                            <input type="checkbox" name="marketing" value="1">
+                            <span>Quero receber novidades e conteúdos da <?= htmlspecialchars(CONF_SITE_NAME) ?> por e-mail ou WhatsApp (opcional; dá para cancelar quando quiser).</span>
+                        </label>
+                    </div>
+
                     <!-- Botão -->
                     <button
                             type="submit"
@@ -271,8 +283,8 @@
                         </svg>
 
                         <p>
-                            Seus dados serão utilizados apenas para
-                            entrarmos em contato sobre sua solicitação.
+                            Seus dados serão usados para entrarmos em contato
+                            sobre sua solicitação. Novidades, só se você marcar acima.
                         </p>
 
                     </div>
@@ -380,8 +392,9 @@
             </div>
 
             <div class="number-content">
-                <strong data-number-target="96">96%</strong>
-                <span>Índice de satisfação<br>dos clientes</span>
+                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0600 */ ?>
+                <strong>App</strong>
+                <span>Portal e aplicativo<br>para moradores</span>
             </div>
         </div>
 

@@ -8,6 +8,8 @@ use Source\Models\Notification\NotificationCategory;
 use Source\Models\Notification\NotificationMessage;
 use Source\Models\Proposal\Proposal;
 use Source\Models\User;
+use Source\Services\Privacy\ConsentLog;
+use Source\Services\Privacy\LegalDocuments;
 use Source\Support\AppLogger;
 use Source\Support\Email;
 
@@ -28,6 +30,12 @@ final class ProposalService
         if (mb_strlen($clean['name']) < 3 || !is_email($clean['email']) || strlen(preg_replace('/\D+/', '', $clean['whatsapp'])) < 10 || mb_strlen($clean['condominium']) < 2 || !$clean['units'] || $clean['units'] < 1 || !in_array($clean['profile'], $profiles, true)) {
             return ['success' => false, 'message' => 'Confira os campos obrigatórios e tente novamente.'];
         }
+        // ADR 0600: a ciência da política é marcada pela pessoa; sem ela, nada é gravado. Marketing é separado e opcional.
+        $privacyAccepted = self::checked($data['privacy'] ?? null);
+        $marketing = self::checked($data['marketing'] ?? null);
+        if (!$privacyAccepted) {
+            return ['success' => false, 'message' => 'Para enviar, marque que leu a Política de Privacidade.'];
+        }
         if (!empty($data['website'])) {
             return ['success' => true, 'message' => 'Solicitação recebida.'];
         }
@@ -39,12 +47,32 @@ final class ProposalService
         $proposal->source_url = mb_substr((string)($data['source_url'] ?? url('/solicite-sua-proposta')), 0, 500);
         $proposal->request_hash = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? ''));
         $proposal->consent_at = date('Y-m-d H:i:s');
+        $proposal->marketing_consent_at = $marketing ? date('Y-m-d H:i:s') : null;
         if (!$proposal->save()) return ['success' => false, 'message' => 'Não foi possível registrar a solicitação agora.'];
+        $this->recordConsents($proposal, $marketing);
 
         $this->queueRequesterEmail($proposal);
         $this->notifyTeam($proposal);
         AppLogger::log('info', 'Nova proposta recebida pelo site', ['event_type' => 'proposal_received', 'proposal_id' => $proposal->id, 'protocol' => $proposal->protocol, 'status' => 'resolved'], 'proposals');
         return ['success' => true, 'message' => 'Proposta solicitada com sucesso!', 'protocol' => $proposal->protocol];
+    }
+
+    private static function checked(mixed $value): bool
+    {
+        return in_array($value, ['1', 1, true, 'on', 'yes'], true);
+    }
+
+    /** Prova do que a pessoa marcou (ADR 0600). Falha aqui não perde a proposta: fica no log para conferir. */
+    private function recordConsents(Proposal $proposal, bool $marketing): void
+    {
+        try {
+            $log = new ConsentLog();
+            $who = ['proposal_id' => (int)$proposal->id, 'email' => (string)$proposal->email];
+            $log->record('privacy', true, LegalDocuments::PRIVACY, 'proposta', $who);
+            $log->record('marketing', $marketing, LegalDocuments::PRIVACY, 'proposta', $who);
+        } catch (\Throwable $e) {
+            AppLogger::log('error', 'Aceite da proposta não registrado', ['event_type' => 'privacy_consent_failed', 'proposal_id' => $proposal->id, 'error' => $e->getMessage(), 'status' => 'open'], 'privacy');
+        }
     }
 
     private function queueRequesterEmail(Proposal $proposal): void

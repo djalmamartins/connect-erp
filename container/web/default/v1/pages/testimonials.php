@@ -1,26 +1,9 @@
 <?php
-if (empty($briefs)) {
-    $briefs = [
-        (object)[
-            "title" => "Juliana R.",
-            "cover" => null,
-            "content" => "A Connect trouxe organização, transparência e tranquilidade para o nosso condomínio.",
-            "townhouse" => "Condomínio Parque do Sol", "rating" => 5
-        ],
-        (object)[
-            "title" => "Carlos E.",
-            "cover" => null,
-            "content" => "Reduzimos custos, melhoramos a comunicação e valorizamos o nosso patrimônio.",
-            "townhouse" => "Condomínio Avenida Tower", "rating" => 5
-        ],
-        (object)[
-            "title" => "Marcia S.",
-            "cover" => null,
-            "content" => "Equipe comprometida, atenciosa e sempre disponível. Superou nossas expectativas!",
-            "townhouse" => "Condomínio Vista Verde", "rating" => 5
-        ]
-    ];
-}
+/*
+ * Depoimentos só reais, cadastrados no Studio e publicados (status published), com autorização do cliente.
+ * Sem depoimento, a seção não aparece: não há mais depoimentos de exemplo (CDC arts. 37 e 67; ADR 0600).
+ */
+$briefs = is_array($briefs ?? null) ? $briefs : [];
 ?>
 
 <?php if (!empty($briefs)): ?>

@@ -2735,8 +2735,9 @@ a.contato-item:hover {
     margin-top: 45px;
     padding: 17px;
     text-align: center;
-    color: #ffffff80;
-    font-size: .6em
+    /* contraste e tamanho legíveis (acessibilidade, ADR 0600) */
+    color: #ffffffcc;
+    font-size: .8em
 }
 
 
