@@ -9,22 +9,10 @@ use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
-use Source\Services\Erp\Agreements;
-use Source\Services\Erp\Banking\BankCharges;
-use Source\Services\Erp\BillingRules;
-use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\DemoData;
 use Source\Services\Erp\ErpNav;
-use Source\Services\Erp\FinancialReports;
-use Source\Services\Erp\Invoices;
-use Source\Services\Erp\MeterReadings;
-use Source\Services\Erp\RecurringEntries;
-use Source\Services\Erp\MonthClosing;
 use Source\Services\Erp\Registry\Definitions;
-use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
-use Source\Services\Erp\UnitDocuments;
-use Source\Services\Erp\VirtualDisk;
 use Source\Support\Access;
 use Source\Support\Erp\CondominiumContext;
 use Source\Support\Erp\FieldSpec;
@@ -210,532 +198,75 @@ final class Panel extends Controller
         return $items;
     }
 
-    /**
-     * Dados reais do fechamento mensal (AP-030, ADR 0032) no contexto da barra superior: o
-     * condomínio escolhido ou, em "Todos", cada condomínio do escopo. A tela lê $closing
-     * (null = sem permissão ou banco indisponível, e a tela mostra a demonstração) e
-     * $canManageClosing para mostrar "Fechar" e "Reabrir" (só com um condomínio escolhido).
-     *
-     * @return array{closing: ?array, closingCompetence: string, canManageClosing: bool}
+    /*
+     * Atalhos mantidos para quem já chama Panel:: (telas, testes e outras *Screens). Os dados e as regras
+     * ficam em FinanceScreens, UnitScreens e OperationScreens.
      */
-    private function closingData(User $user): array
-    {
-        $competence = MonthClosing::competenceOrCurrent($_GET['competencia'] ?? null);
-        $data = ['closing' => null, 'closingCompetence' => $competence, 'canManageClosing' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.closing.view', $user)) {
-            return $data;
-        }
-        $context = CondominiumContext::id();
-        try {
-            $data['closing'] = (new MonthClosing())->overview($user, $context, $competence);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'month_closing_overview_failed', 'condominium_id' => $context]);
-            return $data;
-        }
-        $data['canManageClosing'] = $context !== null && Access::can('erp.closing.manage', $user);
-        return $data;
-    }
+    public const REPORT_PAGES = FinanceScreens::REPORT_PAGES;
+    public const UNIT_DOCUMENT_PAGES = UnitScreens::UNIT_DOCUMENT_PAGES;
+    public const RECEIPT_PAGE = UnitScreens::RECEIPT_PAGE;
+    public const METER_KINDS = UnitScreens::METER_KINDS;
 
-    /**
-     * Faturas reais (AP-032, ADR 0033) no contexto da barra superior ("Todos" = escopo do
-     * usuário), filtradas por ?competencia= e ?situacao=. $invoices null = sem permissão ou sem
-     * banco (a tela segue com a demonstração). As ações usam a API /api/v1/invoices.
-     *
-     * @return array{invoices: ?array, canManageInvoices: bool}
-     */
-    private function invoiceData(User $user): array
-    {
-        $data = ['invoices' => null, 'canManageInvoices' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.invoices.view', $user)) {
-            return $data;
-        }
-        try {
-            $data['invoices'] = (new Invoices())->list($user, CondominiumContext::id(), [
-                'competence' => $_GET['competencia'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
-            ]);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'invoice_list_failed']);
-            return $data;
-        }
-        $data['canManageInvoices'] = Access::can('erp.invoices.manage', $user);
-        $data['canManageCharges'] = Access::can('erp.bank_charges.view', $user) && Access::can('erp.bank_charges.manage', $user);
-        return $data;
-    }
-
-    /**
-     * Cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-037 remessas, AP-038 retornos com
-     * divergência; ADR 0035, 0038 e 0156), sandbox interno ou Inter (sandbox do banco). $bankCharges / $bankDivergences null = sem
-     * permissão ou sem banco (a tela segue com a demonstração). As ações usam a API /api/v1.
-     *
-     * @return array{bankCharges?: ?array, bankDivergences?: ?array, bankReady: bool, canManageCharges: bool}
-     */
-    private function bankingData(User $user, string $id): array
-    {
-        $data = ['bankReady' => false, 'canManageCharges' => false] + ($id === 'AP-035' ? ['bankCharges' => null] : []) + ($id === 'AP-038' ? ['bankDivergences' => null, 'bankReturnFiles' => null] : [])
-            + ($id === 'AP-037' ? ['bankRemittances' => null] : []);
-        if (Connect::databaseDisabled() || !Access::can('erp.bank_charges.view', $user)) {
-            return $data;
-        }
-        try {
-            if ($id === 'AP-035') {
-                $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'q' => $_GET['busca'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
-            } elseif ($id === 'AP-037') {
-                $data['bankRemittances'] = (new \Source\Services\Erp\Banking\BankRemittances())->list($user, CondominiumContext::id(), [
-                    'from' => $_GET['de'] ?? null, 'to' => $_GET['ate'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
-                ]);
-            } elseif ($id === 'AP-038') {
-                $returns = new BankReturns();
-                $data['bankDivergences'] = $returns->divergences($user, CondominiumContext::id());
-                $data['bankReturnFiles'] = $returns->files($user, CondominiumContext::id(), ['page' => $_GET['pagina'] ?? 1]);
-            }
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'banking_screen_failed', 'page' => $id]);
-            return $data;
-        }
-        $data['bankReady'] = true;
-        $data['canManageCharges'] = Access::can('erp.bank_charges.manage', $user);
-        return $data;
-    }
-
-    /** Páginas da prestação de contas com dados reais (ADR 0037): balancete e demonstrativo. */
-    public const REPORT_PAGES = ['AP-079', 'AP-051'];
-
-    /**
-     * Relatórios financeiros reais (ADR 0037) no contexto da barra superior ("Todos" = escopo):
-     *  - AP-079 balancete de verificação: ?de=AAAA-MM&ate=AAAA-MM (padrão: mês atual) → $trialBalance;
-     *  - AP-051 demonstrativo (prestação de contas por caixa, com conciliação bancária):
-     *    ?de=AAAA-MM-DD&ate=AAAA-MM-DD (padrão: do dia 1 até hoje) → $statement.
-     * null = sem permissão, sem banco ou período inválido ($reportError diz qual).
-     *
-     * @return array{trialBalance?: ?array, statement?: ?array, reportError: ?string, reportPeriod: array{from:string, to:string}}
-     */
-    private function reportData(User $user, string $id): array
-    {
-        $trial = $id === 'AP-079';
-        $from = is_string($_GET['de'] ?? null) ? $_GET['de'] : ($trial ? date('Y-m') : date('Y-m-01'));
-        $to = is_string($_GET['ate'] ?? null) ? $_GET['ate'] : ($trial ? date('Y-m') : date('Y-m-d'));
-        $key = $trial ? 'trialBalance' : 'statement';
-        $data = [$key => null, 'reportError' => null, 'reportPeriod' => ['from' => mb_substr($from, 0, 10), 'to' => mb_substr($to, 0, 10)]];
-        if (Connect::databaseDisabled() || !Access::can('erp.entries.view', $user) || !Access::can('erp.chart.view', $user)) {
-            return $data;
-        }
-        try {
-            $reports = new FinancialReports();
-            $data[$key] = $trial ? $reports->trialBalance($user, CondominiumContext::id(), $from, $to) : $reports->statement($user, CondominiumContext::id(), $from, $to);
-        } catch (\InvalidArgumentException $error) {
-            $data['reportError'] = $error->getMessage();
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'financial_report_failed', 'page' => $id]);
-            $data['reportError'] = 'Não foi possível gerar o relatório agora.';
-        }
-        return $data;
-    }
-
-    /**
-     * Inadimplência e acordos (AP-033/034, ADR 0039) no contexto da barra superior. AP-033: contas
-     * vencidas por unidade ($delinquency) e a lista de acordos ($agreements, ?situacao=&pagina=).
-     * AP-034: parcelas dos acordos ativos da página ($agreementParcels). null = sem permissão ou
-     * sem banco (a tela segue com a demonstração). As ações usam a API /api/v1/agreements.
-     *
-     * @return array<string, mixed>
-     */
-    private function agreementData(User $user, string $id): array
-    {
-        $data = ['canManageAgreements' => false] + ($id === 'AP-033' ? ['delinquency' => null, 'agreements' => null] : ['agreements' => null, 'agreementParcels' => null]);
-        if (Connect::databaseDisabled() || !Access::can('erp.agreements.view', $user)) {
-            return $data;
-        }
-        $context = CondominiumContext::id();
-        $service = new Agreements();
-        try {
-            if ($id === 'AP-033') {
-                $data['delinquency'] = $service->delinquency($user, $context);
-                $data['agreements'] = $service->list($user, $context, ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
-            } else {
-                $data['agreements'] = $service->list($user, $context, ['status' => 'active', 'page' => $_GET['pagina'] ?? 1]);
-                $data['agreementParcels'] = self::flattenParcels(array_map(static fn (array $a): array => $service->find($user, (int)$a['id']), $data['agreements']['data']), date('Y-m-d'));
-            }
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'agreements_screen_failed', 'page' => $id]);
-            return ['canManageAgreements' => false] + array_map(static fn (): mixed => null, array_diff_key($data, ['canManageAgreements' => 1]));
-        }
-        $data['canManageAgreements'] = Access::can('erp.agreements.manage', $user);
-        return $data;
-    }
-
-    /**
-     * Parcelas de vários acordos numa lista só (regra pura), com a situação de cada uma na data:
-     * paga, vencida (em aberto e vencimento antes da data) ou a vencer.
-     *
-     * @param list<array> $agreements acordos de Agreements::find (com 'parcels')
-     * @return list<array>
-     */
+    /** @see FinanceScreens::flattenParcels() */
     public static function flattenParcels(array $agreements, string $today): array
     {
-        $rows = [];
-        foreach ($agreements as $agreement) {
-            foreach ($agreement['parcels'] ?? [] as $parcel) {
-                $state = $parcel['paid_on'] !== null ? 'paid' : ((string)$parcel['due_on'] < $today ? 'late' : 'open');
-                $rows[] = $parcel + ['agreement_id' => (int)$agreement['id'], 'installments' => (int)$agreement['installments'],
-                    'unit_label' => $agreement['unit_label'] ?? null, 'condominium_name' => $agreement['condominium_name'] ?? null, 'state' => $state];
-            }
-        }
-        usort($rows, static fn (array $a, array $b): int => [$a['state'] === 'paid', $a['due_on'], $a['agreement_id'], $a['number']] <=> [$b['state'] === 'paid', $b['due_on'], $b['agreement_id'], $b['number']]);
-        return $rows;
+        return FinanceScreens::flattenParcels($agreements, $today);
     }
 
-    /**
-     * Regra de cobrança e índices (AP-165, ADR 0040): regra que vale para o condomínio da barra
-     * superior ("Todos" = padrão da Connect) e os meses do IPCA. null = sem permissão ou sem banco.
-     *
-     * @return array{billingRule: ?array, priceIndexes: ?array, canManageBilling: bool}
-     */
-    private function billingData(User $user): array
-    {
-        $data = ['billingRule' => null, 'priceIndexes' => null, 'canManageBilling' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.billing_rules.view', $user)) {
-            return $data;
-        }
-        try {
-            $service = new BillingRules();
-            $data['billingRule'] = $service->ruleFor($user, CondominiumContext::id());
-            $data['priceIndexes'] = $service->listRates('IPCA');
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'billing_rules_screen_failed']);
-            return ['billingRule' => null, 'priceIndexes' => null, 'canManageBilling' => false];
-        }
-        $data['canManageBilling'] = Access::can('erp.billing_rules.manage', $user);
-        return $data;
-    }
-
-    /** Documentos da unidade com tela própria (ADR 0044 e 0046): página => tipo do documento. */
-    public const UNIT_DOCUMENT_PAGES = ['AP-123' => 'debt_certificate', 'AP-124' => 'delinquency_declaration', 'AP-125' => 'quittance', 'AP-130' => 'consent_letter'];
-
-    /** Recibo (AP-040, ADR 0057 e 0073): a mesma tela dos documentos, com as contas pagas da unidade para escolher. */
-    public const RECEIPT_PAGE = 'AP-040';
-
-    /**
-     * Documentos da unidade (AP-123/124/125/130, ADR 0044) no contexto da barra superior: os emitidos
-     * do tipo da página ($unitDocuments, ?pagina=), as unidades para emitir ($documentUnits) e, com
-     * ?documento=ID, o documento com o conteúdo para imprimir ($unitDocument). null = sem permissão
-     * ou sem banco (a tela segue com a demonstração). Emitir e cancelar usam /api/v1/unit-documents.
-     *
-     * @return array<string, mixed>
-     */
-    private function unitDocumentData(User $user, string $id): array
-    {
-        $kind = self::UNIT_DOCUMENT_PAGES[$id] ?? 'receipt';
-        $data = ['documentKind' => $kind, 'unitDocuments' => null, 'unitDocument' => null, 'documentUnits' => [], 'documentError' => null, 'canManageDocuments' => false,
-            'receiptUnit' => null, 'receiptEntries' => []];
-        if (Connect::databaseDisabled() || !Access::can('erp.unit_documents.view', $user)) {
-            return $data;
-        }
-        $context = CondominiumContext::id();
-        try {
-            $service = new UnitDocuments();
-            $data['unitDocuments'] = $service->list($user, $context, ['kind' => $kind, 'page' => $_GET['pagina'] ?? 1]);
-            $names = array_column($this->condominiumOptions($user), 'name', 'id');
-            $data['documentUnits'] = $context === null ? [] : self::documentUnits((new RegistryService())->units($user), $names, $context);
-            $receiptUnit = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-            if ($kind === 'receipt' && $receiptUnit !== false && $receiptUnit !== null && in_array((int)$receiptUnit, array_column($data['documentUnits'], 'id'), true)) {
-                // Contas pagas sem recibo válido da unidade escolhida (?unidade=); a emissão confere de novo.
-                $data['receiptUnit'] = (int)$receiptUnit;
-                $data['receiptEntries'] = (new \Source\Services\Erp\ReceiptCandidates())->forUnit($user, (int)$receiptUnit);
-            }
-            $documentId = filter_var($_GET['documento'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-            if ($documentId !== false && $documentId !== null) {
-                try {
-                    $data['unitDocument'] = $service->find($user, (int)$documentId);
-                } catch (RegistryNotFound) {
-                    $data['documentError'] = 'Documento não encontrado no seu escopo.';
-                }
-            }
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_documents_screen_failed', 'page' => $id]);
-            return ['unitDocuments' => null, 'unitDocument' => null, 'canManageDocuments' => false] + $data;
-        }
-        $data['canManageDocuments'] = Access::can('erp.unit_documents.manage', $user);
-        return $data;
-    }
-
-    /**
-     * Unidades para o seletor dos documentos (regra pura): só as do condomínio em contexto, com o nome
-     * do condomínio (condomínio sem nome no escopo fica de fora), ordenadas por condomínio e unidade.
-     *
-     * @param list<array{id:int, condominium_id:int, label:string}> $units
-     * @param array<int, string> $names condomínio => nome, do escopo do usuário
-     * @return list<array{id:int, condominium_id:int, label:string, condominium_name:string}>
-     */
-    /**
-     * Unidades do condomínio da barra superior (revisão de 15/11): sem condomínio escolhido, nenhuma,
-     * para que nenhum filtro de unidade misture condomínios.
-     * @param list<array{condominium_id:int}> $units
-     */
+    /** @see UnitScreens::contextUnits() */
     public static function contextUnits(array $units, ?int $context): array
     {
-        if ($context === null) {
-            return [];
-        }
-        return array_values(array_filter($units, static fn (array $u): bool => (int)$u['condominium_id'] === $context));
+        return UnitScreens::contextUnits($units, $context);
     }
 
+    /** @see UnitScreens::documentUnits() */
     public static function documentUnits(array $units, array $names, ?int $context): array
     {
-        $rows = [];
-        foreach ($units as $unit) {
-            $condo = (int)$unit['condominium_id'];
-            if (!isset($names[$condo]) || ($context !== null && $condo !== $context)) {
-                continue;
-            }
-            $rows[] = $unit + ['condominium_name' => (string)$names[$condo]];
-        }
-        usort($rows, static fn (array $a, array $b): int => [$a['condominium_name'], $a['label']] <=> [$b['condominium_name'], $b['label']]);
-        return $rows;
+        return UnitScreens::documentUnits($units, $names, $context);
     }
 
-    /** Tipos de relógio das leituras (ADR 0045). */
-    public const METER_KINDS = ['agua' => 'Água', 'gas' => 'Gás', 'energia' => 'Energia'];
-
-    /**
-     * Leituras do mês (AP-042, ADR 0045) no contexto da barra superior: ?competencia=AAAA-MM (padrão:
-     * mês atual) e ?tipo=agua|gas|energia. $meterSheet tem uma linha por relógio ativo do tipo, com a
-     * leitura anterior e a da competência (consumo, valor e se já foi cobrada). null = sem permissão ou
-     * sem banco (a tela segue com a demonstração). Lançar e faturar usam /api/v1/meter-readings.
-     *
-     * @return array<string, mixed>
-     */
-    private function meterReadingData(User $user): array
-    {
-        $competence = is_string($_GET['competencia'] ?? null) && RecurringEntries::isCompetence($_GET['competencia']) ? $_GET['competencia'] : date('Y-m');
-        $kind = is_string($_GET['tipo'] ?? null) && isset(self::METER_KINDS[$_GET['tipo']]) ? $_GET['tipo'] : 'agua';
-        $data = ['meterSheet' => null, 'meterCompetence' => $competence, 'meterKind' => $kind, 'canManageReadings' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.meter_readings.view', $user)) {
-            return $data;
-        }
-        $context = CondominiumContext::id();
-        try {
-            $registry = new RegistryService();
-            $meters = [];
-            for ($page = 1; $page <= 40; $page++) {
-                $chunk = $registry->list($user, 'meters', ['status' => 'active', 'filter' => $kind, 'condominium_id' => $context, 'page' => $page]);
-                $meters = array_merge($meters, $chunk['data']);
-                if ($page >= $chunk['pages']) {
-                    break;
-                }
-            }
-            $labels = array_column($registry->units($user), 'label', 'id');
-            $readings = (new MeterReadings())->list($user, $context, ['kind' => $kind])['data'];
-            $data['meterSheet'] = self::readingSheet($meters, $labels, $readings, $competence);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'meter_readings_screen_failed']);
-            return ['meterSheet' => null] + $data;
-        }
-        $data['canManageReadings'] = Access::can('erp.meter_readings.manage', $user);
-        return $data;
-    }
-
-    /**
-     * Folha de leituras da competência (regra pura): uma linha por relógio, com a leitura anterior (a
-     * mais recente de competência anterior, senão a inicial do relógio) e a leitura da competência, se
-     * houver. Ordenada por condomínio e unidade.
-     *
-     * @param list<array> $meters relógios (RegistryService 'meters')
-     * @param array<int, string> $unitLabels unidade => rótulo
-     * @param list<array> $readings leituras do tipo (MeterReadings::list), mais novas primeiro
-     * @return list<array{meter_id:int, condominium_id:int, condominium_name:?string, unit_label:string, number:string, previous:float, reading:?array}>
-     */
+    /** @see UnitScreens::readingSheet() */
     public static function readingSheet(array $meters, array $unitLabels, array $readings, string $competence): array
     {
-        $current = [];
-        $previous = [];
-        foreach ($readings as $r) {
-            $meter = (int)$r['meter_id'];
-            if ($r['competence'] === $competence) {
-                $current[$meter] = $r;
-            } elseif ($r['competence'] < $competence && (!isset($previous[$meter]) || $r['competence'] > $previous[$meter]['competence'])) {
-                $previous[$meter] = $r;
-            }
-        }
-        $rows = [];
-        foreach ($meters as $m) {
-            $id = (int)$m['id'];
-            $rows[] = [
-                'meter_id' => $id, 'condominium_id' => (int)$m['condominium_id'], 'condominium_name' => $m['condominium_name'] ?? null,
-                'unit_label' => (string)($unitLabels[(int)$m['unit_id']] ?? '—'), 'number' => (string)$m['number'],
-                'previous' => isset($current[$id]) ? (float)$current[$id]['previous_reading'] : (isset($previous[$id]) ? (float)$previous[$id]['reading'] : (float)($m['initial_reading'] ?? 0)),
-                'reading' => $current[$id] ?? null,
-            ];
-        }
-        usort($rows, static fn (array $a, array $b): int => [(string)$a['condominium_name'], $a['unit_label'], $a['number']] <=> [(string)$b['condominium_name'], $b['unit_label'], $b['number']]);
-        return $rows;
+        return UnitScreens::readingSheet($meters, $unitLabels, $readings, $competence);
     }
 
-    /**
-     * Disco Virtual (AP-122, ADR 0047 e 0049) no contexto da barra superior: arquivos por pasta
-     * (?pasta=, ?q=, ?pagina=) e os condomínios do escopo para enviar. null = sem permissão ou sem
-     * banco (a tela segue com a demonstração). Enviar, baixar e excluir usam /api/v1/documents.
-     *
-     * @return array<string, mixed>
-     */
-    private function virtualDiskData(User $user): array
-    {
-        $folder = is_string($_GET['pasta'] ?? null) && isset(VirtualDisk::FOLDERS[$_GET['pasta']]) ? $_GET['pasta'] : null;
-        $q = is_string($_GET['q'] ?? null) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
-        $data = ['diskFiles' => null, 'diskFolder' => $folder, 'diskQuery' => $q, 'diskCondominiums' => [], 'canManageFiles' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.documents.view', $user)) {
-            return $data;
-        }
-        try {
-            $data['diskFiles'] = (new VirtualDisk())->list($user, CondominiumContext::id(), ['folder' => $folder, 'q' => $q, 'page' => $_GET['pagina'] ?? 1]);
-            $data['diskCondominiums'] = $this->condominiumOptions($user);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'virtual_disk_screen_failed']);
-            return ['diskFiles' => null] + $data;
-        }
-        $data['canManageFiles'] = Access::can('erp.documents.manage', $user);
-        return $data;
-    }
-
-    /**
-     * Integrações (AP-171, ADR 0091 e 0161), só leitura: o mesmo IntegrationStatus de GET /api/v1/integrations
-     * (banco, e-mail, índices, fila de avisos e antivírus), só com números e sem endereços. Sem banco ou sem
-     * erp.settings.view, null = a demonstração.
-     */
-    private function integrationData(User $user): array
-    {
-        $data = ['integrations' => null];
-        if (Connect::databaseDisabled() || !Access::can('erp.settings.view', $user)) {
-            return $data;
-        }
-        try {
-            $data['integrations'] = (new \Source\Services\Erp\IntegrationStatus())->overview($user);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integrations_screen_failed']);
-        }
-        // Banco Inter pela tela (ADR 0158): contas 077 do escopo e quem pode enviar a credencial.
-        $data['bankCredentialAccounts'] = null;
-        $data['canManageBankCredentials'] = Access::can('erp.settings.manage', $user) && Access::can('erp.bank_accounts.manage', $user);
-        if (Access::can('erp.bank_accounts.view', $user)) {
-            try {
-                $data['bankCredentialAccounts'] = (new \Source\Services\Erp\Banking\BankCredentialSetup())->accounts($user);
-            } catch (\Throwable $error) {
-                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'bank_credentials_screen_failed']);
-            }
-        }
-        // Tokens de acesso das integrações (ADR 0601): lista para quem vê, criar e revogar para quem gerencia.
-        $data['integrationTokens'] = null;
-        $data['canManageIntegrationTokens'] = Access::can('erp.settings.manage', $user);
-        try {
-            $tokens = new \Source\Services\Talk\TalkTokens();
-            $data['integrationTokens'] = ['tokens' => $tokens->list(), 'scopes' => \Source\Controllers\Api\V1\IntegrationTokens::scopes(),
-                'users' => $data['canManageIntegrationTokens'] ? $tokens->eligibleUsers() : []];
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integration_tokens_screen_failed']);
-        }
-        return $data;
-    }
-
-    /**
-     * Agendamentos Pendentes (AP-114, ADR 0051 e 0070): as reservas de áreas comuns aguardando
-     * aprovação no condomínio da barra superior, pela listagem do motor (escopo e paginação dele).
-     * Sem banco ou sem erp.reservations.view, null = a demonstração.
-     */
-    private function pendingReservationData(User $user): array
-    {
-        $data = ['pendingReservations' => null, 'pendingAreas' => [], 'pendingUnits' => [], 'canDecideReservations' => false, 'flash' => null];
-        if (Connect::databaseDisabled() || !Access::can('erp.reservations.view', $user)) {
-            return $data;
-        }
-        try {
-            $service = new RegistryService();
-            $data['pendingReservations'] = $service->list($user, 'reservations', [
-                'condominium_id' => CondominiumContext::id(), 'status' => 'active', 'page' => $_GET['pagina'] ?? 1,
-            ]);
-            // Nomes da área e da unidade para a lista (a reserva guarda só os números).
-            $areas = $service->references($user, RegistryService::definition('reservations'))['common_area_id'] ?? [];
-            $data['pendingAreas'] = array_column($areas, 'label', 'id');
-            $data['pendingUnits'] = array_column($service->units($user), 'label', 'id');
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'pending_reservations_screen_failed']);
-            return $data;
-        }
-        $data['canDecideReservations'] = Access::can('erp.reservations.manage', $user);
-        $data['flash'] = (new \Source\Core\Session())->flash();
-        return $data;
-    }
-
-    /**
-     * Painel da unidade (AP-003, ADR 0054 e 0071): escolhe-se a unidade (?unidade=) entre as do
-     * condomínio da barra superior; os dados vêm do PanelSummaries (GET /api/v1/panels/unit/{id}).
-     */
-    /**
-     * Fração ideal e área em grade (AP-167, ADR 0140): unidades ativas do condomínio da barra superior,
-     * pelo mesmo serviço de GET /api/v1/unit-measures. Gravar e dividir usam a API (erp.js).
-     */
-    private function unitMeasuresData(User $user): array
-    {
-        $data = ['measuresReady' => false, 'measures' => null, 'measuresError' => null, 'canManageMeasures' => false];
-        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
-            return $data;
-        }
-        $data['measuresReady'] = true;
-        $data['canManageMeasures'] = Access::can('erp.units.manage', $user);
-        $context = CondominiumContext::id();
-        if ($context === null) {
-            return $data;
-        }
-        try {
-            $data['measures'] = (new \Source\Services\Erp\UnitBatch())->measures($user, $context);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_measures_screen_failed']);
-            $data['measuresError'] = 'Não foi possível carregar as unidades agora. Tente de novo em instantes.';
-        }
-        return $data;
-    }
-
-    private function unitPanelData(User $user): array
-    {
-        $data = ['unitPanelReady' => false, 'unitPanel' => null, 'unitPanelUnits' => [], 'unitPanelSelected' => null, 'unitPanelError' => null];
-        if (Connect::databaseDisabled() || !Access::can('erp.units.view', $user)) {
-            return $data;
-        }
-        $context = CondominiumContext::id();
-        try {
-            $units = (new RegistryService())->units($user);
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_panel_failed']);
-            return $data;
-        }
-        $data['unitPanelReady'] = true;
-        // Revisão 15/11: sem condomínio na barra superior não há filtro de unidade; com ele, só as unidades dele.
-        $data['unitPanelUnits'] = self::contextUnits($units, $context);
-        $selected = filter_var($_GET['unidade'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if ($selected === false || $selected === null) {
-            return $data;
-        }
-        $data['unitPanelSelected'] = (int)$selected;
-        try {
-            $data['unitPanel'] = (new \Source\Services\Erp\PanelSummaries())->unit($user, (int)$selected);
-        } catch (\Source\Services\Erp\Registry\RegistryForbidden) {
-            $data['unitPanelError'] = 'Seu perfil não tem permissão para todos os dados do painel da unidade (pessoas, financeiro e documentos).';
-        } catch (RegistryNotFound) {
-            $data['unitPanelError'] = 'Unidade não encontrada no seu escopo de condomínios.';
-        } catch (\Throwable $error) {
-            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'unit_panel_failed']);
-            $data['unitPanelError'] = 'Não foi possível montar o painel agora. Tente de novo em instantes.';
-        }
-        return $data;
-    }
-
-    /** Tamanho legível em pt-BR (regra pura): 512 B, 12,5 KB, 3,2 MB. */
+    /** @see OperationScreens::fileSize() */
     public static function fileSize(int $bytes): string
     {
-        if ($bytes < 1024) {
-            return $bytes . ' B';
-        }
-        $kb = $bytes / 1024;
-        return $kb < 1024 ? number_format($kb, 1, ',', '.') . ' KB' : number_format($kb / 1024, 1, ',', '.') . ' MB';
+        return OperationScreens::fileSize($bytes);
     }
+
+    /**
+     * Telas com classe própria, na ordem em que os dados são somados (a primeira chave vence). Cada uma
+     * lista as páginas em PAGES (ImportScreens, em pages()) e monta os dados em data($user, $id).
+     */
+    private const SCREENS = [FinanceScreens::class, OperationScreens::class, UnitScreens::class, ImportScreens::class, CommunicationScreens::class,
+        CollectionScreens::class, CollectionReportScreens::class, ChartScreens::class, ReportScreens::class, SettingsScreens::class, AssemblyScreens::class,
+        DeliveryScreens::class, AccountabilityScreens::class, PatrimonialEntryScreens::class, BalanceSheetScreens::class, CashBookScreens::class,
+        AccessScreens::class, AdminScreens::class, EntryShortcutScreens::class];
+
+    /** @return array<string, mixed> os dados reais das telas que têm $id, somados na ordem de SCREENS */
+    private function screenData(User $user, string $id): array
+    {
+        $options = fn (): array => $this->condominiumOptions($user);
+        $data = [];
+        foreach (self::SCREENS as $class) {
+            $pages = method_exists($class, 'pages') ? $class::pages() : $class::PAGES;
+            if (!isset($pages[$id])) {
+                continue;
+            }
+            $data += match ($class) {
+                FinanceScreens::class => (new FinanceScreens())->data($user, $id),
+                UnitScreens::class => (new UnitScreens())->data($user, $id, $options),
+                OperationScreens::class => (new OperationScreens())->data($user, $id, $options),
+                EntryShortcutScreens::class => (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($options(), 'name', 'id')),
+                default => (new $class())->data($user, $id),
+            };
+        }
+        return $data;
+    }
+
 
     /** GET /erp/{módulo}: visão geral do módulo, com todas as páginas do grupo. */
     public function hub(string $group): void
@@ -822,93 +353,7 @@ final class Panel extends Controller
             $data['columns'] = FieldSpec::parseAll($cols, 'c');
             $data['rows'] = DemoData::rows($id, $cols, 6);
         }
-        if ($kind === 'closing') {
-            $data += $this->closingData($user);
-        }
-        if ($id === 'AP-032') {
-            $data += $this->invoiceData($user);
-        }
-        if (in_array($id, self::REPORT_PAGES, true)) {
-            $data += $this->reportData($user, $id);
-        }
-        if ($id === 'AP-165') {
-            $data += $this->billingData($user);
-        }
-        if (in_array($id, ['AP-033', 'AP-034'], true)) {
-            $data += $this->agreementData($user, $id);
-        }
-        if (in_array($id, ['AP-035', 'AP-036', 'AP-037', 'AP-038'], true)) {
-            $data += $this->bankingData($user, $id);
-        }
-        if ($id === 'AP-122') {
-            $data += $this->virtualDiskData($user);
-        }
-        if ($id === 'AP-042') {
-            $data += $this->meterReadingData($user);
-        }
-        if ($id === 'AP-114') {
-            $data += $this->pendingReservationData($user);
-        }
-        if ($id === 'AP-171') {
-            $data += $this->integrationData($user);
-        }
-        if ($id === 'AP-003') {
-            $data += $this->unitPanelData($user);
-        }
-        if ($id === 'AP-167') {
-            $data += $this->unitMeasuresData($user);
-        }
-        if (isset(self::UNIT_DOCUMENT_PAGES[$id]) || $id === self::RECEIPT_PAGE) {
-            $data += $this->unitDocumentData($user, $id);
-        }
-        if (isset(ImportScreens::pages()[$id])) {
-            $data += (new ImportScreens())->data($user, $id);
-        }
-        if (isset(CommunicationScreens::PAGES[$id])) {
-            $data += (new CommunicationScreens())->data($user, $id);
-        }
-        if (isset(CollectionScreens::PAGES[$id])) {
-            $data += (new CollectionScreens())->data($user, $id);
-        }
-        if (isset(CollectionReportScreens::PAGES[$id])) {
-            $data += (new CollectionReportScreens())->data($user, $id);
-        }
-        if (isset(ChartScreens::PAGES[$id])) {
-            $data += (new ChartScreens())->data($user, $id);
-        }
-        if (isset(ReportScreens::PAGES[$id])) {
-            $data += (new ReportScreens())->data($user, $id);
-        }
-        if (isset(SettingsScreens::PAGES[$id])) {
-            $data += (new SettingsScreens())->data($user, $id);
-        }
-        if (isset(AssemblyScreens::PAGES[$id])) {
-            $data += (new AssemblyScreens())->data($user, $id);
-        }
-        if (isset(DeliveryScreens::PAGES[$id])) {
-            $data += (new DeliveryScreens())->data($user, $id);
-        }
-        if (isset(AccountabilityScreens::PAGES[$id])) {
-            $data += (new AccountabilityScreens())->data($user, $id);
-        }
-        if (isset(PatrimonialEntryScreens::PAGES[$id])) {
-            $data += (new PatrimonialEntryScreens())->data($user, $id);
-        }
-        if (isset(BalanceSheetScreens::PAGES[$id])) {
-            $data += (new BalanceSheetScreens())->data($user, $id);
-        }
-        if (isset(CashBookScreens::PAGES[$id])) {
-            $data += (new CashBookScreens())->data($user, $id);
-        }
-        if (isset(AccessScreens::PAGES[$id])) {
-            $data += (new AccessScreens())->data($user, $id);
-        }
-        if (isset(AdminScreens::PAGES[$id])) {
-            $data += (new AdminScreens())->data($user, $id);
-        }
-        if (isset(EntryShortcutScreens::PAGES[$id])) {
-            $data += (new EntryShortcutScreens())->data($user, $id, fn (): array => array_column($this->condominiumOptions($user), 'name', 'id'));
-        }
+        $data += $this->screenData($user, $id);
         return [self::ownTemplate($id, $data) ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
     }
 

@@ -39,6 +39,7 @@ $this->layout('default');
     <?php $this->insert('partials/item', ['icon' => 'key', 'title' => 'Verificação em duas etapas', 'lines' => ['Opcional. Ligue se quiser mais proteção ao entrar.'], 'href' => app_url('/seguranca')]); ?>
     <?php $this->insert('partials/item', ['icon' => 'home', 'title' => 'Rever as boas-vindas', 'lines' => ['As dicas do primeiro acesso.'], 'href' => app_url('/boas-vindas?passo=2')]); ?>
     <?php $this->insert('partials/item', ['icon' => 'bell', 'title' => 'Avisos', 'lines' => ['Contas, encomendas, visitas e comunicados.'], 'href' => app_url('/avisos')]); ?>
+    <?php $this->insert('partials/item', ['icon' => 'shield', 'title' => 'Privacidade e meus dados', 'lines' => ['Termos, novidades e pedidos sobre os seus dados.'], 'href' => app_url('/privacidade')]); ?>
     </ul>
 </section>
 <section class="app-section">

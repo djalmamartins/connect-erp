@@ -1,7 +1,7 @@
 <?php
 /**
  * Fração ideal e área em grade (AP-167, ADR 0140) com dados reais: todas as unidades ativas do condomínio
- * da barra superior, editáveis de uma vez ($measures de Panel::unitMeasuresData, o mesmo serviço de
+ * da barra superior, editáveis de uma vez ($measures de UnitScreens::unitMeasuresData, o mesmo serviço de
  * GET /api/v1/unit-measures). Dividir igualmente ou pela área só preenche a grade (POST
  * /api/v1/unit-measures/distribute); gravar é PUT /api/v1/unit-measures (erp.js, data-erp-unit-measures).
  * @var array $currentPage @var ?array $measures @var ?string $measuresError @var bool $canManageMeasures

@@ -113,8 +113,9 @@
             </div>
 
             <div class="number-content">
-                <strong data-number-target="96">96%</strong>
-                <span>Índice de satisfação<br>dos clientes</span>
+                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0604 */ ?>
+                <strong>App</strong>
+                <span>Portal e aplicativo<br>para moradores</span>
             </div>
         </div>
 
@@ -343,14 +344,18 @@
 
 
             <!-- Lojas -->
+            <!-- CDC art. 37: os selos das lojas só aparecem com o link real do app publicado (.env, ADR 0604) -->
+            <?php $playStore = (string)(getenv('APP_PLAY_STORE_URL') ?: ''); $appleStore = (string)(getenv('APP_APPLE_STORE_URL') ?: ''); ?>
             <div class="app-stores">
-
-                <a href="#"><img class="store" src="<?= theme("/assets/images/google_play.png"); ?>" alt="Aplicativo">
-                </a>
-
-                <a href="#"><img class="store" src="<?= theme("/assets/images/apple_store.png"); ?>" alt="Aplicativo">
-                </a>
-
+                <?php if (str_starts_with($playStore, 'https://play.google.com/')): ?>
+                <a href="<?= htmlspecialchars($playStore) ?>" target="_blank" rel="noopener noreferrer"><img class="store" src="<?= theme("/assets/images/google_play.png"); ?>" alt="Baixar o aplicativo no Google Play"></a>
+                <?php endif; ?>
+                <?php if (str_starts_with($appleStore, 'https://apps.apple.com/')): ?>
+                <a href="<?= htmlspecialchars($appleStore) ?>" target="_blank" rel="noopener noreferrer"><img class="store" src="<?= theme("/assets/images/apple_store.png"); ?>" alt="Baixar o aplicativo na App Store"></a>
+                <?php endif; ?>
+                <?php if (!str_starts_with($playStore, 'https://play.google.com/') && !str_starts_with($appleStore, 'https://apps.apple.com/')): ?>
+                <a class="btn btn-primary" href="<?= htmlspecialchars(app_url('/')) ?>">Acessar o aplicativo pelo navegador</a>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -358,7 +363,7 @@
 
         <!-- Celulares -->
         <div class="phones">
-            <img class="app-image" src="<?= theme("/assets/images/app-cel.png"); ?>" alt="Aplicativo">
+            <img class="app-image" src="<?= theme("/assets/images/app-cel.png"); ?>" alt="Telas do aplicativo do morador no celular">
         </div>
 
 
@@ -1000,12 +1005,14 @@
 
             <div class="mapa">
 
-                <iframe
-                        src="https://www.google.com/maps?q=<?= rawurlencode($siteAddress) ?>&output=embed"
-                        loading="lazy"
-                        allowfullscreen
-                        referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
+                <!-- Mapa do Google só depois do clique ou da escolha no banner de cookies (ADR 0604) -->
+                <div class="consent-embed"
+                     data-consent-src="https://www.google.com/maps?q=<?= rawurlencode($siteAddress) ?>&output=embed"
+                     data-consent-title="Mapa com o endereço da <?= htmlspecialchars(CONF_SITE_NAME) ?>">
+                    <p>O mapa é do Google, que pode gravar cookies.</p>
+                    <button type="button" data-consent-load>Mostrar mapa</button>
+                    <a href="https://www.google.com/maps/search/?api=1&query=<?= rawurlencode($siteAddress) ?>" target="_blank" rel="noopener noreferrer">Abrir no Google Maps</a>
+                </div>
 
 
                 <!-- MARCADOR CONNECT -->

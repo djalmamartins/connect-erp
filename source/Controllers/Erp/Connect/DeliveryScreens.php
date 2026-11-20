@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Source\Controllers\Erp\Connect;
 
 use InvalidArgumentException;
-use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
@@ -45,7 +44,7 @@ final class DeliveryScreens
             'deliveryUnits' => [], 'canPickUp' => Access::can('erp.deliveries.manage', $user)];
         try {
             if ($context !== null) {
-                $data['deliveryUnits'] = self::units(Connect::getInstance(), $context);
+                $data['deliveryUnits'] = (new DeliveryLog(Connect::getInstance()))->units($context);
             }
             try {
                 $data['deliveryLog'] = (new DeliveryLog())->log($user, $context, ['status' => $filters['situacao'], 'from' => $filters['de'], 'to' => $filters['ate'],
@@ -86,11 +85,4 @@ final class DeliveryScreens
             'ate' => $from !== null && $to !== null ? $to : null, 'unidade' => $unit === false || $unit === null ? null : (int)$unit];
     }
 
-    /** @return list<array{id:int, label:string}> */
-    private static function units(PDO $pdo, int $condominium): array
-    {
-        $stmt = $pdo->prepare("SELECT id, label FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL ORDER BY label LIMIT 5000");
-        $stmt->execute(['c' => $condominium]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label']], $stmt->fetchAll(PDO::FETCH_ASSOC));
-    }
 }

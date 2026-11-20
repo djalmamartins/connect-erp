@@ -2,7 +2,7 @@
 /**
  * Regra de cobrança e índices (AP-165, ADR 0040) com dados reais: a regra que vale para o condomínio
  * da barra superior ("Todos" = padrão da Connect) e os meses do IPCA ($billingRule, $priceIndexes de
- * Panel::billingData). Gravar usa a API /api/v1/billing-rules e /api/v1/price-indexes (erp.js,
+ * FinanceScreens::billingData). Gravar usa a API /api/v1/billing-rules e /api/v1/price-indexes (erp.js,
  * data-erp-billing). O padrão da Connect e os índices exigem acesso a todos os condomínios (a API
  * recusa com 403 e a tela mostra a mensagem).
  * @var array $currentPage @var array $billingRule @var list<array> $priceIndexes @var bool $canManageBilling

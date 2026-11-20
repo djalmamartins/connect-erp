@@ -135,7 +135,7 @@ final class ErpOperationalScreensTest extends TestCase
         self::assertNull(Panel::ownTemplate('AP-002', ['condoPanelReady' => true]));
         self::assertNull(Panel::ownTemplate('AP-003', ['unitPanelReady' => false]));
         self::assertSame('pages/condominiums/unit-panel', Panel::ownTemplate('AP-003', ['unitPanelReady' => true]));
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/UnitScreens.php');
         self::assertStringContainsString('(new PanelSummaries())->condominium($user, $id)', $this->file('source/Controllers/Erp/Connect/Condominiums.php'));
         self::assertStringContainsString("(new \\Source\\Services\\Erp\\PanelSummaries())->unit(\$user, (int)\$selected)", $panel);
         self::assertStringContainsString("Access::can('erp.units.view', \$user)", $panel);

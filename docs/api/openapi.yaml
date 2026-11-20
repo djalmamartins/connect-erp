@@ -526,6 +526,19 @@ components:
         mime: { type: string }
         size_bytes: { type: integer }
         uploaded_at: { type: string }
+    ResidentPrivacy:
+      type: object
+      description: 'ADR 0604'
+      properties:
+        terms_version: { type: string, example: '2026-11-20' }
+        privacy_version: { type: string, example: '2026-11-20' }
+        accepted: { type: boolean }
+        accepted_at: { type: string, nullable: true }
+        marketing: { type: boolean }
+        terms_url: { type: string }
+        privacy_url: { type: string }
+        requests: { type: object, additionalProperties: { type: string } }
+        answer_days: { type: integer, example: 15 }
     ResidentError:
       type: object
       description: 'Erros do app do morador: 401 unauthenticated, 403 not_resident, feature_disabled (com feature) ou not_allowed, 404 not_found, 409 conflict, 422 validation_failed (com fields)'
@@ -8732,6 +8745,76 @@ paths:
               schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { kind: { type: string }, kind_label: { type: string }, title: { type: string }, detail: { type: string }, path: { type: string } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/privacy:
+    get:
+      operationId: getResidentPrivacy
+      tags: [Morador]
+      summary: 'Privacidade da conta: aceite dos termos, novidades e pedidos do titular'
+      description: 'ADR 0604 (LGPD). accepted=false: o app mostra a tela de aceite antes de qualquer outra. Versões em terms_version e privacy_version.'
+      security: [{ session: [] }, { residentApp: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentPrivacy' } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/privacy/accept:
+    post:
+      operationId: acceptResidentTerms
+      tags: [Morador]
+      summary: 'Aceita os Termos de Uso e a Política de Privacidade na versão atual'
+      description: 'ADR 0604. Grava terms e privacy em privacy_consents (canal celular); marketing só quando informado.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [accept_terms], properties: { accept_terms: { type: boolean, enum: [true] }, marketing: { type: boolean } } }
+      responses:
+        '200': { description: 'Aceito', content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentPrivacy' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'Sem o aceite', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/privacy/marketing:
+    post:
+      operationId: setResidentMarketing
+      tags: [Morador]
+      summary: 'Dá ou retira o consentimento de novidades'
+      description: 'ADR 0604. Consentimento separado dos termos; retirar grava uma linha nova (o histórico fica).'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [marketing], properties: { marketing: { type: boolean } } }
+      responses:
+        '200': { description: 'Gravado', content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentPrivacy' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'marketing ausente', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/privacy/requests:
+    post:
+      operationId: createResidentPrivacyRequest
+      tags: [Morador]
+      summary: 'Pedido do titular (LGPD art. 18): vira chamado LGPD no Help Desk'
+      description: 'ADR 0604. Tipos: acesso, correcao, exclusao, portabilidade, compartilhamento, outro. Resposta em até 15 dias (art. 19). Não depende da função de chamados do portal.'
+      security: [{ session: [], csrf: [] }, { residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [type], properties: { type: { type: string, enum: [acesso, correcao, exclusao, portabilidade, compartilhamento, outro] }, details: { type: string, maxLength: 2000 } } }
+      responses:
+        '201':
+          description: Pedido aberto
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, answer_until: { type: string, format: date } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '422': { description: 'Tipo inválido', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/onboarding:
     get:
       operationId: getResidentOnboarding

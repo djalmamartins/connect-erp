@@ -49,7 +49,6 @@ if (is_local_host()
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/jquery-ui.js");
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/jquery.mask.js");
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/highcharts.js");
-    $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/tracker.js");
     $minJS->add($movesRoot . "/container/shared/assets/vendor/scripts/validation.js");
     $minJS->add($movesRoot . "/container/shared/assets/js/connect-dialog.js");
 

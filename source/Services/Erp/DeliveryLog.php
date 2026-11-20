@@ -171,4 +171,12 @@ final class DeliveryLog
         }
         return array_values(array_filter(array_map('intval', $this->scope->allowedIds($user)), static fn (int $id): bool => $id > 0));
     }
+
+    /** @return list<array{id:int, label:string}> */
+    public function units(int $condominium): array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, label FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL ORDER BY label LIMIT 5000");
+        $stmt->execute(['c' => $condominium]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 }

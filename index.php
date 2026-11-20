@@ -634,6 +634,11 @@ $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source
 $route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+// LGPD (ADR 0604): aceite dos termos, novidades e pedidos do titular.
+$route->get("/resident/privacy", "ResidentApp:privacy", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/privacy/accept", "ResidentApp:privacyAccept", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/privacy/marketing", "ResidentApp:privacyMarketing", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/privacy/requests", "ResidentApp:privacyRequest", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/onboarding", "ResidentApp:onboarding", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/onboarding/complete", "ResidentApp:onboardingComplete", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/profile/photo", "ResidentApp:photo", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
