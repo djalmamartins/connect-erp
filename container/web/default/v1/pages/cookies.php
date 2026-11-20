@@ -1,6 +1,6 @@
 <?php
 /**
- * Banner de cookies (LGPD, ADR 0600). Nenhum script ou conteúdo de terceiros carrega antes da escolha.
+ * Banner de cookies (LGPD, ADR 0603). Nenhum script ou conteúdo de terceiros carrega antes da escolha.
  * "Recusar", "Escolher" e "Aceitar" têm o mesmo tamanho e destaque. A escolha fica no cookie necessário
  * connect_cookie_consent e a prova vai para privacy_consents (POST /cookies). O link "Cookies" do rodapé reabre.
  */

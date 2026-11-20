@@ -42,8 +42,8 @@ class Web extends Controller
      */
     public function home(): void
     {
-
-        $head = $this->seo->render(
+        // Página inicial leva os dados da empresa para o Google (JSON-LD, ADR 0399).
+        $head = $this->seo->business()->render(
             CONF_SITE_NAME . " - " . CONF_SITE_TITLE,
             CONF_SITE_DESC,
             url(),
@@ -63,6 +63,16 @@ class Web extends Controller
                 ->limit(4)
                 ->fetch(true) ?? [],
         ]);
+    }
+
+    /**
+     * Mapa do site para o Google: páginas públicas, artigos e Central de Ajuda (ADR 0399).
+     */
+    public function sitemap(): void
+    {
+        header("Content-Type: application/xml; charset=utf-8");
+        header("Cache-Control: public, max-age=3600");
+        echo \Source\Support\Sitemap::fromDatabase()->render();
     }
 
     public function sales(): void
@@ -422,7 +432,7 @@ class Web extends Controller
     }
 
     /**
-     * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0600). Responde 204 sempre que o pedido é válido:
+     * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0603). Responde 204 sempre que o pedido é válido:
      * o cookie da escolha já foi gravado pelo navegador, aqui só fica o registro (hash do IP e navegador, sem IP).
      */
     public function cookieConsent(array $data): void
@@ -445,7 +455,7 @@ class Web extends Controller
     }
 
     /**
-     * Política de Privacidade e Termos de Uso (ADR 0600). O texto vem do código, com versão (LegalDocuments), para cada
+     * Política de Privacidade e Termos de Uso (ADR 0603). O texto vem do código, com versão (LegalDocuments), para cada
      * aceite apontar para um texto que não muda depois. Página com o mesmo endereço no Studio não substitui mais o texto.
      */
     public function legal(array $data): void

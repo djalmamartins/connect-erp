@@ -1,7 +1,7 @@
 <?php
 /*
  * Depoimentos só reais, cadastrados no Studio e publicados (status published), com autorização do cliente.
- * Sem depoimento, a seção não aparece: não há mais depoimentos de exemplo (CDC arts. 37 e 67; ADR 0600).
+ * Sem depoimento, a seção não aparece: não há mais depoimentos de exemplo (CDC arts. 37 e 67; ADR 0603).
  */
 $briefs = is_array($briefs ?? null) ? $briefs : [];
 ?>

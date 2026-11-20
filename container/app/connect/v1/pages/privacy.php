@@ -1,6 +1,6 @@
 <?php
 /**
- * Privacidade e meus dados (LGPD, ADR 0600): o que foi aceito, novidades (consentimento separado, dá para retirar) e
+ * Privacidade e meus dados (LGPD, ADR 0603): o que foi aceito, novidades (consentimento separado, dá para retirar) e
  * pedidos do titular (art. 18), que viram chamado LGPD no Help Desk com resposta em até 15 dias.
  *
  * @var array $privacy (PrivacyCenter::status)

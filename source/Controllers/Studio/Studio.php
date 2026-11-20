@@ -1786,6 +1786,10 @@ class Studio extends Controller
                 echo json_encode(["reload" => true]);
                 return;
             }
+            if ($data["action"] === "mail_test") {
+                $this->settingsMailTest($user, $data);
+                return;
+            }
             if ($data["action"] === "release") {
                 if (!$user->can("system.manage")) { $this->jsonMessage("Somente a administração global pode publicar versões.", "error"); return; }
                 $version = trim((string)($data["version"] ?? ""));
@@ -1808,22 +1812,44 @@ class Studio extends Controller
                 }
                 return;
             }
-            $themeDirectories = $this->templateDirectories(dirname(__DIR__, 3) . "/container/web");
-            $supportThemes = array_values(array_filter($themeDirectories, fn($name) => str_contains($name, "support")));
-            $siteThemes = array_values(array_diff($themeDirectories, $supportThemes));
-            $appThemes = $this->templateDirectories(dirname(__DIR__, 3) . "/container/apps/residents");
-            $erpThemes = $this->templateDirectories(dirname(__DIR__, 3) . "/container/apps/erp");
-            foreach (["view_theme" => $siteThemes, "view_support" => $supportThemes, "view_app" => $appThemes, "view_erp" => $erpThemes] as $field => $available) {
+            $themes = $this->settingsThemes();
+            foreach (["view_theme" => ["web", $themes["site"]], "view_support" => ["web", $themes["support"]], "view_upkeep" => ["web", $themes["site"]], "view_app" => ["residents", $themes["app"]], "view_erp" => ["erp", $themes["erp"]]] as $field => [$area, $available]) {
                 if (!array_key_exists($field, $data)) continue;
-                if (!in_array($data[$field] ?? "", $available, true)) { $this->jsonMessage("O template selecionado em {$field} não existe.", "warning"); return; }
+                $chosen = trim((string)($data[$field] ?? ""));
+                // Valor que já estava salvo (inclusive nome antigo, como connect_by_moves) continua aceito (ADR 0602).
+                if ($chosen === (string)($settings->{$field} ?? "") || in_array($chosen, $available, true) || in_array(moves_container_theme($area, strtolower($chosen)), $available, true)) continue;
+                $this->jsonMessage("O template selecionado em {$field} não existe.", "warning");
+                return;
             }
             $fields = ["mode","site_name","site_title","site_desc","site_photo","site_logo_svg","site_icon","site_favicon","site_lang","site_domain","site_domain_ssl","site_domain_off","site_street","site_phone","site_whatsapp","site_number","site_complement","site_city","site_state","site_code","site_district","site_company_name","site_cnpj","privacy_officer_name","privacy_email","view_theme","view_support","view_app","view_erp","view_admin","view_mail","view_upkeep","upload_dir","upload_image","upload_file","upload_media","image_cache","image_size","image_jpg","image_png","mail_host","mail_port","mail_user","mail_pass","mail_name","mail_address","mail_suport","mail_lang","mail_html","mail_auth","mail_secure","mail_charset","pay_mode","pay_live","pay_test","pay_back","social_tw_creator","social_tw_publisher","social_fb_app","social_fb_page","social_fb_author","social_google_page","social_google_author","social_instagram_page","social_youtube_page","social_linkedin_page","timezone_set"];
             $secrets = ["mail_user", "mail_pass", "pay_live", "pay_test"];
+            $invalid = \Source\Support\SystemSettingsRules::validate($data);
+            if ($invalid !== null) { $this->jsonMessage($invalid, "warning"); return; }
+            $box = \Source\Support\SecretBox::isConfigured() ? new \Source\Support\SecretBox() : null;
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $data)) continue;
                 if (in_array($field, $secrets, true) && trim((string)($data[$field] ?? "")) === "") continue;
+                if (in_array($field, \Source\Support\MailConfig::SEALED, true)) {
+                    // Usuário e senha SMTP: nunca em texto puro no banco (ADR 0602). Senha sem trim/strip_tags: pode ter espaço ou "<".
+                    $secret = $field === "mail_pass" ? (string)$data[$field] : trim((string)$data[$field]);
+                    if (strlen($secret) > \Source\Support\MailConfig::SECRET_MAX_LENGTH) { $this->jsonMessage("Usuário ou senha SMTP longos demais (máximo " . \Source\Support\MailConfig::SECRET_MAX_LENGTH . " caracteres sem acento).", "warning"); return; }
+                    if ($box === null) { $this->jsonMessage("Para guardar usuário e senha do e-mail, a chave CONNECT_2FA_KEY precisa estar no .env do servidor. Nada foi salvo.", "error"); return; }
+                    $settings->{$field} = \Source\Support\MailConfig::seal($secret, $field, $box);
+                    continue;
+                }
                 $value = trim(strip_tags((string)($data[$field] ?? "")));
                 $settings->{$field} = $field === "mode" ? (in_array((int)$value, [1,2], true) ? (int)$value : 1) : $value;
+            }
+            if (!empty($data["mail_clear_credentials"])) {
+                $settings->mail_user = null;
+                $settings->mail_pass = null;
+            }
+            // Valor antigo gravado sem cifra: aproveita a gravação para cifrar.
+            foreach (\Source\Support\MailConfig::SEALED as $column) {
+                $stored = (string)($settings->{$column} ?? "");
+                if ($box !== null && $stored !== "" && !\Source\Support\MailConfig::isSealed($stored)) {
+                    $settings->{$column} = \Source\Support\MailConfig::seal($stored, $column, $box);
+                }
             }
             if (!empty($_FILES["site_logo_svg_file"]["tmp_name"])) {
                 $svg = $this->safeSvgUpload($_FILES["site_logo_svg_file"]);
@@ -1837,7 +1863,7 @@ class Studio extends Controller
                 if (!$image) { echo json_encode(["message" => $upload->message()->render()]); return; }
                 $settings->{$field} = $image;
             }
-            // ADR 0600: CNPJ com 14 dígitos e e-mail do encarregado válido (vazio pode: o site só não mostra).
+            // ADR 0603: CNPJ com 14 dígitos e e-mail do encarregado válido (vazio pode: o site só não mostra).
             $cnpjDigits = preg_replace('/\D+/', '', (string)($settings->site_cnpj ?? ''));
             if ($cnpjDigits !== '' && strlen($cnpjDigits) !== 14) { $this->jsonMessage("O CNPJ precisa ter 14 números.", "warning"); return; }
             if ($cnpjDigits !== '') $settings->site_cnpj = substr($cnpjDigits, 0, 2) . '.' . substr($cnpjDigits, 2, 3) . '.' . substr($cnpjDigits, 5, 3) . '/' . substr($cnpjDigits, 8, 4) . '-' . substr($cnpjDigits, 12, 2);
@@ -1848,18 +1874,54 @@ class Studio extends Controller
             return;
         }
         $pdo = Connect::getInstance();
-        $themeDirectories = $this->templateDirectories(dirname(__DIR__, 3) . "/container/web");
-        $supportThemes = array_values(array_filter($themeDirectories, fn($name) => str_contains($name, "support")));
+        $themes = $this->settingsThemes();
         echo $this->view->render("components/settings/home", $this->viewData("Configurações", "settings", $user, [
             "settings" => $settings,
+            "mailStatus" => \Source\Support\SystemSettingsRules::mailStatus($settings, \Source\Support\MailConfig::current($settings), \Source\Support\SecretBox::isConfigured()),
+            "userEmail" => (string)($user->email ?? ""),
             "versions" => $pdo->query("SELECT v.*,CONCAT(u.first_name,' ',u.last_name) author_name FROM movesos_versions v LEFT JOIN users u ON u.id=v.created_by ORDER BY v.id DESC LIMIT 20")->fetchAll(),
-            "siteThemes" => array_values(array_diff($themeDirectories, $supportThemes)),
-            "supportThemes" => $supportThemes,
-            "appThemes" => $this->templateDirectories(dirname(__DIR__, 3) . "/container/apps/residents"),
-            "erpThemes" => $this->templateDirectories(dirname(__DIR__, 3) . "/container/apps/erp")
+            "siteThemes" => $themes["site"],
+            "supportThemes" => $themes["support"],
+            "appThemes" => $themes["app"],
+            "erpThemes" => $themes["erp"]
             ,"languages" => ["pt_BR" => "Português (Brasil)", "pt_PT" => "Português (Portugal)", "en_US" => "English (United States)", "es_ES" => "Español", "fr_FR" => "Français"],
             "timezones" => \DateTimeZone::listIdentifiers()
         ]));
+    }
+
+    /**
+     * Botão "Enviar e-mail de teste" das Configurações (ADR 0602): manda direto pelo SMTP salvo
+     * (sem a fila) e confere SPF/DKIM/DMARC do domínio do remetente. No máximo 5 por 10 minutos.
+     */
+    private function settingsMailTest(User $user, array $data): void
+    {
+        $to = trim((string)($data["mail_test_to"] ?? ""));
+        if (!is_email($to)) { $this->jsonMessage("Informe um e-mail válido para receber o teste.", "warning"); return; }
+        if ((new \Source\Support\IpRateLimit())->hit("settings-mail-test|" . (int)$user->id, (string)(\Source\Support\ClientIp::resolve() ?? ""), 5, 600)) {
+            $this->jsonMessage("Muitos testes seguidos. Espere 10 minutos e tente de novo.", "warning");
+            return;
+        }
+        if (CONF_MAIL_HOST === "" || !is_email((string)CONF_MAIL_SENDER["address"])) {
+            $this->jsonMessage("Preencha e salve o servidor SMTP e o e-mail do remetente antes de testar.", "warning");
+            return;
+        }
+        $mail = (new \Source\Support\Email())->timeout(20);
+        $sent = $mail->bootstrap("Teste de e-mail do Connect ERP", (new \Source\Support\MailTemplate())->render("notice", [
+            "subject" => "Teste de e-mail do Connect ERP",
+            "paragraphs" => [
+                "Este é um e-mail de teste enviado pela tela de Configurações do Studio (" . date("d/m/Y H:i") . ").",
+                "Se chegou na caixa de entrada (e não no spam), o envio de e-mails do sistema está pronto.",
+            ],
+        ]), $to, "Teste")->send();
+        $domain = (string)substr((string)strrchr((string)CONF_MAIL_SENDER["address"], "@"), 1);
+        $dns = \Source\Support\MailDns::check($domain, ((string)getenv("MAIL_DKIM_SELECTOR")) ?: null, \Source\Support\MailDns::resolver());
+        $dnsText = implode(" ", array_map(static fn (array $item): string => $item["name"] . ": " . ["ok" => "ok", "warning" => "atenção", "error" => "falta"][$item["status"]] . ".", $dns["items"]));
+        \Source\Support\AppLogger::log($sent ? "info" : "warning", "Teste de e-mail das Configurações", ["event_type" => "settings_mail_test", "users_id" => $user->id, "recipient_hash" => hash("sha256", strtolower($to)), "sent" => $sent, "dns_ok" => $dns["ok"], "status" => "resolved"], "settings");
+        if ($sent) {
+            $this->jsonMessage("E-mail de teste aceito pelo servidor SMTP. Confira se chegou em {$to} (fora do spam). DNS do domínio {$domain}: {$dnsText}", $dns["ok"] ? "success" : "warning");
+            return;
+        }
+        $this->jsonMessage("O envio falhou: " . strip_tags((string)$mail->message()->getText()) . " Confira servidor, porta, usuário e senha. DNS do domínio {$domain}: {$dnsText}", "error");
     }
 
     public function error(array $data): void
@@ -2068,13 +2130,31 @@ class Studio extends Controller
         }
     }
 
+    /**
+     * Temas das Configurações (ADR 0602): os temas moram em container/{web,app,erp}/{tema}/v1. A lista
+     * antiga procurava em container/apps/... e sem o v1, ficava vazia e a tela recusava qualquer gravação.
+     * @return array{site: string[], support: string[], app: string[], erp: string[]}
+     */
+    private function settingsThemes(): array
+    {
+        $root = dirname(__DIR__, 3);
+        $web = $this->templateDirectories($root . "/container/web");
+        $support = array_values(array_filter($web, fn($name) => str_contains($name, "support")));
+        return [
+            "site" => array_values(array_diff($web, $support)),
+            "support" => $support,
+            "app" => $this->templateDirectories($root . "/container/app"),
+            "erp" => $this->templateDirectories($root . "/container/erp"),
+        ];
+    }
+
     private function templateDirectories(string $base): array
     {
         if (!is_dir($base)) return [];
         $templates = [];
         foreach (new \DirectoryIterator($base) as $directory) {
             if ($directory->isDot() || !$directory->isDir()) continue;
-            if (is_file($directory->getPathname() . "/default.php")) $templates[] = $directory->getFilename();
+            if (is_file($directory->getPathname() . "/default.php") || is_file($directory->getPathname() . "/v1/default.php")) $templates[] = $directory->getFilename();
         }
         sort($templates, SORT_NATURAL | SORT_FLAG_CASE);
         return $templates;

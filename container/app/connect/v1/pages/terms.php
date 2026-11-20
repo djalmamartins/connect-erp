@@ -1,6 +1,6 @@
 <?php
 /**
- * Aceite dos Termos de Uso e da Política de Privacidade (LGPD, ADR 0600). Aparece no primeiro acesso e quando a versão muda;
+ * Aceite dos Termos de Uso e da Política de Privacidade (LGPD, ADR 0603). Aparece no primeiro acesso e quando a versão muda;
  * sem o aceite, as outras telas do aplicativo voltam para cá.
  *
  * @var array $privacy (PrivacyCenter::status)

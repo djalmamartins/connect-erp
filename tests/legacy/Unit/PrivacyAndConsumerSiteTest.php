@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 use Source\Services\Privacy\LegalDocuments;
 
 /**
- * LGPD e CDC no site e no app (ADR 0600): nada de rastreador antes do consentimento, nada de depoimento inventado,
+ * LGPD e CDC no site e no app (ADR 0603): nada de rastreador antes do consentimento, nada de depoimento inventado,
  * selo de loja sem app publicado ou número sem prova, e aceite real no pedido de proposta.
  */
 final class PrivacyAndConsumerSiteTest extends TestCase

@@ -77,7 +77,7 @@ final class ResidentAppXssCanaryIntegrationTest extends TestCase
             + $this->texts('studio_support_tickets'), $refs);
         $this->scopeRow('studio_support_ticket_messages', ['visibility' => 'public', 'is_internal' => 0] + $this->texts('studio_support_ticket_messages'), ['ticket_id' => $ticket, 'user_id' => $userId, 'author_id' => $userId]);
         $this->pdo->prepare('UPDATE settings SET access_app = 1')->execute();
-        // Sem o aceite dos termos (ADR 0600, etapa 2), toda tela levaria a /termos.
+        // Sem o aceite dos termos (ADR 0603, etapa 2), toda tela levaria a /termos.
         (new PrivacyCenter($this->pdo))->accept($userId, 'app');
 
         $user = (new User())->findById($userId);

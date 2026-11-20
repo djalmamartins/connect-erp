@@ -239,7 +239,7 @@
                     </div>
 
 
-                    <!-- LGPD (ADR 0600): ciência da política obrigatória; novidades à parte, opcional e desmarcada -->
+                    <!-- LGPD (ADR 0603): ciência da política obrigatória; novidades à parte, opcional e desmarcada -->
                     <div class="proposal-form-group proposal-form-group-full proposal-consents">
                         <label class="proposal-consent">
                             <input type="checkbox" name="privacy" value="1" required>
@@ -392,7 +392,7 @@
             </div>
 
             <div class="number-content">
-                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0600 */ ?>
+                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0603 */ ?>
                 <strong>App</strong>
                 <span>Portal e aplicativo<br>para moradores</span>
             </div>

@@ -57,7 +57,7 @@ final class AppScreens extends Controller
     public const TABS = ['home', 'resolve', 'unit', 'profile'];
     /** Páginas fora do menu e a aba que fica acesa nelas. */
     private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile', 'welcome' => 'home', 'terms' => 'profile', 'privacy' => 'profile'];
-    /** Sessão: versão dos termos já aceita, para não consultar o banco a cada tela (ADR 0600). */
+    /** Sessão: versão dos termos já aceita, para não consultar o banco a cada tela (ADR 0603). */
     private const TERMS_SESSION = 'resident_terms_ok';
     /** A tela dos termos (e o POST do aceite) abre sem o aceite; o resto do app leva a ela. */
     private bool $termsScreen = false;
@@ -126,7 +126,7 @@ final class AppScreens extends Controller
         }, '/boas-vindas');
     }
 
-    /** GET /termos — aceite dos Termos e da Política (LGPD, ADR 0600). */
+    /** GET /termos — aceite dos Termos e da Política (LGPD, ADR 0603). */
     public function terms(): void
     {
         $this->termsScreen = true;
@@ -775,7 +775,7 @@ final class AppScreens extends Controller
     }
 
     /**
-     * Sem o aceite da versão atual dos Termos e da Política, só a própria tela de aceite e a saída abrem (ADR 0600).
+     * Sem o aceite da versão atual dos Termos e da Política, só a própria tela de aceite e a saída abrem (ADR 0603).
      * O resultado fica na sessão; a versão nova invalida a sessão antiga pelo valor guardado.
      */
     private function termsAccepted(User $user): bool

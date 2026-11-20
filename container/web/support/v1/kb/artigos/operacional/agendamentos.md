@@ -4,7 +4,7 @@ titulo: Agendar mudanças
 resumo: Mudanças de entrada e saída, por dia e período. Só cabe um agendamento por período e dia em cada condomínio, seguindo as regras da configuração de mudança.
 categoria: operacional
 rota: /operacional/agendamentos
-menu: Operacional > Rotina > Agendamentos
+menu: Agenda > Mudanças > Agendamentos
 icone: list-outline
 situacao: funciona
 relacionados: mudancas, contratos, configuracoes, seguros
@@ -16,7 +16,7 @@ Mudanças de entrada e saída, por dia e período. Só cabe um agendamento por p
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Agendamentos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Mudanças > Agendamentos]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela agendamentos
 rota: /operacional/agendamentos

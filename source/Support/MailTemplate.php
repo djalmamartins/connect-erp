@@ -53,7 +53,7 @@ final class MailTemplate
         if ($address !== '' && $const('CONF_SITE_ADDR_ZIPCODE') !== '') {
             $address .= ', CEP ' . $const('CONF_SITE_ADDR_ZIPCODE');
         }
-        // CNPJ das Configurações do Studio (ADR 0600); o CONNECT_CNPJ do .env (ADR 0397) fica como reserva.
+        // CNPJ das Configurações do Studio (ADR 0603); o CONNECT_CNPJ do .env (ADR 0397) fica como reserva.
         $cnpj = $const('CONF_SITE_CNPJ') !== '' ? $const('CONF_SITE_CNPJ') : trim((string)(getenv('CONNECT_CNPJ') ?: ''));
         return [
             'site_name' => $const('CONF_SITE_NAME') !== '' ? $const('CONF_SITE_NAME') : 'Connect',

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Source\Services\Privacy;
 
 /**
- * Versões da política de privacidade, dos termos de uso e do banner de cookies (ADR 0600).
+ * Versões da política de privacidade, dos termos de uso e do banner de cookies (ADR 0603).
  *
  * O texto fica no código (pages/legal/*.php), não no Studio, para que cada aceite aponte para um texto que não muda depois.
  * Ao mudar o sentido de um texto, troque a versão aqui: quem aceitou a versão anterior aceita de novo na próxima entrada
- * (etapa 2 do ADR 0600) e o banner volta a perguntar quando muda COOKIES.
+ * (etapa 2 do ADR 0603) e o banner volta a perguntar quando muda COOKIES.
  */
 final class LegalDocuments
 {

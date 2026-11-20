@@ -637,7 +637,7 @@ $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source
 $route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
-// LGPD (ADR 0600): aceite dos termos, novidades e pedidos do titular.
+// LGPD (ADR 0603): aceite dos termos, novidades e pedidos do titular.
 $route->get("/resident/privacy", "ResidentApp:privacy", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/privacy/accept", "ResidentApp:privacyAccept", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/privacy/marketing", "ResidentApp:privacyMarketing", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

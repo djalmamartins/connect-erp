@@ -4,7 +4,7 @@ titulo: Abrir e acompanhar chamados
 resumo: Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do Help Desk, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.
 categoria: operacional
 rota: /operacional/chamados
-menu: Operacional > Rotina > Chamados
+menu: Agenda > Atendimento > Chamados
 icone: list-outline
 situacao: funciona
 relacionados: pedir-ajuda, ocorrencias, vistorias, manutencoes, chamados-do-whatsapp
@@ -16,7 +16,7 @@ Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Chamados]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Atendimento > Chamados]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela chamados
 rota: /operacional/chamados

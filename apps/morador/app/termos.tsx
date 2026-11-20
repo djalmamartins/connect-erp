@@ -11,7 +11,7 @@ import { dialog } from '../src/ui/Dialog';
 import { Body, Button, Card, Screen } from '../src/ui/kit';
 
 /**
- * Aceite dos Termos de Uso e da Política de Privacidade (LGPD, ADR 0600). Aparece no primeiro acesso e quando a
+ * Aceite dos Termos de Uso e da Política de Privacidade (LGPD, ADR 0603). Aparece no primeiro acesso e quando a
  * versão muda; o aceite fica registrado no servidor (data, versão e canal). Novidades é outra caixa, opcional.
  */
 export default function Termos() {

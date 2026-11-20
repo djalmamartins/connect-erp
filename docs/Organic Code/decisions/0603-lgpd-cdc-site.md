@@ -1,4 +1,4 @@
-# 0600 — LGPD e CDC no site: rastreadores, cookies, aceite na proposta, identificação e textos
+# 0603 — LGPD e CDC no site: rastreadores, cookies, aceite na proposta, identificação e textos
 
 - Status: Aceito (etapa 1 de 2; a etapa 2 traz o aceite dos termos nas contas e o pedido do titular)
 - Data: 20/11/2026
@@ -7,7 +7,7 @@
   avaliações falsas, promessas, acessibilidade). Auditoria item a item no documento "LGPD e CDC: o que falta no Connect ERP".
 - Relacionadas: ADR 0350 (registro das operações), 0328/0330/0332 (relatório e anonimização), 0397 (layout dos e-mails),
   0141 (Central de Ajuda)
-- Numeração: primeira avulsa da nova faixa 0600–0799 (0300–0399 esgotada).
+- Numeração: 0603, avulsa da faixa 0600–0799 (0600 ficou com o boleto único por responsável; 0601 e 0602 já estavam em uso).
 
 ## Contexto (CONFIRMADO no código da main 0c0f4f4)
 

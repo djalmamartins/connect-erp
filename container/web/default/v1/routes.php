@@ -5,11 +5,12 @@ $route->namespace("Source\Controllers\Web\Connect");
  */
 $route->group("");
 $route->get("/", "Web:home");
+$route->get("/sitemap.xml", "Web:sitemap");
 $route->get("/solicite-sua-proposta", "Web:sales");
 $route->post("/solicite-sua-proposta", "Web:proposalSubmit");
 $route->get("/politica-de-privacidade", "Web:legal");
 $route->get("/termos-de-uso", "Web:legal");
-$route->post("/cookies", "Web:cookieConsent"); // prova da escolha do banner de cookies (ADR 0600)
+$route->post("/cookies", "Web:cookieConsent"); // prova da escolha do banner de cookies (ADR 0603)
 
 //password recovery (link do e-mail: /forget/{token}, sem e-mail na URL)
 $route->get("/forget", "Web:forget");

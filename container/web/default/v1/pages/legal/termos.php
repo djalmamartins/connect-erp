@@ -1,6 +1,6 @@
 <?php
 /*
- * Termos de Uso, versão Source\Services\Privacy\LegalDocuments::TERMS (ADR 0600).
+ * Termos de Uso, versão Source\Services\Privacy\LegalDocuments::TERMS (ADR 0603).
  * RASCUNHO TÉCNICO: revisar com advogado antes da produção. Sem cláusula que exclua direito do consumidor (CDC, art. 51).
  * Mudou o sentido? Troque LegalDocuments::TERMS: quem já aceitou aceita de novo na próxima entrada.
  */
