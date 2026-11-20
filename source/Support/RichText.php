@@ -31,7 +31,7 @@ final class RichText
     {
         $value = (string)$value;
         if (!self::isHtml($value)) {
-            return nl2br(htmlspecialchars($value, ENT_QUOTES, 'UTF-8'), false);
+            return nl2br(htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
         }
         return RichHtml::clean($value, true);
     }

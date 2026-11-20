@@ -26,7 +26,7 @@ final class RichTextTest extends TestCase
 
     public function testOldPlainTextStaysReadable(): void
     {
-        self::assertSame("linha &lt;1&gt;<br>\nduas", RichText::html("linha <1>\nduas"));
+        self::assertSame("linha &lt;1&gt;<br />\nduas", RichText::html("linha <1>\nduas"));
         self::assertSame("linha <1>\nduas", RichText::plain("linha <1>\nduas"));
     }
 

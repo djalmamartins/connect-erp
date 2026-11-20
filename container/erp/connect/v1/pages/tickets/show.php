@@ -49,12 +49,12 @@ $this->insert('components/layout/page-head', [
             <ol class="erp-ticket-thread">
                 <li class="erp-ticket-msg erp-ticket-msg--requester">
                     <header><strong><?= $this->e($ticket['requester']['name'] ?? 'Solicitante') ?></strong><small>Abriu o chamado · <?= $when($ticket['created_at']) ?></small></header>
-                    <div class="erp-rich-text"><?= $ticket['message_html'] /* RichText::html, já limpo (ADR 0610) */ ?></div>
+                    <div class="erp-rich-text"><?= $ticket['message_html'] ?? \Source\Support\RichText::html((string)($ticket['message'] ?? '')) /* já limpo (ADR 0610) */ ?></div>
                 </li>
                 <?php foreach ($messages as $message): ?>
                     <li class="erp-ticket-msg <?= !empty($message['internal']) ? 'erp-ticket-msg--internal' : ($message['from_team'] ? 'erp-ticket-msg--team' : 'erp-ticket-msg--requester') ?>">
                         <header><strong><?= $this->e($message['author']) ?></strong><small><?= !empty($message['internal']) ? 'Nota interna' : ($message['from_team'] ? 'Equipe Connect' : 'Solicitante') ?> · <?= $when($message['created_at']) ?></small></header>
-                        <div class="erp-rich-text"><?= $message['message_html'] /* RichText::html, já limpo (ADR 0610) */ ?></div>
+                        <div class="erp-rich-text"><?= $message['message_html'] ?? \Source\Support\RichText::html((string)($message['message'] ?? '')) /* já limpo (ADR 0610) */ ?></div>
                         <?php if ($message['attachments'] !== []): ?>
                             <footer><?php foreach ($message['attachments'] as $file): ?><a href="<?= $this->e($file['url']) ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?><?= $this->e($file['name']) ?></a><?php endforeach; ?></footer>
                         <?php endif; ?>

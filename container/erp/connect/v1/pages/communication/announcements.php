@@ -74,7 +74,7 @@ $this->insert('components/layout/page-head', [
             <?php endif; ?>
             <?php if ($a['kind'] === 'general' && ($a['body'] ?? null) !== null): ?>
                 <h3 class="erp-comm-subtitle">Texto</h3>
-                <div class="erp-comm-body erp-rich-text"><?= (string)($a['body_html'] ?? '') /* RichText::html, já limpo (ADR 0610) */ ?></div>
+                <div class="erp-comm-body erp-rich-text"><?= (string)($a['body_html'] ?? \Source\Support\RichText::html((string)($a['body'] ?? ''))) /* já limpo (ADR 0610) */ ?></div>
             <?php else: ?>
                 <p class="erp-muted">Cada unidade recebe a quantidade de contas vencidas, o valor sem encargos e o vencimento mais antigo, como estavam na data do aviso.</p>
             <?php endif; ?>
