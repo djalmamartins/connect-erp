@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Erp\Connect;
 
-use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
@@ -69,10 +68,10 @@ final class AssemblyScreens
                     $pdo = Connect::getInstance();
                     $condominium = (int)$detail['condominium_id'];
                     if ($kind === 'manage' && $canManage && $detail['status'] === 'open') {
-                        $data['assemblyUnits'] = self::absentUnits($pdo, $condominium, $selected);
-                        $data['assemblyDocuments'] = self::documents($pdo, $condominium);
+                        $data['assemblyUnits'] = (new Assemblies($pdo))->absentUnits($condominium, $selected);
+                        $data['assemblyDocuments'] = (new Assemblies($pdo))->documents($condominium);
                     } elseif ($kind === 'voting' && $canManage && $detail['status'] === 'open') {
-                        $data['assemblyVoters'] = self::voters($pdo, $selected, self::votingItem($detail['items']));
+                        $data['assemblyVoters'] = (new Assemblies($pdo))->voters($selected, self::votingItem($detail['items']));
                     } elseif ($kind === 'attendance') {
                         $data['assemblyReport'] = $service->attendanceReport($user, $selected, Access::can('erp.agreements.view', $user));
                     } elseif ($kind === 'results') {
@@ -161,33 +160,6 @@ final class AssemblyScreens
         return $time === false ? '—' : date('d/m/Y H:i', $time);
     }
 
-    /** @return list<array{id:int, label:string}> unidades ativas do condomínio ainda sem presença na assembleia */
-    private static function absentUnits(PDO $pdo, int $condominium, int $assembly): array
-    {
-        $stmt = $pdo->prepare("SELECT u.id, u.label FROM erp_units u WHERE u.condominium_id = :c AND u.deleted_at IS NULL AND u.status = 'active'
-            AND NOT EXISTS (SELECT 1 FROM erp_assembly_attendance t WHERE t.assembly_id = :a AND t.unit_id = u.id) ORDER BY u.label LIMIT " . Assemblies::MAX_ATTENDANCE);
-        $stmt->execute(['c' => $condominium, 'a' => $assembly]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label']], $stmt->fetchAll(PDO::FETCH_ASSOC));
-    }
 
-    /** @return list<array{id:int, label:string}> arquivos do Disco Virtual do condomínio, para a procuração */
-    private static function documents(PDO $pdo, int $condominium): array
-    {
-        $stmt = $pdo->prepare('SELECT id, title FROM erp_documents WHERE condominium_id = :c AND deleted_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 200');
-        $stmt->execute(['c' => $condominium]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['title']], $stmt->fetchAll(PDO::FETCH_ASSOC));
-    }
 
-    /**
-     * Unidades presentes com direito a voto e se já votaram no item em votação.
-     *
-     * @return list<array{id:int, label:string, voted:bool}>
-     */
-    private static function voters(PDO $pdo, int $assembly, ?int $item): array
-    {
-        $stmt = $pdo->prepare('SELECT u.id, u.label, EXISTS (SELECT 1 FROM erp_assembly_votes v WHERE v.item_id = :i AND v.unit_id = u.id) AS voted
-            FROM erp_assembly_attendance t JOIN erp_units u ON u.id = t.unit_id WHERE t.assembly_id = :a AND t.eligible = 1 ORDER BY u.label LIMIT ' . Assemblies::MAX_ATTENDANCE);
-        $stmt->execute(['a' => $assembly, 'i' => $item ?? 0]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label'], 'voted' => (bool)$r['voted']], $stmt->fetchAll(PDO::FETCH_ASSOC));
-    }
 }

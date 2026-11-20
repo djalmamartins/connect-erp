@@ -695,4 +695,34 @@ final class Assemblies
             'opened_at' => $r['opened_at'], 'closed_at' => $r['closed_at'], 'cancel_reason' => $r['cancel_reason'],
         ];
     }
+
+    /** @return list<array{id:int, label:string}> unidades ativas do condomínio ainda sem presença na assembleia */
+    public function absentUnits(int $condominium, int $assembly): array
+    {
+        $stmt = $this->pdo->prepare("SELECT u.id, u.label FROM erp_units u WHERE u.condominium_id = :c AND u.deleted_at IS NULL AND u.status = 'active'
+            AND NOT EXISTS (SELECT 1 FROM erp_assembly_attendance t WHERE t.assembly_id = :a AND t.unit_id = u.id) ORDER BY u.label LIMIT " . self::MAX_ATTENDANCE);
+        $stmt->execute(['c' => $condominium, 'a' => $assembly]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /** @return list<array{id:int, label:string}> arquivos do Disco Virtual do condomínio, para a procuração */
+    public function documents(int $condominium): array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, title FROM erp_documents WHERE condominium_id = :c AND deleted_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 200');
+        $stmt->execute(['c' => $condominium]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['title']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Unidades presentes com direito a voto e se já votaram no item em votação.
+     *
+     * @return list<array{id:int, label:string, voted:bool}>
+     */
+    public function voters(int $assembly, ?int $item): array
+    {
+        $stmt = $this->pdo->prepare('SELECT u.id, u.label, EXISTS (SELECT 1 FROM erp_assembly_votes v WHERE v.item_id = :i AND v.unit_id = u.id) AS voted
+            FROM erp_assembly_attendance t JOIN erp_units u ON u.id = t.unit_id WHERE t.assembly_id = :a AND t.eligible = 1 ORDER BY u.label LIMIT ' . self::MAX_ATTENDANCE);
+        $stmt->execute(['a' => $assembly, 'i' => $item ?? 0]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => (string)$r['label'], 'voted' => (bool)$r['voted']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 }

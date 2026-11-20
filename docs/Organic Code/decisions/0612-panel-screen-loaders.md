@@ -25,3 +25,17 @@ Em 20/11/2026 o Djalma escolheu, no cartão de decisão, começar a melhoria de 
 - `Panel.php` cai para cerca de 720 linhas. Nenhuma tela, rota, permissão, consulta ou migration mudou.
 - Teste novo `ErpPanelScreensTest`; os testes que liam o código do Panel passam a ler a classe nova.
 - Página nova com dados reais entra numa `*Screens` e na lista `Panel::SCREENS`, nunca dentro do Panel.
+
+## Parte 2 — SQL fora dos controllers (20/11/2026)
+1. Visualizações e votos dos artigos da Central de Ajuda estavam copiados em `Web::supportArticle/supportVote` e
+   `Support::article/vote`. Agora os dois usam `Source\Services\Help\ArticleFeedback` (`countView`, `vote`,
+   `visitorHash`), com a mesma regra: um voto por visitante, troca corrige os dois contadores, numa transação.
+2. As consultas de apoio das telas foram para o serviço do módulo, sem mudar o SQL: unidades ausentes, documentos e
+   votantes da assembleia (`Assemblies`), usuários elegíveis a parceiro (`PartnerAccess`), moradores para convite
+   (`ResidentInvitations`) e unidades das entregas (`DeliveryLog`).
+3. Os condomínios do escopo em Acessos e Administração usam `CondominiumScope::allowed()`, no lugar de duas cópias
+   da mesma consulta.
+- Teste novo `ArticleFeedbackIntegrationTest`. Integração completa (701) passou num MariaDB local.
+- PENDENTE (próximas fatias): consultas de `SettingsScreens`, `PatrimonialEntryScreens` e `EntryShortcutScreens`, a
+  busca e os chamados de `Web/Support/Support.php` e as 66 consultas do `Studio.php` (usuários, permissões e logs:
+  só mover, sem mudar regra).
