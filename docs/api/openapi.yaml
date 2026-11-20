@@ -78,6 +78,9 @@ components:
         resolved_at: { type: string, nullable: true }
         created_at: { type: string }
         occurrence_id: { type: integer, nullable: true, description: Ocorrência do ERP ligada ao chamado (ADR 0305) }
+    TalkPageMeta:
+      type: object
+      properties: { page: { type: integer }, per_page: { type: integer }, total: { type: integer } }
     Error:
       type: object
       required: [error]
@@ -7759,6 +7762,75 @@ paths:
                       condominiums: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string } } } }
         '401': { description: Token ausente, inválido, revogado, vencido ou de IP fora da lista, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { description: Passou do limite do token (Retry-After), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/condominiums:
+    get:
+      operationId: talkCondominiums
+      tags: [Talk]
+      summary: Condomínios ativos que o usuário de integração atende (ADR 0624, condominiums.read)
+      description: Só nome, bairro, cidade e UF. Sem CNPJ, sem dados bancários e sem síndico. 50 por página.
+      security: [{ talkIntegration: [] }]
+      parameters: [{ name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }]
+      responses:
+        '200': { description: Condomínios, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, district: { type: [string, 'null'] }, city: { type: [string, 'null'] }, state: { type: [string, 'null'] } } } }, meta: { $ref: '#/components/schemas/TalkPageMeta' } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo condominiums.read (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: Passou do limite do token, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/condominiums/{id}:
+    get:
+      operationId: talkCondominium
+      tags: [Talk]
+      summary: Endereço do condomínio e áreas comuns que aceitam reserva (condominiums.read)
+      description: Fora do escopo do usuário de integração, inativo ou inexistente = 404, sem dizer qual.
+      security: [{ talkIntegration: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Condomínio
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+                      address: { type: object, properties: { zip_code: { type: [string, 'null'] }, street: { type: [string, 'null'] }, number: { type: [string, 'null'] }, complement: { type: [string, 'null'] }, district: { type: [string, 'null'] }, city: { type: [string, 'null'] }, state: { type: [string, 'null'] }, short: { type: string, example: 'Av. Brasil, 120 · Campinas/SP' } } }
+                      common_areas: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, booking_mode: { type: string }, capacity: { type: [integer, 'null'] }, fee_cents: { type: [integer, 'null'] }, opening_time: { type: [string, 'null'], example: '08:00' }, closing_time: { type: [string, 'null'] }, rules: { type: string } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo condominiums.read, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Condomínio não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/condominiums/{id}/units:
+    get:
+      operationId: talkCondominiumUnits
+      tags: [Talk]
+      summary: Unidades ativas do condomínio, só bloco e número (condominiums.read)
+      description: Para o Talk conferir "qual o seu apartamento?". Nunca traz quem mora na unidade. 200 por página.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: Unidades, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, block: { type: [string, 'null'] }, number: { type: string }, label: { type: string, example: 'A - 101' }, type: { type: string, enum: [apartamento, casa, sala, loja, garagem, outro] } } } }, meta: { $ref: '#/components/schemas/TalkPageMeta' } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo condominiums.read, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Condomínio não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/condominiums/{id}/announcements:
+    get:
+      operationId: talkCondominiumAnnouncements
+      tags: [Talk]
+      summary: Comunicados publicados para todo o condomínio, mais novos primeiro (condominiums.read)
+      description: Só os de audiência "todos", já liberados e não cancelados; o texto vai sem HTML. Os enviados a algumas unidades ficam para a consulta por morador. 50 por página.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        '200': { description: Comunicados, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, subject: { type: string }, body: { type: string }, published_at: { type: string } } } }, meta: { $ref: '#/components/schemas/TalkPageMeta' } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo condominiums.read, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Condomínio não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /tickets:
     get:
       operationId: listTickets
