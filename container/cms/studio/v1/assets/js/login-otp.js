@@ -1,5 +1,5 @@
 /**
- * Código da verificação em duas etapas em 6 campos (ADR 0603).
+ * Código da verificação em duas etapas em 6 campos (ADR 0620).
  * Cada campo guarda um dígito, avança sozinho, aceita colar o código inteiro,
  * apaga voltando e, completo, junta os dígitos no campo "code" e envia.
  * O envio continua com o login.js (AJAX); este arquivo só monta o valor.
