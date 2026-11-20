@@ -26,6 +26,10 @@ final class RichTextTest extends TestCase
 
     public function testOldPlainTextStaysReadable(): void
     {
+        $canary = '"\'></script><i data-xss>x';
+        self::assertSame(htmlspecialchars($canary, ENT_QUOTES, 'UTF-8'), RichText::html($canary), 'texto antigo com "<" sai escapado');
+        self::assertSame($canary, RichText::plain($canary));
+        self::assertSame('<p><strong>Olá</strong> mundo</p>', RichText::store('<strong>Olá</strong> mundo'), 'o que sai do editor começa com bloco');
         self::assertSame("linha &lt;1&gt;<br />\nduas", RichText::html("linha <1>\nduas"));
         self::assertSame("linha <1>\nduas", RichText::plain("linha <1>\nduas"));
     }

@@ -12,7 +12,17 @@ namespace Source\Support;
  */
 final class RichText
 {
+    /**
+     * Gravado pelo editor: o store() sempre começa com um bloco (<p>, <ul>...). Texto antigo que só contém um "<"
+     * no meio continua texto e sai escapado.
+     */
     public static function isHtml(?string $value): bool
+    {
+        return (bool)preg_match('~^\s*<(p|div|ul|ol|blockquote|pre|h[1-6])\b[^>]*>~i', (string)$value);
+    }
+
+    /** O que chega do formulário parece HTML do editor (qualquer marcação de texto). */
+    public static function looksLikeHtml(?string $value): bool
     {
         return (bool)preg_match('~</?(p|br|div|strong|b|em|i|u|s|del|a|ul|ol|li|blockquote|pre|code|span|sub|sup|h[1-6])\b[^>]*>~i', (string)$value);
     }
@@ -20,10 +30,13 @@ final class RichText
     public static function store(?string $value): string
     {
         $value = trim((string)$value);
-        if (!self::isHtml($value)) {
+        if (!self::looksLikeHtml($value)) {
             return trim(strip_tags($value));
         }
         $clean = trim(RichHtml::clean($value, true));
+        if (!self::isHtml($clean)) {
+            $clean = '<p>' . $clean . '</p>'; // começa com bloco, para isHtml() reconhecer na leitura
+        }
         return self::plain($clean) === '' ? '' : $clean;
     }
 

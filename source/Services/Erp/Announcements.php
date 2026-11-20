@@ -88,7 +88,7 @@ final class Announcements
      */
     public static function richText(mixed $value, int $min, int $max, string $what): string
     {
-        if (!is_string($value) || !\Source\Support\RichText::isHtml($value)) {
+        if (!is_string($value) || !\Source\Support\RichText::looksLikeHtml($value)) {
             return self::text($value, $min, $max, $what);
         }
         $html = \Source\Support\RichText::store($value);
