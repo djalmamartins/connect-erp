@@ -49,7 +49,7 @@ class Email
         $this->mail->Password = CONF_MAIL_PASS;
     }
 
-    /** Tempo máximo de conexão com o SMTP (o padrão do PHPMailer é 300 s); usado no teste da tela (ADR 0600). */
+    /** Tempo máximo de conexão com o SMTP (o padrão do PHPMailer é 300 s); usado no teste da tela (ADR 0602). */
     public function timeout(int $seconds): Email
     {
         $this->mail->Timeout = max(5, $seconds);

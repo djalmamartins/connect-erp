@@ -82,7 +82,7 @@ final class OversizedPostTest extends TestCase
             . "\$limit = Source\\Support\\OversizedPost::limit(\$_SERVER, \$_POST, \$_FILES, ini_get('post_max_size'));\n"
             . "echo \$limit === null ? 'recebido:' . count(\$_POST) : 'descartado:' . \$limit;\n");
         $port = random_int(20000, 40000);
-        $proc = proc_open([PHP_BINARY, '-d', 'post_max_size=1K', '-S', '127.0.0.1:' . $port, '-t', $dir], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+        $proc = proc_open([PHP_BINARY, '-d', 'post_max_size=1K', '-d', 'display_errors=0', '-S', '127.0.0.1:' . $port, '-t', $dir], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
         try {
             $post = static function (string $body) use ($port): string {
                 for ($i = 0; $i < 50; $i++) {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Source\Support;
 
 /**
- * Regras da tela de Configurações do Studio (ADR 0600): validação dos campos de sistema e
+ * Regras da tela de Configurações do Studio (ADR 0602): validação dos campos de sistema e
  * resumo do e-mail para a tela, sem nunca devolver usuário ou senha.
  */
 final class SystemSettingsRules

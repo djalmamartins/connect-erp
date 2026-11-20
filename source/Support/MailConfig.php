@@ -9,7 +9,7 @@ namespace Source\Support;
  * tabela settings. A tabela fica só como valor legado para o que o ambiente não definir, e a
  * senha nunca precisa morar no banco.
  *
- * Tela de Configurações do Studio (ADR 0600): quando o usuário e a senha SMTP vêm da tela, eles são
+ * Tela de Configurações do Studio (ADR 0602): quando o usuário e a senha SMTP vêm da tela, eles são
  * gravados cifrados (AES-256-GCM, chave CONNECT_2FA_KEY) com o prefixo "enc1:". Valor antigo sem o
  * prefixo continua lido como estava até a próxima gravação.
  */

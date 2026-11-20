@@ -9,7 +9,7 @@ use Source\Support\MailConfig;
 use Source\Support\SecretBox;
 use Source\Support\SystemSettingsRules;
 
-/** ADR 0600: configuração geral no Studio, usuário/senha SMTP cifrados, AWS SES e e-mail de teste. */
+/** ADR 0602: configuração geral no Studio, usuário/senha SMTP cifrados, AWS SES e e-mail de teste. */
 final class SystemSettingsTest extends TestCase
 {
     private function box(): SecretBox

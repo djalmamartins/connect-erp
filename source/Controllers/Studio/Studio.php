@@ -1816,7 +1816,7 @@ class Studio extends Controller
             foreach (["view_theme" => ["web", $themes["site"]], "view_support" => ["web", $themes["support"]], "view_upkeep" => ["web", $themes["site"]], "view_app" => ["residents", $themes["app"]], "view_erp" => ["erp", $themes["erp"]]] as $field => [$area, $available]) {
                 if (!array_key_exists($field, $data)) continue;
                 $chosen = trim((string)($data[$field] ?? ""));
-                // Valor que já estava salvo (inclusive nome antigo, como connect_by_moves) continua aceito (ADR 0600).
+                // Valor que já estava salvo (inclusive nome antigo, como connect_by_moves) continua aceito (ADR 0602).
                 if ($chosen === (string)($settings->{$field} ?? "") || in_array($chosen, $available, true) || in_array(moves_container_theme($area, strtolower($chosen)), $available, true)) continue;
                 $this->jsonMessage("O template selecionado em {$field} não existe.", "warning");
                 return;
@@ -1830,7 +1830,7 @@ class Studio extends Controller
                 if (!array_key_exists($field, $data)) continue;
                 if (in_array($field, $secrets, true) && trim((string)($data[$field] ?? "")) === "") continue;
                 if (in_array($field, \Source\Support\MailConfig::SEALED, true)) {
-                    // Usuário e senha SMTP: nunca em texto puro no banco (ADR 0600). Senha sem trim/strip_tags: pode ter espaço ou "<".
+                    // Usuário e senha SMTP: nunca em texto puro no banco (ADR 0602). Senha sem trim/strip_tags: pode ter espaço ou "<".
                     $secret = $field === "mail_pass" ? (string)$data[$field] : trim((string)$data[$field]);
                     if (strlen($secret) > \Source\Support\MailConfig::SECRET_MAX_LENGTH) { $this->jsonMessage("Usuário ou senha SMTP longos demais (máximo " . \Source\Support\MailConfig::SECRET_MAX_LENGTH . " caracteres sem acento).", "warning"); return; }
                     if ($box === null) { $this->jsonMessage("Para guardar usuário e senha do e-mail, a chave CONNECT_2FA_KEY precisa estar no .env do servidor. Nada foi salvo.", "error"); return; }
@@ -1885,7 +1885,7 @@ class Studio extends Controller
     }
 
     /**
-     * Botão "Enviar e-mail de teste" das Configurações (ADR 0600): manda direto pelo SMTP salvo
+     * Botão "Enviar e-mail de teste" das Configurações (ADR 0602): manda direto pelo SMTP salvo
      * (sem a fila) e confere SPF/DKIM/DMARC do domínio do remetente. No máximo 5 por 10 minutos.
      */
     private function settingsMailTest(User $user, array $data): void
@@ -2126,7 +2126,7 @@ class Studio extends Controller
     }
 
     /**
-     * Temas das Configurações (ADR 0600): os temas moram em container/{web,app,erp}/{tema}/v1. A lista
+     * Temas das Configurações (ADR 0602): os temas moram em container/{web,app,erp}/{tema}/v1. A lista
      * antiga procurava em container/apps/... e sem o v1, ficava vazia e a tela recusava qualquer gravação.
      * @return array{site: string[], support: string[], app: string[], erp: string[]}
      */

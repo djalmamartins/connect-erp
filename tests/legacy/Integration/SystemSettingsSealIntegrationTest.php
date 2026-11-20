@@ -9,7 +9,7 @@ use Source\Models\Settings\Settings;
 use Source\Support\MailConfig;
 use Source\Support\SecretBox;
 
-/** ADR 0600: senha SMTP da tela gravada cifrada na linha de settings e lida de volta pelo MailConfig. */
+/** ADR 0602: senha SMTP da tela gravada cifrada na linha de settings e lida de volta pelo MailConfig. */
 final class SystemSettingsSealIntegrationTest extends TestCase
 {
     public function testSealedCredentialsRoundTripThroughTheSettingsRow(): void

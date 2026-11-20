@@ -11092,7 +11092,7 @@ html[data-theme="dark"] .studio-v2[data-environment="helpdesk"] .studio-system-p
     scroll-margin-top: 92px;
 }
 
-/* Configurações: aviso de valor vindo do .env e linha do e-mail de teste (ADR 0600). */
+/* Configurações: aviso de valor vindo do .env e linha do e-mail de teste (ADR 0602). */
 .studio-settings-env {
     color: #8a5a00;
     font-weight: 600

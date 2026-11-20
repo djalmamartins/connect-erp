@@ -1,4 +1,4 @@
-# ADR 0600 — Configuração geral do sistema no Studio, com senha SMTP cifrada e e-mail de teste
+# ADR 0602 — Configuração geral do sistema no Studio, com senha SMTP cifrada e e-mail de teste
 
 - Status: Aceito
 - Data: 20/11/2026

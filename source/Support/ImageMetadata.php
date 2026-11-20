@@ -152,13 +152,69 @@ final class ImageMetadata
         };
     }
 
+    /** Orientação do EXIF (1 a 8). Usa a extensão exif quando o PHP tem; senão lê o segmento APP1 direto (o PHP do lab não tem exif). */
+    public static function orientation(string $file): int
+    {
+        if (function_exists('exif_read_data')) {
+            $exif = @exif_read_data($file);
+            return (int)(is_array($exif) ? ($exif['Orientation'] ?? 1) : 1);
+        }
+        $bytes = @file_get_contents($file, false, null, 0, 262144);
+        return is_string($bytes) ? self::jpegOrientation($bytes) : 1;
+    }
+
+    /** Lê a tag Orientation (0x0112) do IFD0 do EXIF de um JPEG em bytes; 1 quando não há. */
+    public static function jpegOrientation(string $bytes): int
+    {
+        if (!str_starts_with($bytes, "\xFF\xD8")) {
+            return 1;
+        }
+        $pos = 2;
+        $len = strlen($bytes);
+        while ($pos + 4 <= $len && $bytes[$pos] === "\xFF") {
+            $marker = ord($bytes[$pos + 1]);
+            if ($marker === 0xDA || $marker === 0xD9) {
+                break;
+            }
+            $size = unpack('n', substr($bytes, $pos + 2, 2))[1];
+            if ($size < 2) {
+                break;
+            }
+            if ($marker === 0xE1 && substr($bytes, $pos + 4, 6) === "Exif\0\0") {
+                return self::tiffOrientation(substr($bytes, $pos + 10, $size - 8));
+            }
+            $pos += 2 + $size;
+        }
+        return 1;
+    }
+
+    private static function tiffOrientation(string $tiff): int
+    {
+        $order = substr($tiff, 0, 2);
+        if ($order !== 'II' && $order !== 'MM') {
+            return 1;
+        }
+        $short = $order === 'II' ? 'v' : 'n';
+        $long = $order === 'II' ? 'V' : 'N';
+        $read = static function (string $format, int $at, int $size) use ($tiff): ?int {
+            $chunk = substr($tiff, $at, $size);
+            return strlen($chunk) === $size ? (int)unpack($format, $chunk)[1] : null;
+        };
+        $ifd = $read($long, 4, 4);
+        $count = $ifd === null ? null : $read($short, $ifd, 2);
+        for ($i = 0; $count !== null && $i < min($count, 200); $i++) {
+            $entry = $ifd + 2 + $i * 12;
+            if ($read($short, $entry, 2) === 0x0112) {
+                $value = $read($short, $entry + 8, 2);
+                return $value !== null && $value >= 1 && $value <= 8 ? $value : 1;
+            }
+        }
+        return 1;
+    }
+
     private static function orient(\GdImage $image, string $file): \GdImage
     {
-        if (!function_exists('exif_read_data')) {
-            return $image;
-        }
-        $exif = @exif_read_data($file);
-        $angle = self::angle((int)(is_array($exif) ? ($exif['Orientation'] ?? 1) : 1));
+        $angle = self::angle(self::orientation($file));
         if ($angle === 0) {
             return $image;
         }
