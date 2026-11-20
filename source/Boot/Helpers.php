@@ -421,9 +421,6 @@ function moves_container_path(string $area, string $theme): string
     if ($area === 'send' || $area === 'mail') {
         return dirname(__DIR__, 2) . "/container/send/" . moves_send_theme($theme) . "/v1";
     }
-    if ($area === 'talk') {
-        return dirname(__DIR__, 2) . "/container/talk/connect/v1";
-    }
     if ($area === 'residents') {
         return dirname(__DIR__, 2) . "/container/app/" . moves_safe_theme('residents', $theme, 'connect') . "/v1";
     }
