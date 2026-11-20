@@ -46,13 +46,10 @@ final class AnnouncementsIntegrationTest extends TestCase
     {
         $created = $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Limpeza da caixa d’água',
             'body' => "A água será cortada no dia 20, das 8h às 12h.\nObrigado."]);
-        self::assertSame([2, 2], [$created['units_count'], $created['delivery']['pending']]);
-        $summary = $this->dispatcher()->dispatch();
-        self::assertSame(['sandbox', 1, 1], [$summary['mode'], $summary['sent'], $summary['cancelled']], 'A 102 recusou comunicado.');
-        self::assertCount(1, $this->queued);
-        self::assertSame('caixa@mailpit.local', $this->queued[0][2], 'Fora de produção, só a caixa de teste.');
-        self::assertSame('[TESTE] Limpeza da caixa d’água', $this->queued[0][0], 'Assunto do próprio comunicado.');
-        self::assertStringContainsString('cortada no dia 20', $this->queued[0][1]);
+        // ADR 0601: o comunicado fica no app; não vai por e-mail ao morador (o aviso nasce cancelado, como histórico).
+        self::assertSame([2, 0, 2], [$created['units_count'], $created['delivery']['pending'], $created['delivery']['cancelled']]);
+        self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
+        self::assertSame([], $this->queued);
     }
 
     public function testScheduledWaitsAndCancelStopsIt(): void
@@ -65,7 +62,7 @@ final class AnnouncementsIntegrationTest extends TestCase
         self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Agendado não sai antes da hora.');
 
         $cancelled = $this->announcements->cancel($this->admin, $created['id'], 'Assembleia adiada');
-        self::assertSame(['cancelled', 1, 1], [$cancelled['status'], $cancelled['stopped'], $cancelled['delivery']['cancelled']]);
+        self::assertSame(['cancelled', 0, 1], [$cancelled['status'], $cancelled['stopped'], $cancelled['delivery']['cancelled']], 'ADR 0601: já nasce sem e-mail.');
         $this->pdo->exec('UPDATE erp_notification_outbox SET available_at = NOW()');
         self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Cancelado não sai.');
         self::assertSame([], $this->queued);
@@ -78,21 +75,13 @@ final class AnnouncementsIntegrationTest extends TestCase
         }
     }
 
-    public function testCollectionReminderTargetsOverdueOnceAWeek(): void
+    /** ADR 0601: o aviso de cobrança manual por e-mail foi desligado; o de atraso é automático (ResidentChargeNotices). */
+    public function testCollectionReminderIsDisabled(): void
     {
-        $this->service->save($this->admin, 'chart', ['condominium_id' => $this->alpha, 'code' => '1', 'nature' => 'receita', 'kind' => 'sintetica', 'name' => 'Receitas']);
-        $account = $this->service->save($this->admin, 'chart', ['condominium_id' => $this->alpha, 'code' => '1.01', 'nature' => 'receita', 'kind' => 'analitica', 'name' => 'Taxa'])['id'];
-        $this->service->save($this->admin, 'entries', ['condominium_id' => $this->alpha, 'nature' => 'receita', 'chart_account_id' => $account, 'unit_id' => $this->units[0],
-            'description' => 'Taxa 101', 'amount_cents' => '500,00', 'competence' => date('Y-m', strtotime('-2 months')), 'due_on' => date('Y-m-d', strtotime('-40 days'))]);
         $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');
-
-        $reminder = $this->announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
-        self::assertSame(['collection', 1, 0], [$reminder['kind'], $reminder['units_count'], $reminder['skipped_recent']], 'Só a 101 está em atraso.');
-        $this->dispatcher()->dispatch();
-        self::assertStringContainsString('R$ 500,00', $this->queued[0][1]);
-
         $this->expectException(DomainException::class);
-        $this->announcements->collection($this->admin, ['condominium_id' => $this->alpha]);
+        $this->expectExceptionMessage(Announcements::COLLECTION_DISABLED);
+        $this->announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
     }
 
     public function testAddressesMaskEmailAndShowWhoReceives(): void
@@ -117,8 +106,6 @@ final class AnnouncementsIntegrationTest extends TestCase
         $created = $this->announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => "Obra\r\nBcc: x@y.test",
             'body' => 'Texto do comunicado.', 'audience' => 'units', 'unit_ids' => [$this->units[0], (string)$this->units[0]]]);
         self::assertSame(['Obra Bcc: x@y.test', 1], [$created['subject'], $created['units_count']], 'Quebra vira espaço; unidade repetida conta uma vez.');
-        $this->dispatcher()->dispatch();
-        self::assertStringNotContainsString("\n", $this->queued[0][0]);
 
         foreach ([['abc'], [0], [], array_fill(0, Announcements::MAX_UNITS + 1, $this->units[0])] as $bad) {
             try {

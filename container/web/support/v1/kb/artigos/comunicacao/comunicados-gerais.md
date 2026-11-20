@@ -1,7 +1,7 @@
 ---
 codigo: AP-111
-titulo: Enviar um comunicado por e-mail
-resumo: Envia um comunicado por e-mail para as unidades do condomínio, como aviso de obra, convocação ou regra nova. Recebem as pessoas ativas com e-mail válido que não recusaram comunicado no cadastro.
+titulo: Publicar um comunicado
+resumo: Publica um comunicado para as unidades do condomínio, como aviso de obra, convocação ou regra nova. O comunicado aparece no app e no portal do morador; ele não vai mais por e-mail, para a caixa do morador receber só boleto, atraso, prestação de contas, convite e senha.
 categoria: comunicacao
 rota: /comunicacao/comunicados-gerais
 menu: Comunicação > Canais > Comunicados Gerais
@@ -12,7 +12,7 @@ palavras: comunicados gerais, comunicação, AP-111
 rascunho: nao
 ---
 
-Envia um comunicado por e-mail para as unidades do condomínio, como aviso de obra, convocação ou regra nova. Recebem as pessoas ativas com e-mail válido que não recusaram comunicado no cadastro.
+Publica um comunicado para as unidades do condomínio, como aviso de obra, convocação ou regra nova. O comunicado aparece no app e no portal do morador; ele não vai mais por e-mail, para a caixa do morador receber só boleto, atraso, prestação de contas, convite e senha.
 
 ## Onde fica
 
@@ -28,7 +28,7 @@ legenda: Tela Comunicados Gerais
 
 ## Novo comunicado
 
-Cada unidade vira um aviso na fila. O **Texto** usa o [editor de texto](artigo:editor-de-texto): negrito, listas e links vão no e-mail; no aplicativo do morador o texto chega sem formatação.
+O comunicado aparece no app e no portal do morador; não vai por e-mail. O **Texto** usa o [editor de texto](artigo:editor-de-texto): no aplicativo do morador o texto chega sem formatação.
 
 1. Preencha **Assunto** e **Texto**.
 2. Clique em {{Enviar comunicado}}.
@@ -49,8 +49,6 @@ recorte: main form:not([method=get])
 - **Texto** (obrigatório): Até 5.000 caracteres.
 
 > Escolha **Agendar** para o comunicado sair numa data e hora; até lá ele aparece em Comunicação > Agendada e pode ser cancelado.
-
-> Confira em **Endereços** quem vai receber antes de enviar.
 
 > Na tela: *Modo só registro: os avisos entram na fila e ficam registrados, mas nenhum e-mail sai. "Enviado" aqui quer dizer processado, não entregue. Ver na Fila de avisos*
 

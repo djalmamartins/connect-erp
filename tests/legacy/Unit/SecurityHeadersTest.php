@@ -29,7 +29,7 @@ final class SecurityHeadersTest extends TestCase
         $index = (string)file_get_contents($root . '/index.php');
         $send = strpos($index, 'SecurityHeaders::send(');
         self::assertNotFalse($send);
-        self::assertLessThan(strpos($index, 'talk_host()'), $send, 'antes do Talk e do roteador');
+        self::assertLessThan(strpos($index, 'new Router('), $send, 'antes do roteador');
         $support = (string)file_get_contents($root . '/source/Controllers/Web/Support/Support.php');
         self::assertStringContainsString('frame-ancestors *', $support);
         self::assertStringContainsString("header_remove('X-Frame-Options')", $support, 'o widget do Help Desk abre dentro de outros sites');
