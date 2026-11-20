@@ -15,6 +15,7 @@ use Source\Support\Access;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
 use Source\Support\Email;
+use Source\Support\MailTemplate;
 
 /**
  * Abertura de chamados (ADR 0034): uma porta só para todas as origens.
@@ -424,7 +425,6 @@ final class TicketService
         $summary = $kind === 'reply'
             ? mb_strimwidth(trim(preg_replace('/\s+/', ' ', (string)$text) ?? ''), 0, 160, '…')
             : "A situação do chamado \"{$ticket['subject']}\" mudou para {$statusLabel}.";
-        $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $category = self::notificationCategory();
 
         $recipients = array_unique(array_filter([(int)($ticket['requester']['user_id'] ?? 0), (int)($row['created_by'] ?? 0)]));
@@ -451,11 +451,17 @@ final class TicketService
                 $notification->save();
             }
             if (is_email((string)$recipient->email)) {
-                $body = '<p>Olá, ' . $e((string)$recipient->first_name) . '.</p>'
-                    . ($kind === 'reply'
-                        ? '<p>A equipe Connect respondeu o chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e((string)$text)) . '</blockquote>'
-                        : '<p>O chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . ') agora está <strong>' . $e($statusLabel) . '</strong>.</p>')
-                    . ($link !== null ? '<p><a href="' . $e($link) . '">Ver o chamado e responder</a></p>' : '');
+                $body = (new MailTemplate())->render('notice', [
+                    'subject' => $title,
+                    'preheader' => $summary,
+                    'first_name' => (string)$recipient->first_name,
+                    'paragraphs' => [$kind === 'reply'
+                        ? "A equipe Connect respondeu o chamado {$protocol} ({$ticket['subject']}):"
+                        : "O chamado {$protocol} ({$ticket['subject']}) agora está {$statusLabel}."],
+                    'quote' => $kind === 'reply' ? (string)$text : '',
+                    'button_label' => $link !== null ? 'Ver o chamado e responder' : '',
+                    'button_link' => (string)($link ?? ''),
+                ]);
                 (new Email())->bootstrap("[{$protocol}] {$title}", $body, $recipient->email, $recipient->fullName())
                     ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, $recipient->id);
             }
@@ -463,11 +469,17 @@ final class TicketService
         // Solicitante sem conta (site, morador informado no ERP): só o e-mail, sem link de sistema.
         if ($ticket['requester']['user_id'] === null && is_email((string)$ticket['requester']['email'])) {
             $name = (string)($ticket['requester']['name'] ?? '');
-            $body = '<p>Olá' . ($name !== '' ? ', ' . $e($name) : '') . '.</p>'
-                . ($kind === 'reply'
-                    ? '<p>Temos uma resposta para o seu chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e((string)$text)) . '</blockquote>'
-                    : '<p>O seu chamado <strong>' . $e($protocol) . '</strong> (' . $e($ticket['subject']) . ') agora está <strong>' . $e($statusLabel) . '</strong>.</p>')
-                . '<p>Para responder, use este e-mail ou fale com a administradora informando o protocolo.</p>';
+            $body = (new MailTemplate())->render('notice', [
+                'subject' => $title,
+                'preheader' => $summary,
+                'first_name' => $name,
+                'paragraphs' => [$kind === 'reply'
+                    ? "Temos uma resposta para o seu chamado {$protocol} ({$ticket['subject']}):"
+                    : "O seu chamado {$protocol} ({$ticket['subject']}) agora está {$statusLabel}."],
+                'quote' => $kind === 'reply' ? (string)$text : '',
+                'note' => 'Para responder, use este e-mail ou fale com a administradora informando o protocolo.',
+                'footer_note' => 'Mensagem do Help Desk da ' . (defined('CONF_SITE_NAME') ? CONF_SITE_NAME : 'Connect') . '. Você pode responder a este e-mail.',
+            ]);
             (new Email())->bootstrap("[{$protocol}] {$title}", $body, (string)$ticket['requester']['email'], $name !== '' ? $name : (string)$ticket['requester']['email'])
                 ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'));
         }
@@ -513,7 +525,6 @@ final class TicketService
         $link = Environments::url('helpdesk', self::helpdeskPath((int)$ticket['id']));
         $title = ($reopened ? 'Chamado reaberto ' : 'Nova mensagem no chamado ') . $ticket['protocol'];
         $summary = mb_strimwidth(trim(preg_replace('/\s+/', ' ', $message) ?? ''), 0, 160, '…');
-        $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         foreach (array_unique(array_filter($recipientIds)) as $recipientId) {
             if ($recipientId === $authorId) {
                 continue;
@@ -535,8 +546,15 @@ final class TicketService
                 $notification->save();
             }
             if (is_email((string)$recipient->email)) {
-                $body = '<p>Olá, ' . $e((string)$recipient->first_name) . '.</p><p>' . $e($title) . ' (' . $e($ticket['subject']) . '):</p><blockquote>' . nl2br($e($message)) . '</blockquote>'
-                    . '<p><a href="' . $e($link) . '">Abrir no Help Desk</a></p>';
+                $body = (new MailTemplate())->render('notice', [
+                    'subject' => $title,
+                    'preheader' => $summary,
+                    'first_name' => (string)$recipient->first_name,
+                    'paragraphs' => ["{$title} ({$ticket['subject']}):"],
+                    'quote' => $message,
+                    'button_label' => 'Abrir no Help Desk',
+                    'button_link' => (string)$link,
+                ]);
                 (new Email())->bootstrap("[{$ticket['protocol']}] {$title}", $body, $recipient->email, $recipient->fullName())
                     ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, $recipient->id);
             }
@@ -703,11 +721,19 @@ final class TicketService
                 $notification->save();
             }
             if (is_email((string)$recipient->email)) {
-                $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-                $body = '<p>Olá, ' . $e((string)$recipient->first_name) . '.</p><p>Foi aberto o chamado <strong>' . $e($protocol) . '</strong>: ' . $e($data['subject']) . '.</p>'
-                    . ($where !== '' ? '<p>' . $e($where) . '</p>' : '')
-                    . '<p>Origem: <strong>' . $e(self::ORIGIN_LABELS[$data['origin']] ?? $data['origin']) . '</strong>. Prioridade: <strong>' . $e($priorityLabel) . '</strong>. Prazo de atendimento: <strong>' . date_fmt($dueAt, 'd/m/Y H:i') . '</strong>.</p>'
-                    . '<p><a href="' . $e($link) . '">Abrir chamado no Help Desk</a></p>';
+                $body = (new MailTemplate())->render('notice', [
+                    'subject' => "Novo chamado {$protocol}",
+                    'preheader' => (string)$data['subject'],
+                    'first_name' => (string)$recipient->first_name,
+                    'paragraphs' => array_values(array_filter(["Foi aberto o chamado {$protocol}: {$data['subject']}.", $where])),
+                    'facts' => [
+                        ['Origem', (string)(self::ORIGIN_LABELS[$data['origin']] ?? $data['origin'])],
+                        ['Prioridade', $priorityLabel],
+                        ['Prazo de atendimento', date_fmt($dueAt, 'd/m/Y H:i')],
+                    ],
+                    'button_label' => 'Abrir chamado no Help Desk',
+                    'button_link' => (string)$link,
+                ]);
                 (new Email())->bootstrap("[{$protocol}] Novo chamado: {$data['subject']}", $body, $recipient->email, $recipient->fullName())
                     ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, $recipient->id);
             }

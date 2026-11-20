@@ -1293,6 +1293,7 @@ paths:
       parameters:
         - { name: condominium_id, in: query, schema: { type: integer }, description: 'Vazio = todos os condomínios do escopo' }
         - { name: status, in: query, schema: { type: string, enum: [pending, registered, rejected, paid, cancelled] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 60 }, description: 'Busca: número do boleto, nosso número (nosso ou do banco), linha digitável, número do lançamento, descrição da conta ou unidade' }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
       responses:
         '200': { description: 'Lista paginada (25 por página)', content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/BankCharge' } }, total: { type: integer }, page: { type: integer }, per_page: { type: integer }, pages: { type: integer } } } } } }

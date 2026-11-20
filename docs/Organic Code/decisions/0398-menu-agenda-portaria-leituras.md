@@ -1,7 +1,7 @@
-# ADR 0397 — Menu novo com Agenda, Portaria e Leituras, guardando o menu atual
+# ADR 0398 — Menu novo com Agenda, Portaria e Leituras, guardando o menu atual
 
 - Status: Aceito
-- Data: 17/11/2026 (renumerada de 0358 em 20/11/2026)
+- Data: 17/11/2026 (renumerada de 0358 e 0397 em 20/11/2026)
 - Relacionados: ADR 0305 (ocorrência é chamado), ADR 0141 (Central de Ajuda), docs/specs/routes.json, tools/erp-catalog.py
 
 ## Contexto

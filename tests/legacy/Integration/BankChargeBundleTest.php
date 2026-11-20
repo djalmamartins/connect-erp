@@ -102,6 +102,9 @@ final class BankChargeBundleTest extends TestCase
         $charges = new BankCharges($this->pdo);
         $first = $charges->issue($this->admin, (int)$byUnit[$this->units['101']], $this->bank);
         self::assertSame(50000, $first['amount_cents']);
+        self::assertSame([1, $first['id']], [($l = $charges->list($this->admin, $this->alpha, ['q' => (string)$first['id']]))['total'], $l['data'][0]['id']], 'Busca pelo número do boleto.');
+        self::assertSame(1, $charges->list($this->admin, $this->alpha, ['q' => $first['our_number']])['total'], 'Busca pelo nosso número.');
+        self::assertSame(0, $charges->list($this->admin, $this->alpha, ['q' => 'nada-assim%'])['total'], 'Curinga do LIKE não vaza.');
 
         $launch = new RevenueLaunch($this->pdo);
         $late = $launch->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'chosen', 'method' => 'fixed', 'amount_cents' => '30,00', 'unit_ids' => [$this->units['101']],

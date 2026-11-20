@@ -450,6 +450,7 @@ $assert(str_contains($html, 'SANDBOX &lt;0001&gt;') && str_contains($html, 'Sem 
 $assert(substr_count($html, 'data-charge-refresh=') === 2 && substr_count($html, 'data-charge-cancel=') === 2 && substr_count($html, 'data-charge-copy=') === 1 && str_contains($html, 'id="charge-issue"') && str_contains($html, 'rel="next"'), 'AP-035: consultar e cancelar só aguardando ou registrado, copiar a linha, emitir e paginação');
 preg_match_all('~\sid="([^"]+)"~', $html, $ids);
 $assert(array_keys(array_filter(array_count_values($ids[1]), static fn (int $n): bool => $n > 1)) === [], 'AP-035: sem ids duplicados');
+$assert(str_contains($html, 'name="busca"') && str_contains($html, '/cobranca/boletos/p/2') && !str_contains($html, 'pagina=') && str_contains($html, 'boleto nº 12'), 'AP-035: busca, paginação em /p/N e número do boleto na linha');
 $html = $bankPage('AP-035', 'pages/finance/bank-charges', ['bankCharges' => ['data' => $charges, 'total' => 4, 'page' => 1, 'per_page' => 25, 'pages' => 1], 'bankReady' => true, 'canManageCharges' => false]);
 $assert(str_contains($html, 'data-charge-copy=') && !str_contains($html, 'data-charge-refresh=') && !str_contains($html, 'data-charge-cancel=') && !str_contains($html, 'id="charge-issue"'), 'AP-035: sem erp.bank_charges.manage só consulta');
 $html = $bankPage('AP-035', 'pages/finance/bank-charges', ['bankCharges' => ['data' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 0], 'bankReady' => true, 'canManageCharges' => true], 'empty');

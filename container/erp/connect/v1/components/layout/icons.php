@@ -39,7 +39,7 @@ return [
     'alert' => '<path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17h.01"/>',
     'info' => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     'check' => '<path d="m5 12 4.5 4.5L19 7"/>',
-    // Medidor (menu Leituras, ADR 0397).
+    // Medidor (menu Leituras, ADR 0398).
     'gauge' => '<path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 18 4-6"/><path d="M12 18h.01"/>',
     'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     'arrow-up' => '<path d="M12 19V5M6 11l6-6 6 6"/>',

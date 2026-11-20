@@ -84,14 +84,18 @@ final class Communication
         return (bool)$stmt->fetchColumn();
     }
 
+    /** Corpo do e-mail na moldura Connect (ADR 0397); o texto é escapado pelo template. */
     private function emailBody(NotificationMessage $message, User $recipient): string
     {
-        $name = htmlspecialchars($recipient->first_name ?: $recipient->fullName(), ENT_QUOTES, "UTF-8");
-        $title = htmlspecialchars($message->title, ENT_QUOTES, "UTF-8");
-        $body = nl2br(htmlspecialchars($message->body, ENT_QUOTES, "UTF-8"));
         $link = $this->safeLink((string)$message->link);
-        $button = $link ? '<p style="margin:28px 0"><a href="' . htmlspecialchars($link, ENT_QUOTES, "UTF-8") . '" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#6E00B3;color:#fff;text-decoration:none;font-weight:700">Ver no MovesOS</a></p>' : '';
-        return '<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f5f3f7;font-family:Arial,sans-serif;color:#242332"><table role="presentation" width="100%"><tr><td style="padding:32px 15px"><table role="presentation" width="100%" style="max-width:620px;margin:auto;background:#fff;border:1px solid #ebe6ee;border-radius:8px"><tr><td style="padding:25px 32px;border-bottom:3px solid #6E00B3"><strong style="font-size:20px;color:#6E00B3">MovesOS</strong><br><small style="color:#777">' . htmlspecialchars(CONF_SITE_NAME, ENT_QUOTES, "UTF-8") . '</small></td></tr><tr><td style="padding:34px 32px"><p style="margin-top:0">Olá, ' . $name . '.</p><h1 style="font-size:22px">' . $title . '</h1><div style="font-size:15px;line-height:1.65;color:#565363">' . $body . '</div>' . $button . '<p style="margin:30px 0 0;color:#8a8490;font-size:12px">Mensagem automática enviada pelo MovesOS.</p></td></tr></table></td></tr></table></body></html>';
+        return (new MailTemplate())->render('notice', [
+            'subject' => (string)$message->title,
+            'preheader' => mb_strimwidth(trim((string)preg_replace('/\s+/', ' ', (string)$message->body)), 0, 120, '…'),
+            'first_name' => (string)($recipient->first_name ?: $recipient->fullName()),
+            'paragraphs' => [(string)$message->body],
+            'button_label' => $link ? 'Ver no sistema' : '',
+            'button_link' => (string)($link ?? ''),
+        ]);
     }
 
     private function safeLink(string $link): ?string

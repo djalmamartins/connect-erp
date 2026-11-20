@@ -40,7 +40,7 @@ final class Banking
     {
         $user = $this->authorize('view');
         if ($user !== null) {
-            $this->run(200, fn () => (new BankCharges())->list($user, $this->int($_GET['condominium_id'] ?? null), ['status' => $_GET['status'] ?? null, 'page' => $_GET['page'] ?? 1]), false);
+            $this->run(200, fn () => (new BankCharges())->list($user, $this->int($_GET['condominium_id'] ?? null), ['status' => $_GET['status'] ?? null, 'q' => $_GET['q'] ?? null, 'page' => $_GET['page'] ?? 1]), false);
         }
     }
 

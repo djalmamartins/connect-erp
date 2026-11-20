@@ -1465,7 +1465,15 @@ class Studio extends Controller
                 $notification->save();
             }
             if (is_email((string)$recipient->email)) {
-                $body = "<p>Olá, " . htmlspecialchars($recipient->first_name, ENT_QUOTES, "UTF-8") . ".</p><p>Há um novo compromisso na agenda: <strong>" . htmlspecialchars($title, ENT_QUOTES, "UTF-8") . "</strong>.</p><p>Tipo: <strong>{$typeLabel}</strong>. Data: <strong>" . date_fmt($startsAt, "d/m/Y H:i") . "</strong>.</p><p><a href=\"" . htmlspecialchars(url("/helpdesk/agenda?month=" . date("Y-m", strtotime($startsAt))), ENT_QUOTES, "UTF-8") . "\">Abrir agenda no MovesOS</a></p>";
+                $body = (new \Source\Support\MailTemplate())->render("notice", [
+                    "subject" => "Novo compromisso na agenda",
+                    "preheader" => "{$typeLabel}: {$title}",
+                    "first_name" => (string)$recipient->first_name,
+                    "paragraphs" => ["Há um novo compromisso na agenda: {$title}."],
+                    "facts" => [["Tipo", (string)$typeLabel], ["Data", date_fmt($startsAt, "d/m/Y H:i")]],
+                    "button_label" => "Abrir a agenda",
+                    "button_link" => url("/helpdesk/agenda?month=" . date("Y-m", strtotime($startsAt))),
+                ]);
                 (new Email())->bootstrap("Novo compromisso: {$title}", $body, $recipient->email, $recipient->fullName())->queue(CONF_MAIL_SENDER["address"], CONF_MAIL_SENDER["name"], date("Y-m-d H:i:s"), null, $recipient->id);
             }
         }
