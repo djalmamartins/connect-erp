@@ -782,42 +782,99 @@ p { margin: 0; }
 .erp-person-link__condo { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .erp-person-link__condo > strong { flex-basis: 100%; font-size: 12px; color: var(--erp-muted); text-transform: uppercase; letter-spacing: .04em; }
 .erp-person-link__condo .is-linked { opacity: .55; text-decoration: line-through; }
-/* Chamado no ERP (CN-004, ADR 0142): conversa com o Help Desk. */
-.erp-ticket-thread { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--erp-space-3); }
-.erp-ticket-msg { padding: var(--erp-space-3) var(--erp-space-4); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); max-width: 92%; }
-.erp-ticket-msg--requester { background: var(--erp-surface-muted); }
-.erp-ticket-msg--team { margin-left: auto; border-color: var(--erp-success-soft); background: var(--erp-success-soft); }
-.erp-ticket-msg header { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-bottom: 6px; }
-.erp-ticket-msg header small { color: var(--erp-muted); font-size: 12px; }
-.erp-ticket-msg p { margin: 0; overflow-wrap: anywhere; }
-.erp-ticket-msg footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 13px; }
-.erp-ticket-msg footer a { display: inline-flex; gap: 4px; align-items: center; }
-.erp-ticket-wait { display: flex; gap: 8px; align-items: center; margin: var(--erp-space-4) 0 0; color: var(--erp-muted); font-size: 13px; }
-.erp-table a.erp-ticket-link { font-weight: 700; }
-.erp-ticket-msg--internal { margin-left: auto; border-color: var(--erp-warning-soft); background: var(--erp-warning-soft); border-style: dashed; }
-/* Fila e atendimento como no Help Desk (ADR 0307), com as cores do ERP. */
+/* Chamados no ERP (CN-004, ADR 0142, 0307 e 0622): a fila e o atendimento com o desenho do Help Desk
+ * (contadores, barra de filtros com o lote ao lado; conversa à esquerda e propriedades à direita), nas cores do ERP. */
 .erp-ticket-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); }
-.erp-ticket-counter { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; }
+.erp-ticket-counter { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); background: var(--erp-surface); color: var(--erp-text); text-decoration: none; box-shadow: var(--erp-shadow-card); }
 .erp-ticket-counter span { color: var(--erp-muted); font-size: 12.5px; }
 .erp-ticket-counter strong { font-size: 22px; line-height: 1.1; }
 .erp-ticket-counter:hover, .erp-ticket-counter.is-active { border-color: var(--erp-brand); box-shadow: inset 0 -3px 0 var(--erp-brand); }
+.erp-ticket-counter.is-active span { color: var(--erp-brand-ink); font-weight: 600; }
 .erp-ticket-counter--late strong { color: var(--erp-danger); }
-.erp-ticket-filters { flex-wrap: wrap; padding: 0 var(--erp-space-5) var(--erp-space-3); }
-.erp-ticket-bulk { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); padding: 0 var(--erp-space-5) var(--erp-space-3); }
+.erp-ticket-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--erp-space-3); padding: var(--erp-space-4) var(--erp-space-5); border-bottom: 1px solid var(--erp-border); }
+.erp-ticket-filters { flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: var(--erp-space-2); padding: 0; border: 0; border-radius: 0; background: none; }
+.erp-ticket-filters .erp-select { width: auto; min-width: 0; max-width: 190px; flex: 0 1 auto; }
+.erp-ticket-filters .erp-btn { flex: none; }
+.erp-ticket-search { position: relative; display: flex; align-items: center; flex: 1 1 220px; min-width: 200px; max-width: 320px; }
+.erp-ticket-search .erp-icon { position: absolute; left: 12px; color: var(--erp-muted); pointer-events: none; }
+.erp-ticket-search .erp-input { width: 100%; padding-left: 36px; }
+.erp-ticket-bulk { display: flex; flex-wrap: nowrap; gap: var(--erp-space-2); align-items: center; margin-left: auto; }
+.erp-ticket-bulk .erp-select { width: auto; min-width: 190px; }
+.erp-ticket-table th, .erp-ticket-table td { padding: 10px 12px; }
+.erp-ticket-table th:first-child, .erp-ticket-table td:first-child { width: 40px; padding-right: 0; }
+.erp-ticket-table td:nth-child(2), .erp-ticket-table td:nth-child(9) { white-space: nowrap; }
+.erp-ticket-table td:nth-child(3) { min-width: 82px; }
+.erp-ticket-table td:nth-child(4) { min-width: 170px; }
+.erp-ticket-cell > * { display: block; line-height: 1.35; }
+.erp-ticket-cell small { margin-top: 2px; color: var(--erp-muted); font-size: 12px; }
+.erp-ticket-cell--subject { min-width: 180px; }
+.erp-ticket-cell--subject .erp-badge { display: inline-flex; width: max-content; margin-top: 4px; }
+.erp-ticket-cell--subject > a:first-child { font-weight: 600; }
 .erp-ticket-table tr.is-overdue td:first-child { box-shadow: inset 3px 0 0 var(--erp-danger); }
-.erp-ticket-composer .erp-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--erp-space-2); align-items: center; }
-.erp-ticket-modes { display: inline-flex; gap: 6px; }
-.erp-ticket-modes .is-active { border-color: var(--erp-brand); color: var(--erp-brand); font-weight: 700; }
+.erp-table a.erp-ticket-link { font-weight: 700; }
+
+.erp-ticket-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--erp-space-5); align-items: start; }
+.erp-ticket-main, .erp-ticket-inspector { display: grid; gap: var(--erp-space-4); min-width: 0; }
+.erp-ticket-thread { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--erp-space-3); }
+.erp-ticket-msg { padding: var(--erp-space-4) var(--erp-space-5); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); }
+.erp-ticket-msg--origin { border-top: 3px solid var(--erp-brand); }
+.erp-ticket-msg--team { border-left: 3px solid var(--erp-brand); }
+.erp-ticket-msg--requester { background: var(--erp-surface-muted); }
+.erp-ticket-msg--internal { border-color: var(--erp-warning); border-style: dashed; background: var(--erp-warning-soft); }
+.erp-ticket-msg header { display: flex; justify-content: space-between; align-items: center; gap: var(--erp-space-3); margin-bottom: var(--erp-space-3); }
+.erp-ticket-person { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.erp-ticket-person > span:last-child { display: grid; line-height: 1.25; }
+.erp-ticket-person small { color: var(--erp-muted); font-size: 12px; }
+.erp-ticket-avatar { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--erp-brand); color: var(--erp-on-brand); font-weight: 700; font-size: 14px; }
+.erp-ticket-avatar--requester { background: var(--erp-info-soft); color: var(--erp-info); }
+.erp-ticket-avatar--internal { background: var(--erp-accent-soft); color: var(--erp-warning); }
+.erp-ticket-protocol { padding: 3px 10px; border-radius: var(--erp-radius-pill); background: var(--erp-brand-soft); color: var(--erp-brand-ink); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.erp-ticket-subject { margin: 0 0 var(--erp-space-2); font-size: 18px; }
+.erp-ticket-msg p { margin: 0; overflow-wrap: anywhere; }
+.erp-ticket-msg footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--erp-space-3); font-size: 13px; }
+.erp-ticket-msg footer a { display: inline-flex; gap: 4px; align-items: center; }
+.erp-ticket-wait { display: flex; gap: 8px; align-items: center; margin: 0; padding: var(--erp-space-3) var(--erp-space-4); border: 1px dashed var(--erp-border-strong); border-radius: var(--erp-radius-md); color: var(--erp-muted); font-size: 13px; }
+.erp-ticket-composer { display: grid; gap: var(--erp-space-3); }
+.erp-ticket-composer label[for="tk-files"] { display: inline-flex; align-items: center; gap: 6px; }
+.erp-ticket-composer__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--erp-space-2); padding-bottom: var(--erp-space-3); border-bottom: 1px solid var(--erp-border); }
+.erp-ticket-composer__head > div:only-child { display: grid; gap: 2px; }
+.erp-ticket-composer__head small { color: var(--erp-muted); font-size: 12.5px; }
+.erp-ticket-modes { display: inline-flex; gap: 4px; padding: 3px; border-radius: var(--erp-radius-sm); background: var(--erp-surface-muted); border: 1px solid var(--erp-border); }
+.erp-ticket-modes button { height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: none; color: var(--erp-muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.erp-ticket-modes button.is-active { background: var(--erp-surface); color: var(--erp-brand-ink); box-shadow: 0 1px 3px rgba(20, 44, 33, .12); }
 .erp-ticket-composer.is-internal { border-color: var(--erp-warning); background: var(--erp-warning-soft); }
-.erp-ticket-timer { display: inline-flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.erp-ticket-composer.is-internal .erp-ticket-modes button.is-active { color: var(--erp-warning); }
+.erp-ticket-timer { display: inline-flex; gap: 6px; align-items: center; color: var(--erp-muted); font-variant-numeric: tabular-nums; }
+.erp-ticket-timer strong { color: var(--erp-text); }
 .erp-ticket-timer.is-paused strong { color: var(--erp-muted); }
 .erp-check { display: inline-flex; gap: 6px; align-items: center; margin-right: auto; font-size: 13.5px; }
+#tk-new fieldset { display: grid; gap: 6px; margin: 0; padding: 10px 14px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); }
+#tk-new fieldset legend { padding: 0 6px; font-weight: 600; font-size: 13.5px; }
+#tk-new fieldset label { display: inline-flex; gap: 8px; align-items: center; font-weight: 500; }
+.erp-ticket-eyebrow { margin: 0 0 2px; color: var(--erp-brand-ink); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.erp-ticket-inspector .erp-card__head h2 { font-size: 16px; }
+.erp-ticket-facts dl { display: grid; margin: 0; }
+.erp-ticket-facts dl > div { display: flex; justify-content: space-between; gap: var(--erp-space-3); padding: 8px 0; border-bottom: 1px solid var(--erp-border); font-size: 13.5px; }
+.erp-ticket-facts dl > div:last-child { border-bottom: 0; }
+.erp-ticket-facts dt { color: var(--erp-muted); }
+.erp-ticket-facts dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.erp-ticket-facts dd.is-late { color: var(--erp-danger); }
 .erp-ticket-history summary { display: flex; gap: 8px; align-items: center; cursor: pointer; list-style: none; }
 .erp-ticket-history summary h2 { font-size: 16px; margin: 0; }
 .erp-ticket-history ol { list-style: none; margin: var(--erp-space-3) 0 0; padding: 0; display: grid; gap: var(--erp-space-2); max-height: 360px; overflow-y: auto; }
-.erp-ticket-history li { padding-left: 12px; border-left: 2px solid var(--erp-border); font-size: 13px; }
+.erp-ticket-history li { padding-left: 12px; border-left: 2px solid var(--erp-brand-line); font-size: 13px; }
 .erp-ticket-history li small { color: var(--erp-muted); }
 .erp-ticket-history li p { margin: 2px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) {
+  .erp-ticket-workspace { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .erp-ticket-toolbar { padding: var(--erp-space-3); }
+  .erp-ticket-filters .erp-select, .erp-ticket-bulk .erp-select, .erp-ticket-search { flex: 1 1 100%; min-width: 0; max-width: none; }
+  .erp-ticket-bulk { margin-left: 0; }
+  .erp-ticket-bulk { flex-wrap: wrap; width: 100%; }
+  .erp-ticket-msg { padding: var(--erp-space-3); }
+}
 
 /* Sino do ERP com as notificações compartilhadas com Studio e Help Desk (ADR 0142). */
 .erp-icon-button__count { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--erp-radius-pill); background: var(--erp-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
