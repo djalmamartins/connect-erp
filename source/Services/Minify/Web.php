@@ -56,7 +56,6 @@ if (is_local_host()) {
         $movesRoot . "/container/shared/assets/vendor/scripts/jquery-ui.js",
         $movesRoot . "/container/shared/assets/vendor/scripts/jquery.mask.js",
         $movesRoot . "/container/shared/assets/vendor/scripts/highcharts.js",
-        $movesRoot . "/container/shared/assets/vendor/scripts/tracker.js",
         $movesRoot . "/container/shared/assets/vendor/scripts/validation.js",
         $movesRoot . "/container/shared/assets/js/connect-notice.js",
         $movesRoot . "/container/shared/assets/js/connect-dialog.js",

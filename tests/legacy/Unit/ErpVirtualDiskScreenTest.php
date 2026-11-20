@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 use Source\Controllers\Erp\Connect\Panel;
 
 /**
- * Tela do Disco Virtual (AP-122, ADR 0047 e 0049): lista por pasta (Panel::virtualDiskData), envio
+ * Tela do Disco Virtual (AP-122, ADR 0047 e 0049): lista por pasta (OperationScreens::virtualDiskData), envio
  * multipart com o CSRF no cabeçalho, download pela API e exclusão.
  */
 final class ErpVirtualDiskScreenTest extends TestCase
@@ -50,7 +50,7 @@ final class ErpVirtualDiskScreenTest extends TestCase
         self::assertMatchesRegularExpression('/<\?php if \(\$canManageFiles\): \?>\s*<form class="erp-card erp-form erp-disk-upload"/', $view);
         self::assertStringContainsString('<?php if ($canManageFiles): ?><button type="button" class="erp-btn erp-btn--sm" data-disk-delete=', $view);
         self::assertStringContainsString('csrf_input()', $view);
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/OperationScreens.php');
         self::assertStringContainsString("!Access::can('erp.documents.view', \$user)", $panel);
         self::assertStringContainsString("Access::can('erp.documents.manage', \$user)", $panel);
     }

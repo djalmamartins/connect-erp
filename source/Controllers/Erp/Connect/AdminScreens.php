@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Source\Controllers\Erp\Connect;
 
 use InvalidArgumentException;
-use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumAccessDenied;
@@ -59,7 +58,7 @@ final class AdminScreens
                 $sentFrom = isset($_GET['de']) && $_GET['de'] !== '' ? $_GET['de'] : date('Y-01-01');
                 $sentTo = isset($_GET['ate']) && $_GET['ate'] !== '' ? $_GET['ate'] : date('Y-m-d');
                 $data['sent'] = (new AdminReports($pdo))->sent($user, $sentFrom, $sentTo, self::report($_GET['relatorio'] ?? null));
-                $data['scopeCondominiums'] = self::scopeCondominiums($pdo, $user);
+                $data['scopeCondominiums'] = array_column((new CondominiumScope($pdo))->allowed($user), 'name', 'id');
             } elseif ($kind === 'users') {
                 $context = CondominiumContext::id();
                 try {
@@ -68,7 +67,7 @@ final class AdminScreens
                     $data['erpUsers'] = ['condominium_id' => $context, 'truncated' => false, 'rows' => []];
                     $data['adminError'] = 'Condomínio não encontrado no seu escopo.';
                 }
-                $data['scopeCondominiums'] = self::scopeCondominiums($pdo, $user);
+                $data['scopeCondominiums'] = array_column((new CondominiumScope($pdo))->allowed($user), 'name', 'id');
             } else {
                 $access = new ErpAccess($pdo);
                 $data['matrix'] = $access->matrix($user);
@@ -129,16 +128,5 @@ final class AdminScreens
             return $bytes . ' B';
         }
         return $bytes < 1048576 ? number_format($bytes / 1024, 1, ',', '.') . ' KB' : number_format($bytes / 1048576, 1, ',', '.') . ' MB';
-    }
-
-    /** @return array<int, string> condomínios do escopo de quem consulta (id => nome) */
-    private static function scopeCondominiums(PDO $pdo, User $user): array
-    {
-        $ids = array_values(array_filter(array_map('intval', (new CondominiumScope($pdo))->allowedIds($user)), static fn (int $i): bool => $i > 0));
-        if ($ids === []) {
-            return [];
-        }
-        $rows = $pdo->query('SELECT id, name FROM condominiums WHERE id IN (' . implode(',', $ids) . ') ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
-        return array_column(array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'name' => (string)$r['name']], $rows), 'name', 'id');
     }
 }

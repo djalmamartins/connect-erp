@@ -1,6 +1,6 @@
 <?php
 /**
- * Faturas da cobrança (AP-032, ADR 0033) com dados reais: lista ($invoices, de Panel::invoiceData,
+ * Faturas da cobrança (AP-032, ADR 0033) com dados reais: lista ($invoices, de FinanceScreens::invoiceData,
  * no contexto da barra superior), filtros por competência e situação, e as ações pela API
  * /api/v1/invoices (erp.js, data-erp-invoices): preparar, ver e ajustar os itens por unidade
  * (só em preparação), emitir e cancelar com motivo. A API valida permissão, escopo e CSRF de novo.

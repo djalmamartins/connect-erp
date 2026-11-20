@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 
 /**
  * Tela do fechamento mensal (AP-030, ADR 0031/0032): lê $closing, $closingCompetence e
- * $canManageClosing de Panel::closingData e envia Fechar/Reabrir por POST para MonthClosings.
+ * $canManageClosing de FinanceScreens::closingData e envia Fechar/Reabrir por POST para MonthClosings.
  */
 final class ErpMonthClosingScreenTest extends TestCase
 {

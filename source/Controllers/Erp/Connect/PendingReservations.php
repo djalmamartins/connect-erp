@@ -14,7 +14,7 @@ use Source\Support\Message;
 
 /**
  * ERP v1 — ações da tela Agendamentos Pendentes (AP-114, ADR 0051 e 0070). A tela (GET) é a página
- * do catálogo, com as reservas aguardando aprovação em Panel::pendingReservationData().
+ * do catálogo, com as reservas aguardando aprovação em OperationScreens::pendingReservationData().
  *
  * POST /operacional/agendamentos-pendentes/{id}/confirmar e /recusar, com CSRF e padrão PRG.
  * Muda só a situação da reserva, pelo mesmo RegistryService do cadastro (AP-113): as regras da

@@ -197,4 +197,15 @@ final class ResidentInvitations
             'email' => RegistryReports::maskEmail($r['email']), 'status' => $r['status'] === 'pending' && (string)$r['expires_at'] <= $now ? 'expired' : (string)$r['status'],
             'expires_at' => (string)$r['expires_at'], 'accepted_at' => $r['accepted_at'], 'created_at' => (string)$r['created_at']], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
+
+    /** @return list<array{id:int, name:string, unit_label:string, relationship:string, email:string, has_email:bool}> moradores ativos do condomínio */
+    public function residents(int $condominium): array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, name, unit_label, relationship, email FROM erp_residents WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active'
+            ORDER BY unit_label, name LIMIT " . self::MAX_BATCH);
+        $stmt->execute(['c' => $condominium]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'unit_label' => (string)$r['unit_label'],
+            'relationship' => (string)$r['relationship'], 'email' => RegistryReports::maskEmail($r['email']), 'has_email' => filter_var($r['email'], FILTER_VALIDATE_EMAIL) !== false],
+            $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 }

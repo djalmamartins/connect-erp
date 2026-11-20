@@ -1,7 +1,7 @@
 <?php
 /**
  * Parcelas de acordo (AP-034, ADR 0039) com dados reais: parcelas dos acordos ativos da página
- * ($agreementParcels, de Panel::agreementData e Panel::flattenParcels), com a situação na data de
+ * ($agreementParcels, de FinanceScreens::agreementData e Panel::flattenParcels), com a situação na data de
  * hoje (paga, vencida ou a vencer). A baixa de cada parcela segue pelos lançamentos ou pelo boleto.
  * @var array $currentPage @var array $agreements @var list<array> $agreementParcels
  */

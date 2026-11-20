@@ -21,6 +21,8 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 
 ## Primeiro acesso
 
+Antes de tudo, se a conta ainda não aceitou a versão atual dos Termos de Uso e da Política de Privacidade, o app abre a tela **Termos e privacidade**: o morador marca que leu e aceita (e, se quiser, que quer receber novidades) e toca em {{Aceitar e continuar}}. {{Não aceito, sair}} encerra a sessão. Em **Perfil > Privacidade e meus dados** ele liga ou desliga novidades e faz pedidos sobre os dados; veja [[Aplicativo do morador]].
+
 Na primeira vez que o morador entra, o app abre as **boas-vindas**:
 
 1. Ele pode colocar uma foto no perfil: {{Tirar foto}} usa a câmera e {{Escolher da galeria}} usa as fotos do celular. A foto é recortada em quadrado. Também dá para deixar para depois.

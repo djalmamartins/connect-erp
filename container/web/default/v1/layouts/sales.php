@@ -30,6 +30,8 @@
 <?= $this->insert("pages/footer", $this->data); ?>
 
 <!--MODALS-->
+<!--COOKIES (ADR 0604)-->
+<?= $this->insert("pages/cookies", $this->data); ?>
 <?= $this->insert("pages/modals", $this->data); ?>
 <script src="<?= url('/container/shared/assets/organic/organic.global.min.js') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/organic.global.min.js') ?>"></script>
 <script src="<?= url('/container/shared/assets/organic/compat-v1.js') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/compat-v1.js') ?>"></script>

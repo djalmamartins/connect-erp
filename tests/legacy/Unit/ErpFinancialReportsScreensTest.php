@@ -9,7 +9,7 @@ use Source\Controllers\Erp\Connect\Panel;
 
 /**
  * Telas dos relatórios financeiros (ADR 0037): AP-079 balancete e AP-051 demonstrativo leem
- * $trialBalance / $statement, $reportPeriod e $reportError de Panel::reportData.
+ * $trialBalance / $statement, $reportPeriod e $reportError de FinanceScreens::reportData.
  */
 final class ErpFinancialReportsScreensTest extends TestCase
 {

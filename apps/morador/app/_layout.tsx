@@ -31,6 +31,8 @@ function RootStack() {
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="boas-vindas" options={{ gestureEnabled: false, animation: 'fade' }} />
+        <Stack.Screen name="termos" options={{ gestureEnabled: false, animation: 'fade' }} />
+        <Stack.Screen name="privacidade" />
         <Stack.Screen name="comunicados" />
         <Stack.Screen name="prestacao-de-contas" />
         <Stack.Screen name="encomendas" />
