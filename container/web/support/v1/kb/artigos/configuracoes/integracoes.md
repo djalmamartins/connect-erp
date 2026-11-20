@@ -47,6 +47,8 @@ Para criar um token (precisa da permissão de **gerenciar configurações**):
 
 >! Revogar corta o acesso na hora. O Talk só volta a falar com o ERP com um token novo no `.env` dele.
 
+> Com o escopo **Condomínios, unidades, áreas comuns e comunicados**, o Talk vê só o nome e o endereço dos condomínios ativos do usuário de integração, o bloco e o número das unidades (nunca quem mora), as áreas que aceitam reserva e os comunicados enviados para todo o condomínio. Não vê CNPJ, conta bancária nem síndico.
+
 > Cada token tem limite de 120 pedidos por minuto. Criar e revogar ficam registrados na auditoria, sem o token.
 
 ## Quem pode usar

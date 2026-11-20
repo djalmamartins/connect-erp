@@ -66,6 +66,10 @@ $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Suppo
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/me", "Talk:me", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/condominiums", "Talk:condominiums", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/condominiums/{id}", "Talk:condominium", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/condominiums/{id}/units", "Talk:units", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/condominiums/{id}/announcements", "Talk:announcements", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
