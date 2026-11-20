@@ -239,7 +239,7 @@ final class BankCharges
     }
 
     /**
-     * @param array{status?:mixed, page?:mixed} $filters
+     * @param array{status?:mixed, page?:mixed, q?:mixed} $filters
      * @return array{data:list<array>, total:int, page:int, per_page:int, pages:int}
      */
     public function list(User $user, ?int $condominiumId = null, array $filters = []): array
@@ -258,6 +258,20 @@ final class BankCharges
         if (is_string($filters['status'] ?? null) && isset(self::STATUSES[$filters['status']])) {
             $where .= ' AND ch.status = :s';
             $params['s'] = $filters['status'];
+        }
+        // Busca (pedido do Djalma, 20/11/2026): número do boleto, nosso número (nosso ou do banco), linha digitável,
+        // número do lançamento, descrição da conta ou unidade.
+        $q = is_string($filters['q'] ?? null) ? mb_substr(trim($filters['q']), 0, 60) : '';
+        if ($q !== '') {
+            $like = '%' . addcslashes($q, '\\%_') . '%';
+            $where .= ' AND (ch.our_number LIKE :q1 OR ch.bank_our_number LIKE :q2 OR ch.digitable_line LIKE :q3
+                OR EXISTS (SELECT 1 FROM erp_entries qe LEFT JOIN erp_units qu ON qu.id = qe.unit_id WHERE qe.id = ch.entry_id AND (qe.description LIKE :q4 OR qu.label LIKE :q5))';
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like, 'q4' => $like, 'q5' => $like];
+            if (ctype_digit($q) && strlen($q) <= 10) {
+                $where .= ' OR ch.id = :qid OR ch.entry_id = :qentry';
+                $params += ['qid' => (int)$q, 'qentry' => (int)$q];
+            }
+            $where .= ')';
         }
         $count = $this->pdo->prepare("SELECT COUNT(*) FROM erp_bank_charges ch WHERE {$where}");
         $count->execute($params);

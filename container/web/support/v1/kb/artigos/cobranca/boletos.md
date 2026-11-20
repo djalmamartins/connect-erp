@@ -23,7 +23,7 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Boletos
 1: menu | Boletos no menu lateral
 2: main :is(a,button):has-text("Emitir boleto") | Botão {{Emitir boleto}}
-3: main form[method=get] | Filtros: Situação
+3: main form[method=get] | Filtros: Buscar e Situação
 4: main table thead | Lista com Nosso número, Vencimento, Valor, Linha digitável e Situação
 ```
 
@@ -105,9 +105,9 @@ No ambiente de testes do Inter, o boleto registrado tem o botão **Simular pagam
 
 Os botões no alto da tela são {{Emitir boleto}}.
 
-1. Ajuste os filtros (Situação).
+1. Ajuste os filtros (Buscar e Situação). A busca acha o boleto pelo número dele (o "boleto nº" embaixo do nosso número), pelo nosso número do ERP ou do banco, pela linha digitável, pelo número do lançamento, pela descrição da conta ou pela unidade.
 2. Clique em {{Filtrar}}.
-3. Confira a lista. Use as ações da linha para abrir, alterar ou cancelar um item.
+3. Confira a lista. Use as ações da linha para abrir, alterar ou cancelar um item. Com mais de 25 boletos, use **Anterior** e **Próxima**: o endereço fica assim, `/cobranca/boletos/p/2`.
 
 ### O que cada coluna mostra
 

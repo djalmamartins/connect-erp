@@ -8,11 +8,13 @@
  */
 $this->layout('default');
 $route = erp_url($currentPage['route']);
-$filters = ['situacao' => is_string($_GET['situacao'] ?? null) ? $_GET['situacao'] : ''];
+$filters = ['situacao' => is_string($_GET['situacao'] ?? null) ? $_GET['situacao'] : '', 'busca' => is_string($_GET['busca'] ?? null) ? mb_substr(trim($_GET['busca']), 0, 60) : ''];
 $query = static function (array $changes) use ($filters): string {
     $params = array_filter(array_merge($filters, $changes), static fn ($v): bool => $v !== null && $v !== '');
     return $params === [] ? '' : '?' . http_build_query($params);
 };
+// Página no caminho (/cobranca/boletos/p/12) e filtros na query.
+$pageUrl = static fn (int $page): string => $route . ($page > 1 ? '/p/' . $page : '') . $query([]);
 $brl = static fn (int $cents): string => 'R$ ' . number_format($cents / 100, 2, ',', '.');
 $date = static fn (?string $value): string => $value ? date('d/m/Y', (int)strtotime($value)) : '—';
 $tones = ['pending' => 'warning', 'registered' => 'info', 'rejected' => 'danger', 'paid' => 'success', 'cancelled' => 'plain'];
@@ -39,11 +41,12 @@ $this->insert('components/layout/page-head', [
 <div class="erp-stack" data-erp-bank-charges data-api="<?= $this->e(url('/api/v1/bank-charges')) ?>" data-entries-api="<?= $this->e(url('/api/v1/entries')) ?>" data-accounts-api="<?= $this->e(url('/api/v1/bank-accounts')) ?>">
     <?= csrf_input() ?>
     <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Filtrar boletos">
+        <div class="erp-field"><label for="chg-q">Buscar</label><input class="erp-input" type="search" id="chg-q" name="busca" maxlength="60" value="<?= $this->e($filters['busca']) ?>" placeholder="Nº do boleto, nosso número, unidade ou descrição"></div>
         <div class="erp-field erp-field--compact"><label for="chg-status">Situação</label><select class="erp-select" id="chg-status" name="situacao"><option value="">Todas</option>
             <?php foreach ($statuses as $key => $label): ?><option value="<?= $this->e($key) ?>"<?= $filters['situacao'] === $key ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?>
         </select></div>
         <div class="erp-field erp-field--actions"><button type="submit" class="erp-btn"><?= $icon('filter', 'erp-icon--sm') ?>Filtrar</button></div>
-        <?php if ($filters['situacao'] !== ''): ?><div class="erp-field erp-field--actions"><a class="erp-btn erp-btn--ghost" href="<?= $this->e($route) ?>">Limpar</a></div><?php endif; ?>
+        <?php if ($filters['situacao'] !== '' || $filters['busca'] !== ''): ?><div class="erp-field erp-field--actions"><a class="erp-btn erp-btn--ghost" href="<?= $this->e($route) ?>">Limpar</a></div><?php endif; ?>
     </form>
 
     <section class="erp-card" aria-labelledby="chg-list">
@@ -55,7 +58,7 @@ $this->insert('components/layout/page-head', [
                 <thead><tr><th>Nosso número</th><th>Vencimento</th><th class="is-num">Valor</th><th>Linha digitável</th><th>Situação</th><th class="is-num">Ações</th></tr></thead>
                 <tbody><?php foreach ($rows as $charge): $status = (string)$charge['status']; $open = in_array($status, ['pending', 'registered'], true); ?>
                     <tr>
-                        <td><strong><?= $this->e((string)$charge['our_number']) ?></strong><small class="erp-muted"><?= $context === null ? $this->e($condoNames[(int)$charge['condominium_id']] ?? ('Condomínio nº ' . (int)$charge['condominium_id'])) . ' · ' : '' ?>lançamento nº <?= (int)$charge['entry_id'] ?><?= in_array($charge['adapter'], ['inter', 'cora'], true) ? ($charge['adapter'] === 'cora' ? ' · Cora' : ' · Banco Inter') . (!empty($charge['bank_our_number']) ? ' nº ' . $this->e((string)$charge['bank_our_number']) : '') : '' ?></small></td>
+                        <td><strong><?= $this->e((string)$charge['our_number']) ?></strong><small class="erp-muted"><?= $context === null ? $this->e($condoNames[(int)$charge['condominium_id']] ?? ('Condomínio nº ' . (int)$charge['condominium_id'])) . ' · ' : '' ?>boleto nº <?= (int)$charge['id'] ?> · lançamento nº <?= (int)$charge['entry_id'] ?><?= in_array($charge['adapter'], ['inter', 'cora'], true) ? ($charge['adapter'] === 'cora' ? ' · Cora' : ' · Banco Inter') . (!empty($charge['bank_our_number']) ? ' nº ' . $this->e((string)$charge['bank_our_number']) : '') : '' ?></small></td>
                         <td><?= $this->e($date((string)$charge['due_on'])) ?><?php if ($status === 'paid'): ?><small class="erp-muted">pago <?= $this->e($date($charge['paid_on'])) ?></small><?php endif; ?></td>
                         <td class="is-num"><?= $brl((int)$charge['amount_cents']) ?><?php if (($charge['bundled_count'] ?? 0) > 0): ?><small class="erp-muted">com <?= (int)$charge['bundled_count'] ?> cobrança(s) junto</small><?php endif; ?><?php if ($status === 'paid' && $charge['paid_cents'] !== null && (int)$charge['paid_cents'] !== (int)$charge['amount_cents']): ?><small class="erp-muted">pago <?= $brl((int)$charge['paid_cents']) ?></small><?php endif; ?></td>
                         <td class="erp-charge-line"><?php if (!empty($charge['digitable_line'])): ?><code><?= $this->e((string)$charge['digitable_line']) ?></code><?php else: ?><span class="erp-muted">—</span><?php endif; ?><?php if (!empty($charge['last_error'])): ?><small class="erp-muted"><?= $this->e((string)$charge['last_error']) ?></small><?php endif; ?></td>
@@ -76,8 +79,8 @@ $this->insert('components/layout/page-head', [
                 <nav class="erp-pagination" aria-label="Paginação">
                     <span>Página <?= (int)$bankCharges['page'] ?> de <?= (int)$bankCharges['pages'] ?></span>
                     <div class="erp-pagination__pages">
-                        <?php if ($bankCharges['page'] > 1): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($route . $query(['pagina' => $bankCharges['page'] - 1])) ?>" rel="prev">Anterior</a><?php endif; ?>
-                        <?php if ($bankCharges['page'] < $bankCharges['pages']): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($route . $query(['pagina' => $bankCharges['page'] + 1])) ?>" rel="next">Próxima</a><?php endif; ?>
+                        <?php if ($bankCharges['page'] > 1): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($pageUrl((int)$bankCharges['page'] - 1)) ?>" rel="prev">Anterior</a><?php endif; ?>
+                        <?php if ($bankCharges['page'] < $bankCharges['pages']): ?><a class="erp-btn erp-btn--sm" href="<?= $this->e($pageUrl((int)$bankCharges['page'] + 1)) ?>" rel="next">Próxima</a><?php endif; ?>
                     </div>
                 </nav>
             <?php endif; ?>

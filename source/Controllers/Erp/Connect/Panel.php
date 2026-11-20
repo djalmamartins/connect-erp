@@ -277,7 +277,7 @@ final class Panel extends Controller
         }
         try {
             if ($id === 'AP-035') {
-                $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
+                $data['bankCharges'] = (new BankCharges())->list($user, CondominiumContext::id(), ['status' => $_GET['situacao'] ?? null, 'q' => $_GET['busca'] ?? null, 'page' => $_GET['pagina'] ?? 1]);
             } elseif ($id === 'AP-037') {
                 $data['bankRemittances'] = (new \Source\Services\Erp\Banking\BankRemittances())->list($user, CondominiumContext::id(), [
                     'from' => $_GET['de'] ?? null, 'to' => $_GET['ate'] ?? null, 'status' => $_GET['situacao'] ?? null, 'page' => $_GET['pagina'] ?? 1,
