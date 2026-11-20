@@ -54,37 +54,26 @@ final class CommunicationsCycleIntegrationTest extends TestCase
         }
         $announcements = new Announcements($this->pdo);
 
-        // 1. Comunicado geral para todas: a 102 recusou, então saem dois e-mails, os dois para a caixa de teste.
+        // 1. Comunicado geral para todas: fica no app; nenhum e-mail ao morador (ADR 0601).
         $general = $announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Obras na fachada', 'body' => "Andaimes de 20 a 30.\nObrigado."]);
         self::assertSame(3, $general['units_count']);
-        $summary = $this->dispatcher()->dispatch();
-        self::assertSame(['sandbox', 2, 1], [$summary['mode'], $summary['sent'], $summary['cancelled']]);
-        self::assertSame(['caixa@mailpit.local'], array_values(array_unique(array_column($this->queued, 2))), 'Nunca o e-mail do morador.');
-        self::assertSame(['[TESTE] Obras na fachada'], array_values(array_unique(array_column($this->queued, 0))));
-        self::assertSame(['sent' => 2, 'cancelled' => 1], array_intersect_key($announcements->find($this->admin, $general['id'])['delivery'], ['sent' => 0, 'cancelled' => 0]));
+        self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
+        self::assertSame([], $this->queued);
+        self::assertSame(['sent' => 0, 'cancelled' => 3], array_intersect_key($announcements->find($this->admin, $general['id'])['delivery'], ['sent' => 0, 'cancelled' => 0]));
 
-        // 2. Aviso de cobrança das três vencidas: só 101 e 102 autorizaram cobrança por e-mail.
-        $this->queued = [];
-        $reminder = $announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
-        self::assertSame([3, 0], [$reminder['units_count'], $reminder['skipped_recent']]);
-        $summary = $this->dispatcher()->dispatch();
-        self::assertSame([2, 1], [$summary['sent'], $summary['cancelled']]);
-        foreach ($this->queued as [, $body]) {
-            self::assertStringContainsString('R$ 500,00', $body);
+        // 2. Aviso de cobrança manual desligado (ADR 0601): o de atraso é automático.
+        try {
+            $announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
+            self::fail('Aviso de cobrança manual devia estar desligado.');
+        } catch (\DomainException $error) {
+            self::assertSame(Announcements::COLLECTION_DISABLED, $error->getMessage());
         }
 
-        // 3. De novo na mesma semana: 101 e 102 já foram avisadas. A 103 não recebeu nada (ninguém autorizou), então volta ao lote.
-        $again = $announcements->collection($this->admin, ['condominium_id' => $this->alpha, 'min_days_late' => 30]);
-        self::assertSame([1, 2], [$again['units_count'], $again['skipped_recent']]);
-        $this->dispatcher()->dispatch();
-
-        // 4. Agendado não sai antes da hora; cancelado não sai nem quando a hora chega.
-        $this->queued = [];
+        // 4. Agendado e cancelado não sai.
         $scheduled = $announcements->announce($this->admin, ['condominium_id' => $this->alpha, 'subject' => 'Assembleia', 'body' => 'Assembleia geral no salão.',
             'audience' => 'units', 'unit_ids' => [$units['101']], 'send_at' => date('Y-m-d H:i', strtotime('+1 day'))]);
-        self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
         self::assertSame(1, $announcements->list($this->admin, $this->alpha, ['scheduled' => 1])['total']);
-        self::assertSame(1, $announcements->cancel($this->admin, $scheduled['id'], 'Assembleia adiada')['stopped']);
+        $announcements->cancel($this->admin, $scheduled['id'], 'Assembleia adiada');
         $this->pdo->exec('UPDATE erp_notification_outbox SET available_at = NOW()');
         self::assertSame(0, $this->dispatcher()->dispatch()['processed']);
         self::assertSame([], $this->queued);
@@ -93,7 +82,7 @@ final class CommunicationsCycleIntegrationTest extends TestCase
         $addresses = $announcements->addresses($this->admin, $this->alpha);
         self::assertSame(['units' => 3, 'without_notices' => 1, 'without_billing' => 1], $addresses['totals']);
         self::assertSame('a**@morador.test', $addresses['data'][0]['people'][0]['email']);
-        self::assertSame(4, $announcements->list($this->admin, $this->alpha)['total']);
+        self::assertSame(2, $announcements->list($this->admin, $this->alpha)['total']);
 
         // 6. Usuário só do Beta não alcança nada do Alpha.
         $outsider = $this->user([$this->beta]);
@@ -101,7 +90,7 @@ final class CommunicationsCycleIntegrationTest extends TestCase
             fn () => $announcements->announce($outsider, ['condominium_id' => $this->alpha, 'subject' => 'Fora do escopo', 'body' => 'Não deveria sair.']),
             fn () => $announcements->collection($outsider, ['condominium_id' => $this->alpha]),
             fn () => $announcements->find($outsider, (int)$general['id']),
-            fn () => $announcements->cancel($outsider, (int)$reminder['id'], 'Fora do escopo'),
+            fn () => $announcements->cancel($outsider, (int)$scheduled['id'], 'Fora do escopo'),
         ] as $i => $call) {
             try {
                 $call();
@@ -113,7 +102,7 @@ final class CommunicationsCycleIntegrationTest extends TestCase
         self::assertSame(0, $announcements->list($outsider)['total']);
         self::assertSame([], $announcements->addresses($outsider, $this->alpha)['data']);
         self::assertSame(0, $this->dispatcher()->list($outsider)['total'], 'Avisos de outro condomínio não aparecem na fila.');
-        self::assertSame('active', $announcements->find($this->admin, (int)$reminder['id'])['status'], 'A tentativa de fora não cancelou.');
+        self::assertSame('cancelled', $announcements->find($this->admin, (int)$scheduled['id'])['status'], 'A tentativa de fora não mexeu.');
     }
 
     private function dispatcher(): NotificationDispatcher
