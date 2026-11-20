@@ -1065,3 +1065,13 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 /* Atalhos da lista de lançamentos (ADR 0313, modelo 7) */
 .erp-entry-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--erp-border); background: var(--erp-surface-muted); font-size: 13.5px; }
 .erp-entry-shortcuts__sep { flex: 1 1 8px; }
+
+/* Texto formatado do Moves Editor nas conversas e comunicados (ADR 0610). */
+.erp-rich-text { overflow-wrap: anywhere; }
+.erp-rich-text > :first-child { margin-top: 0; }
+.erp-rich-text > :last-child { margin-bottom: 0; }
+.erp-rich-text p, .erp-rich-text ul, .erp-rich-text ol, .erp-rich-text blockquote, .erp-rich-text pre { margin: 0 0 .6em; }
+.erp-rich-text ul, .erp-rich-text ol { padding-left: 1.4em; }
+.erp-rich-text blockquote { padding-left: .8em; border-left: 3px solid #cfdcd5; color: #4d5b55; }
+.erp-rich-text a { color: #07884c; text-decoration: underline; }
+.moves-editor-host + .erp-field__error, .erp-field .moves-editor-host { margin-top: 4px; }

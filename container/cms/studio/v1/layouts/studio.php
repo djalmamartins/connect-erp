@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="<?= themeStudio('/assets/css/connect-shell.css', 'default') . '?v=' . filemtime($connectShellCss) ?>">
     <?php /* Visual do Moves OS no Studio (ADR 0621); as regras só valem em data-environment="studio". */ $movesOsCss=dirname(__DIR__).'/assets/css/moves-os.css'; ?>
     <link rel="stylesheet" href="<?= themeStudio('/assets/css/moves-os.css', 'default') . '?v=' . filemtime($movesOsCss) ?>">
+    <link rel="stylesheet" href="<?= url('/container/shared/assets/moves-editor/moves-editor.css') . '?v=' . filemtime(dirname(__DIR__, 4).'/shared/assets/moves-editor/moves-editor.css') ?>">
     <?php /* Favicon por ambiente: Studio roxo, Help Desk azul (favicons por sistema, 15/11/2026). */
     $faviconName=preg_match('~/helpdesk(?:/|$)~',(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? ''))?'favicon-helpdesk':'favicon-studio'; ?>
     <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/'.$faviconName.'.svg', 'default') ?>">
@@ -153,13 +154,13 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
     </div>
 </div>
 <audio id="studio-notification-sound" preload="auto" src="<?= themeStudio('/assets/audio/notification.mp3', 'default') ?>"></audio>
-<script src="<?= url('/container/shared/assets/vendor/scripts/tinymce/tinymce.min.js') ?>"></script>
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 <script src="<?= themeStudio('/assets/studio.min.js', 'default') . '?v=' . filemtime($studioJs) ?>"></script>
 <script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget defer></script>
-<?php $editorJs=dirname(__DIR__).'/assets/js/editor.js'; ?>
-<script type="module" src="<?= themeStudio('/assets/js/editor.js', 'default') . '?v=' . filemtime($editorJs) ?>"></script>
+<?php $movesEditorDir=dirname(__DIR__, 4).'/shared/assets/moves-editor'; ?>
+<script src="<?= url('/container/shared/assets/moves-editor/moves-editor.js') . '?v=' . filemtime($movesEditorDir.'/moves-editor.js') ?>"></script>
+<script src="<?= url('/container/shared/assets/moves-editor/moves-editor-boot.js') . '?v=' . filemtime($movesEditorDir.'/moves-editor-boot.js') ?>"></script>
 <script>
 // O ERP não tem modo escuro; o Studio e o Help Desk seguem a mesma moldura clara (ADR 0026).
 document.documentElement.dataset.theme='light';try{localStorage.removeItem('studio-theme')}catch(e){}

@@ -27,7 +27,7 @@ final class SystemDialogsEverywhereTest extends TestCase
     private function sources(): array
     {
         $files = [];
-        foreach (['container/app', 'container/cms', 'container/web', 'container/send', 'container/erp', 'container/shared/assets/js'] as $dir) {
+        foreach (['container/app', 'container/cms', 'container/web', 'container/send', 'container/erp', 'container/shared/assets/js', 'container/shared/assets/moves-editor'] as $dir) {
             $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->root() . '/' . $dir, \FilesystemIterator::SKIP_DOTS));
             foreach ($it as $file) {
                 $path = str_replace('\\', '/', (string)$file);
