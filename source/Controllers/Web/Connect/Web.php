@@ -432,7 +432,7 @@ class Web extends Controller
     }
 
     /**
-     * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0603). Responde 204 sempre que o pedido é válido:
+     * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0604). Responde 204 sempre que o pedido é válido:
      * o cookie da escolha já foi gravado pelo navegador, aqui só fica o registro (hash do IP e navegador, sem IP).
      */
     public function cookieConsent(array $data): void
@@ -455,7 +455,7 @@ class Web extends Controller
     }
 
     /**
-     * Política de Privacidade e Termos de Uso (ADR 0603). O texto vem do código, com versão (LegalDocuments), para cada
+     * Política de Privacidade e Termos de Uso (ADR 0604). O texto vem do código, com versão (LegalDocuments), para cada
      * aceite apontar para um texto que não muda depois. Página com o mesmo endereço no Studio não substitui mais o texto.
      */
     public function legal(array $data): void

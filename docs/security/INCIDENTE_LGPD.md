@@ -1,6 +1,6 @@
 # Plano de resposta a incidente com dados pessoais (LGPD art. 48)
 
-> ADR 0603. **Rascunho técnico: revisar com advogado.** Base: LGPD art. 48 e Regulamento de Comunicação de Incidente
+> ADR 0604. **Rascunho técnico: revisar com advogado.** Base: LGPD art. 48 e Regulamento de Comunicação de Incidente
 > de Segurança (Resolução CD/ANPD nº 15/2024). Conferir a norma vigente antes de usar.
 
 ## 1. O que é incidente

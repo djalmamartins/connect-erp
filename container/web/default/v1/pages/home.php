@@ -113,7 +113,7 @@
             </div>
 
             <div class="number-content">
-                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0603 */ ?>
+                <?php /* A satisfação de 96 por cento saiu (CDC art. 36, parágrafo único): só volta com a pesquisa guardada. ADR 0604 */ ?>
                 <strong>App</strong>
                 <span>Portal e aplicativo<br>para moradores</span>
             </div>
@@ -344,7 +344,7 @@
 
 
             <!-- Lojas -->
-            <!-- CDC art. 37: os selos das lojas só aparecem com o link real do app publicado (.env, ADR 0603) -->
+            <!-- CDC art. 37: os selos das lojas só aparecem com o link real do app publicado (.env, ADR 0604) -->
             <?php $playStore = (string)(getenv('APP_PLAY_STORE_URL') ?: ''); $appleStore = (string)(getenv('APP_APPLE_STORE_URL') ?: ''); ?>
             <div class="app-stores">
                 <?php if (str_starts_with($playStore, 'https://play.google.com/')): ?>
@@ -1005,7 +1005,7 @@
 
             <div class="mapa">
 
-                <!-- Mapa do Google só depois do clique ou da escolha no banner de cookies (ADR 0603) -->
+                <!-- Mapa do Google só depois do clique ou da escolha no banner de cookies (ADR 0604) -->
                 <div class="consent-embed"
                      data-consent-src="https://www.google.com/maps?q=<?= rawurlencode($siteAddress) ?>&output=embed"
                      data-consent-title="Mapa com o endereço da <?= htmlspecialchars(CONF_SITE_NAME) ?>">

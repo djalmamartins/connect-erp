@@ -12,7 +12,7 @@ use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
 
 /**
- * Privacidade da conta do morador (ADR 0603, etapa 2): aceite dos Termos e da Política na versão atual, novidades
+ * Privacidade da conta do morador (ADR 0604, etapa 2): aceite dos Termos e da Política na versão atual, novidades
  * (marketing) com consentimento separado e pedidos do titular (LGPD art. 18) que viram chamado no Help Desk.
  * Usado pelo app web (AppScreens), pela API (/api/v1/resident/privacy) e pelo app de celular.
  */

@@ -1,7 +1,7 @@
 import type { Privacy } from '../api/resident';
 
 /**
- * Precisa mostrar a tela de aceite (LGPD, ADR 0603)? Enquanto carrega (null) ou se o servidor ainda não tiver a rota
+ * Precisa mostrar a tela de aceite (LGPD, ADR 0604)? Enquanto carrega (null) ou se o servidor ainda não tiver a rota
  * (undefined), não prende o morador: o servidor web pede o aceite de novo na próxima vez.
  */
 export function needsTerms(privacy: Privacy | null | undefined): boolean {

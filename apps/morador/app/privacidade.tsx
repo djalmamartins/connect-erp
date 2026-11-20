@@ -10,7 +10,7 @@ import { dialog } from '../src/ui/Dialog';
 import { Body, Button, Card, CardTitle, Choice, Field, Screen } from '../src/ui/kit';
 
 /**
- * Privacidade e meus dados (LGPD, ADR 0603): o que foi aceito, novidades (dá para retirar) e pedidos do titular
+ * Privacidade e meus dados (LGPD, ADR 0604): o que foi aceito, novidades (dá para retirar) e pedidos do titular
  * (art. 18), que viram chamado LGPD para a administradora, com resposta em até 15 dias.
  */
 export default function Privacidade() {

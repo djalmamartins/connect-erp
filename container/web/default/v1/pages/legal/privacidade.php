@@ -1,6 +1,6 @@
 <?php
 /*
- * Política de Privacidade, versão Source\Services\Privacy\LegalDocuments::PRIVACY (ADR 0603).
+ * Política de Privacidade, versão Source\Services\Privacy\LegalDocuments::PRIVACY (ADR 0604).
  * RASCUNHO TÉCNICO: revisar com advogado antes da produção. Base: docs/security/LGPD_REGISTRO_OPERACOES.md.
  * Mudou o sentido? Troque LegalDocuments::PRIVACY.
  */

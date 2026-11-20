@@ -7,7 +7,7 @@ import { FloatingTabBar } from '../../src/ui/FloatingTabBar';
 
 export default function TabsLayout() {
   const { onboarding, privacy } = useProfile();
-  // LGPD (ADR 0603): aceite dos Termos e da Política antes de tudo.
+  // LGPD (ADR 0604): aceite dos Termos e da Política antes de tudo.
   if (needsTerms(privacy)) {
     return <Redirect href="/termos" />;
   }

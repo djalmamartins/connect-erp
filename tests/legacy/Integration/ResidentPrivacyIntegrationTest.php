@@ -13,7 +13,7 @@ use Source\Services\Privacy\PrivacyCenter;
 use Source\Services\Resident\ResidentLinks;
 
 /**
- * Privacidade da conta do morador (ADR 0603, etapa 2): aceite dos termos na versão atual, novidades com
+ * Privacidade da conta do morador (ADR 0604, etapa 2): aceite dos termos na versão atual, novidades com
  * consentimento separado e pedidos do titular (LGPD art. 18) que viram chamado LGPD no Help Desk.
  */
 final class ResidentPrivacyIntegrationTest extends TestCase

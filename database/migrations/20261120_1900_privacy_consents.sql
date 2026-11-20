@@ -1,17 +1,17 @@
--- LGPD (ADR 0603): identificação da Connect no site, encarregado e registro dos aceites e consentimentos.
+-- LGPD (ADR 0604): identificação da Connect no site, encarregado e registro dos aceites e consentimentos.
 -- Idempotente (a suíte reaplica as migrations).
 
 -- 1) Razão social, CNPJ e encarregado nas Configurações do Studio (rodapé do site e política de privacidade).
 --    TEXT porque a linha de settings (utf8mb3, dezenas de varchar(255)) já está perto do limite de 65.535 bytes.
 ALTER TABLE `settings`
-  ADD COLUMN IF NOT EXISTS `site_company_name` text DEFAULT NULL COMMENT 'Razão social (ADR 0603)' AFTER `site_name`,
-  ADD COLUMN IF NOT EXISTS `site_cnpj` varchar(18) DEFAULT NULL COMMENT 'CNPJ da Connect (ADR 0603)' AFTER `site_company_name`,
-  ADD COLUMN IF NOT EXISTS `privacy_officer_name` text DEFAULT NULL COMMENT 'Encarregado de dados, LGPD art. 41 (ADR 0603)' AFTER `site_cnpj`,
-  ADD COLUMN IF NOT EXISTS `privacy_email` text DEFAULT NULL COMMENT 'Canal do titular (ADR 0603)' AFTER `privacy_officer_name`;
+  ADD COLUMN IF NOT EXISTS `site_company_name` text DEFAULT NULL COMMENT 'Razão social (ADR 0604)' AFTER `site_name`,
+  ADD COLUMN IF NOT EXISTS `site_cnpj` varchar(18) DEFAULT NULL COMMENT 'CNPJ da Connect (ADR 0604)' AFTER `site_company_name`,
+  ADD COLUMN IF NOT EXISTS `privacy_officer_name` text DEFAULT NULL COMMENT 'Encarregado de dados, LGPD art. 41 (ADR 0604)' AFTER `site_cnpj`,
+  ADD COLUMN IF NOT EXISTS `privacy_email` text DEFAULT NULL COMMENT 'Canal do titular (ADR 0604)' AFTER `privacy_officer_name`;
 
 -- 2) Proposta do site: ciência da política só quando a pessoa marca; marketing separado e opcional.
 ALTER TABLE `proposals`
-  ADD COLUMN IF NOT EXISTS `marketing_consent_at` datetime DEFAULT NULL COMMENT 'Aceitou receber novidades (ADR 0603)' AFTER `consent_at`;
+  ADD COLUMN IF NOT EXISTS `marketing_consent_at` datetime DEFAULT NULL COMMENT 'Aceitou receber novidades (ADR 0604)' AFTER `consent_at`;
 
 -- 3) Prova dos aceites e consentimentos (LGPD art. 8º, § 2º: o ônus da prova é do controlador).
 --    Só acrescenta linhas: retirar o consentimento grava uma linha nova com granted = 0.

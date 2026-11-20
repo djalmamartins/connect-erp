@@ -347,7 +347,7 @@ final class ResidentApp
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->petsVehicles($link));
     }
 
-    /** Privacidade da conta (LGPD, ADR 0603): situação do aceite, novidades e tipos de pedido. */
+    /** Privacidade da conta (LGPD, ADR 0604): situação do aceite, novidades e tipos de pedido. */
     public function privacy(): void
     {
         $this->read(fn (User $u): array => (new PrivacyCenter())->status((int)$u->id));

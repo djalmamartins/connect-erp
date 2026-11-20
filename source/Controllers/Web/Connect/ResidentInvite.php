@@ -94,7 +94,7 @@ final class ResidentInvite extends Controller
             redirect('/convite');
             return;
         }
-        // LGPD (ADR 0603): sem o aceite dos Termos e da Política, a conta não é criada.
+        // LGPD (ADR 0604): sem o aceite dos Termos e da Política, a conta não é criada.
         if (($data['terms'] ?? '') !== '1') {
             $this->message->warning('Para ativar a conta, marque que leu e aceita os Termos de Uso e a Política de Privacidade.')->flash();
             redirect('/convite');

@@ -1,5 +1,5 @@
 <?php
-/** Identificação da Connect (Configurações do Studio, ADR 0603). Campo vazio não aparece. */
+/** Identificação da Connect (Configurações do Studio, ADR 0604). Campo vazio não aparece. */
 $legalCompany = CONF_SITE_COMPANY_NAME ?: CONF_SITE_NAME;
 $legalAddress = trim(CONF_SITE_ADDR_STREET . ', ' . CONF_SITE_ADDR_NUMBER . (CONF_SITE_ADDR_COMPLEMENT ? ' - ' . CONF_SITE_ADDR_COMPLEMENT : '') . ' - ' . CONF_SITE_ADDR_DISTRICT . ', ' . CONF_SITE_ADDR_CITY . ' - ' . CONF_SITE_ADDR_STATE . ', ' . CONF_SITE_ADDR_ZIPCODE, ' ,-');
 $legalPrivacyEmail = CONF_PRIVACY_EMAIL ?: CONF_MAIL_SUPPORT;

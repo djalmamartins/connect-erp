@@ -13,7 +13,7 @@ const base: Privacy = {
   answer_days: 15,
 };
 
-describe('privacidade (ADR 0603)', () => {
+describe('privacidade (ADR 0604)', () => {
   it('pede o aceite só quando o servidor diz que falta', () => {
     expect(needsTerms(base)).toBe(true);
     expect(needsTerms({ ...base, accepted: true })).toBe(false);

@@ -170,7 +170,7 @@ $schema = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     "CREATE TABLE IF NOT EXISTS studio_support_ticket_events (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,ticket_id INT UNSIGNED NOT NULL,user_id INT UNSIGNED NULL,event_type VARCHAR(40) NOT NULL,old_value TEXT NULL,new_value TEXT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     "CREATE TABLE IF NOT EXISTS studio_support_ticket_attachments (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,ticket_id INT UNSIGNED NOT NULL,message_id INT UNSIGNED NULL,user_id INT UNSIGNED NOT NULL,file_path VARCHAR(500) NOT NULL,original_name VARCHAR(255) NOT NULL,mime_type VARCHAR(120) NULL,file_size INT UNSIGNED NOT NULL DEFAULT 0,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
-    // Pedido de proposta do site (database/base/schema.sql); a migration do ADR 0603 acrescenta marketing_consent_at.
+    // Pedido de proposta do site (database/base/schema.sql); a migration do ADR 0604 acrescenta marketing_consent_at.
     "CREATE TABLE IF NOT EXISTS proposals (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, protocol VARCHAR(32) NOT NULL UNIQUE, name VARCHAR(180) NOT NULL, email VARCHAR(180) NOT NULL,
         whatsapp VARCHAR(30) NOT NULL, condominium VARCHAR(180) NOT NULL, units INT UNSIGNED NOT NULL, profile VARCHAR(40) NOT NULL, message TEXT NULL,

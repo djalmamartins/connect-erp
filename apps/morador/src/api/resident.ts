@@ -276,7 +276,7 @@ export type TwoFactorStatus = {
 /** Primeiro acesso (boas-vindas) e foto do perfil: valem para a conta, não para o vínculo. */
 export type Onboarding = { completed: boolean; has_photo: boolean };
 
-/** Privacidade da conta (LGPD, ADR 0603): aceite dos termos, novidades e pedidos do titular. */
+/** Privacidade da conta (LGPD, ADR 0604): aceite dos termos, novidades e pedidos do titular. */
 export type Privacy = {
   terms_version: string;
   privacy_version: string;

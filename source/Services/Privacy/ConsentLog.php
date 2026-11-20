@@ -10,7 +10,7 @@ use Source\Core\Connect;
 use Source\Support\ClientIp;
 
 /**
- * Prova dos aceites e consentimentos (LGPD art. 8º, § 2º), ADR 0603. Tabela privacy_consents.
+ * Prova dos aceites e consentimentos (LGPD art. 8º, § 2º), ADR 0604. Tabela privacy_consents.
  *
  * Só acrescenta linhas. Retirar um consentimento grava uma linha nova com granted = 0; a última linha de cada finalidade vale.
  * Guarda o hash (sha256) do IP e do navegador, nunca o IP puro.

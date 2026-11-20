@@ -1,5 +1,5 @@
 /**
- * Banner de cookies (LGPD, ADR 0603).
+ * Banner de cookies (LGPD, ADR 0604).
  * - Nada opcional carrega antes da escolha: o mapa só entra pelo [data-consent-src] e o GA4 só com data-ga-id e "stats".
  * - A escolha fica no cookie necessário (180 dias) e vai para o servidor como prova (POST /cookies).
  * - O link [data-cookie-open] reabre o banner; "Mostrar mapa" libera só o mapa.

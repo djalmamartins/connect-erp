@@ -30,7 +30,7 @@ final class ProposalService
         if (mb_strlen($clean['name']) < 3 || !is_email($clean['email']) || strlen(preg_replace('/\D+/', '', $clean['whatsapp'])) < 10 || mb_strlen($clean['condominium']) < 2 || !$clean['units'] || $clean['units'] < 1 || !in_array($clean['profile'], $profiles, true)) {
             return ['success' => false, 'message' => 'Confira os campos obrigatórios e tente novamente.'];
         }
-        // ADR 0603: a ciência da política é marcada pela pessoa; sem ela, nada é gravado. Marketing é separado e opcional.
+        // ADR 0604: a ciência da política é marcada pela pessoa; sem ela, nada é gravado. Marketing é separado e opcional.
         $privacyAccepted = self::checked($data['privacy'] ?? null);
         $marketing = self::checked($data['marketing'] ?? null);
         if (!$privacyAccepted) {
@@ -62,7 +62,7 @@ final class ProposalService
         return in_array($value, ['1', 1, true, 'on', 'yes'], true);
     }
 
-    /** Prova do que a pessoa marcou (ADR 0603). Falha aqui não perde a proposta: fica no log para conferir. */
+    /** Prova do que a pessoa marcou (ADR 0604). Falha aqui não perde a proposta: fica no log para conferir. */
     private function recordConsents(Proposal $proposal, bool $marketing): void
     {
         try {

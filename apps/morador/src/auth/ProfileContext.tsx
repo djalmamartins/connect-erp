@@ -11,7 +11,7 @@ type ProfileValue = {
   completeOnboarding(): Promise<void>;
   setPhoto(file: UploadFile): Promise<void>;
   removePhoto(): Promise<void>;
-  /** Aceite dos termos (LGPD, ADR 0603). null enquanto carrega ou se o servidor ainda não tiver a rota. */
+  /** Aceite dos termos (LGPD, ADR 0604). null enquanto carrega ou se o servidor ainda não tiver a rota. */
   privacy: Privacy | null;
   acceptTerms(marketing: boolean): Promise<void>;
   setMarketing(marketing: boolean): Promise<void>;

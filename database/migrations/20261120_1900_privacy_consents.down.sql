@@ -1,4 +1,4 @@
--- Reverte 20261120_1900 (ADR 0603). Apaga a prova dos aceites: só rode com cópia do banco.
+-- Reverte 20261120_1900 (ADR 0604). Apaga a prova dos aceites: só rode com cópia do banco.
 DROP TABLE IF EXISTS `privacy_consents`;
 ALTER TABLE `proposals` DROP COLUMN IF EXISTS `marketing_consent_at`;
 ALTER TABLE `settings`

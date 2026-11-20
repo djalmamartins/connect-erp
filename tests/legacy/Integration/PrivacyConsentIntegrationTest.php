@@ -10,7 +10,7 @@ use Source\Services\Privacy\LegalDocuments;
 use Source\Support\Proposal\ProposalService;
 
 /**
- * Prova dos aceites e consentimentos (LGPD art. 8º, § 2º; ADR 0603).
+ * Prova dos aceites e consentimentos (LGPD art. 8º, § 2º; ADR 0604).
  */
 final class PrivacyConsentIntegrationTest extends TestCase
 {

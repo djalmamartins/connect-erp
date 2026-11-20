@@ -121,7 +121,7 @@
 /* Páginas legais */
 .legal-hero{padding:150px 0 64px;background:linear-gradient(135deg,#062b22,#0a4938);color:#fff}.legal-hero span{display:block;margin-bottom:12px;color:#d1ad3a;font-size:.75em;font-weight:700;letter-spacing:2px}.legal-hero h1{margin:0;color:#fff;font-size:clamp(2em,4vw,3.5em)}.legal-hero p{margin:14px 0 0;color:rgba(255,255,255,.78)}.legal-page{padding:64px 0 90px;background:#f7f8f7}.legal-page__content{max-width:920px;padding:48px;background:#fff;border:1px solid #e5e9e7;border-radius:14px;box-shadow:0 12px 36px rgba(5,42,32,.06)}.legal-page__content h2,.legal-page__content h3,.legal-page__content strong{color:#082f25}.legal-page__content p,.legal-page__content li{color:#4e5854;line-height:1.75}.legal-page__content ul,.legal-page__content ol{padding-left:24px}.footer__bottom{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}.footer__legal{display:flex;gap:18px}.footer__legal a{font-size:.9em;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:700px){.legal-hero{padding:115px 0 45px}.legal-page{padding:30px 0 55px}.legal-page__content{padding:26px 20px;border-radius:10px}.footer__bottom{gap:12px}.footer__legal{justify-content:center;gap:12px;flex-wrap:wrap}}
-/* Banner de cookies e conteúdo externo com clique (LGPD, ADR 0603) */
+/* Banner de cookies e conteúdo externo com clique (LGPD, ADR 0604) */
 .cookie-consent{position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483001;display:flex;justify-content:center;pointer-events:none}
 .cookie-consent[hidden]{display:none}
 .cookie-consent__box{pointer-events:auto;max-width:720px;width:100%;background:#fff;color:#1f2a24;border:1px solid #d6ddd8;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:20px 22px}

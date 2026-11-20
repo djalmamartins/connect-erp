@@ -1863,7 +1863,7 @@ class Studio extends Controller
                 if (!$image) { echo json_encode(["message" => $upload->message()->render()]); return; }
                 $settings->{$field} = $image;
             }
-            // ADR 0603: CNPJ com 14 dígitos e e-mail do encarregado válido (vazio pode: o site só não mostra).
+            // ADR 0604: CNPJ com 14 dígitos e e-mail do encarregado válido (vazio pode: o site só não mostra).
             $cnpjDigits = preg_replace('/\D+/', '', (string)($settings->site_cnpj ?? ''));
             if ($cnpjDigits !== '' && strlen($cnpjDigits) !== 14) { $this->jsonMessage("O CNPJ precisa ter 14 números.", "warning"); return; }
             if ($cnpjDigits !== '') $settings->site_cnpj = substr($cnpjDigits, 0, 2) . '.' . substr($cnpjDigits, 2, 3) . '.' . substr($cnpjDigits, 5, 3) . '/' . substr($cnpjDigits, 8, 4) . '-' . substr($cnpjDigits, 12, 2);

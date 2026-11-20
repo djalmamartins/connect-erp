@@ -61,7 +61,7 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
     $route->post("/perfil/foto", "AppScreens:uploadPhoto");
     $route->post("/perfil/foto/remover", "AppScreens:deletePhoto");
     $route->get("/boas-vindas", "AppScreens:welcome");
-    // LGPD (ADR 0603): aceite dos termos, novidades e pedidos do titular.
+    // LGPD (ADR 0604): aceite dos termos, novidades e pedidos do titular.
     $route->get("/termos", "AppScreens:terms");
     $route->post("/termos", "AppScreens:acceptTerms");
     $route->get("/privacidade", "AppScreens:privacy");
