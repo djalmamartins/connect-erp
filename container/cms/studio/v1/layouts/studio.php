@@ -16,6 +16,7 @@
     <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/'.$faviconName.'.svg', 'default') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeStudio('/assets/images/'.$faviconName.'-32.png', 'default') ?>">
     <link rel="apple-touch-icon" href="<?= themeStudio('/assets/images/'.$faviconName.'-180.png', 'default') ?>">
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0624) */ ?>
 </head>
 <?php
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');
@@ -157,6 +158,7 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 <script src="<?= themeStudio('/assets/studio.min.js', 'default') . '?v=' . filemtime($studioJs) ?>"></script>
+<?= connect_fields_assets('js') ?>
 <script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget defer></script>
 <?php $movesEditorDir=dirname(__DIR__, 4).'/shared/assets/moves-editor'; ?>
 <script src="<?= url('/container/shared/assets/moves-editor/moves-editor.js') . '?v=' . filemtime($movesEditorDir.'/moves-editor.js') ?>"></script>

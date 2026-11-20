@@ -86,7 +86,11 @@ async function run(page, step) {
   else if (verb === 'rolar') await locate(page, value).scrollIntoViewIfNeeded();
   else if (verb === 'preencher') {
     const [selector, text] = value.split('=>').map((s) => s.trim());
-    await locate(page, selector).fill(text ?? '');
+    const target = locate(page, selector);
+    // Data padrão (ADR 0624): o input original está escondido; grava o valor por ele e o campo visível acompanha.
+    if (await target.evaluate((el) => el.matches('.cx-date__native')).catch(() => false)) {
+      await target.evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); }, text ?? '');
+    } else await target.fill(text ?? '');
   } else if (verb === 'escolher') {
     const [selector, option] = value.split('=>').map((s) => s.trim());
     await locate(page, selector).selectOption({ label: option });
@@ -181,6 +185,8 @@ for (const screen of screens) {
         continue;
       }
       const box = await locator.evaluate((el) => {
+        // Campo de data ou de arquivo padrão (ADR 0624): o input original fica escondido; marca o componente visível.
+        if (el.matches('.cx-date__native, .cx-upload__native')) el = el.closest('.cx-date, .cx-upload') || el;
         const r = el.getBoundingClientRect();
         return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height };
       });

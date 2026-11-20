@@ -2274,37 +2274,29 @@
     var form = $('[data-disk-upload]', root);
     if (form) {
       var input = $('[name="file"]', form);
-      var drop = $('[data-disk-drop]', form);
-      var progress = $('[data-disk-progress]', form);
-      var bar = $('[data-disk-progress-bar]', form);
-      var size = function (b) { return b < 1024 ? b + ' B' : (b < 1048576 ? (b / 1024).toFixed(1).replace('.', ',') + ' KB' : (b / 1048576).toFixed(1).replace('.', ',') + ' MB'); };
-      var check = function () {
-        var file = (input.files || [])[0];
-        $('[data-disk-file-name]', form).textContent = file ? file.name : 'Escolha ou arraste o arquivo';
-        $('[data-disk-file-meta]', form).textContent = file ? size(file.size) : 'Um arquivo por vez';
-        return file ? fileProblem(input, file) : null;
-      };
-      input.addEventListener('change', function () { var problem = check(); if (problem) toast(problem, 'warning'); });
-      ['dragenter', 'dragover'].forEach(function (name) { drop.addEventListener(name, function () { drop.classList.add('is-over'); }); });
-      ['dragleave', 'drop'].forEach(function (name) { drop.addEventListener(name, function () { drop.classList.remove('is-over'); }); });
+      /* Área de arrastar, lista e progresso: componente padrão de envio (ADR 0624). */
+      var chosen = function () { return window.ConnectUpload ? window.ConnectUpload.files(input)[0] : (input.files || [])[0]; };
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         var condo = $('[name="condominium_id"]', form);
         if (!condo.value) { condo.focus(); toast('Escolha o condomínio.', 'warning'); return; }
-        var problem = check();
-        if (problem === null) { toast('Escolha o arquivo.', 'warning'); return; }
+        var file = chosen();
+        if (!file) { toast('Escolha o arquivo.', 'warning'); return; }
+        var problem = fileProblem(input, file);
         if (problem) { toast(problem, 'warning'); return; }
         var body = new FormData();
         body.append('condominium_id', condo.value);
         body.append('folder', $('[name="folder"]', form).value);
         body.append('title', $('[name="title"]', form).value.replace(/\s+/g, ' ').trim());
-        body.append('file', input.files[0]);
+        body.append('file', file);
         var button = $('[type="submit"]', form);
+        var upload = window.ConnectUpload;
         busy(button, true);
-        progress.hidden = false; bar.style.width = '0%';
-        sendMultipart(api, csrf(), body, function (pct) { bar.style.width = pct + '%'; progress.setAttribute('aria-valuenow', String(pct)); })
-          .then(function () { toast('Arquivo enviado.', 'success'); reload(); })
-          .catch(function (error) { busy(button, false); progress.hidden = true; toast(error.message, 'danger'); });
+        var retry = function () { form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true })); };
+        if (upload) { upload.progress(input, file, 0); }
+        sendMultipart(api, csrf(), body, function (pct) { if (upload) { upload.progress(input, file, pct); } })
+          .then(function () { if (upload) { upload.done(input, file); } toast('Arquivo enviado.', 'success'); reload(); })
+          .catch(function (error) { busy(button, false); if (upload) { upload.fail(input, file, error.message, retry); } toast(error.message, 'danger'); });
       });
     }
     /* Mostrar ou esconder no aplicativo do morador (ADR 0302). */
@@ -2410,17 +2402,17 @@
       body.append('folder', $('[data-attachment-up-folder]', dialog).value);
       body.append('title', $('[data-attachment-up-title]', dialog).value.replace(/\s+/g, ' ').trim());
       body.append('file', file);
-      var progress = $('[data-attachment-progress]', dialog);
-      var bar = $('[data-attachment-bar]', dialog);
+      /* Progresso e falha no cartão do arquivo (componente padrão de envio, ADR 0624). */
+      var cu = window.ConnectUpload;
       busy(send, true);
-      progress.hidden = false; bar.style.width = '0%';
-      sendMultipart(api, csrf(), body, function (pct) { bar.style.width = pct + '%'; progress.setAttribute('aria-valuenow', String(pct)); })
+      if (cu) { cu.progress(input, file, 0); }
+      sendMultipart(api, csrf(), body, function (pct) { if (cu) { cu.progress(input, file, pct); } })
         .then(function (json) {
-          busy(send, false); progress.hidden = true; input.value = '';
+          busy(send, false); if (cu) { cu.clear(input); } else { input.value = ''; }
           choose(json.data); dialog.close();
           toast('Arquivo enviado ao Disco Virtual e anexado. Salve o cadastro para gravar.', 'success');
         })
-        .catch(function (error) { busy(send, false); progress.hidden = true; toast(error.message, 'danger'); });
+        .catch(function (error) { busy(send, false); if (cu) { cu.fail(input, file, error.message, function () { send.click(); }); } toast(error.message, 'danger'); });
     });
   });
 
@@ -3670,7 +3662,12 @@
             upload.append('entry_ids', entries.join(','));
             upload.append('kind', kind);
             upload.append('file', file);
-            return sendMultipart(form.getAttribute('data-attach-api'), token, upload, function () {}).catch(function (error) { failed.push(file.name + ' (' + error.message + ')'); });
+            /* Um anexo por vez, com o progresso no cartão do arquivo (ADR 0624). */
+            var cu = window.ConnectUpload;
+            if (cu) { cu.progress(filesInput, file, 0); }
+            return sendMultipart(form.getAttribute('data-attach-api'), token, upload, function (pct) { if (cu) { cu.progress(filesInput, file, pct); } })
+              .then(function () { if (cu) { cu.done(filesInput, file); } })
+              .catch(function (error) { if (cu) { cu.fail(filesInput, file, 'Falha no envio: ' + error.message + ' Anexe na ficha do lançamento.'); } failed.push(file.name + ' (' + error.message + ')'); });
           });
         }, Promise.resolve());
         return chain.then(function () {
