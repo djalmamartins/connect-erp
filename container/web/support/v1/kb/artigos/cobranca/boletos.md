@@ -59,6 +59,8 @@ Quando o banco confirma o pagamento, todas as contas do boleto são baixadas jun
 
 > Se o boleto da fatura já tinha sido emitido quando o rateio foi lançado, o rateio sai com boleto próprio. O mesmo vale para a unidade marcada com **Bloquear unificação de boletos** no cadastro.
 
+Quem tem várias unidades no condomínio pode receber um boleto só: marque **Juntar num boleto só as unidades do mesmo responsável** na [regra de cobrança](artigo:indices). Aí o boleto da fatura de uma unidade soma as contas da mesma fatura das outras unidades do mesmo CPF ou CNPJ, e o **Gerar boletos** emite um boleto por responsável.
+
 >! Enquanto o banco estiver em modo de teste, os boletos são de homologação e não valem para pagamento.
 
 O pagamento é baixado automaticamente quando o [arquivo de retorno](artigo:arquivo-de-retorno) do banco é importado.
