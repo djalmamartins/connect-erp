@@ -1,4 +1,4 @@
-# 0399 — Boleto único por responsável (várias unidades do mesmo dono)
+# 0600 — Boleto único por responsável (várias unidades do mesmo dono)
 
 - Status: Aceito
 - Data: 20/11/2026

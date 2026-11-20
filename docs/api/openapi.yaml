@@ -5416,7 +5416,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, properties: { condominium_id: { type: [integer, "null"] }, fine_bp: { type: integer, minimum: 0, maximum: 1000, example: 200 }, monthly_interest_bp: { type: integer, minimum: 0, maximum: 1000, example: 100 }, price_index: { type: string, enum: [IPCA, NONE] }, breach_days_late: { type: integer, minimum: 1, maximum: 365 }, breach_open_installments: { type: integer, minimum: 0, maximum: 60 }, merge_owner_units: { type: boolean, description: 'Juntar no boleto da fatura as unidades do mesmo responsável (mesmo CPF/CNPJ). Sem o campo, mantém o valor atual (ADR 0399)' } } } } }
+        content: { application/json: { schema: { type: object, properties: { condominium_id: { type: [integer, "null"] }, fine_bp: { type: integer, minimum: 0, maximum: 1000, example: 200 }, monthly_interest_bp: { type: integer, minimum: 0, maximum: 1000, example: 100 }, price_index: { type: string, enum: [IPCA, NONE] }, breach_days_late: { type: integer, minimum: 1, maximum: 365 }, breach_open_installments: { type: integer, minimum: 0, maximum: 60 }, merge_owner_units: { type: boolean, description: 'Juntar no boleto da fatura as unidades do mesmo responsável (mesmo CPF/CNPJ). Sem o campo, mantém o valor atual (ADR 0600)' } } } } }
       responses:
         '200': { description: Regra gravada }
         '401': { $ref: '#/components/responses/Unauthenticated' }
