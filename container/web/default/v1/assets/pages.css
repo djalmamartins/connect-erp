@@ -148,3 +148,6 @@
 .proposal-form-group .proposal-consent input{width:20px;height:20px;min-width:20px;padding:0;margin:2px 0 0;accent-color:var(--web-primary)}
 .proposal-form-group .proposal-consent>span{color:#fff}
 .proposal-form-group .proposal-consent a{color:var(--web-primary);text-decoration:underline}
+.invite-consent{display:flex!important;flex-direction:row!important;gap:10px;align-items:flex-start;font-size:.9em;line-height:1.45;margin:4px 0 12px;cursor:pointer}
+.invite-consent input{width:20px!important;height:20px!important;min-width:20px;padding:0!important;margin:2px 0 0!important}
+.invite-consent a{text-decoration:underline}

@@ -276,6 +276,20 @@ export type TwoFactorStatus = {
 /** Primeiro acesso (boas-vindas) e foto do perfil: valem para a conta, não para o vínculo. */
 export type Onboarding = { completed: boolean; has_photo: boolean };
 
+/** Privacidade da conta (LGPD, ADR 0600): aceite dos termos, novidades e pedidos do titular. */
+export type Privacy = {
+  terms_version: string;
+  privacy_version: string;
+  accepted: boolean;
+  accepted_at: string | null;
+  marketing: boolean;
+  terms_url: string;
+  privacy_url: string;
+  requests: Record<string, string>;
+  answer_days: number;
+};
+export type PrivacyRequestResult = { id: number; protocol: string; answer_until: string };
+
 export const FORGOT_MESSAGE = 'Se a conta existir, enviamos um link para o e-mail cadastrado.';
 
 export function isFeatureOn(me: Me | null, feature: Feature): boolean {
@@ -347,6 +361,10 @@ export function residentApi(api: ApiClient) {
       const data = await api.post<{ message?: string } | null>('/resident/password/forgot', { login });
       return data?.message ?? FORGOT_MESSAGE;
     },
+    privacy: () => api.get<Privacy>('/resident/privacy'),
+    acceptTerms: (marketing: boolean) => api.post<Privacy>('/resident/privacy/accept', { accept_terms: true, marketing }),
+    setMarketing: (marketing: boolean) => api.post<Privacy>('/resident/privacy/marketing', { marketing }),
+    privacyRequest: (type: string, details: string) => api.post<PrivacyRequestResult>('/resident/privacy/requests', { type, details }),
     onboarding: () => api.get<Onboarding>('/resident/onboarding'),
     completeOnboarding: () => api.post<null>('/resident/onboarding/complete'),
     uploadPhoto: (file: UploadFile) => api.upload<{ has_photo: boolean }>('/resident/profile/photo', {}, [{ field: 'photo', file }]),

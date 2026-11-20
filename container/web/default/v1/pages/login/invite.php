@@ -54,6 +54,15 @@
                                     <input type="password" name="password_re" autocomplete="new-password" required/>
                                 </div>
                             </label>
+                            <?php /* LGPD (ADR 0600): aceite registrado em privacy_consents; novidades à parte, opcional e desmarcada */ ?>
+                            <label class="invite-consent">
+                                <input type="checkbox" name="terms" value="1" required/>
+                                <span>Li e aceito os <a href="<?= htmlspecialchars(CONF_URL_SSL . '/termos-de-uso') ?>" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="<?= htmlspecialchars(CONF_URL_SSL . '/politica-de-privacidade') ?>" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+                            </label>
+                            <label class="invite-consent">
+                                <input type="checkbox" name="marketing" value="1"/>
+                                <span>Quero receber novidades da <?= htmlspecialchars(CONF_SITE_NAME) ?> (opcional).</span>
+                            </label>
                             <button class="btn btn-full gradient gradient-web gradient-hover transition icon-check-square-o">Ativar conta</button>
                         </form>
                     <?php endif; ?>

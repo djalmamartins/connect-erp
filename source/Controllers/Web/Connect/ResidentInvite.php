@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Web\Connect;
 
+use Source\Services\Privacy\PrivacyCenter;
 use Source\Core\Controller;
 use Source\Core\Session;
 use Source\Models\Auth;
@@ -93,12 +94,24 @@ final class ResidentInvite extends Controller
             redirect('/convite');
             return;
         }
+        // LGPD (ADR 0600): sem o aceite dos Termos e da Política, a conta não é criada.
+        if (($data['terms'] ?? '') !== '1') {
+            $this->message->warning('Para ativar a conta, marque que leu e aceita os Termos de Uso e a Política de Privacidade.')->flash();
+            redirect('/convite');
+            return;
+        }
         $session = new Session();
         $token = $session->{self::SESSION_KEY} ?? null;
         $result = (new ResidentInvitationAcceptance())->accept($token, (string)($data['document'] ?? ''), (string)($data['password'] ?? ''),
             (string)($data['password_re'] ?? ''), ClientIp::resolve());
         if ($result['ok']) {
             $session->unset(self::SESSION_KEY);
+            try {
+                (new PrivacyCenter())->accept((int)($result['user_id'] ?? 0), 'convite', ($data['marketing'] ?? '') === '1');
+            } catch (\Throwable $error) {
+                // A conta já existe: sem o registro, o aceite é pedido de novo na primeira entrada no app.
+                \Source\Support\AppLogger::log('error', 'Aceite do convite não registrado', ['event_type' => 'privacy_consent_failed', 'error' => $error->getMessage(), 'status' => 'open'], 'privacy');
+            }
             $this->message->success($result['message'])->flash();
             redirect('/studio/login');
             return;

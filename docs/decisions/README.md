@@ -403,4 +403,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0395](../Organic%20Code/decisions/0395-studio-svg-logo-sandboxed.md) | Logo SVG do Studio volta a abrir, com sandbox | Aceito |
 | [0396](../Organic%20Code/decisions/0396-clean-install-command.md) | Instalação limpa do banco da produção (composer db:install) | Aceito |
 | [0397](../Organic%20Code/decisions/0397-email-layout-connect.md) | Layout único dos e-mails na identidade Connect | Aceito |
-| [0600](../Organic%20Code/decisions/0600-lgpd-cdc-site.md) | LGPD e CDC no site: rastreadores fora, banner de cookies, aceite na proposta, identificação, textos versionados e plano de incidente | Aceito |
+| [0600](../Organic%20Code/decisions/0600-lgpd-cdc-site.md) | LGPD e CDC no site: rastreadores fora, banner de cookies, aceite na proposta, identificação, textos versionados e plano de incidente; etapa 2: aceite dos termos no convite e nos apps do morador, novidades à parte e pedidos do titular como chamado LGPD | Aceito |

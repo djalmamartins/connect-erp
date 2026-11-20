@@ -67,3 +67,26 @@
   do registro; contratos com suboperadores e com os condomínios.
 - Ainda carrega do Google: as fontes (Google Fonts) do site e do Studio. Não grava cookie, mas envia o IP; servir as
   fontes do próprio site é a próxima melhoria.
+
+## Etapa 2 — aceite e direitos do titular na conta do morador
+
+CONFIRMADO no código: o convite do morador criava a conta sem aceite de termos, e o app (web e celular) não tinha onde
+pedir acesso, correção ou exclusão dos dados nem retirar o consentimento de novidades.
+
+1. **Convite** (`ResidentInvite::accept`): a caixa "Li e aceito os Termos de Uso e a Política de Privacidade" é
+   obrigatória; novidades é outra caixa, opcional. O aceite vai para `privacy_consents` com o canal `convite`.
+2. **Aceite por versão** (`Services/Privacy/PrivacyCenter`): a conta precisa ter aceito a versão atual de
+   `LegalDocuments::TERMS` e `::PRIVACY`. Mudou a versão, o morador aceita de novo. No app web, `AppScreens::context()`
+   leva a `/termos` antes de qualquer tela (guardado na sessão; se a leitura falhar, registra no log e deixa passar
+   para não trancar o morador). No celular, a aba inicial leva a `/termos` pelo `ProfileContext`.
+3. **Privacidade e meus dados** (Perfil): mostra a data do aceite e os links, liga e desliga novidades (cada mudança é
+   uma linha nova, o histórico fica) e abre pedido do titular (art. 18: acesso, correção, exclusão, portabilidade,
+   compartilhamento, outro). O pedido vira chamado do Help Desk, categoria `LGPD`, prioridade alta, origem do portal,
+   com condomínio e unidade do vínculo, e prazo de resposta de 15 dias (art. 19). Vale mesmo com a função "chamados"
+   desligada no condomínio, porque o direito não depende dela.
+4. **API** (`/api/v1/resident/privacy`, `/accept`, `/marketing`, `/requests`) no OpenAPI (`ResidentPrivacy`); o
+   aceite pela API exige `accept_terms: true` e grava o canal `celular`.
+
+Testes: `ResidentPrivacyIntegrationTest` (aceite por versão, novidades separadas, chamado LGPD na unidade certa e sem
+HTML, rotas da API com 422 sem a caixa) e `__tests__/privacy.test.ts` no app de celular. Central de Ajuda: seção
+"Termos, novidades e pedidos sobre os dados (LGPD)" em `aplicativo-do-morador`.

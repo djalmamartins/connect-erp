@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Source\Controllers\App\Resident;
 
+use Source\Services\Privacy\LegalDocuments;
+use Source\Services\Privacy\PrivacyCenter;
 use DomainException;
 use InvalidArgumentException;
 use Source\Controllers\Api\V1\ResidentApp;
 use Source\Core\Controller;
+use Source\Core\Session;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\Registry\RegistryNotFound;
@@ -53,7 +56,11 @@ final class AppScreens extends Controller
     /** Barra inferior no celular: Início, Resolva fácil, Unidade e Perfil (revisão de 15/11). */
     public const TABS = ['home', 'resolve', 'unit', 'profile'];
     /** Páginas fora do menu e a aba que fica acesa nelas. */
-    private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile', 'welcome' => 'home'];
+    private const SECTION_OF = ['notifications' => 'home', 'search' => 'home', 'security' => 'profile', 'welcome' => 'home', 'terms' => 'profile', 'privacy' => 'profile'];
+    /** Sessão: versão dos termos já aceita, para não consultar o banco a cada tela (ADR 0600). */
+    private const TERMS_SESSION = 'resident_terms_ok';
+    /** A tela dos termos (e o POST do aceite) abre sem o aceite; o resto do app leva a ela. */
+    private bool $termsScreen = false;
 
     private ResidentPortal $portal;
 
@@ -117,6 +124,52 @@ final class AppScreens extends Controller
             (new ResidentProfile())->complete((int)$u->id);
             return 'Tudo pronto! Este é o seu aplicativo.';
         }, '/boas-vindas');
+    }
+
+    /** GET /termos — aceite dos Termos e da Política (LGPD, ADR 0600). */
+    public function terms(): void
+    {
+        $this->termsScreen = true;
+        $this->page('terms', null, 'pages/terms', 'Termos e privacidade', fn (User $u): array => ['privacy' => (new PrivacyCenter())->status((int)$u->id)]);
+    }
+
+    /** POST /termos — grava o aceite; novidades só se marcadas. */
+    public function acceptTerms(array $data): void
+    {
+        if (($data['terms'] ?? '') !== '1') {
+            $this->message->warning('Para continuar, marque que leu e aceita os Termos de Uso e a Política de Privacidade.')->flash();
+            redirect(app_url('/termos'));
+            return;
+        }
+        $this->termsScreen = true;
+        $this->action(null, '/', $data, function (User $u) use ($data): string {
+            (new PrivacyCenter())->accept((int)$u->id, 'app', ($data['marketing'] ?? '') === '1');
+            (new Session())->set(self::TERMS_SESSION, LegalDocuments::TERMS . '|' . LegalDocuments::PRIVACY);
+            return 'Obrigado! Aceite registrado.';
+        }, '/termos');
+    }
+
+    /** GET /privacidade — o que foi aceito, novidades e pedidos do titular. */
+    public function privacy(): void
+    {
+        $this->page('privacy', null, 'pages/privacy', 'Privacidade e meus dados', fn (User $u): array => ['privacy' => (new PrivacyCenter())->status((int)$u->id)]);
+    }
+
+    public function privacyMarketing(array $data): void
+    {
+        $this->action(null, '/privacidade', $data, function (User $u) use ($data): string {
+            $on = ($data['marketing'] ?? '') === '1';
+            (new PrivacyCenter())->setMarketing((int)$u->id, $on, 'app');
+            return $on ? 'Pronto. Você vai receber novidades.' : 'Pronto. Você não recebe mais novidades.';
+        });
+    }
+
+    public function privacyRequest(array $data): void
+    {
+        $this->action(null, '/privacidade', $data, function (User $u, array $link) use ($data): string {
+            $ticket = (new PrivacyCenter())->request($u, $link, (string)($data['type'] ?? ''), (string)($data['details'] ?? ''));
+            return 'Pedido enviado. Protocolo ' . $ticket['protocol'] . '. Respondemos até ' . date('d/m/Y', strtotime($ticket['answer_until'])) . '.';
+        });
     }
 
     /** GET /perfil/foto — a foto da própria conta (nunca de outra pessoa). */
@@ -709,12 +762,43 @@ final class AppScreens extends Controller
             redirect(app_url('/login'));
             return null;
         }
+        if (!$this->termsAccepted($user)) {
+            redirect(app_url('/termos'));
+            return null;
+        }
         if ($feature !== null && !in_array($feature, $link['features'], true)) {
             http_response_code(403);
             $this->render('pages/disabled', 'Ainda não liberado', '', $user, $all, $link, ['feature' => ResidentPortalPermissions::FEATURES[$feature] ?? $feature]);
             return null;
         }
         return [$user, $link, $all];
+    }
+
+    /**
+     * Sem o aceite da versão atual dos Termos e da Política, só a própria tela de aceite e a saída abrem (ADR 0600).
+     * O resultado fica na sessão; a versão nova invalida a sessão antiga pelo valor guardado.
+     */
+    private function termsAccepted(User $user): bool
+    {
+        if ($this->termsScreen) {
+            return true;
+        }
+        $session = new Session();
+        $current = LegalDocuments::TERMS . '|' . LegalDocuments::PRIVACY;
+        if (($session->{self::TERMS_SESSION} ?? null) === $current) {
+            return true;
+        }
+        try {
+            $ok = (new PrivacyCenter())->hasAccepted((int)$user->id);
+        } catch (\Throwable $error) {
+            // Falha ao ler o registro não tranca o morador fora do app: fica no log e pergunta de novo depois.
+            \Source\Support\AppLogger::exception($error, 'privacy', ['event_type' => 'privacy_status_failed']);
+            return true;
+        }
+        if ($ok) {
+            $session->set(self::TERMS_SESSION, $current);
+        }
+        return $ok;
     }
 
     private function page(string $active, ?string $feature, string $template, string $title, callable $data): void

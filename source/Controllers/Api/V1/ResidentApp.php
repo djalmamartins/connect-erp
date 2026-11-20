@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Api\V1;
 
+use Source\Services\Privacy\PrivacyCenter;
 use Connect\Http\JsonResponse;
 use DomainException;
 use InvalidArgumentException;
@@ -344,6 +345,42 @@ final class ResidentApp
     public function petsVehicles(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentPortal())->petsVehicles($link));
+    }
+
+    /** Privacidade da conta (LGPD, ADR 0600): situação do aceite, novidades e tipos de pedido. */
+    public function privacy(): void
+    {
+        $this->read(fn (User $u): array => (new PrivacyCenter())->status((int)$u->id));
+    }
+
+    /** POST {accept_terms: true, marketing?: bool} — aceite dos Termos e da Política na versão atual. */
+    public function privacyAccept(): void
+    {
+        $this->write(200, function (User $u, array $link, array $body): array {
+            if (($body['accept_terms'] ?? null) !== true) {
+                throw new InvalidArgumentException('Marque que leu e aceita os Termos de Uso e a Política de Privacidade.');
+            }
+            $marketing = array_key_exists('marketing', $body) ? $body['marketing'] === true : null;
+            return (new PrivacyCenter())->accept((int)$u->id, 'celular', $marketing);
+        });
+    }
+
+    /** POST {marketing: bool} — dar ou retirar o consentimento de novidades. */
+    public function privacyMarketing(): void
+    {
+        $this->write(200, function (User $u, array $link, array $body): array {
+            if (!is_bool($body['marketing'] ?? null)) {
+                throw new InvalidArgumentException('Informe marketing como verdadeiro ou falso.');
+            }
+            return (new PrivacyCenter())->setMarketing((int)$u->id, $body['marketing'], 'celular');
+        });
+    }
+
+    /** POST {type, details?} — pedido do titular (art. 18), vira chamado LGPD no Help Desk. */
+    public function privacyRequest(): void
+    {
+        $this->write(201, fn (User $u, array $link, array $body): array => (new PrivacyCenter())->request($u, $link,
+            is_string($body['type'] ?? null) ? $body['type'] : '', is_string($body['details'] ?? null) ? $body['details'] : ''));
     }
 
     public function onboarding(): void

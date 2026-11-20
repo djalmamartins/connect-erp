@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { UploadFile } from '../api/client';
-import type { Onboarding } from '../api/resident';
+import type { Onboarding, Privacy } from '../api/resident';
 import { useAuth } from './AuthContext';
 
 type ProfileValue = {
@@ -11,6 +11,10 @@ type ProfileValue = {
   completeOnboarding(): Promise<void>;
   setPhoto(file: UploadFile): Promise<void>;
   removePhoto(): Promise<void>;
+  /** Aceite dos termos (LGPD, ADR 0600). null enquanto carrega ou se o servidor ainda não tiver a rota. */
+  privacy: Privacy | null;
+  acceptTerms(marketing: boolean): Promise<void>;
+  setMarketing(marketing: boolean): Promise<void>;
 };
 
 const ProfileContext = createContext<ProfileValue | null>(null);
@@ -23,6 +27,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const { status, api, me } = useAuth();
   const [onboarding, setOnboarding] = useState<Onboarding | null>(null);
   const [photoVersion, setPhotoVersion] = useState(1);
+  const [privacy, setPrivacy] = useState<Privacy | null>(null);
   const userId = me?.user.id ?? null;
 
   useEffect(() => {
@@ -39,6 +44,35 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
   }, [status, userId, api]);
+
+  useEffect(() => {
+    if (status !== 'signedIn' || userId === null) {
+      setPrivacy(null);
+      return;
+    }
+    let alive = true;
+    api
+      .privacy()
+      .then((data) => alive && setPrivacy(data))
+      .catch(() => alive && setPrivacy(null));
+    return () => {
+      alive = false;
+    };
+  }, [status, userId, api]);
+
+  const acceptTerms = useCallback(
+    async (marketing: boolean) => {
+      setPrivacy(await api.acceptTerms(marketing));
+    },
+    [api],
+  );
+
+  const setMarketing = useCallback(
+    async (marketing: boolean) => {
+      setPrivacy(await api.setMarketing(marketing));
+    },
+    [api],
+  );
 
   const completeOnboarding = useCallback(async () => {
     setOnboarding((o) => ({ has_photo: o?.has_photo ?? false, completed: true }));
@@ -61,8 +95,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [api]);
 
   const value = useMemo(
-    () => ({ onboarding, photoVersion, completeOnboarding, setPhoto, removePhoto }),
-    [onboarding, photoVersion, completeOnboarding, setPhoto, removePhoto],
+    () => ({ onboarding, photoVersion, completeOnboarding, setPhoto, removePhoto, privacy, acceptTerms, setMarketing }),
+    [onboarding, photoVersion, completeOnboarding, setPhoto, removePhoto, privacy, acceptTerms, setMarketing],
   );
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
