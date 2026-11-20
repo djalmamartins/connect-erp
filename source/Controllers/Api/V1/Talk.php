@@ -8,6 +8,7 @@ use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Support\TicketError;
+use Source\Services\Talk\TalkCatalog;
 use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkHelpdesk;
 use Source\Services\Talk\TalkTokens;
@@ -23,6 +24,10 @@ use Source\Support\AppLogger;
  *   POST /api/v1/talk/tickets/{id}/close
  *   GET  /api/v1/talk/charges?resident_id=77&phone=5531999998888   2ª via do boleto (ADR 0386)
  *   GET  /api/v1/talk/me                      o próprio token: nome, escopos, validade, condomínios (ADR 0623)
+ *   GET  /api/v1/talk/condominiums                    condomínios do escopo (ADR 0624, condominiums.read)
+ *   GET  /api/v1/talk/condominiums/{id}               endereço e áreas comuns
+ *   GET  /api/v1/talk/condominiums/{id}/units         unidades (só bloco e número)
+ *   GET  /api/v1/talk/condominiums/{id}/announcements comunicados publicados para todos
  * Cada rota pede um escopo do token (TalkTokens::SCOPES); sem ele = 403 insufficient_scope.
  */
 final class Talk
@@ -34,6 +39,38 @@ final class Talk
             return;
         }
         $this->run('talk_me_failed', static fn (): array => [200, (new TalkTokens())->describe($token)]);
+    }
+
+    public function condominiums(): void
+    {
+        $agent = $this->agent('condominiums.read');
+        if ($agent !== null) {
+            $this->list('talk_condominiums_failed', static fn (): array => (new TalkCatalog())->condominiums($agent, $_GET['page'] ?? 1));
+        }
+    }
+
+    public function condominium(array $data): void
+    {
+        $agent = $this->agent('condominiums.read');
+        if ($agent !== null) {
+            $this->run('talk_condominium_failed', static fn (): array => [200, (new TalkCatalog())->condominium($agent, (int)($data['id'] ?? 0))]);
+        }
+    }
+
+    public function units(array $data): void
+    {
+        $agent = $this->agent('condominiums.read');
+        if ($agent !== null) {
+            $this->list('talk_units_failed', static fn (): array => (new TalkCatalog())->units($agent, (int)($data['id'] ?? 0), $_GET['page'] ?? 1));
+        }
+    }
+
+    public function announcements(array $data): void
+    {
+        $agent = $this->agent('condominiums.read');
+        if ($agent !== null) {
+            $this->list('talk_announcements_failed', static fn (): array => (new TalkCatalog())->announcements($agent, (int)($data['id'] ?? 0), $_GET['page'] ?? 1));
+        }
     }
 
     public function people(): void
@@ -107,6 +144,19 @@ final class Talk
             JsonResponse::send($error->status(), ['error' => ['code' => $code, 'message' => $error->getMessage(), 'fields' => $code === 'validation_failed' ? [$error->field => $error->getMessage()] : (object)[]]]);
         } catch (\JsonException) {
             JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'integration', ['event_type' => $failure, 'origin' => 'talk']);
+            JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível concluir o pedido do Talk.']]);
+        }
+    }
+
+    /** Lista paginada: {data: [...], meta: {page, per_page, total}}. @param callable():array{data:list<array>, meta:array} $action */
+    private function list(string $failure, callable $action): void
+    {
+        try {
+            JsonResponse::send(200, $action());
+        } catch (TicketError $error) {
+            JsonResponse::send($error->status(), ['error' => ['code' => $error->status() === 404 ? 'not_found' : 'validation_failed', 'message' => $error->getMessage()]]);
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'integration', ['event_type' => $failure, 'origin' => 'talk']);
             JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível concluir o pedido do Talk.']]);
