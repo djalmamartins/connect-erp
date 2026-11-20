@@ -98,7 +98,7 @@ final class LabSampleYearTest extends TestCase
             'CREATE TABLE erp_bank_charges (id INTEGER PRIMARY KEY, entry_id INTEGER, status TEXT)',
             'CREATE TABLE erp_bank_charge_entries (charge_id INTEGER, entry_id INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_notification_outbox (id INTEGER PRIMARY KEY, condominium_id INTEGER, event_type TEXT, event_key TEXT UNIQUE, subject_table TEXT, subject_id INTEGER,
-                payload_json TEXT, created_by INTEGER, available_at TEXT)',
+                payload_json TEXT, created_by INTEGER, available_at TEXT, status TEXT DEFAULT "pending", last_error TEXT, processed_at TEXT)',
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',
             'CREATE TABLE erp_billing_rules (id INTEGER PRIMARY KEY, condominium_id INTEGER)',
             'CREATE TABLE erp_price_indexes (id INTEGER PRIMARY KEY, code TEXT, competence TEXT, rate_percent REAL)',

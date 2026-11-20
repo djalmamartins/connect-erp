@@ -114,7 +114,7 @@ final class PanelSummariesIntegrationTest extends TestCase
         (new OperationalDashboard($this->pdo))->callWaitlist($this->admin, $reservation['id']);
         $rows = $this->pdo->query("SELECT event_type, status, payload_json FROM erp_notification_outbox")->fetchAll(\PDO::FETCH_ASSOC);
         self::assertCount(1, $rows);
-        self::assertSame(['waitlist.called', 'pending'], [$rows[0]['event_type'], $rows[0]['status']], 'Nada é enviado: fica pendente.');
+        self::assertSame(['waitlist.called', 'cancelled'], [$rows[0]['event_type'], $rows[0]['status']], 'ADR 0600: fica no histórico, sem e-mail.');
         self::assertSame('Bia', json_decode($rows[0]['payload_json'], true)['resident_name']);
     }
 

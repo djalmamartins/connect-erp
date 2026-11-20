@@ -70,13 +70,13 @@ final class OperationsCycleIntegrationTest extends TestCase
         self::assertSame($waiting, $call['waitlist_id']);
         self::assertSame(0, $cards()['waitlist_to_call']);
 
-        // 3. Os dois avisos saem pela fila e, fora de produção, só para a caixa de teste.
+        // 3. Os dois avisos ficam no histórico, já cancelados: o morador não recebe esses e-mails (ADR 0600).
         $events = $this->pdo->query("SELECT event_type FROM erp_notification_outbox WHERE condominium_id = {$this->alpha} ORDER BY id")->fetchAll(\PDO::FETCH_COLUMN);
         self::assertSame(['reservation.approved', 'waitlist.called'], $events);
+        self::assertSame(['cancelled'], array_values(array_unique($this->pdo->query("SELECT status FROM erp_notification_outbox WHERE condominium_id = {$this->alpha}")->fetchAll(\PDO::FETCH_COLUMN))));
         $summary = $this->dispatcher()->dispatch();
-        self::assertSame(['sandbox', 2], [$summary['mode'], $summary['sent']]);
-        self::assertSame(['caixa@mailpit.local'], array_values(array_unique(array_column($this->queued, 2))), 'Nunca o e-mail do morador.');
-        self::assertSame(0, $this->dispatcher()->dispatch()['processed'], 'Despachar de novo não reenvia.');
+        self::assertSame(['sandbox', 0], [$summary['mode'], $summary['processed']]);
+        self::assertSame([], $this->queued, 'Nenhum e-mail.');
 
         // 4. Manutenção atrasada: conta no dashboard, sai ao concluir e gera a próxima uma vez.
         $maintenanceInput = ['condominium_id' => $this->alpha, 'service' => 'Bombas', 'planned_on' => $day(-3), 'frequency' => 'mensal'];

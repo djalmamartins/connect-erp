@@ -10,6 +10,7 @@ use Source\Services\CondominiumAccessDenied;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\NotificationDispatcher;
 use Source\Services\Erp\NotificationOutbox;
+use Source\Services\Erp\ResidentEmailPolicy;
 use Source\Services\Erp\NotificationStaleCancellation;
 use Source\Services\Erp\Registry\RegistryValidationException;
 
@@ -31,10 +32,10 @@ final class NotificationStaleCancellationTest extends TestCase
 
     public function testCancelsStalePendingEvents(): void
     {
-        $type = NotificationOutbox::EVENTS[0];
+        $type = ResidentEmailPolicy::ALLOWED[0];   // ADR 0600: só os permitidos ficam pendentes
         $old = $this->event($type, 10);
         $recent = $this->event($type, 1);
-        $older = $this->event(NotificationOutbox::EVENTS[count(NotificationOutbox::EVENTS) - 1], 40);
+        $older = $this->event(ResidentEmailPolicy::ALLOWED[count(ResidentEmailPolicy::ALLOWED) - 1], 40);
         $this->pdo->prepare("UPDATE erp_notification_outbox SET status = 'failed' WHERE id = ?")->execute([$older]);
         $mail = (int)$this->pdo->query('SELECT COUNT(*) FROM mail_queue')->fetchColumn();
         $deliveries = (int)$this->pdo->query('SELECT COUNT(*) FROM erp_notification_deliveries')->fetchColumn();
