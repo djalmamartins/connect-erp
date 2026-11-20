@@ -76,13 +76,38 @@ final class StudioErpShellTest extends TestCase
             preg_match('/body\.studio-v2\.studio-erp\[data-environment="' . $environment . '"\]\s*\{([^}]*)\}/', $shell, $block);
             return $block[1] ?? '';
         };
-        self::assertStringContainsString('--cx-brand: #6b1fa8', $palette('studio'), 'Studio em roxo');
+        self::assertStringContainsString('--cx-brand: #7c22d4', $palette('studio'), 'Studio no roxo do Moves OS (ADR 0621)');
+        self::assertStringContainsString('--cx-sidebar: #13121f', $palette('studio'), 'Studio com a sidebar quase preta do Moves OS');
         self::assertStringContainsString('--cx-brand: #2563eb', $palette('helpdesk'), 'Help Desk em azul');
         foreach (['studio', 'helpdesk'] as $environment) {
             foreach (['--cx-sidebar:', '--cx-canvas:', '--cx-brand-soft:', '--cx-sidebar-accent:'] as $token) {
                 self::assertStringContainsString($token, $palette($environment), "$environment define $token");
             }
         }
+    }
+
+    public function testMovesOsLayerStylesOnlyTheStudio(): void
+    {
+        $root = moves_container_path('studio', 'default');
+        $layout = (string)file_get_contents($root . '/layouts/studio.php');
+        self::assertFileExists($root . '/assets/css/moves-os.css');
+        self::assertStringContainsString('/assets/css/moves-os.css', $layout);
+        self::assertLessThan(strpos($layout, '/assets/css/moves-os.css'), strpos($layout, '/assets/css/connect-shell.css'), 'moves-os.css vem depois da moldura');
+
+        $css = (string)file_get_contents($root . '/assets/css/moves-os.css');
+        $withoutComments = (string)preg_replace('~/\*.*?\*/~s', '', $css);
+        preg_match_all('/([^{}]+)\{/', $withoutComments, $selectors);
+        foreach ($selectors[1] as $group) {
+            foreach (explode(',', $group) as $selector) {
+                $selector = trim($selector);
+                if ($selector === '' || str_starts_with($selector, '@')) continue;
+                self::assertStringContainsString('[data-environment="studio"]', $selector, "regra só do Studio: $selector");
+            }
+        }
+        // Item ativo do menu em degradê, com texto branco, e foco visível para quem usa teclado.
+        self::assertMatchesRegularExpression('/nav-link\[aria-current="page"\][^{]*\{[^}]*var\(--mo-grad\)[^}]*color: #fff/s', $css);
+        self::assertStringContainsString(':focus-visible', $css);
+        self::assertStringNotContainsString('outline: 0', $css);
     }
 
     public function testStudioHostRegistersOnlyStudioHelpDeskAndRecovery(): void

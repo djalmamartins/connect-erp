@@ -1,0 +1,125 @@
+/*
+ * Moves OS — visual do Studio (CMS) no desenho do Moves OS (ADR 0621, 20/11/2026).
+ *
+ * Carregada por layouts/studio.php depois de connect-shell.css. Vale só para o Studio
+ * (body[data-environment="studio"]); o Help Desk continua azul e o ERP continua no padrão
+ * Realizze verde. Não muda HTML nem comportamento: só cores, sombras e formas.
+ *
+ *   - sidebar quase preta, com o item ativo num degradê rosa → roxo;
+ *   - cards brancos com borda suave, ícones em quadrados coloridos (rosa e roxo alternados);
+ *   - tabelas limpas, cabeçalho em maiúsculas com espaçamento;
+ *   - fonte Inter (a mesma da moldura).
+ *
+ * Contraste (WCAG AA): texto branco sobre o rosa #d6196f dá 5,0:1 e sobre o roxo #7c22d4 dá 6,9:1;
+ * o roxo #7c22d4 sobre branco dá 6,9:1; o texto da sidebar #cfcde0 sobre #13121f dá 12:1.
+ */
+body.studio-v2.studio-erp[data-environment="studio"] {
+    --mo-pink: #d6196f;
+    --mo-purple: #7c22d4;
+    --mo-violet: #6a1bb8;
+    --mo-grad: linear-gradient(100deg, var(--mo-pink) 0%, #a11fb4 48%, var(--mo-purple) 100%);
+    --mo-grad-pink: linear-gradient(140deg, #e0287f 0%, #b9137a 100%);
+    --mo-grad-purple: linear-gradient(140deg, #9333ea 0%, #6a1bb8 100%);
+    --mo-glow: 0 8px 22px -8px rgba(214, 25, 111, .65);
+    --mo-heading: #251f5e;
+    --mo-focus: #ff9ad0;
+}
+
+/* Sidebar ------------------------------------------------------------------ */
+body.studio-erp[data-environment="studio"] .studio-sidebar { background: var(--cx-sidebar) !important; border-right: 1px solid rgba(255, 255, 255, .04) }
+body.studio-erp[data-environment="studio"] .studio-erp-collapse { background: rgba(255, 255, 255, .06); color: var(--cx-sidebar-ink) }
+body.studio-erp[data-environment="studio"] .studio-erp-collapse:hover { background: rgba(255, 255, 255, .12); color: #fff }
+body.studio-erp[data-environment="studio"] .studio-brand-v2.studio-erp-context { border-color: rgba(255, 255, 255, .14) !important; border-radius: 10px; background: rgba(255, 255, 255, .04) }
+body.studio-erp[data-environment="studio"] .studio-erp-context:hover { background: rgba(255, 255, 255, .08) }
+body.studio-erp[data-environment="studio"] .studio-erp-nav { gap: 4px }
+body.studio-erp[data-environment="studio"] .studio-erp-nav-link,
+body.studio-erp[data-environment="studio"] .studio-erp-nav-group > summary,
+body.studio-erp[data-environment="studio"] .studio-sidebar-footer > a { border-radius: 10px !important; font-weight: 500 !important }
+body.studio-erp[data-environment="studio"] .studio-erp-nav-link[aria-current="page"],
+body.studio-erp[data-environment="studio"] .studio-erp-nav-sub a[aria-current="page"] {
+    background: var(--mo-grad) !important; color: #fff !important; font-weight: 600 !important; box-shadow: var(--mo-glow) !important;
+}
+body.studio-erp[data-environment="studio"] .studio-erp-nav-group > summary.is-active { color: #fff !important }
+body.studio-erp[data-environment="studio"] .studio-erp-nav-group > summary.is-active > ion-icon { color: var(--mo-focus) }
+body.studio-erp[data-environment="studio"] .studio-erp-nav-sub { border-left-color: rgba(255, 255, 255, .1) }
+body.studio-erp[data-environment="studio"] .studio-erp-avatar { background: var(--mo-grad); color: #fff }
+body.studio-erp[data-environment="studio"] .studio-sidebar a:focus-visible,
+body.studio-erp[data-environment="studio"] .studio-sidebar button:focus-visible,
+body.studio-erp[data-environment="studio"] .studio-sidebar summary:focus-visible { outline: 2px solid var(--mo-focus) !important; outline-offset: 2px }
+
+/* Navbar: some na tela, como no Moves OS ------------------------------------ */
+body.studio-erp[data-environment="studio"] .studio-topbar { background: var(--cx-canvas) !important; border-bottom-color: transparent !important }
+body.studio-erp[data-environment="studio"] .studio-erp-title > strong { color: var(--mo-heading) }
+body.studio-erp[data-environment="studio"] .studio-global-search input { background-color: var(--cx-surface) !important; border-color: var(--cx-border) !important; border-radius: 10px !important }
+body.studio-erp[data-environment="studio"] .studio-header-actions > a,
+body.studio-erp[data-environment="studio"] .studio-notification-toggle { border-radius: 10px }
+body.studio-erp[data-environment="studio"] .studio-header-profile > .studio-erp-avatar { background: var(--mo-grad); color: #fff }
+
+/* Foco visível no conteúdo (teclado) */
+body.studio-erp[data-environment="studio"] .studio-main a:focus-visible,
+body.studio-erp[data-environment="studio"] .studio-main button:focus-visible,
+body.studio-erp[data-environment="studio"] .studio-main [tabindex]:focus-visible { outline: 2px solid var(--mo-purple); outline-offset: 2px }
+
+/* Títulos e cards ------------------------------------------------------------ */
+body.studio-erp[data-environment="studio"] .studio-page-header .studio-eyebrow,
+body.studio-erp[data-environment="studio"] .studio-page-header > div:first-child > small { color: var(--mo-violet) }
+body.studio-erp[data-environment="studio"] .studio-page-header h1,
+body.studio-erp[data-environment="studio"] .studio-page-header .studio-page-title { color: var(--mo-heading) }
+body.studio-erp[data-environment="studio"] .cx-card,
+body.studio-erp[data-environment="studio"] .studio-panel {
+    border: 1px solid var(--cx-border) !important; border-radius: 10px; box-shadow: var(--cx-shadow-card);
+}
+body.studio-erp[data-environment="studio"] .cx-card__head h2,
+body.studio-erp[data-environment="studio"] .studio-panel > header h2,
+body.studio-erp[data-environment="studio"] .studio-panel-title { color: var(--mo-heading); font-weight: 600 }
+
+/* Indicadores: todos brancos, ícone em quadrado colorido (rosa e roxo alternados) */
+body.studio-erp[data-environment="studio"] .cx-kpi--hero { background: var(--cx-surface) }
+body.studio-erp[data-environment="studio"] .cx-kpi--hero .cx-kpi__label,
+body.studio-erp[data-environment="studio"] .cx-kpi--hero .cx-kpi__meta { color: var(--cx-muted) }
+body.studio-erp[data-environment="studio"] .cx-kpi--hero .cx-kpi__value { color: var(--cx-text) }
+body.studio-erp[data-environment="studio"] .cx-kpi__label { color: var(--cx-text); font-size: 15px; font-weight: 500 }
+body.studio-erp[data-environment="studio"] .cx-kpi__icon,
+body.studio-erp[data-environment="studio"] .cx-kpi--hero .cx-kpi__icon {
+    width: 46px; height: 46px; border-radius: 10px; background: var(--mo-grad-pink); color: #fff; font-size: 23px; box-shadow: 0 6px 14px -6px rgba(185, 19, 122, .6);
+}
+body.studio-erp[data-environment="studio"] .cx-kpi:nth-child(even) .cx-kpi__icon { background: var(--mo-grad-purple); box-shadow: 0 6px 14px -6px rgba(106, 27, 184, .6) }
+body.studio-erp[data-environment="studio"] a.cx-kpi:hover { border-color: var(--cx-border-strong) !important }
+
+/* Ações rápidas: mesmo quadrado colorido */
+body.studio-erp[data-environment="studio"] .cx-actions__icon { border-radius: 10px; background: var(--mo-grad-pink); color: #fff }
+body.studio-erp[data-environment="studio"] .cx-actions > a:nth-child(even) .cx-actions__icon { background: var(--mo-grad-purple) }
+body.studio-erp[data-environment="studio"] .cx-actions > a:hover { background: var(--cx-surface-hover) }
+
+/* Gráfico e atividade */
+body.studio-erp[data-environment="studio"] .cx-bars__bar { background: linear-gradient(180deg, var(--mo-pink), var(--mo-purple)) }
+body.studio-erp[data-environment="studio"] .cx-feed__dot { background: var(--mo-grad) }
+body.studio-erp[data-environment="studio"] .cx-empty > ion-icon { color: var(--mo-purple) }
+
+/* Tabelas limpas ------------------------------------------------------------- */
+body.studio-erp[data-environment="studio"] .studio-table thead th { background: #f7f7fb !important; color: #4a4b63; font-size: 11.5px; font-weight: 600; letter-spacing: .08em }
+body.studio-erp[data-environment="studio"] .studio-table th,
+body.studio-erp[data-environment="studio"] .studio-table td { border-bottom-color: var(--cx-divider) }
+body.studio-erp[data-environment="studio"] .studio-table tbody tr:hover td { background: #fafafd }
+
+/* Botões --------------------------------------------------------------------- */
+body.studio-erp[data-environment="studio"] .studio-btn { border-radius: 10px }
+body.studio-erp[data-environment="studio"] .studio-btn.primary { border-color: transparent; background: var(--mo-grad); color: #fff; box-shadow: var(--mo-glow) }
+body.studio-erp[data-environment="studio"] .studio-btn.primary:hover { border-color: transparent; background: var(--mo-grad); filter: brightness(.93) }
+body.studio-erp[data-environment="studio"] .studio-btn.outline { border-color: var(--cx-border-strong) }
+
+/* Campos: anel de foco roxo, cantos iguais aos cards */
+body.studio-erp[data-environment="studio"] .studio-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]),
+body.studio-erp[data-environment="studio"] .studio-content select,
+body.studio-erp[data-environment="studio"] .studio-content textarea { border-radius: 8px !important }
+
+/* Rodapé centralizado e discreto */
+body.studio-erp[data-environment="studio"] .studio-footer { justify-content: center; gap: 6px }
+
+/* Indicadores das outras telas (usuários, propostas, depoimentos, log): mesmo quadrado colorido */
+body.studio-erp[data-environment="studio"] .studio-dashboard-kpis > * > i,
+body.studio-erp[data-environment="studio"] .studio-stats > article > i,
+body.studio-erp[data-environment="studio"] .studio-stat-icon { border-radius: 10px !important; background: var(--mo-grad-pink) !important; color: #fff !important }
+body.studio-erp[data-environment="studio"] .studio-dashboard-kpis > :nth-child(even) > i,
+body.studio-erp[data-environment="studio"] .studio-stats > article:nth-child(even) > i,
+body.studio-erp[data-environment="studio"] .studio-stats > article:nth-child(even) .studio-stat-icon { background: var(--mo-grad-purple) !important }
