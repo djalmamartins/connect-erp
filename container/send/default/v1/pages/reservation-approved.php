@@ -9,4 +9,4 @@ $period = trim((string)($starts ?? '')) !== '' ? ' das ' . $starts . ' às ' . (
 <p style="margin:0 0 16px;">Taxa da reserva: <strong><?= $this->e($fee) ?></strong>.</p>
 <?php endif; ?>
 <p style="margin:0 0 16px;">Siga as regras de uso da área. Para cancelar, avise a administração com antecedência.</p>
-<p style="margin:0;font-size:13px;color:#5b6878;">Você recebe este aviso porque a reserva foi feita para a sua unidade.</p>
+<?php $this->insert('partials/note', ['text' => 'Você recebe este aviso porque a reserva foi feita para a sua unidade.']); ?>

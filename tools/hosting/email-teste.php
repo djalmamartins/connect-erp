@@ -46,9 +46,14 @@ if (!isset($options['so-dns'])) {
         exit(2);
     }
     $mail = new \Source\Support\Email();
-    $sent = $mail->bootstrap('Teste de e-mail do Connect ERP',
-        '<p>Este é um e-mail de teste do servidor do Connect ERP (' . htmlspecialchars(date('d/m/Y H:i'), ENT_QUOTES) . ').</p>'
-        . '<p>Se chegou na caixa de entrada (e não no spam), o envio está pronto.</p>', $to, 'Teste')->send();
+    // Na moldura dos e-mails (ADR 0397): o teste também mostra o layout como o morador vai ver.
+    $sent = $mail->bootstrap('Teste de e-mail do Connect ERP', (new \Source\Support\MailTemplate())->render('notice', [
+        'subject' => 'Teste de e-mail do Connect ERP',
+        'paragraphs' => [
+            'Este é um e-mail de teste do servidor do Connect ERP (' . date('d/m/Y H:i') . ').',
+            'Se chegou na caixa de entrada (e não no spam), o envio está pronto.',
+        ],
+    ]), $to, 'Teste')->send();
     echo $sent ? "Envio: OK, aceito pelo SMTP ({$to}). Confira se chegou fora do spam.\n"
         : "Envio: ERRO, " . strip_tags((string)$mail->message()->getText()) . "\n";
     $exit = $sent ? $exit : 1;
