@@ -1,6 +1,6 @@
 # 0610 — Moves Editor no lugar do TinyMCE e do Organic Editor
 
-- Status: Aceito (etapa 1: Studio e Central de Ajuda)
+- Status: Aceito (etapa 1: Studio e Central de Ajuda; etapa 2: chamados e comunicados)
 - Data: 20/11/2026
 - Relacionados: ADR 0346 (limpeza do HTML do Studio), 0316/0320 (modal do sistema, sem alert), 0026 (moldura do Studio)
 - Número: 0601–0609 ficaram livres para as threads abertas em 20/11 que já usavam a faixa 0600 (evitar colisão).
@@ -39,17 +39,28 @@ Conferência do pacote (CONFIRMADO no zip): 9 arquivos, sem dependências, sem c
    `figure[data-align=left|center|right]` e `font-size` no `style`. Site e Central de Ajuda ganharam o CSS do
    alinhamento das imagens (`pages.css`, `support.css`, `site.min.css` regerado).
 
+## Etapa 2 — chamados e comunicados
+6. Barra `basic` em: resposta e nota interna do chamado no ERP e no Help Desk, abertura de chamado (ERP e Help Desk),
+   respostas rápidas do Help Desk e texto do comunicado geral (AP-111). O ERP só carrega o editor nas telas que têm
+   `data-moves-editor` (`default.php`). A resposta rápida entra na posição do cursor (`MovesEditors.insert/set`).
+7. `Source\Support\RichText`: `store()` grava o HTML limpo pela lista curta do `RichHtml::clean($html, true)` (texto,
+   listas, links, citação; sem imagem, tabela, título ou iframe) ou o texto antigo como antes (`strip_tags`); `html()`
+   mostra (texto antigo vira `nl2br` escapado); `plain()` tira a marcação (listas viram "• ", links "texto (endereço)").
+8. Onde o texto sai sem HTML continua texto puro: `TicketService::conversation()/present()` devolvem `message` em texto e
+   `message_html` para as telas (API, app do morador, Talk e e-mails do chamado leem `message`); `ResidentTickets`,
+   `ResidentPortal::announcements`, o widget do suporte e a API de comunicados (`body` texto e `body_html`). O e-mail do
+   comunicado mostra a formatação (`RichText::html`). Tamanho: o limite conta o texto visível e o HTML cabe no TEXT (60 kB).
+9. Registros antigos (texto) aparecem como antes; nada no banco muda (sem migration).
+
 ## Pendências
-- PENDENTE (etapa 2): mensagens e textos que hoje são texto puro (resposta e nota dos chamados no ERP e no Help Desk,
-  respostas rápidas, comunicados, notificações do Studio, propostas, termo de mudança, respostas das FAQs). Hoje eles
-  passam por `strip_tags` e vão também para WhatsApp, push e o app de celular; virar HTML exige converter para texto
-  nesses canais. Fica num PR próprio.
+- PENDENTE: propostas comerciais (PDF), termo de mudança (palavras-chave e PDF) e respostas das FAQs. Notificações do
+  Studio ficam texto: aparecem em avisos curtos montados com `textContent` (sino, modal, ERP).
 - O pacote do Organic (`container/shared/assets/organic/organic*.js`) ainda traz o módulo de editor dele, sem uso.
   Esse arquivo é gerado no repositório organic-v2 e copiado por `sync-organic-v2.php`; editar à mão seria desfeito.
 - Apps do morador (web e React Native): o morador continua escrevendo em texto simples (campo pequeno no celular).
 
 ## Testes
-`tests/legacy/Unit/MovesEditorTest.php` (editores antigos fora, telas com o editor, correções do componente, CSS sem a
+`tests/legacy/Unit/MovesEditorTest.php` e `RichTextTest.php` (editores antigos fora, telas com o editor, correções do componente, CSS sem a
 demonstração, HTML do servidor, permissão do envio de imagem) e `SystemDialogsEverywhereTest` passa a varrer a pasta do
 editor. Navegador (Playwright/Chromium): digitação, negrito, cor, tamanho, colagem com `onerror`/`script`, barra
 `basic`, obrigatório e limite no envio.

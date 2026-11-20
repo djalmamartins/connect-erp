@@ -82,6 +82,23 @@ final class Announcements
         return $text;
     }
 
+    /**
+     * Texto do Moves Editor, barra "basic" (ADR 0610): HTML limpo pela lista curta; o tamanho vale para o texto
+     * visível e o HTML tem de caber na coluna TEXT. Texto sem marcação segue a regra de text().
+     */
+    public static function richText(mixed $value, int $min, int $max, string $what): string
+    {
+        if (!is_string($value) || !\Source\Support\RichText::isHtml($value)) {
+            return self::text($value, $min, $max, $what);
+        }
+        $html = \Source\Support\RichText::store($value);
+        $length = mb_strlen(\Source\Support\RichText::plain($html));
+        if ($length < $min || $length > $max || strlen($html) > 60000) {
+            throw new InvalidArgumentException("Informe {$what} ({$min} a {$max} caracteres).");
+        }
+        return $html;
+    }
+
     /** Linha única (regra pura): como text(), mas quebras de linha viram espaço. Para assunto e motivo (ADR 0065). */
     public static function line(mixed $value, int $min, int $max, string $what): string
     {
@@ -123,7 +140,7 @@ final class Announcements
     {
         $condominium = $this->condominium($user, $input['condominium_id'] ?? null);
         $subject = self::line($input['subject'] ?? null, 5, 120, 'o assunto');
-        $body = self::text($input['body'] ?? null, 10, self::MAX_BODY, 'o texto do comunicado');
+        $body = self::richText($input['body'] ?? null, 10, self::MAX_BODY, 'o texto do comunicado');
         $sendAt = self::sendAt($input['send_at'] ?? null);
         $audience = ($input['audience'] ?? 'all') === 'units' ? 'units' : 'all';
         $units = $this->units($condominium, $audience === 'units' ? (self::unitIds($input['unit_ids'] ?? []) ?? []) : null);
@@ -446,7 +463,8 @@ final class Announcements
                 'failed' => $stats['failed'] ?? 0, 'cancelled' => $stats['cancelled'] ?? 0, 'recipients' => $stats['recipients'] ?? 0],
         ];
         if ($withBody) {
-            $out['body'] = $r['body'];
+            $out['body'] = $r['body'] === null ? null : \Source\Support\RichText::plain((string)$r['body']);
+            $out['body_html'] = $r['body'] === null ? null : \Source\Support\RichText::html((string)$r['body']);
         }
         return $out;
     }

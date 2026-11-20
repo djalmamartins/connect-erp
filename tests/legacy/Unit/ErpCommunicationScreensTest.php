@@ -69,7 +69,8 @@ final class ErpCommunicationScreensTest extends TestCase
         self::assertStringContainsString("url('/api/v1/announcements')", $view);
         self::assertStringContainsString("url('/api/v1/announcements/collection')", $view);
         self::assertStringContainsString("'/api/v1/announcements/' . (int)\$r['id'] . '/cancel'", $view);
-        self::assertStringContainsString('nl2br($this->e(', $view, 'o texto do comunicado sai escapado');
+        self::assertStringContainsString("(string)(\$a['body_html'] ?? '')", $view, 'o texto do comunicado sai limpo pelo RichText (ADR 0610)');
+        self::assertStringContainsString("\$out['body_html'] = \$r['body'] === null ? null : \\Source\\Support\\RichText::html(", (string)file_get_contents(dirname(__DIR__, 3) . '/source/Services/Erp/Announcements.php'));
         $js = $this->file(self::THEME . 'assets/js/erp.js');
         self::assertStringContainsString("\$\$('[data-erp-communication]')", $js);
         self::assertStringContainsString('unit_ids: marked.length === ok.length ? null : marked', $js);

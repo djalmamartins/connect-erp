@@ -74,7 +74,7 @@ $this->insert('components/layout/page-head', [
             <?php endif; ?>
             <?php if ($a['kind'] === 'general' && ($a['body'] ?? null) !== null): ?>
                 <h3 class="erp-comm-subtitle">Texto</h3>
-                <div class="erp-comm-body"><?= nl2br($this->e((string)$a['body'])) ?></div>
+                <div class="erp-comm-body erp-rich-text"><?= (string)($a['body_html'] ?? '') /* RichText::html, já limpo (ADR 0610) */ ?></div>
             <?php else: ?>
                 <p class="erp-muted">Cada unidade recebe a quantidade de contas vencidas, o valor sem encargos e o vencimento mais antigo, como estavam na data do aviso.</p>
             <?php endif; ?>
@@ -94,7 +94,7 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-card__head"><div><h2 id="announce-title">Novo comunicado</h2><p>Cada unidade vira um aviso na fila. O texto sai como você escrever, sem formatação.</p></div></div>
                     <div class="erp-form__grid">
                         <div class="erp-field erp-col-12"><label for="announce-subject">Assunto</label><input class="erp-input" id="announce-subject" name="subject" minlength="5" maxlength="120" required data-comm-count="announce-subject-count" aria-describedby="announce-subject-count"><small class="erp-muted" id="announce-subject-count">0 de 120</small></div>
-                        <div class="erp-field erp-col-12"><label for="announce-body">Texto</label><textarea class="erp-textarea erp-comm-textarea" id="announce-body" name="body" minlength="10" maxlength="<?= Announcements::MAX_BODY ?>" required data-comm-count="announce-body-count" aria-describedby="announce-body-count"></textarea><small class="erp-muted" id="announce-body-count">0 de <?= number_format(Announcements::MAX_BODY, 0, ',', '.') ?></small></div>
+                        <div class="erp-field erp-col-12"><label for="announce-body">Texto</label><textarea class="erp-textarea erp-comm-textarea" data-moves-editor="basic" id="announce-body" name="body" minlength="10" maxlength="<?= Announcements::MAX_BODY ?>" required data-comm-count="announce-body-count" aria-describedby="announce-body-count"></textarea><small class="erp-muted" id="announce-body-count">0 de <?= number_format(Announcements::MAX_BODY, 0, ',', '.') ?></small></div>
                         <fieldset class="erp-field erp-col-12 erp-comm-when"><legend>Para quem</legend>
                             <label class="erp-check"><input type="radio" name="audience" value="all" checked> Todas as unidades ativas (<?= count($commUnits) ?>)</label>
                             <label class="erp-check"><input type="radio" name="audience" value="units"> Só as unidades escolhidas</label>

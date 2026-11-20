@@ -101,4 +101,29 @@ final class MovesEditorTest extends TestCase
         self::assertStringNotContainsString('function postImage', $controller);
         self::assertStringNotContainsString('function supportImage', $controller);
     }
+
+    /** Etapa 2: chamados (ERP e Help Desk), respostas rápidas e comunicados com a barra "basic". */
+    public function testMessagesUseTheBasicEditor(): void
+    {
+        foreach ([
+            'container/erp/connect/v1/pages/tickets/show.php' => 2,
+            'container/erp/connect/v1/pages/tickets/index.php' => 1,
+            'container/erp/connect/v1/pages/communication/announcements.php' => 1,
+            'container/cms/studio/v1/components/tickets/home.php' => 3,
+        ] as $view => $count) {
+            self::assertSame($count, substr_count($this->file($view), 'data-moves-editor="basic"'), $view);
+        }
+        $erp = $this->file('container/erp/connect/v1/default.php');
+        self::assertStringContainsString('str_contains((string)$this->section(\'content\'), \'data-moves-editor\')', $erp, 'ERP só carrega o editor quando a tela usa');
+        $show = $this->file('container/erp/connect/v1/pages/tickets/show.php');
+        self::assertStringNotContainsString('nl2br($this->e($message[\'message\']))', $show);
+        self::assertStringContainsString('$message[\'message_html\']', $show);
+        $service = $this->file('source/Services/Support/TicketService.php');
+        self::assertStringContainsString('\'message\' => RichText::plain((string)$row[\'message\']), // texto para API, app, e-mail e Talk', $service);
+        self::assertStringContainsString('\'message_html\' => RichText::html((string)$row[\'message\'])', $service);
+        self::assertStringContainsString('RichText::store($message); // Moves Editor', $this->file('source/Services/Support/TicketDesk.php'));
+        self::assertStringContainsString('RichText::plain((string)$row[\'message\'])', $this->file('source/Services/Resident/ResidentTickets.php'), 'app do morador recebe texto');
+        self::assertStringContainsString('RichText::plain((string)($r[\'body\'] ?? \'\'))', $this->file('source/Services/Resident/ResidentPortal.php'));
+        self::assertStringContainsString('window.MovesEditors.insert(text.id, template.value)', $this->file('container/erp/connect/v1/assets/js/erp.js'));
+    }
 }

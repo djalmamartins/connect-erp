@@ -10,6 +10,7 @@ use Source\Models\User;
 use Source\Services\Erp\Occurrences;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
+use Source\Support\RichText;
 use Source\Support\Upload;
 
 /**
@@ -103,10 +104,11 @@ final class TicketDesk
      */
     public function reply(User $agent, int $ticketId, string $message, bool $internal, int $seconds = 0, bool $resolve = false, ?array $files = null): array
     {
-        $message = trim(strip_tags($message));
-        if (mb_strlen($message) < 2) {
+        $message = RichText::store($message); // Moves Editor, barra "basic" (ADR 0610)
+        if (mb_strlen(RichText::plain($message)) < 2) {
             throw new TicketError('message', 'Escreva uma resposta antes de enviar.');
         }
+        TicketService::checkSize($message);
         $current = $this->pdo->prepare('SELECT status FROM studio_support_tickets WHERE id = ?');
         $current->execute([$ticketId]);
         $before = $current->fetchColumn();
@@ -118,7 +120,7 @@ final class TicketDesk
         $this->pdo->beginTransaction();
         try {
             $this->pdo->prepare('INSERT INTO studio_support_ticket_messages (ticket_id, user_id, message, is_internal) VALUES (?, ?, ?, ?)')
-                ->execute([$ticketId, (int)$agent->id, mb_substr($message, 0, 10000), $internal ? 1 : 0]);
+                ->execute([$ticketId, (int)$agent->id, $message, $internal ? 1 : 0]);
             $messageId = (int)$this->pdo->lastInsertId();
             $this->pdo->prepare('UPDATE studio_support_tickets SET status = :status, first_response_at = COALESCE(first_response_at, NOW()),
                 work_seconds = work_seconds + :seconds, resolved_at = ' . ($resolve ? 'COALESCE(resolved_at, NOW())' : 'resolved_at') . ' WHERE id = :id')
@@ -140,7 +142,7 @@ final class TicketDesk
             (new Occurrences($this->pdo))->followTickets([$ticketId], (int)$agent->id);
         }
         if (!$internal) {
-            $this->notify($ticketId, 'reply', (int)$agent->id, $message);
+            $this->notify($ticketId, 'reply', (int)$agent->id, RichText::plain($message));
         }
         return ['message_id' => $messageId, 'status' => $status];
     }

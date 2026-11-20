@@ -1366,8 +1366,8 @@ class Studio extends Controller
             if (!csrf_verify($data)) { $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return; }
             $ticketId = (int)($data["ticket_id"] ?? 0);
             if ($data['action'] === 'template_save') {
-                $title=mb_substr(trim(strip_tags((string)($data['title']??''))),0,120);$body=trim(strip_tags((string)($data['body']??'')));
-                if(mb_strlen($title)<2||mb_strlen($body)<2){$this->jsonMessage('Informe título e conteúdo da resposta rápida.','warning');return;}
+                $title=mb_substr(trim(strip_tags((string)($data['title']??''))),0,120);$body=\Source\Support\RichText::store((string)($data['body']??'')); // Moves Editor (ADR 0610)
+                if(mb_strlen($title)<2||mb_strlen(\Source\Support\RichText::plain($body))<2||strlen($body)>60000){$this->jsonMessage('Informe título e conteúdo da resposta rápida.','warning');return;}
                 $stmt=$pdo->prepare('INSERT INTO studio_support_templates(title,body,created_by) VALUES(?,?,?)');$stmt->execute([$title,$body,$user->id]);
                 \Source\Support\Audit::record('create','studio_support_templates',$pdo->lastInsertId(),[],['title'=>$title]);echo json_encode(['reload'=>true]);return;
             }

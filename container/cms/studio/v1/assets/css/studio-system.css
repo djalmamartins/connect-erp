@@ -926,6 +926,12 @@ body.studio-modal-open { overflow: hidden }
    -------------------------------------------------------------------------- */
 .studio-v2 .moves-editor-host { margin: 6px 0 12px }
 .studio-v2 .moves-editor-host .moves-editor { border: 1px solid #dfe3e8; border-radius: var(--studio-radius-sm); overflow: hidden }
+.studio-v2 .studio-rich-text { overflow-wrap: anywhere }
+.studio-v2 .studio-rich-text > :first-child { margin-top: 0 }
+.studio-v2 .studio-rich-text > :last-child { margin-bottom: 0 }
+.studio-v2 .studio-rich-text p, .studio-v2 .studio-rich-text ul, .studio-v2 .studio-rich-text ol, .studio-v2 .studio-rich-text blockquote { margin: 0 0 .6em }
+.studio-v2 .studio-rich-text ul, .studio-v2 .studio-rich-text ol { padding-left: 1.4em }
+.studio-v2 .studio-rich-text a { color: var(--studio-primary); text-decoration: underline }
 
 /* --------------------------------------------------------------------------
    Legado ainda acessível (telas não migradas)

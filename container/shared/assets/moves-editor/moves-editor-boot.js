@@ -69,6 +69,7 @@
         var maxLength = Number(textarea.getAttribute('maxlength') || 0);
         textarea.required = false;
         textarea.removeAttribute('maxlength');
+        if (maxLength) textarea.dataset.maxLength = String(maxLength); // o limite vale para o texto, sem a formatação
         textarea.hidden = true;
         textarea.classList.add('moves-editor-source');
         var rows = Number(textarea.getAttribute('rows') || 0);
@@ -102,7 +103,7 @@
                 textarea.value = isEmpty(html) ? '' : html;
                 var problem = '';
                 if (wasRequired && textarea.value === '') problem = 'Escreva o texto antes de enviar. Nada foi gravado.';
-                else if (maxLength && textarea.value.length > maxLength) problem = 'O texto passou do tamanho máximo (' + maxLength.toLocaleString('pt-BR') + ' caracteres com a formatação). Encurte e envie de novo.';
+                else if (maxLength && editor.getText().length > maxLength) problem = 'O texto passou do tamanho máximo (' + maxLength.toLocaleString('pt-BR') + ' caracteres). Encurte e envie de novo.';
                 if (problem) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
@@ -124,6 +125,8 @@
     global.MovesEditors = {
         mount: mountAll,
         get: function (id) { return editors.get(id) || null; },
+        /** Tamanho do texto visível (sem a formatação), para contadores de caracteres. */
+        textLength: function (id) { var editor = editors.get(id); return editor ? editor.getText().length : null; },
         /** Coloca HTML na posição do cursor (biblioteca de mídia, respostas rápidas). */
         insert: function (id, html) {
             var editor = editors.get(id);
