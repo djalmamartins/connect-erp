@@ -16,6 +16,7 @@ import { MenuGroup, type MenuItem } from '../../src/ui/Menu';
 const ACCOUNT: MenuItem[] = [
   { label: 'Rever as dicas do app', color: '#c5a131', hint: 'O passo a passo do primeiro acesso', href: '/boas-vindas?rever=1', icon: 'bulb-outline' },
   { label: 'Verificação em duas etapas', color: '#0d2e27', hint: 'Opcional: um código além da senha', href: '/seguranca', icon: 'shield-checkmark-outline' },
+  { label: 'Privacidade e meus dados', color: '#18587d', hint: 'Termos, novidades e pedidos sobre os seus dados', href: '/privacidade', icon: 'lock-closed-outline' },
 ];
 
 /** Liga ou desliga a entrada por Face ID / digital neste aparelho. */

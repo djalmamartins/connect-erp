@@ -27,8 +27,8 @@ $kindLabel = static fn (string $kind): string => $kind === 'collection' ? 'Aviso
 $minSend = date('Y-m-d\TH:i');
 $maxSend = date('Y-m-d\TH:i', strtotime('+' . Announcements::MAX_SCHEDULE_DAYS . ' days'));
 $leads = [
-    'AP-111' => 'Comunicado por e-mail para as unidades do condomínio. Recebem as pessoas ativas com e-mail válido que não recusaram comunicado no cadastro.',
-    'AP-137' => 'Aviso de débitos em aberto para as unidades com conta vencida. Só recebe quem autorizou a cobrança por e-mail, e a unidade avisada nos últimos ' . Announcements::COLLECTION_COOLDOWN_DAYS . ' dias fica de fora.',
+    'AP-111' => 'Comunicado para as unidades do condomínio. Aparece no app e no portal do morador; não vai por e-mail.',
+    'AP-137' => 'Unidades com conta vencida. O aviso de atraso por e-mail sai sozinho, com 10, 15, 30, 45 e 60 dias, para quem autorizou a cobrança por e-mail.',
     'AP-138' => 'Comunicados e avisos de cobrança que ainda vão sair. Cancelar para o que ainda não saiu.',
 ];
 $sendWhen = static function (string $prefix) use ($minSend, $maxSend): string {
@@ -52,6 +52,9 @@ $this->insert('components/layout/page-head', [
     <?= csrf_input() ?>
     <?php if ($commNotice !== null): ?>
         <div class="erp-alert" role="note" data-comm-delivery-notice><?= $icon('info') ?><div><strong><?= $this->e($commNotice) ?></strong><a href="<?= $this->e(erp_url('/configuracoes/fila-de-avisos')) ?>">Ver na Fila de avisos</a></div></div>
+    <?php endif; ?>
+    <?php if ($general || $collection): ?>
+        <div class="erp-alert" role="note" data-resident-email-policy><?= $icon('info') ?><div><strong><?= $this->e($general ? Announcements::EMAIL_OFF_NOTICE : Announcements::COLLECTION_DISABLED) ?></strong>O morador só recebe por e-mail: o boleto no dia do vencimento, o aviso de atraso com 10, 15, 30, 45 e 60 dias, a prestação de contas do mês (dias 5 a 10), o convite de cadastro e a recuperação de senha.</div></div>
     <?php endif; ?>
     <?php if ($commError !== null): ?>
         <div class="erp-alert erp-alert--warning" role="alert"><?= $icon('alert') ?><div><strong><?= $this->e($commError) ?></strong><a href="<?= $this->e($route) ?>">Voltar à lista</a></div></div>
@@ -91,7 +94,7 @@ $this->insert('components/layout/page-head', [
                 <div class="erp-alert erp-alert--warning" role="note"><?= $icon('alert') ?><div><strong>O condomínio não tem unidade ativa.</strong>Cadastre as unidades em Cadastros › Unidades.</div></div>
             <?php elseif ($general): ?>
                 <form class="erp-card erp-form" data-announce-form data-api="<?= $this->e(url('/api/v1/announcements')) ?>" data-condominium="<?= (int)$commContext ?>" aria-labelledby="announce-title" novalidate>
-                    <div class="erp-card__head"><div><h2 id="announce-title">Novo comunicado</h2><p>Cada unidade vira um aviso na fila. O texto sai como você escrever, sem formatação.</p></div></div>
+                    <div class="erp-card__head"><div><h2 id="announce-title">Novo comunicado</h2><p>O comunicado aparece no app e no portal do morador. O texto sai como você escrever, sem formatação.</p></div></div>
                     <div class="erp-form__grid">
                         <div class="erp-field erp-col-12"><label for="announce-subject">Assunto</label><input class="erp-input" id="announce-subject" name="subject" minlength="5" maxlength="120" required data-comm-count="announce-subject-count" aria-describedby="announce-subject-count"><small class="erp-muted" id="announce-subject-count">0 de 120</small></div>
                         <div class="erp-field erp-col-12"><label for="announce-body">Texto</label><textarea class="erp-textarea erp-comm-textarea" data-moves-editor="basic" id="announce-body" name="body" minlength="10" maxlength="<?= Announcements::MAX_BODY ?>" required data-comm-count="announce-body-count" aria-describedby="announce-body-count"></textarea><small class="erp-muted" id="announce-body-count">0 de <?= number_format(Announcements::MAX_BODY, 0, ',', '.') ?></small></div>
@@ -120,9 +123,9 @@ $this->insert('components/layout/page-head', [
                 <?php else: ?>
                     <form data-collection-form data-api="<?= $this->e(url('/api/v1/announcements/collection')) ?>" data-condominium="<?= (int)$commContext ?>" data-as-of="<?= $this->e($collectionAsOf) ?>" aria-labelledby="collection-units-title" novalidate>
                         <div class="erp-table-wrap" role="region" aria-labelledby="collection-units-title" tabindex="0"><table class="erp-table">
-                            <thead><tr><th scope="col"><?php if ($commCanManage): ?><label class="erp-check"><input type="checkbox" data-collection-all checked><span class="erp-sr-only">Marcar todas as unidades</span></label><?php endif; ?></th><th scope="col">Unidade</th><th scope="col" class="is-num">Contas</th><th scope="col" class="is-num">Em aberto</th><th scope="col">Vencimento mais antigo</th><th scope="col" class="is-num">Atraso</th><th scope="col">Aviso</th></tr></thead>
+                            <thead><tr><th scope="col">Unidade</th><th scope="col" class="is-num">Contas</th><th scope="col" class="is-num">Em aberto</th><th scope="col">Vencimento mais antigo</th><th scope="col" class="is-num">Atraso</th><th scope="col">Aviso</th></tr></thead>
                             <tbody><?php foreach ($collectionUnits as $u): $uid = (int)$u['unit_id']; $reminded = isset($collectionReminded[$uid]); $billing = $collectionBilling === null ? null : (int)($collectionBilling[$uid] ?? 0); $eligible += $reminded ? 0 : 1; ?><tr data-days="<?= (int)$u['max_days_late'] ?>"<?= $reminded ? ' class="erp-muted"' : '' ?>>
-                                <td><?php if ($commCanManage): ?><label class="erp-check"><input type="checkbox" name="unit_ids" value="<?= $uid ?>"<?= $reminded ? ' disabled' : ' checked' ?>><span class="erp-sr-only">Avisar a unidade <?= $this->e($u['unit_label']) ?></span></label><?php endif; ?></td>
+                                
                                 <td><?= $this->e($u['unit_label']) ?></td>
                                 <td class="is-num"><?= count($u['entries']) ?></td>
                                 <td class="is-num erp-nowrap"><?= $this->e($brl((int)$u['amount_cents'])) ?></td>
@@ -131,19 +134,7 @@ $this->insert('components/layout/page-head', [
                                 <td><?php if ($reminded): ?><span class="erp-badge erp-badge--plain">Avisada nos últimos <?= Announcements::COLLECTION_COOLDOWN_DAYS ?> dias</span><?php elseif ($billing === 0): ?><span class="erp-badge erp-badge--warning">Ninguém recebe cobrança por e-mail</span><?php elseif ($billing !== null): ?><span class="erp-badge erp-badge--success"><?= $billing ?> pessoa(s)</span><?php else: ?><span class="erp-muted">—</span><?php endif; ?></td>
                             </tr><?php endforeach; ?></tbody>
                         </table></div>
-                        <?php if ($commCanManage): ?>
-                            <?php if ($eligible === 0): ?>
-                                <p class="erp-field__hint">Todas as unidades em atraso já foram avisadas nos últimos <?= Announcements::COLLECTION_COOLDOWN_DAYS ?> dias.</p>
-                            <?php else: ?>
-                                <div class="erp-form__grid erp-comm-collection-grid">
-                                    <div class="erp-field erp-col-4"><label for="collection-min-days">Atraso mínimo (dias)</label><input class="erp-input" type="number" id="collection-min-days" name="min_days_late" min="1" max="3650" value="1" required></div>
-                                    <?= $sendWhen('collection') ?>
-                                </div>
-                                <?php if ($collectionBilling !== null && in_array(0, array_map('intval', $collectionBilling), true)): ?><p class="erp-field__hint">Unidade sem ninguém que receba cobrança por e-mail recebe o aviso na fila, mas ninguém é avisado. Confira em <a href="<?= $this->e(erp_url('/comunicacao/enderecos?sem=cobranca')) ?>">Endereços</a>.</p><?php endif; ?>
-                                <div data-form-error aria-live="assertive"></div>
-                                <div class="erp-form__actions"><span class="erp-muted" data-collection-count aria-live="polite"></span><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('megaphone', 'erp-icon--sm') ?>Enviar aviso de cobrança</button></div>
-                            <?php endif; ?>
-                        <?php endif; ?>
+                        <p class="erp-field__hint">O aviso de atraso por e-mail é automático (10, 15, 30, 45 e 60 dias). Para falar com a unidade, use o Atendimento de cobrança.</p>
                     </form>
                 <?php endif; ?>
             </section>
