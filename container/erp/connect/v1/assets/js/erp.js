@@ -3813,6 +3813,18 @@
       $$('input[name="ticket_ids[]"]').forEach(function (box) { box.checked = all.checked; });
     });
   });
+  // Fila de chamados (ADR 0622): o lote sem nenhum chamado marcado avisa, como no Help Desk, e o modal
+  // "Abrir chamado" reabre sozinho quando o envio volta com erro de preenchimento.
+  $$('#tk-bulk').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if ($$('input[name="ticket_ids[]"]:checked').length) return;
+      event.preventDefault();
+      ErpUI.alert({ title: 'Nenhum chamado marcado', message: 'Marque ao menos um chamado na lista e tente de novo. Nada foi alterado.', tone: 'info' });
+    });
+  });
+  $$('dialog.erp-modal[data-erp-modal-auto]').forEach(function (dialog) {
+    if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
+  });
 
   /* Máscara de dinheiro R$ 0.000,00 (revisão de 15/11, ADR 0310) ------------------
    * Todo campo com data-erp-money: os dígitos entram pelos centavos (digitar 1 2 5 0 0 0 dá 1.250,00) e o

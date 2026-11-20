@@ -25,21 +25,22 @@ legenda: Tela Chamados
 1: menu | Chamados no menu lateral
 2: main .erp-page-head__actions :is(a,button):has-text("Abrir chamado") | Botão {{Abrir chamado}}
 3: main .erp-page-head__actions :is(a,button):has-text("Fila do Help Desk") | Botão {{Fila do Help Desk}}
-4: main :is(form[method=get], .erp-filters) | Filtros: Buscar, Condomínio e Situação
+4: main :is(form[method=get], .erp-filters) | Filtros: busca, condomínio, prioridade, responsável, prazo, origem e tipo
 5: main table thead | Colunas da lista
 ```
 
 ## Outros botões da tela
 
 - {{Fila do Help Desk}}: abre a fila de atendimento no Help Desk (para quem atende os chamados).
-- {{Abrir chamado}}: leva ao formulário de abertura, no alto da página.
+- {{Abrir chamado}}: abre o formulário de abertura numa janela por cima da fila.
 
 ## Abrir chamado
 
 O chamado cai na fila do Help Desk e a equipe é avisada na hora.
 
-1. Preencha **Assunto** e **Descrição**.
-2. Clique em {{Enviar para o Help Desk}}.
+1. Clique em {{Abrir chamado}}, no alto da tela.
+2. Preencha **Assunto** e **Descrição**.
+3. Clique em {{Enviar para o Help Desk}}.
 
 > Enquanto você digita o assunto, a tela sugere artigos desta Central de Ajuda que falam do mesmo tema. Se um deles resolver, não precisa abrir o chamado; se não, siga normalmente.
 
@@ -47,13 +48,15 @@ O chamado cai na fila do Help Desk e a equipe é avisada na hora.
 rota: /operacional/chamados
 condominio: residencial-jardim-das-acacias
 legenda: Abrir chamado
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="condominium_id"] | Condomínio
-2: main form:not([method=get]) [name="unit_id"] | Unidade
-3: main form:not([method=get]) [name="subject"] | Assunto (obrigatório)
-4: main form:not([method=get]) [name="message"] | Descrição (obrigatório)
-5: main form:not([method=get]) [name="area"] | Área
-6: main form:not([method=get]) button:has-text("Enviar para o Help Desk") | Botão {{Enviar para o Help Desk}}
+antes: clicar main .erp-page-head__actions :is(a,button):has-text("Abrir chamado")
+antes: esperar 500
+recorte: dialog[open]
+1: dialog[open] [name="condominium_id"] | Condomínio
+2: dialog[open] [name="unit_id"] | Unidade
+3: dialog[open] [name="subject"] | Assunto (obrigatório)
+4: dialog[open] [name="message"] | Descrição (obrigatório)
+5: dialog[open] [name="area"] | Área
+6: dialog[open] button:has-text("Enviar para o Help Desk") | Botão {{Enviar para o Help Desk}}
 ```
 
 ### O que preencher
@@ -70,15 +73,15 @@ recorte: main form:not([method=get])
 
 ## Acompanhar e responder
 
-Clique no protocolo na lista para abrir o chamado. Ali aparecem a conversa com a equipe e a situação atual. Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
+Clique no protocolo na lista para abrir o chamado. A tela é igual à do Help Desk: à esquerda fica a conversa, com o pedido no alto e cada resposta embaixo; à direita ficam os detalhes do chamado (situação, prioridade, condomínio, unidade, prazo e quem pediu). Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
 
 ## Pesquisar e filtrar
 
 Toda ocorrência também é um chamado. No filtro de tipo, **Só ocorrências** mostra apenas elas, e **Sem as ocorrências** mostra os outros chamados. O selo "Ocorrência #" na lista leva à ocorrência.
 
-No alto da tela ficam os contadores da fila, como no Help Desk: um por situação, **SLA vencido**, **Vence hoje** e **Sem responsável**. Clique em um deles para filtrar.
+No alto da tela ficam os contadores da fila, como no Help Desk: um por situação, **SLA vencido**, **Vence hoje** e **Sem responsável**. Clique em um deles para filtrar pela situação. Logo abaixo fica a barra de filtros, com a busca por protocolo ou assunto, e as colunas da lista são as mesmas da fila do Help Desk.
 
-Use os filtros no alto da lista: **Buscar**, **Condomínio**, **Situação**, **Prioridade**, **Responsável**, **Prazo**, **Origem** e **Tipo**.
+Use os filtros no alto da lista: **Buscar**, **Condomínio**, **Prioridade**, **Responsável**, **Prazo**, **Origem** e **Tipo**. A situação se escolhe pelos contadores.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
 
 As conversas do WhatsApp atendidas no Connect Talk também viram chamado, com a origem **WhatsApp (Connect Talk)**: veja [Chamados que chegam pelo WhatsApp](artigo:chamados-do-whatsapp).
@@ -94,10 +97,10 @@ Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do Help De
 - **Cronômetro**: ao abrir o chamado, ele começa a contar o tempo dedicado. Dá para pausar ou zerar. O tempo é somado ao chamado quando você envia a mensagem.
 - **Responder** ou **Nota interna**: a nota interna só a equipe vê.
 - **Resposta rápida**, **Anexos** e **Resolver após enviar**.
-- **Triagem**: situação, prioridade, responsável, categoria, equipe e tags, e o botão **Resolver chamado** (ou **Reabrir chamado**).
-- **Detalhes**: primeira resposta, prazo SLA, tempo dedicado e número de respostas.
+- **Triagem** (à direita, em **Propriedades do chamado**): situação, categoria, prioridade, responsável, equipe e tags, e o botão **Resolver chamado** (ou **Reabrir chamado**).
+- **Detalhes do chamado**: protocolo, origem, condomínio, unidade, quem pediu, primeira resposta, prazo SLA, tempo dedicado e número de respostas.
 - **Histórico de alterações**: quem mudou o quê e quando.
-- Na lista, marque vários chamados e escolha a situação em **Com os selecionados**.
+- Na lista, marque vários chamados e escolha a situação em **Com os selecionados**, à direita da barra de filtros.
 
 > Se o pedido é de um morador, marque **Um morador ou outra pessoa** e informe nome, e-mail e telefone dele: a resposta vai para ele.
 
