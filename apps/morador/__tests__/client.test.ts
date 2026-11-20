@@ -79,6 +79,17 @@ describe('createClient', () => {
     expect(onUnauthenticated).toHaveBeenCalledTimes(1);
   });
 
+  it('servidor que não responde no prazo vira erro de prazo, sem a tela presa', async () => {
+    const hanging = (async (_url: string, init: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+      })) as unknown as typeof fetch;
+    const slow = createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: hanging, timeoutMs: 20 });
+    const e = await failure(slow.get('/resident/charges'));
+    expect(e.code).toBe('timeout');
+    expect(e.message).toContain('demorou');
+  });
+
   it('erro de rede e resposta sem JSON viram mensagens claras', async () => {
     const offline = createClient({ baseUrl: 'https://x', getToken: () => 't', fetchImpl: (async () => { throw new TypeError('Network request failed'); }) as unknown as typeof fetch });
     const e = await failure(offline.get('/resident/me'));

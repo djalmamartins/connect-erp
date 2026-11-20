@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/organic.min.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/organic.min.css') ?>"/>
     <link rel="stylesheet" href="<?= url('/container/shared/assets/organic/compat-v1.css') . '?v=' . filemtime(dirname(__DIR__, 5) . '/container/shared/assets/organic/compat-v1.css') ?>"/>
     <link rel="stylesheet" href="<?= theme('/assets/site.min.css') . '?v=' . filemtime(__DIR__ . '/../assets/site.min.css') ?>"/>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body class="organic-error-layout">
 <a class="org-skip-link" href="#main-content">Ir para o conteúdo</a>
