@@ -28,7 +28,7 @@ legenda: Tela Comunicados Gerais
 
 ## Novo comunicado
 
-O comunicado aparece no app e no portal do morador. O texto sai como você escrever, sem formatação.
+O comunicado aparece no app e no portal do morador; não vai por e-mail. O **Texto** usa o [editor de texto](artigo:editor-de-texto): no aplicativo do morador o texto chega sem formatação.
 
 1. Preencha **Assunto** e **Texto**.
 2. Clique em {{Enviar comunicado}}.

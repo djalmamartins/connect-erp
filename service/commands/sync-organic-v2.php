@@ -64,7 +64,6 @@ try {
     $copyTree($sourceRoot . '/assets', $targetRoot . '/assets');
     $copyTree($sourceRoot . '/dist/fonts', $targetRoot . '/fonts');
     $copyTree($sourceRoot . '/src/js', $targetRoot . '/modules');
-    $copyTree($sourceRoot . '/dist/organic-editor', $targetRoot . '/editor');
 } catch (Throwable $error) {
     fwrite(STDERR, $error->getMessage() . PHP_EOL);
     exit(1);

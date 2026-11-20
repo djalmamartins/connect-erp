@@ -34,5 +34,4 @@ $route->get("/support/article", "Studio:supportArticle");
 $route->post("/support/article", "Studio:supportArticle");
 $route->get("/support/article/{id}", "Studio:supportArticle");
 $route->post("/support/article/{id}", "Studio:supportArticle");
-$route->post("/support/image", "Studio:supportImage");
 $route->get("/ops/{errcode}", "Studio:error");
