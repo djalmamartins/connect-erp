@@ -9,7 +9,7 @@ use Source\Controllers\Erp\Connect\Panel;
 
 /**
  * Telas dos documentos da unidade (AP-123/124/125/130, ADR 0044 e 0046): dados de
- * Panel::unitDocumentData, emissão, conferência e cancelamento pela API /api/v1/unit-documents.
+ * UnitScreens::unitDocumentData, emissão, conferência e cancelamento pela API /api/v1/unit-documents.
  */
 final class ErpUnitDocumentsScreensTest extends TestCase
 {
@@ -46,7 +46,7 @@ final class ErpUnitDocumentsScreensTest extends TestCase
         self::assertStringContainsString('$canManageDocuments && !$cancelled', $view);
         self::assertStringContainsString('name="reason" minlength="5" maxlength="255" required', $view);
         self::assertStringContainsString('csrf_input()', $view);
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/UnitScreens.php');
         self::assertStringContainsString("!Access::can('erp.unit_documents.view', \$user)", $panel);
         self::assertStringContainsString("Access::can('erp.unit_documents.manage', \$user)", $panel);
     }

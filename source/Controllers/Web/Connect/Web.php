@@ -13,7 +13,6 @@ use Source\Models\Brief\AppBrief;
 use Source\Models\Slide\AppSlides;
 use Source\Models\Support\SupportArticle;
 use Source\Models\Support\SupportCategory;
-use Source\Core\Connect;
 use Source\Models\User;
 use Source\Support\Pager;
 use Source\Support\Proposal\ProposalService;
@@ -147,7 +146,7 @@ class Web extends Controller
         $category = (new SupportCategory())->findByUri(str_slug($data["category"] ?? ""));
         $article = (new SupportArticle())->findByUri(str_slug($data["article"] ?? ""), true);
         if (!$category || !$article || (int)$article->category_id !== (int)$category->id) { redirect("/suporte"); return; }
-        Connect::getInstance()->prepare("UPDATE support_articles SET views = views + 1 WHERE id = :id")->execute(["id" => $article->id]);
+        (new \Source\Services\Help\ArticleFeedback())->countView((int)$article->id);
         $related = (new SupportArticle())->findPublished("category_id = :category AND id != :id", "category={$category->id}&id={$article->id}")->order("views DESC, title")->limit(5)->fetch(true) ?: [];
         echo $this->view->render("support/article", ["head" => $this->seo->render($article->title . " - Ajuda", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $article->cover ? image($article->cover, 1200, 628) : theme("/assets/images/share.jpg")), "article" => $article, "category" => $category, "related" => $related, "categories" => (new SupportCategory())->find("status = :s", "s=active")->order("position")->fetch(true) ?: []]);
     }
@@ -159,22 +158,14 @@ class Web extends Controller
         $articleId = filter_var($data["id"] ?? null, FILTER_VALIDATE_INT);
         $vote = in_array($data["vote"] ?? "", ["yes", "no"], true) ? $data["vote"] : null;
         if (!$articleId || !$vote || !(new SupportArticle())->findById($articleId)) { echo json_encode(["message" => "Avaliação inválida."]); return; }
-        $hash = hash("sha256", ($articleId . "|" . ($_SERVER["REMOTE_ADDR"] ?? "") . "|" . ($_SERVER["HTTP_USER_AGENT"] ?? "")));
-        $pdo = Connect::getInstance();
-        $pdo->beginTransaction();
+        $hash = \Source\Services\Help\ArticleFeedback::visitorHash($articleId, $_SERVER["REMOTE_ADDR"] ?? null, $_SERVER["HTTP_USER_AGENT"] ?? null);
         try {
-            $find = $pdo->prepare("SELECT * FROM support_article_votes WHERE article_id=:article AND visitor_hash=:hash FOR UPDATE");
-            $find->execute(["article" => $articleId, "hash" => $hash]);
-            $old = $find->fetch();
-            if (!$old) {
-                $pdo->prepare("INSERT INTO support_article_votes (article_id,vote,visitor_hash) VALUES (:article,:vote,:hash)")->execute(["article" => $articleId, "vote" => $vote, "hash" => $hash]);
-                $pdo->prepare("UPDATE support_articles SET helpful_{$vote} = helpful_{$vote} + 1 WHERE id=:id")->execute(["id" => $articleId]);
-            } elseif ($old->vote !== $vote) {
-                $pdo->prepare("UPDATE support_article_votes SET vote=:vote WHERE id=:id")->execute(["vote" => $vote, "id" => $old->id]);
-                $pdo->prepare("UPDATE support_articles SET helpful_{$old->vote}=GREATEST(0,helpful_{$old->vote}-1), helpful_{$vote}=helpful_{$vote}+1 WHERE id=:id")->execute(["id" => $articleId]);
-            }
-            $pdo->commit(); echo json_encode(["success" => true, "message" => "Obrigado pela sua avaliação!"]);
-        } catch (\Throwable $exception) { if ($pdo->inTransaction()) $pdo->rollBack(); \Source\Support\AppLogger::exception($exception, 'support', ['event_type' => 'support_vote_failed', 'article_id' => $articleId]); echo json_encode(["message" => "Não foi possível registrar sua avaliação."]); }
+            (new \Source\Services\Help\ArticleFeedback())->vote($articleId, $vote, $hash);
+            echo json_encode(["success" => true, "message" => "Obrigado pela sua avaliação!"]);
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, 'support', ['event_type' => 'support_vote_failed', 'article_id' => $articleId]);
+            echo json_encode(["message" => "Não foi possível registrar sua avaliação."]);
+        }
     }
 
     /**

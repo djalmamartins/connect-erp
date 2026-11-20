@@ -326,4 +326,21 @@ final class PartnerAccess
         return ['id' => (int)$a['id'], 'name' => (string)$a['name'], 'document' => CollectionReports::maskDocument($a['document']),
             'email' => RegistryReports::maskEmail($a['email']), 'phone' => RegistryReports::maskPhone($a['phone']), 'status' => (string)$a['status']];
     }
+
+    /**
+     * Usuários que podem virar parceiro (as mesmas regras de PartnerAccess::linkUser): nível comum, sem papel,
+     * sem acesso a condomínio, sem permissão própria e sem vínculo; nunca quem está concedendo.
+     *
+     * @return list<array{id:int, label:string}>
+     */
+    public function eligibleUsers(int $self): array
+    {
+        $stmt = $this->pdo->prepare('SELECT u.id, u.first_name, u.last_name, u.email FROM users u WHERE u.level <= :level AND u.id <> :self
+            AND NOT EXISTS (SELECT 1 FROM access_user_roles r WHERE r.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM user_condominium_access a WHERE a.user_id = u.id)
+            AND NOT EXISTS (SELECT 1 FROM access_user_overrides o WHERE o.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM erp_partner_agency_users p WHERE p.user_id = u.id)
+            ORDER BY u.first_name, u.last_name, u.id LIMIT 500');
+        $stmt->execute(['level' => self::MAX_USER_LEVEL, 'self' => $self]);
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => trim($r['first_name'] . ' ' . $r['last_name']) . ' · ' . RegistryReports::maskEmail($r['email'])],
+            $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 }

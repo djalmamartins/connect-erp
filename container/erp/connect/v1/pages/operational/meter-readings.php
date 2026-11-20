@@ -1,7 +1,7 @@
 <?php
 /**
  * Leituras do mês (AP-042, ADR 0045 e 0047) com dados reais, no contexto da barra superior: uma linha
- * por relógio ativo do tipo ($meterSheet de Panel::meterReadingData), com a leitura anterior, a da
+ * por relógio ativo do tipo ($meterSheet de UnitScreens::meterReadingData), com a leitura anterior, a da
  * competência, o consumo e o valor. Lançar em lote e faturar usam a API /api/v1/meter-readings
  * (erp.js, data-erp-meter-readings). Leitura já cobrada não muda.
  * @var array $currentPage @var list<array> $meterSheet @var string $meterCompetence @var string $meterKind @var bool $canManageReadings

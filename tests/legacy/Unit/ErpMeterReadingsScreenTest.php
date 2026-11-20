@@ -53,7 +53,7 @@ final class ErpMeterReadingsScreenTest extends TestCase
         self::assertStringContainsString('$canManageReadings && !$locked', $view);
         self::assertStringContainsString('<?php if ($canManageReadings && $billable > 0 && $context !== null): ?>', $view);
         self::assertStringContainsString('csrf_input()', $view);
-        self::assertStringContainsString("!Access::can('erp.meter_readings.view', \$user)", $this->file('source/Controllers/Erp/Connect/Panel.php'));
+        self::assertStringContainsString("!Access::can('erp.meter_readings.view', \$user)", $this->file('source/Controllers/Erp/Connect/UnitScreens.php'));
     }
 
     public function testJavascriptCallsEveryEndpointInSourceAndBundle(): void

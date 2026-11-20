@@ -17,7 +17,7 @@ use Source\Support\Message;
 
 /**
  * ERP v1 — ações da tela Fechamento Mensal (AP-030, ADR 0031/0032). A tela (GET) é a página
- * do catálogo, que recebe os dados reais em Panel::closingData().
+ * do catálogo, que recebe os dados reais em FinanceScreens::closingData().
  *
  * POST /financeiro/fechamento-mensal/fechar e /reabrir, com CSRF e padrão PRG. O condomínio
  * vem do contexto da barra superior (ADR 0030), nunca do formulário: em "Todos" a ação é
