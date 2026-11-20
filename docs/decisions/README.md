@@ -408,3 +408,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0600](../Organic%20Code/decisions/0600-boleto-per-payer.md) | Boleto único por responsável (várias unidades do mesmo dono) | Aceito |
 | [0601](../Organic%20Code/decisions/0601-resident-emails-limited.md) | Morador recebe só cinco e-mails | Aceito |
 | [0602](../Organic%20Code/decisions/0602-system-settings-studio.md) | Configuração geral do sistema no Studio, com senha SMTP cifrada e e-mail de teste | Aceito |
+| [0603](../Organic%20Code/decisions/0603-two-factor-login-screen.md) | Tela da verificação em duas etapas igual à do login, com o código em 6 campos e dicas de segurança | Aceito |
