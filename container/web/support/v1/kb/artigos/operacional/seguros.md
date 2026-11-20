@@ -4,7 +4,7 @@ titulo: Seguros do condomínio
 resumo: As apólices do condomínio: seguradora, vigência, prêmio, cobertura e a apólice em PDF guardada no Disco Virtual. O vencimento próximo aparece nos alertas.
 categoria: operacional
 rota: /operacional/seguros
-menu: Operacional > Rotina > Seguros
+menu: Agenda > Contratos e seguros > Seguros
 icone: list-outline
 situacao: funciona
 relacionados: lista-de-espera, contratos, agendamentos-pendentes, agendamentos
@@ -16,7 +16,7 @@ As apólices do condomínio: seguradora, vigência, prêmio, cobertura e a apól
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Seguros]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Contratos e seguros > Seguros]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela seguros
 rota: /operacional/seguros

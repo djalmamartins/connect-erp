@@ -4,7 +4,7 @@ titulo: Aprovar reservas pendentes
 resumo: Reservas que aguardam aprovação. Confirme ou recuse cada pedido; o horário recusado fica livre para outra reserva, e quem está na lista de espera é avisado.
 categoria: operacional
 rota: /operacional/agendamentos-pendentes
-menu: Operacional > Rotina > Agendamentos Pendentes
+menu: Agenda > Áreas comuns > Agendamentos Pendentes
 icone: list-outline
 situacao: funciona
 relacionados: reservas-areas-comuns, lista-de-espera, ocorrencias, seguros
@@ -16,7 +16,7 @@ Reservas que aguardam aprovação. Confirme ou recuse cada pedido; o horário re
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Agendamentos Pendentes]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Áreas comuns > Agendamentos Pendentes]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela agendamentos-pendentes
 rota: /operacional/agendamentos-pendentes

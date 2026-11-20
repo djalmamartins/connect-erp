@@ -4,7 +4,7 @@ titulo: Cadastrar relógios (medidores)
 resumo: Medidores de água, gás e energia de cada unidade. A leitura inicial é a base da primeira leitura do mês.
 categoria: operacional
 rota: /operacional/relogios
-menu: Operacional > Leituras e consumo > Relógios
+menu: Leituras > Relógios
 icone: list-outline
 situacao: funciona
 relacionados: leituras, tarifas
@@ -16,7 +16,7 @@ Medidores de água, gás e energia de cada unidade. A leitura inicial é a base 
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Leituras e consumo > Relógios]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Leituras > Relógios]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela relogios
 rota: /operacional/relogios

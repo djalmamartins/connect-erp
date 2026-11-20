@@ -4,7 +4,7 @@ titulo: Reservas de áreas comuns
 resumo: As reservas do salão de festas, churrasqueira e demais áreas, seguindo as regras de cada área: antecedência, horário, taxa e aprovação. Reserva que precisa de aprovação aparece em Agendamentos Pendentes.
 categoria: operacional
 rota: /operacional/reservas-areas-comuns
-menu: Operacional > Rotina > Reservas Áreas Comuns
+menu: Agenda > Áreas comuns > Reservas Áreas Comuns
 icone: list-outline
 situacao: funciona
 relacionados: areas-comuns, agendamentos-pendentes, lista-de-espera, ocorrencias
@@ -16,7 +16,7 @@ As reservas do salão de festas, churrasqueira e demais áreas, seguindo as regr
 
 ## Onde fica
 
-No menu lateral, abra [[Operacional > Rotina > Reservas Áreas Comuns]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
+No menu lateral, abra [[Agenda > Áreas comuns > Reservas Áreas Comuns]]. Confira o condomínio na barra superior: a tela mostra só os dados dele.
 
 ```tela reservas-areas-comuns
 rota: /operacional/reservas-areas-comuns

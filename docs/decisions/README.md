@@ -403,6 +403,9 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0395](../Organic%20Code/decisions/0395-studio-svg-logo-sandboxed.md) | Logo SVG do Studio volta a abrir, com sandbox | Aceito |
 | [0396](../Organic%20Code/decisions/0396-clean-install-command.md) | Instalação limpa do banco da produção (composer db:install) | Aceito |
 | [0397](../Organic%20Code/decisions/0397-email-layout-connect.md) | Layout único dos e-mails na identidade Connect | Aceito |
+| [0398](../Organic%20Code/decisions/0398-menu-agenda-portaria-leituras.md) | Menu novo com Agenda, Portaria e Leituras, guardando o menu atual | Aceito |
 | [0399](../Organic%20Code/decisions/0399-realizze-base-sitemap-seo.md) | Base do Realizze conferida: sitemap.xml, dados da empresa para o Google e miniatura sem derrubar a página | Aceito |
 | [0600](../Organic%20Code/decisions/0600-boleto-per-payer.md) | Boleto único por responsável (várias unidades do mesmo dono) | Aceito |
+| [0602](../Organic%20Code/decisions/0602-system-settings-studio.md) | Configuração geral do sistema no Studio, com senha SMTP cifrada e e-mail de teste | Aceito |
+| [0603](../Organic%20Code/decisions/0603-two-factor-login-screen.md) | Tela da verificação em duas etapas igual à do login, com o código em 6 campos e dicas de segurança | Aceito |
 | [0610](../Organic%20Code/decisions/0610-moves-editor.md) | Moves Editor no lugar do TinyMCE e do Organic Editor: componente compartilhado, correções, Studio e Central de Ajuda (etapa 1) | Aceito |
