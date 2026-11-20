@@ -968,7 +968,7 @@ final class Panel extends Controller
     }
 
     /**
-     * POST /preferencias/menu — troca entre o menu novo e o atual (ADR 0358). Guarda a escolha num cookie do
+     * POST /preferencias/menu — troca entre o menu novo e o atual (ADR 0397). Guarda a escolha num cookie do
      * navegador por um ano e volta para a mesma tela. Só aceita os modos conhecidos.
      */
     public function setMenu(?array $data): void
@@ -1096,7 +1096,7 @@ final class Panel extends Controller
         $page = $pageId !== null ? ($this->catalog['pages'][$pageId] ?? null) : null;
         $group = $page['group'] ?? ($extra['hubGroup'] ?? null);
         $title ??= $page['name'] ?? 'Connect ERP';
-        // Menu lateral (ADR 0358): novo ou atual, escolhido pela pessoa; o endereço da página não muda.
+        // Menu lateral (ADR 0397): novo ou atual, escolhido pela pessoa; o endereço da página não muda.
         $navMode = ErpNav::mode();
         $nav = ErpNav::build($this->catalog, $navMode);
         $navGroup = ErpNav::groupOf($nav, $pageId) ?? (isset($nav[(string)$group]) ? $group : null);
@@ -1215,7 +1215,7 @@ final class Panel extends Controller
     /** @return list<array{label: string, href: ?string}> */
     private function breadcrumbs(?array $page, ?string $group, string $title, array $nav = [], ?string $pageId = null): array
     {
-        // Página que o menu escolhido mostra em outro grupo (ADR 0358): a migalha segue o menu, sem link para a
+        // Página que o menu escolhido mostra em outro grupo (ADR 0397): a migalha segue o menu, sem link para a
         // visão geral antiga ("Agenda > Áreas comuns > Reservas", e não "Operacional > Rotina > Reservas").
         $navGroup = ErpNav::groupOf($nav, $pageId);
         if ($page !== null && $navGroup !== null && $navGroup !== $page['group']) {

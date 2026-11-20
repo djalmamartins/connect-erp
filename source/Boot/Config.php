@@ -6,7 +6,7 @@ if (is_file($environmentFile)) {
     // quebrava com '(' num comentário '#' (testar-main.sh, 10/11).
     $environment = parse_ini_string((string)preg_replace('/^\s*#.*$/m', '', (string)file_get_contents($environmentFile)), false, INI_SCANNER_RAW) ?: [];
     $allowedEnvironmentKeys = [
-        "APP_ENV", "APP_DEBUG", "APP_URL", "ALERT_EMAIL", "HOSTING_DISK_LIMIT_GB",
+        "APP_ENV", "APP_DEBUG", "APP_URL", "CONNECT_FORCE_HTTPS", "ALERT_EMAIL", "HOSTING_DISK_LIMIT_GB",
         // Central de Ajuda e rotinas (ADR 0357): sem elas aqui, a hospedagem (que só tem o .env) nunca as recebia.
         "CONNECT_ERP_URL", "CONNECT_SUPPORT_HOURS", "CONNECT_JOB_HOST",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
@@ -19,6 +19,8 @@ if (is_file($environmentFile)) {
         // SMTP (ADR 0060): credenciais fora do banco e fora do Git.
         "MOVESOS_SMTP_HOST", "MOVESOS_SMTP_PORT", "MOVESOS_SMTP_USER", "MOVESOS_SMTP_PASS",
         "MOVESOS_SMTP_SECURE", "MOVESOS_SMTP_AUTH", "MOVESOS_SMTP_FROM_ADDRESS", "MOVESOS_SMTP_FROM_NAME",
+        // Seletor DKIM do domínio do remetente (ADR 0382), conferido no deploy-check e no tools/hosting/email-teste.php.
+        "MAIL_DKIM_SELECTOR",
         // 2FA (ADR 0023/0028): chave do cofre TOTP e data a partir da qual o 2FA é obrigatório.
         // Sem estas chaves aqui, o Apache do lab (xampp) nunca as recebia e o login entrava sem 2FA.
         "CONNECT_2FA_KEY", "CONNECT_2FA_ENFORCE_FROM", "CONNECT_TRUSTED_PROXIES",
@@ -26,7 +28,9 @@ if (is_file($environmentFile)) {
         "ERP_DEMO_DATA", "ERP_DEMO_DB", "ERP_MAIL_DELIVERY", "ERP_MAIL_SANDBOX_TO", "ERP_AV_MODE", "ERP_AV_ENDPOINT",
         // Cobrança bancária (ADR 0156): chave do cofre das credenciais e base pública do endereço do webhook.
         // Sem elas aqui, o Apache do lab não recebe a chave e o Inter não abre a credencial.
-        "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL",
+        "CONNECT_BANK_VAULT_KEY", "BANK_WEBHOOK_BASE_URL", "BANK_WEBHOOK_ALLOWED_IPS",
+        // Arquivos no OneDrive da Connect (ADR 0373/0374); padrão: disco local.
+        "DOCUMENT_STORAGE", "ONEDRIVE_TENANT_ID", "ONEDRIVE_CLIENT_ID", "ONEDRIVE_CLIENT_SECRET", "ONEDRIVE_DRIVE_ID", "ONEDRIVE_FOLDER",
         // Connect Talk dentro do ERP (ADR 0308/0324): cofre dos canais, endereço público, arquivos, Jack e WhatsApp.
         "TALK_ALLOWED_IPS", "TALK_KEY", "TALK_ENV", "TALK_URL", "TALK_STORAGE", "TALK_RATING", "TALK_HTTP_TIMEOUT",
         "TALK_JACK_MODE", "TALK_JACK_WAIT_SECONDS", "TALK_JACK_MAX_WAIT_SECONDS", "TALK_JACK_TYPING_SECONDS",

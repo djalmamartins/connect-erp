@@ -252,6 +252,7 @@ final class Inspections extends Controller
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="' . InspectionReport::filename($inspection) . '"');
         header('Content-Length: ' . strlen($pdf));
+        header('Cache-Control: private, no-store'); // ADR 0391
         echo $pdf;
     }
 

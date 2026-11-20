@@ -215,7 +215,17 @@ class User extends Model
             return false;
         }
 
-        return parent::destroy();
+        $id = (int)($this->id ?? 0);
+        if (!parent::destroy()) {
+            return false;
+        }
+        // ADR 0377 (LGPD): a foto do app do morador sai junto com a conta; falha aqui não desfaz a exclusão.
+        try {
+            (new \Source\Services\Resident\ResidentProfile())->forgetAccount($id);
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::log('warning', 'Foto do morador não apagada com a conta.', ['event_type' => 'resident_photo_orphan', 'user_id' => $id]);
+        }
+        return true;
     }
 
 }

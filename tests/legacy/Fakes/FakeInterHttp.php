@@ -22,6 +22,10 @@ final class FakeInterHttp implements InterHttp
     /** Próxima resposta forçada (status, body) ou exceção de rede. */
     public ?array $nextResponse = null;
     public bool $failNext = false;
+    /** A busca por seuNumero (GET /cobranca/v3/cobrancas) responde 500. */
+    public bool $listFails = false;
+    /** A emissão grava a cobrança mas responde 500 (o ERP fica sem o código da solicitação). */
+    public bool $createThen500 = false;
     /** Falha de rede/TLS no pedido de token (ex.: 'tlsv1 alert unknown ca'). */
     public ?string $tokenError = null;
     /** Extrato (transacoes da API Banking v2) e saldo disponível; ADR 0318. */
@@ -105,11 +109,24 @@ final class FakeInterHttp implements InterHttp
             }
             return ['status' => 200, 'body' => json_encode(['bloqueadoCheque' => 0, 'disponivel' => $this->balance, 'bloqueadoJudicialmente' => 0, 'limite' => 0])];
         }
+        if ($method === 'GET' && $path === '/cobranca/v3/cobrancas') {
+            if ($this->listFails) {
+                return ['status' => 500, 'body' => '{"title":"Erro desconhecido."}'];
+            }
+            parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
+            $found = array_values(array_filter(array_keys($this->charges), fn (string $id): bool => $this->charges[$id]['seuNumero'] === ($query['seuNumero'] ?? null)));
+            return ['status' => 200, 'body' => json_encode(['totalPaginas' => 1, 'totalElementos' => count($found),
+                'cobrancas' => array_map(fn (string $id): array => $this->view($id), $found)])];
+        }
         if ($method === 'POST' && $path === '/cobranca/v3/cobrancas') {
             $data = json_decode((string)$body, true);
             $id = sprintf('00000000-0000-4000-8000-%012d', ++$this->sequence);
             $this->charges[$id] = ['seuNumero' => $data['seuNumero'], 'valorNominal' => $data['valorNominal'], 'situacao' => $this->initialSituation,
                 'dataSituacao' => '2026-11-10', 'request' => $data];
+            if ($this->createThen500) {
+                $this->createThen500 = false;
+                return ['status' => 500, 'body' => '{"title":"Erro desconhecido."}'];
+            }
             return ['status' => 200, 'body' => json_encode(['codigoSolicitacao' => $id])];
         }
         if (preg_match('#^/cobranca/v3/cobrancas/([^/]+)(/pdf|/cancelar|/pagar)?$#', $path, $m)) {

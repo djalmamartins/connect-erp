@@ -26,11 +26,11 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 | 7 | Assembleias e conselho | condôminos, síndico, conselheiros | nome, documento, e-mail, telefone, presença, voto | `erp_assembly_attendance`, `erp_board_members` | convocar, registrar presença e votos, ata | art. 7º, II (Código Civil e convenção) | permanente (a ata é documento do condomínio) |
 | 8 | Funcionários do condomínio | funcionários | nome, documento, e-mail, telefone | `erp_employees` | gestão do condomínio | art. 7º, V e II | 5 anos após o desligamento (INFERIDO; folha fora do sistema) |
 | 9 | Fornecedores, advogados, imobiliárias, contatos | pessoas de contato e autônomos | nome, CPF/CNPJ, e-mail, telefone, chave Pix | `erp_suppliers`, `erp_lawyers`, `erp_partner_agencies`, `erp_useful_contacts`, `condominiums` | pagar, contratar, contatar | art. 7º, V | 5 anos após o último pagamento |
-| 10 | App do morador | moradores com conta | e-mail, senha (hash), foto, aparelho, 2FA | `users`, `erp_resident_app_profiles`, `erp_resident_app_tokens`, `erp_resident_invitations` | acesso ao portal | art. 7º, V | enquanto a conta existir; foto apagada ao remover |
+| 10 | App do morador | moradores com conta | e-mail, senha (hash), foto, aparelho, 2FA | `users`, `erp_resident_app_profiles`, `erp_resident_app_tokens`, `erp_resident_invitations` | acesso ao portal | art. 7º, V | enquanto a conta existir; foto e perfil apagados ao excluir a conta (ADR 0377) |
 | 11 | Chamados e Central de Ajuda | moradores, visitantes do site, equipe | nome, e-mail, telefone, mensagens, anexos | `studio_support_tickets`, `studio_support_ticket_messages`, `studio_support_ticket_attachments` | atender pedidos e ocorrências | art. 7º, V e IX | 5 anos (INFERIDO); anonimização junto com o morador |
 | 12 | Vistorias | quem recebe o relatório | e-mail | `inspection_report_deliveries` | enviar o relatório | art. 7º, V | PDF apagado após envio (ADR 0335); registro do envio, PENDENTE |
 | 13 | E-mails e avisos | todos que recebem e-mail | nome, e-mail | `mail_queue`, `erp_notification_outbox` | entregar avisos e boletos | art. 7º, V | **PENDENTE**: hoje sem limpeza; proposta de 6 meses |
-| 14 | Connect Talk (WhatsApp) | moradores e contatos | nome, telefone, mensagens | `talk_contacts`, `talk_channels`, `talk_outbox`, `talk_campaign_recipients`, `talk_users`, `talk_login_attempts`, `talk_audit_log` | atendimento e comunicados | art. 7º, V e IX; campanha só com consentimento ou interesse do condomínio | tentativas de login: 1 dia; demais, **PENDENTE** |
+| 14 | Connect Talk (WhatsApp) | moradores e contatos | nome, telefone, mensagens; 2ª via do boleto (linha digitável e Pix) só ao proprietário ou responsável financeiro com o telefone do cadastro (ADR 0386) | `talk_contacts`, `talk_channels`, `talk_outbox`, `talk_campaign_recipients`, `talk_users`, `talk_login_attempts`, `talk_audit_log` | atendimento e comunicados | art. 7º, V e IX; campanha só com consentimento ou interesse do condomínio | tentativas de login: 1 dia; demais, **PENDENTE** |
 | 15 | Equipe da Connect | funcionários da Connect | nome, e-mail, documento, foto, 2FA | `users` | acesso ao sistema | art. 7º, V | enquanto houver vínculo |
 | 16 | Segurança e auditoria | todos que usam o sistema | IP, navegador, ação feita | `system_audit_logs`, `app_log`, `auth_environment_handoffs`, `user_password_resets`, `auth_throttle_events` (só hash) | provar quem fez o quê, evitar fraude | art. 7º, II (Marco Civil art. 15: 6 meses) e IX | `app_log` 90 a 180 dias; arquivos de log 6 meses (ADR 0336); limitador 1 dia; troca de ambiente 1 dia; `system_audit_logs` **PENDENTE** (proposta: 5 anos, por ser trilha financeira) |
 
@@ -39,7 +39,7 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 | Quem | O que recebe | Por quê |
 | --- | --- | --- |
 | Hostinger (hospedagem) | tudo (banco e arquivos) | onde o sistema roda |
-| Microsoft (OneDrive da Connect) | backup cifrado; documentos do condomínio (planejado) | backup e Disco Virtual |
+| Microsoft (OneDrive da Connect) | backup cifrado; com `DOCUMENT_STORAGE=onedrive`, documentos, fotos de vistoria e fotos dos moradores (ADR 0373/0374) | backup e arquivos do sistema |
 | Banco Inter e Cora | nome, CPF/CNPJ, endereço e valor do pagador | registrar boleto e Pix |
 | Provedor de e-mail (SMTP) | nome, e-mail, conteúdo do aviso | entregar e-mail |
 | WhatsApp (Meta), pelo Talk | telefone e mensagem | atendimento |
@@ -70,4 +70,7 @@ aqui com o nome entre crases. O teste `PersonalDataRegisterIntegrationTest` lê 
 1. Confirmar papéis (condomínio controlador, Connect operadora) e incluir no contrato com cada condomínio.
 2. Nomear o encarregado e publicar o canal do titular.
 3. Prazos marcados como PENDENTE: portaria, e-mails, Talk e `system_audit_logs`.
-4. Texto da política de privacidade do site e do app (§3.8 do ROADMAP).
+4. Desde 17/11/2026 (ADR 0359) o Talk em uso roda no projeto separado, num Raspberry Pi no escritório: os dados dele
+   ficam no Pi, fora do relatório e da anonimização do ERP. Pedido de titular precisa ser atendido também lá (**PENDENTE**
+   no projeto `djalmamartins/talk`).
+5. Texto da política de privacidade do site e do app (§3.8 do ROADMAP).

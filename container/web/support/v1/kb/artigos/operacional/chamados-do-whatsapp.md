@@ -1,21 +1,24 @@
 ---
 codigo:
 titulo: Chamados que chegam pelo WhatsApp (Connect Talk)
-resumo: Toda conversa atendida no Connect Talk vira um chamado do Help Desk, com o nome, o condomínio e a unidade do morador puxados do cadastro do ERP. Veja como reconhecer esses chamados e como ligar o Talk ao ERP.
+resumo: Toda conversa atendida no Connect Talk vira um chamado do Help Desk, com o nome, o condomínio e a unidade do morador puxados do cadastro do ERP. Veja como reconhecer esses chamados, quando o Talk manda a 2ª via do boleto e como ligar o Talk ao ERP.
 categoria: operacional
 rota: /operacional/chamados
 menu: Agenda > Atendimento > Chamados
 icone: chatbubbles-outline
 situacao: guia
 relacionados: chamados, proprietarios-e-inquilinos, usuarios-do-sistema
-palavras: whatsapp, talk, connect talk, chamado, protocolo, help desk, integração, token, morador, telefone
+palavras: whatsapp, talk, connect talk, chamado, protocolo, help desk, integração, token, morador, telefone, boleto, segunda via, 2ª via, pix
 manual: sim
 rascunho: nao
 ---
 
-O **Connect Talk** é o atendimento da Connect pelo WhatsApp. Ele está passando para **dentro do ERP**: abre pelo alternador de ambientes, com o mesmo login, e consulta o cadastro e o Help Desk direto. Quando um morador escreve, o Talk descobre de quem é aquele telefone e abre um chamado no Help Desk.
+O **Connect Talk** é o atendimento da Connect pelo WhatsApp. O Talk em uso roda num computador no escritório da Connect e conversa com o ERP pela API (veja a última seção). Quando um morador escreve, o Talk descobre de quem é aquele telefone e abre um chamado no Help Desk.
 
-## Abrir o Talk pelo ERP
+## Abrir o Talk pelo ERP (versão dentro do ERP)
+
+O ERP também tem uma versão do Talk que abre pelo alternador de ambientes. Desde 17/11/2026 ela está **pausada**: o Talk em uso é o do escritório. Os passos abaixo valem se ela voltar a ser usada.
+
 
 1. No topo do ERP, abra o alternador de ambientes e escolha **Talk** (Atendimento por WhatsApp). Ele abre no endereço `talk.` do seu domínio, sem pedir senha de novo.
 2. Se o **Talk** não aparecer, seu usuário não tem a permissão **Atendimento por WhatsApp (Connect Talk)**. Peça ao administrador em [[Configurações > Acesso > Usuários do Sistema]]. Quem já atende chamados recebe essa permissão automaticamente.
@@ -31,9 +34,23 @@ O Talk procura o telefone em [[Cadastros > Proprietários e inquilinos]]. Só en
 
 - O telefone pode estar com ou sem o 55 e com ou sem o nono dígito: o ERP confere as duas formas.
 - Se o mesmo telefone estiver em mais de um condomínio ou unidade, o Talk mostra o mais recente e avisa quantos cadastros existem.
-- O Talk recebe só nome, vínculo, e-mail, condomínio e unidade. CPF e dados financeiros **não** saem do ERP.
+- Para identificar quem escreveu, o Talk recebe só nome, vínculo, e-mail, condomínio e unidade. O CPF **não** sai do ERP.
 
 > Para o Talk reconhecer o morador, mantenha o telefone celular atualizado no cadastro.
+
+## 2ª via do boleto pelo WhatsApp
+
+Quando o morador pede o boleto, o Talk consulta o ERP e manda a **linha digitável** e o **Pix copia e cola** na conversa. Para proteger o morador, o ERP só responde quando tudo confere:
+
+- o telefone que escreveu é o mesmo do cadastro em [[Cadastros > Proprietários e inquilinos]] (com ou sem 55 e nono dígito);
+- o cadastro está ativo, ligado a uma unidade, e o vínculo é **proprietário** ou **responsável financeiro**. Inquilino e morador não recebem; quando o inquilino é quem paga, cadastre-o também como responsável financeiro;
+- o boleto está **registrado no banco** e ainda não foi pago, com vencimento de até 60 dias atrás. Vão no máximo 3, do mais antigo para o mais novo, com o link da página do boleto no aplicativo do morador.
+
+Se algo não confere, o ERP responde que não encontrou, sem dizer o motivo, e o Talk passa a conversa para o **Financeiro**. Boletos vencidos há mais de 60 dias também vão para o Financeiro.
+
+> Cada consulta de boleto fica registrada na auditoria do ERP, com o telefone escondido.
+
+>! O boleto vai para quem escreve do telefone do cadastro. Quando o morador trocar de número, atualize o cadastro antes.
 
 ## O chamado no Help Desk
 
@@ -48,9 +65,9 @@ Quando o atendente do Talk **transfere** a conversa de setor (Financeiro, Manute
 
 >! Contato que não está cadastrado também gera chamado, como "Contato do WhatsApp (final 7777)", sem condomínio. Confira e complete na triagem.
 
-## Talk separado, até a mudança terminar (equipe de TI)
+## Ligar o Talk do escritório ao ERP (equipe de TI)
 
-Enquanto o Talk antigo, em endereço próprio, ainda estiver no ar, ele conversa com o ERP pela API:
+O Talk que roda no escritório conversa com o ERP pela API:
 
 
 1. Crie em [[Configurações > Acesso > Usuários do Sistema]] um usuário só para a integração, por exemplo "Connect Talk (integração)", com um papel que tenha a permissão de atender chamados (`support.manage`) e acesso aos condomínios que o Talk vai atender.

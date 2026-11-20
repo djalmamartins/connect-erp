@@ -14,7 +14,19 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 </FilesMatch>
 
 RewriteRule ^(?:source|service|tests|vendor)(?:/|$) - [F,L,NC]
-RewriteRule ^storage/(?:backups|cache|cert|database|logs|private|sessions|temp|tmp)(?:/|$) - [F,L,NC]
+RewriteRule ^storage/(?:backups|cache|cert|database|logs|media|output|private|sessions|talk|temp|tmp|uploads)(?:/|$) - [F,L,NC]
+# Propostas comerciais (nome, e-mail e telefone do interessado) só pela rota do Studio com login (ADR 0388).
+RewriteRule ^storage/files/proposals(?:/|$) - [F,L,NC]
+# Nada enviado vira página ou script: em storage/ só ficam imagens e documentos (ADR 0388).
+# Exceção: o logo SVG que o Studio grava em Configurações, só com o nome que ele gera e com sandbox (ADR 0395).
+RewriteCond %{REQUEST_URI} !/storage/images/\d{4}/\d{2}/logo-svg-\d{14}-[0-9a-f]{6}\.svg$
+RewriteRule ^storage/.*\.(?:php\d*|phtml|phar|pht|s?html?|xht(?:ml)?|svgz?|m?js)$ - [F,L,NC]
+<IfModule mod_headers.c>
+    <FilesMatch "^logo-svg-\d{14}-[0-9a-f]{6}\.svg$">
+        Header always set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+        Header always set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>
 # Anexos de chamados só pela rota /api/v1/ticket-attachments/{id}, que confere quem pode ver (ADR 0339).
 RewriteRule ^storage/(?:files|images)/(?:.*/)?(?:public-)?ticket- - [F,L,NC]
 

@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Source\Services\Erp\ErpNav;
 
 /**
- * Menu novo e menu atual do ERP (ADR 0358): toda página aparece uma vez em cada menu, nenhum endereço muda
+ * Menu novo e menu atual do ERP (ADR 0397): toda página aparece uma vez em cada menu, nenhum endereço muda
  * e o menu de antes continua igual ao catálogo.
  */
 final class ErpNavTest extends TestCase

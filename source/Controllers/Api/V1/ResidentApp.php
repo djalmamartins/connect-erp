@@ -459,6 +459,7 @@ final class ResidentApp
         header('Content-Disposition: attachment; filename="' . $name . '"');
         header('Cache-Control: no-store, private');
         header('X-Content-Type-Options: nosniff');
+        header("Content-Security-Policy: default-src 'none'; sandbox"); // ADR 0393: arquivo enviado nunca roda como página
         readfile($file['path']);
     }
 

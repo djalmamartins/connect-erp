@@ -15,7 +15,8 @@ declare(strict_types=1);
  *       Depois de cadastrar, apague os arquivos .crt/.key da pasta de downloads.
  *
  *   php tools/bank-credentials.php testar --conta=ID
- *       Só pede um token ao sandbox do Inter (não emite nada) para conferir credencial e certificado.
+ *       Só pede um token ao banco da conta (sandbox do Inter ou stage da Cora; não emite nada) para conferir credencial
+ *       e certificado. Saída 0 se o banco respondeu, 1 se não (com o motivo).
  *
  *   php tools/bank-credentials.php situacao --conta=ID
  *   php tools/bank-credentials.php remover --conta=ID      volta a conta para o sandbox interno
@@ -28,10 +29,9 @@ if (PHP_SAPI !== 'cli') {
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+use Source\Services\Erp\Banking\BankCredentialSetup;
 use Source\Services\Erp\Banking\BankCredentials;
 use Source\Services\Erp\Banking\BankVault;
-use Source\Services\Erp\Banking\Inter\CurlInterHttp;
-use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 
 $command = $argv[1] ?? '';
 $options = [];
@@ -94,11 +94,11 @@ try {
             break;
 
         case 'testar':
+            // ADR 0392: o banco sai do código da conta (Inter ou Cora); antes era sempre o Inter, e a Cora falhava sem motivo.
             $id = $account();
-            $adapter = new InterBankAdapter((new BankCredentials())->secrets($id), new CurlInterHttp());
-            $adapter->checkAuthentication();
-            fwrite(STDOUT, "Inter sandbox respondeu: token obtido com o certificado e a credencial da conta {$id}." . PHP_EOL);
-            break;
+            $result = (new BankCredentialSetup())->testFromTerminal($id);
+            fwrite($result['connected'] ? STDOUT : STDERR, $result['message'] . PHP_EOL);
+            exit($result['connected'] ? 0 : 1);
 
         case 'situacao':
             $id = $account();
@@ -115,6 +115,6 @@ try {
         default:
             $fail("Uso: php tools/bank-credentials.php [gerar-chave|cadastrar|testar|situacao|remover] --conta=ID ...\nVeja o cabeçalho deste arquivo.");
     }
-} catch (InvalidArgumentException|RuntimeException $error) {
+} catch (InvalidArgumentException|RuntimeException|DomainException $error) {
     $fail('Erro: ' . $error->getMessage());
 }

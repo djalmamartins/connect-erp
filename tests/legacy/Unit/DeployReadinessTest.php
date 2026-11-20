@@ -84,5 +84,49 @@ final class DeployReadinessTest extends TestCase
         $check = (string)file_get_contents(dirname(__DIR__, 3) . '/service/commands/deploy-check.php');
         self::assertStringContainsString('DeployReadiness::env(', $check);
         self::assertStringContainsString('DeployReadiness::database(', $check);
+        self::assertStringContainsString('DeployReadiness::php(', $check);
+    }
+
+    public function testPhpLimitsBelowWhatTheSystemAcceptsAreWarnings(): void
+    {
+        $good = ['memory_limit' => '512M', 'upload_max_filesize' => '64M', 'post_max_size' => '70M', 'file_uploads' => '1'];
+        self::assertSame([], DeployReadiness::php($good));
+        self::assertSame([], DeployReadiness::php(['memory_limit' => '-1', 'post_max_size' => '0', 'upload_max_filesize' => '1G'] + $good));
+
+        $warnings = DeployReadiness::php(['memory_limit' => '128M', 'upload_max_filesize' => '2M', 'post_max_size' => '8M', 'file_uploads' => 'Off']);
+        self::assertCount(4, $warnings);
+        foreach (['memory_limit', 'file_uploads', 'upload_max_filesize', 'post_max_size'] as $i => $directive) {
+            self::assertStringStartsWith($directive, $warnings[$i]);
+            self::assertStringContainsString('hPanel', $warnings[$i]);
+        }
+        // ADR 0384: 256M já não basta para o livro-caixa de um mês cheio (1.000 lançamentos ~550 MB).
+        self::assertStringContainsString('512M', DeployReadiness::php(['memory_limit' => '256M'] + $good)[0] ?? '');
+        self::assertSame([], DeployReadiness::php(['memory_limit' => '1G'] + $good));
+        $post = DeployReadiness::php(['upload_max_filesize' => '100M', 'post_max_size' => '64M'] + $good);
+        self::assertCount(1, $post, 'post_max_size menor que o upload');
+        self::assertStringStartsWith('post_max_size', $post[0]);
+    }
+
+    public function testBytesParsesPhpShorthand(): void
+    {
+        self::assertSame(268435456, DeployReadiness::bytes('256M'));
+        self::assertSame(2048, DeployReadiness::bytes('2k'));
+        self::assertSame(1073741824, DeployReadiness::bytes(' 1G '));
+        self::assertSame(-1, DeployReadiness::bytes('-1'));
+        self::assertSame(0, DeployReadiness::bytes(false));
+        self::assertSame(0, DeployReadiness::bytes('lixo'));
+    }
+
+    public function testRequiredUploadCoversEveryUploadLimitInTheCode(): void
+    {
+        $limits = [\Source\Services\Erp\VirtualDisk::MAX_BYTES, \Source\Services\Inspections\PhotoStorage::MAX_BYTES,
+            \Source\Services\Resident\ResidentProfile::MAX_BYTES];
+        foreach ((new \ReflectionClass(\Source\Support\Upload::class))->getConstants() as $name => $value) {
+            if (str_ends_with($name, '_MAX_BYTES')) {
+                $limits[] = $value;
+            }
+        }
+        self::assertGreaterThanOrEqual(max($limits), DeployReadiness::REQUIRED_UPLOAD_BYTES,
+            'um limite de envio do sistema passou do que o deploy-check pede ao PHP');
     }
 }

@@ -52,7 +52,16 @@
     "dompdf/dompdf": "^3.1",
     "bacon/bacon-qr-code": "^3.0",
     "setasign/fpdi": "^2.6",
-    "setasign/fpdf": "^1.8"
+    "setasign/fpdf": "^1.8",
+    "ext-curl": "*",
+    "ext-dom": "*",
+    "ext-fileinfo": "*",
+    "ext-gd": "*",
+    "ext-mbstring": "*",
+    "ext-openssl": "*",
+    "ext-pdo_mysql": "*",
+    "ext-simplexml": "*",
+    "ext-zip": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.5"
@@ -61,6 +70,7 @@
     "build:studio": "@php service/commands/build-studio-assets.php",
     "db:status": "@php service/commands/database-migrate.php status",
     "db:migrate": "@php service/commands/database-migrate.php apply",
+    "db:install": "@php service/commands/database-install.php",
     "db:baseline": "@php service/commands/database-migrate.php baseline",
     "db:rollback": "@php service/commands/database-migrate.php rollback",
     "deploy:check": "@php service/commands/deploy-check.php",

@@ -102,6 +102,42 @@ final class InspectionPhotoStorageTest extends TestCase
         }
     }
 
+    /** ADR 0371: a foto vai para o DocumentStore, sem arquivo temporário sobrando. */
+    public function testStoresThroughTheDocumentStore(): void
+    {
+        $store = new class implements \Source\Support\Storage\DocumentStore {
+            /** @var array<string, string> */
+            public array $files = [];
+
+            public function put(string $relative, string $source, bool $move): bool
+            {
+                $this->files[$relative] = (string)file_get_contents($source);
+                return !$move;
+            }
+
+            public function path(string $relative): ?string
+            {
+                return isset($this->files[$relative]) ? '/cache/' . $relative : null;
+            }
+
+            public function delete(string $relative): void
+            {
+                unset($this->files[$relative]);
+            }
+        };
+        $before = glob(sys_get_temp_dir() . '/photo*') ?: [];
+        $storage = new PhotoStorage($this->root, $store);
+        $stored = $storage->store(['tmp_name' => $this->jpeg(400, 300, withExif: false), 'error' => UPLOAD_ERR_OK], 3, 9);
+        self::assertSame([$stored['path']], array_keys($store->files));
+        self::assertSame(hash('sha256', $store->files[$stored['path']]), $stored['sha256']);
+        self::assertSame(strlen($store->files[$stored['path']]), $stored['size_bytes']);
+        self::assertSame('/cache/' . $stored['path'], $storage->absolute($stored['path']));
+        self::assertDirectoryDoesNotExist($this->root . '/3', 'nada gravado direto no disco');
+        self::assertSame($before, glob(sys_get_temp_dir() . '/photo*') ?: [], 'JPEG temporário apagado');
+        $storage->delete($stored['path']);
+        self::assertSame([], $store->files);
+    }
+
     private function temp(string $suffix): string
     {
         $file = sys_get_temp_dir() . '/insp-src-' . bin2hex(random_bytes(6)) . $suffix;

@@ -7,13 +7,17 @@ Roteiro da etapa 4 de `docs/ROADMAP_V1.md` (ADR 0325). Nada aqui usa credencial 
 
 ```bash
 php -v                                   # 8.2 ou superior
-php -m | grep -Ei 'intl|pdo_mysql|openssl|fileinfo|mbstring|gd|zip'
+php -m | grep -Ei 'intl|pdo_mysql|openssl|fileinfo|mbstring|gd|zip|curl|dom|simplexml'   # composer check-platform-reqs confere tudo
 mariadb-dump --version || mysqldump --version
 which flock git composer
 curl -sI https://cdpj.partners.bancointer.com.br | head -1   # saída liberada para o banco
 ```
 
 Se faltar extensão, trocar no hPanel (Avançado > Configuração do PHP). Anotar aqui o resultado.
+
+Na mesma tela, deixar `memory_limit` em 512M ou mais (ADR 0384: o livro-caixa de um mês cheio passa de 256M), `upload_max_filesize` em 50M ou mais (o maior arquivo que o sistema
+aceita) e `post_max_size` maior que ele. O `deploy-check` avisa se algum ficar abaixo (ADR 0362). Se mesmo assim um
+envio passar do `post_max_size`, o sistema avisa o limite em MB em vez de "sessão expirada" (ADR 0363).
 
 ## 2. Domínios
 
@@ -25,7 +29,8 @@ Se faltar extensão, trocar no hPanel (Avançado > Configuração do PHP). Anota
 | `app.connectcondominios.com.br` | app web do morador |
 
 Todos apontam para o mesmo front controller do sistema; o roteamento por host é o mesmo do laboratório
-(`*.connect.lab`). SSL grátis do hPanel em todos. O código fica **fora** de `public_html`; só a pasta pública é exposta.
+(`*.connect.lab`). SSL grátis do hPanel em todos. Com `APP_ENV=production`, o próprio sistema manda `http://` para `https://` (301; 308 em
+POST) no mesmo endereço do domínio do `APP_URL` (ADR 0364); `CONNECT_FORCE_HTTPS=false` desliga se der laço. O código fica **fora** de `public_html`; só a pasta pública é exposta.
 Como o `index.php` e os assets moram na raiz do projeto, a pasta pública costuma ser a própria pasta do projeto: o
 `.htaccess` barra `.git`, `.local` (backups), `tools`, `docs`, `database` e o código dos temas (ADR 0338). Depois de
 implantar, conferir com `php tools/hosting/smoke-http.php --domain=connectcondominios.com.br` (ADR 0356): páginas,
@@ -38,13 +43,26 @@ cd ~ && git clone https://github.com/djalmamartins/connect-erp.git connect && cd
 composer install --no-dev --optimize-autoloader
 cp .env.production.example .env && chmod 600 .env   # preencher tudo marcado com <...> (ADR 0357)
 php tools/bank-credentials.php gerar-chave # CONNECT_BANK_VAULT_KEY nova (nunca a do laboratório)
+composer db:install    # banco vazio: estrutura base, catálogos, configuração e migrations (ADR 0396)
+php tools/hosting/criar-admin.php --email=<seu e-mail> --nome=<nome> --sobrenome=<sobrenome> --cpf=<cpf>   # ADR 0380
 php service/commands/deploy-check.php
-composer db:migrate
 ```
+
+O `criar-admin` mostra a senha uma vez só e só funciona enquanto não houver administrador; as outras contas saem pela tela
+Usuários do Sistema.
+
+**Banco vazio (ADR 0379 e 0396):** `composer db:install` só roda num banco sem nenhuma tabela. Carrega a estrutura
+exportada do laboratório (`database/base/schema.sql`, sem dados), os catálogos das migrations antigas (papéis, permissões,
+versões), a configuração inicial (`settings`, com o `APP_URL`) e as migrations atuais. Nas atualizações seguintes, só
+`composer db:migrate`. Se o laboratório ganhar tabela nova fora de migration, rode de novo no Mac
+`bash tools/lab-exportar-esquema.sh` e mande `database/base/` num PR.
 
 O `deploy-check` com `APP_ENV=production` (ADR 0354) para com erro se o `.env` estiver inseguro (debug, dados de
 exemplo, endereço do laboratório, `CONNECT_2FA_KEY` ou `CONNECT_BANK_VAULT_KEY` ausente ou repetida) ou se houver conta de
 teste no banco, e avisa do que o roteiro ainda pede (2FA obrigatório, `ALERT_EMAIL`, e-mail, equipe sem 2FA).
+
+Se as imagens antigas do site forem copiadas para `storage/images`, rode `php tools/hosting/limpar-exif.php` (só conta) e
+`--aplicar` para tirar o GPS e o aparelho das fotos (ADR 0390); as imagens enviadas pelo sistema já saem limpas (ADR 0389).
 
 Não subir `apps/` nem `node_modules` (limite de 2 milhões de inodes). Credenciais históricas do laboratório não são
 reaproveitadas (`docs/migration/PENDENCIAS.md` item 7).
@@ -57,6 +75,17 @@ reaproveitadas (`docs/migration/PENDENCIAS.md` item 7).
 0 7 * * *   bash /home/USUARIO/connect/tools/hosting/cron.sh dia
 30 3 * * *  bash /home/USUARIO/connect/tools/hosting/cron.sh backup
 ```
+
+O Connect Talk **não roda na hospedagem** (Djalma, 17/11/2026, ADR 0359): volta a ser o projeto separado
+(`djalmamartins/talk`), inteiro num Raspberry Pi no escritório com nobreak, e conversa com o ERP pelas rotas `/talk/...` da API, com o token `ctk_` (ADR 0308). Por isso não
+há cron do `tools/talk-worker.php` no hPanel. Os e-mails da fila saem pelo SMTP quando o `.env` tem `ERP_MAIL_DELIVERY=production` (ADR 0358);
+o `cron.sh` lê do `.env` essa chave, `MAIL_QUEUE_SEND` e `PHP_BIN`.
+
+**Conferir o e-mail (ADR 0381)** depois de criar a conta de e-mail no hPanel e preencher o SMTP no `.env`:
+`php tools/hosting/email-teste.php --para=seu@email --dkim-seletor=SELETOR` (o seletor aparece no hPanel, em E-mails >
+Autenticação). Ele mostra o que falta no DNS (SPF, DKIM, DMARC) e manda um e-mail de teste; conferir se chegou fora do spam.
+Anote o seletor em `MAIL_DKIM_SELECTOR` no `.env`: o `deploy-check` passa a avisar a cada atualização se o DNS de e-mail
+mudar (ADR 0382). Comece o DMARC com `p=none` e passe para `quarantine` depois de algumas semanas sem falha.
 
 Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `bash`. Logs em `storage/logs/cron-*.log`.
 
@@ -82,20 +111,35 @@ Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `
 ## 6. Atualizar uma versão
 
 ```bash
-cd ~/connect && bash tools/hosting/backup.sh
-git fetch origin && git checkout <commit-novo>
-composer install --no-dev --optimize-autoloader && composer db:migrate
-php service/commands/deploy-check.php
-php tools/hosting/smoke-http.php --domain=connectcondominios.com.br   # ADR 0356; código 1 = algo falhou
+cd ~/connect && bash tools/hosting/update.sh <commit-novo> --domain=connectcondominios.com.br
 ```
 
-Reversão: `git checkout <commit-anterior>` e, se uma migration quebrou dados, restaurar o backup do passo 1.
+O script (ADR 0361) faz, em ordem: recusa se algum arquivo versionado foi mexido no servidor; anota o commit atual em
+`.local/deploy/previous`; backup (`backup.sh`); `git fetch` e checkout do commit novo; `composer install --no-dev`;
+`deploy-check`; `composer db:migrate`; conferência por HTTP (`smoke-http.php`, ADR 0356). Tudo fica em
+`storage/logs/deploy.log`. Códigos de saída:
+
+| Código | O que aconteceu | O que fazer |
+| --- | --- | --- |
+| 0 | versão nova no ar | nada |
+| 1 | `composer install` ou `deploy-check` falhou | **o script já voltou** para o commit anterior; o banco não mudou. Corrigir o `.env` ou o código e repetir |
+| 2 | a migration falhou | o banco pode ter mudado em parte: restaurar o backup do passo 1 (§5) e rodar `bash tools/hosting/update.sh <commit-anterior>` |
+| 3 | a conferência por HTTP falhou | ver o que falhou; para voltar o código, `bash tools/hosting/update.sh <commit-anterior>` (com migration nova, restaurar o backup antes) |
+| 4, 5, 6 | arquivo mexido no servidor, backup falhou ou commit não encontrado | nada foi feito; resolver e repetir |
+
+O commit anterior aparece na saída e fica em `.local/deploy/previous`.
 
 ## 7. Webhook dos bancos
 
+Antes de tudo, confira que a hospedagem consegue falar com o banco usando o certificado (mTLS pelo cURL do PHP):
+`php tools/bank-credentials.php testar --conta=ID` pede só um token ao banco da conta (sandbox do Inter ou stage da Cora),
+sem emitir nada. Saída 0 = o banco respondeu; 1 = mostra o motivo (ADR 0392).
+
 Sem proxy próprio não dá para exigir o certificado do banco. A rota `/api/v1/webhooks/bank/{banco}/{segredo}` continua
-protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa; a lista de IPs do banco vai
-no `.htaccess` do subdomínio do ERP. A consulta de hora em hora (`cron.sh hora`) dá a baixa mesmo se o webhook falhar.
+protegida pelo segredo do endereço e pela consulta de cada título no banco antes da baixa. A lista de IPs do banco vai
+no `.env`, em `BANK_WEBHOOK_ALLOWED_IPS` (IPs ou faixas CIDR separados por vírgula, ADR 0360): chamada de fora da lista
+recebe 404, como se o endereço não existisse, e fica no log como `bank_webhook_ip_blocked`. Preencher com os IPs que o
+Inter e a Cora informarem; vazio aceita qualquer origem. A consulta de hora em hora (`cron.sh hora`) dá a baixa mesmo se o webhook falhar.
 
 ## 8. Monitoramento (ADR 0333)
 
@@ -136,3 +180,27 @@ php tools/hosting/load-test-limits.php --base=https://erp.connectcondominios.com
 Esperado: no primeiro, `aceitos` igual a 6 (limite por conta); no segundo, até 30 (limite por IP no banco; o contador em
 arquivo corta em 40). O seu IP fica bloqueado por 15 minutos depois do teste. Não rodar contra o servidor com moradores
 usando: quem estiver no mesmo IP do teste também fica bloqueado.
+
+## 10. Arquivos no OneDrive da Connect (ADR 0373/0374)
+
+Padrão: `DOCUMENT_STORAGE=local` (pasta privada do servidor). Para guardar os documentos, fotos de vistoria e fotos dos
+moradores no OneDrive empresarial da Connect (precisa da conta Microsoft 365 Business no domínio):
+
+1. Entra ID (portal.azure.com > Microsoft Entra ID > Registros de aplicativo > Novo registro): nome "Connect ERP
+   arquivos", conta só desta organização. Anote o **ID do diretório (locatário)** e o **ID do aplicativo (cliente)**.
+2. Certificados e segredos > Novo segredo do cliente (24 meses). Copie o **valor** na hora (ele não aparece de novo) e
+   anote no calendário a data de troca.
+3. Permissões de API > Microsoft Graph > Permissões de aplicativo > `Files.ReadWrite.All` > Conceder consentimento de
+   administrador.
+4. ID do drive: no Graph Explorer, com a conta da Connect, `GET https://graph.microsoft.com/v1.0/users/<e-mail>/drive`
+   e copie o `id`.
+5. No `.env` do servidor (mantenha `DOCUMENT_STORAGE=local` até o passo 6): `ONEDRIVE_TENANT_ID`, `ONEDRIVE_CLIENT_ID`,
+   `ONEDRIVE_CLIENT_SECRET`, `ONEDRIVE_DRIVE_ID` e `ONEDRIVE_FOLDER=ConnectERP`. Depois da troca, rode
+   `php service/commands/deploy-check.php`: faltando chave, ele acusa e os arquivos continuam no servidor; com as chaves
+   completas, ele também confere autorização, permissão e drive no OneDrive (ADR 0378).
+6. Antes de trocar para `onedrive`, copie os arquivos que já estão no servidor (ADR 0376), com as chaves do OneDrive
+   já no `.env` e `DOCUMENT_STORAGE=local`:
+   `php tools/hosting/onedrive-copy.php --dry-run` (conta; já confere a ligação) e depois `php tools/hosting/onedrive-copy.php`
+   (envia; se algum falhar, rode de novo: só o que faltou sobe). Com tudo copiado, troque para `DOCUMENT_STORAGE=onedrive`. A pasta
+   local não é apagada. A cópia de leitura fica em `storage/cache/onedrive/` e a faxina diária apaga o que ficou 7 dias
+   sem uso (ADR 0375).

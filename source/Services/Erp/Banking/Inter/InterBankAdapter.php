@@ -175,9 +175,17 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
     public function getCharge(string $ourNumber, ?string $externalId): array
     {
         if ($externalId === null || !self::validRequestId($externalId)) {
-            // Sem o código da solicitação não dá para consultar. Não reemite: evita boleto em dobro.
-            return ['status' => 'pending', 'external_id' => null, 'digitable_line' => null, 'barcode' => null,
-                'error' => 'Sem o código da solicitação do Inter. Confira no Internet Banking antes de emitir de novo.'];
+            // Sem o código da solicitação (o Inter falhou na emissão): procura pelo nosso número. Não reemite: evita boleto em dobro.
+            try {
+                $externalId = $this->findBySeuNumero($ourNumber);
+            } catch (RuntimeException) {
+                return ['status' => 'pending', 'external_id' => null, 'digitable_line' => null, 'barcode' => null,
+                    'error' => 'Sem o código da solicitação do Inter. Confira no Internet Banking antes de emitir de novo.'];
+            }
+            if ($externalId === null) {
+                return ['status' => 'pending', 'external_id' => null, 'digitable_line' => null, 'barcode' => null,
+                    'error' => 'O Inter não tem cobrança com este nosso número: cancele o boleto no ERP e emita de novo.'];
+            }
         }
         $response = $this->call('GET', '/cobranca/v3/cobrancas/' . rawurlencode($externalId));
         if ($response['status'] === 404) {
@@ -250,7 +258,15 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
     public function cancelCharge(string $ourNumber, ?string $externalId): array
     {
         if ($externalId === null || !self::validRequestId($externalId)) {
-            return ['status' => 'pending', 'error' => 'Sem o código da solicitação do Inter: cancele pelo Internet Banking.'];
+            try {
+                $externalId = $this->findBySeuNumero($ourNumber);
+            } catch (RuntimeException) {
+                return ['status' => 'pending', 'error' => 'Sem o código da solicitação do Inter: cancele pelo Internet Banking.'];
+            }
+            if ($externalId === null) {
+                // A consulta respondeu e o Inter não tem a cobrança (emissão falhou): não há nada a cancelar no banco.
+                return ['status' => 'cancelled', 'error' => null];
+            }
         }
         $response = $this->call('POST', '/cobranca/v3/cobrancas/' . rawurlencode($externalId) . '/cancelar', ['motivoCancelamento' => 'Cancelado pela administradora'],
             'application/json, application/problem+json');
@@ -511,6 +527,39 @@ final class InterBankAdapter implements BankAdapter, BankChargeExtras, BankState
         // Renova um minuto antes de vencer.
         $this->tokens[$scope] = [$token, $now + max(60, (int)($data['expires_in'] ?? 3600) - 60)];
         return $token;
+    }
+
+    /**
+     * Código da solicitação da cobrança com este seuNumero emitida nos últimos 60 dias, ou null se o Inter respondeu
+     * sem nenhuma (ADR 0331, adendo de 18/11/2026: o sandbox respondeu 500 na emissão e o título ficou sem código).
+     * Lista INFERIDA da doc pública (GET /cobranca/v3/cobrancas com dataInicial, dataFinal, filtrarDataPor, seuNumero);
+     * conferir na homologação. Exceção se a consulta falhar: aí não dá para afirmar que a cobrança não existe.
+     */
+    private function findBySeuNumero(string $ourNumber): ?string
+    {
+        if (!preg_match('/^\d{1,15}$/', $ourNumber)) {
+            return null;
+        }
+        $now = $this->clock !== null ? ($this->clock)() : time();
+        $query = http_build_query(['dataInicial' => date('Y-m-d', $now - 60 * 86400), 'dataFinal' => date('Y-m-d', $now + 86400),
+            'filtrarDataPor' => 'EMISSAO', 'seuNumero' => $ourNumber, 'itensPorPagina' => 10, 'paginaAtual' => 0]);
+        $response = $this->call('GET', '/cobranca/v3/cobrancas?' . $query);
+        if ($response['status'] !== 200) {
+            throw new RuntimeException('Inter respondeu ' . $response['status'] . ' na busca pelo nosso número.');
+        }
+        $data = self::json($response['body']);
+        if (!is_array($data['cobrancas'] ?? null)) {
+            throw new RuntimeException('Inter respondeu a busca sem a lista de cobranças.');
+        }
+        foreach ($data['cobrancas'] as $item) {
+            $cobranca = is_array($item['cobranca'] ?? null) ? $item['cobranca'] : (is_array($item) ? $item : []);
+            $id = (string)($cobranca['codigoSolicitacao'] ?? '');
+            if ((string)($cobranca['seuNumero'] ?? '') === $ourNumber && self::validRequestId($id)
+                && strtoupper((string)($cobranca['situacao'] ?? '')) !== 'FALHA_EMISSAO') {
+                return $id;
+            }
+        }
+        return null;
     }
 
     private static function validRequestId(string $id): bool

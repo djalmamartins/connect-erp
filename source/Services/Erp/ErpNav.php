@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Source\Services\Erp;
 
 /**
- * Menu lateral do ERP (ADR 0358).
+ * Menu lateral do ERP (ADR 0397).
  *
  * O catálogo (catalog.php) continua dizendo o endereço, o grupo de permissão e a migalha de cada página; o menu
  * é uma camada só de organização por cima dele, montada aqui. Assim o menu muda sem mudar nenhum endereço.

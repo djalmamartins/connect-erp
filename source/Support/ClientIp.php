@@ -36,6 +36,16 @@ final class ClientIp
         return $remote;
     }
 
+    /**
+     * Lista opcional de IPs ou faixas CIDR (separados por vírgula). Lista vazia libera todos;
+     * IP desconhecido (null) só passa com a lista vazia. Usada no webhook dos bancos (ADR 0360).
+     */
+    public static function allowed(?string $ip, string $list): bool
+    {
+        $ranges = self::parse($list);
+        return $ranges === [] || ($ip !== null && self::matches($ip, $ranges));
+    }
+
     /** @return list<string> */
     private static function parse(string $list): array
     {

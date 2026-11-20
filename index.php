@@ -1,6 +1,8 @@
 <?php
 ob_start();
 require __DIR__ . "/vendor/autoload.php";
+// Sem debug, erro do PHP não aparece na tela nem a versão do PHP no cabeçalho (ADR 0366).
+\Source\Support\ErrorDisplay::apply(CONF_APP_DEBUG);
 
 /**
  * BOOTSTRAP
@@ -13,6 +15,8 @@ use Source\Support\Access;
 use Source\Support\AppLogger;
 
 $logger = AppLogger::bootstrap();
+// Produção: http:// vai para https:// antes de abrir a sessão (ADR 0364).
+\Source\Support\HttpsRedirect::handle();
 $session = new Session();
 
 // Cabeçalhos de segurança de toda resposta (ADR 0355): sem moldura de outro site, nosniff, HSTS fora do lab.
@@ -26,6 +30,8 @@ if (talk_host() && !str_starts_with((string)parse_url((string)($_SERVER['REQUEST
     require moves_container_path('talk', 'connect') . '/app.php';
     exit;
 }
+// Envio acima do post_max_size (ADR 0363): o PHP descarta o corpo inteiro; avisa o limite em vez de "sessão expirada".
+\Source\Support\OversizedPost::handle();
 $route = new Router(url(), ":");
 
 $route->namespace(null);
@@ -65,6 +71,7 @@ $route->get("/talk/people", "Talk:people", null, \Source\Support\Middleware\Talk
 $route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

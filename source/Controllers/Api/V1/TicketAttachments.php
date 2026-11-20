@@ -34,6 +34,7 @@ final class TicketAttachments
         header("Content-Disposition: attachment; filename=\"" . str_replace('"', '', $name) . "\"; filename*=UTF-8''" . rawurlencode($file['name']));
         header('Cache-Control: private, no-store');
         header('X-Content-Type-Options: nosniff');
+        header("Content-Security-Policy: default-src 'none'; sandbox"); // ADR 0393: arquivo enviado nunca roda como página
         readfile($file['path']);
     }
 }

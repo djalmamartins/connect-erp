@@ -10,7 +10,8 @@ $fail = static function (string $message) use (&$errors): void { $errors[] = $me
 $warn = static function (string $message) use (&$warnings): void { $warnings[] = $message; echo "[aviso] {$message}\n"; };
 
 version_compare(PHP_VERSION, '8.2.0', '>=') ? $ok('PHP ' . PHP_VERSION) : $fail('PHP 8.2 ou superior é obrigatório.');
-foreach (['pdo', 'pdo_mysql', 'intl', 'mbstring', 'json', 'openssl', 'fileinfo'] as $extension) {
+// Mesma lista do require ext-* do composer.json (ADR 0368; DeployExtensionsTest confere).
+foreach (['pdo', 'pdo_mysql', 'intl', 'mbstring', 'json', 'openssl', 'fileinfo', 'curl', 'dom', 'simplexml', 'gd', 'zip'] as $extension) {
     extension_loaded($extension) ? $ok("Extensão {$extension}") : $fail("Extensão PHP ausente: {$extension}");
 }
 foreach (['vendor/autoload.php', 'container/cms/studio/v1/assets/studio.min.css', 'container/cms/studio/v1/assets/studio.min.js'] as $file) {
@@ -36,6 +37,12 @@ if (!is_file($envFile)) {
         if (is_file($root . '/vendor/autoload.php')) {
             require_once $root . '/vendor/autoload.php';
             $ready = \Source\Support\DeployReadiness::env(array_map('strval', $env), time());
+            // Limites do PHP (ADR 0362): lidos aqui no CLI; o site usa a mesma configuração do hPanel.
+            $limits = [];
+            foreach (['memory_limit', 'upload_max_filesize', 'post_max_size', 'file_uploads'] as $directive) {
+                $limits[$directive] = ini_get($directive);
+            }
+            $ready['warnings'] = array_merge($ready['warnings'], \Source\Support\DeployReadiness::php($limits));
             try {
                 $pdo = \Source\Core\Connect::getInstance();
                 if ($pdo instanceof \PDO) {
@@ -45,6 +52,18 @@ if (!is_file($envFile)) {
             } catch (\Throwable $error) {
                 $warn('Banco não respondeu: contas de teste e 2FA da equipe não foram conferidos.');
             }
+            // OneDrive ligado (ADR 0378): confere autorização, permissão e drive antes de abrir.
+            $storageEnv = array_map('strval', $env);
+            if (\Source\Support\Storage\DocumentStores::mode($storageEnv) === 'onedrive' && \Source\Support\Storage\DocumentStores::missing($storageEnv) === []) {
+                $problem = \Source\Support\Storage\DocumentStores::oneDrive('documents', $storageEnv)->probe();
+                if ($problem === null) {
+                    $ok('OneDrive respondeu (autorização, permissão e drive)');
+                } else {
+                    $ready['errors'][] = 'OneDrive: ' . $problem;
+                }
+            }
+            // DNS de e-mail (ADR 0382): SPF, DKIM e DMARC do remetente, só como aviso.
+            $ready['warnings'] = array_merge($ready['warnings'], \Source\Support\MailDns::deployWarnings($storageEnv, \Source\Support\MailDns::resolver()));
             array_map($fail, $ready['errors']);
             array_map($warn, $ready['warnings']);
             $ready['errors'] === [] && $ready['warnings'] === [] && $ok('Conferência de produção sem pendências');

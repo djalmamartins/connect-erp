@@ -1205,42 +1205,6 @@
     "tests/legacy/Unit/ErpCommunicationScreensTest.php"
    ]
   },
-  "Source\\Controllers\\Erp\\Connect\\Condo": {
-   "deps": [
-    "Source\\Core\\View",
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppOwner",
-    "Source\\Models\\Corporation\\AppUnits",
-    "Source\\Models\\User",
-    "Source\\Support\\Email",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/Connect/Condo.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\Connect\\Condominium": {
-   "deps": [
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Corporation\\AppOwner",
-    "Source\\Models\\Corporation\\AppUnits",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Models\\User",
-    "Source\\Support\\Pager",
-    "Source\\Support\\Thumb",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/Connect/Condominium.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [],
-   "tests": []
-  },
   "Source\\Controllers\\Erp\\Connect\\CondominiumChecklist": {
    "deps": [
     "Source\\Core\\Controller",
@@ -1547,20 +1511,6 @@
     "tests/legacy/Unit/ErpOperationalScreensTest.php"
    ]
   },
-  "Source\\Controllers\\Erp\\Connect\\Register": {
-   "deps": [
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppUnits",
-    "Source\\Models\\User",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/Connect/Register.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [],
-   "tests": []
-  },
   "Source\\Controllers\\Erp\\Connect\\Registry": {
    "deps": [
     "Source\\Core\\Connect",
@@ -1645,141 +1595,6 @@
    "kind": "class",
    "layer": "Controllers",
    "tables": [],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\Connect\\Users": {
-   "deps": [
-    "Source\\Core\\View",
-    "Source\\Models\\Address",
-    "Source\\Models\\Auth",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\User",
-    "Source\\Support\\Email",
-    "Source\\Support\\Pager",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/Connect/Users.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Condominium": {
-   "deps": [
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Corporation\\AppOwner",
-    "Source\\Models\\Corporation\\AppUnits",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Models\\User",
-    "Source\\Support\\Pager",
-    "Source\\Support\\Thumb",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/V1/Condominium.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [
-    "notifications"
-   ],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Corporations": {
-   "deps": [
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Support\\Pager",
-    "Source\\Support\\Thumb",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/V1/Corporations.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [
-    "notifications"
-   ],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Dash": {
-   "deps": [
-    "Source\\Models\\Auth",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Faq\\Channel",
-    "Source\\Models\\Faq\\Question",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Models\\Post\\Category",
-    "Source\\Models\\Post\\Post",
-    "Source\\Models\\Report\\Access",
-    "Source\\Models\\Report\\Online",
-    "Source\\Models\\Session\\AppLog",
-    "Source\\Models\\Session\\AppSession",
-    "Source\\Models\\User"
-   ],
-   "file": "source/Controllers/Erp/V1/Dash.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [
-    "notifications"
-   ],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Erp": {
-   "deps": [
-    "Source\\Core\\Controller",
-    "Source\\Core\\Session",
-    "Source\\Models\\Auth",
-    "Source\\Models\\Report\\Access",
-    "Source\\Models\\Report\\Online",
-    "Source\\Models\\Session\\AppSession",
-    "Source\\Models\\User"
-   ],
-   "file": "source/Controllers/Erp/V1/Erp.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Manager": {
-   "deps": [
-    "Source\\Models\\Banking\\AppBankInter",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Corporation\\AppUnits",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Models\\User",
-    "Source\\Support\\Pager"
-   ],
-   "file": "source/Controllers/Erp/V1/Manager.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [
-    "notifications"
-   ],
-   "tests": []
-  },
-  "Source\\Controllers\\Erp\\V1\\Users": {
-   "deps": [
-    "Source\\Core\\View",
-    "Source\\Models\\Address",
-    "Source\\Models\\Corporation\\AppCondominium",
-    "Source\\Models\\Corporation\\AppCorporations",
-    "Source\\Models\\Notification\\Notification",
-    "Source\\Models\\Session\\AppSession",
-    "Source\\Models\\User",
-    "Source\\Support\\Email",
-    "Source\\Support\\Pager",
-    "Source\\Support\\Upload"
-   ],
-   "file": "source/Controllers/Erp/V1/Users.php",
-   "kind": "class",
-   "layer": "Controllers",
-   "tables": [
-    "notifications"
-   ],
    "tests": []
   },
   "Source\\Controllers\\Pay\\Pay": {
@@ -4764,7 +4579,7 @@
  },
  "counts": {
   "adrs": 115,
-  "classes": 236,
+  "classes": 226,
   "dynamic_route_lines": {
    "erp": 9,
    "index": 6
@@ -10464,11 +10279,6 @@
    "created_in": null,
    "used_by": [
     "Source\\Controllers\\Erp\\Connect\\Panel",
-    "Source\\Controllers\\Erp\\V1\\Condominium",
-    "Source\\Controllers\\Erp\\V1\\Corporations",
-    "Source\\Controllers\\Erp\\V1\\Dash",
-    "Source\\Controllers\\Erp\\V1\\Manager",
-    "Source\\Controllers\\Erp\\V1\\Users",
     "Source\\Controllers\\Studio\\Studio",
     "Source\\Models\\Notification\\Notification",
     "Source\\Services\\OnboardingAlerts",

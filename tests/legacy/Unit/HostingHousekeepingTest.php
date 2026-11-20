@@ -20,6 +20,24 @@ final class HostingHousekeepingTest extends TestCase
         self::assertSame(['movesos-2026-05-17.log'], $plan['delete'], 'Apaga só o que passou de 183 dias; outros logs não entram.');
     }
 
+    /** ADR 0375: cópia local do OneDrive sai depois de 7 dias sem uso; envio interrompido, depois de 1 dia. */
+    public function testOneDriveCachePlan(): void
+    {
+        $now = 1_800_000_000;
+        $day = 86400;
+        $plan = HostingHousekeeping::cachePlan([
+            '/c/documents/1/2026/novo.pdf' => $now - $day,
+            '/c/documents/1/2026/limite.pdf' => $now - 7 * $day,
+            '/c/documents/1/2026/velho.pdf' => $now - 7 * $day - 1,
+            '/c/inspections/1/2/a.jpg.ab12.part' => $now - $day - 1,
+            '/c/inspections/1/2/b.jpg.cd34.part' => $now - 3600,
+        ], $now);
+        self::assertSame(['/c/documents/1/2026/velho.pdf', '/c/inspections/1/2/a.jpg.ab12.part'], $plan);
+        $script = (string)file_get_contents(dirname(__DIR__, 3) . '/tools/hosting/housekeeping.php');
+        self::assertStringContainsString("storage/cache/onedrive", $script);
+        self::assertStringContainsString("str_starts_with(\$path, \$cache . '/')", $script, 'só apaga dentro do cache');
+    }
+
     public function testDiskAndCertificateProblems(): void
     {
         self::assertNull(HostingHousekeeping::diskProblem(80 * 1048576, 100));

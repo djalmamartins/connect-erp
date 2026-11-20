@@ -8,6 +8,9 @@ use PDO;
 use Source\Core\Connect;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Support\Audit;
+use Source\Support\Storage\DocumentStore;
+use Source\Support\Storage\DocumentStores;
+use Source\Support\Storage\LocalDocumentStore;
 
 /**
  * Boas-vindas e foto do morador no aplicativo (revisão de 15/11, ADR 0302), iguais no web e no celular.
@@ -18,6 +21,7 @@ use Source\Support\Audit;
  * - é recortada em quadrado no centro e reduzida a 512 px;
  * - é regravada como JPEG, o que descarta o EXIF com GPS e o modelo do aparelho (LGPD).
  * Ela fica fora da pasta pública, e só a própria pessoa a vê, pela sessão ou pelo Bearer.
+ * Grava, lê e apaga pelo DocumentStore (ADR 0372), como o Disco Virtual (ADR 0370).
  */
 final class ResidentProfile
 {
@@ -28,12 +32,13 @@ final class ResidentProfile
     private const MAX_PIXELS = 50000000;
 
     private PDO $pdo;
-    private string $root;
+    private DocumentStore $store;
 
-    public function __construct(?PDO $pdo = null, ?string $root = null)
+    public function __construct(?PDO $pdo = null, ?string $root = null, ?DocumentStore $store = null)
     {
         $this->pdo = $pdo ?? Connect::getInstance();
-        $this->root = rtrim($root ?? dirname(__DIR__, 3) . '/storage/private/resident-photos', '/');
+        $local = dirname(__DIR__, 3) . '/storage/private/resident-photos';
+        $this->store = $store ?? ($root !== null ? new LocalDocumentStore($root) : DocumentStores::make('resident-photos', $local));
     }
 
     /** @return array{completed: bool, has_photo: bool} */
@@ -58,19 +63,23 @@ final class ResidentProfile
     {
         $image = $this->decode($upload);
         $relative = sprintf('%d/%s.jpg', $userId, bin2hex(random_bytes(16)));
-        $target = $this->root . '/' . $relative;
-        $this->prepareDirectory(dirname($target));
-        $written = imagejpeg($image, $target, self::QUALITY);
-        unset($image);
-        if (!$written || !is_file($target)) {
-            throw new \RuntimeException('Não foi possível guardar a foto.');
+        $encoded = tempnam(sys_get_temp_dir(), 'photo');
+        try {
+            $written = $encoded !== false && imagejpeg($image, $encoded, self::QUALITY);
+            unset($image);
+            if (!$written || !$this->store->put($relative, $encoded, false)) {
+                throw new \RuntimeException('Não foi possível guardar a foto.');
+            }
+        } finally {
+            if ($encoded !== false) {
+                @unlink($encoded);
+            }
         }
-        @chmod($target, 0640);
-        $old = $this->photoFile($this->row($userId));
+        $old = $this->photoRelative($this->row($userId));
         $this->pdo->prepare('INSERT INTO erp_resident_app_profiles (user_id, photo_path) VALUES (:user, :path)
             ON DUPLICATE KEY UPDATE photo_path = VALUES(photo_path)')->execute(['user' => $userId, 'path' => $relative]);
         if ($old !== null) {
-            @unlink($old);
+            $this->store->delete($old);
         }
         Audit::record('resident_app.photo', 'erp_resident_app_profiles', $userId, null, ['action' => 'store']);
     }
@@ -83,12 +92,29 @@ final class ResidentProfile
 
     public function deletePhoto(int $userId): void
     {
-        $file = $this->photo($userId);
+        $row = $this->row($userId);
+        $relative = $this->photoFile($row) !== null ? $this->photoRelative($row) : null;
         $this->pdo->prepare('UPDATE erp_resident_app_profiles SET photo_path = NULL WHERE user_id = :user')->execute(['user' => $userId]);
-        if ($file !== null) {
-            @unlink($file);
+        if ($relative !== null) {
+            $this->store->delete($relative);
             Audit::record('resident_app.photo', 'erp_resident_app_profiles', $userId, null, ['action' => 'delete']);
         }
+    }
+
+    /**
+     * Conta excluída (ADR 0377, LGPD): apaga a foto do armazenamento e a linha do perfil. Sem foto, só a linha.
+     */
+    public function forgetAccount(int $userId): void
+    {
+        $row = $this->row($userId);
+        if ($row === null) {
+            return;
+        }
+        $relative = $this->photoRelative($row);
+        if ($relative !== null) {
+            $this->store->delete($relative);
+        }
+        $this->pdo->prepare('DELETE FROM erp_resident_app_profiles WHERE user_id = :user')->execute(['user' => $userId]);
     }
 
     /** Recorte central quadrado (regra pura): [x, y, lado] da área da imagem original que vira a foto. */
@@ -106,14 +132,17 @@ final class ResidentProfile
         return $row === false ? null : $row;
     }
 
-    private function photoFile(?array $row): ?string
+    /** Caminho relativo guardado, só no formato que o próprio serviço cria. */
+    private function photoRelative(?array $row): ?string
     {
         $relative = (string)($row['photo_path'] ?? '');
-        if (!preg_match('~^\d+/[a-f0-9]{32}\.jpg$~', $relative)) {
-            return null;
-        }
-        $path = $this->root . '/' . $relative;
-        return is_file($path) ? $path : null;
+        return preg_match('~^\d+/[a-f0-9]{32}\.jpg$~', $relative) ? $relative : null;
+    }
+
+    private function photoFile(?array $row): ?string
+    {
+        $relative = $this->photoRelative($row);
+        return $relative === null ? null : $this->store->path($relative);
     }
 
     private function decode(array $upload): \GdImage
@@ -158,28 +187,11 @@ final class ResidentProfile
             return $image;
         }
         $exif = @exif_read_data($file);
-        $angle = match ((int)($exif['Orientation'] ?? 1)) {
-            3 => 180,
-            6 => -90,
-            8 => 90,
-            default => 0,
-        };
+        $angle = \Source\Support\ImageMetadata::angle((int)(is_array($exif) ? ($exif['Orientation'] ?? 1) : 1));
         if ($angle === 0) {
             return $image;
         }
         $rotated = imagerotate($image, $angle, 0);
         return $rotated === false ? $image : $rotated;
-    }
-
-    private function prepareDirectory(string $directory): void
-    {
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Não foi possível preparar a pasta das fotos.');
-        }
-        // Defesa extra caso a pasta storage fique dentro da raiz pública do Apache.
-        $base = dirname($this->root);
-        if (is_dir($base) && !is_file($base . '/.htaccess')) {
-            @file_put_contents($base . '/.htaccess', "Require all denied\n");
-        }
     }
 }

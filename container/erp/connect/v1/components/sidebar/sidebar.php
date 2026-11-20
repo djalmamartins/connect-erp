@@ -6,7 +6,7 @@
  *
  * @var array $catalog
  * @var ?string $currentGroup
- * @var ?array $nav       grupos do menu (ErpNav::build), ADR 0358
+ * @var ?array $nav       grupos do menu (ErpNav::build), ADR 0397
  * @var ?string $navMode   'novo' ou 'atual'
  * @var ?string $navGroup  grupo do menu da página atual
  * @var ?string $currentPageId
@@ -14,7 +14,7 @@
  * @var callable $anchor
  * @var callable $canSee  esconde páginas sem a permissão própria (a rota valida de novo)
  */
-// Menu novo ou atual (ADR 0358): os grupos vêm de ErpNav; o catálogo continua dando nome e endereço de cada página.
+// Menu novo ou atual (ADR 0397): os grupos vêm de ErpNav; o catálogo continua dando nome e endereço de cada página.
 $navMode ??= \Source\Services\Erp\ErpNav::mode();
 $nav ??= \Source\Services\Erp\ErpNav::build($catalog, $navMode);
 $navGroup ??= \Source\Services\Erp\ErpNav::groupOf($nav, $currentPageId) ?? (isset($nav[(string)$currentGroup]) ? $currentGroup : null);

@@ -47,7 +47,7 @@ Se o servidor ou a aprovação do Inter atrasarem, tudo anda junto: cada semana 
 | Pendências do modelo 8 (Nova Receita): conta relacionada, tipo da fatura, anexos no envio | **feito** (ADR 0323, 0329 e 0331: anexos, conta relacionada, repetição e boleto único) | sim |
 | Prestação de contas: colunas Sobras de rateio e Fundo de reserva, juntar anexos PDF | **feito** (ADR 0323) | sim |
 | Lista de revisão do Djalma prometida para depois de 19/11 | ainda não chegou | sim |
-| **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | **etapas 1 e 2 feitas** (ADR 0324 e 0349: Talk no ERP, WhatsApp num Raspberry Pi e worker pelo cron); dados do titular no Talk (ADR 0353) | sim |
+| **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | **pausado** (Djalma, 17/11/2026, ADR 0359): o Talk volta a ser o projeto separado, inteiro num Raspberry Pi no escritório com nobreak, ligado ao ERP pela API. O código das etapas 1 e 2 (ADR 0324 e 0349) fica no ERP, desligado na hospedagem, porque o relatório e a anonimização do titular usam essas tabelas (ADR 0353) | não |
 | NFS-e etapas 2 e 3 (certificado A1, envio à API Nacional, nota do condomínio) | dependem de dados fiscais e da norma de dez/2026 | **não** (emitir manualmente no início) |
 | Itaú e CNAB 240 genérico | não iniciados | **não** (v1.1) |
 | `docs/specs/pages/ap-*.md` com campos PENDENTE | documentação desatualizada | não bloqueia |
@@ -71,6 +71,11 @@ uma em 10 minutos e fechar. `#46` (decisões antes do banco real) fica aberta at
 | Proxy do webhook: `ssl_verify_client` com a CA do Inter, IPs do banco, corpo até 256 KB | configurar no servidor |
 
 ### 3.4 Servidor e implantação: Hostinger Cloud Startup (decisão do Djalma, 16/11/2026)
+**Bloqueio achado em 17/11 (ADR 0379):** o banco de produção começa vazio e `composer db:migrate` falha, porque as tabelas
+base (`users`, `access_*`, `settings`...) nunca vieram de migration. Passo 1 feito: `tools/lab-exportar-esquema.sh` exporta
+a estrutura do laboratório sem dados (rodado pelo Djalma em 18/11, PR #668: 191 tabelas). **Passo 2 feito em 18/11
+(ADR 0396):** `composer db:install` monta o banco vazio (estrutura, catálogos, configuração e migrations), com teste de
+integração no CI que instala do zero. Falta conferir na hospedagem. **Primeiro administrador (ADR 0380):** `tools/hosting/criar-admin.php`.
 Hoje não existe nada de produção. O alvo é a hospedagem **Cloud Startup** (Hostinger, painel hPanel), não uma VPS. Ela traz PHP
 selecionável, MariaDB, SSH, Composer, Git, cron, SSL grátis, e-mail e backup diário do próprio provedor. Ela **não** tem Docker,
 root, processo rodando o tempo todo nem configuração própria do servidor web (é LiteSpeed com `.htaccess`). Conferir no hPanel
@@ -96,20 +101,28 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
 - **Backup:** `tools/backup-database.sh` usa `docker compose exec`; precisa de uma versão com `mariadb-dump` direto (ver 3.5).
 - **Webhook do banco:** sem proxy próprio não dá para exigir o certificado do Inter (`ssl_verify_client`). Continua protegido pelo
   segredo do endereço e pela consulta de cada título no banco antes de dar baixa (`BankWebhook.php`); a lista de IPs do banco vai no
-  `.htaccess`. A consulta de hora em hora segue como garantia se o webhook falhar.
+  `.env` em `BANK_WEBHOOK_ALLOWED_IPS` (**feito em 17/11, ADR 0360**; falta só preencher com os IPs que o banco informar). A consulta de hora em hora segue como garantia se o webhook falhar.
 - **Antivírus de upload** (ClamAV, ADR 0098) não existe nessa hospedagem: fica desligado, com os limites de tipo e tamanho.
-- **Saída com certificado (mTLS) para o Inter e a Cora** usa o cURL do PHP e deve funcionar; testar logo no começo da etapa 4.
+- **Saída com certificado (mTLS) para o Inter e a Cora** usa o cURL do PHP e deve funcionar; testar logo no começo da etapa 4. Teste: `php tools/bank-credentials.php testar --conta=ID` (Inter ou Cora, ADR 0392; HOSPEDAGEM.md §7).
 - `APP_ENV=production`, `ERP_DEMO_DATA=false`, `.env` fora da pasta pública, sem rotas de laboratório.
 - Segredos só no `.env` do servidor: `CONNECT_BANK_VAULT_KEY` nova, senhas novas do banco. **Rotacionar toda credencial histórica**
   (`PENDENCIAS.md` item 7).
 - Roteiro de implantação e de reversão: `deploy-check.php`, migrations, smoke HTTP, volta para a versão anterior.
   **Feito em 17/11 (ADR 0354 e 0356):** `deploy-check` confere o `.env` e o banco de produção; `tools/hosting/smoke-http.php`
-  confere os 4 endereços por HTTP depois de publicar (HOSPEDAGEM.md §3 e §6).
+  confere os 4 endereços por HTTP depois de publicar (HOSPEDAGEM.md §3 e §6). **Feito em 17/11 (ADR 0361):**
+  `tools/hosting/update.sh` faz backup, atualiza, confere e volta sozinho para a versão anterior se o `deploy-check` falhar.
 - E-mail: o e-mail da própria hospedagem ou um SMTP transacional, com SPF, DKIM e DMARC no domínio; ligar `ERP_MAIL_DELIVERY` e a `mail_queue`.
+  **Feito em 17/11 (ADR 0381):** `tools/hosting/email-teste.php` confere SPF, DKIM e DMARC do domínio e manda um e-mail de teste. O `deploy-check` avisa se o DNS de e-mail mudar (ADR 0382).
 - Recursos do plano (informados pelo Djalma em 16/11/2026): até 4 núcleos, 4 GB de RAM, 100 GB de disco, 2 milhões de inodes,
   banda ilimitada. Suficiente para o piloto e os primeiros condomínios. Cuidados: não subir `node_modules` nem `apps/` (inodes),
   não guardar backups no mesmo disco, acompanhar o espaço dos documentos e fotos; o `memory_limit` do PHP por processo pode apertar
-  nos PDFs grandes e nas importações, medir no piloto.
+  nos PDFs grandes e nas importações, medir no piloto. **Feito em 17/11 (ADR 0362):** o `deploy-check` avisa com
+  `memory_limit` abaixo de 256M ou envio de arquivo abaixo de 50M; a medição real continua no piloto. **ADR 0383:** o PDF das listas
+  gastava 1,2 GB com 2.000 linhas (5.000 estourava 2 GB); agora sai em lotes e fica perto de 70 MB.
+  **ADR 0384:** o livro-caixa gasta ~135 MB com 400 lançamentos no mês e ~550 MB com 1.000 (fotos dos anexos pesam pouco);
+  o `deploy-check` passa a pedir `memory_limit` de 512M. **ADR 0385:** prestação de contas com 1.000 lançamentos: 240 MB e 14 s; os PDFs
+  grandes pedem 120 s de prazo ao PHP antes de montar. **ADR 0363:** envio
+  acima do `post_max_size` avisa o limite (413 na API, volta com aviso na tela) em vez de "sessão expirada".
 
 ### 3.5 Backup e recuperação
 - O backup diário da Hostinger ajuda, mas fica no mesmo provedor. Falta: um backup nosso por cron (`mariadb-dump` + arquivos,
@@ -130,6 +143,13 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   ficam indisponíveis até autorizar de novo; o OneDrive passa a ser a cópia principal, então o backup desses arquivos precisa de um
   segundo lugar (ou aceitar a lixeira e o histórico de versões do OneDrive, 30 dias); LGPD: a Microsoft entra como suboperadora.
   Tamanho estimado: ~1 semana, junto da etapa 5, para o piloto já começar com os documentos no OneDrive.
+  **Passo 1 feito em 17/11 (ADR 0370):** o Disco Virtual grava e lê por uma interface de armazenamento (hoje só o disco local);
+  o OneDrive entra como outra implementação quando a conta da Connect existir.
+  **Passo 2 (ADR 0371):** fotos de vistoria pelo mesmo armazenamento. **Passo 3 (ADR 0372):** foto do morador.
+  **Passo 4 (ADR 0373):** armazenamento do OneDrive pelo Microsoft Graph, testado com Graph falso. **Passo 5 (ADR 0374):**
+  `DOCUMENT_STORAGE=local|onedrive` no `.env`, conferido no deploy-check; roteiro do Entra ID em HOSPEDAGEM.md §10. Falta:
+  a conta da Connect **[Djalma]**. **Cópia dos arquivos existentes (ADR 0376):** `tools/hosting/onedrive-copy.php`. **Cache (ADR 0375):** a faxina
+  diária apaga a cópia local sem uso há 7 dias.
   Conta: **OneDrive empresarial da Connect** (Microsoft 365 Business, conta no domínio `connectcondominios.com.br`), não o pessoal
   do Djalma: os dados ficam em nome da empresa, o acesso do sistema é por aplicativo registrado (não depende da senha de uma pessoa)
   e o contrato de tratamento de dados da Microsoft cobre a LGPD. O backup cifrado pode ir para a mesma conta.
@@ -160,6 +180,17 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   **Site e Central de Ajuda em 17/11 (ADR 0346):** blog, páginas e matérias saíam no site com o HTML do Studio sem limpeza (um script colado no editor rodava para o visitante); agora o HTML passa por `RichHtml::clean` ao salvar e ao mostrar.
   **App do morador em 17/11 (ADR 0347):** 27 telas do app web renderizadas com texto com HTML em todos os campos; nada sai cru. O app de celular (React Native) não usa `dangerouslySetInnerHTML` nem HTML em WebView.
   **Cabeçalhos em 17/11 (ADR 0355):** nenhuma tela abre dentro de outro site, nosniff, Referrer-Policy e HSTS em toda resposta.
+  **HTTPS em 17/11 (ADR 0364):** em produção, `http://` vai para `https://` antes de abrir a sessão; só no domínio do `APP_URL`.
+  **Busca em 17/11 (ADR 0365):** ERP, app, Studio, Talk e API com `X-Robots-Tag: noindex` e `/robots.txt`; só o site e a Central de Ajuda aparecem no Google.
+  **Erros fora da tela em 17/11 (ADR 0366):** com `APP_DEBUG=false`, aviso do PHP não sai na página (caminho do servidor) e o cabeçalho com a versão do PHP sai.
+  **Sessão em 17/11 (ADR 0367):** só aceita id de sessão criado pelo servidor (`use_strict_mode`), contra fixação de sessão.
+  **CSP em 18/11 (ADR 0387):** `object-src 'none'`, `base-uri 'self'` e `form-action` só para o domínio da Connect.
+  **Envios de arquivo em 18/11 (ADR 0388):** tipo pelo conteúdo e lista fechada em todos; a mídia do Talk e o PDF das propostas abriam pelo endereço direto sem login, agora 403; nenhum `.php`, `.html` ou `.svg` abre de `storage/`.
+  **Imagens públicas em 18/11 (ADR 0389):** fotos enviadas ao Studio, ao condomínio e aos chamados perdem o EXIF (GPS, aparelho) e ficam na orientação certa; as antigas, com `tools/hosting/limpar-exif.php` (ADR 0390).
+  **Downloads em 18/11 (ADR 0391):** proposta, planilha de usuários, vistoria, link público da prestação de contas e relatório do Talk saíam sem `Cache-Control: private`; agora todos, com teste para as rotas futuras.
+  **Sandbox em 18/11 (ADR 0393):** anexos dos chamados e documentos do app do morador saem com `sandbox`, como o Disco Virtual.
+  **Código antigo em 18/11 (ADR 0394):** 10 controladores do ERP antigo sem rota apagados (senha igual ao e-mail, CPF em pasta pública), com o ok do Djalma.
+  **Logo SVG em 18/11 (ADR 0395):** o bloqueio de `.svg` do ADR 0388 quebrava o logo SVG enviado pelo Studio; agora só esse arquivo abre, com sandbox.
   Pendente: Content-Security-Policy que limita scripts (depois do piloto).
 - Teste de carga dos limites (`request_limit`) e revisão do HTML dos templates (pendentes do ADR 0159).
   **Feito em 17/11 (ADR 0348):** com 20 e 50 pedidos ao mesmo tempo, o limite por conta deixava passar 9 a 10 tentativas em vez de 6; agora a conta fica travada durante a conferência e passa exatamente 6. Limite por IP: 30 (banco) e 40 (arquivo, sem perder pedidos com 10 processos). `tools/hosting/load-test-limits.php` repete o teste na hospedagem (HOSPEDAGEM.md §9). A revisão do HTML dos templates foi feita nos ADRs 0344 a 0347.
@@ -176,7 +207,7 @@ O que muda em relação ao laboratório (que roda com `compose.yaml`):
   financeira. Hoje não existe essa função; criar uma versão simples (tela na equipe, não autoatendimento).
 - Registro das operações de tratamento (planilha) e regra de retenção dos logs.
   **Feito em 17/11 (ADR 0350):** `docs/security/LGPD_REGISTRO_OPERACOES.md` com 16 operações, suboperadores, medidas e prazos; teste falha se surgir tabela com dado pessoal fora dele. Faltam do Djalma/advogado: confirmar bases legais e papéis, e os prazos PENDENTES (portaria, e-mails, Talk, `system_audit_logs`).
-  **Feito em 17/11 (ADR 0351):** relatório e anonimização do titular passam a cobrir portaria, visitas previstas, conselho, mudanças, reservas, lista de espera, presença em assembleia e contatos de cobrança (conselho e atas ficam guardados). Falta o Talk.
+  **Feito em 17/11 (ADR 0351):** relatório e anonimização do titular passam a cobrir portaria, visitas previstas, conselho, mudanças, reservas, lista de espera, presença em assembleia e contatos de cobrança (conselho e atas ficam guardados). O Talk entrou no ADR 0353.
 
 ### 3.9 Dados reais e piloto
 - **[Djalma]** escolher o condomínio piloto e mandar os dados reais: unidades, moradores, saldos iniciais, inadimplência, contas fixas.

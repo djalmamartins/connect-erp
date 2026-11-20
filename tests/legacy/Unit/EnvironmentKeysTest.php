@@ -76,19 +76,21 @@ final class EnvironmentKeysTest extends TestCase
     {
         $template = self::template();
         foreach (['APP_ENV', 'APP_DEBUG', 'APP_URL', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'CONNECT_2FA_KEY', 'CONNECT_2FA_ENFORCE_FROM',
-            'CONNECT_BANK_VAULT_KEY', 'ERP_DEMO_DATA', 'ERP_MAIL_DELIVERY', 'MOVESOS_SMTP_HOST', 'ALERT_EMAIL', 'TALK_KEY'] as $key) {
+            'CONNECT_BANK_VAULT_KEY', 'ERP_DEMO_DATA', 'ERP_MAIL_DELIVERY', 'MOVESOS_SMTP_HOST', 'ALERT_EMAIL'] as $key) {
             self::assertArrayHasKey($key, $template, $key);
         }
         $unknown = array_values(array_diff(array_keys($template), self::allowed(), self::SHELL_ONLY));
         self::assertSame([], $unknown, 'Chave no modelo que o sistema não lê do .env.');
         self::assertSame('production', $template['APP_ENV']);
+        // O Talk roda no Raspberry Pi do escritório, fora da hospedagem (ADR 0359): nenhuma chave TALK_/EVOLUTION_ ativa.
+        self::assertSame([], preg_grep('~^(TALK|EVOLUTION)_~', array_keys($template)), 'Talk não roda na hospedagem (ADR 0359)');
 
         // Preenchido só com os marcadores <...>, o deploy-check acusa as chaves a gerar, nunca debug, demonstração ou endereço.
         $errors = DeployReadiness::env($template, time())['errors'];
         self::assertCount(2, $errors);
         self::assertStringContainsString('CONNECT_2FA_KEY', $errors[0]);
         self::assertStringContainsString('CONNECT_BANK_VAULT_KEY', $errors[1]);
-        foreach (['CONNECT_2FA_KEY', 'CONNECT_BANK_VAULT_KEY', 'TALK_KEY', 'DB_PASS', 'MOVESOS_SMTP_PASS', 'EVOLUTION_API_KEY'] as $secret) {
+        foreach (['CONNECT_2FA_KEY', 'CONNECT_BANK_VAULT_KEY', 'DB_PASS', 'MOVESOS_SMTP_PASS'] as $secret) {
             self::assertMatchesRegularExpression('~^<[^>]+>$~', $template[$secret], 'segredo sem valor no Git: ' . $secret);
         }
     }

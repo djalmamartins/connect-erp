@@ -88,6 +88,19 @@ final class CoraBankingIntegrationTest extends TestCase
         self::assertSame([['cora', false]], array_map(static fn (array $a): array => [$a['bank'], $a['needs_secret']], $accounts));
     }
 
+    public function testTerminalTestUsesTheCoraNotTheInter(): void
+    {
+        // ADR 0392: `php tools/bank-credentials.php testar` usava sempre o Inter; agora sai do código da conta.
+        $before = $this->http->count('POST', '/token');
+        $result = (new BankCredentialSetup($this->pdo, $this->vault, fn () => $this->http))->testFromTerminal($this->bank);
+        self::assertTrue($result['connected'], $result['message']);
+        self::assertSame('cora', $result['bank']);
+        self::assertGreaterThan($before, $this->http->count('POST', '/token'), 'o token deve ter sido pedido à Cora');
+
+        $this->expectException(\Source\Services\Erp\Registry\RegistryNotFound::class);
+        (new BankCredentialSetup($this->pdo, $this->vault, fn () => $this->http))->testFromTerminal(999999);
+    }
+
     public function testIssueSimulatePaymentAndSettle(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);

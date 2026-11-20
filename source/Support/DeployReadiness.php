@@ -15,6 +15,9 @@ use PDO;
  * - database(): o banco de produção. Erro com conta ativa de teste (e-mail do laboratório ou de exemplo). Aviso com
  *   pessoa da equipe sem 2FA confirmado e credencial de banco em ambiente de teste.
  *
+ * - php(): limites do PHP (ADR 0362). Aviso quando a memória ou o tamanho de envio ficam abaixo do que o sistema aceita
+ *   (PDFs grandes, importações e o maior anexo: 50 MB), porque o envio falharia sem mensagem clara.
+ *
  * Mostra só ids e quantidades, nunca e-mail ou nome (LGPD). Tabela que ainda não existe (antes da primeira migration)
  * é ignorada.
  */
@@ -22,6 +25,54 @@ final class DeployReadiness
 {
     /** Domínios que só existem no laboratório e nos testes. */
     public const TEST_DOMAINS = ['connect.lab', 'exemplo.test', 'example.com', 'example.org', 'teste.com', 'test.com'];
+
+    /** Maior arquivo que o sistema aceita (mídia do Studio, Upload::MEDIA_MAX_BYTES). */
+    public const REQUIRED_UPLOAD_BYTES = 52428800;
+
+    /**
+     * Memória mínima por processo para os PDFs e as importações. 512M desde o ADR 0384: o livro-caixa (uma tabela só no
+     * Dompdf) gasta ~135 MB com 400 lançamentos no mês e ~550 MB com 1.000.
+     */
+    public const REQUIRED_MEMORY_BYTES = 536870912;
+
+    /**
+     * @param array<string, string|false> $ini valores de ini_get (memory_limit, upload_max_filesize, post_max_size, file_uploads)
+     * @return list<string> avisos
+     */
+    public static function php(array $ini): array
+    {
+        $warnings = [];
+        $where = ' Ajustar no hPanel (Avançado > Configuração do PHP), que vale para o site.';
+        $memory = self::bytes($ini['memory_limit'] ?? '');
+        if ($memory !== -1 && $memory < self::REQUIRED_MEMORY_BYTES) {
+            $warnings[] = 'memory_limit do PHP abaixo de 512M: o livro-caixa de um mês cheio, outros PDFs grandes e importações podem parar no meio.' . $where;
+        }
+        if (!filter_var($ini['file_uploads'] ?? '1', FILTER_VALIDATE_BOOL)) {
+            $warnings[] = 'file_uploads do PHP está desligado: nenhum anexo ou foto é recebido.' . $where;
+        }
+        $upload = self::bytes($ini['upload_max_filesize'] ?? '');
+        if ($upload < self::REQUIRED_UPLOAD_BYTES) {
+            $warnings[] = 'upload_max_filesize do PHP abaixo de 50M: arquivos que o sistema aceita seriam recusados pelo PHP.' . $where;
+        }
+        $post = self::bytes($ini['post_max_size'] ?? '');
+        if ($post !== 0 && $post < max($upload, self::REQUIRED_UPLOAD_BYTES)) {
+            $warnings[] = 'post_max_size do PHP menor que o upload_max_filesize (ou que 50M): o formulário chega vazio.' . $where;
+        }
+        return $warnings;
+    }
+
+    /** "128M" → bytes; "-1" → -1; vazio ou inválido → 0. */
+    public static function bytes(string|false $value): int
+    {
+        $value = strtoupper(trim((string)$value));
+        if ($value === '-1') {
+            return -1;
+        }
+        if (!preg_match('~^(\d+)([KMG]?)~', $value, $m)) {
+            return 0;
+        }
+        return (int)$m[1] * match ($m[2]) { 'K' => 1024, 'M' => 1048576, 'G' => 1073741824, default => 1 };
+    }
 
     /**
      * @param array<string, string> $env
@@ -56,6 +107,12 @@ final class DeployReadiness
         }
         if (count($keys) === 2 && count(array_unique($keys)) === 1) {
             $errors[] = 'CONNECT_2FA_KEY e CONNECT_BANK_VAULT_KEY não podem ser a mesma chave.';
+        }
+        $storage = \Source\Support\Storage\DocumentStores::mode($env);
+        if ($storage === '') {
+            $errors[] = 'DOCUMENT_STORAGE precisa ser local ou onedrive (ADR 0374).';
+        } elseif ($storage === 'onedrive' && ($missing = \Source\Support\Storage\DocumentStores::missing($env)) !== []) {
+            $errors[] = 'DOCUMENT_STORAGE=onedrive sem ' . implode(', ', $missing) . ': os arquivos continuariam no servidor.';
         }
         $talk = $get('TALK_KEY');
         if ($talk !== '' && in_array($talk, $keys, true)) {

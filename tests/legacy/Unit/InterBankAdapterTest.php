@@ -163,7 +163,10 @@ final class InterBankAdapterTest extends TestCase
         self::assertSame('cancelled', $this->adapter->cancelCharge('0000000001', $id)['status']);
         self::assertStringContainsString('motivoCancelamento', (string)end($this->http->requests)['body']);
         self::assertStringStartsWith('%PDF', $this->adapter->downloadBoleto('0000000001', $id));
-        self::assertSame('pending', $this->adapter->cancelCharge('0000000001', null)['status']);
+        self::assertSame('cancelled', $this->adapter->cancelCharge('0000000001', null)['status'], 'Sem código, acha pelo nosso número e cancela.');
+        $this->http->listFails = true;
+        self::assertSame('pending', $this->adapter->cancelCharge('0000000001', null)['status'], 'Busca falhou: não afirma nada.');
+        $this->http->listFails = false;
         $this->expectException(InvalidArgumentException::class);
         $this->adapter->parseReturn('qualquer coisa');
     }
@@ -197,6 +200,30 @@ final class InterBankAdapterTest extends TestCase
                 self::assertTrue(true);
             }
         }
+    }
+
+    public function testBoletoWithoutRequestIdIsFoundOrCancelledBySeuNumero(): void
+    {
+        $this->http->createThen500 = true;
+        try {
+            $this->adapter->registerCharge($this->charge(['our_number' => '0000000007']));
+            self::fail('500 deve virar exceção.');
+        } catch (RuntimeException) {
+        }
+        $found = $this->adapter->getCharge('0000000007', null);
+        self::assertSame('registered', $found['status'], 'O Inter gravou apesar do 500: a consulta acha pelo nosso número.');
+        self::assertNotNull($found['external_id']);
+
+        $this->http->nextResponse = ['status' => 500, 'body' => '{}'];
+        try {
+            $this->adapter->registerCharge($this->charge(['our_number' => '0000000008']));
+        } catch (RuntimeException) {
+        }
+        $missing = $this->adapter->getCharge('0000000008', null);
+        self::assertSame(['pending', null], [$missing['status'], $missing['external_id']]);
+        self::assertStringContainsString('cancele o boleto no ERP', (string)$missing['error']);
+        self::assertSame('cancelled', $this->adapter->cancelCharge('0000000008', null)['status'], 'Nada no banco: cancela só no ERP.');
+        self::assertSame(0, $this->http->count('POST', '/cobranca/v3/cobrancas/'), 'Nenhum pedido de cancelamento ao banco.');
     }
 
     public function testRefusalShowsFieldViolations(): void
