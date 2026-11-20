@@ -109,7 +109,7 @@ img { max-width: 100%; height: auto; }
 .hc-contact h2 { margin: 0 0 4px; font-size: 30px; letter-spacing: -.015em; }
 .hc-contact__form > .hc-muted { margin: 0 0 24px; color: var(--hc-brand); }
 .hc-form { display: grid; gap: 18px; }
-.hc-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.hc-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 .hc-form label > span { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 500; }
 .hc-form input:not([type=checkbox]), .hc-form textarea { width: 100%; border: 1px solid #cdd8d2; border-radius: 10px; padding: 12px 16px; font: 400 15px/1.4 Inter, system-ui, sans-serif; color: var(--hc-ink); background: #fff; transition: border-color .15s, box-shadow .15s; }
 .hc-form input:not([type=checkbox]) { height: 50px; }

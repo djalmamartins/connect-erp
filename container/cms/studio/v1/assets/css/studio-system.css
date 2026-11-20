@@ -1172,3 +1172,32 @@ html[data-theme="dark"] .studio-v2 .studio-settings-save { background: rgb(30 27
   .studio-v2 .studio-list-panel .studio-user-table th.studio-table-action { width: 64px }
   .studio-v2 .studio-list-panel .studio-user-table th, .studio-v2 .studio-list-panel .studio-user-table td { padding-left: 8px; padding-right: 8px }
 }
+
+/* --------------------------------------------------------------------------
+   Padrão de campo e de espaçamento (ADR 0628)
+   Campo = rótulo em cima, campo, e o texto de ajuda ou de erro embaixo.
+   Campos da mesma linha ficam presos no topo: um texto de ajuda embaixo de um
+   campo não empurra o campo vizinho. Blocos (caixas) sempre com espaço entre eles.
+   -------------------------------------------------------------------------- */
+.studio-v2 .studio-field,
+.studio-v2 .studio-form label,
+.studio-v2 .app_form label { align-content: start }
+.studio-v2 .studio-grid,
+.studio-v2 .studio-fields-two,
+.studio-v2 .studio-fields-three,
+.studio-v2 .studio-form-grid { align-items: start }
+.studio-v2 .studio-form label > small,
+.studio-v2 .studio-field > small { color: var(--studio-muted); font-size: var(--studio-font-xs); font-weight: 400; line-height: 1.4 }
+.studio-v2 .studio-settings-content,
+.studio-v2 .studio-settings-form { display: grid; align-content: start; gap: 18px; min-width: 0 }
+.studio-v2 .studio-settings-form > [data-settings-panel]:not(.active),
+.studio-v2 .studio-settings-content > [data-settings-panel]:not(.active) { display: none }
+/* Barra de Salvar: fica no fim do formulário, no fluxo da página (não anda junto com a rolagem). */
+.studio-v2 .studio-settings-save,
+.studio-v2 .studio-access-save { position: static; margin: 0; box-shadow: var(--studio-shadow-sm); backdrop-filter: none }
+.studio-v2 .studio-access-save { margin-top: 18px }
+/* Espaço no pé da página para o botão flutuante "Ajuda" não cobrir o último botão. */
+.studio-v2 .studio-content { padding-bottom: 104px }
+@media (max-width: 760px) {
+  .studio-v2 .studio-content { padding-bottom: 88px }
+}

@@ -395,6 +395,8 @@ p { margin: 0; }
 /* Campos alinhados pelo topo: o texto de ajuda embaixo de um campo não empurra nem estica os vizinhos. */
 .erp-form__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--erp-space-4); align-items: start; }
 .erp-col-3 { grid-column: span 3; } .erp-col-4 { grid-column: span 4; } .erp-col-6 { grid-column: span 6; } .erp-col-8 { grid-column: span 8; } .erp-col-12 { grid-column: 1 / -1; }
+/* Padrão de campo (ADR 0628): campo sem erp-col-* ocupa meia linha (antes ficava com 1/12 e o rótulo quebrava letra a letra). */
+.erp-form__grid > :where(:not([class*="erp-col-"])) { grid-column: span 6; }
 .erp-field { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .erp-field > label, .erp-field__label { font-size: 12.5px; font-weight: 650; color: var(--erp-text); }
 .erp-field__hint { color: var(--erp-muted); font-size: 12px; }
@@ -422,6 +424,8 @@ p { margin: 0; }
 .erp-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
 .erp-form__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--erp-space-2); padding-top: var(--erp-space-4); border-top: 1px solid var(--erp-border); }
 .erp-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--erp-space-3); padding: 14px 16px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface-muted); }
+/* Espaço padrão entre blocos (ADR 0628): filtro, aviso, tabela e barra de ações nunca ficam colados. */
+:where(.erp-filters, .erp-alert, .erp-table-wrap) + :where(.erp-card, .erp-table-wrap, .erp-form__actions, .erp-alert, .erp-filters) { margin-top: var(--erp-space-4); }
 .erp-filters .erp-field { flex: 1 1 170px; }
 .erp-filters .erp-field--grow { flex: 2 1 260px; }
 .erp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -588,7 +592,8 @@ p { margin: 0; }
   .erp-page-head h1 { font-size: 21px; }
   .erp-page-head__actions { width: 100%; }
   .erp-page-head__actions > * { flex: 1; }
-  .erp-form__grid > [class*="erp-col-"] { grid-column: 1 / -1; }
+  .erp-form__grid > [class*="erp-col-"], .erp-form__grid > :where(:not([class*="erp-col-"])) { grid-column: 1 / -1; }
+  .erp-navbar .erp-breadcrumbs { display: none; }
   .erp-detail-grid { grid-template-columns: minmax(0, 1fr); }
   .erp-filters { display: grid; }
   .erp-donut { flex-direction: column; align-items: flex-start; }
@@ -694,7 +699,7 @@ p { margin: 0; }
 .erp-attachment__current { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .erp-attachment__icon { display: inline-flex; color: var(--erp-muted); }
 .erp-attachment__label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.erp-attachment__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.erp-attachment__actions { display: flex; flex-wrap: wrap; gap: var(--erp-space-2); }
 .erp-attachment__search { display: flex; gap: 8px; flex-wrap: wrap; }
 .erp-attachment__search .erp-input { flex: 1 1 220px; }
 .erp-attachment__search .erp-select { flex: 0 1 200px; }
