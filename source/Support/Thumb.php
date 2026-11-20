@@ -22,7 +22,8 @@ class Thumb
      */
     public function __construct()
     {
-        $this->cropper = new Cropper(CONF_IMAGE_CACHE, CONF_IMAGE_QUALITY['jpg'], CONF_IMAGE_QUALITY['png']);
+        // Miniaturas em WebP quando o GD do servidor sabe gravar (ADR 0611): bem menores que JPG/PNG, mesma imagem.
+        $this->cropper = new Cropper(CONF_IMAGE_CACHE, CONF_IMAGE_QUALITY['jpg'], CONF_IMAGE_QUALITY['png'], function_exists('imagewebp'));
         $this->uploads = CONF_UPLOAD_DIR;
     }
 

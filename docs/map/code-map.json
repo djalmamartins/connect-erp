@@ -1894,14 +1894,6 @@
     "tests/legacy/Unit/TwoFactorSchemaMissingTest.php"
    ]
   },
-  "Source\\Models\\Banking\\AppBankInter": {
-   "deps": [],
-   "file": "source/Models/Banking/AppBankInter.php",
-   "kind": "class",
-   "layer": "Models",
-   "tables": [],
-   "tests": []
-  },
   "Source\\Models\\Banking\\Banking": {
    "deps": [
     "Source\\Core\\Model"
