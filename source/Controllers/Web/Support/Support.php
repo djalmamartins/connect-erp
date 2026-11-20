@@ -175,7 +175,9 @@ class Support extends Controller
         if (!$ticket) { echo json_encode(['success' => false, 'message' => 'Chamado não encontrado para esses dados.']); return; }
         $messages = $pdo->prepare("SELECT m.message,m.created_at,CONCAT(u.first_name,' ',u.last_name) author FROM studio_support_ticket_messages m LEFT JOIN users u ON u.id=m.user_id WHERE m.ticket_id=:ticket AND m.is_internal=0 ORDER BY m.created_at");
         $messages->execute(['ticket' => $ticket->id]);
-        echo json_encode(['success' => true, 'ticket' => $ticket, 'messages' => $messages->fetchAll() ?: []]);
+        $list = $messages->fetchAll() ?: [];
+        foreach ($list as $item) { $item->message = \Source\Support\RichText::plain((string)$item->message); } // texto puro no widget (ADR 0610)
+        echo json_encode(['success' => true, 'ticket' => $ticket, 'messages' => $list]);
     }
 
     private function saveWidgetAttachments(\PDO $pdo, int $ticketId): void

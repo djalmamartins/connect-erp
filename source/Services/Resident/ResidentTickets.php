@@ -71,7 +71,7 @@ final class ResidentTickets
         $row = $this->row($user, $link, $id);
         $full = $this->tickets->findFor($user, $id);
         $messages = [['id' => 0, 'author' => 'morador', 'author_name' => trim((string)($user->first_name ?? '') . ' ' . (string)($user->last_name ?? '')),
-            'body' => (string)$row['message'], 'created_at' => (string)$row['created_at'], 'attachments' => []]];
+            'body' => \Source\Support\RichText::plain((string)$row['message']), 'created_at' => (string)$row['created_at'], 'attachments' => []]];
         foreach ($full !== null ? $this->tickets->conversation($full) : [] as $message) {
             $messages[] = ['id' => (int)$message['id'], 'author' => $message['from_team'] ? 'equipe' : 'morador', 'author_name' => (string)$message['author'],
                 'body' => (string)$message['message'], 'created_at' => (string)$message['created_at'], 'attachments' => $message['attachments'] ?? []];

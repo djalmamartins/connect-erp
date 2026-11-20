@@ -31,6 +31,13 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeErp('/assets/images/favicon-32.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeErp('/assets/images/favicon-180.png') ?>">
     <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
+    <?php
+    // Moves Editor (ADR 0610) só nas telas que têm campo de texto formatado.
+    $movesEditorDir = dirname(__DIR__, 3) . '/shared/assets/moves-editor';
+    $movesEditorOn = str_contains((string)$this->section('content'), 'data-moves-editor');
+    if ($movesEditorOn): ?>
+    <link rel="stylesheet" href="<?= url('/container/shared/assets/moves-editor/moves-editor.css') . '?v=' . filemtime($movesEditorDir . '/moves-editor.css') ?>">
+    <?php endif; ?>
 </head>
 <body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?>">
 <a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
@@ -52,6 +59,10 @@ foreach ($catalog['pages'] as $id => $page) {
 <div class="erp-toasts" data-erp-toasts role="status" aria-live="polite"></div>
 <script type="application/json" id="erp-search-index"><?= json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= $erpAsset('/assets/js/erp.js', '/assets/erp.min.js') ?>" defer></script>
+<?php if ($movesEditorOn): ?>
+<script src="<?= url('/container/shared/assets/moves-editor/moves-editor.js') . '?v=' . filemtime($movesEditorDir . '/moves-editor.js') ?>"></script>
+<script src="<?= url('/container/shared/assets/moves-editor/moves-editor-boot.js') . '?v=' . filemtime($movesEditorDir . '/moves-editor-boot.js') ?>"></script>
+<?php endif; ?>
 <?= $this->section('scripts') ?>
 </body>
 </html>

@@ -411,28 +411,6 @@ class Studio extends Controller
         ]));
     }
 
-    public function postImage(?array $data): void
-    {
-        $this->guard("articles.manage");
-        if (!csrf_verify($data ?? [])) {
-            $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return;
-        }
-        if (empty($_FILES["image"]["tmp_name"])) {
-            $this->jsonMessage("Selecione uma imagem para o conteúdo.", "warning"); return;
-        }
-        try {
-            $uploader = new Upload();
-            $uploaded = $uploader->image($_FILES["image"], "artigo-" . time(), 1600);
-            if (!$uploaded) {
-                echo json_encode(["message" => $uploader->message()->render()]); return;
-            }
-            echo json_encode(["mce_image" => '<img src="' . url("/" . CONF_UPLOAD_DIR . "/" . $uploaded) . '" alt="Imagem do artigo">']);
-        } catch (\Throwable $exception) {
-            \Source\Support\AppLogger::exception($exception, 'upload', ['event_type' => 'article_content_upload_failed']);
-            $this->jsonMessage("Não foi possível enviar a imagem.", "error");
-        }
-    }
-
     public function notificationsCount(): void
     {
         $user = $this->guard("studio.access");
@@ -952,9 +930,22 @@ class Studio extends Controller
         echo json_encode(["images" => array_slice($files, 0, 120)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
+    /**
+     * Envio de imagem do Moves Editor (ADR 0601): artigos, páginas, destaques e matérias da Central de Ajuda.
+     * Vale para quem pode editar um desses conteúdos, não só para quem gerencia a biblioteca de mídia.
+     */
     public function editorImage(?array $data): void
     {
-        $this->guard("media.manage");
+        $user = $this->guard(null);
+        $allowed = false;
+        foreach (["media.manage", "articles.manage", "pages.manage", "slides.manage", "support.manage"] as $permission) {
+            $allowed = $allowed || AccessControl::can($permission, $user);
+        }
+        if (!$allowed) {
+            http_response_code(403);
+            echo json_encode(["error" => "Você não tem permissão para enviar imagens."]);
+            return;
+        }
         if (!csrf_verify($data ?? [])) {
             http_response_code(419);
             echo json_encode(["error" => "Sessão expirada. Atualize a página."]);
@@ -972,7 +963,7 @@ class Studio extends Controller
             echo json_encode(["error" => "Não foi possível enviar a imagem."]);
             return;
         }
-        \Source\Support\Audit::record("create", "media_file", null, [], ["path" => $stored, "source" => "organic_editor"]);
+        \Source\Support\Audit::record("create", "media_file", null, [], ["path" => $stored, "source" => "moves_editor"]);
         echo json_encode([
             "url" => url("/" . CONF_UPLOAD_DIR . "/" . $stored),
             "path" => $stored,
@@ -1375,8 +1366,8 @@ class Studio extends Controller
             if (!csrf_verify($data)) { $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return; }
             $ticketId = (int)($data["ticket_id"] ?? 0);
             if ($data['action'] === 'template_save') {
-                $title=mb_substr(trim(strip_tags((string)($data['title']??''))),0,120);$body=trim(strip_tags((string)($data['body']??'')));
-                if(mb_strlen($title)<2||mb_strlen($body)<2){$this->jsonMessage('Informe título e conteúdo da resposta rápida.','warning');return;}
+                $title=mb_substr(trim(strip_tags((string)($data['title']??''))),0,120);$body=\Source\Support\RichText::store((string)($data['body']??'')); // Moves Editor (ADR 0610)
+                if(mb_strlen($title)<2||mb_strlen(\Source\Support\RichText::plain($body))<2||strlen($body)>60000){$this->jsonMessage('Informe título e conteúdo da resposta rápida.','warning');return;}
                 $stmt=$pdo->prepare('INSERT INTO studio_support_templates(title,body,created_by) VALUES(?,?,?)');$stmt->execute([$title,$body,$user->id]);
                 \Source\Support\Audit::record('create','studio_support_templates',$pdo->lastInsertId(),[],['title'=>$title]);echo json_encode(['reload'=>true]);return;
             }
@@ -1558,16 +1549,6 @@ class Studio extends Controller
         echo $this->view->render("components/support/article", $this->viewData($article ? "Editar matéria" : "Nova matéria", "support", $user, [
             "article" => $article, "categories" => (new SupportCategory())->find("status = :status", "status=active")->order("position, title")->fetch(true) ?: []
         ]));
-    }
-
-    public function supportImage(?array $data): void
-    {
-        $this->guard("support.manage");
-        if (!csrf_verify($data ?? [])) { $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return; }
-        if (empty($_FILES["image"]["tmp_name"])) { $this->jsonMessage("Selecione uma imagem.", "warning"); return; }
-        $uploaded = (new Upload())->image($_FILES["image"], "ajuda-" . time(), 1600);
-        if (!$uploaded) { $this->jsonMessage("Não foi possível enviar a imagem.", "error"); return; }
-        echo json_encode(["mce_image" => '<img src="' . url("/" . CONF_UPLOAD_DIR . "/" . $uploaded) . '" alt="Imagem da matéria de suporte">']);
     }
 
     public function slides(): void
