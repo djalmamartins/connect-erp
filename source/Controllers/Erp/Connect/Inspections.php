@@ -296,6 +296,7 @@ final class Inspections extends Controller
             'editing' => $editing,
             'editingText' => $editing ? ChecklistText::format($editing['items']) : '',
             'plans' => $this->service->plans($user),
+            'agents' => (new \Source\Services\Support\TicketDesk())->agents(),
             'condominiums' => (new CondominiumScope())->allowed($user),
             'geolocations' => $this->service->geolocations($user),
             'old' => $this->old(),

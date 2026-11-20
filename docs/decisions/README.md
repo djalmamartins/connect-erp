@@ -414,6 +414,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0611](../Organic%20Code/decisions/0611-performance-load-test.md) | Desempenho para muitos moradores ao mesmo tempo (consulta dos boletos do app, fila de e-mail fora da página, compressão e cache) e teste de carga | Aceito |
 | [0623](../Organic%20Code/decisions/0623-integration-token-scopes.md) | Token de integração (Connect Talk) com escopos, validade, IPs e limite por token, criado e revogado na tela Integrações; GET /talk/me; migration 20261120_2100 | Aceito |
 | [0624](../Organic%20Code/decisions/0624-talk-condominium-catalog.md) | Dados dos condomínios para o Connect Talk (condominiums.read): lista, endereço e áreas que aceitam reserva, unidades sem morador e comunicados para todos | Aceito |
+| [0628](../Organic%20Code/decisions/0628-my-day-inspection-tickets.md) | Meu Dia (agenda e tarefas do dia de cada pessoa) e vistoria que vira chamado no SAC, resolvido ao concluir; migration 20261120_2200 | Aceito |
 | [0612](../Organic%20Code/decisions/0612-panel-screen-loaders.md) | Carregadores de tela fora do Panel do ERP (FinanceScreens, UnitScreens, OperationScreens) | Aceito |
 | [0620](../Organic%20Code/decisions/0620-remove-talk-inside-erp.md) | Telas e worker do Connect Talk removidos do ERP (fica a API do Talk do Pi) | Aceito |
 | [0621](../Organic%20Code/decisions/0621-studio-moves-os-visual.md) | Studio (CMS) com o visual do Moves OS: sidebar quase preta, item ativo em degradê rosa/roxo, cards e ícones coloridos; Help Desk e ERP sem mudança | Aceito |

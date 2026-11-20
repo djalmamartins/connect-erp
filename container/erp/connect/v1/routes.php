@@ -128,6 +128,11 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Vistoria presencial (CN-001) com dados reais: InspectionService → MariaDB, o mesmo
     // serviço da API /api/v1/inspections. Rotas fixas antes de /{id}.
+    // Meu Dia (CN-010, ADR 0628): agenda e tarefas do dia de quem está logado.
+    $route->get("/meu-dia", "MyDayScreens:index");
+    $route->post("/meu-dia/compromissos", "MyDayScreens:store");
+    $route->post("/meu-dia/compromissos/{id}/situacao", "MyDayScreens:status");
+
     $route->get("/operacional/vistorias", "Inspections:index");
     $route->get("/operacional/vistorias/nova", "Inspections:create");
     $route->post("/operacional/vistorias", "Inspections:store");
@@ -194,7 +199,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
+        if (in_array($page['route'], ['/dashboard', '/meu-dia', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
             || isset(\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES[$page['route']])) {
             continue;
         }

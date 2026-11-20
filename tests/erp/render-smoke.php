@@ -201,6 +201,42 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(!str_contains($done, 'multipart/form-data') && str_contains($done, 'id="enviar"'), 'CN-001: concluída fica só leitura e oferece envio');
         continue;
     }
+    if ($id === 'CN-010') {
+        // Meu Dia (ADR 0628): semana em círculos, agenda, Para agendar, painel da visita, escape e CSRF.
+        $evil = '<b>Residencial</b>';
+        $week = [];
+        foreach (range(23, 29) as $i => $d) {
+            $week[] = ['date' => "2026-11-{$d}", 'weekday' => ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'][$i], 'day' => $d, 'count' => $d === 25 ? 2 : 0, 'today' => $d === 25, 'selected' => $d === 25];
+        }
+        $event = ['id' => 9, 'title' => 'Visita <script>', 'description' => '', 'starts_at' => '2026-11-25 09:00:00', 'ends_at' => '2026-11-25 10:30:00', 'start' => '09:00', 'end' => '10:30', 'minutes' => 90,
+            'type' => 'meeting', 'type_label' => 'Compromisso', 'status' => 'scheduled', 'condominium_id' => 7, 'condominium' => $evil, 'ticket_id' => 3, 'protocol' => 'CH261109ABCD'];
+        $ticket = ['id' => 3, 'protocol' => 'CH261109ABCD', 'subject' => 'Portão <i>quebrado</i>', 'priority' => 'urgent', 'priority_label' => 'Urgente', 'tag' => 'Urgente', 'status' => 'open', 'status_label' => 'Aberto',
+            'category' => '', 'due_at' => '2026-11-24 10:00:00', 'due_on' => '2026-11-24', 'overdue' => true, 'due_today' => false, 'condominium_id' => 7, 'condominium' => $evil, 'scheduled_event_id' => null];
+        $visit = ['plan_id' => 1, 'condominium_id' => 7, 'condominium' => $evil, 'address' => 'Rua <x>', 'template_id' => 1, 'template' => 'Ronda', 'frequency' => 'biweekly', 'frequency_label' => 'Quinzenal',
+            'due_on' => '2026-11-25', 'overdue' => false, 'last_completed_at' => null, 'open_inspection_id' => null];
+        $myDay = ['date' => '2026-11-25', 'today' => '2026-11-25', 'person' => ['id' => 1, 'name' => 'Ana'],
+            'summary' => ['commitments' => 1, 'commitment_minutes' => 90, 'done' => 0, 'to_schedule' => 1, 'waiting' => 0, 'overdue' => 1, 'week_visits' => 1, 'week_condominiums' => 1],
+            'week' => $week, 'events' => [$event], 'week_events' => [$event], 'day_visits' => [$visit], 'day_deadlines' => [], 'to_schedule' => [$ticket], 'waiting' => [], 'visits' => [$visit],
+            'deadlines' => [['id' => 4, 'title' => 'AVCB <b>', 'date' => '2026-12-20', 'days' => 25, 'label' => 'Vence em 25 dias', 'condominium_id' => 7, 'condominium' => $evil]]];
+        $panelData = ['condominium' => ['id' => 7, 'name' => $evil, 'address' => 'Rua <x>'], 'tickets' => [$ticket], 'urgent' => 1, 'documents' => [], 'pending_from_last_visit' => [],
+            'last_visit' => ['id' => 5, 'template' => 'Ronda', 'completed_at' => '2026-11-10 10:00:00', 'issues' => 2]];
+        foreach (['dia' => [$panelData, null], 'semana' => [null, $ticket]] as $view => [$visitPanel, $schedule]) {
+            $html = $render('pages/my-day/index', $layoutData->invoke($panel, $user, 'CN-010', [
+                'day' => $myDay, 'panel' => $visitPanel, 'view' => $view, 'team' => [['id' => 1, 'name' => 'Ana'], ['id' => 2, 'name' => 'Bia <i>']],
+                'condominiums' => [['id' => 7, 'name' => $evil]], 'longDate' => 'Quarta-feira, 25 de novembro de 2026', 'flash' => ['type' => 'success', 'text' => 'Ok <x>'],
+                'errors' => $view === 'semana' ? ['title' => 'Diga <b>'] : [], 'old' => [], 'base' => '/meu-dia', 'self' => true, 'schedule' => $schedule,
+            ], 'Meu Dia'));
+            $assert(str_contains($html, '<aside class="erp-sidebar"') && substr_count($html, '<main') === 1 && str_contains($html, 'my-day.css'), "CN-010 $view: moldura e assets");
+            $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, '<script>') && !str_contains($html, '<i>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Rua <x>'), "CN-010 $view: escape");
+            $assert(substr_count($html, 'md-week__day') === 7 && str_contains($html, 'is-today') && str_contains($html, 'aria-current="date"'), "CN-010 $view: semana em círculos com hoje marcado");
+            $assert(substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"'), "CN-010 $view: formulários com CSRF");
+            $assert(str_contains($html, 'agendar=3') && str_contains($html, 'id="md-person"') && str_contains($html, '/meu-dia/compromissos'), "CN-010 $view: agendar, pessoa e novo compromisso");
+            $save('cn-010-' . $view, $html);
+        }
+        $assert(str_contains($html, 'name="ticket_id" value="3"') && str_contains($html, 'data-erp-modal-auto'), 'CN-010: Agendar abre o formulário com o chamado');
+        $assert(!str_contains($html, 'Iniciar visita'), 'CN-010: sem painel, sem Iniciar visita');
+        continue;
+    }
     if ($id === 'CN-004') {
         // Chamados (ADR 0034): abertura para o Help Desk com condomínio, unidade e solicitante.
         $evil = '<b>Residencial</b>';

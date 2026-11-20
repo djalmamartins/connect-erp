@@ -622,6 +622,11 @@ $route->get("/inspections/{id}", "Inspections:show", null, \Source\Support\Middl
 $route->put("/inspections/{id}/items/{item}", "Inspections:answer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/items/{item}/photos", "Inspections:photo", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/complete", "Inspections:complete", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Meu Dia (CN-010, ADR 0628): agenda e tarefas do dia de quem está logado.
+$route->get("/my-day", "MyDay:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/my-day/visit/{condominium_id}", "MyDay:visit", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/my-day/events", "MyDay:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/my-day/events/{id}/status", "MyDay:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Chamados (ADR 0034): todo chamado cai na fila do Help Desk, com condomínio e unidade.
 $route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);

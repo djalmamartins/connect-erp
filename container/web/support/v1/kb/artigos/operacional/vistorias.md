@@ -7,7 +7,7 @@ rota: /operacional/vistorias
 menu: Agenda > Atendimento > Vistorias
 icone: list-outline
 situacao: funciona
-relacionados: chamados, manutencoes, ocorrencias, reservas-areas-comuns
+relacionados: meu-dia, chamados, manutencoes, ocorrencias, reservas-areas-comuns
 palavras: vistorias, operacional, CN-001
 rascunho: nao
 ---
@@ -32,6 +32,10 @@ legenda: Tela Vistorias
 
 - {{Configurar}}: define a programação das vistorias e os itens do checklist.
 - {{Nova vistoria}}: começa uma vistoria: escolha o condomínio, faça o check-in no local e siga o checklist.
+
+## Responsável e chamado automático
+
+No {{Configurar}}, cada plano por condomínio tem um **Responsável** (sem escolher, fica quem criou o plano). Quando a vistoria está para vencer (na quinzenal, 2 dias antes), a rotina das 7h abre um chamado "Vistoria quinzenal" para o responsável, com prazo no dia da vistoria. Ele aparece no [[Meu Dia]] da pessoa. Ao concluir a vistoria, o chamado é resolvido sozinho, e os itens marcados **Com problema** viram um chamado "Pendências da vistoria" do condomínio.
 
 ## Pesquisar e filtrar
 
