@@ -9,6 +9,7 @@ use Source\Controllers\App\Resident\AppScreens;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\Erp\ResidentPortalPermissions;
+use Source\Services\Privacy\PrivacyCenter;
 
 /**
  * XSS no app web do morador (ADR 0347): grava um texto de teste com HTML em toda coluna de texto das tabelas que o app mostra
@@ -76,6 +77,8 @@ final class ResidentAppXssCanaryIntegrationTest extends TestCase
             + $this->texts('studio_support_tickets'), $refs);
         $this->scopeRow('studio_support_ticket_messages', ['visibility' => 'public', 'is_internal' => 0] + $this->texts('studio_support_ticket_messages'), ['ticket_id' => $ticket, 'user_id' => $userId, 'author_id' => $userId]);
         $this->pdo->prepare('UPDATE settings SET access_app = 1')->execute();
+        // Sem o aceite dos termos (ADR 0604, etapa 2), toda tela levaria a /termos.
+        (new PrivacyCenter($this->pdo))->accept($userId, 'app');
 
         $user = (new User())->findById($userId);
         $screens = [
@@ -88,7 +91,7 @@ final class ResidentAppXssCanaryIntegrationTest extends TestCase
             'chamado' => ['ticket', ['id' => (string)$ticket]], 'encomendas' => ['deliveries', []], 'moradores' => ['household', []],
             'visitantes' => ['visits', []], 'assembleias' => ['assemblies', []], 'assembleia' => ['assembly', ['id' => (string)$ids['erp_assemblies']]],
             'edital' => ['notice', ['id' => (string)$ids['erp_assemblies']]], 'documentos' => ['documents', []], 'minha unidade' => ['unit', []],
-            'segurança' => ['security', []], 'boas-vindas' => ['welcome', []], 'sem internet' => ['offline', []],
+            'segurança' => ['security', []], 'termos' => ['terms', []], 'privacidade' => ['privacy', []], 'boas-vindas' => ['welcome', []], 'sem internet' => ['offline', []],
         ];
 
         $raw = [];

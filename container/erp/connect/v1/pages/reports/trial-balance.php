@@ -1,6 +1,6 @@
 <?php
 /**
- * Balancete de verificação (AP-079, ADR 0037) com dados reais: $trialBalance de Panel::reportData,
+ * Balancete de verificação (AP-079, ADR 0037) com dados reais: $trialBalance de FinanceScreens::reportData,
  * no contexto da barra superior, por competência (?de=AAAA-MM&ate=AAAA-MM, até 24 meses). Cada conta
  * do plano com previsto, realizado e em aberto; as analíticas somam nas sintéticas.
  * @var array $currentPage @var ?array $trialBalance @var ?string $reportError @var array{from:string,to:string} $reportPeriod

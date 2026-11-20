@@ -1802,7 +1802,7 @@ class Studio extends Controller
                 $this->jsonMessage("O template selecionado em {$field} não existe.", "warning");
                 return;
             }
-            $fields = ["mode","site_name","site_title","site_desc","site_photo","site_logo_svg","site_icon","site_favicon","site_lang","site_domain","site_domain_ssl","site_domain_off","site_street","site_phone","site_whatsapp","site_number","site_complement","site_city","site_state","site_code","site_district","view_theme","view_support","view_app","view_erp","view_admin","view_mail","view_upkeep","upload_dir","upload_image","upload_file","upload_media","image_cache","image_size","image_jpg","image_png","mail_host","mail_port","mail_user","mail_pass","mail_name","mail_address","mail_suport","mail_lang","mail_html","mail_auth","mail_secure","mail_charset","pay_mode","pay_live","pay_test","pay_back","social_tw_creator","social_tw_publisher","social_fb_app","social_fb_page","social_fb_author","social_google_page","social_google_author","social_instagram_page","social_youtube_page","social_linkedin_page","timezone_set"];
+            $fields = ["mode","site_name","site_title","site_desc","site_photo","site_logo_svg","site_icon","site_favicon","site_lang","site_domain","site_domain_ssl","site_domain_off","site_street","site_phone","site_whatsapp","site_number","site_complement","site_city","site_state","site_code","site_district","site_company_name","site_cnpj","privacy_officer_name","privacy_email","view_theme","view_support","view_app","view_erp","view_admin","view_mail","view_upkeep","upload_dir","upload_image","upload_file","upload_media","image_cache","image_size","image_jpg","image_png","mail_host","mail_port","mail_user","mail_pass","mail_name","mail_address","mail_suport","mail_lang","mail_html","mail_auth","mail_secure","mail_charset","pay_mode","pay_live","pay_test","pay_back","social_tw_creator","social_tw_publisher","social_fb_app","social_fb_page","social_fb_author","social_google_page","social_google_author","social_instagram_page","social_youtube_page","social_linkedin_page","timezone_set"];
             $secrets = ["mail_user", "mail_pass", "pay_live", "pay_test"];
             $invalid = \Source\Support\SystemSettingsRules::validate($data);
             if ($invalid !== null) { $this->jsonMessage($invalid, "warning"); return; }
@@ -1844,6 +1844,11 @@ class Studio extends Controller
                 if (!$image) { echo json_encode(["message" => $upload->message()->render()]); return; }
                 $settings->{$field} = $image;
             }
+            // ADR 0604: CNPJ com 14 dígitos e e-mail do encarregado válido (vazio pode: o site só não mostra).
+            $cnpjDigits = preg_replace('/\D+/', '', (string)($settings->site_cnpj ?? ''));
+            if ($cnpjDigits !== '' && strlen($cnpjDigits) !== 14) { $this->jsonMessage("O CNPJ precisa ter 14 números.", "warning"); return; }
+            if ($cnpjDigits !== '') $settings->site_cnpj = substr($cnpjDigits, 0, 2) . '.' . substr($cnpjDigits, 2, 3) . '.' . substr($cnpjDigits, 5, 3) . '/' . substr($cnpjDigits, 8, 4) . '-' . substr($cnpjDigits, 12, 2);
+            if (trim((string)($settings->privacy_email ?? '')) !== '' && !is_email((string)$settings->privacy_email)) { $this->jsonMessage("O e-mail do encarregado não é válido.", "warning"); return; }
             if (!$settings->save()) { echo json_encode(["message" => $settings->message()->render()]); return; }
             \Source\Support\AppLogger::log('info', 'Configurações do site atualizadas', ['event_type' => 'settings_updated', 'users_id' => $user->id, 'changed_fields' => array_values(array_intersect($fields, array_keys($data))), 'status' => 'resolved'], 'settings');
             echo json_encode(["reload" => true]);

@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use MovesOSTests\TestCase;
 
 /**
- * Tela das faturas (AP-032, ADR 0033): lê $invoices e $canManageInvoices de Panel::invoiceData e
+ * Tela das faturas (AP-032, ADR 0033): lê $invoices e $canManageInvoices de FinanceScreens::invoiceData e
  * faz as ações pela API /api/v1/invoices, com o CSRF no cabeçalho.
  */
 final class ErpInvoicesScreenTest extends TestCase

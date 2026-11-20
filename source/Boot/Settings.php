@@ -71,6 +71,11 @@ define("CONF_SITE_ADDR_CITY", "{$setup->site_city}");
 define("CONF_SITE_ADDR_STATE", "{$setup->site_state}");
 define("CONF_SITE_ADDR_ZIPCODE", "{$setup->site_code}");
 define("CONF_SITE_ADDR_DISTRICT", "{$setup->site_district}");
+// Identificação da Connect e canal do titular (LGPD e CDC, ADR 0604). Vazio = o site não mostra.
+define("CONF_SITE_COMPANY_NAME", trim((string)($setup->site_company_name ?? "")));
+define("CONF_SITE_CNPJ", trim((string)($setup->site_cnpj ?? "")));
+define("CONF_PRIVACY_OFFICER", trim((string)($setup->privacy_officer_name ?? "")));
+define("CONF_PRIVACY_EMAIL", trim((string)($setup->privacy_email ?? "")));
 
 /**
  * SOCIAL

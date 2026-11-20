@@ -1,7 +1,7 @@
 <?php
 /**
  * Disco Virtual (AP-122, ADR 0047 e 0049) com dados reais, no contexto da barra superior: arquivos
- * por pasta ($diskFiles de Panel::virtualDiskData). Enviar (multipart, com progresso), baixar e
+ * por pasta ($diskFiles de OperationScreens::virtualDiskData). Enviar (multipart, com progresso), baixar e
  * excluir usam a API /api/v1/documents (erp.js, data-erp-virtual-disk). O tipo é conferido pelo
  * conteúdo no servidor; aqui só se avisa antes do envio.
  * @var array $currentPage @var array $diskFiles @var ?string $diskFolder @var string $diskQuery

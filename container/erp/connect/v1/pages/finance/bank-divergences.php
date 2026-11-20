@@ -1,7 +1,7 @@
 <?php
 /**
  * Retornos (AP-038, ADR 0035 e 0038): arquivos importados ($bankReturnFiles, GET /api/v1/bank-returns no serviço) e a fila de revisão das ocorrências do retorno
- * que não deram baixa automática ($bankDivergences, de Panel::bankingData, no contexto da barra
+ * que não deram baixa automática ($bankDivergences, de FinanceScreens::bankingData, no contexto da barra
  * superior). "Marcar como revisada" grava uma nota pela API POST /api/v1/bank-events/{id}/resolve
  * (erp.js, data-erp-bank-divergences); a correção em si é feita à mão no lançamento ou no boleto.
  * @var array $currentPage @var list<array> $bankDivergences @var array $bankReturnFiles @var bool $canManageCharges @var list<array> $condoOptions

@@ -1,7 +1,7 @@
 <?php
 /**
  * Demonstrativo / prestação de contas por caixa (AP-051, ADR 0037) com dados reais: $statement de
- * Panel::reportData, no contexto da barra superior (?de=AAAA-MM-DD&ate=AAAA-MM-DD, até 366 dias).
+ * FinanceScreens::reportData, no contexto da barra superior (?de=AAAA-MM-DD&ate=AAAA-MM-DD, até 366 dias).
  * Recebido e pago por conta do plano, movimento de cada conta bancária e a conciliação entre os dois,
  * com a diferença sempre à mostra.
  * @var array $currentPage @var ?array $statement @var ?string $reportError @var array{from:string,to:string} $reportPeriod

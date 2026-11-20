@@ -62,6 +62,14 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - Não tem volta: os dados só voltam restaurando o backup.
 - Consultar exige a permissão de dados pessoais; anonimizar exige também a de gerenciar usuários.
 
+## Política, termos, cookies e encarregado
+
+- A **Política de Privacidade** e os **Termos de Uso** ficam no rodapé do site, com a data da versão. O texto é fixo no sistema, para que cada aceite fique ligado ao texto que a pessoa leu.
+- A razão social, o CNPJ, o nome do encarregado de dados e o e-mail para o titular são preenchidos no Studio, em **Configurações > Identificação e encarregado de dados**. Eles aparecem no rodapé do site e nas duas páginas. Campo vazio não aparece.
+- O site mostra um aviso de cookies com **Recusar**, **Escolher** e **Aceitar**. Nada opcional carrega antes da escolha: o mapa do Google só aparece depois do clique em **Mostrar mapa** ou do aceite. O link **Cookies** do rodapé reabre a escolha.
+- O pedido de proposta do site só é enviado com a caixa da Política marcada. Receber novidades é outra caixa, opcional e desmarcada.
+- Cada aceite e cada escolha ficam guardados com a data, a versão e um código do aparelho (nunca o IP).
+
 ## Quem pode usar
 
 Consultar e baixar exigem a permissão de dados pessoais. Anonimizar exige também a permissão de gerenciar usuários. O administrador libera as permissões em [[Configurações > Acesso > Permissões de Usuários]]. Toda busca, download e anonimização fica no histórico, sem o CPF e sem o e-mail.

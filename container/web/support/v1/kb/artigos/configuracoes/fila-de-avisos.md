@@ -1,7 +1,7 @@
 ---
 codigo: CN-005
 titulo: Fila de avisos por e-mail
-resumo: Os avisos que o ERP manda por e-mail, como a chamada da lista de espera. Cada aviso tenta até 5 vezes; o que falhou pode ser reenviado daqui.
+resumo: Os avisos que o ERP manda por e-mail ao morador: boleto no dia do vencimento, atraso com 10, 15, 30, 45 e 60 dias, prestação de contas e convite. Cada aviso tenta até 5 vezes; o que falhou pode ser reenviado daqui.
 categoria: configuracoes
 rota: /configuracoes/fila-de-avisos
 menu: Configurações > Aplicativo e notificações > Fila de avisos
@@ -12,7 +12,7 @@ palavras: fila de avisos, configurações, CN-005
 rascunho: nao
 ---
 
-Os avisos que o ERP manda por e-mail, como a chamada da lista de espera. Cada aviso tenta até 5 vezes; o que falhou pode ser reenviado daqui.
+Os avisos que o ERP manda por e-mail ao morador: boleto no dia do vencimento, atraso com 10, 15, 30, 45 e 60 dias, prestação de contas e convite. Cada aviso tenta até 5 vezes; o que falhou pode ser reenviado daqui.
 
 ## Onde fica
 

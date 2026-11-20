@@ -1,6 +1,6 @@
 <?php
 /**
- * Fechamento mensal (AP-030, ADR 0031/0032). Com dados reais ($closing, de Panel::closingData):
+ * Fechamento mensal (AP-030, ADR 0031/0032). Com dados reais ($closing, de FinanceScreens::closingData):
  * resumo da competência no condomínio da barra superior ou em todos do escopo, e Fechar/Reabrir
  * (POST com CSRF para MonthClosings, só com um condomínio escolhido). Sem dados (banco
  * indisponível ou sem erp.closing.view) fica a demonstração.

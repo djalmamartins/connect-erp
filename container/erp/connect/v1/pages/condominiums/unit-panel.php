@@ -1,7 +1,7 @@
 <?php
 /**
  * Painel da unidade (AP-003, ADR 0054, 0071 e 0155) com dados reais: pessoas (o nome abre a ficha somente leitura), débitos com encargos, a vencer,
- * acordos, documentos emitidos e rotina da unidade ($unitPanel de Panel::unitPanelData, mesmo serviço
+ * acordos, documentos emitidos e rotina da unidade ($unitPanel de UnitScreens::unitPanelData, mesmo serviço
  * de GET /api/v1/panels/unit/{id}). A unidade é escolhida por ?unidade=, entre as do condomínio da
  * barra superior.
  * @var array $currentPage @var ?array $unitPanel @var list<array{id:int,condominium_id:int,label:string}> $unitPanelUnits

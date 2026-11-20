@@ -373,7 +373,7 @@ foreach ([[403, false], [404, true]] as [$code, $nav]) {
     $assert(str_contains($html, "Erro $code"), "estado $code");
     $assert($nav === str_contains($html, 'erp-sidebar"'), "estado $code: navegação " . ($nav ? 'visível' : 'oculta'));
 }
-// Fechamento mensal (AP-030) com dados reais ($closing de Panel::closingData, ADR 0032): um condomínio
+// Fechamento mensal (AP-030) com dados reais ($closing de FinanceScreens::closingData, ADR 0032): um condomínio
 // aberto, fechado e reaberto, sem permissão de fechar, e "Todos" (só consulta).
 $closingRow = static fn (array $over = []): array => $over + [
     'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'status' => 'open', 'closed_at' => null, 'reopened_at' => null, 'reopen_reason' => null,
@@ -405,7 +405,7 @@ $assert(!str_contains($html, 'data-closing-order') && !(bool)preg_match('~erp-bt
 $html = $closingPage(null, [$closingRow(['pending_before' => ['2026-09']]), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false);
 $assert(str_contains($html, '1 condomínio(s) com mês anterior em aberto') && str_contains($html, 'antes: 09/2026'), 'AP-030: em Todos mostra quem tem mês anterior aberto');
 
-// Faturas (AP-032) com dados reais ($invoices de Panel::invoiceData, ADR 0033): lista, ações pela API e estados.
+// Faturas (AP-032) com dados reais ($invoices de FinanceScreens::invoiceData, ADR 0033): lista, ações pela API e estados.
 $invoiceRow = static fn (array $over = []): array => $over + [
     'id' => 5, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'invoice_type_id' => 2, 'type_name' => 'Taxa <condominial>',
     'competence' => '2026-11', 'due_on' => '2026-11-10', 'status' => 'draft', 'status_label' => 'Em preparação', 'units_count' => 48, 'amount_cents' => 4320000,
@@ -883,12 +883,12 @@ $collData = $commData(['commKind' => 'collection', 'collectionAsOf' => '2026-11-
     'announcements' => ['data' => [$annRow(['kind' => 'collection', 'subject' => 'Aviso de débitos em aberto', 'audience' => 'units'])], 'total' => 1]]);
 $html = $agreementPage('AP-137', 'pages/communication/announcements', $collData, 'collection');
 $common($html, 'AP-137', 'Cobrança');
-$assert(str_contains($html, 'data-collection-form data-api="https://' . $smokeHost . '/api/v1/announcements/collection" data-condominium="1" data-as-of="2026-11-09"') && str_contains($html, 'R$ 1.850,00')
-    && str_contains($html, 'data-days="122"') && str_contains($html, 'Avisada nos últimos 7 dias') && str_contains($html, 'value="7" disabled') && str_contains($html, 'value="5" checked')
-    && str_contains($html, 'Ninguém recebe cobrança por e-mail') && str_contains($html, '2 pessoa(s)') && str_contains($html, 'name="min_days_late"') && str_contains($html, '?sem=cobranca')
-    && str_contains($html, 'name="referencia" value="2026-11-09"') && !str_contains($html, 'data-announce-form') && str_contains($html, 'Avisos enviados'), 'AP-137: unidades em atraso, avisadas de fora e enviar');
-$html = $agreementPage('AP-137', 'pages/communication/announcements', ['collectionReminded' => [5 => true, 6 => true, 7 => true]] + $collData);
-$assert(!str_contains($html, 'Enviar aviso de cobrança') && str_contains($html, 'Todas as unidades em atraso já foram avisadas'), 'AP-137: todas avisadas não envia');
+$assert(str_contains($html, 'R$ 1.850,00') && str_contains($html, 'data-days="122"') && str_contains($html, 'Avisada nos últimos 7 dias')
+    && str_contains($html, 'Ninguém recebe cobrança por e-mail') && str_contains($html, '2 pessoa(s)') && str_contains($html, 'name="referencia" value="2026-11-09"')
+    && !str_contains($html, 'data-announce-form') && str_contains($html, 'Avisos enviados'), 'AP-137: unidades em atraso e avisadas');
+// ADR 0601: o aviso de cobrança manual por e-mail foi desligado; a tela explica o aviso automático.
+$assert(!str_contains($html, 'Enviar aviso de cobrança') && !str_contains($html, 'name="min_days_late"') && !str_contains($html, 'name="unit_ids"')
+    && str_contains($html, 'data-resident-email-policy') && str_contains($html, '10, 15, 30, 45 e 60 dias'), 'AP-137: sem envio manual, com o aviso automático explicado');
 $html = $agreementPage('AP-137', 'pages/communication/announcements', ['collectionUnits' => [], 'commError' => 'Data de referência inválida ou futura. Mostrando a de hoje.'] + $collData);
 $assert(str_contains($html, 'Nenhuma unidade em atraso') && str_contains($html, 'Data de referência inválida'), 'AP-137: sem atraso e data inválida');
 

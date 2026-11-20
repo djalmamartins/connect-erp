@@ -9,7 +9,7 @@ use Source\Controllers\Erp\Connect\Panel;
 
 /**
  * Telas da cobrança bancária (AP-035 boletos, AP-036 importar retorno, AP-038 divergências; ADR
- * 0035 e 0038): dados de Panel::bankingData, ações pela API /api/v1 com o CSRF no cabeçalho.
+ * 0035 e 0038): dados de FinanceScreens::bankingData, ações pela API /api/v1 com o CSRF no cabeçalho.
  */
 final class ErpBankingScreensTest extends TestCase
 {
@@ -31,7 +31,7 @@ final class ErpBankingScreensTest extends TestCase
 
     public function testPanelChecksPermissionsBeforeLoading(): void
     {
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/FinanceScreens.php');
         self::assertStringContainsString("!Access::can('erp.bank_charges.view', \$user)", $panel);
         self::assertStringContainsString("Access::can('erp.bank_charges.manage', \$user)", $panel);
     }
@@ -68,7 +68,7 @@ final class ErpBankingScreensTest extends TestCase
         self::assertStringContainsString('type="password" id="inter-secret"', $view);
         self::assertStringContainsString('csrf_input()', $view);
         self::assertStringNotContainsString('client_secret\']', $view, 'O secret nunca é impresso.');
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/OperationScreens.php');
         self::assertStringContainsString("Access::can('erp.settings.manage', \$user) && Access::can('erp.bank_accounts.manage', \$user)", $panel);
         foreach (['assets/js/erp.js', 'assets/erp.min.js'] as $file) {
             $js = $this->file('container/erp/connect/v1/' . $file);

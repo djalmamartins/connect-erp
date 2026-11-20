@@ -368,12 +368,14 @@ final class AccountabilityLinks
         $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $outbox = new NotificationOutbox($this->pdo);
         $count = 0;
+        // E-mail do morador entre os dias 5 e 10 (ADR 0601): antes do dia 5 fica agendado para o dia 5.
+        $sendAt = ResidentEmailPolicy::accountabilitySendAt(new \DateTimeImmutable());
         $this->pdo->beginTransaction();
         try {
             foreach ($units as $unit) {
                 $count += $outbox->record(self::EVENT, "accountability:{$linkId}:v{$version}:{$unit['id']}", $condominium, 'erp_accountability_links', $linkId,
                     ['accountability_link_id' => $linkId, 'unit_id' => (int)$unit['id'], 'kind' => (string)$link['kind'], 'period' => (string)$link['competence'],
-                        'version' => $version], (int)$user->id) ? 1 : 0;
+                        'version' => $version], (int)$user->id, $sendAt) ? 1 : 0;
             }
             $this->pdo->prepare('UPDATE erp_accountability_links SET sent_version = :v, sent_at = NOW() WHERE id = :id')->execute(['v' => $version, 'id' => $linkId]);
             $this->pdo->commit();

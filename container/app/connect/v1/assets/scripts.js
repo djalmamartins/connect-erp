@@ -4785,31 +4785,6 @@ u(d.series,function(a){a.options.stacking&&a.visible&&(a.isDirty=!0)});u(c.linke
 C.prototype.setResponsive=function(e){var f=this.options.responsive,n=[],u=this.currentResponsive;f&&f.rules&&F(f.rules,function(c){void 0===c._id&&(c._id=a.uniqueKey());this.matchResponsiveRule(c,n,e)},this);var c=a.merge.apply(0,a.map(n,function(c){return a.find(f.rules,function(a){return a._id===c}).chartOptions})),n=n.toString()||void 0;n!==(u&&u.ruleIds)&&(u&&this.update(u.undoOptions,e),n?(this.currentResponsive={ruleIds:n,mergedOptions:c,undoOptions:this.currentOptions(c)},this.update(c,e)):
 this.currentResponsive=void 0)};C.prototype.matchResponsiveRule=function(a,f){var n=a.condition;(n.callback||function(){return this.chartWidth<=e(n.maxWidth,Number.MAX_VALUE)&&this.chartHeight<=e(n.maxHeight,Number.MAX_VALUE)&&this.chartWidth>=e(n.minWidth,0)&&this.chartHeight>=e(n.minHeight,0)}).call(this)&&f.push(a._id)};C.prototype.currentOptions=function(e){function t(e,c,h,p){var k;a.objectEach(e,function(a,d){if(!p&&-1<I(d,["series","xAxis","yAxis"]))for(a=u(a),h[d]=[],k=0;k<a.length;k++)c[d][k]&&
 (h[d][k]={},t(a[k],c[d][k],h[d][k],p+1));else f(a)?(h[d]=n(a)?[]:{},t(a,c[d]||{},h[d],p+1)):h[d]=c[d]||null})}var w={};t(e,this.options,w,0);return w}})(K);return K});
-window.dataLayer = window.dataLayer || [];
-function gtag() {
-dataLayer.push(arguments);
-}
-gtag('js', new Date());
-gtag('config', 'UA-53658515-18');
-gtag('config', 'AW-953362805');
-!function (f, b, e, v, n, t, s) {
-if (f.fbq) return;
-n = f.fbq = function () {
-n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments)
-};
-if (!f._fbq) f._fbq = n;
-n.push = n;
-n.loaded = !0;
-n.version = '2.0';
-n.queue = [];
-t = b.createElement(e);
-t.async = !0;
-t.src = v;
-s = b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t, s)
-}(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '207569866352882');
-fbq('track', 'PageView');
 /*! jQuery Validation Plugin - v1.19.0 - 11/28/2018
 * https://jqueryvalidation.org/
 * Copyright (c) 2018 Jörn Zaefferer; Licensed MIT */

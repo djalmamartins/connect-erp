@@ -30,7 +30,7 @@ final class ErpBillingScreensTest extends TestCase
         self::assertStringContainsString('$disabled = $canManageBilling ? \'\' : \' disabled\';', $view);
         self::assertStringContainsString('<?php if ($canManageBilling): ?><div class="erp-form__actions">', $view);
         self::assertStringContainsString('csrf_input()', $view);
-        $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
+        $panel = $this->file('source/Controllers/Erp/Connect/FinanceScreens.php');
         self::assertStringContainsString("Access::can('erp.billing_rules.view', \$user)", $panel);
         self::assertStringContainsString("Access::can('erp.billing_rules.manage', \$user)", $panel);
         $agreements = $this->file('container/erp/connect/v1/pages/finance/agreements.php');
