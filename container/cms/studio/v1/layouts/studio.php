@@ -10,12 +10,15 @@
     <link rel="stylesheet" href="<?= themeStudio('/assets/css/connect-shell.css', 'default') . '?v=' . filemtime($connectShellCss) ?>">
     <?php /* Visual do Moves OS no Studio (ADR 0621); as regras só valem em data-environment="studio". */ $movesOsCss=dirname(__DIR__).'/assets/css/moves-os.css'; ?>
     <link rel="stylesheet" href="<?= themeStudio('/assets/css/moves-os.css', 'default') . '?v=' . filemtime($movesOsCss) ?>">
+    <?php /* Alternador de ambientes único (ADR 0627), o mesmo do ERP. */ $envswitchDir=dirname(__DIR__, 4).'/shared/assets/envswitch'; ?>
+    <link rel="stylesheet" href="<?= url('/container/shared/assets/envswitch/envswitch.css') . '?v=' . filemtime($envswitchDir.'/envswitch.css') ?>">
     <link rel="stylesheet" href="<?= url('/container/shared/assets/moves-editor/moves-editor.css') . '?v=' . filemtime(dirname(__DIR__, 4).'/shared/assets/moves-editor/moves-editor.css') ?>">
     <?php /* Favicon por ambiente: Studio roxo, Help Desk azul (favicons por sistema, 15/11/2026). */
     $faviconName=preg_match('~/helpdesk(?:/|$)~',(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? ''))?'favicon-helpdesk':'favicon-studio'; ?>
     <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/'.$faviconName.'.svg', 'default') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeStudio('/assets/images/'.$faviconName.'-32.png', 'default') ?>">
     <link rel="apple-touch-icon" href="<?= themeStudio('/assets/images/'.$faviconName.'-180.png', 'default') ?>">
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <?php
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');
@@ -38,14 +41,8 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
             </a>
             <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
         </div>
-        <button class="studio-brand-v2 studio-system-toggle studio-erp-context" type="button" aria-expanded="false" aria-controls="studio-system-panel" title="Trocar de ambiente">
-            <span><small><?= $isHelpDeskEnvironment ? 'Atendimento' : 'CMS' ?></small><strong>Moves <?= $environmentName ?></strong></span>
-            <ion-icon name="chevron-down-outline"></ion-icon>
-        </button>
-        <div class="studio-system-panel" id="studio-system-panel" hidden>
-            <small>AMBIENTES CONNECT</small>
-            <?php /* Alternador único (ADR 0034): Source\Services\Environments decide quem vê o quê e liga os hosts. */ foreach(\Source\Services\Environments::menu($user,$isHelpDeskEnvironment?'helpdesk':'studio') as $system): $current=$system['current']; ?><a href="<?= htmlspecialchars($system['href']) ?>" class="<?= $current?'current':'' ?>"><ion-icon name="<?= htmlspecialchars($system['icon']) ?>"></ion-icon><span><strong><?= htmlspecialchars($system['label']) ?></strong><small><?= htmlspecialchars($system['description']) ?></small></span><?= $current?'<em>Atual</em>':'' ?></a><?php endforeach; ?>
-        </div>
+        <?php /* Alternador de ambientes único (ADR 0627): o mesmo do ERP; lista em Source\Services\Environments (ADR 0034). */ ?>
+        <div class="studio-erp-envswitch"><?= \Source\Support\EnvironmentSwitcher::render($user, $isHelpDeskEnvironment ? 'helpdesk' : 'studio', $isHelpDeskEnvironment ? 'Atendimento' : 'CMS', 'Moves '.$environmentName) ?></div>
         <?php
         // Menu no desenho do ERP: links diretos e grupos em <details> (abertos quando contêm a página atual).
         // Cada item: [chave do app, rota, rótulo, ícone, permissão]. A rota valida a permissão de novo.
@@ -157,7 +154,9 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 <script src="<?= themeStudio('/assets/studio.min.js', 'default') . '?v=' . filemtime($studioJs) ?>"></script>
+<?= connect_fields_assets('js') ?>
 <script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget defer></script>
+<script src="<?= url('/container/shared/assets/envswitch/envswitch.js') . '?v=' . filemtime($envswitchDir.'/envswitch.js') ?>" defer></script>
 <?php $movesEditorDir=dirname(__DIR__, 4).'/shared/assets/moves-editor'; ?>
 <script src="<?= url('/container/shared/assets/moves-editor/moves-editor.js') . '?v=' . filemtime($movesEditorDir.'/moves-editor.js') ?>"></script>
 <script src="<?= url('/container/shared/assets/moves-editor/moves-editor-boot.js') . '?v=' . filemtime($movesEditorDir.'/moves-editor-boot.js') ?>"></script>
@@ -176,7 +175,6 @@ studioCollapseButton?.addEventListener('click',()=>{if(studioIsMobile()){documen
 document.querySelector('.studio-sidebar-backdrop')?.addEventListener('click',()=>{document.body.classList.remove('menu-open');studioSetMenuState()});
 window.addEventListener('resize',()=>{if(!studioIsMobile())document.body.classList.remove('menu-open');studioSetMenuState()});
 studioSetMenuState();
-const studioSystemToggle=document.querySelector('.studio-system-toggle'),studioSystemPanel=document.getElementById('studio-system-panel');if(studioSystemPanel)document.body.append(studioSystemPanel);const studioPositionSystemPanel=()=>{if(!studioSystemToggle||!studioSystemPanel)return;const rect=studioSystemToggle.getBoundingClientRect();studioSystemPanel.style.left=Math.max(10,rect.left)+'px';studioSystemPanel.style.top=(rect.bottom+6)+'px'};studioSystemToggle?.addEventListener('click',event=>{event.stopPropagation();const open=studioSystemPanel.hidden;if(open)studioPositionSystemPanel();studioSystemPanel.hidden=!open;studioSystemToggle.setAttribute('aria-expanded',String(open))});window.addEventListener('resize',()=>{if(studioSystemPanel&&!studioSystemPanel.hidden)studioPositionSystemPanel()});
 const studioProfile=document.querySelector('.studio-header-profile');
 const studioToggleProfile=()=>{const open=!studioProfile?.classList.contains('open');studioProfile?.classList.toggle('open',open);studioProfile?.setAttribute('aria-expanded',String(open))};
 studioProfile?.addEventListener('click',e=>{if(!e.target.closest('a'))studioToggleProfile()});
@@ -192,7 +190,7 @@ const studioShowNotifyModal=item=>{studioActiveNotification=item;studioNotifyMod
 const studioNotifyAction=action=>{if(!studioActiveNotification)return;const form=new FormData();form.append('csrf',studioNotifyModal.querySelector('[name="csrf"]').value);form.append('action',action);fetch(studioActiveNotification.action_url,{method:'POST',body:form,headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(data=>{if(data.redirect){window.location.href=data.redirect;return}studioHideNotifyModal();studioLoadNotifyCount()}).catch(()=>{})};
 const studioLoadNotifyCount=()=>studioNotifyButton&&fetch(studioNotifyButton.dataset.count,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(data=>{const nextCount=Number(data.count||0);studioNotifyButton.querySelector('small').textContent=nextCount;if(studioLastNotificationCount!==null&&nextCount>studioLastNotificationCount){studioNotifySound?.play().catch(()=>{})}studioLastNotificationCount=nextCount}).catch(()=>{});
 studioNotifyButton?.addEventListener('click',e=>{e.stopPropagation();studioNotifyPanel?.classList.toggle('open');if(!studioNotifyPanel?.classList.contains('open'))return;fetch(studioNotifyButton.dataset.list,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(data=>{const box=studioNotifyPanel.querySelector('div');box.innerHTML='';if(!data.notifications?.length){box.innerHTML='<p>Não há notificações.</p>';return}data.notifications.forEach(item=>{const button=document.createElement('button');button.type='button';button.className=`${item.view?'':'unread'} ${item.severity}`;button.innerHTML=`<ion-icon name="${item.severity==='warning'?'warning-outline':item.severity==='error'?'alert-circle-outline':'notifications-outline'}"></ion-icon><span><strong></strong><em></em><small></small></span>`;button.querySelector('strong').textContent=item.title;button.querySelector('em').textContent=item.body||'';button.querySelector('small').textContent=item.created_at;button.addEventListener('click',()=>studioShowNotifyModal(item));box.appendChild(button)})}).catch(()=>{})});
-document.addEventListener('click',e=>{if(!e.target.closest('.studio-notifications'))studioNotifyPanel?.classList.remove('open');if(!e.target.closest('.studio-header-profile')){studioProfile?.classList.remove('open');studioProfile?.setAttribute('aria-expanded','false')}if(!e.target.closest('.studio-system-panel')&&!e.target.closest('.studio-system-toggle')){if(studioSystemPanel)studioSystemPanel.hidden=true;studioSystemToggle?.setAttribute('aria-expanded','false')}});
+document.addEventListener('click',e=>{if(!e.target.closest('.studio-notifications'))studioNotifyPanel?.classList.remove('open');if(!e.target.closest('.studio-header-profile')){studioProfile?.classList.remove('open');studioProfile?.setAttribute('aria-expanded','false')}});
 studioNotifyModal?.querySelector('[data-notification-later]')?.addEventListener('click',studioHideNotifyModal);
 studioNotifyModal?.querySelector('.studio-notification-modal-x')?.addEventListener('click',studioHideNotifyModal);
 studioNotifyModal?.querySelector('[data-notification-delete]')?.addEventListener('click',()=>studioNotifyAction('delete'));

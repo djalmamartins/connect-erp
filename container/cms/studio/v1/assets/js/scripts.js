@@ -135,6 +135,10 @@ $(function () {
                 load.fadeIn(200).css("display", "flex");
             },
             uploadProgress: function (event, position, total, completed) {
+                // Barra de cada arquivo no componente padrão de envio (ADR 0628).
+                if (window.ConnectUpload) {
+                    window.ConnectUpload.formProgress(form[0], position, total);
+                }
                 var loaded = completed;
                 var load_title = $(".ajax_load_box_title");
                 load_title.text("Enviando (" + loaded + "%)");
@@ -144,6 +148,15 @@ $(function () {
                 }
             },
             success: function (response) {
+                if (window.ConnectUpload) {
+                    if (response.redirect || response.reload) {
+                        window.ConnectUpload.formDone(form[0], false);
+                    } else if (response.message && /error|warning/.test(String(response.message))) {
+                        window.ConnectUpload.formReady(form[0]);
+                    } else {
+                        window.ConnectUpload.formDone(form[0], true);
+                    }
+                }
                 //redirect
                 if (response.redirect) {
                     window.location.href = response.redirect;
@@ -170,6 +183,9 @@ $(function () {
                 }
             },
             error: function () {
+                if (window.ConnectUpload) {
+                    window.ConnectUpload.formFail(form[0], "Falha no envio. Confira a conexão.", function () { form.trigger("submit"); });
+                }
                 ajaxMessage(ajaxResponseRequestError, 5);
                 load.fadeOut();
             }
@@ -380,7 +396,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 /*
- * Padrão de campo (ADR 0628): os rótulos da mesma linha ficam com a mesma altura. Assim, quando um
+ * Padrão de campo (ADR 0629): os rótulos da mesma linha ficam com a mesma altura. Assim, quando um
  * rótulo quebra em duas linhas, os campos da linha continuam alinhados. O texto solto do <label>
  * ganha um <span class="studio-field-label"> para poder medir.
  */

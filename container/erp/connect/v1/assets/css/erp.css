@@ -111,19 +111,8 @@ p { margin: 0; }
 .erp-sidebar__context { margin: 0 var(--erp-space-1); padding: 10px 12px; border: 1px solid var(--erp-sidebar-line); border-radius: var(--erp-radius-md); background: rgba(255, 255, 255, .06); }
 .erp-sidebar__context small { display: block; color: var(--erp-sidebar-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .erp-sidebar__context strong { display: block; color: var(--erp-sidebar-strong); font-size: 13px; }
-.erp-envswitch > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none; }
-.erp-envswitch > summary::-webkit-details-marker { display: none; }
-.erp-envswitch__chevron { color: var(--erp-sidebar-muted); transition: transform .2s; }
-.erp-envswitch[open] .erp-envswitch__chevron { transform: rotate(90deg); }
-.erp-envswitch__panel { display: grid; gap: 2px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--erp-sidebar-line); }
-.erp-envswitch__title { padding: 0 4px 4px; }
-.erp-envswitch__panel a { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: var(--erp-radius-md); color: var(--erp-sidebar-ink); }
-.erp-envswitch__panel a:hover { background: var(--erp-sidebar-hover); color: var(--erp-sidebar-strong); text-decoration: none; }
-.erp-envswitch__panel a[aria-current="page"] { background: var(--erp-sidebar-active); }
-.erp-envswitch__panel a span { flex: 1; min-width: 0; }
-.erp-envswitch__panel a strong { font-size: 13px; }
-.erp-envswitch__panel a small { text-transform: none; letter-spacing: 0; }
-.erp-envswitch__panel em { font-style: normal; font-size: 11px; color: var(--erp-sidebar-accent); }
+/* Alternador de ambientes único (ADR 0627): desenho em container/shared/assets/envswitch/envswitch.css. */
+.erp-sidebar__envswitch .cx-envswitch { margin: 0 var(--erp-space-1); }
 .erp-nav { flex: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2px; padding: 0 var(--erp-space-1) var(--erp-space-3); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .erp-nav__link, .erp-nav__group > summary {
   display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border-radius: var(--erp-radius-md);
@@ -162,7 +151,7 @@ p { margin: 0; }
 
 /* Sidebar recolhida (desktop) */
 .erp-shell.is-collapsed .erp-brand__logo, .erp-shell.is-collapsed .erp-brand__tag, .erp-shell.is-collapsed .erp-nav__label,
-.erp-shell.is-collapsed .erp-nav__sub, .erp-shell.is-collapsed .erp-sidebar__context, .erp-shell.is-collapsed .erp-sidebar__profile div,
+.erp-shell.is-collapsed .erp-nav__sub, .erp-shell.is-collapsed .erp-sidebar__context, .erp-shell.is-collapsed .erp-sidebar__envswitch, .erp-shell.is-collapsed .erp-sidebar__profile div,
 .erp-shell.is-collapsed .erp-nav__group > summary::after { display: none; }
 .erp-shell.is-collapsed .erp-brand__mark { display: block; }
 .erp-shell.is-collapsed .erp-sidebar__head { flex-direction: column; padding: 0; }
@@ -395,7 +384,7 @@ p { margin: 0; }
 /* Campos alinhados pelo topo: o texto de ajuda embaixo de um campo não empurra nem estica os vizinhos. */
 .erp-form__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--erp-space-4); align-items: start; }
 .erp-col-3 { grid-column: span 3; } .erp-col-4 { grid-column: span 4; } .erp-col-6 { grid-column: span 6; } .erp-col-8 { grid-column: span 8; } .erp-col-12 { grid-column: 1 / -1; }
-/* Padrão de campo (ADR 0628): campo sem erp-col-* ocupa meia linha (antes ficava com 1/12 e o rótulo quebrava letra a letra). */
+/* Padrão de campo (ADR 0629): campo sem erp-col-* ocupa meia linha (antes ficava com 1/12 e o rótulo quebrava letra a letra). */
 .erp-form__grid > :where(:not([class*="erp-col-"])) { grid-column: span 6; }
 .erp-field { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .erp-field > label, .erp-field__label { font-size: 12.5px; font-weight: 650; color: var(--erp-text); }
@@ -424,7 +413,7 @@ p { margin: 0; }
 .erp-check input { width: 16px; height: 16px; accent-color: var(--erp-brand); }
 .erp-form__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--erp-space-2); padding-top: var(--erp-space-4); border-top: 1px solid var(--erp-border); }
 .erp-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--erp-space-3); padding: 14px 16px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface-muted); }
-/* Espaço padrão entre blocos (ADR 0628): filtro, aviso, tabela e barra de ações nunca ficam colados. */
+/* Espaço padrão entre blocos (ADR 0629): filtro, aviso, tabela e barra de ações nunca ficam colados. */
 :where(.erp-filters, .erp-alert, .erp-table-wrap) + :where(.erp-card, .erp-table-wrap, .erp-form__actions, .erp-alert, .erp-filters) { margin-top: var(--erp-space-4); }
 .erp-filters .erp-field { flex: 1 1 170px; }
 .erp-filters .erp-field--grow { flex: 2 1 260px; }

@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use MovesOSTests\TestCase;
 
 /**
- * Campo padrão e espaçamento em todo o sistema (ADR 0628, pedido do Djalma em 20/11/2026): o texto de
+ * Campo padrão e espaçamento em todo o sistema (ADR 0629, pedido do Djalma em 20/11/2026): o texto de
  * ajuda embaixo de um campo não pode desalinhar o campo vizinho, os blocos não ficam colados e a
  * barra de Salvar não anda junto com a rolagem.
  */

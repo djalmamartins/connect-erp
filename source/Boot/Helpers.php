@@ -981,3 +981,22 @@ function erp_context_url(string $path, ?array $condominium): string
     $full = erp_base() . ($path === '/' && erp_base() !== '' ? '' : $path);
     return url($full === '' ? '/' : $full);
 }
+
+/**
+ * Envio de arquivos e seletor de datas padrão de todos os sistemas (ADR 0628).
+ * connect_fields_assets('css') vai no <head>; connect_fields_assets('js') antes do </body>.
+ * Os arquivos ficam em container/shared/assets/connect-fields e levam ?v= da data do arquivo.
+ */
+function connect_fields_assets(string $part): string
+{
+    $dir = dirname(__DIR__, 2) . '/container/shared/assets/connect-fields';
+    $src = static function (string $file) use ($dir): string {
+        $version = is_file($dir . '/' . $file) ? (string)filemtime($dir . '/' . $file) : '1';
+        return htmlspecialchars(url('/container/shared/assets/connect-fields/' . $file) . '?v=' . $version, ENT_QUOTES);
+    };
+    if ($part === 'css') {
+        return '<link rel="stylesheet" href="' . $src('connect-fields.css') . '">';
+    }
+    return '<script src="' . $src('connect-upload.js') . '" defer></script>'
+        . '<script src="' . $src('connect-datepicker.js') . '" defer></script>';
+}

@@ -1174,7 +1174,7 @@ html[data-theme="dark"] .studio-v2 .studio-settings-save { background: rgb(30 27
 }
 
 /* --------------------------------------------------------------------------
-   Padrão de campo e de espaçamento (ADR 0628)
+   Padrão de campo e de espaçamento (ADR 0629)
    Campo = rótulo em cima, campo, e o texto de ajuda ou de erro embaixo.
    Campos da mesma linha ficam presos no topo: um texto de ajuda embaixo de um
    campo não empurra o campo vizinho. Blocos (caixas) sempre com espaço entre eles.

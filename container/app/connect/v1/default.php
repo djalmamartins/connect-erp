@@ -66,6 +66,7 @@ $unit = function (string $id) use ($link, $links): string {
     <link rel="icon" type="image/png" sizes="192x192" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="stylesheet" href="<?= $asset('/assets/css/app.css') ?>">
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <body class="app-body" data-sw="<?= $this->e(app_url('/sw.js')) ?>" data-scope="<?= $this->e(app_url('/')) ?>">
 <a class="app-skip" href="#app-main">Ir para o conteúdo</a>
@@ -147,5 +148,6 @@ $unit = function (string $id) use ($link, $links): string {
 </nav>
 <?php endif; ?>
 <script src="<?= $asset('/assets/js/app.js') ?>" defer></script>
+<?= connect_fields_assets('js') ?>
 </body>
 </html>

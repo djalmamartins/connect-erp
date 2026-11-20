@@ -12,7 +12,7 @@ Uma única fonte de tokens e componentes. Não copiar cores, logos, ícones prop
 - Quando um rótulo quebra em duas linhas, o `erp.js` dá aos rótulos daquela linha a altura do maior. O cálculo usa um ResizeObserver, então vale também em modais e campos que aparecem depois.
 - Teste: `tests/legacy/Unit/ErpFormLayoutTest.php`.
 
-## Campo padrão e espaçamento em todo o sistema (20/11/2026, ADR 0628)
+## Campo padrão e espaçamento em todo o sistema (20/11/2026, ADR 0629)
 
 Vale para ERP, Studio, Help Desk, aplicativo web do morador e Central de Ajuda.
 

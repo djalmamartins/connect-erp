@@ -51,14 +51,8 @@ $this->insert('components/layout/page-head', [
                     <input type="hidden" name="condominium_id" value="<?= (int)$context ?>">
                 <?php endif; ?>
                 <div class="erp-field"><label for="disk-folder">Pasta</label><select class="erp-select" id="disk-folder" name="folder" required><?php foreach ($folders as $key => $label): ?><option value="<?= $key ?>"<?= $key === ($diskFolder ?? 'atas') ? ' selected' : '' ?>><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
-                <label class="erp-dropzone" for="disk-file" data-disk-drop>
-                    <?= $icon('upload') ?>
-                    <strong data-disk-file-name>Escolha ou arraste o arquivo</strong>
-                    <span class="erp-muted" data-disk-file-meta>Um arquivo por vez</span>
-                    <input class="erp-dropzone__input" type="file" id="disk-file" name="file" accept="<?= $accept ?>" required data-max-bytes="<?= \Source\Services\Erp\VirtualDisk::MAX_BYTES ?>">
-                </label>
+                <div class="erp-field"><label for="disk-file">Arquivo</label><input class="erp-input" type="file" id="disk-file" name="file" accept="<?= $accept ?>" required data-max-bytes="<?= \Source\Services\Erp\VirtualDisk::MAX_BYTES ?>"></div>
                 <div class="erp-field"><label for="disk-title">Título <span class="erp-muted">(opcional)</span></label><input class="erp-input" id="disk-title" name="title" maxlength="160" placeholder="Vazio = nome do arquivo"></div>
-                <div class="erp-progress" data-disk-progress hidden role="progressbar" aria-label="Envio do arquivo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-disk-progress-bar style="width:0%"></span></div>
                 <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('upload', 'erp-icon--sm') ?>Enviar</button></div>
             </form>
         <?php endif; ?>
