@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use MovesOSTests\TestCase;
 
 /**
- * Envio de arquivos e seletor de datas padrão em todo o sistema (ADR 0624; pedido do Djalma em 20/11/2026).
+ * Envio de arquivos e seletor de datas padrão em todo o sistema (ADR 0628; pedido do Djalma em 20/11/2026).
  * Os componentes ficam em container/shared/assets/connect-fields e entram em todos os layouts pelo helper
  * connect_fields_assets(); os campos continuam sendo <input type="file|date|datetime-local"> comuns.
  */
@@ -25,7 +25,7 @@ final class ConnectFieldsEverywhereTest extends TestCase
         'container/app/connect/v1/partials/bare.php',
     ];
 
-    /** Seletores de foto de perfil continuam com a prévia redonda própria (decisão da ADR 0624). */
+    /** Seletores de foto de perfil continuam com a prévia redonda própria (decisão da ADR 0628). */
     private const OPT_OUT = [
         'container/cms/studio/v1/components/users/form.php',
         'container/app/connect/v1/pages/welcome.php',

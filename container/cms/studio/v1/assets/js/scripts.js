@@ -135,7 +135,7 @@ $(function () {
                 load.fadeIn(200).css("display", "flex");
             },
             uploadProgress: function (event, position, total, completed) {
-                // Barra de cada arquivo no componente padrão de envio (ADR 0624).
+                // Barra de cada arquivo no componente padrão de envio (ADR 0628).
                 if (window.ConnectUpload) {
                     window.ConnectUpload.formProgress(form[0], position, total);
                 }

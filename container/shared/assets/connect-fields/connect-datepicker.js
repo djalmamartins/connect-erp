@@ -1,5 +1,5 @@
 /*
- * Connect — seletor de datas e de período padrão (ADR 0624).
+ * Connect — seletor de datas e de período padrão (ADR 0628).
  *
  * Melhora os <input type="date"> e <input type="datetime-local"> do sistema sem trocar o campo: o
  * input original continua no formulário com o mesmo name, id e valor (AAAA-MM-DD), escondido só da

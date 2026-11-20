@@ -18,7 +18,7 @@ $asset = static function (string $path): string {
     <link rel="icon" type="image/png" sizes="192x192" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeApp('/assets/images/icon-192.png') ?>">
     <link rel="stylesheet" href="<?= $asset('/assets/css/app.css') ?>">
-    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0624) */ ?>
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <body class="app-body app-body--bare" data-sw="<?= $this->e(app_url('/sw.js')) ?>" data-scope="<?= $this->e(app_url('/')) ?>">
 <?= $this->section('content') ?>

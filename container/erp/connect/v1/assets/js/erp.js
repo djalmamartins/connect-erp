@@ -2274,7 +2274,7 @@
     var form = $('[data-disk-upload]', root);
     if (form) {
       var input = $('[name="file"]', form);
-      /* Área de arrastar, lista e progresso: componente padrão de envio (ADR 0624). */
+      /* Área de arrastar, lista e progresso: componente padrão de envio (ADR 0628). */
       var chosen = function () { return window.ConnectUpload ? window.ConnectUpload.files(input)[0] : (input.files || [])[0]; };
       form.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -2402,7 +2402,7 @@
       body.append('folder', $('[data-attachment-up-folder]', dialog).value);
       body.append('title', $('[data-attachment-up-title]', dialog).value.replace(/\s+/g, ' ').trim());
       body.append('file', file);
-      /* Progresso e falha no cartão do arquivo (componente padrão de envio, ADR 0624). */
+      /* Progresso e falha no cartão do arquivo (componente padrão de envio, ADR 0628). */
       var cu = window.ConnectUpload;
       busy(send, true);
       if (cu) { cu.progress(input, file, 0); }
@@ -3662,7 +3662,7 @@
             upload.append('entry_ids', entries.join(','));
             upload.append('kind', kind);
             upload.append('file', file);
-            /* Um anexo por vez, com o progresso no cartão do arquivo (ADR 0624). */
+            /* Um anexo por vez, com o progresso no cartão do arquivo (ADR 0628). */
             var cu = window.ConnectUpload;
             if (cu) { cu.progress(filesInput, file, 0); }
             return sendMultipart(form.getAttribute('data-attach-api'), token, upload, function (pct) { if (cu) { cu.progress(filesInput, file, pct); } })

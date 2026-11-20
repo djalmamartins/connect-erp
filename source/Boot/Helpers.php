@@ -983,7 +983,7 @@ function erp_context_url(string $path, ?array $condominium): string
 }
 
 /**
- * Envio de arquivos e seletor de datas padrão de todos os sistemas (ADR 0624).
+ * Envio de arquivos e seletor de datas padrão de todos os sistemas (ADR 0628).
  * connect_fields_assets('css') vai no <head>; connect_fields_assets('js') antes do </body>.
  * Os arquivos ficam em container/shared/assets/connect-fields e levam ?v= da data do arquivo.
  */

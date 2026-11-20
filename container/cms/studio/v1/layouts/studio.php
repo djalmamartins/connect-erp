@@ -16,7 +16,7 @@
     <link rel="icon" type="image/svg+xml" href="<?= themeStudio('/assets/images/'.$faviconName.'.svg', 'default') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeStudio('/assets/images/'.$faviconName.'-32.png', 'default') ?>">
     <link rel="apple-touch-icon" href="<?= themeStudio('/assets/images/'.$faviconName.'-180.png', 'default') ?>">
-    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0624) */ ?>
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <?php
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');

@@ -31,7 +31,7 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeErp('/assets/images/favicon-32.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeErp('/assets/images/favicon-180.png') ?>">
     <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
-    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0624) */ ?>
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
     <?php
     // Moves Editor (ADR 0610) só nas telas que têm campo de texto formatado.
     $movesEditorDir = dirname(__DIR__, 3) . '/shared/assets/moves-editor';

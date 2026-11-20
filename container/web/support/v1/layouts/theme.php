@@ -23,7 +23,7 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= url('/container/web/support/v1/assets/support.css?v=' . filemtime($cssFile)) ?>">
-    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0624) */ ?>
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <body class="hc">
 <a class="hc-skip" href="#conteudo">Ir para o conteúdo</a>

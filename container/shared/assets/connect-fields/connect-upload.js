@@ -1,5 +1,5 @@
 /*
- * Connect — envio de arquivos padrão (ADR 0624).
+ * Connect — envio de arquivos padrão (ADR 0628).
  *
  * Melhora qualquer <input type="file"> do sistema (ERP, Studio, Help Desk, apps web) sem trocar o
  * campo: o input original continua no formulário, com o mesmo name, id e validação, e recebe os

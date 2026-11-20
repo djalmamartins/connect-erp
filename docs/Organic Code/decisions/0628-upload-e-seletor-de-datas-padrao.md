@@ -1,4 +1,4 @@
-# ADR 0624 — Envio de arquivos e seletor de datas padrão em todo o sistema
+# ADR 0628 — Envio de arquivos e seletor de datas padrão em todo o sistema
 
 - Status: Aceito
 - Data: 20/11/2026
