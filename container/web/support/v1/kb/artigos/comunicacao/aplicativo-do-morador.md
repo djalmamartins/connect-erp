@@ -7,8 +7,8 @@ rota:
 menu:
 icone: phone-portrait-outline
 situacao: guia
-relacionados: criacao-de-usuarios-para-moradores, permissoes-de-moradores, disco-virtual
-palavras: aplicativo, app, morador, portal, celular, instalar, segunda via, reserva, encomenda, visitante, duas etapas, 2fa, segurança, recibo, edital, sininho, avisos, busca
+relacionados: criacao-de-usuarios-para-moradores, permissoes-de-moradores, disco-virtual, dados-pessoais
+palavras: aplicativo, app, morador, termos, lgpd, privacidade, meus dados, exclusão, novidades, portal, celular, instalar, segunda via, reserva, encomenda, visitante, duas etapas, 2fa, segurança, recibo, edital, sininho, avisos, busca
 rascunho: nao
 ---
 
@@ -19,7 +19,7 @@ O aplicativo do morador é o site **app.connect.lab**, feito para o celular. O m
 ## Como o morador entra
 
 1. A administração manda o convite em [[Configurações > Acesso > Criação de usuários para moradores]].
-2. O morador abre o e-mail, cria a senha e entra em **app.connect.lab** com o e-mail e a senha. A verificação em duas etapas **não é obrigatória** para o morador: ele entra só com e-mail e senha.
+2. O morador abre o e-mail, cria a senha, marca que leu e aceita os **Termos de Uso** e a **Política de Privacidade** (sem isso o convite não é aceito) e entra em **app.connect.lab** com o e-mail e a senha. A verificação em duas etapas **não é obrigatória** para o morador: ele entra só com e-mail e senha.
 3. Quem tem mais de uma unidade troca de unidade no alto da tela.
 
 >! Só entra quem tem **vínculo ativo** com uma unidade: cadastro de morador ativo, unidade e condomínio ativos e dentro das datas de início e fim. Quem já está logado no ERP com uma conta da equipe, sem unidade, volta para a tela de entrada do aplicativo com um aviso de que essa conta não é de morador, e não vê nenhum dado.
@@ -85,3 +85,9 @@ No [[Documentos > Disco Virtual]], clique em {{Mostrar}} na linha do arquivo. O 
 - O morador vê só a unidade dele, nunca a de outro morador.
 - Toda ação (reserva, aviso de visita, ocorrência, download de boleto ou documento) fica registrada na auditoria.
 - O aplicativo não guarda dados no celular; sem internet aparece só a página "Sem conexão".
+
+## Termos, novidades e pedidos sobre os dados (LGPD)
+
+- **Aceite dos termos.** No primeiro acesso, e sempre que a administradora publicar uma versão nova dos Termos de Uso ou da Política de Privacidade, o morador vê a tela **Termos e privacidade** antes de qualquer outra. Ele só segue depois de marcar que leu e aceita. O aceite fica registrado com a versão, a data e por onde foi feito (convite, aplicativo ou celular).
+- **Novidades.** Receber novidades da administradora é **opcional** e separado do aceite. O morador liga ou desliga em **Perfil > Privacidade e meus dados**. Avisos do condomínio (boletos, assembleias, encomendas) continuam chegando de qualquer forma.
+- **Pedidos sobre os dados.** Em **Perfil > Privacidade e meus dados**, o morador pede acesso, correção, exclusão, cópia (portabilidade) ou com quem os dados foram compartilhados. O pedido vira um **chamado da categoria LGPD**, com prioridade alta, em [[Operacional > Rotina > Chamados]]. A equipe responde em até **15 dias** e usa [[Configurações > Acesso > Dados pessoais (LGPD)]] para o relatório ou a anonimização. Dados que a lei manda guardar (por exemplo, a contabilidade do condomínio) não podem ser apagados; nesse caso, a resposta explica o motivo.

@@ -409,6 +409,7 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0601](../Organic%20Code/decisions/0601-resident-emails-limited.md) | Morador recebe só cinco e-mails | Aceito |
 | [0602](../Organic%20Code/decisions/0602-system-settings-studio.md) | Configuração geral do sistema no Studio, com senha SMTP cifrada e e-mail de teste | Aceito |
 | [0603](../Organic%20Code/decisions/0603-two-factor-login-screen.md) | Tela da verificação em duas etapas igual à do login, com o código em 6 campos e dicas de segurança | Aceito |
+| [0604](../Organic%20Code/decisions/0604-lgpd-cdc-site.md) | LGPD e CDC no site: rastreadores fora, banner de cookies, aceite na proposta, identificação, textos versionados e plano de incidente; etapa 2: aceite dos termos no convite e nos apps do morador, novidades à parte e pedidos do titular como chamado LGPD | Aceito |
 | [0610](../Organic%20Code/decisions/0610-moves-editor.md) | Moves Editor no lugar do TinyMCE e do Organic Editor: componente compartilhado, correções, Studio e Central de Ajuda (etapa 1) | Aceito |
 | [0620](../Organic%20Code/decisions/0620-remove-talk-inside-erp.md) | Telas e worker do Connect Talk removidos do ERP (fica a API do Talk do Pi) | Aceito |
 | [0621](../Organic%20Code/decisions/0621-studio-moves-os-visual.md) | Studio (CMS) com o visual do Moves OS: sidebar quase preta, item ativo em degradê rosa/roxo, cards e ícones coloridos; Help Desk e ERP sem mudança | Aceito |

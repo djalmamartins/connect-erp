@@ -17,6 +17,8 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Support\Pager;
 use Source\Support\Proposal\ProposalService;
+use Source\Services\Privacy\ConsentLog;
+use Source\Services\Privacy\LegalDocuments;
 
 /**
  * Web Controller
@@ -429,45 +431,55 @@ class Web extends Controller
         ]);
     }
 
+    /**
+     * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0604). Responde 204 sempre que o pedido é válido:
+     * o cookie da escolha já foi gravado pelo navegador, aqui só fica o registro (hash do IP e navegador, sem IP).
+     */
+    public function cookieConsent(array $data): void
+    {
+        if (!csrf_verify($data) || request_limit('cookie_consent', 20, 3600)) {
+            http_response_code(429);
+            return;
+        }
+        $granted = [];
+        foreach (array_keys(LegalDocuments::cookieCategories()) as $key) {
+            $granted[] = $key . '=' . (($data[$key] ?? '0') === '1' ? '1' : '0');
+        }
+        try {
+            (new ConsentLog())->record('cookies', str_contains(implode(',', $granted), '=1'), LegalDocuments::COOKIES, 'site',
+                ['detail' => implode(',', $granted)]);
+        } catch (\Throwable $e) {
+            \Source\Support\AppLogger::log('error', 'Escolha de cookies não registrada', ['event_type' => 'privacy_consent_failed', 'error' => $e->getMessage(), 'status' => 'open'], 'privacy');
+        }
+        http_response_code(204);
+    }
+
+    /**
+     * Política de Privacidade e Termos de Uso (ADR 0604). O texto vem do código, com versão (LegalDocuments), para cada
+     * aceite apontar para um texto que não muda depois. Página com o mesmo endereço no Studio não substitui mais o texto.
+     */
     public function legal(array $data): void
     {
         $requestPath = trim((string)parse_url($_SERVER["REQUEST_URI"] ?? "", PHP_URL_PATH), "/");
+        $documents = [
+            "politica-de-privacidade" => ["Política de Privacidade", "privacidade", LegalDocuments::PRIVACY,
+                "Como a " . CONF_SITE_NAME . " trata dados pessoais: quais dados, para quê, por quanto tempo e como exercer seus direitos."],
+            "termos-de-uso" => ["Termos de Uso", "termos", LegalDocuments::TERMS,
+                "Regras de uso do site, do ERP, do portal e do aplicativo do morador da " . CONF_SITE_NAME . "."],
+        ];
         $uri = basename($requestPath);
-        if (!in_array($uri, ["politica-de-privacidade", "termos-de-uso"], true)) {
+        if (!isset($documents[$uri])) {
             redirect("/ops/404");
             return;
         }
-
-        $page = (new Page())->findByUri($uri);
-        if (!$page) {
-            $page = (object)$this->legalFallback($uri);
-        }
-
-        $head = $this->seo->render(
-            "{$page->title} - " . CONF_SITE_NAME,
-            str_limit_chars(strip_tags($page->content), 150),
-            url("/{$page->uri}"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("pages/legal", ["head" => $head, "page" => $page]);
-    }
-
-    private function legalFallback(string $uri): array
-    {
-        if ($uri === "politica-de-privacidade") {
-            return [
-                "uri" => $uri,
-                "title" => "Política de Privacidade",
-                "content" => '<h2>Como tratamos seus dados</h2><p>A Connect Condomínios utiliza os dados fornecidos por clientes, moradores, síndicos e visitantes para prestar seus serviços, responder solicitações, cumprir obrigações legais e manter a segurança das operações.</p><h2>Dados coletados</h2><p>Podemos tratar dados de identificação, contato, informações condominiais e registros técnicos de acesso, sempre limitados às finalidades informadas e necessárias.</p><h2>Compartilhamento e segurança</h2><p>Os dados somente são compartilhados com fornecedores essenciais, autoridades competentes ou quando houver obrigação legal. Adotamos medidas técnicas e administrativas para evitar acesso, perda ou uso indevido.</p><h2>Seus direitos</h2><p>Você pode solicitar confirmação, acesso, correção, portabilidade ou exclusão de dados, observados os prazos e deveres legais, pelo e-mail <a href="mailto:' . htmlspecialchars(CONF_MAIL_SUPPORT) . '">' . htmlspecialchars(CONF_MAIL_SUPPORT) . '</a>.</p><p><small>Última atualização: ' . date('d/m/Y') . '.</small></p>'
-            ];
-        }
-
-        return [
-            "uri" => $uri,
-            "title" => "Termos de Uso",
-            "content" => '<h2>Uso dos serviços</h2><p>Ao acessar este site e utilizar os serviços da Connect Condomínios, você concorda em fornecer informações verdadeiras, respeitar a legislação e não praticar atos que prejudiquem a plataforma, seus usuários ou terceiros.</p><h2>Conteúdo e disponibilidade</h2><p>As informações do site têm caráter institucional. Recursos, prazos e condições comerciais são formalizados nas respectivas propostas e contratos. Podemos atualizar conteúdos e funcionalidades para melhorar os serviços.</p><h2>Responsabilidades</h2><p>Cada usuário é responsável pela segurança de suas credenciais e pelas ações realizadas em sua conta. Links e serviços de terceiros seguem seus próprios termos e políticas.</p><h2>Contato</h2><p>Dúvidas sobre estes termos podem ser enviadas para <a href="mailto:' . htmlspecialchars(CONF_MAIL_SUPPORT) . '">' . htmlspecialchars(CONF_MAIL_SUPPORT) . '</a>.</p><p><small>Última atualização: ' . date('d/m/Y') . '.</small></p>'
-        ];
+        [$title, $template, $version, $description] = $documents[$uri];
+        $head = $this->seo->render("{$title} - " . CONF_SITE_NAME, $description, url("/{$uri}"), theme("/assets/images/share.jpg"));
+        echo $this->view->render("pages/legal", [
+            "head" => $head,
+            "title" => $title,
+            "template" => $template,
+            "versionLabel" => LegalDocuments::label($version),
+        ]);
     }
 
     public function auth(?array $data):void{
@@ -739,55 +751,6 @@ class Web extends Controller
     /**
      * SITE TERMS
      */
-    public function terms(array $data): void
-    {
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!$this->user = Auth::user()) {
-            $this->message->warning("Efetue login para acessar nosso serviços.")->flash();
-            redirect("/login");
-        }
-
-        if ($this->user->privacy == "accept") {
-            $this->message->success("Seja bem-vindo(a) de volta " . Auth::user()->first_name . "!")->flash();
-            redirect("/redirect");
-        }
-
-        if (!empty($data['csrf'])) {
-            if (!csrf_verify($data)) {
-                $json['message'] = $this->message->error("Erro ao enviar, favor use o formulário")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if (empty($data['confirm'])) {
-                $json['message'] = $this->message->error("Você precisa aceitar os termos e política de privacidade.")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if ($this->user && $this->user->privacy != "accept") {
-                $this->user->privacy = "accept";
-                $this->user->save();
-
-                $this->message->success("Seja bem-vindo(a) " . Auth::user()->first_name . "!")->flash();
-                $json['redirect'] = url("/redirect");
-            }
-
-        }
-
-        $head = $this->seo->render(
-            CONF_SITE_NAME . " - Termos de uso",
-            CONF_SITE_DESC,
-            url("/termos"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("pages/login/terms", [
-            "head" => $head
-        ]);
-    }
-
     public function privacy(array $data): void
     {
         $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
