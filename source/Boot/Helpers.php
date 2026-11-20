@@ -537,7 +537,13 @@ function themeStudio(?string $path = null, string $theme = 'moves_studio'): stri
 function image(?string $image, int $width, ?int $height = null): ?string
 {
     if ($image) {
-        $generated = (new \Source\Support\Thumb())->make($image, $width, $height);
+        // Imagem corrompida ou fora do formato não derruba a página (ADR 0399): o Cropper lança exceção.
+        try {
+            $generated = (new \Source\Support\Thumb())->make($image, $width, $height);
+        } catch (\Throwable $exception) {
+            \Source\Support\AppLogger::exception($exception, 'storage', ['event_type' => 'thumb_failed']);
+            $generated = null;
+        }
         if (!$generated) {
             return theme("/assets/images/avatar.jpg");
         }

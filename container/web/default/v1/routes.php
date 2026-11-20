@@ -5,6 +5,7 @@ $route->namespace("Source\Controllers\Web\Connect");
  */
 $route->group("");
 $route->get("/", "Web:home");
+$route->get("/sitemap.xml", "Web:sitemap");
 $route->get("/solicite-sua-proposta", "Web:sales");
 $route->post("/solicite-sua-proposta", "Web:proposalSubmit");
 $route->get("/politica-de-privacidade", "Web:legal");
