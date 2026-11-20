@@ -1,4 +1,4 @@
-# 0624 — "Sobre esta tela" em todas as páginas, sempre fechado
+# 0625 — "Sobre esta tela" em todas as páginas, sempre fechado
 
 - Data: 20/11/2026
 - Situação: Aceito

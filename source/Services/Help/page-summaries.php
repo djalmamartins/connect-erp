@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * GERADO por `php tools/help.php resumos` (ADR 0624). Não edite à mão: mude o resumo ou as seções do
+ * GERADO por `php tools/help.php resumos` (ADR 0625). Não edite à mão: mude o resumo ou as seções do
  * artigo em container/web/support/v1/kb/artigos/ e rode o comando de novo. O `check` confere.
  */
 

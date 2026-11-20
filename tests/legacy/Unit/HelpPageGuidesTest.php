@@ -82,7 +82,7 @@ final class HelpPageGuidesTest extends TestCase
         self::assertStringContainsString("'dismissed'", (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/assets/js/erp.js'));
     }
 
-    /** ADR 0624: o quadro em todas as páginas do menu, sempre fechado ao abrir a tela. */
+    /** ADR 0625: o quadro em todas as páginas do menu, sempre fechado ao abrir a tela. */
     public function testEveryMenuPageHasTheIntroAndItAlwaysStartsClosed(): void
     {
         $codes = array_keys(KnowledgeBase::erpCatalog()['pages']);

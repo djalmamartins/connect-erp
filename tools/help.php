@@ -13,7 +13,7 @@ declare(strict_types=1);
  *   php tools/help.php explicar               escreve em cada artigo a seção "O que acontece por trás"
  *                                             a partir das explicações das telas (ADR 0309)
  *   php tools/help.php resumos                gera source/Services/Help/page-summaries.php (resumo e
- *                                             seções de cada artigo) para o "Sobre esta tela" (ADR 0624)
+ *                                             seções de cada artigo) para o "Sobre esta tela" (ADR 0625)
  *   php tools/help.php sync                   publica a base na Central de Ajuda (/suporte)
  *   php tools/help.php stats                  quantos artigos, prints e páginas cobertas
  *
@@ -122,7 +122,7 @@ switch ($command) {
         exit(0);
 
     case 'resumos':
-        // "Sobre esta tela" (ADR 0624): o resumo e as seções do artigo de cada tela, para o quadro do ERP.
+        // "Sobre esta tela" (ADR 0625): o resumo e as seções do artigo de cada tela, para o quadro do ERP.
         $content = PageGuides::buildSummaries($kb, $codes);
         $current = is_file(PageGuides::SUMMARIES_FILE) ? (string)file_get_contents(PageGuides::SUMMARIES_FILE) : '';
         if ($current !== $content) {

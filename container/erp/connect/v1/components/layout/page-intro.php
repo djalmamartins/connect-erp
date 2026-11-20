@@ -4,7 +4,7 @@
  * para o tutorial completo na Central de Ajuda. Texto de Source\Services\Help\PageGuides (a mesma
  * fonte da seção "O que acontece por trás" do artigo).
  *
- * Em todas as páginas do ERP (ADR 0624): a tela sem explicação escrita à mão mostra o resumo do artigo
+ * Em todas as páginas do ERP (ADR 0625): a tela sem explicação escrita à mão mostra o resumo do artigo
  * (source/Services/Help/page-summaries.php, gerado por `php tools/help.php resumos`). Também lista as
  * seções do tutorial, cada uma com link direto.
  *

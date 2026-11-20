@@ -107,7 +107,7 @@ para o artigo. O mesmo texto vira a seção `## O que acontece por trás` do art
 - Depois de mudar um texto: `php tools/help.php explicar` (escreve a seção nos artigos) e `php tools/help.php check`.
   O `check` falha se o artigo ficar diferente da explicação.
 - Página nova: escreva a explicação dela no mesmo PR do artigo.
-- Todas as páginas têm o quadro (ADR 0624). Tela sem explicação escrita à mão mostra o `resumo` do artigo; todas
+- Todas as páginas têm o quadro (ADR 0625). Tela sem explicação escrita à mão mostra o `resumo` do artigo; todas
   mostram as seções do tutorial ("No tutorial: ...") com link direto. Isso sai de
   `source/Services/Help/page-summaries.php`, gerado por `php tools/help.php resumos`: rode depois de mudar o resumo
   ou os títulos `##` de um artigo. O `check` falha se o arquivo estiver desatualizado.
