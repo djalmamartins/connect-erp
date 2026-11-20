@@ -558,7 +558,7 @@ final class BankCharges
     }
 
     /**
-     * Boleto único por responsável (ADR 0611, pedido do Djalma em 20/11/2026), com a chave "Juntar as unidades do mesmo
+     * Boleto único por responsável (ADR 0600, pedido do Djalma em 20/11/2026), com a chave "Juntar as unidades do mesmo
      * responsável" da regra de cobrança ligada: as contas da MESMA fatura de outras unidades cujo responsável pelo
      * pagamento tem o mesmo CPF/CNPJ do boleto entram junto, cada uma com o rateio da própria unidade. Unidade com
      * "Bloquear unificação" fica fora. Sem documento do responsável, nada entra (não dá para afirmar que é a mesma pessoa).

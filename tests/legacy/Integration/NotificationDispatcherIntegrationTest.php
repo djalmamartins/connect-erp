@@ -32,6 +32,8 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         $this->area = $service->save($this->admin, 'common_areas', ['condominium_id' => $this->alpha, 'name' => 'Salão', 'booking_mode' => 'approval'])['id'];
         $service->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $this->unit, 'relationship' => 'owner',
             'name' => 'Bia Moradora', 'document' => self::validCpf(), 'email' => 'bia@morador.test']);
+        // Aviso genérico dos testes: boleto em atraso (ADR 0601), que só vai a quem autorizou cobrança por e-mail.
+        $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');
     }
 
     public function testLogModeSendsNothingAndRecordsTrail(): void
@@ -55,7 +57,7 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         self::assertCount(1, $this->queued);
         self::assertSame('caixa@mailpit.local', $this->queued[0][2], 'Nunca o e-mail do morador.');
         self::assertStringStartsWith('[TESTE]', $this->queued[0][0]);
-        self::assertStringContainsString('Salão', $this->queued[0][1]);
+        self::assertStringContainsString('10 dias</strong>', $this->queued[0][1]);
     }
 
     public function testRetryWithBackoffThenFailAndManualRetry(): void
@@ -100,7 +102,7 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         $this->pdo->exec("UPDATE erp_residents SET email = NULL");
         $id = $this->event('e4');
         self::assertSame(1, $this->dispatcher('development', 'log')->dispatch()['cancelled']);
-        self::assertSame('Nenhum destinatário com e-mail cadastrado.', $this->row($id)['last_error']);
+        self::assertSame('Ninguém da unidade autorizou receber cobrança por e-mail.', $this->row($id)['last_error']);
 
         $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Beta', 'active']);
         $outsider = $this->user([(int)$this->pdo->lastInsertId()]);
@@ -110,13 +112,14 @@ final class NotificationDispatcherIntegrationTest extends TestCase
     public function testBillingNoticesOnlyReachOptIn(): void
     {
         $outbox = new NotificationOutbox($this->pdo);
-        $payload = ['unit_id' => $this->unit, 'unit_label' => '101', 'type_name' => 'Taxa condominial', 'competence' => '2026-11', 'due_on' => '2026-11-10', 'amount_cents' => 50000];
-        $outbox->record('invoice.issued', 'invoice.issued:t1', $this->alpha, 'erp_invoice_items', 1, $payload, null);
+        $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 0');
+        $payload = ['unit_id' => $this->unit, 'unit_label' => '101', 'items' => 1, 'description' => 'Taxa condominial', 'due_on' => '2026-11-10', 'amount_cents' => 50000];
+        $outbox->record('charge.due_today', 'charge.due_today:t1', $this->alpha, 'erp_units', 1, $payload, null);
         self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['cancelled'], 'Sem opt-in, ninguém recebe cobrança.');
         self::assertSame([], $this->queued);
 
         $this->pdo->exec('UPDATE erp_residents SET billing_by_email = 1');
-        $outbox->record('invoice.issued', 'invoice.issued:t2', $this->alpha, 'erp_invoice_items', 2, $payload, null);
+        $outbox->record('charge.due_today', 'charge.due_today:t2', $this->alpha, 'erp_units', 2, $payload, null);
         self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['sent']);
         self::assertSame('caixa@mailpit.local', $this->queued[0][2], 'Fora de produção, só a caixa de teste.');
         self::assertStringContainsString('R$ 500,00', $this->queued[0][1]);
@@ -133,9 +136,10 @@ final class NotificationDispatcherIntegrationTest extends TestCase
         self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_notification_outbox WHERE event_type = 'reservation.approved'")->fetchColumn());
 
         $service->save($this->admin, 'reservations', ['status' => 'confirmed'] + $input, $reservation['id']);
-        self::assertSame(1, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['sent']);
-        self::assertStringContainsString('Salão', $this->queued[0][1]);
-        self::assertStringContainsString('18:00', $this->queued[0][1]);
+        // ADR 0601: a reserva aprovada fica no histórico, já cancelada; o morador não recebe e-mail.
+        self::assertSame('cancelled', $this->pdo->query("SELECT status FROM erp_notification_outbox WHERE event_type = 'reservation.approved'")->fetchColumn());
+        self::assertSame(0, $this->dispatcher('development', 'sandbox', 'caixa@mailpit.local')->dispatch()['processed']);
+        self::assertSame([], $this->queued);
     }
 
     private function dispatcher(string $env, string $mode, ?string $sandbox = null): NotificationDispatcher
@@ -148,8 +152,8 @@ final class NotificationDispatcherIntegrationTest extends TestCase
 
     private function event(string $key): int
     {
-        (new NotificationOutbox($this->pdo))->record('waitlist.called', $key, $this->alpha, 'erp_waitlist', 1,
-            ['resident_name' => 'Bia', 'unit_id' => $this->unit, 'common_area_id' => $this->area, 'date' => '2026-11-20', 'reservation_id' => 1], null);
+        (new NotificationOutbox($this->pdo))->record('charge.overdue', $key, $this->alpha, 'erp_units', $this->unit,
+            ['unit_id' => $this->unit, 'unit_label' => '101', 'items' => 1, 'description' => 'Taxa', 'amount_cents' => 45000, 'due_on' => '2026-11-01', 'days_late' => 10], null);
         return (int)$this->pdo->query("SELECT id FROM erp_notification_outbox WHERE event_key = " . $this->pdo->quote($key))->fetchColumn();
     }
 

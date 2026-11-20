@@ -128,7 +128,7 @@ final class BillingRules
         }
         $before = $this->rule($condominiumId);
         $rule = self::normalize($input);
-        // Juntar no mesmo boleto as unidades do mesmo responsável (ADR 0611): sem o campo, fica como estava.
+        // Juntar no mesmo boleto as unidades do mesmo responsável (ADR 0601): sem o campo, fica como estava.
         $rule['merge_owner_units'] = array_key_exists('merge_owner_units', $input)
             ? filter_var($input['merge_owner_units'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true
             : (bool)$before['merge_owner_units'];
