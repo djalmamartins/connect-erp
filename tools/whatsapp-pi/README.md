@@ -1,6 +1,6 @@
 # WhatsApp do Connect Talk num Raspberry Pi
 
-> **Histórico (ADR 0603, 20/11/2026):** o Talk dentro do ERP foi removido; o Talk em uso é o projeto separado
+> **Histórico (ADR 0620, 20/11/2026):** o Talk dentro do ERP foi removido; o Talk em uso é o projeto separado
 > `djalmamartins/talk`, inteiro no Raspberry Pi (ADR 0359). O `tools/talk-worker.php` citado abaixo não existe mais.
 > O `instalar.sh` da Evolution continua aqui só como referência.
 

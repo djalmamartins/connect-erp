@@ -28,7 +28,7 @@ de Ajuda, segurança (0337–0348, 0355, 0364–0367, 0387–0393), LGPD (0328, 
 
 | ADR | O que foi | Por que sai | Proposta |
 |---|---|---|---|
-| 0324, 0349 | Connect Talk dentro do ERP (etapas 1 e 2) | 0359 (17/11): o Talk volta inteiro para o Raspberry Pi | **feito (ADR 0603, aprovado em 20/11):** telas e worker removidos; ficam as tabelas e a API que o Talk do Pi usa |
+| 0324, 0349 | Connect Talk dentro do ERP (etapas 1 e 2) | 0359 (17/11): o Talk volta inteiro para o Raspberry Pi | **feito (ADR 0620, aprovado em 20/11):** telas e worker removidos; ficam as tabelas e a API que o Talk do Pi usa |
 | 0308 | número reservado para a integração do Talk | a integração virou 0359/0386 | liberar o número |
 | 0010 (parte) | identidade dourada do ERP | trocada pelo visual verde (08/11) | nada a remover: já substituída no código |
 

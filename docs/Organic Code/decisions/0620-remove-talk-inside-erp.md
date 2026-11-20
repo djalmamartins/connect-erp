@@ -1,4 +1,4 @@
-# 0603 — Telas e worker do Connect Talk removidos do ERP
+# 0620 — Telas e worker do Connect Talk removidos do ERP
 
 - **Status:** aceito
 - **Data:** 2026-11-20

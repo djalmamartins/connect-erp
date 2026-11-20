@@ -22,7 +22,7 @@ $session = new Session();
 // Cabeçalhos de segurança de toda resposta (ADR 0355): sem moldura de outro site, nosniff, HSTS fora do lab.
 \Source\Support\SecurityHeaders::send(is_local_host());
 
-// Connect Talk (ADR 0603): as telas do Talk saíram do ERP; o Talk roda no Raspberry Pi e usa só a API /talk/...
+// Connect Talk (ADR 0620): as telas do Talk saíram do ERP; o Talk roda no Raspberry Pi e usa só a API /talk/...
 // Envio acima do post_max_size (ADR 0363): o PHP descarta o corpo inteiro; avisa o limite em vez de "sessão expirada".
 \Source\Support\OversizedPost::handle();
 $route = new Router(url(), ":");
