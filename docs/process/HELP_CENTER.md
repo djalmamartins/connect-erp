@@ -107,6 +107,12 @@ para o artigo. O mesmo texto vira a seção `## O que acontece por trás` do art
 - Depois de mudar um texto: `php tools/help.php explicar` (escreve a seção nos artigos) e `php tools/help.php check`.
   O `check` falha se o artigo ficar diferente da explicação.
 - Página nova: escreva a explicação dela no mesmo PR do artigo.
+- Todas as páginas têm o quadro (ADR 0625). Tela sem explicação escrita à mão mostra o `resumo` do artigo; todas
+  mostram as seções do tutorial ("No tutorial: ...") com link direto. Isso sai de
+  `source/Services/Help/page-summaries.php`, gerado por `php tools/help.php resumos`: rode depois de mudar o resumo
+  ou os títulos `##` de um artigo. O `check` falha se o arquivo estiver desatualizado.
+- O quadro sempre nasce fechado (só o título); a pessoa abre se tiver dúvida. O X tira o quadro daquela tela,
+  naquele navegador; em Configurações > Administrativo dá para desligar para todos.
 - O guia geral para quem está chegando é `primeiros-passos/como-o-sistema-funciona.md`.
 - Cada categoria tem (ou terá, por etapa) o resumo "Como funciona esta área" em
   `container/web/support/v1/kb/areas/<categoria>.md`, mostrado no topo da página da categoria em `/suporte`.
