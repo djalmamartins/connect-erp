@@ -240,6 +240,7 @@ body.studio-erp .studio-erp-avatar { display: grid; width: 36px; height: 36px; f
     body.studio-erp.menu-collapsed .studio-erp-brand-mark { display: block }
     body.studio-erp.menu-collapsed .studio-erp-collapse ion-icon { transform: rotate(180deg) }
     body.studio-erp.menu-collapsed .studio-erp-context,
+    body.studio-erp.menu-collapsed .studio-erp-envswitch,
     body.studio-erp.menu-collapsed .studio-erp-nav-label,
     body.studio-erp.menu-collapsed .studio-erp-nav-sub,
     body.studio-erp.menu-collapsed .studio-erp-nav-group > summary::after,
