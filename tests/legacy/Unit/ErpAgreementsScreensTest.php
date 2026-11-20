@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 use Source\Controllers\Erp\Connect\Panel;
 
 /**
- * Telas de inadimplência e acordos (AP-033/034, ADR 0039 e 0041): dados de Panel::agreementData,
+ * Telas de inadimplência e acordos (AP-033/034, ADR 0039 e 0041): dados de FinanceScreens::agreementData,
  * ações pela API /api/v1/agreements com o CSRF no cabeçalho.
  */
 final class ErpAgreementsScreensTest extends TestCase
@@ -45,7 +45,7 @@ final class ErpAgreementsScreensTest extends TestCase
         self::assertStringContainsString("\$canManageAgreements && \$active && (int)\$agreement['paid_installments'] === 0", $view);
         self::assertStringContainsString('name="reason" minlength="5" maxlength="255" required', $view);
         self::assertStringContainsString('csrf_input()', $view);
-        self::assertStringContainsString("!Access::can('erp.agreements.view', \$user)", $this->file('source/Controllers/Erp/Connect/Panel.php'));
+        self::assertStringContainsString("!Access::can('erp.agreements.view', \$user)", $this->file('source/Controllers/Erp/Connect/FinanceScreens.php'));
     }
 
     public function testJavascriptCallsEveryEndpointInSourceAndBundle(): void

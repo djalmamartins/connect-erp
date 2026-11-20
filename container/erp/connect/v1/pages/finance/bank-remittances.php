@@ -1,7 +1,7 @@
 <?php
 /**
  * Remessas (AP-037, ADR 0156) com dados reais: boletos enviados ao banco agrupados por conta bancária e dia
- * ($bankRemittances, de Panel::bankingData; a mesma lista está em GET /api/v1/bank-remittances). Com o Inter o
+ * ($bankRemittances, de FinanceScreens::bankingData; a mesma lista está em GET /api/v1/bank-remittances). Com o Inter o
  * registro é online, sem arquivo de remessa: a tela mostra o envio e a confirmação do banco. Só leitura.
  * @var array $currentPage @var array $bankRemittances @var list<array> $condoOptions
  */

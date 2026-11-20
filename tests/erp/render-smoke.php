@@ -373,7 +373,7 @@ foreach ([[403, false], [404, true]] as [$code, $nav]) {
     $assert(str_contains($html, "Erro $code"), "estado $code");
     $assert($nav === str_contains($html, 'erp-sidebar"'), "estado $code: navegação " . ($nav ? 'visível' : 'oculta'));
 }
-// Fechamento mensal (AP-030) com dados reais ($closing de Panel::closingData, ADR 0032): um condomínio
+// Fechamento mensal (AP-030) com dados reais ($closing de FinanceScreens::closingData, ADR 0032): um condomínio
 // aberto, fechado e reaberto, sem permissão de fechar, e "Todos" (só consulta).
 $closingRow = static fn (array $over = []): array => $over + [
     'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'status' => 'open', 'closed_at' => null, 'reopened_at' => null, 'reopen_reason' => null,
@@ -405,7 +405,7 @@ $assert(!str_contains($html, 'data-closing-order') && !(bool)preg_match('~erp-bt
 $html = $closingPage(null, [$closingRow(['pending_before' => ['2026-09']]), $closingRow(['condominium_id' => 9, 'condominium_name' => 'Edifício Dois'])], false);
 $assert(str_contains($html, '1 condomínio(s) com mês anterior em aberto') && str_contains($html, 'antes: 09/2026'), 'AP-030: em Todos mostra quem tem mês anterior aberto');
 
-// Faturas (AP-032) com dados reais ($invoices de Panel::invoiceData, ADR 0033): lista, ações pela API e estados.
+// Faturas (AP-032) com dados reais ($invoices de FinanceScreens::invoiceData, ADR 0033): lista, ações pela API e estados.
 $invoiceRow = static fn (array $over = []): array => $over + [
     'id' => 5, 'condominium_id' => 7, 'condominium_name' => 'Residencial <Exemplo>', 'invoice_type_id' => 2, 'type_name' => 'Taxa <condominial>',
     'competence' => '2026-11', 'due_on' => '2026-11-10', 'status' => 'draft', 'status_label' => 'Em preparação', 'units_count' => 48, 'amount_cents' => 4320000,

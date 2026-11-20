@@ -2,7 +2,7 @@
 /**
  * Agendamentos Pendentes (AP-114, ADR 0051 e 0070) com dados reais: as reservas de áreas comuns
  * (AP-113) aguardando aprovação no condomínio da barra superior ($pendingReservations de
- * Panel::pendingReservationData). Confirmar e recusar são POST com CSRF em
+ * OperationScreens::pendingReservationData). Confirmar e recusar são POST com CSRF em
  * /operacional/agendamentos-pendentes/{id}/confirmar|recusar (PendingReservations).
  * @var array $currentPage @var array $pendingReservations @var array<int,string> $pendingAreas
  * @var array<int,string> $pendingUnits @var bool $canDecideReservations
