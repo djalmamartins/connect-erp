@@ -23,6 +23,7 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= url('/container/web/support/v1/assets/support.css?v=' . filemtime($cssFile)) ?>">
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
 </head>
 <body class="hc">
 <a class="hc-skip" href="#conteudo">Ir para o conteúdo</a>
@@ -93,5 +94,6 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
 <script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget data-color="#0d2e27" data-label="Ajuda" defer></script>
 <script src="<?= url('/container/web/support/v1/assets/support.js?v=' . filemtime(__DIR__ . '/../assets/support.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>
+<?= connect_fields_assets('js') ?>
 </body>
 </html>

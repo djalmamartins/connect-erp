@@ -31,6 +31,7 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="icon" type="image/png" sizes="32x32" href="<?= themeErp('/assets/images/favicon-32.png') ?>">
     <link rel="apple-touch-icon" href="<?= themeErp('/assets/images/favicon-180.png') ?>">
     <link rel="stylesheet" href="<?= $erpAsset('/assets/css/erp.css', '/assets/erp.min.css') ?>">
+    <?= connect_fields_assets('css') /* upload e datas padrão (ADR 0628) */ ?>
     <?php /* Alternador de ambientes único (ADR 0627), o mesmo do Studio e do Help Desk. */ $envswitchDir = dirname(__DIR__, 3) . '/shared/assets/envswitch'; ?>
     <link rel="stylesheet" href="<?= url('/container/shared/assets/envswitch/envswitch.css') . '?v=' . filemtime($envswitchDir . '/envswitch.css') ?>">
     <?php
@@ -60,6 +61,7 @@ foreach ($catalog['pages'] as $id => $page) {
 <?php endif; ?>
 <div class="erp-toasts" data-erp-toasts role="status" aria-live="polite"></div>
 <script type="application/json" id="erp-search-index"><?= json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<?= connect_fields_assets('js') /* antes do erp.js, que usa o ConnectUpload */ ?>
 <script src="<?= $erpAsset('/assets/js/erp.js', '/assets/erp.min.js') ?>" defer></script>
 <script src="<?= url('/container/shared/assets/envswitch/envswitch.js') . '?v=' . filemtime($envswitchDir . '/envswitch.js') ?>" defer></script>
 <?php if ($movesEditorOn): ?>
