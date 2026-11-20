@@ -33,7 +33,7 @@ $next = app_url('/boas-vindas?passo=' . ($step + 1));
             <input type="hidden" name="voltar" value="boas-vindas">
             <label class="app-button app-button--ghost app-button--block app-file">
                 <svg aria-hidden="true"><use href="#i-camera"></use></svg><?= $hasPhoto ? 'Trocar a foto' : 'Tirar ou escolher uma foto' ?>
-                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required data-app-autosubmit-file>
+                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required data-app-autosubmit-file data-cx-upload="off">
             </label>
             <noscript><button class="app-button app-button--block" type="submit">Enviar foto</button></noscript>
         </form>

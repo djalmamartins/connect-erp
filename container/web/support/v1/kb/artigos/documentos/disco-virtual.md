@@ -31,7 +31,7 @@ legenda: Tela Disco Virtual
 
 PDF, imagem (JPG, PNG, WebP), DOCX, XLSX, ODT, ODS, CSV, TXT ou XML, até 20 MB.
 
-1. Preencha **Pasta** e **Escolha ou arraste o arquivo Um arquivo por vez**.
+1. Preencha **Pasta** e **Arquivo** (arraste para a área tracejada ou clique em {{Escolher arquivo}}; o envio mostra a barra de progresso e, se falhar, o botão de tentar de novo).
 2. Clique em {{Enviar}}.
 
 ```tela disco-virtual-form
@@ -40,7 +40,7 @@ condominio: residencial-jardim-das-acacias
 legenda: Enviar arquivo
 recorte: main form:not([method=get])
 1: main form:not([method=get]) [name="folder"] | Pasta (obrigatório)
-2: main form:not([method=get]) [name="file"] | Escolha ou arraste o arquivo Um arquivo por vez (obrigatório)
+2: main form:not([method=get]) .cx-upload__zone | Arquivo: arraste ou clique em Escolher arquivo (obrigatório)
 3: main form:not([method=get]) [name="title"] | Título (opcional)
 4: main form:not([method=get]) button:has-text("Enviar") | Botão {{Enviar}}
 ```
@@ -48,7 +48,7 @@ recorte: main form:not([method=get])
 ### O que preencher
 
 - **Pasta** (obrigatório): Opções: Atas, Contratos, Plantas, Notas fiscais e Outros.
-- **Escolha ou arraste o arquivo Um arquivo por vez** (obrigatório): Escolha o arquivo no seu computador.
+- **Arquivo** (obrigatório): arraste o arquivo ou clique em {{Escolher arquivo}}. Veja [como funciona o envio](artigo:enviar-arquivos-e-escolher-datas).
 - **Título (opcional)**: Exemplo: Vazio = nome do arquivo.
 
 ## Pesquisar e filtrar

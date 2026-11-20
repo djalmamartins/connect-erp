@@ -24,7 +24,7 @@ $this->layout('default');
         <form method="post" action="<?= app_url('/perfil/foto') ?>" enctype="multipart/form-data">
             <?= csrf_input() ?>
             <label class="app-button app-button--ghost app-file"><svg aria-hidden="true"><use href="#i-camera"></use></svg><?= !empty($photo) ? 'Trocar a foto' : 'Colocar uma foto' ?>
-                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required data-app-autosubmit-file></label>
+                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required data-app-autosubmit-file data-cx-upload="off"></label>
             <noscript><button class="app-button" type="submit">Enviar</button></noscript>
         </form>
         <?php if (!empty($photo)): ?>
