@@ -3861,16 +3861,10 @@
   });
 
   /* "Sobre esta tela" (ADR 0309) ------------------------------------------
-   * Nasce fechada; quem abre pelo título deixa aberta naquela tela. O X fecha e não volta mais naquela tela, neste navegador. */
+   * Sempre nasce fechada, em todas as telas (ADR 0623): quem tem dúvida abre pelo título. O X fecha e não volta mais naquela tela, neste navegador. */
   $$('[data-erp-intro]').forEach(function (box) {
     var key = 'erp.intro.' + box.getAttribute('data-erp-intro');
-    var details = $('details', box);
-    var state = storage.get(key);
-    if (state === 'dismissed') { box.hidden = true; return; }
-    if (details) {
-      if (state === 'open') { details.open = true; }
-      details.addEventListener('toggle', function () { storage.set(key, details.open ? 'open' : 'closed'); });
-    }
+    if (storage.get(key) === 'dismissed') { box.hidden = true; return; }
     var close = $('[data-erp-intro-close]', box);
     if (close) {
       close.addEventListener('click', function () { storage.set(key, 'dismissed'); box.hidden = true; });
