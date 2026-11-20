@@ -223,17 +223,17 @@ a.app-hero:hover { box-shadow: 0 12px 28px #06513f40; }
 
 /* Formulários */
 .app-form { display: grid; gap: 14px; margin-top: 12px; }
-.app-field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--app-text); }
+.app-field { display: grid; gap: 6px; align-content: start; font-size: 13px; font-weight: 600; color: var(--app-text); }
 .app-field input, .app-field select, .app-field textarea, .app-filter input {
   width: 100%; min-height: var(--app-control); border: 1px solid var(--app-control-border); border-radius: 10px; background: #fff; color: var(--app-text);
   padding: 8px 12px; font: 16px/1.4 var(--app-font); }
 .app-field input:focus, .app-field select:focus, .app-field textarea:focus, .app-filter input:focus { border-color: var(--app-brand); box-shadow: 0 0 0 3px #078b4c33; outline: none; }
 .app-field textarea { resize: vertical; }
-.app-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.app-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 .app-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .app-check input { width: 18px; height: 18px; accent-color: var(--app-brand); }
 .app-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.app-filter label { display: grid; gap: 6px; font-size: 12px; font-weight: 600; color: var(--app-muted); min-width: 0; }
+.app-filter label { display: grid; gap: 6px; align-content: start; font-size: 12px; font-weight: 600; color: var(--app-muted); min-width: 0; }
 .app-filter .app-button { grid-column: 1 / -1; }
 @media (min-width: 600px) { .app-filter { grid-template-columns: 1fr 1fr auto; align-items: end; } .app-filter .app-button { grid-column: auto; } }
 .app-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 18px;
