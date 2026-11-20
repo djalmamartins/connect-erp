@@ -335,7 +335,7 @@ final class ResidentPortal
                     WHERE o.event_key = CONCAT('announcement:', a.id, ':', :u) AND o.status <> 'cancelled'))
             ORDER BY a.send_at DESC, a.id DESC LIMIT 50");
         $stmt->execute(['c' => $link['condominium_id'], 'u' => $link['unit_id']]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'subject' => (string)$r['subject'], 'body' => (string)($r['body'] ?? ''),
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'subject' => (string)$r['subject'], 'body' => \Source\Support\RichText::plain((string)($r['body'] ?? '')),
             'published_at' => (string)$r['send_at']], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 

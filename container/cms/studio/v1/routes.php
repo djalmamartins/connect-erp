@@ -22,7 +22,6 @@ $route->get("/blog/post", "Studio:post");
 $route->post("/blog/post", "Studio:post");
 $route->get("/blog/post/{id}", "Studio:post");
 $route->post("/blog/post/{id}", "Studio:post");
-$route->post("/blog/image", "Studio:postImage");
 $route->get("/notifications/count", "Studio:notificationsCount");
 $route->get("/notifications/list", "Studio:notificationsList");
 $route->get("/notifications/read/{id}", "Studio:notificationRead");

@@ -17,7 +17,7 @@ final class RichHtml
         'a' => ['href', 'target', 'rel'], 'abbr' => [], 'aside' => [], 'b' => [], 'blockquote' => ['cite'],
         'br' => [], 'caption' => [], 'code' => [], 'col' => ['span'], 'colgroup' => ['span'], 'dd' => [],
         'del' => [], 'details' => ['open'], 'div' => [], 'dl' => [], 'dt' => [], 'em' => [], 'figcaption' => [],
-        'figure' => [], 'h1' => [], 'h2' => [], 'h3' => [], 'h4' => [], 'h5' => [], 'h6' => [], 'hr' => [],
+        'figure' => ['data-align'], 'h1' => [], 'h2' => [], 'h3' => [], 'h4' => [], 'h5' => [], 'h6' => [], 'hr' => [],
         'i' => [], 'iframe' => ['src', 'width', 'height', 'allow', 'allowfullscreen', 'loading'],
         'img' => ['src', 'alt', 'width', 'height', 'loading'], 'ins' => [], 'kbd' => [], 'li' => ['value'],
         'mark' => [], 'ol' => ['start', 'type', 'reversed'], 'p' => [], 'pre' => [], 'q' => ['cite'], 's' => [],
@@ -30,11 +30,14 @@ final class RichHtml
     private const DROP = ['script', 'style', 'template', 'noscript', 'object', 'embed', 'applet', 'svg', 'math', 'head', 'title', 'meta', 'link', 'base', 'frame', 'frameset', 'textarea', 'select', 'option'];
 
     private const COMMON = ['class', 'id', 'title', 'hidden', 'lang', 'dir'];
-    private const STYLE = ['text-align', 'color', 'background-color', 'font-weight', 'font-style', 'text-decoration', 'width', 'height', 'max-width', 'vertical-align'];
+    private const STYLE = ['text-align', 'color', 'background-color', 'font-size', 'font-weight', 'font-style', 'text-decoration', 'width', 'height', 'max-width', 'vertical-align'];
     private const URL_ATTRS = ['href', 'src', 'cite'];
     private const VIDEO_HOSTS = ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'];
 
-    public static function clean(?string $html): string
+    /** Barra "basic" do Moves Editor (mensagens, chamados, comunicados): só texto, listas e links (ADR 0610). */
+    private const BASIC = ['a', 'b', 'blockquote', 'br', 'code', 'del', 'div', 'em', 'i', 'li', 'ol', 'p', 'pre', 's', 'span', 'strong', 'sub', 'sup', 'u', 'ul'];
+
+    public static function clean(?string $html, bool $basic = false): string
     {
         $html = (string)$html;
         if (trim($html) === '') {
@@ -49,7 +52,7 @@ final class RichHtml
         if (!$root) {
             return htmlspecialchars(strip_tags($html), ENT_QUOTES, 'UTF-8');
         }
-        self::walk($root);
+        self::walk($root, $basic);
         $out = '';
         foreach (iterator_to_array($root->childNodes) as $child) {
             $out .= $document->saveHTML($child);
@@ -57,7 +60,7 @@ final class RichHtml
         return $out;
     }
 
-    private static function walk(\DOMNode $node): void
+    private static function walk(\DOMNode $node, bool $basic = false): void
     {
         foreach (iterator_to_array($node->childNodes) as $child) {
             if ($child instanceof \DOMComment || $child instanceof \DOMProcessingInstruction || $child instanceof \DOMCdataSection) {
@@ -72,8 +75,12 @@ final class RichHtml
                 $node->removeChild($child);
                 continue;
             }
-            self::walk($child);
-            if (!isset(self::TAGS[$tag])) {
+            if ($basic && in_array($tag, ['img', 'iframe', 'figure', 'table'], true)) {
+                $node->removeChild($child);
+                continue;
+            }
+            self::walk($child, $basic);
+            if (!isset(self::TAGS[$tag]) || ($basic && !in_array($tag, self::BASIC, true))) {
                 while ($child->firstChild) {
                     $node->insertBefore($child->firstChild, $child);
                 }
@@ -96,6 +103,9 @@ final class RichHtml
             $keep = in_array($name, $allowed, true) || str_starts_with($name, 'aria-') || ($name === 'style');
             if ($keep && in_array($name, self::URL_ATTRS, true)) {
                 $keep = $tag === 'iframe' ? self::videoUrl($value) : self::safeUrl($value, $tag === 'img');
+            }
+            if ($keep && $name === 'data-align') {
+                $keep = in_array($value, ['left', 'center', 'right'], true); // alinhamento da imagem no Moves Editor (ADR 0601)
             }
             if ($keep && $name === 'style') {
                 $value = self::style($value);
