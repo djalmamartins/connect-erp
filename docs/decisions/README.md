@@ -404,3 +404,4 @@ referências. Este arquivo é o índice único das duas (issue #9).
 | [0396](../Organic%20Code/decisions/0396-clean-install-command.md) | Instalação limpa do banco da produção (composer db:install) | Aceito |
 | [0397](../Organic%20Code/decisions/0397-email-layout-connect.md) | Layout único dos e-mails na identidade Connect | Aceito |
 | [0600](../Organic%20Code/decisions/0600-boleto-per-payer.md) | Boleto único por responsável (várias unidades do mesmo dono) | Aceito |
+| [0603](../Organic%20Code/decisions/0603-two-factor-login-screen.md) | Tela da verificação em duas etapas igual à do login, com o código em 6 campos e dicas de segurança | Aceito |
