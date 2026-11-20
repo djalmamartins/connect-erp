@@ -150,7 +150,9 @@ final class BankCharges
         $pending = function (bool $count, int $limit = 0) use ($invoiceId): mixed {
             $sql = "FROM erp_invoice_items it JOIN erp_entries e ON e.invoice_item_id = it.id AND e.deleted_at IS NULL
                 WHERE it.invoice_id = :i AND e.paid_on IS NULL AND e.status = 'active'
-                  AND NOT EXISTS (SELECT 1 FROM erp_bank_charges c WHERE c.entry_id = e.id)";
+                  AND NOT EXISTS (SELECT 1 FROM erp_bank_charges c WHERE c.entry_id = e.id)
+                  AND NOT EXISTS (SELECT 1 FROM erp_bank_charge_entries ce JOIN erp_bank_charges c2 ON c2.id = ce.charge_id
+                      WHERE ce.entry_id = e.id AND c2.active_key = 1)";
             $stmt = $this->pdo->prepare($count ? "SELECT COUNT(*) {$sql}" : "SELECT e.id, it.unit_label {$sql} ORDER BY it.unit_label, it.id LIMIT " . max(1, min($limit, 50)));
             $stmt->execute(['i' => $invoiceId]);
             return $count ? (int)$stmt->fetchColumn() : $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -552,6 +554,48 @@ final class BankCharges
         if ((int)$blocked->fetchColumn() === 1) {
             return [];   // "Bloquear unificação de boletos" na unidade (ADR 0311): cada conta com o próprio boleto
         }
+        return array_merge($this->unitCompanions($entry), $this->ownerCompanions($entry));
+    }
+
+    /**
+     * Boleto único por responsável (ADR 0399, pedido do Djalma em 20/11/2026), com a chave "Juntar as unidades do mesmo
+     * responsável" da regra de cobrança ligada: as contas da MESMA fatura de outras unidades cujo responsável pelo
+     * pagamento tem o mesmo CPF/CNPJ do boleto entram junto, cada uma com o rateio da própria unidade. Unidade com
+     * "Bloquear unificação" fica fora. Sem documento do responsável, nada entra (não dá para afirmar que é a mesma pessoa).
+     * @return list<array{id:int|string, amount_cents:int|string}>
+     */
+    private function ownerCompanions(array $entry): array
+    {
+        if (!(new BillingRules($this->pdo))->rule((int)$entry['condominium_id'])['merge_owner_units']) {
+            return [];
+        }
+        $document = preg_replace('/\D+/', '', (string)($this->payer($entry)['document'] ?? '')) ?? '';
+        if (strlen($document) !== 11 && strlen($document) !== 14) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare("SELECT e.* FROM erp_entries e JOIN erp_invoice_items it ON it.id = e.invoice_item_id JOIN erp_units u ON u.id = e.unit_id
+            WHERE it.invoice_id = (SELECT invoice_id FROM erp_invoice_items WHERE id = :item) AND e.condominium_id = :c AND e.unit_id <> :u
+              AND u.block_bill_merge = 0 AND e.nature = 'receita' AND e.status = 'active' AND e.paid_on IS NULL AND e.deleted_at IS NULL
+              AND NOT EXISTS (SELECT 1 FROM " . self::COVERAGE . " cv WHERE cv.entry_id = e.id AND cv.status IN ('pending','registered','paid'))
+            ORDER BY e.unit_id, e.id FOR UPDATE");
+        $stmt->execute(['item' => (int)$entry['invoice_item_id'], 'c' => (int)$entry['condominium_id'], 'u' => (int)$entry['unit_id']]);
+        $found = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $other) {
+            $otherDocument = preg_replace('/\D+/', '', (string)($this->payer($other)['document'] ?? '')) ?? '';
+            if ($otherDocument !== $document) {
+                continue;
+            }
+            $found[] = ['id' => $other['id'], 'amount_cents' => $other['amount_cents']];
+            foreach ($this->unitCompanions($other) as $companion) {
+                $found[] = $companion;
+            }
+        }
+        return $found;
+    }
+
+    /** Rateio e fundo da mesma unidade e competência marcados com o tipo da fatura (ADR 0331). */
+    private function unitCompanions(array $entry): array
+    {
         $stmt = $this->pdo->prepare("SELECT e.id, e.amount_cents FROM erp_entries e
             JOIN erp_invoice_items it ON it.id = :item JOIN erp_invoices i ON i.id = it.invoice_id
             WHERE e.condominium_id = :c AND e.unit_id = :u AND e.competence = :m AND e.bundle_invoice_type_id = i.invoice_type_id
