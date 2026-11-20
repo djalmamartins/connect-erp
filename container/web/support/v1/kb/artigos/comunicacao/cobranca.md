@@ -1,7 +1,7 @@
 ---
 codigo: AP-137
-titulo: Enviar aviso de cobrança
-resumo: Envia por e-mail o aviso de débitos em aberto para as unidades com conta vencida. Só recebe quem autorizou cobrança por e-mail, e a unidade avisada nos últimos 7 dias fica de fora para não repetir.
+titulo: Unidades em atraso e aviso automático de cobrança
+resumo: Mostra as unidades com conta vencida. O aviso de atraso por e-mail agora é automático: sai com 10, 15, 30, 45 e 60 dias de atraso, só para quem autorizou cobrança por e-mail, e cada boleto é avisado uma vez em cada marco.
 categoria: comunicacao
 rota: /comunicacao/cobranca
 menu: Comunicação > Mala direta > Cobrança
@@ -12,7 +12,7 @@ palavras: cobrança, comunicação, AP-137
 rascunho: nao
 ---
 
-Envia por e-mail o aviso de débitos em aberto para as unidades com conta vencida. Só recebe quem autorizou cobrança por e-mail, e a unidade avisada nos últimos 7 dias fica de fora para não repetir.
+Mostra as unidades com conta vencida. O aviso de atraso por e-mail agora é automático: sai com 10, 15, 30, 45 e 60 dias de atraso, só para quem autorizou cobrança por e-mail, e cada boleto é avisado uma vez em cada marco.
 
 ## Onde fica
 
@@ -27,23 +27,18 @@ legenda: Tela Cobrança
 3: main table thead | Colunas da lista
 ```
 
-## Quando enviar
+## Aviso automático por e-mail
 
-1. Preencha **Atraso mínimo (dias)**.
-2. Clique em {{Enviar aviso de cobrança}}.
+O morador recebe por e-mail só o que a Connect decidiu (ADR 0601):
 
-```tela cobranca-form
-rota: /comunicacao/cobranca
-condominio: residencial-jardim-das-acacias
-legenda: Quando enviar
-recorte: main form:not([method=get])
-1: main form:not([method=get]) [name="min_days_late"] | Atraso mínimo (dias) (obrigatório)
-2: main form:not([method=get]) button:has-text("Enviar aviso de cobrança") | Botão {{Enviar aviso de cobrança}}
-```
+- o boleto **no dia do vencimento**, avisando que vence hoje;
+- o **aviso de atraso com 10, 15, 30, 45 e 60 dias**;
+- a **prestação de contas do mês**, entre os dias 5 e 10;
+- o **convite de cadastro** e a **recuperação de senha**, quando ele pede.
 
-### O que preencher
-
-- **Atraso mínimo (dias)** (obrigatório).
+O aviso de cobrança manual desta tela foi desligado. Os avisos de boleto saem sozinhos, uma vez por dia de manhã, e
+cada boleto é avisado uma única vez em cada marco. Boleto pago deixa de ser avisado. Só recebe quem autorizou a
+cobrança por e-mail no cadastro da pessoa.
 
 ## Pesquisar e filtrar
 
@@ -52,16 +47,11 @@ Depois clique em {{Atualizar}}. Para voltar à lista completa, limpe os filtros.
 
 ## O que a lista mostra
 
-Colunas: **Marcar todas as unidades**, **Unidade**, **Contas**, **Em aberto**, **Vencimento mais antigo**, **Atraso** e **Aviso**.
+Colunas: **Unidade**, **Contas**, **Em aberto**, **Vencimento mais antigo**, **Atraso** e **Aviso**.
 
-## Como enviar
+## Para falar com uma unidade
 
-1. Ajuste a **Data de referência** e o **Atraso mínimo (dias)**.
-2. Marque as unidades que vão receber, ou **Marcar todas as unidades**.
-3. Escolha **Agora** ou **Agendar**.
-4. Clique em {{Enviar aviso de cobrança}}.
-
-> Na tela: *Modo só registro: os avisos entram na fila e ficam registrados, mas nenhum e-mail sai. "Enviado" aqui quer dizer processado, não entregue. Ver na Fila de avisos*
+Use o [Atendimento de cobrança](artigo:atendimento-cobranca) para registrar o contato, a promessa de pagamento e a próxima ação.
 
 ## Quem pode usar
 

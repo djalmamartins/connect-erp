@@ -1212,7 +1212,7 @@ a {
     background: none !important
 }
 
-/* Verificação em duas etapas (ADR 0603): mesma moldura do login, código em 6 campos */
+/* Verificação em duas etapas (ADR 0620): mesma moldura do login, código em 6 campos */
 .connect-login__otp {
     margin: 0 0 20px;
     padding: 0;

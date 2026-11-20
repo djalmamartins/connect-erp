@@ -55,6 +55,9 @@ final class NotificationDispatcher
         'resident.invitation' => ['template' => 'resident-invitation', 'subject' => 'Convite para o portal do condomínio', 'audience' => 'resident'],
         // Prestação de contas (ADR 0301): o link do mês ou do ano, para as pessoas da unidade que aceitam comunicado.
         'accountability.published' => ['template' => 'accountability-link', 'subject' => 'Prestação de contas do condomínio', 'audience' => 'notices'],
+        // Boleto no dia do vencimento e atraso com 10, 15, 30, 45 e 60 dias (ADR 0601, ResidentChargeNotices).
+        'charge.due_today' => ['template' => 'charge-due-today', 'subject' => 'Seu boleto do condomínio vence hoje', 'audience' => 'billing'],
+        'charge.overdue' => ['template' => 'charge-overdue', 'subject' => 'Boleto do condomínio em atraso', 'audience' => 'billing'],
     ];
 
     private PDO $pdo;
@@ -187,6 +190,10 @@ final class NotificationDispatcher
             return $this->finish($id, 'failed', 0, 'Envio interrompido repetidas vezes; reenvie manualmente.');
         }
         try {
+            // Só os e-mails permitidos ao morador saem (ADR 0601); um aviso antigo de outro tipo é cancelado.
+            if (!ResidentEmailPolicy::allows((string)$event['event_type'])) {
+                return $this->finish($id, 'cancelled', 0, ResidentEmailPolicy::DISABLED_REASON);
+            }
             $notice = self::NOTICES[$event['event_type']] ?? null;
             if ($notice === null) {
                 return $this->finish($id, 'cancelled', 0, 'Tipo de aviso sem modelo de e-mail.');
@@ -346,6 +353,10 @@ final class NotificationDispatcher
             }
             $context['subject'] = (string)$announcement['subject'];
             $context['body'] = (string)($announcement['body'] ?? '');
+        }
+        // Boleto no vencimento e em atraso (ADR 0601): o botão leva aos boletos do app do morador.
+        if (str_starts_with((string)$event['event_type'], 'charge.')) {
+            $context['app_link'] = app_url('/boletos');
         }
         // Prestação de contas (ADR 0301): o endereço vem do link na hora do envio; revogado não sai.
         if (isset($payload['accountability_link_id'])) {

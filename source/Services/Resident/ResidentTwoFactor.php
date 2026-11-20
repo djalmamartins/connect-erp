@@ -39,7 +39,8 @@ final class ResidentTwoFactor
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->twoFactor = $twoFactor ?? new TwoFactorService($this->pdo);
         $this->throttle = $throttle ?? new LoginThrottle($this->pdo);
-        $this->notify = $notify ?? static fn (object $user, string $event): bool => (new TwoFactorNotice())->send($user, $event);
+        // Morador não recebe e-mail da verificação em duas etapas (ADR 0601): a mudança aparece na tela do app.
+        $this->notify = $notify ?? static fn (object $user, string $event): bool => true;
     }
 
     /**
