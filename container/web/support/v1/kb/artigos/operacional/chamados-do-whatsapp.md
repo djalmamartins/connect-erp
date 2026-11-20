@@ -15,18 +15,9 @@ rascunho: nao
 
 O **Connect Talk** é o atendimento da Connect pelo WhatsApp. O Talk em uso roda num computador no escritório da Connect e conversa com o ERP pela API (veja a última seção). Quando um morador escreve, o Talk descobre de quem é aquele telefone e abre um chamado no Help Desk.
 
-## Abrir o Talk pelo ERP (versão dentro do ERP)
+## Onde fica o Talk
 
-O ERP também tem uma versão do Talk que abre pelo alternador de ambientes. Desde 17/11/2026 ela está **pausada**: o Talk em uso é o do escritório. Os passos abaixo valem se ela voltar a ser usada.
-
-
-1. No topo do ERP, abra o alternador de ambientes e escolha **Talk** (Atendimento por WhatsApp). Ele abre no endereço `talk.` do seu domínio, sem pedir senha de novo.
-2. Se o **Talk** não aparecer, seu usuário não tem a permissão **Atendimento por WhatsApp (Connect Talk)**. Peça ao administrador em [[Configurações > Acesso > Usuários do Sistema]]. Quem já atende chamados recebe essa permissão automaticamente.
-3. Na primeira entrada, o Talk cria o seu perfil de atendente. Quem entra primeiro vira **supervisor**; os demais entram sem setor, e o supervisor escolhe os setores de cada um em **Equipe**, dentro do Talk.
-
-> A senha é a do ERP. Para trocar, use o ERP; o Talk não tem senha própria.
-
->! Se o supervisor desativar você em **Equipe**, o Talk avisa que o acesso está desativado, mesmo com a permissão no ERP.
+O Talk roda só no computador do escritório. Desde 20/11/2026 o ERP não tem mais uma versão própria do Talk: o item **Talk** do alternador de ambientes abre o Talk do escritório, e o ERP só responde às consultas que ele faz pela API.
 
 ## Como o Talk sabe quem está escrevendo
 

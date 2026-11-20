@@ -96,7 +96,7 @@ final class LabSampleYearRemovalTest extends TestCase
             'CREATE TABLE erp_unit_documents (id INTEGER PRIMARY KEY, status TEXT)',
             'CREATE TABLE erp_unit_document_entries (document_id INTEGER, entry_id INTEGER REFERENCES erp_entries (id))',
             'CREATE TABLE erp_notification_outbox (id INTEGER PRIMARY KEY, condominium_id INTEGER, event_type TEXT, event_key TEXT UNIQUE, subject_table TEXT, subject_id INTEGER,
-                payload_json TEXT, created_by INTEGER, available_at TEXT)',
+                payload_json TEXT, created_by INTEGER, available_at TEXT, status TEXT DEFAULT "pending", last_error TEXT, processed_at TEXT)',
             'CREATE TABLE erp_month_closings (id INTEGER PRIMARY KEY, condominium_id INTEGER, competence TEXT, status TEXT)',
             'CREATE TABLE erp_budget_lines (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), year INTEGER, chart_account_id INTEGER REFERENCES erp_chart_accounts(id), month INTEGER, amount_cents INTEGER)',
             'CREATE TABLE erp_accountability_publications (id INTEGER PRIMARY KEY, condominium_id INTEGER REFERENCES condominiums(id), competence TEXT, version INTEGER, status TEXT)',
