@@ -32,7 +32,14 @@ legenda: Tela Índices
 Hoje: multa de 2,00%, juros de 1,00% ao mês e correção pelo IPCA. A quebra do acordo nunca é automática: o ERP só indica e alguém marca.
 
 1. Preencha **Multa (%)**, **Juros (% ao mês)**, **Quebra: parcela atrasada há mais de (dias)** e **ou parcelas vencidas em aberto**.
-2. Clique em {{Salvar regra}}.
+2. Se quiser, marque **Juntar num boleto só as unidades do mesmo responsável** (veja abaixo).
+3. Clique em {{Salvar regra}}.
+
+### Um boleto para quem tem várias unidades
+
+Com **Juntar num boleto só as unidades do mesmo responsável** marcado, o [boleto](artigo:boletos) da fatura de uma unidade leva junto as contas da mesma fatura das outras unidades cujo responsável pelo pagamento tem o mesmo CPF ou CNPJ, cada uma com o seu rateio e fundo. A chave vem desligada: cada unidade tem o seu boleto.
+
+> A unidade marcada com **Bloquear unificação de boletos** no cadastro continua com boleto próprio. Responsável sem CPF ou CNPJ no cadastro também fica fora, porque o sistema não tem como saber que é a mesma pessoa.
 
 ```tela indices-form
 rota: /configuracoes/indices

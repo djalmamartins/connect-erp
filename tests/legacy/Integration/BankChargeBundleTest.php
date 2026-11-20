@@ -9,6 +9,7 @@ use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Banking\BankCharges;
+use Source\Services\Erp\BillingRules;
 use Source\Services\Erp\Banking\BankReturns;
 use Source\Services\Erp\Banking\SandboxBankAdapter;
 use Source\Services\Erp\EntryCancellation;
@@ -92,6 +93,39 @@ final class BankChargeBundleTest extends TestCase
         self::assertSame(50000, $alone['amount_cents'], 'Unidade com unificação bloqueada: a fatura sai sozinha.');
         $rateio102 = (int)$this->pdo->query("SELECT id FROM erp_entries WHERE unit_id = {$this->units['102']} AND amount_cents = 8000")->fetchColumn();
         self::assertSame(8000, $charges->issue($this->admin, $rateio102, $this->bank)['amount_cents'], 'E o rateio dela tem boleto próprio.');
+    }
+
+    public function testUnitsOfTheSamePayerShareOneBoletoWhenTheRuleIsOn(): void
+    {
+        $this->units['103'] = (int)$this->service->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '103', 'type' => 'apartamento'])['id'];
+        $owner = $this->pdo->prepare("INSERT INTO erp_residents (condominium_id, unit_id, unit_label, relationship, name, document, status) VALUES (?, ?, ?, 'owner', ?, ?, 'active')");
+        $owner->execute([$this->alpha, $this->units['101'], '101', 'Pessoa Dona', '111.444.777-35']);
+        $owner->execute([$this->alpha, $this->units['102'], '102', 'Pessoa Dona', '11144477735']);
+        $owner->execute([$this->alpha, $this->units['103'], '103', 'Outra Pessoa', '529.982.247-25']);
+        $rules = new BillingRules($this->pdo);
+        self::assertFalse($rules->rule($this->alpha)['merge_owner_units'], 'Desligado por padrão.');
+        $rules->save($this->admin, $this->alpha, ['merge_owner_units' => true]);
+        self::assertTrue($rules->rule($this->alpha)['merge_owner_units']);
+        $rules->save($this->admin, $this->alpha, ['fine_bp' => 200]);
+        self::assertTrue($rules->rule($this->alpha)['merge_owner_units'], 'Salvar sem o campo mantém a chave.');
+
+        (new RevenueLaunch($this->pdo))->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '80,00',
+            'description' => 'Rateio de obra', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20',
+            'reserve_percent' => '10', 'reserve_account_id' => $this->fee, 'invoice_type_id' => $this->type]);
+        $invoices = new Invoices($this->pdo);
+        $draft = $invoices->prepare($this->admin, ['condominium_id' => $this->alpha, 'invoice_type_id' => $this->type, 'competence' => '2026-11', 'due_on' => '2026-11-10']);
+        $byUnit = array_column($invoices->issue($this->admin, $draft['id'])['items'], 'entry_id', 'unit_id');
+
+        $charges = new BankCharges($this->pdo);
+        $batch = $charges->issueForInvoice($this->admin, (int)$draft['id'], $this->bank);
+        self::assertSame(0, $batch['remaining'], 'O lote termina: a conta que entrou junto não fica pendente para sempre.');
+        $ids = array_values(array_unique(array_column($batch['processed'], 'charge_id')));
+        self::assertCount(2, $ids, 'Um boleto para a dona de 101 e 102 e outro para 103.');
+        $shared = $charges->find($this->admin, $ids[0]);
+        self::assertSame(2 * (50000 + 8000 + 800), $shared['amount_cents'], 'Taxa, rateio e fundo das duas unidades.');
+        self::assertContains((int)$byUnit[$this->units['102']], array_column($shared['bundled'], 'entry_id'));
+        self::assertSame(50000 + 8000 + 800, $charges->find($this->admin, $ids[1])['amount_cents'], 'Outro responsável: boleto próprio.');
+        self::assertSame($ids[0], $charges->issue($this->admin, (int)$byUnit[$this->units['102']], $this->bank)['id'], 'Emitir pela 102 devolve o boleto da dona.');
     }
 
     public function testWithoutTypeOrAfterTheInvoiceBoletoTheRateioKeepsItsOwnBoleto(): void
