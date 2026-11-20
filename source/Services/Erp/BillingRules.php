@@ -103,9 +103,9 @@ final class BillingRules
         $stmt->execute(['c' => $condominiumId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
-            return LateCharges::DEFAULT_RULE + ['condominium_id' => $condominiumId, 'source' => 'builtin'];
+            return LateCharges::DEFAULT_RULE + ['merge_owner_units' => false, 'condominium_id' => $condominiumId, 'source' => 'builtin'];
         }
-        return self::normalize($row) + ['condominium_id' => $condominiumId,
+        return self::normalize($row) + ['merge_owner_units' => (int)($row['merge_owner_units'] ?? 0) === 1, 'condominium_id' => $condominiumId,
             'source' => $row['condominium_id'] === null ? 'default' : 'condominium'];
     }
 
@@ -128,12 +128,17 @@ final class BillingRules
         }
         $before = $this->rule($condominiumId);
         $rule = self::normalize($input);
-        $this->pdo->prepare('INSERT INTO erp_billing_rules (condominium_id, fine_bp, monthly_interest_bp, price_index, breach_days_late, breach_open_installments, updated_by)
-            VALUES (:c, :f, :i, :x, :d, :o, :u)
+        // Juntar no mesmo boleto as unidades do mesmo responsável (ADR 0600): sem o campo, fica como estava.
+        $rule['merge_owner_units'] = array_key_exists('merge_owner_units', $input)
+            ? filter_var($input['merge_owner_units'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true
+            : (bool)$before['merge_owner_units'];
+        $this->pdo->prepare('INSERT INTO erp_billing_rules (condominium_id, fine_bp, monthly_interest_bp, price_index, breach_days_late, breach_open_installments, merge_owner_units, updated_by)
+            VALUES (:c, :f, :i, :x, :d, :o, :m, :u)
             ON DUPLICATE KEY UPDATE fine_bp = VALUES(fine_bp), monthly_interest_bp = VALUES(monthly_interest_bp), price_index = VALUES(price_index),
-                breach_days_late = VALUES(breach_days_late), breach_open_installments = VALUES(breach_open_installments), updated_by = VALUES(updated_by)')
+                breach_days_late = VALUES(breach_days_late), breach_open_installments = VALUES(breach_open_installments),
+                merge_owner_units = VALUES(merge_owner_units), updated_by = VALUES(updated_by)')
             ->execute(['c' => $condominiumId, 'f' => $rule['fine_bp'], 'i' => $rule['monthly_interest_bp'], 'x' => $rule['price_index'],
-                'd' => $rule['breach_days_late'], 'o' => $rule['breach_open_installments'], 'u' => (int)$user->id]);
+                'd' => $rule['breach_days_late'], 'o' => $rule['breach_open_installments'], 'm' => $rule['merge_owner_units'] ? 1 : 0, 'u' => (int)$user->id]);
         $id = (int)$this->pdo->query('SELECT id FROM erp_billing_rules WHERE scope_key = ' . (int)($condominiumId ?? 0))->fetchColumn();
         Audit::record('update', 'erp_billing_rules', $id, array_intersect_key($before, $rule), $rule);
         return $this->rule($condominiumId);
