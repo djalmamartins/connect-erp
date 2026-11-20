@@ -124,7 +124,7 @@ class Support extends Controller
     }
 
     /**
-     * GET /suporte/widget/equipe (ADR 0629): o que o botão do SAC mostra antes de abrir: no horário e quem está online.
+     * GET /suporte/widget/equipe (ADR 0631): o que o botão do SAC mostra antes de abrir: no horário e quem está online.
      * Público e sem cookie: só primeiro nome e foto de quem autorizou. Cache curto para não pesar no banco.
      */
     public function widgetTeam(): void

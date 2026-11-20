@@ -128,7 +128,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Vistoria presencial (CN-001) com dados reais: InspectionService → MariaDB, o mesmo
     // serviço da API /api/v1/inspections. Rotas fixas antes de /{id}.
-    // Meu Dia (CN-010, ADR 0628): agenda e tarefas do dia de quem está logado.
+    // Meu Dia (CN-010, ADR 0630): agenda e tarefas do dia de quem está logado.
     $route->get("/meu-dia", "MyDayScreens:index");
     $route->post("/meu-dia/compromissos", "MyDayScreens:store");
     $route->post("/meu-dia/compromissos/{id}/situacao", "MyDayScreens:status");

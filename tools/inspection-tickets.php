@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Vistoria que vira chamado (ADR 0628): abre no SAC o chamado das vistorias que vencem em breve ou venceram.
+ * Vistoria que vira chamado (ADR 0630): abre no SAC o chamado das vistorias que vencem em breve ou venceram.
  * Rodar uma vez por dia (scheduler do lab às 07:00; na hospedagem, tools/hosting/cron.sh daily).
  * Rodar de novo no mesmo dia é seguro: um chamado por plano e por data devida.
  */

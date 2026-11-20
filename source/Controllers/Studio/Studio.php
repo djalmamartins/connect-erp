@@ -1298,7 +1298,7 @@ class Studio extends Controller
     public function agenda(?array $data): void
     {
         $user = $this->guard("support.manage");
-        (new \Source\Services\Support\SacDesk())->touch($user); // balão do SAC (ADR 0629)
+        (new \Source\Services\Support\SacDesk())->touch($user); // balão do SAC (ADR 0631)
         $pdo = Connect::getInstance();
         if (!empty($data["action"])) {
             if (!csrf_verify($data)) { $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return; }
@@ -1362,7 +1362,7 @@ class Studio extends Controller
     public function tickets(?array $data): void
     {
         $user = $this->guard("support.manage");
-        (new \Source\Services\Support\SacDesk())->touch($user); // balão do SAC (ADR 0629)
+        (new \Source\Services\Support\SacDesk())->touch($user); // balão do SAC (ADR 0631)
         $pdo = Connect::getInstance();
         if (!empty($data["action"])) {
             if (!csrf_verify($data)) { $this->jsonMessage("Sessão expirada. Atualize a página.", "error"); return; }

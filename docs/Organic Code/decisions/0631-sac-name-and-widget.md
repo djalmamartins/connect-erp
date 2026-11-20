@@ -1,9 +1,9 @@
-# 0629 — SAC: Help Desk passa a se chamar SAC e o balão mostra quem está online
+# 0631 — SAC: Help Desk passa a se chamar SAC e o balão mostra quem está online
 
 - Status: Aceito
 - Data: 20/11/2026
 - Relacionados: ADR 0034/0305 (todo chamado num lugar só), 0355 (widget do atendimento), 0141 (Central de Ajuda),
-  0604 (LGPD/CDC no site), 0628 (Meu Dia, onde fica a autorização).
+  0604 (LGPD/CDC no site), 0630 (Meu Dia, onde fica a autorização).
 
 ## Contexto
 Pedido do Djalma (20/11/2026), depois do estudo "Meu Dia, vistorias e SAC": trocar o nome Help Desk por SAC em tudo que

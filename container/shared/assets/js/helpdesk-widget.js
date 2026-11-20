@@ -1,6 +1,6 @@
 (function(){
     'use strict';
-    // Botão do SAC (ADR 0355, visual ADR 0629): cinza-claro com dourado; mostra quem está online no horário.
+    // Botão do SAC (ADR 0355, visual ADR 0631): cinza-claro com dourado; mostra quem está online no horário.
     if(window.__movesHelpDeskWidget)return;
     window.__movesHelpDeskWidget=true;
     var script=document.currentScript;

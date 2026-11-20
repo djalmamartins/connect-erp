@@ -609,7 +609,7 @@ final class InspectionService
             throw InspectionError::conflict('A vistoria já foi concluída ou cancelada.');
         }
         Audit::record('update', 'inspections', $inspectionId, ['status' => 'in_progress'], ['status' => 'completed']);
-        // Resolve o chamado da vistoria e abre o das pendências (ADR 0628). Falha aqui não desfaz a conclusão.
+        // Resolve o chamado da vistoria e abre o das pendências (ADR 0630). Falha aqui não desfaz a conclusão.
         try {
             (new InspectionTickets($this->pdo))->completed($user, $inspectionId);
         } catch (\Throwable $error) {

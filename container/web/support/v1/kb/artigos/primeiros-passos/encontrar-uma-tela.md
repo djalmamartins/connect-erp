@@ -1,14 +1,14 @@
 ---
 codigo:
 titulo: Encontrar uma tela pelo menu ou pela pesquisa
-resumo: Como usar o menu lateral, a pesquisa de páginas (Ctrl + K), as notificações e o botão de ajuda que abre o tutorial da tela em que você está.
+resumo: Como usar o menu lateral, a troca de sistema (Studio, ERP, Help Desk), a pesquisa de páginas (Ctrl + K), as notificações e o botão de ajuda que abre o tutorial da tela em que você está.
 categoria: primeiros-passos
 rota: /dashboard
 menu:
 icone: navigate-outline
 situacao: guia
 relacionados: escolher-o-condominio, pedir-ajuda, dashboard
-palavras: menu, pesquisar página, aviso de sucesso, salvo com sucesso, atalho, ctrl k, ajuda desta página, notificações, navegação
+palavras: menu, trocar de sistema, ambientes connect, studio, help desk, pesquisar página, aviso de sucesso, salvo com sucesso, atalho, ctrl k, ajuda desta página, notificações, navegação
 manual: sim
 rascunho: nao
 ---
@@ -31,6 +31,32 @@ legenda: Menu lateral e barra superior
 - Clique no nome de um assunto para abrir as telas dele. A tela aberta fica destacada no menu.
 - Nos tutoriais desta Central, o caminho no menu aparece assim: [[Cadastros > Unidades]].
 - No celular, o menu fica escondido no botão de três linhas, no canto superior esquerdo.
+
+## Trocar de sistema
+
+No alto do menu lateral, o quadro **ERP / Connect ERP** mostra em que sistema você está. Clique nele para abrir **Ambientes Connect** e ir para outro sistema da Connect sem entrar de novo:
+
+- **Studio**: conteúdo do site, usuários e configurações.
+- **ERP**: a gestão dos condomínios (este sistema).
+- **Help Desk**: a fila de chamados da equipe.
+- **Moradores**: o aplicativo do morador.
+- **Talk**: o atendimento por WhatsApp, para quem atende por lá.
+- **Site**: o site institucional.
+
+O sistema em que você está fica destacado e marcado **Atual**. O quadro é o mesmo no ERP, no Studio e no Help Desk; só a cor muda (verde no ERP, roxo no Studio, azul no Help Desk). Cada pessoa vê só os sistemas liberados para ela.
+
+```tela menu-ambientes
+rota: /dashboard
+condominio: residencial-jardim-das-acacias
+legenda: Troca de sistema aberta
+antes: clicar .cx-envswitch__toggle
+antes: esperar 300
+1: .cx-envswitch__toggle | Sistema em que você está: clique para trocar
+2: .cx-envswitch__panel | Ambientes Connect: escolha o sistema
+3: .cx-envswitch__item.is-current | Sistema atual
+```
+
+> Também dá para abrir pelo teclado: com o quadro em foco, aperte a seta para baixo, escolha com as setas e aperte **Enter**. **Esc** fecha.
 
 ## Pesquisar uma página
 

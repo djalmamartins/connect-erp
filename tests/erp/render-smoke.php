@@ -202,7 +202,7 @@ foreach ($catalog['pages'] as $id => $page) {
         continue;
     }
     if ($id === 'CN-010') {
-        // Meu Dia (ADR 0628): semana em círculos, agenda, Para agendar, painel da visita, escape e CSRF.
+        // Meu Dia (ADR 0630): semana em círculos, agenda, Para agendar, painel da visita, escape e CSRF.
         $evil = '<b>Residencial</b>';
         $week = [];
         foreach (range(23, 29) as $i => $d) {
@@ -255,7 +255,7 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, 'Interfone <script>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Unidade <i>'), 'CN-004: escape');
         $assert(str_contains($html, 'name="condominium_id"') && str_contains($html, 'name="unit_id"') && str_contains($html, 'name="requester_name"') && str_contains($html, '<option value="2" selected>'), 'CN-004: condomínio, unidade e solicitante no formulário');
         $assert(str_contains($html, 'CH261109ABCD') && str_contains($html, 'Unid. B - 101') && str_contains($html, '/ambiente/helpdesk'), 'CN-004: lista com contexto e link do SAC');
-        $assert(str_contains($html, 'erp-envswitch') && str_contains($html, 'SAC') && str_contains($html, 'Studio'), 'sidebar: alternador de ambientes');
+        $assert(str_contains($html, 'cx-envswitch') && str_contains($html, 'Ambientes Connect') && str_contains($html, 'SAC') && str_contains($html, 'Studio'), 'sidebar: alternador de ambientes');
         $assert(str_contains($html, 'SLA vencido') && str_contains($html, 'Vencido') && str_contains($html, '/operacional/chamados/lote') && str_contains($html, 'Ana &lt;Equipe&gt;')
             && str_contains($html, 'Ocorrência #4'), 'CN-004: fila como no Help Desk (contadores, SLA, lote, responsável)');
         $save('cn-004', $html);

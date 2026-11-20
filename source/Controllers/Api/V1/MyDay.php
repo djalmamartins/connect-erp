@@ -13,7 +13,7 @@ use Source\Services\Erp\MyDayError;
 use Source\Support\Access;
 
 /**
- * API REST do Meu Dia (CN-010, ADR 0628; docs/api/openapi.yaml, tag MyDay). As mesmas regras da tela:
+ * API REST do Meu Dia (CN-010, ADR 0630; docs/api/openapi.yaml, tag MyDay). As mesmas regras da tela:
  * cada pessoa vê o próprio dia; outra pessoa só com erp.myday.team. Sessão e CSRF no middleware ApiAuthenticated.
  */
 final class MyDay

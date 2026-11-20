@@ -7416,7 +7416,7 @@ paths:
     get:
       operationId: getMyDay
       tags: [MyDay]
-      summary: Meu Dia (ADR 0628) — compromissos, chamados para agendar, aguardando, vistorias e vencimentos
+      summary: Meu Dia (ADR 0630) — compromissos, chamados para agendar, aguardando, vistorias e vencimentos
       description: Cada pessoa vê o próprio dia; person_id de outra pessoa exige erp.myday.team. A semana vai de segunda a domingo.
       security: [{ session: [] }]
       parameters:

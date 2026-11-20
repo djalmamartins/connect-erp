@@ -12,6 +12,8 @@ declare(strict_types=1);
  *   php tools/help.php screens [--only a,b]   lista os prints em JSON (usado por tools/help/shots.mjs)
  *   php tools/help.php explicar               escreve em cada artigo a seção "O que acontece por trás"
  *                                             a partir das explicações das telas (ADR 0309)
+ *   php tools/help.php resumos                gera source/Services/Help/page-summaries.php (resumo e
+ *                                             seções de cada artigo) para o "Sobre esta tela" (ADR 0625)
  *   php tools/help.php sync                   publica a base na Central de Ajuda (/suporte)
  *   php tools/help.php stats                  quantos artigos, prints e páginas cobertas
  *
@@ -119,6 +121,17 @@ switch ($command) {
         echo $changed . " artigo(s) atualizado(s). Rode php tools/help.php check.\n";
         exit(0);
 
+    case 'resumos':
+        // "Sobre esta tela" (ADR 0625): o resumo e as seções do artigo de cada tela, para o quadro do ERP.
+        $content = PageGuides::buildSummaries($kb, $codes);
+        $current = is_file(PageGuides::SUMMARIES_FILE) ? (string)file_get_contents(PageGuides::SUMMARIES_FILE) : '';
+        if ($current !== $content) {
+            file_put_contents(PageGuides::SUMMARIES_FILE, $content);
+            echo "atualizado source/Services/Help/page-summaries.php\n";
+        }
+        echo PageGuides::coverage($codes) . ' de ' . count($codes) . " páginas do menu com o quadro \"Sobre esta tela\".\n";
+        exit(0);
+
     case 'screens':
         $only = [];
         foreach ($options as $index => $option) {
@@ -159,6 +172,6 @@ switch ($command) {
         exit(0);
 
     default:
-        echo "Uso: php tools/help.php check|scaffold|escrever|explicar|screens|sync|stats\n";
+        echo "Uso: php tools/help.php check|scaffold|escrever|explicar|resumos|screens|sync|stats\n";
         exit($command === 'help' ? 0 : 1);
 }

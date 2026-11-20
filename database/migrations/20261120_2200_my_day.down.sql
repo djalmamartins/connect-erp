@@ -1,4 +1,4 @@
--- Reverte 20261120_2200_my_day (ADR 0628). Os chamados já abertos continuam no SAC.
+-- Reverte 20261120_2200_my_day (ADR 0630). Os chamados já abertos continuam no SAC.
 DELETE rp FROM `access_role_permissions` rp JOIN `access_permissions` p ON p.id = rp.permission_id WHERE p.slug = 'erp.myday.team';
 DELETE o FROM `access_user_overrides` o JOIN `access_permissions` p ON p.id = o.permission_id WHERE p.slug = 'erp.myday.team';
 DELETE FROM `access_permissions` WHERE slug = 'erp.myday.team';

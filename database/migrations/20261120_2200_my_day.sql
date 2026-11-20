@@ -1,11 +1,11 @@
--- Meu Dia e vistoria que vira chamado (ADR 0628). Idempotente.
+-- Meu Dia e vistoria que vira chamado (ADR 0630). Idempotente.
 -- inspection_plans.responsible_id: quem recebe o chamado da vistoria do plano (vazio = sem responsável fixo).
 -- inspection_plan_tickets: um chamado por plano e por data devida; a chave única impede chamado repetido
 --   quando a rotina diária roda mais de uma vez. inspection_id liga a vistoria que fechou o chamado.
 -- studio_calendar_events.condominium_id/ticket_id: o compromisso da agenda (já existente no Studio) pode ser de um
 --   condomínio e agendar um chamado, para aparecer no Meu Dia e sair da lista "Para agendar".
 ALTER TABLE `inspection_plans`
-    ADD COLUMN IF NOT EXISTS `responsible_id` int unsigned DEFAULT NULL COMMENT 'Quem recebe o chamado da vistoria (ADR 0628)' AFTER `status`,
+    ADD COLUMN IF NOT EXISTS `responsible_id` int unsigned DEFAULT NULL COMMENT 'Quem recebe o chamado da vistoria (ADR 0630)' AFTER `status`,
     ADD CONSTRAINT `fk_iplan_responsible` FOREIGN KEY IF NOT EXISTS (`responsible_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS `inspection_plan_tickets` (
@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS `inspection_plan_tickets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE `studio_calendar_events`
-    ADD COLUMN IF NOT EXISTS `condominium_id` int unsigned DEFAULT NULL COMMENT 'Condomínio do compromisso (ADR 0628)' AFTER `assigned_to`,
-    ADD COLUMN IF NOT EXISTS `ticket_id` int unsigned DEFAULT NULL COMMENT 'Chamado agendado por este compromisso (ADR 0628)' AFTER `condominium_id`,
+    ADD COLUMN IF NOT EXISTS `condominium_id` int unsigned DEFAULT NULL COMMENT 'Condomínio do compromisso (ADR 0630)' AFTER `assigned_to`,
+    ADD COLUMN IF NOT EXISTS `ticket_id` int unsigned DEFAULT NULL COMMENT 'Chamado agendado por este compromisso (ADR 0630)' AFTER `condominium_id`,
     ADD INDEX IF NOT EXISTS `idx_calendar_condominium` (`condominium_id`),
     ADD INDEX IF NOT EXISTS `idx_calendar_ticket` (`ticket_id`);
 

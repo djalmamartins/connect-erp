@@ -89,7 +89,7 @@ final class InspectionServiceTest extends TestCase
 
         $queued = $report->queue($inspector, $done, ['sindico@test.local', 'conselho@test.local'], 'Segue a vistoria.');
         self::assertSame(2, $queued);
-        // O chamado das pendências (ADR 0628) também avisa por e-mail; aqui só interessam os envios do relatório.
+        // O chamado das pendências (ADR 0630) também avisa por e-mail; aqui só interessam os envios do relatório.
         $rows = $this->pdo->query("SELECT recipient_email, attachments_json, body FROM mail_queue WHERE attachments_json IS NOT NULL ORDER BY id")->fetchAll(\PDO::FETCH_ASSOC);
         self::assertSame(['sindico@test.local', 'conselho@test.local'], array_column($rows, 'recipient_email'));
         $attachments = json_decode((string)$rows[0]['attachments_json'], true);

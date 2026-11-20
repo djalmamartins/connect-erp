@@ -11,7 +11,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Erp\MyDay;
 use Source\Services\Erp\MyDayError;
 
-/** Meu Dia (ADR 0628) no MariaDB de teste: o que entra no dia de cada pessoa, escopo e compromissos. */
+/** Meu Dia (ADR 0630) no MariaDB de teste: o que entra no dia de cada pessoa, escopo e compromissos. */
 final class MyDayTest extends TestCase
 {
     private MyDay $service;

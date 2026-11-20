@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Services\Erp;
 
-/** Erro de regra do Meu Dia (ADR 0628) com o status HTTP, usado igual pela tela e pela API. */
+/** Erro de regra do Meu Dia (ADR 0630) com o status HTTP, usado igual pela tela e pela API. */
 final class MyDayError extends \RuntimeException
 {
     /** @param array<string, string> $errors campo => mensagem */

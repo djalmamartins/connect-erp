@@ -202,7 +202,7 @@ CONNECT_PAGES = [
      "route": "/condominios/honorarios", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-008-honorarios.md", "reference": "",
      "note": "Contrato de administração da Connect com cada condomínio, total mensal e pedido da nota fiscal (pedido do proprietário, 14/11/2026)"},
-    # Meu Dia: agenda e tarefas do dia de cada pessoa da equipe (ADR 0628).
+    # Meu Dia: agenda e tarefas do dia de cada pessoa da equipe (ADR 0630).
     {"id": "CN-010", "name": "Meu Dia", "group": "dashboard", "section": "", "order": 100,
      "route": "/meu-dia", "kind": "dashboard", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-010-meu-dia.md", "reference": "",

@@ -81,4 +81,38 @@ final class HelpPageGuidesTest extends TestCase
         self::assertStringContainsString('data-erp-intro-close', $template);
         self::assertStringContainsString("'dismissed'", (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/assets/js/erp.js'));
     }
+
+    /** ADR 0625: o quadro em todas as páginas do menu, sempre fechado ao abrir a tela. */
+    public function testEveryMenuPageHasTheIntroAndItAlwaysStartsClosed(): void
+    {
+        $codes = array_keys(KnowledgeBase::erpCatalog()['pages']);
+        self::assertSame(count($codes), PageGuides::coverage($codes), 'toda página do menu tem o quadro');
+        foreach ($codes as $code) {
+            $intro = PageGuides::forPage($code);
+            self::assertNotNull($intro, "{$code} sem o quadro");
+            self::assertGreaterThanOrEqual(20, mb_strlen($intro['faz']), "{$code} com texto curto");
+            foreach ($intro['topicos'] as $topic) {
+                self::assertMatchesRegularExpression('/^[a-z0-9-]+$/', $topic['id']);
+                self::assertNotContains($topic['title'], ['Onde fica', 'Quem pode usar']);
+            }
+        }
+        // Escrita à mão vale mais que o resumo do artigo; tela sem nada não mostra quadro.
+        self::assertSame(PageGuides::for('AP-004')['faz'], PageGuides::forPage('AP-004')['faz']);
+        self::assertNotSame([], PageGuides::forPage('AP-004')['por_tras']);
+        self::assertNull(PageGuides::forPage('XX-999'));
+        self::assertNull(PageGuides::forPage(null));
+        // O arquivo gerado está igual ao que os artigos geram hoje.
+        self::assertSame(
+            str_replace("\r\n", "\n", (string)file_get_contents(PageGuides::SUMMARIES_FILE)),
+            PageGuides::buildSummaries(new KnowledgeBase(), $codes)
+        );
+
+        $template = (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/components/layout/page-intro.php');
+        self::assertStringContainsString('PageGuides::forPage(', $template);
+        self::assertMatchesRegularExpression('/<details class="erp-page-intro__box">/', $template, 'nasce fechada: <details> sem open');
+        self::assertStringNotContainsString('<details class="erp-page-intro__box" open', $template);
+        $js = (string)file_get_contents(dirname(__DIR__, 3) . '/container/erp/connect/v1/assets/js/erp.js');
+        self::assertStringNotContainsString("state === 'open'", $js, 'não reabre sozinha quem abriu antes');
+        self::assertStringNotContainsString('details.open = true', $js);
+    }
 }

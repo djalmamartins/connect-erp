@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Source\Services\Support\SacDesk;
 
-/** Regras puras do balão do SAC (ADR 0629): horário de atendimento e o texto mostrado no site. */
+/** Regras puras do balão do SAC (ADR 0631): horário de atendimento e o texto mostrado no site. */
 final class SacDeskRulesTest extends TestCase
 {
     public function testHoursComeFromTheSettingAndFallBackWhenInvalid(): void

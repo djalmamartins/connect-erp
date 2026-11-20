@@ -156,7 +156,7 @@ class User extends Model
         $this->data = (object)filter_var_array((array)$this->data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         // Campos opcionais tipados não podem ser persistidos como string vazia
         // em bancos executando com modo SQL estrito.
-        // sac_*: presença e autorização do balão do SAC (ADR 0629), nulas até a pessoa usar o atendimento.
+        // sac_*: presença e autorização do balão do SAC (ADR 0631), nulas até a pessoa usar o atendimento.
         foreach (['datebirth', 'session_condo', 'sac_seen_at', 'sac_public_at'] as $nullable) {
             if (($this->{$nullable} ?? null) === "") {
                 $this->{$nullable} = null;

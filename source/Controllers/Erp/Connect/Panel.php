@@ -558,7 +558,7 @@ final class Panel extends Controller
         $navGroup = ErpNav::groupOf($nav, $pageId) ?? (isset($nav[(string)$group]) ? $group : null);
         $icons = require self::THEME . 'components/layout/icons.php';
         $dashboard = DemoData::get('dashboard');
-        (new SacDesk())->touch($user); // balão do SAC (ADR 0629): quem atende e está no ERP conta como online
+        (new SacDesk())->touch($user); // balão do SAC (ADR 0631): quem atende e está no ERP conta como online
 
         return array_merge([
             'head' => $this->seo->render($title . ' · Connect ERP', 'ERP da administradora Connect.', erp_url(), theme('/assets/images/favicon.png'), false),

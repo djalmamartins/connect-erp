@@ -10,7 +10,7 @@
 #   ADR 0315), só no sino da equipe; cada contato é lembrado uma vez.
 # - No mesmo horário: boleto que vence hoje e atraso com 10, 15, 30, 45 e 60 dias para o morador
 #   (tools/resident-charge-emails.php, ADR 0601); cada boleto é avisado uma vez por marco.
-# - No mesmo horário: chamado no SAC das vistorias que vencem em breve (tools/inspection-tickets.php, ADR 0628).
+# - No mesmo horário: chamado no SAC das vistorias que vencem em breve (tools/inspection-tickets.php, ADR 0630).
 # - De hora em hora: consulta dos boletos em aberto nos bancos reais (tools/bank-charges-sync.php, ADR 0156).
 #   Dá baixa do que foi pago sem depender do webhook (que precisa de endereço público).
 set -u

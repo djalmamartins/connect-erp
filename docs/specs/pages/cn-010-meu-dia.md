@@ -2,7 +2,7 @@
 
 Origem: pedido do proprietário em 20/11/2026 (estudo "Meu Dia, vistorias e SAC", referência visual enviada por ele).
 Não existe no inventário APControle; é página própria da Connect.
-Rota: `/erp/meu-dia` (menu, logo abaixo do Dashboard). Decisão: ADR 0628.
+Rota: `/erp/meu-dia` (menu, logo abaixo do Dashboard). Decisão: ADR 0630.
 API: `GET /api/v1/my-day`, `GET /api/v1/my-day/visit/{condominium_id}`, `POST /api/v1/my-day/events`, `POST /api/v1/my-day/events/{id}/status`.
 
 ## Regras implementadas

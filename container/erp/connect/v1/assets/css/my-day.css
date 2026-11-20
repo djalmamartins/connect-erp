@@ -1,4 +1,4 @@
-/* Meu Dia (CN-010, ADR 0628). Complementa erp.css: verde do ERP nas ações, dourado Connect só em detalhes (o dia de hoje). */
+/* Meu Dia (CN-010, ADR 0630). Complementa erp.css: verde do ERP nas ações, dourado Connect só em detalhes (o dia de hoje). */
 .md-flash { margin-bottom: var(--erp-space-4); }
 .md-person { display: inline-flex; gap: 6px; align-items: center; }
 .md-person .erp-select { min-width: 180px; }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Meu Dia (CN-010, ADR 0628): agenda do dia e da semana, o que falta agendar e o painel da visita.
+ * Meu Dia (CN-010, ADR 0630): agenda do dia e da semana, o que falta agendar e o painel da visita.
  * @var array<string, mixed> $day MyDay::day()
  * @var ?array<string, mixed> $panel MyDay::visitPanel()
  * @var string $view dia|semana
@@ -10,7 +10,7 @@
  * @var array<string,string> $errors @var array<string,mixed> $old
  * @var ?array<string,mixed> $schedule chamado escolhido em "Agendar"
  * @var string $longDate @var string $base @var bool $self
- * @var ?bool $sacPublic null quando a pessoa não atende chamados (ADR 0629)
+ * @var ?bool $sacPublic null quando a pessoa não atende chamados (ADR 0631)
  */
 use Source\Services\Erp\MyDay;
 

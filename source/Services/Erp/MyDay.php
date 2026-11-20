@@ -15,7 +15,7 @@ use Source\Support\Access;
 use Source\Support\Audit;
 
 /**
- * Meu Dia (ADR 0628): o dia de trabalho de uma pessoa da equipe, montado do que o sistema já tem.
+ * Meu Dia (ADR 0630): o dia de trabalho de uma pessoa da equipe, montado do que o sistema já tem.
  *
  * - Compromissos: a agenda que já existe (studio_calendar_events), do responsável ou, sem responsável, de quem criou.
  * - Para agendar: chamados atribuídos à pessoa, em aberto ou em atendimento, sem compromisso marcado.

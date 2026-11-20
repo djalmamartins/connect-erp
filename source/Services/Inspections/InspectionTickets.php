@@ -15,7 +15,7 @@ use Source\Services\Support\TicketService;
 use Source\Support\AppLogger;
 
 /**
- * Vistoria que vira chamado no SAC (ADR 0628).
+ * Vistoria que vira chamado no SAC (ADR 0630).
  *
  * - run(): rotina diária. Para cada plano ativo cuja vistoria vence em breve ou já venceu, abre um chamado
  *   "Vistoria ..." para o responsável do plano. Um chamado por plano e por data devida (chave única), então

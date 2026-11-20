@@ -110,7 +110,7 @@ $this->insert('components/layout/page-head', [
             </div>
             <div class="erp-field">
                 <label for="tk-files"><?= $icon('file', 'erp-icon--sm') ?> Anexar arquivos</label>
-                <input class="erp-input" id="tk-files" type="file" name="attachments[]" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.txt">
+                <input class="erp-input" id="tk-files" type="file" data-cx-upload-size="compact" name="attachments[]" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.txt">
             </div>
             <div class="erp-form__actions">
                 <label class="erp-check"><input type="checkbox" name="resolve_after" value="1"> Resolver após enviar</label>

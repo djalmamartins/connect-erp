@@ -16,7 +16,7 @@ use Source\Services\Support\SacDesk;
 use Source\Support\Access;
 
 /**
- * ERP v1 — Meu Dia (CN-010, ADR 0628): agenda do dia e da semana, o que falta agendar e o painel da visita,
+ * ERP v1 — Meu Dia (CN-010, ADR 0630): agenda do dia e da semana, o que falta agendar e o painel da visita,
  * de quem está logado (ou, com erp.myday.team, de alguém da equipe). Regras em MyDay, as mesmas da API
  * /api/v1/my-day. Formulários com CSRF e padrão PRG, sem depender de JavaScript.
  */
@@ -77,7 +77,7 @@ final class MyDayScreens extends Controller
             'base' => self::BASE,
             'self' => (int)$owner->id === (int)$user->id,
             // "Agendar" num chamado da lista abre o formulário já preenchido com ele.
-            // Balão do SAC (ADR 0629): só quem atende escolhe se aparece como online no site.
+            // Balão do SAC (ADR 0631): só quem atende escolhe se aparece como online no site.
             'sacPublic' => $this->sacPublic($user),
             'schedule' => array_values(array_filter($day['to_schedule'], static fn (array $t): bool => $t['id'] === (int)($_GET['agendar'] ?? 0)))[0] ?? null,
         ], 'Meu Dia'));

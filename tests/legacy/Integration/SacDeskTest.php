@@ -9,7 +9,7 @@ use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\Support\SacDesk;
 
-/** Balão do SAC (ADR 0629) no MariaDB de teste: quem aparece online, horário e consentimento. */
+/** Balão do SAC (ADR 0631) no MariaDB de teste: quem aparece online, horário e consentimento. */
 final class SacDeskTest extends TestCase
 {
     private SacDesk $desk;

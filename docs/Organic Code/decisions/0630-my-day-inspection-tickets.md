@@ -1,10 +1,10 @@
-# 0628 — Meu Dia e vistoria que vira chamado
+# 0630 — Meu Dia e vistoria que vira chamado
 
 - Status: Aceito
 - Data: 20/11/2026
 - Relacionados: ADR 0013 (vistoria presencial e checklist de chegada), 0034/0305 (todo chamado no Help Desk), 0398 (menu novo),
   0141/0309 (Central de Ajuda e "Sobre esta tela").
-- Numeração: faixa avulsa 0600–0799. 0624 e 0627 já estavam usados na main e em PRs abertos (#686, #687, #689).
+- Numeração: faixa avulsa 0600–0799. 0624, 0627, 0628 e 0629 já estavam usados na main e em PRs abertos; este fica com 0630 e o SAC com 0631.
 
 ## Contexto
 Pedido do Djalma (20/11/2026), depois do estudo "Meu Dia, vistorias e SAC" (Claude Doc), com o desenho do Meu Dia que ele

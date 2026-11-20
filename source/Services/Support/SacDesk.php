@@ -14,7 +14,7 @@ use Source\Support\Access;
 use Source\Support\Audit;
 
 /**
- * Balão do SAC (ADR 0629): quem da equipe está online, se o atendimento está no horário e o WhatsApp.
+ * Balão do SAC (ADR 0631): quem da equipe está online, se o atendimento está no horário e o WhatsApp.
  *
  * - Online: pessoa da equipe com support.manage que abriu uma tela do ERP ou do SAC nos últimos
  *   5 minutos E que autorizou aparecer no balão (sac_public). Sem autorização, ela atende normalmente, só não aparece.
