@@ -16,6 +16,7 @@ use Source\Support\AppLogger;
 use Source\Support\Audit;
 use Source\Support\Email;
 use Source\Support\MailTemplate;
+use Source\Support\RichText;
 
 /**
  * Abertura de chamados (ADR 0034): uma porta só para todas as origens.
@@ -68,6 +69,17 @@ final class TicketService
      * @return array<string, mixed>
      * @throws TicketError
      */
+    /**
+     * Mensagem do Moves Editor: até 10.000 caracteres de texto e o HTML cabendo na coluna TEXT (ADR 0610).
+     * @throws TicketError
+     */
+    public static function checkSize(string $message): void
+    {
+        if (mb_strlen(RichText::plain($message)) > 10000 || strlen($message) > 60000) {
+            throw new TicketError('message', 'A mensagem ficou grande demais (até 10.000 caracteres). Encurte e envie de novo.');
+        }
+    }
+
     public static function normalize(array $input, string $origin): array
     {
         if (!in_array($origin, self::ORIGINS, true)) {
@@ -78,7 +90,7 @@ final class TicketService
 
         $data = [
             'subject' => $text('subject', 180),
-            'message' => trim(strip_tags((string)($input['message'] ?? ''))),
+            'message' => RichText::store((string)($input['message'] ?? '')), // Moves Editor (ADR 0610)
             'area' => in_array($input['area'] ?? '', self::AREAS, true) ? $input['area'] : 'general',
             'priority' => in_array($input['priority'] ?? '', self::PRIORITIES, true) ? $input['priority'] : 'medium',
             'origin' => $origin,
@@ -96,9 +108,10 @@ final class TicketService
         if (mb_strlen($data['subject']) < 4) {
             throw new TicketError('subject', 'Informe um assunto com pelo menos 4 caracteres.');
         }
-        if (mb_strlen($data['message']) < 10) {
+        if (mb_strlen(RichText::plain($data['message'])) < 10) {
             throw new TicketError('message', 'Descreva o chamado com pelo menos 10 caracteres.');
         }
+        self::checkSize($data['message']);
         if ($data['unit_id'] !== null && $data['condominium_id'] === null) {
             throw new TicketError('condominium_id', 'Escolha o condomínio da unidade.');
         }
@@ -338,7 +351,8 @@ final class TicketService
                 'id' => (int)$row['id'],
                 'author' => (string)($row['author'] ?? 'Equipe Connect'),
                 'from_team' => $authorId === 0 || ($authorId !== $requesterId && $authorId !== $creatorId),
-                'message' => (string)$row['message'],
+                'message' => RichText::plain((string)$row['message']), // texto para API, app, e-mail e Talk
+                'message_html' => RichText::html((string)$row['message']), // para as telas (ADR 0610)
                 'internal' => (bool)$row['is_internal'],
                 'created_at' => (string)$row['created_at'],
                 'attachments' => $files[(int)$row['id']] ?? [],
@@ -361,11 +375,11 @@ final class TicketService
         if ($ticket === null) {
             throw new TicketError('ticket', 'Chamado não encontrado.', 404);
         }
-        $message = trim(strip_tags($message));
-        if (mb_strlen($message) < 2) {
+        $message = RichText::store($message);
+        if (mb_strlen(RichText::plain($message)) < 2) {
             throw new TicketError('message', 'Escreva a mensagem antes de enviar.');
         }
-        $message = mb_substr($message, 0, 10000);
+        self::checkSize($message);
         $status = match ($ticket['status']) {
             'waiting_customer' => 'in_progress',
             'resolved', 'closed' => 'open',
@@ -396,7 +410,7 @@ final class TicketService
             (new \Source\Services\Erp\Occurrences($pdo, $this->scope()))->followTickets([$ticketId], (int)$user->id);
         }
         try {
-            $this->notifyTeam($ticket, (int)$user->id, $message, $status !== $ticket['status'] && $status === 'open');
+            $this->notifyTeam($ticket, (int)$user->id, RichText::plain($message), $status !== $ticket['status'] && $status === 'open');
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
         }
@@ -649,7 +663,8 @@ final class TicketService
             'id' => (int)$row['id'],
             'protocol' => (string)$row['protocol'],
             'subject' => (string)$row['subject'],
-            'message' => (string)($row['message'] ?? ''),
+            'message' => RichText::plain((string)($row['message'] ?? '')),
+            'message_html' => RichText::html((string)($row['message'] ?? '')),
             'area' => (string)$row['area'],
             'origin' => (string)($row['origin'] ?? 'helpdesk'),
             'category' => $row['category'] !== null ? (string)$row['category'] : null,

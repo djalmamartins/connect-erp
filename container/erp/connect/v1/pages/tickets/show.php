@@ -49,12 +49,12 @@ $this->insert('components/layout/page-head', [
             <ol class="erp-ticket-thread">
                 <li class="erp-ticket-msg erp-ticket-msg--requester">
                     <header><strong><?= $this->e($ticket['requester']['name'] ?? 'Solicitante') ?></strong><small>Abriu o chamado · <?= $when($ticket['created_at']) ?></small></header>
-                    <p><?= nl2br($this->e($ticket['message'])) ?></p>
+                    <div class="erp-rich-text"><?= $ticket['message_html'] ?? \Source\Support\RichText::html((string)($ticket['message'] ?? '')) /* já limpo (ADR 0610) */ ?></div>
                 </li>
                 <?php foreach ($messages as $message): ?>
                     <li class="erp-ticket-msg <?= !empty($message['internal']) ? 'erp-ticket-msg--internal' : ($message['from_team'] ? 'erp-ticket-msg--team' : 'erp-ticket-msg--requester') ?>">
                         <header><strong><?= $this->e($message['author']) ?></strong><small><?= !empty($message['internal']) ? 'Nota interna' : ($message['from_team'] ? 'Equipe Connect' : 'Solicitante') ?> · <?= $when($message['created_at']) ?></small></header>
-                        <p><?= nl2br($this->e($message['message'])) ?></p>
+                        <div class="erp-rich-text"><?= $message['message_html'] ?? \Source\Support\RichText::html((string)($message['message'] ?? '')) /* já limpo (ADR 0610) */ ?></div>
                         <?php if ($message['attachments'] !== []): ?>
                             <footer><?php foreach ($message['attachments'] as $file): ?><a href="<?= $this->e($file['url']) ?>" target="_blank" rel="noopener"><?= $icon('file', 'erp-icon--sm') ?><?= $this->e($file['name']) ?></a><?php endforeach; ?></footer>
                         <?php endif; ?>
@@ -93,7 +93,7 @@ $this->insert('components/layout/page-head', [
             <?php endif; ?>
             <div class="erp-field">
                 <label for="tk-reply" data-erp-ticket-label>Resposta para quem pediu</label>
-                <textarea class="erp-textarea" id="tk-reply" name="message" rows="6" required maxlength="10000" placeholder="Escreva a resposta…"<?= isset($errors['message']) ? ' aria-invalid="true" aria-describedby="tk-reply-error"' : '' ?>><?= $this->e((string)($old['message'] ?? '')) ?></textarea>
+                <textarea class="erp-textarea" data-moves-editor="basic" id="tk-reply" name="message" rows="6" required maxlength="10000" placeholder="Escreva a resposta…"<?= isset($errors['message']) ? ' aria-invalid="true" aria-describedby="tk-reply-error"' : '' ?>><?= $this->e((string)($old['message'] ?? '')) ?></textarea>
                 <span class="erp-field__error" id="tk-reply-error"><?= $this->e($errors['message'] ?? $errors['attachments'] ?? '') ?></span>
             </div>
             <div class="erp-field">
@@ -111,7 +111,7 @@ $this->insert('components/layout/page-head', [
             <?= csrf_input() ?>
             <div class="erp-field">
                 <label for="tk-reply">Mensagem</label>
-                <textarea class="erp-textarea" id="tk-reply" name="message" rows="4" required maxlength="10000"<?= isset($errors['message']) ? ' aria-invalid="true" aria-describedby="tk-reply-error"' : '' ?>><?= $this->e((string)($old['message'] ?? '')) ?></textarea>
+                <textarea class="erp-textarea" data-moves-editor="basic" id="tk-reply" name="message" rows="4" required maxlength="10000"<?= isset($errors['message']) ? ' aria-invalid="true" aria-describedby="tk-reply-error"' : '' ?>><?= $this->e((string)($old['message'] ?? '')) ?></textarea>
                 <span class="erp-field__error" id="tk-reply-error"><?= $this->e($errors['message'] ?? '') ?></span>
             </div>
             <div class="erp-form__actions">

@@ -19,6 +19,7 @@ final class SendTemplatesEscapeTest extends TestCase
         '~^nl2br\(\$this->e\(~',
         '~^\(int\)~',
         '~^\$this->section\(~',
+        '~^\\\\Source\\\\Support\\\\RichText::html\(~', // HTML do Moves Editor limpo pela lista curta (ADR 0610)
         "~^\\\$[a-zA-Z_]+ \\? '[^'<>]*' : '[^'<>]*' \\?>~",
     ];
 
