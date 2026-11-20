@@ -3,6 +3,21 @@ Options -Indexes
 
 RewriteEngine On
 
+# Desempenho (ADR 0611): texto comprimido e arquivos estáticos guardados no navegador.
+# A LiteSpeed da hospedagem lê estas mesmas regras. As páginas e a API continuam sem cache (o PHP manda no-store).
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml application/manifest+json font/ttf font/otf
+</IfModule>
+# Arquivo com ?v= (a data do arquivo, que muda a cada versão) pode ficar 1 ano no navegador; sem ?v=, 1 dia.
+RewriteCond %{QUERY_STRING} (?:^|&)v=
+RewriteRule \.(?:css|js|mjs|woff2?|ttf|otf|svg|png|jpe?g|gif|webp|avif|ico)$ - [E=CONNECT_VERSIONED:1]
+<IfModule mod_headers.c>
+    <FilesMatch "\.(?:css|js|mjs|woff2?|ttf|otf|svg|png|jpe?g|gif|webp|avif|ico)$">
+        Header set Cache-Control "public, max-age=86400"
+        Header set Cache-Control "public, max-age=31536000, immutable" env=CONNECT_VERSIONED
+    </FilesMatch>
+</IfModule>
+
 # O app do morador (ADR 0303) manda "Authorization: Bearer". O Apache não repassa esse cabeçalho
 # ao PHP sozinho; esta regra o copia para a variável que o PHP lê.
 RewriteCond %{HTTP:Authorization} .

@@ -133,7 +133,7 @@ final class OperationScreens
                 \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'bank_credentials_screen_failed']);
             }
         }
-        // Tokens de acesso das integrações (ADR 0611): lista para quem vê, criar e revogar para quem gerencia.
+        // Tokens de acesso das integrações (ADR 0623): lista para quem vê, criar e revogar para quem gerencia.
         $data['integrationTokens'] = null;
         $data['canManageIntegrationTokens'] = Access::can('erp.settings.manage', $user);
         try {

@@ -22,7 +22,7 @@ use Source\Support\AppLogger;
  *   POST /api/v1/talk/tickets/{id}/transfer
  *   POST /api/v1/talk/tickets/{id}/close
  *   GET  /api/v1/talk/charges?resident_id=77&phone=5531999998888   2ª via do boleto (ADR 0386)
- *   GET  /api/v1/talk/me                      o próprio token: nome, escopos, validade, condomínios (ADR 0601)
+ *   GET  /api/v1/talk/me                      o próprio token: nome, escopos, validade, condomínios (ADR 0623)
  * Cada rota pede um escopo do token (TalkTokens::SCOPES); sem ele = 403 insufficient_scope.
  */
 final class Talk

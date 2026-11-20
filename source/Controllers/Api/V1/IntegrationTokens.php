@@ -12,7 +12,7 @@ use Source\Services\Talk\TalkTokens;
 use Source\Support\Access;
 
 /**
- * Tokens de acesso das integrações pela tela Configurações › Integrações (ADR 0601). Hoje só o Connect Talk.
+ * Tokens de acesso das integrações pela tela Configurações › Integrações (ADR 0623). Hoje só o Connect Talk.
  *  GET  /api/v1/integration-tokens               tokens (sem hash), escopos disponíveis e usuários que podem ser
  *                                                o usuário de integração (erp.settings.view)
  *  POST /api/v1/integration-tokens               {name, user_id, scopes[], expires_in_days?, allowed_ips?} → o token

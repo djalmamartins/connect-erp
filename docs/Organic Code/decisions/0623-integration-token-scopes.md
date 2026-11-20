@@ -1,10 +1,10 @@
-# 0611 — Token de integração com escopos, criado e revogado na tela Integrações
+# 0623 — Token de integração com escopos, criado e revogado na tela Integrações
 
 - Status: Aceito
 - Data: 20/11/2026
 - Relacionados: ADR 0308 (integração com o Connect Talk e token `ctk_`), 0386 (2ª via do boleto para o Talk), 0359 (Talk
   de volta ao Raspberry Pi do escritório), 0091/0158 (tela Integrações), 0328 (relatório do titular).
-- Numeração: faixa avulsa 0600–0799. 0600 está na main; 0601, 0602 e 0610 estão em branches abertos, então 0611.
+- Numeração: faixa avulsa 0600–0799. Nasceu como 0611, renumerada para 0623 porque outra thread mesclou o 0611 (desempenho) antes.
 
 ## Contexto
 Pedido do Djalma (20/11/2026): "a API REST completa, pronta, para o ConnectTalk pegar todas as informações que forem

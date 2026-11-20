@@ -15,7 +15,7 @@ use Source\Support\Access;
 use Source\Support\Middleware\TalkApiAuthenticated;
 
 /**
- * Token de integração com escopos, validade, IPs e tela (ADR 0601): o token que já existia continua valendo, cada
+ * Token de integração com escopos, validade, IPs e tela (ADR 0623): o token que já existia continua valendo, cada
  * rota do Talk confere o escopo, o token vencido ou de IP fora da lista cai, e a tela lista sem mostrar o hash.
  */
 final class IntegrationTokensTest extends TestCase

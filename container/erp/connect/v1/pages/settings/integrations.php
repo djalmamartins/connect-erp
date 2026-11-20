@@ -6,7 +6,7 @@
  * Banco Inter (ADR 0158) e Cora (ADR 0322): quem tem erp.settings.manage e erp.bank_accounts.manage envia o pacote do
  * banco (ZIP ou certificado e chave), o client ID e, só no Inter, o secret para /api/v1/bank-credentials/{id}
  * (erp.js, data-erp-bank-credentials). O banco sai do código da conta: 077 = Inter, 403 = Cora.
- * Tokens de acesso (ADR 0601): quem tem erp.settings.manage cria e revoga o token do Connect Talk, com escopos,
+ * Tokens de acesso (ADR 0623): quem tem erp.settings.manage cria e revoga o token do Connect Talk, com escopos,
  * validade e IPs, por /api/v1/integration-tokens (erp.js, data-erp-integration-tokens). O token aparece uma vez.
  * @var array $currentPage @var array $integrations @var ?list<array> $bankCredentialAccounts @var bool $canManageBankCredentials
  * @var ?array $integrationTokens @var bool $canManageIntegrationTokens

@@ -11,7 +11,7 @@ declare(strict_types=1);
  *       atender (todos, com erp.condominiums.all, ou os liberados um a um). Recomendado: um usuário só para a
  *       integração, por exemplo "Connect Talk (integração)".
  *
- *       [--escopos=people.read,charges.read,tickets.write]  (padrão: os três, o que o Talk sempre usou; ADR 0601)
+ *       [--escopos=people.read,charges.read,tickets.write]  (padrão: os três, o que o Talk sempre usou; ADR 0623)
  *       Também dá para criar e revogar na tela Configurações › Integrações, com validade e IPs.
  *
  *   php tools/talk-token.php listar

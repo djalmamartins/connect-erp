@@ -38,11 +38,16 @@ export type ClientOptions = {
   getResidentId?: () => number | null;
   onUnauthenticated?: () => void;
   fetchImpl?: typeof fetch;
+  /** Prazo de cada pedido, em ms (padrão 20 s; envio de foto, 60 s). Sem prazo, a tela ficava carregando para sempre. */
+  timeoutMs?: number;
 };
 
 export type UploadFile = { uri: string; name: string; type: string };
 
 const NETWORK_MESSAGE = 'Sem conexão com o servidor. Confira a internet e tente de novo.';
+const TIMEOUT_MESSAGE = 'O servidor demorou para responder. Tente de novo em instantes.';
+export const DEFAULT_TIMEOUT_MS = 20_000;
+export const UPLOAD_TIMEOUT_MS = 60_000;
 
 export function buildUrl(baseUrl: string, path: string, query: Query = {}, residentId: number | null = null): string {
   const base = baseUrl.replace(/\/+$/, '');
@@ -101,13 +106,23 @@ export function createClient(options: ClientOptions) {
     return ((body as { data?: T } | null)?.data ?? (null as T));
   }
 
-  async function send<T>(method: string, path: string, query: Query, init: RequestInit, whole = false): Promise<T> {
+  async function send<T>(method: string, path: string, query: Query, init: RequestInit, whole = false, timeoutMs?: number): Promise<T> {
     const url = buildUrl(options.baseUrl, path, query, options.getResidentId?.() ?? null);
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    let timedOut = false;
+    const timer = controller
+      ? setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, timeoutMs ?? options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+      : null;
     let response: Response;
     try {
-      response = await fetchImpl(url, { ...init, method });
+      response = await fetchImpl(url, { ...init, method, ...(controller ? { signal: controller.signal } : {}) });
     } catch {
-      throw new ApiError(0, 'network', NETWORK_MESSAGE);
+      throw timedOut ? new ApiError(0, 'timeout', TIMEOUT_MESSAGE) : new ApiError(0, 'network', NETWORK_MESSAGE);
+    } finally {
+      if (timer) clearTimeout(timer);
     }
     return parse<T>(response, whole);
   }
@@ -139,7 +154,7 @@ export function createClient(options: ClientOptions) {
       for (const { field, file } of files) {
         form.append(field, file as unknown as Blob);
       }
-      return send<T>('POST', path, {}, { headers: headers(), body: form });
+      return send<T>('POST', path, {}, { headers: headers(), body: form }, false, UPLOAD_TIMEOUT_MS);
     },
     /** Endereço com resident_id, para baixar arquivo com o cabeçalho de autenticação. */
     url(path: string, query: Query = {}): string {

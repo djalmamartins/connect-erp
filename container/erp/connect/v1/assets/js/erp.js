@@ -1396,7 +1396,7 @@
     });
   });
 
-  /* AP-171 (ADR 0601): tokens de acesso do Connect Talk. O token em claro volta UMA vez, na resposta do POST, e só
+  /* AP-171 (ADR 0623): tokens de acesso do Connect Talk. O token em claro volta UMA vez, na resposta do POST, e só
      fica nesta caixa até a página recarregar. Escopo de escrita marcado pede confirmação. */
   $$('[data-erp-integration-tokens]').forEach(function (root) {
     var call = apiClient(root);
@@ -3868,6 +3868,18 @@
     all.addEventListener('change', function () {
       $$('input[name="ticket_ids[]"]').forEach(function (box) { box.checked = all.checked; });
     });
+  });
+  // Fila de chamados (ADR 0622): o lote sem nenhum chamado marcado avisa, como no Help Desk, e o modal
+  // "Abrir chamado" reabre sozinho quando o envio volta com erro de preenchimento.
+  $$('#tk-bulk').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if ($$('input[name="ticket_ids[]"]:checked').length) return;
+      event.preventDefault();
+      ErpUI.alert({ title: 'Nenhum chamado marcado', message: 'Marque ao menos um chamado na lista e tente de novo. Nada foi alterado.', tone: 'info' });
+    });
+  });
+  $$('dialog.erp-modal[data-erp-modal-auto]').forEach(function (dialog) {
+    if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
   });
 
   /* Máscara de dinheiro R$ 0.000,00 (revisão de 15/11, ADR 0310) ------------------

@@ -9,7 +9,7 @@ use Source\Controllers\Api\V1\IntegrationTokens;
 use Source\Services\Talk\TalkTokens;
 use Source\Support\IpRateLimit;
 
-/** Token de integração com escopos, validade, IPs e limite (ADR 0601): regras puras, rotas, tela e migration. */
+/** Token de integração com escopos, validade, IPs e limite (ADR 0623): regras puras, rotas, tela e migration. */
 final class IntegrationTokenScopesTest extends TestCase
 {
     private function file(string $path): string

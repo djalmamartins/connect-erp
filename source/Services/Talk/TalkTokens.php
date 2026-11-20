@@ -21,7 +21,7 @@ use Source\Support\Audit;
  *   à mão (ou deixa de valer se o usuário sair de "confirmed" ou perder a permissão).
  * - Falha de token conta no limite por IP (auth_throttle_events), e passou do limite = 429.
  *
- * ADR 0601: o token também é criado e revogado na tela Integrações, com escopos (o que ele pode fazer), validade
+ * ADR 0623: o token também é criado e revogado na tela Integrações, com escopos (o que ele pode fazer), validade
  * opcional, IPs por token e limite de RATE pedidos por minuto por token. Cada rota /talk pede o seu escopo
  * (allows()); o token criado antes disso ficou com LEGACY_SCOPES, o que o Talk já usava.
  */

@@ -16,7 +16,7 @@ use Source\Support\ClientIp;
  * ("Authorization: Bearer ctk_..."), sem sessão, sem cookie e sem CSRF. Sessão de navegador não vale aqui.
  * O usuário do token fica só nesta requisição (Auth::actingAs), para a auditoria e para o escopo de condomínios.
  * Lista de IPs opcional em TALK_ALLOWED_IPS; falhas de token contam no limite por IP (429).
- * ADR 0601: o token pode ter validade e IPs próprios, tem limite de TalkTokens::RATE pedidos por minuto (429) e
+ * ADR 0623: o token pode ter validade e IPs próprios, tem limite de TalkTokens::RATE pedidos por minuto (429) e
  * cada rota confere o escopo dele (TalkTokens::allows, no controlador).
  */
 final class TalkApiAuthenticated

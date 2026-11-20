@@ -212,7 +212,17 @@ foreach ($late as $unitId => $entries) {
 
 $tickets = new TicketService($pdo);
 $tickets->open(['subject' => 'Dúvida sobre a segunda via do boleto', 'message' => 'Não recebi o boleto deste mês por e-mail. Como faço para emitir a segunda via?', 'requester_name' => 'Mariana Albuquerque', 'requester_email' => 'morador1@exemplo.com.br', 'condominium_id' => $alpha], 'site', null);
-$tickets->open(['subject' => 'Portão da garagem fazendo barulho', 'message' => 'O portão da garagem está rangendo ao abrir. Podem verificar com a manutenção?', 'condominium_id' => $alpha], 'erp', $admin);
+$gate = $tickets->open(['subject' => 'Portão da garagem fazendo barulho', 'message' => 'O portão da garagem está rangendo ao abrir. Podem verificar com a manutenção?', 'requester_name' => 'Carlos Pereira', 'requester_email' => 'sindico@exemplo.com.br', 'condominium_id' => $alpha], 'site', null);
+// Fila e atendimento (ADR 0622): mais chamados fictícios, com resposta, nota interna e triagem, para os prints.
+$tickets->open(['subject' => 'Vazamento no teto da garagem', 'message' => 'Há uma infiltração pingando perto da vaga 12 desde ontem.', 'requester_name' => 'Rafael Monteiro', 'requester_email' => 'morador2@exemplo.com.br', 'condominium_id' => $ids[1] ?? $alpha, 'priority' => 'urgent', 'area' => 'technical'], 'site', null);
+$tickets->open(['subject' => 'Pedido de cópia da ata da assembleia', 'message' => 'Gostaria de receber a ata da última assembleia em PDF.', 'condominium_id' => $ids[2] ?? $alpha, 'priority' => 'low'], 'erp', $admin);
+$desk = new \Source\Services\Support\TicketDesk($pdo);
+$gateId = (int)($gate['id'] ?? 0);
+if ($gateId > 0) {
+    $desk->update($admin, $gateId, ['status' => 'in_progress', 'priority' => 'high', 'assigned_to' => $admin->id, 'category' => 'Manutenção', 'team' => 'Manutenção', 'tags' => 'portão, garagem']);
+    $desk->reply($admin, $gateId, 'Combinado com o zelador: a lubrificação fica para amanhã cedo.', true, 240);
+    $desk->reply($admin, $gateId, 'Olá! A manutenção vai lubrificar o portão amanhã de manhã. Avisamos quando terminar.', false, 420);
+}
 
 // Aplicativo do morador (ADR 0302): conta de morador ligada à 1ª unidade do primeiro condomínio, todas as funções
 // ligadas na matriz do portal e alguns comunicados, encomendas, visitas e uma assembleia convocada.

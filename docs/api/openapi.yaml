@@ -33,7 +33,7 @@ components:
       scheme: bearer
       description: >-
         Token de integração do Connect Talk (ADR 0308), formato ctk_ + 64 hexadecimais, gerado no terminal do servidor
-        por tools/talk-token.php ou na tela Configurações › Integrações (ADR 0601). Vale só nas rotas /talk; sem sessão,
+        por tools/talk-token.php ou na tela Configurações › Integrações (ADR 0623). Vale só nas rotas /talk; sem sessão,
         sem cookie e sem CSRF. O token é de um usuário de integração comum (permissão support.manage) e herda o escopo de
         condomínios dele. Cada rota pede um escopo (people.read, charges.read, tickets.write, condominiums.read,
         residents.read); sem ele = 403 insufficient_scope. Validade e IPs opcionais por token; limite de 120 pedidos
@@ -1458,7 +1458,7 @@ paths:
     get:
       operationId: listIntegrationTokens
       summary: Tokens de acesso das integrações (Connect Talk), escopos e usuários de integração possíveis (erp.settings.view)
-      description: ADR 0601. Sem o hash nem o token. users = ativos com support.manage.
+      description: ADR 0623. Sem o hash nem o token. users = ativos com support.manage.
       security: [{ session: [] }]
       responses:
         '200': { description: 'Tokens', content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { tokens: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, user_id: { type: integer }, user: { type: string }, hint: { type: string }, scopes: { type: array, items: { type: string } }, created_at: { type: string }, expires_at: { type: [string, 'null'] }, allowed_ips: { type: [string, 'null'] }, last_used_at: { type: [string, 'null'] }, last_ip: { type: [string, 'null'] }, revoked_at: { type: [string, 'null'] }, revoke_reason: { type: [string, 'null'] } } } }, scopes: { type: array, items: { type: object, properties: { scope: { type: string }, label: { type: string }, kind: { type: string, enum: [read, write] } } } }, users: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, email: { type: string } } } } } } } } } } }
@@ -1467,7 +1467,7 @@ paths:
     post:
       operationId: createIntegrationToken
       summary: Cria um token do Connect Talk; o token volta só nesta resposta (erp.settings.manage)
-      description: ADR 0601. Vai para a auditoria (sem o token). Validade em dias (0 = sem validade). IPs separados por vírgula.
+      description: ADR 0623. Vai para a auditoria (sem o token). Validade em dias (0 = sem validade). IPs separados por vírgula.
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
@@ -7734,7 +7734,7 @@ paths:
     get:
       operationId: talkMe
       tags: [Talk]
-      summary: O próprio token do Talk (ADR 0601)
+      summary: O próprio token do Talk (ADR 0623)
       description: >-
         Nome, escopos, validade, limite de pedidos e condomínios que o usuário de integração atende. Não pede escopo.
         Serve para o Talk conferir, ao ligar, se o token está certo e o que ele pode pedir.

@@ -1,6 +1,8 @@
 <?php
 /**
  * Chamados (CN-004, ADR 0034): abertura para o Help Desk e acompanhamento no ERP.
+ * Organização da tela (ADR 0622): a mesma fila do Help Desk (contadores, barra de filtros com a ação
+ * em lote ao lado e as mesmas colunas), no visual do ERP; o formulário de abertura fica num modal.
  * @var string $base
  * @var ?array{type:string,text:string,protocol:?string} $flash
  * @var array<string,string> $errors @var array<string,mixed> $old
@@ -24,12 +26,12 @@ $selectedCondo = (int)($old['condominium_id'] ?? 0);
 $selectedUnit = (int)($old['unit_id'] ?? 0);
 ob_start(); ?>
     <?php if ($helpdeskUrl !== null): ?><a class="erp-btn" href="<?= $this->e($helpdeskUrl) ?>"><?= $icon('help', 'erp-icon--sm') ?>Fila do Help Desk</a><?php endif; ?>
-    <a class="erp-btn erp-btn--primary" href="#abrir"><?= $icon('plus', 'erp-icon--sm') ?>Abrir chamado</a>
+    <button class="erp-btn erp-btn--primary" type="button" data-erp-modal-open="tk-new"><?= $icon('plus', 'erp-icon--sm') ?>Abrir chamado</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
-    'pageEyebrow' => 'Operacional',
+    'pageEyebrow' => 'Atendimento',
     'pageTitle' => 'Chamados',
-    'pageLead' => 'Abra chamados para o Help Desk com o condomínio, a unidade e quem pediu, e acompanhe o andamento.',
+    'pageLead' => 'A fila do Help Desk dos seus condomínios: priorize, distribua e acompanhe cada atendimento.',
     'pageActions' => $actions,
 ]);
 ?>
@@ -37,9 +39,135 @@ $this->insert('components/layout/page-head', [
     <div class="erp-alert erp-alert--<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="<?= $flash['type'] === 'success' ? 'status' : 'alert' ?>"><?= $this->e($flash['text']) ?><?php if (!empty($flash['ticket_id'])): ?> <a href="<?= erp_url($base . '/' . (int)$flash['ticket_id']) ?>">Acompanhar o chamado</a><?php endif; ?></div>
 <?php endif; ?>
 
-<form class="erp-card erp-form" id="abrir" method="post" action="<?= erp_url($base) ?>" novalidate>
-    <div class="erp-card__head"><div><h2>Abrir chamado</h2><p>O chamado cai na fila do Help Desk e a equipe é avisada na hora.</p></div></div>
+
+
+<?php
+// Fila como no Help Desk (ADR 0307): contadores por situação e de prazo, filtros, SLA e situação em lote.
+$query = static function (array $change) use ($filters): string {
+    $map = ['q' => 'q', 'condominium_id' => 'condominio', 'status' => 'situacao', 'kind' => 'tipo', 'priority' => 'prioridade', 'assigned' => 'responsavel', 'due' => 'prazo', 'origin' => 'origem'];
+    $kind = ['occurrence' => 'ocorrencias', 'other' => 'outros'];
+    $params = [];
+    foreach (array_merge($filters, $change) as $key => $value) {
+        $value = $key === 'kind' ? ($kind[$value] ?? '') : (string)$value;
+        if ($value !== '' && $value !== '0' && isset($map[$key])) {
+            $params[$map[$key]] = $value;
+        }
+    }
+    return $params === [] ? '' : '?' . http_build_query($params);
+};
+$slaLabel = static function (array $ticket): array {
+    $state = \Source\Services\Support\TicketDesk::slaState($ticket['status'], $ticket['due_at']);
+    return match ($state) { 'done' => ['Finalizado', 'plain'], 'late' => ['Vencido', 'danger'], default => [date('d/m H:i', strtotime($ticket['due_at'])), 'info'] };
+};
+?>
+<nav class="erp-ticket-counters" id="fila" aria-label="Resumo da fila">
+    <a class="erp-ticket-counter<?= $filters['status'] === '' && $filters['due'] === '' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['status' => '', 'due' => ''])) ?>"><span>Todos</span><strong><?= (int)$metrics['total'] ?></strong></a>
+    <?php foreach (TicketService::STATUS_LABELS as $key => $label): ?>
+        <a class="erp-ticket-counter erp-ticket-counter--<?= $key ?><?= $filters['status'] === $key ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['status' => $key, 'due' => ''])) ?>"><span><?= $label ?></span><strong><?= (int)$metrics['by_status'][$key] ?></strong></a>
+    <?php endforeach; ?>
+    <a class="erp-ticket-counter erp-ticket-counter--late<?= $filters['due'] === 'overdue' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['due' => 'overdue', 'status' => ''])) ?>"><span>SLA vencido</span><strong><?= (int)$metrics['overdue'] ?></strong></a>
+    <a class="erp-ticket-counter<?= $filters['due'] === 'today' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['due' => 'today', 'status' => ''])) ?>"><span>Vence hoje</span><strong><?= (int)$metrics['due_today'] ?></strong></a>
+    <a class="erp-ticket-counter<?= $filters['assigned'] === 'unassigned' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['assigned' => 'unassigned'])) ?>"><span>Sem responsável</span><strong><?= (int)$metrics['unassigned'] ?></strong></a>
+</nav>
+
+<section class="erp-card erp-card--flush erp-ticket-queue" aria-label="Fila de chamados">
+    <header class="erp-ticket-toolbar">
+    <form class="erp-filters erp-ticket-filters" method="get" action="<?= erp_url($base) ?>">
+        <?php if ($filters['status'] !== ''): ?><input type="hidden" name="situacao" value="<?= $this->e($filters['status']) ?>"><?php endif; ?>
+        <label class="erp-ticket-search"><span class="erp-sr-only">Buscar</span><?= $icon('search', 'erp-icon--sm') ?><input class="erp-input" id="tk-f-q" name="q" value="<?= $this->e($filters['q']) ?>" placeholder="Protocolo ou assunto"></label>
+        <label class="erp-sr-only" for="tk-f-condo">Condomínio</label>
+        <select class="erp-select" id="tk-f-condo" name="condominio">
+            <option value="">Todos os condomínios</option>
+            <?php foreach ($condominiums as $condominium): ?>
+                <option value="<?= (int)$condominium['id'] ?>"<?= $filters['condominium_id'] === (int)$condominium['id'] ? ' selected' : '' ?>><?= $this->e($condominium['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label class="erp-sr-only" for="tk-f-priority">Prioridade</label>
+        <select class="erp-select" id="tk-f-priority" name="prioridade">
+            <option value="">Todas as prioridades</option>
+            <?php foreach (TicketService::PRIORITY_LABELS as $key => $label): ?>
+                <option value="<?= $key ?>"<?= $filters['priority'] === $key ? ' selected' : '' ?>><?= $label ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label class="erp-sr-only" for="tk-f-assigned">Responsável</label>
+        <select class="erp-select" id="tk-f-assigned" name="responsavel">
+            <option value="">Todos os responsáveis</option>
+            <option value="unassigned"<?= $filters['assigned'] === 'unassigned' ? ' selected' : '' ?>>Sem responsável</option>
+            <?php foreach ($agents as $agent): ?>
+                <option value="<?= (int)$agent['id'] ?>"<?= $filters['assigned'] === (string)$agent['id'] ? ' selected' : '' ?>><?= $this->e($agent['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label class="erp-sr-only" for="tk-f-due">Prazo</label>
+        <select class="erp-select" id="tk-f-due" name="prazo">
+            <option value="">Qualquer prazo</option>
+            <option value="today"<?= $filters['due'] === 'today' ? ' selected' : '' ?>>Vence hoje</option>
+            <option value="overdue"<?= $filters['due'] === 'overdue' ? ' selected' : '' ?>>SLA vencido</option>
+        </select>
+        <label class="erp-sr-only" for="tk-f-origin">Origem</label>
+        <select class="erp-select" id="tk-f-origin" name="origem">
+            <option value="">Todas as origens</option>
+            <?php foreach (TicketService::ORIGIN_LABELS as $key => $label): ?>
+                <option value="<?= $key ?>"<?= $filters['origin'] === $key ? ' selected' : '' ?>><?= $label ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label class="erp-sr-only" for="tk-f-kind">Tipo</label>
+        <select class="erp-select" id="tk-f-kind" name="tipo">
+            <option value="">Chamados e ocorrências</option>
+            <option value="ocorrencias"<?= ($filters['kind'] ?? '') === 'occurrence' ? ' selected' : '' ?>>Só ocorrências</option>
+            <option value="outros"<?= ($filters['kind'] ?? '') === 'other' ? ' selected' : '' ?>>Sem as ocorrências</option>
+        </select>
+        <button class="erp-btn" type="submit"><?= $icon('filter', 'erp-icon--sm') ?>Filtrar</button>
+        <?php if ($canAttend && $tickets !== []): /* lote na mesma barra, como no Help Desk; os campos usam form="tk-bulk" */ ?>
+            <span class="erp-ticket-bulk">
+                <label class="erp-sr-only" for="tk-bulk-status">Situação dos selecionados</label>
+                <select class="erp-select" id="tk-bulk-status" name="status" form="tk-bulk" required>
+                    <option value="">Com os selecionados…</option>
+                    <?php foreach (TicketService::STATUS_LABELS as $key => $label): ?><option value="<?= $key ?>"><?= $label ?></option><?php endforeach; ?>
+                </select>
+                <button class="erp-btn" type="submit" form="tk-bulk">Aplicar</button>
+            </span>
+        <?php endif; ?>
+    </form>
+    <?php if ($canAttend && $tickets !== []): ?>
+        <form id="tk-bulk" method="post" action="<?= erp_url($base . '/lote') ?>" hidden><?= csrf_input() ?></form>
+    <?php endif; ?>
+    </header>
+    <?php if ($tickets === []): ?>
+        <div style="padding:0 var(--erp-space-5) var(--erp-space-5)">
+            <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'help', 'emptyTitle' => 'Nenhum chamado encontrado', 'emptyText' => 'Os chamados abertos aqui, no Help Desk, no site ou pela API aparecem nesta lista.']); ?>
+        </div>
+    <?php else: ?>
+        <div class="erp-table-wrap">
+            <table class="erp-table erp-ticket-table">
+                <thead><tr><?php if ($canAttend): ?><th><input type="checkbox" data-erp-ticket-all aria-label="Selecionar todos"></th><?php endif; ?><th>Protocolo</th><th>Atualizado</th><th>Solicitante</th><th>Assunto</th><th>Situação</th><th>Responsável</th><th>Prioridade</th><th>SLA</th></tr></thead>
+                <tbody>
+                <?php foreach ($tickets as $ticket): [$sla, $slaTone] = $slaLabel($ticket); ?>
+                    <tr<?= $slaTone === 'danger' ? ' class="is-overdue"' : '' ?>>
+                        <?php if ($canAttend): ?><td><input type="checkbox" name="ticket_ids[]" value="<?= (int)$ticket['id'] ?>" form="tk-bulk" aria-label="Selecionar <?= $this->e($ticket['protocol']) ?>"></td><?php endif; ?>
+                        <td><a class="erp-ticket-link" href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['protocol']) ?></a></td>
+                        <td><?= date('d/m/y H:i', strtotime($ticket['updated_at'])) ?></td>
+                        <td class="erp-ticket-cell"><strong><?= $this->e($ticket['requester']['name'] ?? '—') ?></strong><small><?= $this->e(implode(' · ', array_filter([$ticket['condominium']['name'] ?? null, $ticket['unit'] !== null ? 'Unid. ' . $ticket['unit']['label'] : null, TicketService::ORIGIN_LABELS[$ticket['origin']] ?? $ticket['origin']]))) ?></small></td>
+                        <td class="erp-ticket-cell erp-ticket-cell--subject"><a href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['subject']) ?></a><?php if (($ticket['occurrence_id'] ?? null) !== null): ?><a class="erp-badge erp-badge--plain" href="<?= erp_url('/operacional/ocorrencias/' . (int)$ticket['occurrence_id']) ?>"><?= $this->e('Ocorrência #' . (int)$ticket['occurrence_id']) ?></a><?php endif; ?></td>
+                        <td><span class="erp-badge erp-badge--<?= $statusTone[$ticket['status']] ?? 'plain' ?>"><?= $this->e(TicketService::STATUS_LABELS[$ticket['status']] ?? $ticket['status']) ?></span></td>
+                        <td><?= $this->e($ticket['assigned_to']['name'] ?? 'Não atribuído') ?></td>
+                        <td><span class="erp-badge erp-badge--<?= $priorityTone[$ticket['priority']] ?? 'plain' ?>"><?= $this->e(TicketService::PRIORITY_LABELS[$ticket['priority']] ?? $ticket['priority']) ?></span></td>
+                        <td><span class="erp-badge erp-badge--<?= $slaTone ?>"><?= $this->e($sla) ?></span></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+
+<dialog class="erp-modal erp-modal--wide" id="tk-new" aria-labelledby="tk-new-title"<?= $errors !== [] ? ' data-erp-modal-auto' : '' ?>>
+<form class="erp-form" id="abrir" method="post" action="<?= erp_url($base) ?>" novalidate>
+    <div class="erp-modal__head">
+        <div><h2 id="tk-new-title">Abrir chamado</h2><p class="erp-muted">O chamado cai na fila do Help Desk e a equipe é avisada na hora.</p></div>
+        <button type="button" class="erp-icon-button" data-erp-modal-close aria-label="Fechar"><?= $icon('close') ?></button>
+    </div>
     <?= csrf_input() ?>
+    <div class="erp-modal__body">
     <div class="erp-form__grid">
         <div class="erp-field erp-col-6">
             <label for="tk-condo">Condomínio</label>
@@ -117,132 +245,10 @@ $this->insert('components/layout/page-head', [
             <span class="erp-field__hint">Só quando o pedido é de outra pessoa.</span>
         </div>
     </div>
-    <div class="erp-form__actions">
+    </div>
+    <div class="erp-modal__foot">
+        <button type="button" class="erp-btn" data-erp-modal-close>Cancelar</button>
         <button class="erp-btn erp-btn--primary" type="submit"><?= $icon('check', 'erp-icon--sm') ?>Enviar para o Help Desk</button>
     </div>
 </form>
-
-<?php
-// Fila como no Help Desk (ADR 0307): contadores por situação e de prazo, filtros, SLA e situação em lote.
-$query = static function (array $change) use ($filters): string {
-    $map = ['q' => 'q', 'condominium_id' => 'condominio', 'status' => 'situacao', 'kind' => 'tipo', 'priority' => 'prioridade', 'assigned' => 'responsavel', 'due' => 'prazo', 'origin' => 'origem'];
-    $kind = ['occurrence' => 'ocorrencias', 'other' => 'outros'];
-    $params = [];
-    foreach (array_merge($filters, $change) as $key => $value) {
-        $value = $key === 'kind' ? ($kind[$value] ?? '') : (string)$value;
-        if ($value !== '' && $value !== '0' && isset($map[$key])) {
-            $params[$map[$key]] = $value;
-        }
-    }
-    return $params === [] ? '' : '?' . http_build_query($params);
-};
-$slaLabel = static function (array $ticket): array {
-    $state = \Source\Services\Support\TicketDesk::slaState($ticket['status'], $ticket['due_at']);
-    return match ($state) { 'done' => ['Finalizado', 'plain'], 'late' => ['Vencido', 'danger'], default => [date('d/m H:i', strtotime($ticket['due_at'])), 'info'] };
-};
-?>
-<nav class="erp-ticket-counters" id="fila" aria-label="Resumo da fila">
-    <a class="erp-ticket-counter<?= $filters['status'] === '' && $filters['due'] === '' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['status' => '', 'due' => ''])) ?>"><span>Todos</span><strong><?= (int)$metrics['total'] ?></strong></a>
-    <?php foreach (TicketService::STATUS_LABELS as $key => $label): ?>
-        <a class="erp-ticket-counter erp-ticket-counter--<?= $key ?><?= $filters['status'] === $key ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['status' => $key, 'due' => ''])) ?>"><span><?= $label ?></span><strong><?= (int)$metrics['by_status'][$key] ?></strong></a>
-    <?php endforeach; ?>
-    <a class="erp-ticket-counter erp-ticket-counter--late<?= $filters['due'] === 'overdue' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['due' => 'overdue', 'status' => ''])) ?>"><span>SLA vencido</span><strong><?= (int)$metrics['overdue'] ?></strong></a>
-    <a class="erp-ticket-counter<?= $filters['due'] === 'today' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['due' => 'today', 'status' => ''])) ?>"><span>Vence hoje</span><strong><?= (int)$metrics['due_today'] ?></strong></a>
-    <a class="erp-ticket-counter<?= $filters['assigned'] === 'unassigned' ? ' is-active' : '' ?>" href="<?= erp_url($base . $query(['assigned' => 'unassigned'])) ?>"><span>Sem responsável</span><strong><?= (int)$metrics['unassigned'] ?></strong></a>
-</nav>
-
-<section class="erp-card erp-card--flush" aria-labelledby="tk-list-title">
-    <div class="erp-card__head">
-        <div><h2 id="tk-list-title">Chamados</h2><p>Dos seus condomínios e os que você abriu. As ocorrências também estão aqui: toda ocorrência é um chamado.</p></div>
-    </div>
-    <form class="erp-filters erp-ticket-filters" method="get" action="<?= erp_url($base) ?>">
-        <label class="erp-sr-only" for="tk-f-q">Buscar</label>
-        <input class="erp-input" id="tk-f-q" name="q" value="<?= $this->e($filters['q']) ?>" placeholder="Protocolo ou assunto">
-        <label class="erp-sr-only" for="tk-f-condo">Condomínio</label>
-        <select class="erp-select" id="tk-f-condo" name="condominio">
-            <option value="">Todos os condomínios</option>
-            <?php foreach ($condominiums as $condominium): ?>
-                <option value="<?= (int)$condominium['id'] ?>"<?= $filters['condominium_id'] === (int)$condominium['id'] ? ' selected' : '' ?>><?= $this->e($condominium['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="erp-sr-only" for="tk-f-status">Situação</label>
-        <select class="erp-select" id="tk-f-status" name="situacao">
-            <option value="">Todas as situações</option>
-            <?php foreach (TicketService::STATUS_LABELS as $key => $label): ?>
-                <option value="<?= $key ?>"<?= $filters['status'] === $key ? ' selected' : '' ?>><?= $label ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="erp-sr-only" for="tk-f-priority">Prioridade</label>
-        <select class="erp-select" id="tk-f-priority" name="prioridade">
-            <option value="">Todas as prioridades</option>
-            <?php foreach (TicketService::PRIORITY_LABELS as $key => $label): ?>
-                <option value="<?= $key ?>"<?= $filters['priority'] === $key ? ' selected' : '' ?>><?= $label ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="erp-sr-only" for="tk-f-assigned">Responsável</label>
-        <select class="erp-select" id="tk-f-assigned" name="responsavel">
-            <option value="">Todos os responsáveis</option>
-            <option value="unassigned"<?= $filters['assigned'] === 'unassigned' ? ' selected' : '' ?>>Sem responsável</option>
-            <?php foreach ($agents as $agent): ?>
-                <option value="<?= (int)$agent['id'] ?>"<?= $filters['assigned'] === (string)$agent['id'] ? ' selected' : '' ?>><?= $this->e($agent['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="erp-sr-only" for="tk-f-due">Prazo</label>
-        <select class="erp-select" id="tk-f-due" name="prazo">
-            <option value="">Qualquer prazo</option>
-            <option value="today"<?= $filters['due'] === 'today' ? ' selected' : '' ?>>Vence hoje</option>
-            <option value="overdue"<?= $filters['due'] === 'overdue' ? ' selected' : '' ?>>SLA vencido</option>
-        </select>
-        <label class="erp-sr-only" for="tk-f-origin">Origem</label>
-        <select class="erp-select" id="tk-f-origin" name="origem">
-            <option value="">Todas as origens</option>
-            <?php foreach (TicketService::ORIGIN_LABELS as $key => $label): ?>
-                <option value="<?= $key ?>"<?= $filters['origin'] === $key ? ' selected' : '' ?>><?= $label ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="erp-sr-only" for="tk-f-kind">Tipo</label>
-        <select class="erp-select" id="tk-f-kind" name="tipo">
-            <option value="">Chamados e ocorrências</option>
-            <option value="ocorrencias"<?= ($filters['kind'] ?? '') === 'occurrence' ? ' selected' : '' ?>>Só ocorrências</option>
-            <option value="outros"<?= ($filters['kind'] ?? '') === 'other' ? ' selected' : '' ?>>Sem as ocorrências</option>
-        </select>
-        <button class="erp-btn" type="submit"><?= $icon('filter', 'erp-icon--sm') ?>Filtrar</button>
-    </form>
-    <?php if ($canAttend && $tickets !== []): ?>
-        <form class="erp-ticket-bulk" id="tk-bulk" method="post" action="<?= erp_url($base . '/lote') ?>">
-            <?= csrf_input() ?>
-            <label class="erp-sr-only" for="tk-bulk-status">Situação dos selecionados</label>
-            <select class="erp-select" id="tk-bulk-status" name="status" required>
-                <option value="">Com os selecionados…</option>
-                <?php foreach (TicketService::STATUS_LABELS as $key => $label): ?><option value="<?= $key ?>"><?= $label ?></option><?php endforeach; ?>
-            </select>
-            <button class="erp-btn" type="submit">Aplicar</button>
-        </form>
-    <?php endif; ?>
-    <?php if ($tickets === []): ?>
-        <div style="padding:0 var(--erp-space-5) var(--erp-space-5)">
-            <?php $this->insert('components/feedback/empty', ['emptyIcon' => 'help', 'emptyTitle' => 'Nenhum chamado encontrado', 'emptyText' => 'Os chamados abertos aqui, no Help Desk, no site ou pela API aparecem nesta lista.']); ?>
-        </div>
-    <?php else: ?>
-        <div class="erp-table-wrap">
-            <table class="erp-table erp-ticket-table">
-                <thead><tr><?php if ($canAttend): ?><th><input type="checkbox" data-erp-ticket-all aria-label="Selecionar todos"></th><?php endif; ?><th>Protocolo</th><th>Atualizado</th><th>Solicitante</th><th>Assunto</th><th>Situação</th><th>Responsável</th><th>Prioridade</th><th>SLA</th></tr></thead>
-                <tbody>
-                <?php foreach ($tickets as $ticket): [$sla, $slaTone] = $slaLabel($ticket); ?>
-                    <tr<?= $slaTone === 'danger' ? ' class="is-overdue"' : '' ?>>
-                        <?php if ($canAttend): ?><td><input type="checkbox" name="ticket_ids[]" value="<?= (int)$ticket['id'] ?>" form="tk-bulk" aria-label="Selecionar <?= $this->e($ticket['protocol']) ?>"></td><?php endif; ?>
-                        <td><a class="erp-ticket-link" href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['protocol']) ?></a></td>
-                        <td><?= date('d/m/y H:i', strtotime($ticket['updated_at'])) ?></td>
-                        <td><strong><?= $this->e($ticket['requester']['name'] ?? '—') ?></strong><br><small><?= $this->e(implode(' · ', array_filter([$ticket['condominium']['name'] ?? null, $ticket['unit'] !== null ? 'Unid. ' . $ticket['unit']['label'] : null, TicketService::ORIGIN_LABELS[$ticket['origin']] ?? $ticket['origin']]))) ?></small></td>
-                        <td><a href="<?= erp_url($base . '/' . (int)$ticket['id']) ?>"><?= $this->e($ticket['subject']) ?></a><?php if (($ticket['occurrence_id'] ?? null) !== null): ?><br><a class="erp-badge erp-badge--plain" href="<?= erp_url('/operacional/ocorrencias/' . (int)$ticket['occurrence_id']) ?>"><?= $this->e('Ocorrência #' . (int)$ticket['occurrence_id']) ?></a><?php endif; ?></td>
-                        <td><span class="erp-badge erp-badge--<?= $statusTone[$ticket['status']] ?? 'plain' ?>"><?= $this->e(TicketService::STATUS_LABELS[$ticket['status']] ?? $ticket['status']) ?></span></td>
-                        <td><?= $this->e($ticket['assigned_to']['name'] ?? 'Não atribuído') ?></td>
-                        <td><span class="erp-badge erp-badge--<?= $priorityTone[$ticket['priority']] ?? 'plain' ?>"><?= $this->e(TicketService::PRIORITY_LABELS[$ticket['priority']] ?? $ticket['priority']) ?></span></td>
-                        <td><span class="erp-badge erp-badge--<?= $slaTone ?>"><?= $this->e($sla) ?></span></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php endif; ?>
-</section>
+</dialog>
