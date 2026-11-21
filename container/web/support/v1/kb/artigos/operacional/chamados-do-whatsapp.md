@@ -43,6 +43,14 @@ Se algo não confere, o ERP responde que não encontrou, sem dizer o motivo, e o
 
 >! O boleto vai para quem escreve do telefone do cadastro. Quando o morador trocar de número, atualize o cadastro antes.
 
+## O que o Talk responde sozinho para o morador
+
+Com o escopo **Dados do morador identificado** no token, o Talk responde no WhatsApp as dúvidas do dia a dia: encomendas que chegaram, comunicados, áreas comuns e horários livres, as próprias reservas, visitas avisadas, assembleias e a lista de documentos do condomínio.
+
+Ele só responde quando quem escreve está no telefone do cadastro do morador. O Talk vê exatamente o que o morador veria no aplicativo: se uma função está desligada em [[Configurações > Aplicativo e notificações > Portal do morador]], ele também não vê. O Talk só consulta, não reserva nem cancela nada.
+
+> Cada consulta fica registrada na auditoria do ERP, sem o telefone. Depois de 10 consultas de morador que não conferem em 10 minutos, o ERP para de responder ao Talk por alguns minutos.
+
 ## O chamado no SAC
 
 Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:

@@ -70,6 +70,16 @@ $route->get("/talk/condominiums", "Talk:condominiums", null, \Source\Support\Mid
 $route->get("/talk/condominiums/{id}", "Talk:condominium", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/condominiums/{id}/units", "Talk:units", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/condominiums/{id}/announcements", "Talk:announcements", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}", "Talk:resident", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/announcements", "Talk:residentAnnouncements", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/common-areas", "Talk:residentCommonAreas", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/common-areas/{area}/availability", "Talk:residentAreaAvailability", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/reservations", "Talk:residentReservations", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/deliveries", "Talk:residentDeliveries", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/visits", "Talk:residentVisits", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/assemblies", "Talk:residentAssemblies", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/assemblies/{assembly}", "Talk:residentAssembly", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/residents/{id}/documents", "Talk:residentDocuments", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

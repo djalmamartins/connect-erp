@@ -7,10 +7,14 @@ namespace Source\Controllers\Api\V1;
 use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Resident\ResidentFeatureDisabled;
+use Source\Services\Resident\ResidentPortal;
 use Source\Services\Support\TicketError;
 use Source\Services\Talk\TalkCatalog;
 use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkHelpdesk;
+use Source\Services\Talk\TalkResidents;
 use Source\Services\Talk\TalkTokens;
 use Source\Support\AppLogger;
 
@@ -28,6 +32,8 @@ use Source\Support\AppLogger;
  *   GET  /api/v1/talk/condominiums/{id}               endereço e áreas comuns
  *   GET  /api/v1/talk/condominiums/{id}/units         unidades (só bloco e número)
  *   GET  /api/v1/talk/condominiums/{id}/announcements comunicados publicados para todos
+ *   GET  /api/v1/talk/residents/{id}[/...]            o que o morador veria no app (ADR 0632, residents.read),
+ *                                                     com o telefone dele no cabeçalho X-Resident-Phone
  * Cada rota pede um escopo do token (TalkTokens::SCOPES); sem ele = 403 insufficient_scope.
  */
 final class Talk
@@ -70,6 +76,90 @@ final class Talk
         $agent = $this->agent('condominiums.read');
         if ($agent !== null) {
             $this->list('talk_announcements_failed', static fn (): array => (new TalkCatalog())->announcements($agent, (int)($data['id'] ?? 0), $_GET['page'] ?? 1));
+        }
+    }
+
+    /** Vínculo do morador: primeiro nome, condomínio, unidade e funções ligadas. */
+    public function resident(array $data): void
+    {
+        $this->forResident($data, 'profile', static fn (array $link): array => TalkResidents::present($link));
+    }
+
+    public function residentAnnouncements(array $data): void
+    {
+        $this->forResident($data, 'announcements', static fn (array $link, ResidentPortal $p): array => $p->announcements($link));
+    }
+
+    public function residentCommonAreas(array $data): void
+    {
+        $this->forResident($data, 'common_areas', static fn (array $link, ResidentPortal $p): array => $p->commonAreas($link));
+    }
+
+    public function residentAreaAvailability(array $data): void
+    {
+        $area = (int)($data['area'] ?? 0);
+        $month = is_string($_GET['month'] ?? null) ? (string)$_GET['month'] : null;
+        $this->forResident($data, 'area_availability', static fn (array $link, ResidentPortal $p): array => $p->areaAvailability($link, $area, $month));
+    }
+
+    public function residentReservations(array $data): void
+    {
+        $this->forResident($data, 'reservations', static fn (array $link, ResidentPortal $p): array => $p->reservations($link));
+    }
+
+    public function residentDeliveries(array $data): void
+    {
+        $this->forResident($data, 'deliveries', static fn (array $link, ResidentPortal $p): array => $p->deliveries($link));
+    }
+
+    public function residentVisits(array $data): void
+    {
+        $this->forResident($data, 'visits', static fn (array $link, ResidentPortal $p): array => $p->visits($link));
+    }
+
+    public function residentAssemblies(array $data): void
+    {
+        $this->forResident($data, 'assemblies', static fn (array $link, ResidentPortal $p): array => $p->assemblies($link));
+    }
+
+    public function residentAssembly(array $data): void
+    {
+        $assembly = (int)($data['assembly'] ?? 0);
+        $this->forResident($data, 'assembly', static fn (array $link, ResidentPortal $p): array => $p->assembly($link, $assembly));
+    }
+
+    public function residentDocuments(array $data): void
+    {
+        $this->forResident($data, 'documents', static fn (array $link, ResidentPortal $p): array => $p->documents($link));
+    }
+
+    /**
+     * Confere o morador e o telefone (TalkResidents::link) e roda a leitura do ResidentPortal no vínculo dele.
+     * Função desligada no condomínio = 403 feature_disabled, como no app. @param callable(array, ResidentPortal):array $action
+     */
+    private function forResident(array $data, string $action, callable $read): void
+    {
+        $agent = $this->agent('residents.read');
+        if ($agent === null) {
+            return;
+        }
+        header('Cache-Control: no-store, private');
+        try {
+            $phone = mb_substr((string)($_SERVER['HTTP_X_RESIDENT_PHONE'] ?? ''), 0, 30);
+            $link = (new TalkResidents())->link($agent, (int)($data['id'] ?? 0), $phone, $action, (int)(TalkTokens::current()['id'] ?? 0));
+            JsonResponse::send(200, ['data' => $read($link, new ResidentPortal())]);
+        } catch (TicketError $error) {
+            $code = match ($error->status()) { 404 => 'not_found', 429 => 'too_many_requests', default => 'validation_failed' };
+            JsonResponse::send($error->status(), ['error' => ['code' => $code, 'message' => $error->getMessage()]
+                + ($code === 'validation_failed' ? ['fields' => [$error->field => $error->getMessage()]] : [])]);
+        } catch (ResidentFeatureDisabled $error) {
+            JsonResponse::send(403, ['error' => ['code' => 'feature_disabled', 'message' => $error->getMessage(), 'feature' => $error->feature]]);
+        } catch (RegistryNotFound | \Source\Services\Erp\Registry\RegistryValidationException) {
+            // Assembleia ou área comum de outro condomínio: o mesmo 404.
+            JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Não encontrado.']]);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'integration', ['event_type' => 'talk_resident_' . $action . '_failed', 'origin' => 'talk']);
+            JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível concluir o pedido do Talk.']]);
         }
     }
 
