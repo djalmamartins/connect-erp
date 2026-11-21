@@ -19,7 +19,7 @@ use Source\Services\CondominiumScope;
 final class BankRemittances
 {
     public const STATUSES = ['confirmed' => 'Confirmada', 'sent' => 'Enviada', 'rejected' => 'Com recusa'];
-    public const MODES = ['inter' => 'Registro online (API do Inter), sem arquivo', 'cora' => 'Registro online (API da Cora), sem arquivo', 'sandbox' => 'Sandbox interno (testes)'];
+    public const MODES = ['inter' => 'Registro online (API do Inter), sem arquivo', 'cora' => 'Registro online (API da Cora), sem arquivo', 'sicoob' => 'Registro online (API do Sicoob), sem arquivo', 'sandbox' => 'Sandbox interno (testes)'];
 
     private PDO $pdo;
     private CondominiumScope $scope;

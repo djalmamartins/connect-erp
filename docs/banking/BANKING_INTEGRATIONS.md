@@ -26,6 +26,9 @@ BankAdapter: capabilities(), validateConfiguration(), registerCharge(), getCharg
 
 ## Bancos
 - **Inter** (piloto, decidido em 10/11/2026): adaptador `InterBankAdapter`, só sandbox. Ver `docs/banking/INTER.md` e ADR 0156.
+- **Cora**: adaptador `CoraBankAdapter`, só stage; cancelada pelo Djalma em 21/11/2026 (código inativo). Ver `docs/banking/CORA.md` e ADR 0322.
+- **Sicoob** (pedido de 21/11/2026): adaptador `SicoobBankAdapter`, só sandbox. Ver `docs/banking/SICOOB.md` e ADR 0633.
+- **CondoConta** (pedido de 21/11/2026): PENDENTE da documentação da API. Ver `docs/banking/CONDOCONTA.md`.
 - Próximos (proposta da issue #46): Itaú e um adaptador CNAB 240 genérico.
 
 ## Decisões pendentes

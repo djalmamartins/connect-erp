@@ -14,8 +14,11 @@ declare(strict_types=1);
  *       grava tudo cifrado, liga a conta ao Inter (sandbox) e mostra UMA vez o endereço do webhook.
  *       Depois de cadastrar, apague os arquivos .crt/.key da pasta de downloads.
  *
+ *   php tools/bank-credentials.php cadastrar --conta=ID --banco=sicoob --client-id=XXXX --numero-cliente=NNNN
+ *       Sicoob (ADR 0633), só sandbox: pede o access token do portal no lugar do client_secret; sem certificado.
+ *
  *   php tools/bank-credentials.php testar --conta=ID
- *       Só pede um token ao banco da conta (sandbox do Inter ou stage da Cora; não emite nada) para conferir credencial
+ *       Só pede um token ao banco da conta (sandbox do Inter ou do Sicoob, stage da Cora; não emite nada) para conferir credencial
  *       e certificado. Saída 0 se o banco respondeu, 1 se não (com o motivo).
  *
  *   php tools/bank-credentials.php situacao --conta=ID
@@ -59,7 +62,8 @@ try {
         case 'cadastrar':
             $id = $account();
             $bank = $options['banco'] ?? 'inter';
-            foreach (['client-id', 'certificado', 'chave'] as $required) {
+            $noCertificate = in_array($bank, BankCredentials::WITHOUT_CERTIFICATE, true);
+            foreach ($noCertificate ? ['client-id', 'numero-cliente'] : ['client-id', 'certificado', 'chave'] as $required) {
                 if (trim((string)($options[$required] ?? '')) === '') {
                     $fail("Falta --{$required}.");
                 }
@@ -72,7 +76,7 @@ try {
             };
             $secret = getenv('BANK_CLIENT_SECRET') ?: '';
             if ($secret === '') {
-                fwrite(STDOUT, 'client_secret (não aparece na tela): ');
+                fwrite(STDOUT, ($noCertificate ? 'access token do sandbox' : 'client_secret') . ' (não aparece na tela): ');
                 if (DIRECTORY_SEPARATOR === '/') {
                     shell_exec('stty -echo');
                 }
@@ -84,17 +88,19 @@ try {
             }
             $result = (new BankCredentials())->save($id, $bank, 'sandbox', [
                 'client_id' => (string)$options['client-id'], 'client_secret' => $secret,
-                'certificate' => $read((string)$options['certificado']), 'private_key' => $read((string)$options['chave']),
+                'certificate' => ($options['certificado'] ?? '') !== '' ? $read((string)$options['certificado']) : '',
+                'private_key' => ($options['chave'] ?? '') !== '' ? $read((string)$options['chave']) : '',
+                'client_number' => (string)($options['numero-cliente'] ?? ''),
             ]);
             $base = rtrim((string)(getenv('BANK_WEBHOOK_BASE_URL') ?: (defined('CONF_URL_BASE') ? CONF_URL_BASE : '')), '/');
-            fwrite(STDOUT, "Credencial gravada no cofre. Conta {$id} agora usa o {$bank} (sandbox). Certificado vence em {$result['certificate_expires_on']}." . PHP_EOL);
-            fwrite(STDOUT, "Endereço do webhook (aparece só agora; cadastre no Inter e não compartilhe):" . PHP_EOL);
+            fwrite(STDOUT, "Credencial gravada no cofre. Conta {$id} agora usa o {$bank} (sandbox). " . ($result['certificate_expires_on'] !== null ? "Certificado vence em {$result['certificate_expires_on']}." : 'Sem certificado (sandbox).') . PHP_EOL);
+            fwrite(STDOUT, "Endereço do webhook (aparece só agora; cadastre no banco e não compartilhe):" . PHP_EOL);
             fwrite(STDOUT, ($base !== '' ? $base : 'https://SEU-HOST') . "/api/v1/webhooks/bank/{$bank}/{$result['webhook_secret']}" . PHP_EOL);
             fwrite(STDOUT, "Apague os arquivos .crt e .key da pasta de onde vieram." . PHP_EOL);
             break;
 
         case 'testar':
-            // ADR 0392: o banco sai do código da conta (Inter ou Cora); antes era sempre o Inter, e a Cora falhava sem motivo.
+            // ADR 0392: o banco sai do código da conta (Inter, Cora ou Sicoob); antes era sempre o Inter, e a Cora falhava sem motivo.
             $id = $account();
             $result = (new BankCredentialSetup())->testFromTerminal($id);
             fwrite($result['connected'] ? STDOUT : STDERR, $result['message'] . PHP_EOL);
