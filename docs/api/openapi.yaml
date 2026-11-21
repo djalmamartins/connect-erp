@@ -554,6 +554,12 @@ components:
             feature: { type: string }
             fields: { type: object, additionalProperties: { type: string } }
   responses:
+    TalkResidentError:
+      description: >-
+        403 insufficient_scope (token sem residents.read) ou feature_disabled (função desligada no portal do condomínio);
+        404 not_found (morador ou telefone não confere, fora do escopo, ou item de outro condomínio); 422 sem X-Resident-Phone;
+        429 too_many_requests (10 erros de morador por token em 10 minutos)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
     Unauthenticated:
       description: Sessão ausente ou ainda sem o segundo fator
       content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
@@ -7916,6 +7922,179 @@ paths:
         '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Token sem o escopo condominiums.read, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Condomínio não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/residents/{id}:
+    get:
+      operationId: talkResident
+      tags: [Talk]
+      summary: Morador identificado pelo telefone - vínculo e funções ligadas (ADR 0632, residents.read)
+      description: Só o primeiro nome, condomínio, unidade, tipo de vínculo e as funções ligadas no portal (sem boletos e moradores da unidade, que têm rota própria ou ficam no app). Sem CPF, e-mail ou telefone. Cada consulta vai para a auditoria.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { resident_id: { type: integer }, first_name: { type: string }, relationship: { type: string, enum: [owner, tenant, resident, financial] }, relationship_label: { type: string }, condominium: { type: object, properties: { id: { type: integer }, name: { type: string } } }, unit: { type: object, properties: { id: { type: integer }, label: { type: string } } }, features: { type: array, items: { type: string } } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/announcements:
+    get:
+      operationId: talkResidentAnnouncements
+      tags: [Talk]
+      summary: Comunicados que o morador vê no app, inclusive os enviados à unidade (announcements)
+      description: Mesma lista do GET /resident/announcements, texto sem HTML, 50 mais novos.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/common-areas:
+    get:
+      operationId: talkResidentCommonAreas
+      tags: [Talk]
+      summary: Áreas comuns com as regras de reserva (reservations)
+      description: Mesma lista do GET /resident/common-areas.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/common-areas/{area}/availability:
+    get:
+      operationId: talkResidentAreaAvailability
+      tags: [Talk]
+      summary: Horários já tomados da área no mês (reservations)
+      description: Só data e horário, nunca quem reservou. Área de outro condomínio = 404.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+        - { name: area, in: path, required: true, schema: { type: integer } }
+        - { name: month, in: query, schema: { type: string, example: '2026-12' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { area_id: { type: integer }, month: { type: string }, busy: { type: array, items: { type: object, properties: { date: { type: string }, starts_time: { type: [string, 'null'] }, ends_time: { type: [string, 'null'] } } } } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/reservations:
+    get:
+      operationId: talkResidentReservations
+      tags: [Talk]
+      summary: Reservas e lista de espera da unidade (reservations)
+      description: De 30 dias atrás em diante, como no app.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { reservations: { type: array, items: { type: object } }, waitlist: { type: array, items: { type: object } } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/deliveries:
+    get:
+      operationId: talkResidentDeliveries
+      tags: [Talk]
+      summary: Encomendas da unidade (deliveries)
+      description: As que aguardam retirada e as dos últimos 90 dias.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/visits:
+    get:
+      operationId: talkResidentVisits
+      tags: [Talk]
+      summary: Visitas avisadas pela unidade (visitors)
+      description: De 30 dias atrás em diante; documento do visitante mascarado.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/assemblies:
+    get:
+      operationId: talkResidentAssemblies
+      tags: [Talk]
+      summary: Assembleias convocadas, abertas e encerradas (assemblies)
+      description: Rascunho e cancelada não aparecem.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/assemblies/{assembly}:
+    get:
+      operationId: talkResidentAssembly
+      tags: [Talk]
+      summary: Assembleia com a pauta e o resultado (assemblies)
+      description: Ata só depois de encerrada. De outro condomínio = 404.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+        - { name: assembly, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
+  /talk/residents/{id}/documents:
+    get:
+      operationId: talkResidentDocuments
+      tags: [Talk]
+      summary: Documentos liberados para os moradores (documents)
+      description: Só a lista (título, pasta, tamanho). O arquivo o morador baixa no app.
+      security: [{ talkIntegration: [] }]
+      parameters:
+        - { name: id, in: path, required: true, description: id do morador (de /talk/people), schema: { type: integer } }
+        - { name: X-Resident-Phone, in: header, required: true, description: telefone de quem fala no WhatsApp, com DDD; tem de ser o do cadastro, schema: { type: string, example: '5531999998888' } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { $ref: '#/components/responses/TalkResidentError' }
+        '404': { $ref: '#/components/responses/TalkResidentError' }
+        '422': { $ref: '#/components/responses/TalkResidentError' }
+        '429': { $ref: '#/components/responses/TalkResidentError' }
   /tickets:
     get:
       operationId: listTickets
