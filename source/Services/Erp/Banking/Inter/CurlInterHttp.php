@@ -7,7 +7,7 @@ namespace Source\Services\Erp\Banking\Inter;
 use RuntimeException;
 
 /**
- * mTLS com o banco (Inter, ADR 0156; Cora, ADR 0322). Certificado e chave vão para o cURL em memória (CURLOPT_SSLCERT_BLOB
+ * mTLS com o banco (Inter, ADR 0156; Cora, ADR 0322; Sicoob em produção, ADR 0633). Certificado e chave vão para o cURL em memória (CURLOPT_SSLCERT_BLOB
  * e CURLOPT_SSLKEY_BLOB): nada é gravado em disco. Verificação do servidor sempre ligada.
  */
 final class CurlInterHttp implements InterHttp
@@ -37,13 +37,18 @@ final class CurlInterHttp implements InterHttp
             CURLOPT_TIMEOUT => $this->timeoutSeconds,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_SSLCERTTYPE => 'PEM',
-            CURLOPT_SSLKEYTYPE => 'PEM',
-            CURLOPT_SSLCERT_BLOB => $certificatePem,
-            CURLOPT_SSLKEY_BLOB => $privateKeyPem,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
         ]);
+        if ($certificatePem !== '' || $privateKeyPem !== '') {
+            // Sem certificado só o sandbox do Sicoob (ADR 0633), que autentica pelo token fixo do portal.
+            curl_setopt_array($curl, [
+                CURLOPT_SSLCERTTYPE => 'PEM',
+                CURLOPT_SSLKEYTYPE => 'PEM',
+                CURLOPT_SSLCERT_BLOB => $certificatePem,
+                CURLOPT_SSLKEY_BLOB => $privateKeyPem,
+            ]);
+        }
         if ($body !== null) {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
         }

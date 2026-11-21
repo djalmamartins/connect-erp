@@ -16,13 +16,15 @@ use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\CurlInterHttp;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 use Source\Services\Erp\Banking\Inter\InterHttp;
+use Source\Services\Erp\Banking\Sicoob\SicoobBankAdapter;
 use Source\Services\LoginThrottle;
 use Source\Support\AppLogger;
 
 /**
- * Integração do banco pela tela (ADR 0158; Cora no ADR 0322): quem pode gerenciar configurações e contas bancárias
- * envia o pacote do banco (ZIP ou certificado e chave), o client ID e, no Inter, o secret (a Cora não usa secret).
- * O banco sai do código da conta: 077 = Inter, 403 = Cora. O sistema abre o pacote em memória,
+ * Integração do banco pela tela (ADR 0158; Cora no ADR 0322; Sicoob no ADR 0633): quem pode gerenciar configurações e contas
+ * bancárias envia o pacote do banco (ZIP ou certificado e chave), o client ID e, no Inter, o secret (a Cora não usa secret).
+ * No sandbox do Sicoob vão o client ID, o access token do portal (no lugar do secret) e o número do cliente, sem certificado.
+ * O banco sai do código da conta: 077 = Inter, 403 = Cora, 756 = Sicoob. O sistema abre o pacote em memória,
  * acha o certificado e a chave pelo conteúdo (não pelo nome), confere o par e a validade, testa a
  * conexão (só pede um token, não emite nada) e só então grava cifrado no cofre (BankCredentials).
  *
@@ -39,6 +41,7 @@ final class BankCredentialSetup
     public const THROTTLE_SCOPE = 'bank-cred';
     public const THROTTLE_MAX = 10;
     public const THROTTLE_WINDOW = 3600;
+    public const ONLY_BANKS = 'Só contas do Banco Inter (código 077), da Cora (código 403) e do Sicoob (código 756) aceitam esta integração por enquanto.';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -103,6 +106,13 @@ final class BankCredentialSetup
     public static function diagnose(string $error, string $adapter = InterBankAdapter::NAME): string
     {
         $lower = strtolower($error);
+        if ($adapter === SicoobBankAdapter::NAME) {
+            return match (true) {
+                str_contains($lower, 'recusou a autenticação') => 'O Sicoob recusou o client ID ou o access token. No sandbox, copie os dois do portal developers.sicoob.com.br (Sandbox), sem espaços.',
+                str_contains($lower, 'sem resposta') => 'O Sicoob não respondeu. Tente de novo em alguns minutos.',
+                default => 'O teste com o Sicoob falhou: ' . mb_substr($error, 0, 200),
+            };
+        }
         if ($adapter === CoraBankAdapter::NAME) {
             return match (true) {
                 str_contains($lower, 'unknown ca') || str_contains($lower, 'certificate') => 'A Cora não reconheceu o certificado. Para o ambiente de teste, use a credencial gerada em Conta > Integrações via APIs > Integração Direta > Ambiente de teste, na Cora Web (a de produção é outra).',
@@ -119,7 +129,7 @@ final class BankCredentialSetup
         };
     }
 
-    /** Contas do Inter (077) e da Cora (403) nos condomínios do usuário, com o banco e a situação da credencial (sem segredo). */
+    /** Contas do Inter (077), da Cora (403) e do Sicoob (756) nos condomínios do usuário, com o banco e a situação da credencial (sem segredo). */
     public function accounts(User $user): array
     {
         $ids = array_values(array_filter(array_map('intval', $this->scope->allowedIds($user)), static fn (int $i): bool => $i > 0));
@@ -130,12 +140,14 @@ final class BankCredentialSetup
             WHERE a.deleted_at IS NULL AND a.bank_code IN ('" . implode("','", BankCredentials::ADAPTERS) . "') AND a.condominium_id IN (" . implode(',', $ids) . ') ORDER BY c.name, a.name')->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn (array $row): array => ['id' => (int)$row['id'], 'name' => (string)$row['name'], 'condominium_id' => (int)$row['condominium_id'],
             'bank' => self::bankOf((string)$row['bank_code']), 'needs_secret' => !in_array(self::bankOf((string)$row['bank_code']), BankCredentials::WITHOUT_SECRET, true),
+            'needs_certificate' => !in_array(self::bankOf((string)$row['bank_code']), BankCredentials::WITHOUT_CERTIFICATE, true),
+            'needs_client_number' => in_array(self::bankOf((string)$row['bank_code']), BankCredentials::NEEDS_CLIENT_NUMBER, true),
             'condominium' => (string)$row['condominium'], 'adapter' => (string)$row['adapter'], 'credential' => $this->credentials->status((int)$row['id'])], $rows);
     }
 
     /**
      * Abre o pacote, testa e grava. @param array{client_id?:mixed, client_secret?:mixed, files?:mixed, save_anyway?:mixed} $input
-     * @return array{connected:bool, message:string, certificate_expires_on:string, webhook_url:string, credential:?array}
+     * @return array{connected:bool, message:string, certificate_expires_on:?string, webhook_url:string, credential:?array}
      */
     public function connect(User $user, int $bankAccountId, array $input, string $webhookBase): array
     {
@@ -146,17 +158,29 @@ final class BankCredentialSetup
         $clientId = trim(is_string($input['client_id'] ?? null) ? $input['client_id'] : '');
         $secret = $withoutSecret ? '' : trim(is_string($input['client_secret'] ?? null) ? $input['client_secret'] : '');
         if ($clientId === '' || mb_strlen($clientId) > 200 || (!$withoutSecret && $secret === '') || mb_strlen($secret) > 500) {
-            throw new InvalidArgumentException($withoutSecret ? 'Informe o client ID da credencial da Cora.' : 'Informe o client ID e o client secret da aplicação do banco.');
+            throw new InvalidArgumentException($withoutSecret ? 'Informe o client ID da credencial da Cora.'
+                : ($bank === SicoobBankAdapter::NAME ? 'Informe o client ID e o access token do sandbox do Sicoob.' : 'Informe o client ID e o client secret da aplicação do banco.'));
+        }
+        $clientNumber = '';
+        if (in_array($bank, BankCredentials::NEEDS_CLIENT_NUMBER, true)) {
+            $clientNumber = preg_replace('/\D+/', '', is_scalar($input['client_number'] ?? null) ? (string)$input['client_number'] : '') ?? '';
+            if ($clientNumber === '' || strlen($clientNumber) > 10) {
+                throw new InvalidArgumentException('Informe o número do cliente do Sicoob (código do beneficiário), só com números.');
+            }
         }
         $files = is_array($input['files'] ?? null) ? array_values(array_filter($input['files'], 'is_array')) : [];
-        $pair = self::extract($files);
-        BankCredentials::inspectCertificate($pair['certificate'], $pair['private_key']);
-        $secrets = ['client_id' => $clientId, 'client_secret' => $secret] + $pair;
+        if ($files === [] && in_array($bank, BankCredentials::WITHOUT_CERTIFICATE, true)) {
+            $pair = ['certificate' => '', 'private_key' => ''];   // sandbox do Sicoob: sem certificado
+        } else {
+            $pair = self::extract($files);
+            BankCredentials::inspectCertificate($pair['certificate'], $pair['private_key']);
+        }
+        $secrets = ['client_id' => $clientId, 'client_secret' => $secret] + $pair + ($clientNumber !== '' ? ['client_number' => $clientNumber] : []);
 
         $connected = true;
         $message = self::okMessage($bank);
         try {
-            $this->adapter($bank, $secrets + ['account_number' => (string)($account['account_number'] ?? '')])->checkAuthentication();
+            $this->adapter($bank, $secrets + ['account_number' => (string)($account['account_number'] ?? '')], $account)->checkAuthentication();
         } catch (RuntimeException|InvalidArgumentException $error) {
             $connected = false;
             $message = self::diagnose($error->getMessage(), $bank);
@@ -184,7 +208,7 @@ final class BankCredentialSetup
 
     /**
      * Mesmo teste, pelo terminal do servidor (ADR 0392): `php tools/bank-credentials.php testar --conta=ID`. Sem usuário,
-     * porque quem tem o terminal já tem o .env; escolhe o banco pelo código da conta (Inter ou Cora), como a tela.
+     * porque quem tem o terminal já tem o .env; escolhe o banco pelo código da conta (Inter, Cora ou Sicoob), como a tela.
      *
      * @return array{connected:bool, message:string, bank:string}
      */
@@ -197,7 +221,7 @@ final class BankCredentialSetup
             throw new RegistryNotFound('Conta bancária não encontrada.');
         }
         if (!in_array((string)$account['bank_code'], BankCredentials::ADAPTERS, true)) {
-            throw new InvalidArgumentException('Só contas do Banco Inter (código 077) e da Cora (código 403) aceitam esta integração por enquanto.');
+            throw new InvalidArgumentException(self::ONLY_BANKS);
         }
         return $this->probe($account) + ['bank' => self::bankOf((string)$account['bank_code'])];
     }
@@ -208,7 +232,7 @@ final class BankCredentialSetup
         $bankAccountId = (int)$account['id'];
         $bank = self::bankOf((string)$account['bank_code']);
         try {
-            $this->adapter($bank, $this->credentials->secrets($bankAccountId) + ['account_number' => (string)($account['account_number'] ?? '')])->checkAuthentication();
+            $this->adapter($bank, $this->credentials->secrets($bankAccountId) + ['account_number' => (string)($account['account_number'] ?? '')], $account)->checkAuthentication();
             return ['connected' => true, 'message' => self::okMessage($bank)];
         } catch (RuntimeException|InvalidArgumentException $error) {
             if ($error->getMessage() === 'Conta bancária sem credencial cadastrada.') {
@@ -224,12 +248,16 @@ final class BankCredentialSetup
         $this->credentials->remove($bankAccountId, (int)$user->id, 'web');
     }
 
-    private function adapter(string $bank, array $secrets): BankPaymentSimulator
+    private function adapter(string $bank, array $secrets, array $account = []): BankPaymentSimulator
     {
-        return $bank === CoraBankAdapter::NAME ? new CoraBankAdapter($secrets, ($this->httpFactory)()) : new InterBankAdapter($secrets, ($this->httpFactory)());
+        return match ($bank) {
+            CoraBankAdapter::NAME => new CoraBankAdapter($secrets, ($this->httpFactory)()),
+            SicoobBankAdapter::NAME => new SicoobBankAdapter($secrets + ['modality' => (string)SicoobBankAdapter::modality($account['wallet'] ?? null)], ($this->httpFactory)()),
+            default => new InterBankAdapter($secrets, ($this->httpFactory)()),
+        };
     }
 
-    /** Adaptador pelo código do banco da conta (regra pura): 077 = inter, 403 = cora. */
+    /** Adaptador pelo código do banco da conta (regra pura): 077 = inter, 403 = cora, 756 = sicoob. */
     public static function bankOf(string $bankCode): string
     {
         $bank = array_search($bankCode, BankCredentials::ADAPTERS, true);
@@ -238,7 +266,11 @@ final class BankCredentialSetup
 
     private static function okMessage(string $bank): string
     {
-        return $bank === CoraBankAdapter::NAME ? 'Conexão com a Cora (ambiente de teste) testada: token obtido.' : 'Conexão com o Inter (sandbox) testada: token obtido.';
+        return match ($bank) {
+            CoraBankAdapter::NAME => 'Conexão com a Cora (ambiente de teste) testada: token obtido.',
+            SicoobBankAdapter::NAME => 'Conexão com o Sicoob (sandbox) testada: o banco aceitou o client ID e o token.',
+            default => 'Conexão com o Inter (sandbox) testada: token obtido.',
+        };
     }
 
     private function account(User $user, int $bankAccountId): array
@@ -250,7 +282,7 @@ final class BankCredentialSetup
             throw new RegistryNotFound('Conta bancária não encontrada.');
         }
         if (!in_array((string)$row['bank_code'], BankCredentials::ADAPTERS, true)) {
-            throw new InvalidArgumentException('Só contas do Banco Inter (código 077) e da Cora (código 403) aceitam esta integração por enquanto.');
+            throw new InvalidArgumentException(self::ONLY_BANKS);
         }
         return $row;
     }

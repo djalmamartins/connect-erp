@@ -1350,15 +1350,26 @@
       });
     });
     if (!form) return;
-    /* Cora (ADR 0322) não usa client secret: o campo some e deixa de ser obrigatório. */
+    /* Cora (ADR 0322) não usa client secret: o campo some e deixa de ser obrigatório. Sicoob (ADR 0633): o secret
+       vira o access token do sandbox, pede o número do cliente e o certificado fica opcional. */
     var accountSelect = $('[data-bank-credential-account]', form);
     var secretField = $('[data-bank-credential-secret]', form);
+    var numberField = $('[data-bank-credential-client-number]', form);
+    var filesField = $('[data-bank-credential-files]', form);
+    var flag = function (name, fallback) { var opt = accountSelect && accountSelect.options[accountSelect.selectedIndex]; return opt ? opt.getAttribute(name) === '1' : fallback; };
     var needsSecret = function () { var opt = accountSelect && accountSelect.options[accountSelect.selectedIndex]; return !opt || opt.getAttribute('data-needs-secret') !== '0'; };
+    var needsNumber = function () { return flag('data-needs-client-number', false); };
+    var needsCertificate = function () { var opt = accountSelect && accountSelect.options[accountSelect.selectedIndex]; return !opt || opt.getAttribute('data-needs-certificate') !== '0'; };
     var syncSecret = function () {
-      if (!secretField) return;
-      var need = needsSecret();
-      secretField.hidden = !need;
-      $('[name="client_secret"]', form).required = need;
+      if (secretField) {
+        var need = needsSecret();
+        secretField.hidden = !need;
+        $('[name="client_secret"]', form).required = need;
+        var label = $('[data-bank-credential-secret-label]', form);
+        if (label) label.textContent = needsNumber() ? 'Access token do sandbox' : 'Client secret';
+      }
+      if (numberField) { numberField.hidden = !needsNumber(); $('[name="client_number"]', form).required = needsNumber(); }
+      if (filesField) { $('[name="files"]', form).required = needsCertificate(); }
     };
     if (accountSelect) { accountSelect.addEventListener('change', syncSecret); syncSecret(); }
     form.addEventListener('submit', function (event) {
@@ -1366,7 +1377,7 @@
       if (!form.reportValidity()) return;
       var input = $('[name="files"]', form);
       var files = Array.prototype.slice.call(input.files || []);
-      if (!files.length || files.length > 4) { toast('Escolha o ZIP do banco ou os arquivos .crt e .key.', 'warning'); return; }
+      if ((!files.length && needsCertificate()) || files.length > 4) { toast('Escolha o ZIP do banco ou os arquivos .crt e .key.', 'warning'); return; }
       if (files.some(function (f) { return f.size > 250000; })) { toast('Arquivo grande demais para um pacote de certificado.', 'warning'); return; }
       var button = $('[type="submit"]', form);
       busy(button, true);
@@ -1375,6 +1386,7 @@
         return call('POST', api + '/' + $('[name="bank_account_id"]', form).value, {
           client_id: $('[name="client_id"]', form).value.trim(),
           client_secret: needsSecret() ? $('[name="client_secret"]', form).value : '',
+          client_number: needsNumber() ? $('[name="client_number"]', form).value.trim() : '',
           files: encoded,
           save_anyway: $('[name="save_anyway"]', form).checked
         });
@@ -1383,7 +1395,7 @@
         var d = json.data || {};
         $('[name="client_secret"]', form).value = '';
         input.value = '';
-        show(d.connected ? 'success' : 'warning', '<strong>' + esc(d.message) + '</strong> Certificado vence em ' + esc((d.certificate_expires_on || '').split('-').reverse().join('/')) + '.' +
+        show(d.connected ? 'success' : 'warning', '<strong>' + esc(d.message) + '</strong> ' + (d.certificate_expires_on ? 'Certificado vence em ' + esc(d.certificate_expires_on.split('-').reverse().join('/')) + '.' : 'Sem certificado (sandbox).') +
           '<br>Endereço do aviso de pagamento (webhook), mostrado só agora. Guarde para quando o servidor tiver endereço público e não compartilhe:<br><code data-bank-webhook-url>' + esc(d.webhook_url) + '</code> ' +
           '<button type="button" class="erp-btn erp-btn--sm" data-bank-webhook-copy>Copiar</button>');
         var copy = $('[data-bank-webhook-copy]', result);

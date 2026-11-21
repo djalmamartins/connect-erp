@@ -3,9 +3,9 @@
  * Integrações (AP-171, ADR 0091 e 0161), com o mesmo IntegrationStatus de GET /api/v1/integrations.
  * Mostra banco, e-mail, fila de avisos, antivírus e índices de correção. Só números e estados, sem endereço do
  * antivírus nem da caixa de teste. A fila e o antivírus contam só os condomínios do escopo do usuário.
- * Banco Inter (ADR 0158) e Cora (ADR 0322): quem tem erp.settings.manage e erp.bank_accounts.manage envia o pacote do
+ * Banco Inter (ADR 0158), Cora (ADR 0322) e Sicoob (ADR 0633): quem tem erp.settings.manage e erp.bank_accounts.manage envia o pacote do
  * banco (ZIP ou certificado e chave), o client ID e, só no Inter, o secret para /api/v1/bank-credentials/{id}
- * (erp.js, data-erp-bank-credentials). O banco sai do código da conta: 077 = Inter, 403 = Cora.
+ * (erp.js, data-erp-bank-credentials). O banco sai do código da conta: 077 = Inter, 403 = Cora, 756 = Sicoob.
  * Tokens de acesso (ADR 0623): quem tem erp.settings.manage cria e revoga o token do Connect Talk, com escopos,
  * validade e IPs, por /api/v1/integration-tokens (erp.js, data-erp-integration-tokens). O token aparece uma vez.
  * @var array $currentPage @var array $integrations @var ?list<array> $bankCredentialAccounts @var bool $canManageBankCredentials
@@ -34,7 +34,7 @@ $brDate = static fn (?string $d): string => $d !== null && preg_match('/^(\d{4})
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],
     'pageTitle' => $currentPage['name'],
-    'pageLead' => 'Situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. Aqui você também liga uma conta do Banco Inter ou da Cora (ambiente de testes) à cobrança.',
+    'pageLead' => 'Situação das integrações da Connect: banco, e-mail, antivírus e índices de correção. Aqui você também liga uma conta do Banco Inter, da Cora ou do Sicoob (ambiente de testes) à cobrança.',
     'pageActions' => '',
 ]);
 ?>
@@ -87,10 +87,10 @@ $this->insert('components/layout/page-head', [
 <?php if ($bankCredentialAccounts !== null): ?>
 <section class="erp-card" aria-labelledby="int-inter-title" data-erp-bank-credentials data-api="<?= $this->e(url('/api/v1/bank-credentials')) ?>">
     <?= csrf_input() ?>
-    <div class="erp-card__head"><div><h2 id="int-inter-title">Banco Inter e Cora</h2><p>Ligue uma conta do Inter ou da Cora à cobrança: envie o certificado do banco e o client ID (no Inter, também o secret). O sistema testa a conexão antes de gravar.</p></div></div>
-    <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><strong>Só o ambiente de testes dos bancos.</strong> <strong>Inter:</strong> crie a aplicação no portal de sandbox do Inter (developers.inter.co/sandbox), não no Internet Banking; o sandbox funciona de segunda a sexta, das 8h às 20h. <strong>Cora:</strong> gere a credencial na Cora Web em Conta &gt; Integrações via APIs &gt; Integração Direta &gt; Ambiente de teste; a credencial de produção é outra e o ambiente de teste recusa.</div></div>
+    <div class="erp-card__head"><div><h2 id="int-inter-title">Banco Inter, Cora e Sicoob</h2><p>Ligue uma conta do Inter, da Cora ou do Sicoob à cobrança: envie o certificado do banco e o client ID (no Inter, também o secret; no Sicoob, o access token e o número do cliente). O sistema testa a conexão antes de gravar.</p></div></div>
+    <div class="erp-alert erp-alert--warning" role="note"><?= $icon('info') ?><div><strong>Só o ambiente de testes dos bancos.</strong> <strong>Inter:</strong> crie a aplicação no portal de sandbox do Inter (developers.inter.co/sandbox), não no Internet Banking; o sandbox funciona de segunda a sexta, das 8h às 20h. <strong>Cora:</strong> gere a credencial na Cora Web em Conta &gt; Integrações via APIs &gt; Integração Direta &gt; Ambiente de teste; a credencial de produção é outra e o ambiente de teste recusa. <strong>Sicoob:</strong> entre em developers.sicoob.com.br, abra Sandbox e copie o client ID e o access token de lá; no sandbox não vai certificado.</div></div>
     <?php if ($bankCredentialAccounts === []): ?>
-        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('wallet') ?></span><strong>Nenhuma conta do Inter ou da Cora cadastrada</strong><p>Cadastre a conta bancária do condomínio com o banco 077 (Inter) ou 403 (Cora) em <?= $accountsPage !== null ? '<a href="' . $this->e(erp_url($accountsPage['route'])) . '">Contas bancárias</a>' : 'Contas bancárias' ?> e volte aqui.</p></div>
+        <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('wallet') ?></span><strong>Nenhuma conta do Inter, da Cora ou do Sicoob cadastrada</strong><p>Cadastre a conta bancária do condomínio com o banco 077 (Inter), 403 (Cora) ou 756 (Sicoob) em <?= $accountsPage !== null ? '<a href="' . $this->e(erp_url($accountsPage['route'])) . '">Contas bancárias</a>' : 'Contas bancárias' ?> e volte aqui.</p></div>
     <?php else: ?>
         <div class="erp-table-wrap" role="region" aria-labelledby="int-inter-title" tabindex="0"><table class="erp-table">
             <thead><tr><th scope="col">Conta</th><th scope="col">Banco</th><th scope="col">Condomínio</th><th scope="col">Credencial</th><th scope="col">Certificado vence</th><?php if ($canManageBankCredentials): ?><th scope="col"><span class="erp-sr-only">Ações</span></th><?php endif; ?></tr></thead>
@@ -98,10 +98,10 @@ $this->insert('components/layout/page-head', [
             <?php foreach ($bankCredentialAccounts as $acc): $cred = $acc['credential']; ?>
                 <tr data-bank-credential-row="<?= (int)$acc['id'] ?>">
                     <td><strong><?= $this->e($acc['name']) ?></strong></td>
-                    <td><?= ($acc['bank'] ?? 'inter') === 'cora' ? 'Cora' : 'Banco Inter' ?></td>
+                    <td><?= $this->e(['cora' => 'Cora', 'sicoob' => 'Sicoob'][$acc['bank'] ?? 'inter'] ?? 'Banco Inter') ?></td>
                     <td><?= $this->e($acc['condominium']) ?></td>
                     <td><?php if ($cred === null): ?><span class="erp-badge erp-badge--plain">Sem credencial</span><?php else: ?><span class="erp-badge erp-badge--success">Gravada</span> <span class="erp-muted">client ID <?= $this->e((string)$cred['client_id_hint']) ?></span><?php endif; ?></td>
-                    <td><?= $cred === null ? '—' : $this->e($brDate($cred['certificate_expires_on'])) ?></td>
+                    <td><?= $cred === null ? '—' : ($cred['certificate_expires_on'] === null ? 'Sem certificado (sandbox)' : $this->e($brDate($cred['certificate_expires_on']))) ?></td>
                     <?php if ($canManageBankCredentials): ?>
                     <td class="erp-table__actions">
                         <?php if ($cred !== null): ?>
@@ -117,10 +117,11 @@ $this->insert('components/layout/page-head', [
         <?php if ($canManageBankCredentials): ?>
         <form data-bank-credential-form autocomplete="off">
             <div class="erp-form__grid">
-                <div class="erp-field erp-col-4"><label for="inter-account">Conta bancária</label><select class="erp-select" id="inter-account" name="bank_account_id" required data-bank-credential-account><?php foreach ($bankCredentialAccounts as $acc): ?><option value="<?= (int)$acc['id'] ?>" data-needs-secret="<?= !empty($acc['needs_secret']) || !isset($acc['needs_secret']) ? '1' : '0' ?>"><?= $this->e($acc['name'] . ' · ' . (($acc['bank'] ?? 'inter') === 'cora' ? 'Cora' : 'Inter') . ' · ' . $acc['condominium']) ?></option><?php endforeach; ?></select></div>
+                <div class="erp-field erp-col-4"><label for="inter-account">Conta bancária</label><select class="erp-select" id="inter-account" name="bank_account_id" required data-bank-credential-account><?php foreach ($bankCredentialAccounts as $acc): ?><option value="<?= (int)$acc['id'] ?>" data-needs-secret="<?= !empty($acc['needs_secret']) || !isset($acc['needs_secret']) ? '1' : '0' ?>" data-needs-certificate="<?= ($acc['needs_certificate'] ?? true) ? '1' : '0' ?>" data-needs-client-number="<?= !empty($acc['needs_client_number']) ? '1' : '0' ?>"><?= $this->e($acc['name'] . ' · ' . (['cora' => 'Cora', 'sicoob' => 'Sicoob'][$acc['bank'] ?? 'inter'] ?? 'Inter') . ' · ' . $acc['condominium']) ?></option><?php endforeach; ?></select></div>
                 <div class="erp-field erp-col-4"><label for="inter-client">Client ID</label><input class="erp-input" id="inter-client" name="client_id" required maxlength="200" spellcheck="false" autocomplete="off"></div>
-                <div class="erp-field erp-col-4" data-bank-credential-secret><label for="inter-secret">Client secret</label><input class="erp-input" type="password" id="inter-secret" name="client_secret" required maxlength="500" autocomplete="new-password"><p class="erp-field__hint">Só o Inter usa. Não aparece de novo depois de gravado.</p></div>
-                <div class="erp-field erp-col-8"><label for="inter-files">Pacote do banco</label><input class="erp-input" type="file" id="inter-files" name="files" accept=".zip,.crt,.key,.pem" multiple required><p class="erp-field__hint">O ZIP baixado do banco, ou o certificado (.crt/.pem) e a chave (.key) juntos. Nada é guardado em disco.</p></div>
+                <div class="erp-field erp-col-4" data-bank-credential-secret><label for="inter-secret" data-bank-credential-secret-label>Client secret</label><input class="erp-input" type="password" id="inter-secret" name="client_secret" required maxlength="500" autocomplete="new-password"><p class="erp-field__hint">O Inter usa o secret; o Sicoob, o access token do sandbox. Não aparece de novo depois de gravado.</p></div>
+                <div class="erp-field erp-col-4" data-bank-credential-client-number hidden><label for="inter-client-number">Número do cliente</label><input class="erp-input" id="inter-client-number" name="client_number" inputmode="numeric" maxlength="10" pattern="\d{1,10}" spellcheck="false" autocomplete="off"><p class="erp-field__hint">Sicoob: o código do beneficiário da cooperativa, só números.</p></div>
+                <div class="erp-field erp-col-8" data-bank-credential-files><label for="inter-files">Pacote do banco</label><input class="erp-input" type="file" id="inter-files" name="files" accept=".zip,.crt,.key,.pem" multiple required><p class="erp-field__hint">O ZIP baixado do banco, ou o certificado (.crt/.pem) e a chave (.key) juntos. Nada é guardado em disco.</p></div>
                 <div class="erp-field erp-col-4"><label class="erp-check"><input type="checkbox" name="save_anyway" value="1"> Gravar mesmo se o teste falhar</label></div>
             </div>
             <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('upload', 'erp-icon--sm') ?>Testar e gravar</button></div>

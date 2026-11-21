@@ -9,6 +9,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
+use Source\Services\Erp\Banking\Sicoob\SicoobBankAdapter;
 use Source\Support\Audit;
 
 /**
@@ -25,11 +26,18 @@ use Source\Support\Audit;
  */
 final class BankCredentials
 {
-    public const ADAPTERS = [InterBankAdapter::NAME => InterBankAdapter::BANK_CODE, CoraBankAdapter::NAME => CoraBankAdapter::BANK_CODE];
+    public const ADAPTERS = [InterBankAdapter::NAME => InterBankAdapter::BANK_CODE, CoraBankAdapter::NAME => CoraBankAdapter::BANK_CODE,
+        SicoobBankAdapter::NAME => SicoobBankAdapter::BANK_CODE];
     /** Nome do banco por adaptador, para as mensagens. */
-    public const BANK_NAMES = [InterBankAdapter::NAME => 'Inter', CoraBankAdapter::NAME => 'Cora'];
+    public const BANK_NAMES = [InterBankAdapter::NAME => 'Inter', CoraBankAdapter::NAME => 'Cora', SicoobBankAdapter::NAME => 'Sicoob'];
     /** A Cora (Integração Direta) autentica só com client ID e certificado, sem client secret (ADR 0322). */
     public const WITHOUT_SECRET = [CoraBankAdapter::NAME];
+    /**
+     * O sandbox do Sicoob (ADR 0633) autentica pelo client ID e pelo access token fixos do portal, sem certificado:
+     * o token vai no lugar do client secret e o certificado é opcional. Ele pede também o número do cliente.
+     */
+    public const WITHOUT_CERTIFICATE = [SicoobBankAdapter::NAME];
+    public const NEEDS_CLIENT_NUMBER = [SicoobBankAdapter::NAME];
 
     private PDO $pdo;
 
@@ -64,8 +72,8 @@ final class BankCredentials
     /**
      * Grava (ou troca) as credenciais da conta e liga o adaptador.
      *
-     * @param array{client_id:string, client_secret:string, certificate:string, private_key:string} $secrets
-     * @return array{webhook_secret:string, certificate_expires_on:string}
+     * @param array{client_id:string, client_secret:string, certificate:string, private_key:string, client_number?:string} $secrets
+     * @return array{webhook_secret:string, certificate_expires_on:?string}
      */
     public function save(int $bankAccountId, string $adapter, string $environment, array $secrets, ?int $userId = null, string $source = 'cli'): array
     {
@@ -79,18 +87,26 @@ final class BankCredentials
         if ($account['bank_code'] !== self::ADAPTERS[$adapter]) {
             throw new InvalidArgumentException("A conta {$bankAccountId} não é do banco {$adapter} (código " . self::ADAPTERS[$adapter] . ").");
         }
+        $withoutCertificate = in_array($adapter, self::WITHOUT_CERTIFICATE, true);
         foreach (['client_id', 'client_secret', 'certificate', 'private_key'] as $key) {
             $secrets[$key] = trim((string)($secrets[$key] ?? ''));
-            if ($secrets[$key] === '' && !($key === 'client_secret' && in_array($adapter, self::WITHOUT_SECRET, true))) {
+            if ($secrets[$key] === '' && !($key === 'client_secret' && in_array($adapter, self::WITHOUT_SECRET, true))
+                && !(in_array($key, ['certificate', 'private_key'], true) && $withoutCertificate)) {
                 throw new InvalidArgumentException("Falta {$key}.");
             }
         }
-        $cert = self::inspectCertificate($secrets['certificate'], $secrets['private_key']);
+        $clientNumber = trim((string)($secrets['client_number'] ?? ''));
+        if (in_array($adapter, self::NEEDS_CLIENT_NUMBER, true) && !preg_match('/^\d{1,10}$/', $clientNumber)) {
+            throw new InvalidArgumentException('Falta o número do cliente (código do beneficiário), só com números.');
+        }
+        $cert = $secrets['certificate'] === '' && $withoutCertificate
+            ? ['subject' => null, 'expires_on' => null]
+            : self::inspectCertificate($secrets['certificate'], $secrets['private_key']);
         $webhookSecret = bin2hex(random_bytes(24));
         $sealed = $this->vault()->seal([
             'client_id' => $secrets['client_id'], 'client_secret' => $secrets['client_secret'],
             'certificate' => $secrets['certificate'], 'private_key' => $secrets['private_key'],
-        ], self::context($bankAccountId));
+        ] + ($clientNumber !== '' ? ['client_number' => $clientNumber] : []), self::context($bankAccountId));
 
         $this->pdo->beginTransaction();
         try {
