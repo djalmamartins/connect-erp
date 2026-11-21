@@ -245,7 +245,7 @@ final class SicoobBankAdapter implements BankAdapter, BankChargeExtras, BankStat
         $lastHistory = self::lastHistoryDate($data);
         if (str_starts_with($status, 'liquidad')) {
             $result['status'] = 'registered';
-            $result['event'] = $event('paid', self::cents($data['valorPago'] ?? $data['valor'] ?? null), self::date($data['dataLiquidacao'] ?? null) ?? $lastHistory);
+            $result['event'] = $event('paid', self::cents($data['valorPago'] ?? $data['valor'] ?? null), self::date($data['dataLiquidacao'] ?? null) ?? self::lastHistoryDate($data, 'liquida'));
         } elseif (str_starts_with($status, 'baixad')) {
             $result['status'] = $result['digitable_line'] !== null ? 'registered' : 'pending';
             $result['event'] = $event('cancelled', null, $lastHistory);
@@ -469,16 +469,23 @@ final class SicoobBankAdapter implements BankAdapter, BankChargeExtras, BankStat
         return $cents < 0 && !$allowNegative ? null : $cents;
     }
 
-    private static function lastHistoryDate(array $data): ?string
+    /** Data mais recente do histórico; com $word, a do histórico que fala dela (ex.: liquidação), senão a mais recente. */
+    private static function lastHistoryDate(array $data, ?string $word = null): ?string
     {
-        $last = null;
+        $last = $match = null;
         foreach (is_array($data['listaHistorico'] ?? null) ? $data['listaHistorico'] : [] as $item) {
             $on = is_array($item) ? self::date($item['dataHistorico'] ?? null) : null;
-            if ($on !== null && ($last === null || $on > $last)) {
+            if ($on === null) {
+                continue;
+            }
+            if ($last === null || $on > $last) {
                 $last = $on;
             }
+            if ($word !== null && str_contains(mb_strtolower((string)($item['descricaoHistorico'] ?? '')), $word) && ($match === null || $on > $match)) {
+                $match = $on;
+            }
         }
-        return $last;
+        return $match ?? $last;
     }
 
     private static function json(string $body): array
