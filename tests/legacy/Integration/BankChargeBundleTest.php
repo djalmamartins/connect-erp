@@ -55,7 +55,7 @@ final class BankChargeBundleTest extends TestCase
     {
         $launch = new RevenueLaunch($this->pdo);
         $rateio = $launch->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '80,00',
-            'description' => 'Rateio de obra', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20',
+            'description' => 'Rateio de obra', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2027-11-20',
             'reserve_percent' => '10', 'reserve_account_id' => $this->fee, 'invoice_type_id' => $this->type]);
         self::assertSame(4, count($rateio['entries']), 'Rateio e fundo das duas unidades.');
         self::assertSame(4, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_entries WHERE bundle_invoice_type_id = {$this->type}")->fetchColumn());
@@ -110,7 +110,7 @@ final class BankChargeBundleTest extends TestCase
         self::assertTrue($rules->rule($this->alpha)['merge_owner_units'], 'Salvar sem o campo mantém a chave.');
 
         (new RevenueLaunch($this->pdo))->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '80,00',
-            'description' => 'Rateio de obra', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20',
+            'description' => 'Rateio de obra', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2027-11-20',
             'reserve_percent' => '10', 'reserve_account_id' => $this->fee, 'invoice_type_id' => $this->type]);
         $invoices = new Invoices($this->pdo);
         $draft = $invoices->prepare($this->admin, ['condominium_id' => $this->alpha, 'invoice_type_id' => $this->type, 'competence' => '2026-11', 'due_on' => '2026-11-10']);
@@ -142,17 +142,17 @@ final class BankChargeBundleTest extends TestCase
 
         $launch = new RevenueLaunch($this->pdo);
         $late = $launch->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'chosen', 'method' => 'fixed', 'amount_cents' => '30,00', 'unit_ids' => [$this->units['101']],
-            'description' => 'Rateio tardio', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20', 'invoice_type_id' => $this->type]);
+            'description' => 'Rateio tardio', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2027-11-20', 'invoice_type_id' => $this->type]);
         $own = $charges->issue($this->admin, $late['entries'][0], $this->bank);
-        self::assertSame([3000, '2026-11-20'], [$own['amount_cents'], $own['due_on']], 'Boleto da fatura já emitido: o rateio tem o próprio.');
+        self::assertSame([3000, '2027-11-20'], [$own['amount_cents'], $own['due_on']], 'Boleto da fatura já emitido: o rateio tem o próprio.');
 
         $plain = $launch->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'chosen', 'method' => 'fixed', 'amount_cents' => '20,00', 'unit_ids' => [$this->units['102']],
-            'description' => 'Sem tipo', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20']);
+            'description' => 'Sem tipo', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2027-11-20']);
         self::assertSame(50000, $charges->issue($this->admin, (int)$byUnit[$this->units['102']], $this->bank)['amount_cents'], 'Sem tipo da fatura, nada entra junto.');
         self::assertNull($this->pdo->query('SELECT bundle_invoice_type_id FROM erp_entries WHERE id = ' . $plain['entries'][0])->fetchColumn() ?: null);
 
         $this->expectException(InvalidArgumentException::class);
         $launch->launch($this->admin, ['condominium_id' => $this->alpha, 'apportion' => 'all', 'method' => 'fixed', 'amount_cents' => '1,00',
-            'description' => 'Tipo inválido', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2026-11-20', 'invoice_type_id' => 999999]);
+            'description' => 'Tipo inválido', 'chart_account_id' => $this->fee, 'competence' => '2026-11', 'due_on' => '2027-11-20', 'invoice_type_id' => 999999]);
     }
 }
