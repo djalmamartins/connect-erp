@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Source\Controllers\Erp\Connect;
 
+use Source\Services\Support\SacDesk;
 use Source\Core\Connect;
 use Source\Core\Controller;
 use Source\Core\Session;
@@ -557,6 +558,7 @@ final class Panel extends Controller
         $navGroup = ErpNav::groupOf($nav, $pageId) ?? (isset($nav[(string)$group]) ? $group : null);
         $icons = require self::THEME . 'components/layout/icons.php';
         $dashboard = DemoData::get('dashboard');
+        (new SacDesk())->touch($user); // balão do SAC (ADR 0631): quem atende e está no ERP conta como online
 
         return array_merge([
             'head' => $this->seo->render($title . ' · Connect ERP', 'ERP da administradora Connect.', erp_url(), theme('/assets/images/favicon.png'), false),
@@ -655,12 +657,12 @@ final class Panel extends Controller
             : ['label' => 'Central de Ajuda', 'text' => 'Tutoriais de todas as telas', 'href' => \Source\Services\Environments::url('site', '/suporte'), 'icon' => 'help'];
         $items = [
             $help,
-            ['label' => 'Abrir chamado', 'text' => 'Vai para a fila do Help Desk', 'href' => erp_url('/operacional/chamados#abrir'), 'icon' => 'plus'],
+            ['label' => 'Abrir chamado', 'text' => 'Vai para a fila do SAC', 'href' => erp_url('/operacional/chamados#abrir'), 'icon' => 'plus'],
             ['label' => 'Meus chamados', 'text' => 'Respostas da equipe e andamento', 'href' => erp_url('/operacional/chamados'), 'icon' => 'clipboard'],
         ];
         try {
             if (\Source\Support\Access::can('support.manage', $user)) {
-                $items[] = ['label' => 'Help Desk', 'text' => 'Atender a fila de chamados', 'href' => \Source\Services\Environments::href('helpdesk'), 'icon' => 'help'];
+                $items[] = ['label' => 'SAC', 'text' => 'Atender a fila de chamados', 'href' => \Source\Services\Environments::href('helpdesk'), 'icon' => 'help'];
             }
         } catch (\Throwable) {
         }

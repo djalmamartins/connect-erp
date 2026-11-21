@@ -155,7 +155,7 @@ final class Occurrences
                 throw new RegistryNotFound();
             }
             if ($occurrence['ticket_id'] !== null) {
-                throw new DomainException('Esta ocorrência já tem chamado aberto no Help Desk.');
+                throw new DomainException('Esta ocorrência já tem chamado aberto no SAC.');
             }
             $this->pdo->commit();
         } catch (\Throwable $error) {
@@ -172,7 +172,7 @@ final class Occurrences
             $lock->execute(['id' => $occurrenceId]);
             $current = $lock->fetch(PDO::FETCH_ASSOC);
             if (!is_array($current) || $current['ticket_id'] !== null) {
-                throw new DomainException('Esta ocorrência já tem chamado aberto no Help Desk.');
+                throw new DomainException('Esta ocorrência já tem chamado aberto no SAC.');
             }
             $pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t, status = CASE WHEN status = \'active\' THEN \'running\' ELSE status END, updated_by = :u
                 WHERE id = :id AND ticket_id IS NULL')->execute(['t' => $ticketId, 'u' => (int)$user->id, 'id' => $occurrenceId]);

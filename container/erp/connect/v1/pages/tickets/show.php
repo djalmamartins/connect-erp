@@ -23,7 +23,7 @@ $closed = in_array($ticket['status'], ['resolved', 'closed'], true);
 $late = !$closed && strtotime($ticket['due_at']) < time();
 $when = static fn (string $date): string => date('d/m/Y H:i', strtotime($date));
 $statusHint = [
-    'open' => 'Na fila do Help Desk, aguardando atendimento.',
+    'open' => 'Na fila do SAC, aguardando atendimento.',
     'in_progress' => 'A equipe está cuidando do chamado.',
     'waiting_customer' => 'A equipe precisa de uma resposta sua para seguir.',
     'resolved' => 'A equipe marcou como resolvido. Se algo ficou pendente, responda e o chamado é reaberto.',
@@ -33,7 +33,7 @@ $initial = static fn (?string $name): string => mb_strtoupper(mb_substr(trim((st
 $workTime = static fn (int $seconds): string => sprintf('%02d:%02d:%02d', intdiv($seconds, 3600), intdiv($seconds % 3600, 60), $seconds % 60);
 ob_start(); ?>
     <a class="erp-btn" href="<?= erp_url($base) ?>"><?= $icon('chevron-left', 'erp-icon--sm') ?>Voltar à fila</a>
-    <?php if ($helpdeskUrl !== null): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e($helpdeskUrl) ?>"><?= $icon('help', 'erp-icon--sm') ?>Atender no Help Desk</a><?php endif; ?>
+    <?php if ($helpdeskUrl !== null): ?><a class="erp-btn erp-btn--primary" href="<?= $this->e($helpdeskUrl) ?>"><?= $icon('help', 'erp-icon--sm') ?>Atender no SAC</a><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => 'Atendimento · Chamados',
@@ -119,7 +119,7 @@ $this->insert('components/layout/page-head', [
         </form>
 <?php else: ?>
         <form class="erp-card erp-form erp-ticket-composer" id="responder" method="post" action="<?= erp_url($base . '/' . (int)$ticket['id'] . '/responder') ?>" novalidate>
-            <div class="erp-ticket-composer__head"><div><strong><?= $closed ? 'Reabrir com uma mensagem' : 'Responder' ?></strong><small><?= $closed ? 'A mensagem reabre o chamado e volta para a fila do Help Desk.' : 'A mensagem vai para a equipe do Help Desk, que é avisada na hora.' ?></small></div></div>
+            <div class="erp-ticket-composer__head"><div><strong><?= $closed ? 'Reabrir com uma mensagem' : 'Responder' ?></strong><small><?= $closed ? 'A mensagem reabre o chamado e volta para a fila do SAC.' : 'A mensagem vai para a equipe do SAC, que é avisada na hora.' ?></small></div></div>
             <?= csrf_input() ?>
             <div class="erp-field">
                 <label class="erp-sr-only" for="tk-reply">Mensagem</label>

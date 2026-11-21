@@ -23,7 +23,7 @@
 <?php
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');
 $isHelpDeskEnvironment=(bool)preg_match('~/helpdesk(?:/|$)~',$requestPath);
-$environmentName=$isHelpDeskEnvironment?'Help Desk':'Studio';
+$environmentName=$isHelpDeskEnvironment?'SAC':'Studio';
 $environmentHome=$isHelpDeskEnvironment?'/helpdesk/tickets':'/studio/dash';
 $userInitial=mb_strtoupper(mb_substr(trim((string)($user->first_name ?? $user->fullName() ?? 'C')),0,1));
 $siteHome=function_exists('site_home_url')?site_home_url():url('/');

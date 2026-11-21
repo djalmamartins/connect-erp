@@ -107,6 +107,18 @@ return [
         ],
     ],
 
+    'CN-010' => [
+        'faz' => 'Mostra o seu dia de trabalho num lugar só: os compromissos de hoje e da semana, os chamados que estão com você esperando uma data, os que aguardam o cliente, as vistorias que vencem e os documentos dos condomínios que estão para vencer.',
+        'por_tras' => [
+            'A tela só junta o que já existe no sistema: a agenda, os chamados atribuídos a você, os planos de vistoria em que você é o responsável e os itens do checklist de chegada sob sua responsabilidade. Nada muda quando você só abre a tela.',
+            '"Agendar" um chamado cria um compromisso ligado a ele; o chamado sai da lista "Para agendar" enquanto o compromisso estiver marcado.',
+            'Quando uma vistoria vence em breve, a rotina das 7h abre um chamado de vistoria para o responsável do plano. Ao concluir a vistoria, esse chamado é resolvido sozinho e os itens com problema viram um chamado de pendências.',
+            'No balão do SAC, conta como online quem atende chamados, autorizou aparecer e abriu uma tela do ERP ou do SAC nos últimos 5 minutos. A autorização e a retirada entram no histórico.',
+            'Cada pessoa vê o próprio dia. Ver o dia de outra pessoa ou marcar compromisso para ela exige a permissão "Ver o Meu Dia da equipe". Toda marcação, conclusão e cancelamento entra no histórico.',
+        ],
+        'mais' => 'Um exemplo: a gerente abre o chamado "Portão quebrado" e atribui a você. Ele aparece em **Para agendar** com a etiqueta Urgente. Clique em {{Agendar}}, escolha o horário, e ele entra na sua agenda do dia.',
+    ],
+
     'CN-009' => [
         'faz' => 'Atende os pedidos dos titulares pela LGPD: mostra tudo o que o sistema guarda de uma pessoa nos condomínios que você acessa, baixa esse relatório em JSON para entregar a ela e anonimiza quem já saiu do condomínio.',
         'por_tras' => [

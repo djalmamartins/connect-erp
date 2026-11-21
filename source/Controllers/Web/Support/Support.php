@@ -120,7 +120,31 @@ class Support extends Controller
     {
         header("Content-Security-Policy: frame-ancestors *");
         header_remove('X-Frame-Options'); // o widget é feito para outros sites (ADR 0355)
-        echo $this->view->render('pages/widget', ['siteName' => CONF_SITE_NAME, 'widgetToken' => $this->widgetToken()]);
+        echo $this->view->render('pages/widget', ['siteName' => CONF_SITE_NAME, 'widgetToken' => $this->widgetToken(), 'sac' => $this->sacStatus()]);
+    }
+
+    /**
+     * GET /suporte/widget/equipe (ADR 0631): o que o botão do SAC mostra antes de abrir: no horário e quem está online.
+     * Público e sem cookie: só primeiro nome e foto de quem autorizou. Cache curto para não pesar no banco.
+     */
+    public function widgetTeam(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Access-Control-Allow-Origin: *');
+        header('Cache-Control: public, max-age=60');
+        echo json_encode($this->sacStatus(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /** @return array{open:bool, agents:list<array{name:string,initials:string,photo:?string}>, hours:string, whatsapp:?string} */
+    private function sacStatus(): array
+    {
+        return (new \Source\Services\Support\SacDesk())->status(null, static function (string $photo): ?string {
+            try {
+                return image($photo, 160, 160);
+            } catch (\Throwable) {
+                return null;
+            }
+        });
     }
 
     public function widgetCreate(array $data): void

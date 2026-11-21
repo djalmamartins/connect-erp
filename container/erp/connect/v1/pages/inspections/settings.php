@@ -2,7 +2,7 @@
 /**
  * Configuração das vistorias: modelos de checklist, planos por condomínio e localização.
  * @var list<array> $templates @var ?array $editing @var string $editingText
- * @var list<array> $plans @var list<array> $condominiums
+ * @var list<array> $plans @var list<array> $condominiums @var list<array{id:int,name:string}> $agents
  * @var array<int, array{latitude: float, longitude: float, radius_m: int}> $geolocations
  * @var array $old @var array<string, string> $errors @var string $base
  */
@@ -85,12 +85,13 @@ $this->insert('components/layout/page-head', [
     <?php if ($plans !== []): ?>
         <div class="erp-table-wrap">
             <table class="erp-table">
-                <thead><tr><th scope="col">Condomínio</th><th scope="col">Modelo</th><th scope="col">Periodicidade</th><th scope="col">Início</th><th scope="col">Situação</th></tr></thead>
+                <thead><tr><th scope="col">Condomínio</th><th scope="col">Modelo</th><th scope="col">Periodicidade</th><th scope="col">Início</th><th scope="col">Responsável</th><th scope="col">Situação</th></tr></thead>
                 <tbody>
                 <?php foreach ($plans as $plan): ?>
                     <tr>
                         <td><?= $this->e($plan['condominium']) ?></td><td><?= $this->e($plan['template']) ?></td>
                         <td><?= $this->e(Schedule::label($plan['frequency'])) ?></td><td><?= date('d/m/Y', strtotime($plan['starts_on'])) ?></td>
+                        <td><?= $this->e($plan['responsible'] ?? 'Quem criou o plano') ?></td>
                         <td><span class="erp-badge erp-badge--<?= $plan['status'] === 'active' ? 'success' : 'plain' ?>"><?= $plan['status'] === 'active' ? 'Ativo' : 'Inativo' ?></span></td>
                     </tr>
                 <?php endforeach; ?>
@@ -113,10 +114,14 @@ $this->insert('components/layout/page-head', [
                 <select class="erp-select" id="plan-frequency" name="frequency"><option value="">Do modelo</option><?= $frequencyOptions((string)$value('frequency')) ?></select><?= $err('frequency') ?></div>
             <div class="erp-field erp-col-4"><label for="plan-start">Primeira vistoria em</label>
                 <input class="erp-input" type="date" id="plan-start" name="starts_on" required value="<?= $this->e((string)$value('starts_on', date('Y-m-d'))) ?>"><?= $err('starts_on') ?></div>
+            <div class="erp-field erp-col-4"><label for="plan-responsible">Responsável</label>
+                <select class="erp-select" id="plan-responsible" name="responsible_id"><option value="">Quem criou o plano</option>
+                    <?php foreach ($agents ?? [] as $agent): ?><option value="<?= (int)$agent['id'] ?>"<?= (int)$value('responsible_id') === (int)$agent['id'] ? ' selected' : '' ?>><?= $this->e($agent['name']) ?></option><?php endforeach; ?>
+                </select><?= $err('responsible_id') ?></div>
             <div class="erp-field erp-col-4"><label for="plan-status">Situação</label>
                 <select class="erp-select" id="plan-status" name="status"><option value="active">Ativo</option><option value="inactive"<?= $value('status') === 'inactive' ? ' selected' : '' ?>>Inativo</option></select></div>
         </div>
-        <span class="erp-field__hint">Salvar de novo o mesmo condomínio e modelo altera o plano existente.</span>
+        <span class="erp-field__hint">Salvar de novo o mesmo condomínio e modelo altera o plano existente. Quando a vistoria vence em breve, o responsável recebe um chamado no SAC, que se resolve sozinho ao concluir a vistoria.</span>
         <div class="insp-actions"><button class="erp-btn erp-btn--primary" type="submit">Salvar plano</button></div>
     </form>
 </section>

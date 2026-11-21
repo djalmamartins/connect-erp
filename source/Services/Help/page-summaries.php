@@ -1939,7 +1939,7 @@ return [
         ],
     ],
     'AP-112' => [
-        'faz' => 'Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no Help Desk: o atendimento e a situação ficam no chamado, em Agenda > Atendimento > Chamados.',
+        'faz' => 'Ocorrências do dia a dia do condomínio, como barulho, vazamento ou dano, com a unidade e a prioridade. Toda ocorrência já nasce como chamado no SAC: o atendimento e a situação ficam no chamado, em Agenda > Atendimento > Chamados.',
         'artigo' => 'ocorrencias',
         'topicos' => [
             [
@@ -2927,6 +2927,10 @@ return [
                 'title' => 'Outros botões da tela',
             ],
             [
+                'id' => 'responsavel-e-chamado-automatico',
+                'title' => 'Responsável e chamado automático',
+            ],
+            [
                 'id' => 'pesquisar-e-filtrar',
                 'title' => 'Pesquisar e filtrar',
             ],
@@ -2985,7 +2989,7 @@ return [
         ],
     ],
     'CN-004' => [
-        'faz' => 'Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do Help Desk, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.',
+        'faz' => 'Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do SAC, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.',
         'artigo' => 'chamados',
         'topicos' => [
             [
@@ -3121,6 +3125,32 @@ return [
             [
                 'id' => 'politica-termos-cookies-e-encarregado',
                 'title' => 'Política, termos, cookies e encarregado',
+            ],
+        ],
+    ],
+    'CN-010' => [
+        'faz' => 'Veja num lugar só os compromissos do dia e da semana, os chamados que estão com você, as vistorias que vencem e os documentos para vencer.',
+        'artigo' => 'meu-dia',
+        'topicos' => [
+            [
+                'id' => 'o-que-a-tela-mostra',
+                'title' => 'O que a tela mostra',
+            ],
+            [
+                'id' => 'como-marcar-um-compromisso',
+                'title' => 'Como marcar um compromisso',
+            ],
+            [
+                'id' => 'como-agendar-um-chamado',
+                'title' => 'Como agendar um chamado',
+            ],
+            [
+                'id' => 'vistoria-que-vira-chamado',
+                'title' => 'Vistoria que vira chamado',
+            ],
+            [
+                'id' => 'aparecer-no-balao-do-sac',
+                'title' => 'Aparecer no balão do SAC',
             ],
         ],
     ],

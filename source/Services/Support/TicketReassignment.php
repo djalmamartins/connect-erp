@@ -102,7 +102,7 @@ final class TicketReassignment
         $stmt->execute([(int)$to]);
         $level = $stmt->fetchColumn();
         if ($level === false || (int)$level < self::TEAM_LEVEL) {
-            throw new InvalidArgumentException('O novo responsável precisa ser da equipe do Help Desk.');
+            throw new InvalidArgumentException('O novo responsável precisa ser da equipe do SAC.');
         }
 
         $result = ['condominium_id' => (int)$condominium, 'dry_run' => $dryRun, 'from_user_id' => (int)$from, 'to_user_id' => (int)$to, 'reason' => $reason,

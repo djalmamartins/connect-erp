@@ -10,7 +10,7 @@ $this->layout('default');
 $route = erp_url($currentPage['route']);
 $day = static fn (?string $v): string => $v ? date('d/m/Y', (int)strtotime($v)) : '—';
 $groups = ['residents' => 'Cadastros de morador, proprietário ou inquilino', 'invitations' => 'Convites do portal do morador', 'visitors' => 'Visitantes',
-    'vehicles' => 'Veículos', 'pets' => 'Animais', 'receivables' => 'Contas a receber (pagador)', 'tickets' => 'Chamados do Help Desk',
+    'vehicles' => 'Veículos', 'pets' => 'Animais', 'receivables' => 'Contas a receber (pagador)', 'tickets' => 'Chamados do SAC',
     'access_logs' => 'Entradas e saídas na portaria', 'visit_forecasts' => 'Visitas previstas', 'board_members' => 'Conselho e síndico',
     'moves' => 'Mudanças', 'reservations' => 'Reservas', 'waitlist' => 'Lista de espera', 'assembly_attendance' => 'Presença em assembleia',
     'collection_contacts' => 'Contatos de cobrança', 'talk_contacts' => 'Connect Talk: contato', 'talk_conversations' => 'Connect Talk: conversas',

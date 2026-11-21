@@ -7412,6 +7412,91 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /my-day:
+    get:
+      operationId: getMyDay
+      tags: [MyDay]
+      summary: Meu Dia (ADR 0630) — compromissos, chamados para agendar, aguardando, vistorias e vencimentos
+      description: Cada pessoa vê o próprio dia; person_id de outra pessoa exige erp.myday.team. A semana vai de segunda a domingo.
+      security: [{ session: [] }]
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+        - { name: person_id, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: O dia (summary, week, events, to_schedule, waiting, visits, deadlines) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /my-day/visit/{condominium_id}:
+    get:
+      operationId: getMyDayVisitPanel
+      tags: [MyDay]
+      summary: Painel da visita de um condomínio do escopo (chamados abertos, vencimentos, pendências e última vistoria)
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Painel }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /my-day/events:
+    post:
+      operationId: createMyDayEvent
+      tags: [MyDay]
+      summary: Marca um compromisso na agenda (para outra pessoa, exige erp.myday.team)
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, date, start]
+              properties:
+                title: { type: string, minLength: 3, maxLength: 180 }
+                date: { type: string, format: date }
+                start: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+                end: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+                type: { type: string, enum: [meeting, task, deadline, support] }
+                condominium_id: { type: integer }
+                ticket_id: { type: integer, description: Chamado agendado; sai de "Para agendar" }
+                assigned_to: { type: integer }
+                description: { type: string, maxLength: 2000 }
+      responses:
+        '201': { description: Criado }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /my-day/events/{id}/status:
+    post:
+      operationId: setMyDayEventStatus
+      tags: [MyDay]
+      summary: Conclui, cancela ou reabre um compromisso
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [scheduled, completed, cancelled] }
+      responses:
+        '200': { description: Situação alterada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates

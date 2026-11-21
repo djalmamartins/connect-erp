@@ -1,7 +1,7 @@
 ---
 codigo:
 titulo: Chamados que chegam pelo WhatsApp (Connect Talk)
-resumo: Toda conversa atendida no Connect Talk vira um chamado do Help Desk, com o nome, o condomínio e a unidade do morador puxados do cadastro do ERP. Veja como reconhecer esses chamados, quando o Talk manda a 2ª via do boleto e como ligar o Talk ao ERP.
+resumo: Toda conversa atendida no Connect Talk vira um chamado do SAC, com o nome, o condomínio e a unidade do morador puxados do cadastro do ERP. Veja como reconhecer esses chamados, quando o Talk manda a 2ª via do boleto e como ligar o Talk ao ERP.
 categoria: operacional
 rota: /operacional/chamados
 menu: Agenda > Atendimento > Chamados
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-O **Connect Talk** é o atendimento da Connect pelo WhatsApp. O Talk em uso roda num computador no escritório da Connect e conversa com o ERP pela API (veja a última seção). Quando um morador escreve, o Talk descobre de quem é aquele telefone e abre um chamado no Help Desk.
+O **Connect Talk** é o atendimento da Connect pelo WhatsApp. O Talk em uso roda num computador no escritório da Connect e conversa com o ERP pela API (veja a última seção). Quando um morador escreve, o Talk descobre de quem é aquele telefone e abre um chamado no SAC.
 
 ## Onde fica o Talk
 
@@ -43,7 +43,7 @@ Se algo não confere, o ERP responde que não encontrou, sem dizer o motivo, e o
 
 >! O boleto vai para quem escreve do telefone do cadastro. Quando o morador trocar de número, atualize o cadastro antes.
 
-## O chamado no Help Desk
+## O chamado no SAC
 
 Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
 

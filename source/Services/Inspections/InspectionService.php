@@ -10,6 +10,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Support\Access;
+use Source\Support\AppLogger;
 use Source\Support\Audit;
 
 /**
@@ -99,7 +100,11 @@ final class InspectionService
         $description = trim((string)($input['description'] ?? ''));
         $frequency = (string)($input['frequency'] ?? '');
         $status = (string)($input['status'] ?? 'active');
+        $responsible = (int)($input['responsible_id'] ?? 0) ?: null;
         $errors = [];
+        if ($responsible !== null && !$this->isStaff($responsible)) {
+            $errors['responsible_id'] = 'Escolha um responsável da equipe.';
+        }
         if ($name === '' || mb_strlen($name) > 120) {
             $errors['name'] = 'Informe um nome com até 120 caracteres.';
         }
@@ -207,14 +212,18 @@ final class InspectionService
             return [];
         }
         $in = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->pdo->prepare("SELECT p.id, p.condominium_id, c.name AS condominium, p.template_id, t.name AS template, p.frequency, p.starts_on, p.status
+        $stmt = $this->pdo->prepare("SELECT p.id, p.condominium_id, c.name AS condominium, p.template_id, t.name AS template, p.frequency, p.starts_on, p.status,
+                p.responsible_id, NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), '') AS responsible
             FROM inspection_plans p JOIN condominiums c ON c.id = p.condominium_id JOIN inspection_templates t ON t.id = p.template_id
+            LEFT JOIN users u ON u.id = p.responsible_id
             WHERE p.condominium_id IN ({$in}) ORDER BY c.name, t.name");
         $stmt->execute($ids);
         return array_map(static fn(array $row): array => [
             'id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'condominium' => (string)$row['condominium'],
             'template_id' => (int)$row['template_id'], 'template' => (string)$row['template'], 'frequency' => (string)$row['frequency'],
             'starts_on' => (string)$row['starts_on'], 'status' => (string)$row['status'],
+            'responsible_id' => $row['responsible_id'] !== null ? (int)$row['responsible_id'] : null,
+            'responsible' => $row['responsible'] !== null ? (string)$row['responsible'] : null,
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
@@ -228,7 +237,11 @@ final class InspectionService
         $frequency = (string)($input['frequency'] ?? '') ?: (string)($template['frequency'] ?? '');
         $startsOn = DateTimeImmutable::createFromFormat('!Y-m-d', (string)($input['starts_on'] ?? '')) ?: null;
         $status = (string)($input['status'] ?? 'active');
+        $responsible = (int)($input['responsible_id'] ?? 0) ?: null;
         $errors = [];
+        if ($responsible !== null && !$this->isStaff($responsible)) {
+            $errors['responsible_id'] = 'Escolha um responsável da equipe.';
+        }
         if ($template === null) {
             $errors['template_id'] = 'Escolha um modelo.';
         }
@@ -244,14 +257,22 @@ final class InspectionService
         if ($errors !== []) {
             throw InspectionError::invalid($errors);
         }
-        $this->pdo->prepare('INSERT INTO inspection_plans (condominium_id, template_id, frequency, starts_on, status, created_by) VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE frequency = VALUES(frequency), starts_on = VALUES(starts_on), status = VALUES(status)')
-            ->execute([$condominiumId, $template['id'], $frequency, $startsOn->format('Y-m-d'), $status, (int)$user->id]);
+        $this->pdo->prepare('INSERT INTO inspection_plans (condominium_id, template_id, frequency, starts_on, status, responsible_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE frequency = VALUES(frequency), starts_on = VALUES(starts_on), status = VALUES(status), responsible_id = VALUES(responsible_id)')
+            ->execute([$condominiumId, $template['id'], $frequency, $startsOn->format('Y-m-d'), $status, $responsible, (int)$user->id]);
         $stmt = $this->pdo->prepare('SELECT id FROM inspection_plans WHERE condominium_id = ? AND template_id = ?');
         $stmt->execute([$condominiumId, $template['id']]);
         $id = (int)$stmt->fetchColumn();
-        Audit::record('update', 'inspection_plans', $id, null, ['condominium_id' => $condominiumId, 'template_id' => $template['id'], 'frequency' => $frequency, 'status' => $status]);
+        Audit::record('update', 'inspection_plans', $id, null, ['condominium_id' => $condominiumId, 'template_id' => $template['id'], 'frequency' => $frequency, 'status' => $status, 'responsible_id' => $responsible]);
         return $id;
+    }
+
+    /** Responsável de plano: alguém da equipe (mesma régua do responsável de chamado, TicketDesk::agents). */
+    private function isStaff(int $userId): bool
+    {
+        $stmt = $this->pdo->prepare("SELECT 1 FROM users WHERE id = ? AND status <> 'trash' AND level >= 5");
+        $stmt->execute([$userId]);
+        return (bool)$stmt->fetchColumn();
     }
 
     /** @return array{latitude: float, longitude: float, radius_m: int}|null */
@@ -588,6 +609,12 @@ final class InspectionService
             throw InspectionError::conflict('A vistoria já foi concluída ou cancelada.');
         }
         Audit::record('update', 'inspections', $inspectionId, ['status' => 'in_progress'], ['status' => 'completed']);
+        // Resolve o chamado da vistoria e abre o das pendências (ADR 0630). Falha aqui não desfaz a conclusão.
+        try {
+            (new InspectionTickets($this->pdo))->completed($user, $inspectionId);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'inspections', ['event_type' => 'inspection_ticket_close_failed', 'inspection_id' => $inspectionId]);
+        }
     }
 
     public function cancel(User $user, int $inspectionId, string $reason): void

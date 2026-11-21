@@ -11,6 +11,7 @@ use Source\Services\CondominiumScope;
 use Source\Services\Inspections\InspectionError;
 use Source\Services\Inspections\InspectionReport;
 use Source\Services\Inspections\InspectionService;
+use Source\Services\Inspections\InspectionTickets;
 use Source\Services\Inspections\PhotoStorage;
 use Source\Support\Access;
 
@@ -88,7 +89,8 @@ final class InspectionServiceTest extends TestCase
 
         $queued = $report->queue($inspector, $done, ['sindico@test.local', 'conselho@test.local'], 'Segue a vistoria.');
         self::assertSame(2, $queued);
-        $rows = $this->pdo->query("SELECT recipient_email, attachments_json, body FROM mail_queue ORDER BY id")->fetchAll(\PDO::FETCH_ASSOC);
+        // O chamado das pendências (ADR 0630) também avisa por e-mail; aqui só interessam os envios do relatório.
+        $rows = $this->pdo->query("SELECT recipient_email, attachments_json, body FROM mail_queue WHERE attachments_json IS NOT NULL ORDER BY id")->fetchAll(\PDO::FETCH_ASSOC);
         self::assertSame(['sindico@test.local', 'conselho@test.local'], array_column($rows, 'recipient_email'));
         $attachments = json_decode((string)$rows[0]['attachments_json'], true);
         $path = (string)array_key_first($attachments);
@@ -241,6 +243,54 @@ final class InspectionServiceTest extends TestCase
     }
 
     /* ---------------------------------------------------------------- apoio */
+
+    public function testDuePlanOpensTicketOnceAndCompletionResolvesIt(): void
+    {
+        $manager = $this->manager();
+        $responsible = $this->user(['erp.inspections.view', 'erp.inspections.perform'], [$this->condo], 5);
+        $template = $this->template("Portão\nPiscina");
+        $this->assertInvalid(fn() => $this->service->savePlan($manager, ['condominium_id' => $this->condo, 'template_id' => $template,
+            'frequency' => 'biweekly', 'starts_on' => '2026-11-01', 'responsible_id' => $this->user([], [], 2)->id]), 'responsible_id');
+        $planId = $this->service->savePlan($manager, ['condominium_id' => $this->condo, 'template_id' => $template,
+            'frequency' => 'biweekly', 'starts_on' => '2026-11-21', 'responsible_id' => $responsible->id]);
+        self::assertSame((int)$responsible->id, $this->service->plans($manager)[0]['responsible_id']);
+
+        $tickets = new InspectionTickets($this->pdo);
+        // Longe do vencimento: nada. Na véspera (quinzenal avisa 2 dias antes): abre um chamado, uma vez só.
+        self::assertSame(0, $tickets->run(new DateTimeImmutable('2026-11-10'))['opened']);
+        self::assertSame(1, $tickets->run(new DateTimeImmutable('2026-11-20'))['opened']);
+        self::assertSame(0, $tickets->run(new DateTimeImmutable('2026-11-20'))['opened']);
+        $ticket = $this->pdo->query("SELECT t.* FROM studio_support_tickets t JOIN inspection_plan_tickets pt ON pt.ticket_id = t.id WHERE pt.plan_id = {$planId}")->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame((int)$responsible->id, (int)$ticket['assigned_to']);
+        self::assertSame('Vistoria', $ticket['category']);
+        self::assertSame($this->condo, (int)$ticket['condominium_id']);
+        self::assertSame('2026-11-21 18:00:00', $ticket['due_at']);
+        self::assertStringContainsString('Vistoria quinzenal', $ticket['subject']);
+
+        $id = $this->service->start($responsible, ['condominium_id' => $this->condo, 'template_id' => $template, 'latitude' => '-23.5503', 'longitude' => '-46.6340']);
+        [$gate, $pool] = array_column($this->service->get($responsible, $id)['items'], 'id');
+        $this->service->answer($responsible, $id, $gate, ['result' => 'ok']);
+        $this->service->answer($responsible, $id, $pool, ['result' => 'issue', 'note' => 'Bomba parada']);
+        $this->service->complete($responsible, $id, 'ok');
+
+        self::assertSame('resolved', $this->pdo->query("SELECT status FROM studio_support_tickets WHERE id = {$ticket['id']}")->fetchColumn());
+        self::assertSame($id, (int)$this->pdo->query("SELECT inspection_id FROM inspection_plan_tickets WHERE ticket_id = {$ticket['id']}")->fetchColumn());
+        $issues = $this->pdo->query("SELECT * FROM studio_support_tickets WHERE category = 'Pendência de vistoria'")->fetch(\PDO::FETCH_ASSOC);
+        self::assertIsArray($issues);
+        self::assertStringContainsString('Bomba parada', $issues['message']);
+        self::assertSame((int)$responsible->id, (int)$issues['assigned_to']);
+        // Próxima vistoria só daqui a 15 dias: nada novo hoje.
+        self::assertSame(0, $tickets->run(new DateTimeImmutable('today'))['opened']);
+    }
+
+    public function testPlanWithoutAnyOwnerIsSkipped(): void
+    {
+        $template = $this->template('Portão');
+        $planId = $this->service->savePlan($this->manager(), ['condominium_id' => $this->condo, 'template_id' => $template, 'frequency' => 'weekly', 'starts_on' => '2026-11-01']);
+        $this->pdo->exec("UPDATE inspection_plans SET created_by = NULL WHERE id = {$planId}");
+        $result = (new InspectionTickets($this->pdo))->run(new DateTimeImmutable('2026-11-20'));
+        self::assertSame(['plans' => 1, 'opened' => 0, 'skipped' => 1], $result);
+    }
 
     private function condominium(string $name): int
     {

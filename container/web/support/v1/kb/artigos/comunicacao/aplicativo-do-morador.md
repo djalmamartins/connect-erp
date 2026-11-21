@@ -68,7 +68,7 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
   - **Chamado** é um pedido ou uma dúvida para a administração (por exemplo, a cópia do regimento);
   - **Ocorrência** é um problema no condomínio (barulho, vazamento, dano).
 
-  Os dois vão para o Help Desk, com a categoria Chamado ou Ocorrência, e o morador vê o **número**, a situação e **conversa** com a administração até o registro ser fechado. A lista mostra os dois, com o filtro Todos, Chamados e Ocorrências. Em Resolva fácil, os botões Chamado e Ocorrência já abrem o formulário com o tipo marcado.
+  Os dois vão para o SAC, com a categoria Chamado ou Ocorrência, e o morador vê o **número**, a situação e **conversa** com a administração até o registro ser fechado. A lista mostra os dois, com o filtro Todos, Chamados e Ocorrências. Em Resolva fácil, os botões Chamado e Ocorrência já abrem o formulário com o tipo marcado.
 - **Assembleias**: ver a pauta, **baixar o edital de convocação** (para imprimir ou salvar em PDF), o resultado de cada item e a ata depois de encerrada.
 - **Documentos**: baixar os arquivos que a administração marcou como visíveis no Disco Virtual.
 

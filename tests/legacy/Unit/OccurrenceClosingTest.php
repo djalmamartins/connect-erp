@@ -73,7 +73,7 @@ final class OccurrenceClosingTest extends TestCase
         self::assertNull(OccurrenceClosing::problem(['occurred_on' => '2026-08-13'] + $row, '2026-08-13'), 'O último dia do prazo entra.');
         self::assertStringContainsString('não encontrada', (string)OccurrenceClosing::problem(null, '2026-08-13'));
         self::assertStringContainsString('já está resolvida', (string)OccurrenceClosing::problem(['status' => 'done'] + $row, '2026-08-13'));
-        self::assertStringContainsString('Help Desk', (string)OccurrenceClosing::problem(['ticket_id' => 900] + $row, '2026-08-13'));
+        self::assertStringContainsString('SAC', (string)OccurrenceClosing::problem(['ticket_id' => 900] + $row, '2026-08-13'));
         self::assertStringContainsString('dentro do prazo', (string)OccurrenceClosing::problem(['occurred_on' => '2026-08-14'] + $row, '2026-08-13'));
         self::assertStringContainsString('unidade', (string)OccurrenceClosing::problem($row, '2026-08-13', false));
     }
@@ -101,7 +101,7 @@ final class OccurrenceClosingTest extends TestCase
 
     public function testChosenIdsRefusedBeforeTheForm(): void
     {
-        foreach ([[2, 'já está resolvida'], [3, 'dentro do prazo'], [4, 'Help Desk'], [5, 'unidade'], [6, 'documento'], [7, 'não encontrada'],
+        foreach ([[2, 'já está resolvida'], [3, 'dentro do prazo'], [4, 'SAC'], [5, 'unidade'], [6, 'documento'], [7, 'não encontrada'],
             [8, 'não encontrada'], [99, 'não encontrada']] as [$id, $message]) {
             try {
                 $this->service->close($this->user(), ['condominium_id' => 1, 'occurrence_ids' => [1, $id], 'reason' => 'Problema já resolvido']);

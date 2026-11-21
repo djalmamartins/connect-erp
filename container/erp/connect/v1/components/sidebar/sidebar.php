@@ -49,6 +49,9 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
             $isActive = $navGroup === $groupKey;
             if ($groupKey === 'dashboard'): ?>
                 <a class="erp-nav__link" href="<?= erp_url('/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
+                <?php if (isset($pages['CN-010'])): // Meu Dia (ADR 0630): link direto logo abaixo do Dashboard ?>
+                    <a class="erp-nav__link" href="<?= erp_url('/meu-dia') ?>"<?= $currentPageId === 'CN-010' ? ' aria-current="page"' : '' ?> title="Meu Dia"><?= $icon('clock') ?><span class="erp-nav__label">Meu Dia</span></a>
+                <?php endif; ?>
                 <?php continue;
             endif;
             $long = count($pages) > 14;

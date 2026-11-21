@@ -8,13 +8,13 @@
 ?>
 <section class="erp-card erp-occurrence-ticket" aria-labelledby="occ-ticket-title" data-erp-occurrence-ticket data-api="<?= $this->e($ticket['api']) ?>" data-href="<?= $this->e($ticket['hrefPattern']) ?>">
     <?= csrf_input() ?>
-    <div class="erp-card__head"><div><h2 id="occ-ticket-title">Chamado no Help Desk</h2><p>Para quando a ocorrência precisa da administradora</p></div></div>
+    <div class="erp-card__head"><div><h2 id="occ-ticket-title">Chamado no SAC</h2><p>Para quando a ocorrência precisa da administradora</p></div></div>
     <div data-ticket-state>
         <?php if ($ticket['ticketId'] !== null): ?>
             <p class="erp-occurrence-ticket__status"><span class="erp-badge erp-badge--success">Chamado aberto</span> <strong>nº <?= (int)$ticket['ticketId'] ?></strong></p>
             <a class="erp-btn erp-btn--block" href="<?= $this->e((string)$ticket['href']) ?>"><?= $icon('clipboard', 'erp-icon--sm') ?>Acompanhar o chamado</a>
         <?php elseif ($ticket['canOpen']): ?>
-            <p class="erp-field__hint">Abre um chamado na fila do Help Desk com o assunto, a descrição, a unidade e a prioridade desta ocorrência, e a ocorrência passa para "Em andamento". Cada ocorrência abre um chamado só.</p>
+            <p class="erp-field__hint">Abre um chamado na fila do SAC com o assunto, a descrição, a unidade e a prioridade desta ocorrência, e a ocorrência passa para "Em andamento". Cada ocorrência abre um chamado só.</p>
             <button type="button" class="erp-btn erp-btn--primary erp-btn--block" data-ticket-open><?= $icon('clipboard', 'erp-icon--sm') ?>Abrir chamado</button>
         <?php else: ?>
             <p class="erp-field__hint">Nenhum chamado aberto para esta ocorrência.</p>

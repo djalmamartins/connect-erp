@@ -62,7 +62,7 @@ final class OccurrenceClosing
         return match (true) {
             $row === null => 'Ocorrência não encontrada neste condomínio.',
             !in_array($row['status'] ?? '', self::OPEN, true) => 'A ocorrência já está resolvida.',
-            ($row['ticket_id'] ?? null) !== null => 'A ocorrência tem chamado no Help Desk: acerte pela sincronização com o Help Desk.',
+            ($row['ticket_id'] ?? null) !== null => 'A ocorrência tem chamado no SAC: acerte pela sincronização com o SAC.',
             substr((string)($row['occurred_on'] ?? ''), 0, 10) > $cutoff => 'A ocorrência ainda está dentro do prazo.',
             !$linksActive => 'A unidade da ocorrência está inativa ou o documento foi removido: corrija no cadastro.',
             default => null,

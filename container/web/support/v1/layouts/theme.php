@@ -91,7 +91,7 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
         </div>
     </div>
 </footer>
-<script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget data-color="#0d2e27" data-label="Ajuda" defer></script>
+<script src="<?= url('/container/shared/assets/js/helpdesk-widget.js') ?>" data-moves-helpdesk-widget defer></script>
 <script src="<?= url('/container/web/support/v1/assets/support.js?v=' . filemtime(__DIR__ . '/../assets/support.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>
 <?= connect_fields_assets('js') ?>

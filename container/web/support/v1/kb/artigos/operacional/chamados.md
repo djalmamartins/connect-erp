@@ -1,7 +1,7 @@
 ---
 codigo: CN-004
 titulo: Abrir e acompanhar chamados
-resumo: Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do Help Desk, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.
+resumo: Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do SAC, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.
 categoria: operacional
 rota: /operacional/chamados
 menu: Agenda > Atendimento > Chamados
@@ -12,7 +12,7 @@ palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendime
 rascunho: nao
 ---
 
-Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do Help Desk, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.
+Quando o condomínio precisa da administradora, abra um chamado: ele cai na fila do SAC, a equipe é avisada na hora e você acompanha o andamento e as respostas por aqui.
 
 ## Onde fica
 
@@ -24,23 +24,23 @@ condominio: residencial-jardim-das-acacias
 legenda: Tela Chamados
 1: menu | Chamados no menu lateral
 2: main .erp-page-head__actions :is(a,button):has-text("Abrir chamado") | Botão {{Abrir chamado}}
-3: main .erp-page-head__actions :is(a,button):has-text("Fila do Help Desk") | Botão {{Fila do Help Desk}}
+3: main .erp-page-head__actions :is(a,button):has-text("Fila do SAC") | Botão {{Fila do SAC}}
 4: main :is(form[method=get], .erp-filters) | Filtros: busca, condomínio, prioridade, responsável, prazo, origem e tipo
 5: main table thead | Colunas da lista
 ```
 
 ## Outros botões da tela
 
-- {{Fila do Help Desk}}: abre a fila de atendimento no Help Desk (para quem atende os chamados).
+- {{Fila do SAC}}: abre a fila de atendimento no SAC (para quem atende os chamados).
 - {{Abrir chamado}}: abre o formulário de abertura numa janela por cima da fila.
 
 ## Abrir chamado
 
-O chamado cai na fila do Help Desk e a equipe é avisada na hora.
+O chamado cai na fila do SAC e a equipe é avisada na hora.
 
 1. Clique em {{Abrir chamado}}, no alto da tela.
 2. Preencha **Assunto** e **Descrição**.
-3. Clique em {{Enviar para o Help Desk}}.
+3. Clique em {{Enviar para o SAC}}.
 
 > Enquanto você digita o assunto, a tela sugere artigos desta Central de Ajuda que falam do mesmo tema. Se um deles resolver, não precisa abrir o chamado; se não, siga normalmente.
 
@@ -56,7 +56,7 @@ recorte: dialog[open]
 3: dialog[open] [name="subject"] | Assunto (obrigatório)
 4: dialog[open] [name="message"] | Descrição (obrigatório)
 5: dialog[open] [name="area"] | Área
-6: dialog[open] button:has-text("Enviar para o Help Desk") | Botão {{Enviar para o Help Desk}}
+6: dialog[open] button:has-text("Enviar para o SAC") | Botão {{Enviar para o SAC}}
 ```
 
 ### O que preencher
@@ -73,13 +73,13 @@ recorte: dialog[open]
 
 ## Acompanhar e responder
 
-Clique no protocolo na lista para abrir o chamado. A tela é igual à do Help Desk: à esquerda fica a conversa, com o pedido no alto e cada resposta embaixo; à direita ficam os detalhes do chamado (situação, prioridade, condomínio, unidade, prazo e quem pediu). Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
+Clique no protocolo na lista para abrir o chamado. A tela é igual à do SAC: à esquerda fica a conversa, com o pedido no alto e cada resposta embaixo; à direita ficam os detalhes do chamado (situação, prioridade, condomínio, unidade, prazo e quem pediu). Para responder, escreva no campo de resposta e envie: se o chamado estava aguardando você, ele volta para a fila. Quando a equipe responde, o sino da barra superior avisa e leva direto ao chamado.
 
 ## Pesquisar e filtrar
 
 Toda ocorrência também é um chamado. No filtro de tipo, **Só ocorrências** mostra apenas elas, e **Sem as ocorrências** mostra os outros chamados. O selo "Ocorrência #" na lista leva à ocorrência.
 
-No alto da tela ficam os contadores da fila, como no Help Desk: um por situação, **SLA vencido**, **Vence hoje** e **Sem responsável**. Clique em um deles para filtrar pela situação. Logo abaixo fica a barra de filtros, com a busca por protocolo ou assunto, e as colunas da lista são as mesmas da fila do Help Desk.
+No alto da tela ficam os contadores da fila, como no SAC: um por situação, **SLA vencido**, **Vence hoje** e **Sem responsável**. Clique em um deles para filtrar pela situação. Logo abaixo fica a barra de filtros, com a busca por protocolo ou assunto, e as colunas da lista são as mesmas da fila do SAC.
 
 Use os filtros no alto da lista: **Buscar**, **Condomínio**, **Prioridade**, **Responsável**, **Prazo**, **Origem** e **Tipo**. A situação se escolhe pelos contadores.
 Depois clique em {{Filtrar}}. Para voltar à lista completa, limpe os filtros.
@@ -92,7 +92,7 @@ Colunas: **Protocolo**, **Atualizado**, **Solicitante** (com condomínio, unidad
 
 ## Atender pelo ERP
 
-Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do Help Desk:
+Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do SAC:
 
 - **Cronômetro**: ao abrir o chamado, ele começa a contar o tempo dedicado. Dá para pausar ou zerar. O tempo é somado ao chamado quando você envia a mensagem.
 - **Responder** ou **Nota interna**: a nota interna só a equipe vê.

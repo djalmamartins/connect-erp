@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-Os campos onde você escreve um texto mais longo usam o mesmo **editor de texto**: a resposta e a nota interna dos chamados, a abertura de chamado, as respostas rápidas do Help Desk e o texto dos comunicados. No Studio, o editor completo aparece nos artigos do blog, nas páginas do site, nos destaques e nas matérias da Central de Ajuda.
+Os campos onde você escreve um texto mais longo usam o mesmo **editor de texto**: a resposta e a nota interna dos chamados, a abertura de chamado, as respostas rápidas do SAC e o texto dos comunicados. No Studio, o editor completo aparece nos artigos do blog, nas páginas do site, nos destaques e nas matérias da Central de Ajuda.
 
 Campos curtos, como nome, CPF, assunto ou pesquisa, continuam simples.
 
@@ -38,7 +38,7 @@ Pode colar de um e-mail, do Word ou de um site. O editor tira o que não serve (
 
 ## O que quem recebe vê
 
-- No ERP e no Help Desk, a conversa mostra o texto com a formatação.
+- No ERP e no SAC, a conversa mostra o texto com a formatação.
 - No aplicativo do morador, no WhatsApp e nas notificações do celular, o texto chega sem formatação: as listas viram linhas com •, e os links aparecem com o endereço entre parênteses.
 - No e-mail do comunicado, a formatação vai junto.
 
