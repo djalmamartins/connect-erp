@@ -16,7 +16,7 @@ API: `GET /api/v1/my-day`, `GET /api/v1/my-day/visit/{condominium_id}`, `POST /a
 | "Aguardando cliente": chamados atribuídos à pessoa na situação aguardando cliente | CONFIRMADO |
 | Vistorias: planos com a pessoa como responsável (sem responsável: quem criou o plano), até 14 dias à frente; vencidas aparecem hoje | CONFIRMADO |
 | Documentos e vencimentos: itens do checklist de chegada sob responsabilidade da pessoa, com prazo ou validade em até 45 dias | CONFIRMADO |
-| Agenda da semana em 7 círculos (segunda a domingo), hoje com anel dourado, contagem de itens por dia | CONFIRMADO |
+| Faixa de 7 dias em retângulos com o dia mostrado no meio (verde, maior; "Hoje" quando é hoje), 3 antes e 3 depois (5 no celular), passados apagados, contagem de itens por dia, setas de 7 dias (pedido do Djalma, 22/11) | CONFIRMADO |
 | Painel da visita só para condomínios do escopo de quem vê: chamados abertos, vencimentos, pendências da última vistoria, última visita, "Iniciar visita" | CONFIRMADO |
 | Concluir, cancelar e reabrir compromisso: o responsável, quem criou ou quem tem `erp.myday.team`; tudo auditado | CONFIRMADO |
 | Formulários com CSRF e padrão PRG; página sem cache | CONFIRMADO |

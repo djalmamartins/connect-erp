@@ -21,7 +21,7 @@ No menu lateral, clique em [[Meu Dia]], logo abaixo do Dashboard. A tela abre se
 ## O que a tela mostra
 
 - **Cartões do topo:** quantos compromissos você tem no dia (e quanto tempo somam), quantos chamados esperam uma data, quantos aguardam o cliente, o que está atrasado e quantas vistorias caem na semana.
-- **Agenda da semana:** os sete dias em círculos. O dia de hoje tem um anel dourado e o número em cada dia diz quantos itens ele tem. Clique num dia para abri-lo.
+- **Faixa dos dias:** o dia que você está vendo fica sempre no meio, em verde e maior, com 3 dias antes e 3 depois (no celular, 2 e 2). Abrindo a tela, o do meio é hoje; os dias que já passaram ficam mais claros. O número dourado em cada dia diz quantos itens ele tem. Clique num dia para ele ir para o meio, ou use as setas das pontas para andar 7 dias.
 - **Agenda:** na aba **Dia**, os compromissos por horário e, no alto, o que vale para o dia todo (vistoria marcada, prazo de chamado). Na aba **Semana**, a lista de cada dia.
 - **Para agendar:** os chamados atribuídos a você que ainda não têm horário, com a etiqueta Urgente, Importante ou Rotina e o prazo.
 - **Aguardando cliente**, **Próximas vistorias** e **Documentos e vencimentos**.

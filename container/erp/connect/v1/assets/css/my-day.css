@@ -6,16 +6,22 @@
 
 .md-kpis { display: grid; gap: var(--erp-space-3); grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: var(--erp-space-4); }
 
-/* Agenda da semana: os 7 dias em círculos, hoje com anel dourado, o dia aberto preenchido. */
-.md-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); padding: var(--erp-space-3); border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); }
-.md-week__day { position: relative; display: grid; justify-items: center; gap: 4px; padding: 6px 0; border-radius: var(--erp-radius-md); color: var(--erp-text); text-decoration: none; }
-.md-week__day:hover { background: var(--erp-surface-muted); text-decoration: none; }
+/* Faixa dos dias: o dia mostrado no meio, em verde e maior; hoje com borda dourada quando não está no meio; dias passados apagados. */
+.md-week { display: flex; align-items: center; gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); padding: 16px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); }
+.md-week__nav { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); color: var(--erp-text); }
+.md-week__nav:hover { background: var(--erp-surface-muted); text-decoration: none; }
+.md-week__days { flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: center; }
+.md-week__day { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border: 1px solid var(--erp-border); border-radius: 12px; background: var(--erp-surface-muted); color: var(--erp-text); text-decoration: none; }
+.md-week__day:hover { border-color: var(--erp-brand-line); text-decoration: none; }
 .md-week__day small { color: var(--erp-muted); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
-.md-week__day strong { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--erp-border); font-size: 16px; font-variant-numeric: tabular-nums; }
-.md-week__day.is-today strong { border-color: var(--erp-accent); box-shadow: 0 0 0 3px var(--erp-accent-soft); }
-.md-week__day.is-selected strong { background: var(--erp-brand); border-color: var(--erp-brand); color: var(--erp-on-brand); }
-.md-week__day.is-today.is-selected strong { box-shadow: 0 0 0 3px var(--erp-accent); }
-.md-week__dot { position: absolute; top: 18px; right: calc(50% - 30px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--erp-accent); color: #2b2205; font-size: 11px; font-weight: 750; line-height: 18px; text-align: center; }
+.md-week__day strong { font-size: 22px; font-variant-numeric: tabular-nums; }
+.md-week__day em { font-style: normal; font-size: 11px; font-weight: 700; }
+.md-week__day.is-past { opacity: .55; }
+.md-week__day.is-today { border-color: var(--erp-accent); }
+.md-week__day.is-selected { padding: 14px 4px 10px; background: var(--erp-brand); border-color: var(--erp-brand); color: var(--erp-on-brand); box-shadow: 0 0 0 3px var(--erp-accent-soft), 0 8px 20px rgba(0, 0, 0, .12); transform: scale(1.08); opacity: 1; }
+.md-week__day.is-selected small { color: var(--erp-on-brand); }
+.md-week__day.is-selected strong { font-size: 28px; }
+.md-week__dot { position: absolute; top: -8px; right: -6px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--erp-accent); color: #2b2205; font-size: 11px; font-weight: 750; line-height: 20px; text-align: center; }
 .md-week__dot[hidden] { display: none; }
 
 .md-grid { display: grid; gap: var(--erp-space-4); grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .95fr); align-items: start; }
@@ -90,9 +96,14 @@
 }
 @media (max-width: 760px) {
     .md-grid { grid-template-columns: minmax(0, 1fr); }
-    .md-week { gap: 2px; padding: var(--erp-space-2); }
-    .md-week__day strong { width: 36px; height: 36px; font-size: 15px; }
-    .md-week__dot { right: calc(50% - 26px); }
+    /* No celular, 5 dias: 2 antes, o do meio e 2 depois. */
+    .md-week { gap: 6px; padding: 14px 8px 10px; }
+    .md-week__nav { width: 28px; height: 28px; }
+    .md-week__days { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .md-week__day:first-child, .md-week__day:last-child { display: none; }
+    .md-week__day strong { font-size: 18px; }
+    .md-week__day.is-selected strong { font-size: 22px; }
+    .md-week__day small { font-size: 11px; }
     .md-task { flex-direction: column; }
     .md-task__side { justify-items: start; text-align: left; }
 }
