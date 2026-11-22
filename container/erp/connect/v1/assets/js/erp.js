@@ -1729,7 +1729,8 @@
       var ids = $$('[name="entry_ids"]:checked', form).map(function (box) { return box.value; });
       if (!current || !ids.length) { feesHint.textContent = 'Escolha as contas para calcular os encargos.'; return; }
       feesHint.textContent = 'Calculando os encargos…';
-      call('GET', api + '/suggestion?unit_id=' + current.unit_id + '&entry_ids=' + ids.join(','))
+      var noIndex = $('[name="without_correction"]', form);
+      call('GET', api + '/suggestion?unit_id=' + current.unit_id + '&entry_ids=' + ids.join(',') + (noIndex && noIndex.checked ? '&without_correction=1' : ''))
         .then(function (json) {
           var s = json.data || {};
           if (!feesTouched) feesInput.value = toBrl(s.fees_cents || 0);
@@ -1743,7 +1744,8 @@
     form.addEventListener('input', update);
     form.addEventListener('change', function (event) {
       update();
-      if (event.target && event.target.name === 'entry_ids') { window.clearTimeout(suggestTimer); suggestTimer = window.setTimeout(suggest, 250); }
+      if (event.target && event.target.name === 'without_correction') feesTouched = false;
+      if (event.target && (event.target.name === 'entry_ids' || event.target.name === 'without_correction')) { window.clearTimeout(suggestTimer); suggestTimer = window.setTimeout(suggest, 250); }
     });
     $$('[data-agreement-unit]', root).forEach(function (button) {
       button.addEventListener('click', function () {

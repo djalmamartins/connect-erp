@@ -128,9 +128,10 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-field erp-col-4"><label for="agr-fees">Encargos (R$)</label><input data-erp-money class="erp-input" id="agr-fees" name="fees_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"><small class="erp-muted" data-agreement-fees-hint>Correção, multa e juros calculados pela regra do condomínio; pode ajustar</small></div>
                     <div class="erp-field erp-col-4"><label for="agr-discount">Desconto (R$)</label><input data-erp-money class="erp-input" id="agr-discount" name="discount_cents" inputmode="decimal" placeholder="0,00" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"></div>
                     <div class="erp-field erp-col-4"><label for="agr-notes">Observações</label><input class="erp-input" id="agr-notes" name="notes" maxlength="255"></div>
+                    <div class="erp-field erp-col-12"><label class="erp-check" for="agr-no-index"><input type="checkbox" id="agr-no-index" name="without_correction" value="1"> Sem correção pelo IPCA (só multa e juros)</label><small class="erp-muted">Marque para tirar a correção do índice dos encargos sugeridos neste acordo.</small></div>
                 </div>
                 <div class="erp-agreement-summary" role="status" aria-live="polite" data-agreement-summary></div>
-                <p class="erp-muted">As contas escolhidas ficam canceladas e ligadas ao acordo; cada parcela vira uma conta a receber nova. Se o acordo for cancelado sem parcela paga, as contas voltam a valer.</p>
+                <p class="erp-muted">As contas escolhidas ficam canceladas e ligadas ao acordo; cada parcela vira uma conta a receber nova. Conta de mês já fechado não reabre o mês: ela é quitada por compensação na data do acordo, e a compensação entra no mês de hoje. Se o acordo for cancelado sem parcela paga, as contas voltam a valer.</p>
             </div>
             <div class="erp-modal__foot"><button type="button" class="erp-btn" data-erp-modal-close>Voltar</button><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('check', 'erp-icon--sm') ?>Fazer acordo</button></div>
         </form>

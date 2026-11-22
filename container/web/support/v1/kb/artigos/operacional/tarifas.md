@@ -52,12 +52,28 @@ recorte: main form:not([method=get])
 - **Condomínio**: Vazio: tarifa padrão da Connect.
 - **Tipo** (obrigatório): Opções: Água, Gás e Energia.
 - **Faixa** (obrigatório): Ex.: Faixa 1.
-- **De (m³ ou kWh)** (obrigatório).
+- **De (m³ ou kWh)** (obrigatório): Pode ser o "Até" da faixa anterior (10) ou o número seguinte (10,001): os dois cobram igual.
 - **Até**: Vazio = sem limite.
 - **Valor por m³ (ou kWh)** (obrigatório).
 - **Vigência a partir de** (obrigatório).
 - **Observações**.
 - **Situação** (obrigatório): Opções: Ativo e Inativo.
+
+## Como as faixas se encadeiam
+
+O consumo é cobrado por partes: cada faixa cobra só o que cai entre o **De** e o **Até** dela, pelo preço dela.
+
+| Faixa | De | Até | Preço |
+|---|---|---|---|
+| Faixa 1 | 0 | 10 | R$ 5,00 |
+| Faixa 2 | 10 (ou 10,001) | 20 | R$ 8,00 |
+| Faixa 3 | 20 (ou 20,001) | vazio | R$ 12,00 |
+
+Quem gastou 23 m³ paga 10 × 5,00 + 10 × 8,00 + 3 × 12,00 = **R$ 166,00**.
+
+- A faixa seguinte pode começar no mesmo número em que a anterior termina (10) ou logo depois (10,001 ou 10,01), como vem na conta da concessionária. O sistema entende os dois jeitos como continuação e cobra todo o consumo, sem sobra entre as faixas.
+- Diferença maior que isso (por exemplo, de 20 para 25) é um buraco: o consumo entre 20 e 25 fica sem preço. Confira as faixas ao cadastrar.
+- Deixe o **Até** da última faixa vazio, senão o consumo acima dela fica sem preço.
 
 ## Pesquisar e filtrar
 

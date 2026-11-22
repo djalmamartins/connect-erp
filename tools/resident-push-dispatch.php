@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Envia o push do app do morador (avisos do chamado, ADR 0641). Pelo cron da hospedagem a cada minuto
+ * Envia o push do app do morador (avisos do chamado, ADR 0642). Pelo cron da hospedagem a cada minuto
  * (tools/hosting/cron.sh minuto): php tools/resident-push-dispatch.php [limite]
  *
  * CONNECT_RESIDENT_PUSH=expo envia pelo serviço de push do Expo; qualquer outro valor (padrão: log) não envia nada

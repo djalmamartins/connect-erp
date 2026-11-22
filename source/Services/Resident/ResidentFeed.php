@@ -12,7 +12,7 @@ use Source\Core\Connect;
  * mostra para o vínculo, respeitando as funções ligadas no condomínio; não cria dado novo nem tabela.
  *
  * - Avisos: conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia
- *   convocada ou em andamento, reserva dos próximos 7 dias e o andamento dos chamados (ADR 0641). "Novo" = mais recente que a última vez que o morador
+ *   convocada ou em andamento, reserva dos próximos 7 dias e o andamento dos chamados (ADR 0642). "Novo" = mais recente que a última vez que o morador
  *   abriu os avisos (guardado no navegador; ver AppScreens::notifications).
  * - Busca: funções do menu, comunicados, assembleias, documentos e encomendas, sem diferenciar acentos e maiúsculas.
  */
@@ -40,7 +40,7 @@ final class ResidentFeed
         $today ??= date('Y-m-d');
         $features = $link['features'] ?? [];
         $items = [];
-        // Andamento dos chamados que o morador pediu (ADR 0641): cada movimentação da equipe.
+        // Andamento dos chamados que o morador pediu (ADR 0642): cada movimentação da equipe.
         if ($userId !== null && $userId > 0) {
             array_push($items, ...(new ResidentTicketNotices($this->pdo))->feed($userId, (int)$link['condominium_id'], $today));
         }

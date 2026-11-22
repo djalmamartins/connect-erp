@@ -31,6 +31,8 @@ use Source\Support\Audit;
  */
 final class MeterReadings
 {
+    /** Diferença entre o fim de uma faixa e o começo da seguinte tratada como continuação (10 → 10,001 ou 10,01). */
+    public const BAND_STEP = 0.01;
     private PDO $pdo;
     private CondominiumScope $scope;
     private RegistryService $registry;
@@ -44,7 +46,8 @@ final class MeterReadings
 
     /**
      * Valor do consumo pelas faixas progressivas (regra pura): cada faixa cobra a parte do consumo
-     * que cai entre "de" e "até" (vazio = sem limite), pelo preço dela. Arredonda no fim.
+     * que cai entre "de" e "até" (vazio = sem limite), pelo preço dela. Arredonda no fim. A faixa que começa até
+     * BAND_STEP depois do fim da anterior (10,001 ou 10,01 depois de 10) continua a anterior (ADR 0642).
      *
      * @param list<array{from_amount:float|string, to_amount:float|string|null, price_cents:int|string}> $bands
      */
@@ -55,9 +58,15 @@ final class MeterReadings
         }
         usort($bands, static fn (array $a, array $b): int => (float)$a['from_amount'] <=> (float)$b['from_amount']);
         $total = 0.0;
+        $previous = null;
         foreach ($bands as $band) {
             $from = (float)$band['from_amount'];
+            // Faixa cadastrada como "0 a 10 / 10,001 a 20" (ou 10,01): continua a anterior, sem buraco (ADR 0642).
+            if ($previous !== null && $from > $previous && $from - $previous <= self::BAND_STEP + 1e-9) {
+                $from = $previous;
+            }
             $to = $band['to_amount'] === null || $band['to_amount'] === '' ? INF : (float)$band['to_amount'];
+            $previous = $to;
             $portion = max(0.0, min($consumption, $to) - $from);
             $total += $portion * (int)$band['price_cents'];
         }

@@ -58,7 +58,7 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  GET  /api/v1/resident/pets-vehicles            pets e veículos da unidade
  *  GET  /api/v1/resident/entries/{id}             uma conta da unidade com o boleto e, se paga, o recibo
  *  GET  /api/v1/resident/notifications            avisos do sininho (contas vencidas, encomendas, visitas, comunicados...)
- *  POST /api/v1/resident/push-token              {token, platform}: celular recebe o push dos chamados (ADR 0641)
+ *  POST /api/v1/resident/push-token              {token, platform}: celular recebe o push dos chamados (ADR 0642)
  *  POST /api/v1/resident/push-token/forget       {token}: ao sair do app, o celular deixa de receber
  *  GET  /api/v1/resident/search?q=                busca no que o morador pode ver
  *  GET  /api/v1/resident/2fa                      situação da verificação em duas etapas (opcional, ADR 0304)
@@ -108,7 +108,7 @@ final class ResidentApp
         $this->read(fn (User $u, array $link): array => (new ResidentFeed())->notifications($link, null, (int)$u->id));
     }
 
-    /** POST /resident/push-token — guarda o celular do morador para o push dos chamados (ADR 0641). */
+    /** POST /resident/push-token — guarda o celular do morador para o push dos chamados (ADR 0642). */
     public function registerPushToken(): void
     {
         $this->write(200, function (User $u, array $link, array $body): array {

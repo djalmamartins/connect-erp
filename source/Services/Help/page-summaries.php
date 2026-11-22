@@ -659,6 +659,10 @@ return [
                 'title' => 'Fazer um acordo',
             ],
             [
+                'id' => 'contas-de-meses-ja-fechados',
+                'title' => 'Contas de meses já fechados',
+            ],
+            [
                 'id' => 'como-usar',
                 'title' => 'Como usar',
             ],
@@ -821,6 +825,10 @@ return [
             [
                 'id' => 'como-cadastrar',
                 'title' => 'Como cadastrar',
+            ],
+            [
+                'id' => 'como-as-faixas-se-encadeiam',
+                'title' => 'Como as faixas se encadeiam',
             ],
             [
                 'id' => 'pesquisar-e-filtrar',

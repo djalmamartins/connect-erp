@@ -34,8 +34,9 @@ O acordo junta as contas em atraso de uma unidade e as divide em parcelas novas.
 1. Na lista de inadimplentes, clique em {{Fazer acordo}} na unidade.
 2. Confira as contas marcadas. Desmarque o que não entra no acordo.
 3. Escolha a **Conta do plano** das parcelas, o número de **Parcelas** e o **1º vencimento**.
-4. Se houver, informe **Encargos** e **Desconto**.
-5. Clique em {{Fazer acordo}}.
+4. Confira os **Encargos** sugeridos (correção pelo IPCA, multa e juros, pela regra do condomínio) e, se houver, o **Desconto**.
+5. Para cobrar só multa e juros, marque **Sem correção pelo IPCA**: os encargos são calculados de novo sem o índice.
+6. Clique em {{Fazer acordo}}.
 
 ```tela acordos-novo
 rota: /cobranca/acordos
@@ -52,6 +53,18 @@ recorte: dialog[open]
 ```
 
 > As contas do acordo saem da inadimplência e as parcelas aparecem em [Parcelas de acordo](artigo:parcelas-de-acordo).
+
+## Contas de meses já fechados
+
+O acordo **nunca reabre um mês fechado** e não muda uma prestação de contas já publicada. Ele entra no mês em que é feito:
+
+- As contas de mês fechado ficam no mês delas como estavam. Na data do acordo, elas são quitadas por **compensação** (sem dinheiro entrando no banco) e saem da inadimplência.
+- No mês do acordo entra uma despesa de compensação do mesmo valor, na conta **2.92 Cotas renegociadas em acordo** do plano de contas. As parcelas entram como receita nos meses em que vencem. Assim nada é contado duas vezes.
+- Se a conta 2.92 não existir no plano de contas, o sistema avisa e não faz o acordo. Cadastre-a como despesa analítica.
+- O mês de hoje precisa estar aberto.
+- Se o acordo for cancelado (sem parcela paga), as contas voltam a ficar em aberto e a compensação é cancelada.
+
+> Os encargos usam o IPCA porque, desde a Lei 14.905/2024, ele é o índice de correção quando a convenção não define outro. A multa vai até 2% e os juros são os da convenção ou 1% ao mês (Código Civil, art. 1.336). O índice e os percentuais ficam em [Índices e regra de cobrança](artigo:indices).
 
 >! O acordo é quebrado só manualmente, com motivo, quando uma parcela passa de 30 dias de atraso ou duas ficam em aberto.
 

@@ -53,7 +53,7 @@ final class TicketDesk
         if (!is_array($before)) {
             throw new TicketError('ticket', 'Chamado não encontrado.', 404);
         }
-        // Equipe só da lista (ADR 0641). Um texto antigo fora da lista continua até alguém escolher outra.
+        // Equipe só da lista (ADR 0642). Um texto antigo fora da lista continua até alguém escolher outra.
         if (array_key_exists('team', $input)) {
             $team = TicketService::team($input['team']);
             if ($team === false) {
@@ -103,7 +103,7 @@ final class TicketDesk
                 $this->notify($ticketId, 'status', (int)$agent->id);
             }
         }
-        // App do morador (ADR 0641): situação, equipe e responsável. Prioridade, categoria e tags são da triagem interna.
+        // App do morador (ADR 0642): situação, equipe e responsável. Prioridade, categoria e tags são da triagem interna.
         $visible = array_intersect($changed, ['status', 'team', 'assigned_to']);
         if ($visible !== []) {
             $changes = [];
@@ -164,7 +164,7 @@ final class TicketDesk
         }
         if (!$internal) {
             $this->notify($ticketId, 'reply', (int)$agent->id, RichText::plain($message));
-            // Nota interna nunca chega ao morador (ADR 0641).
+            // Nota interna nunca chega ao morador (ADR 0642).
             $this->notifyResident($ticketId, 'reply', (int)$agent->id, ['text' => RichText::plain($message)]
                 + ($status !== (string)$before ? ['status' => $status] : []));
         } elseif ($status !== (string)$before) {

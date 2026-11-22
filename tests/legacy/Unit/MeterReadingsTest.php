@@ -26,6 +26,19 @@ final class MeterReadingsTest extends TestCase
         self::assertSame(0, MeterReadings::charge(12, []), 'Sem tarifa, valor zero.');
     }
 
+    public function testNextUnitBandsContinueThePreviousOne(): void
+    {
+        $contiguous = [['from_amount' => '0', 'to_amount' => '10', 'price_cents' => 500], ['from_amount' => '10', 'to_amount' => '20', 'price_cents' => 800],
+            ['from_amount' => '20', 'to_amount' => null, 'price_cents' => 1200]];
+        $nextUnit = [['from_amount' => '0', 'to_amount' => '10', 'price_cents' => 500], ['from_amount' => '10.001', 'to_amount' => '20', 'price_cents' => 800],
+            ['from_amount' => '20.01', 'to_amount' => null, 'price_cents' => 1200]];
+        foreach ([5, 10, 10.0005, 15, 20, 23, 31.25] as $consumption) {
+            self::assertSame(MeterReadings::charge($consumption, $contiguous), MeterReadings::charge($consumption, $nextUnit), "{$consumption} m³: 10,001 continua a faixa de 10 (ADR 0642).");
+        }
+        $gap = [['from_amount' => '0', 'to_amount' => '20', 'price_cents' => 500], ['from_amount' => '25', 'to_amount' => null, 'price_cents' => 1200]];
+        self::assertSame(20 * 500 + 3 * 1200, MeterReadings::charge(28, $gap), 'Buraco de verdade (20 a 25) continua sem preço.');
+    }
+
     public function testReadingParsing(): void
     {
         self::assertSame(123.456, MeterReadings::parseReading('123,456'));

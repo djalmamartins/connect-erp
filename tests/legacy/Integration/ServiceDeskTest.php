@@ -170,7 +170,7 @@ final class ServiceDeskTest extends TestCase
         $ticketId = (int)$this->pdo->lastInsertId();
 
         // Desde o ADR 0034 todo chamado é aberto pelo TicketService, que avisa a equipe (nível 5+). Solicitante sem ERP
-        // nem SAC (morador) não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0641).
+        // nem SAC (morador) não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0642).
         $notify = (new ReflectionClass(TicketService::class))->getMethod('notifyOpened');
         $notify->invoke(new TicketService($this->pdo), $ticketId, 'CH240101ABC2', ['requester_id' => $requesterId, 'assigned_to' => null, 'priority' => 'urgent',
             'subject' => 'Teste de entrega', 'origin' => 'helpdesk', 'condominium_id' => null, 'unit_id' => null], $dueAt);
