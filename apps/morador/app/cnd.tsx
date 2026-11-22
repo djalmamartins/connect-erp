@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { ApiError } from '../src/api/client';
 import type { Certificate } from '../src/api/resident';
 import { useAuth } from '../src/auth/AuthContext';
@@ -13,33 +14,41 @@ import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } fr
 import { dialog } from '../src/ui/Dialog';
 
 /**
- * CND — certidão negativa de débitos da unidade (revisão de 15/11). O morador emite a do dia,
- * baixa o PDF e passa o código de verificação para quem for conferir.
+ * CND — certidão negativa de débitos da unidade (ADR 0635). O morador não emite: pede à administradora, o pedido vira
+ * chamado do Help Desk, a equipe emite no ERP e a certidão aparece aqui. Com conta vencida em aberto, o servidor
+ * recusa o pedido e o app só mostra o débito (nada é gerado).
  */
 export default function Cnd() {
   const { api, client, residentId } = useAuth();
   const list = useResource(() => api.certificates(), [residentId]);
-  const [issuing, setIssuing] = useState(false);
+  const status = useResource(() => api.certificateStatus(), [residentId]);
+  const [asking, setAsking] = useState(false);
   const [opening, setOpening] = useState<number | null>(null);
 
-  async function issue() {
-    setIssuing(true);
+  async function reload() {
+    await Promise.all([list.reload(), status.reload()]);
+  }
+
+  async function ask() {
+    setAsking(true);
     try {
-      const c = await api.issueCertificate();
-      await list.reload();
+      const r = await api.requestCertificate();
+      await status.reload();
       await dialog.notice({
-        title: c?.result === 'clear' ? 'Nada consta' : 'Certidão emitida',
-        message:
-          c?.result === 'clear'
-            ? 'A unidade está sem débitos hoje. Baixe o PDF para enviar a quem pediu.'
-            : `A certidão saiu com débitos de ${money(c?.total_cents ?? 0)}. Veja os boletos em aberto para regularizar.`,
-        tone: c?.result === 'clear' ? 'success' : 'info',
-        icon: c?.result === 'clear' ? 'ribbon' : undefined,
+        title: r?.created === false ? 'Pedido em andamento' : 'Pedido enviado',
+        message: `A administradora recebeu o pedido (protocolo ${r?.protocol ?? ''}). A certidão aparece aqui quando for emitida.`,
+        tone: 'success',
       });
     } catch (e) {
-      await dialog.notice({ title: 'Não deu para emitir', message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.', tone: 'error' });
+      const debt = e instanceof ApiError && e.code === 'debt_open';
+      await status.reload();
+      await dialog.notice({
+        title: debt ? 'Há débito em aberto' : 'Não deu para pedir',
+        message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.',
+        tone: debt ? 'info' : 'error',
+      });
     } finally {
-      setIssuing(false);
+      setAsking(false);
     }
   }
 
@@ -60,21 +69,40 @@ export default function Cnd() {
   }
 
   const items = list.data ?? [];
+  const st = status.data;
   return (
-    <Screen title="CND" subtitle="Certidão negativa de débitos" back refreshing={list.refreshing} onRefresh={list.reload}>
-      {list.loading && !list.data ? (
+    <Screen title="CND" subtitle="Certidão negativa de débitos" back refreshing={list.refreshing || status.refreshing} onRefresh={reload}>
+      {(list.loading && !list.data) || (status.loading && !status.data) ? (
         <Loading />
-      ) : list.error ? (
-        <ErrorBox error={list.error} onRetry={list.reload} />
+      ) : list.error || status.error ? (
+        <ErrorBox error={(list.error ?? status.error)!} onRetry={reload} />
       ) : (
         <>
           <Card>
             <View style={{ gap: space[3] }}>
-              <Body muted>
-                A certidão mostra se a unidade tem débitos com o condomínio na data de hoje. Ela traz um código para quem receber
-                conferir se é verdadeira.
-              </Body>
-              <Button title="Emitir certidão" onPress={issue} busy={issuing} />
+              {st?.blocked ? (
+                <>
+                  <Text style={styles.result}>Há débito em aberto</Text>
+                  <Body muted>{st.message}</Body>
+                  <Button title="Ver boletos" variant="secondary" onPress={() => router.push('/financeiro')} />
+                </>
+              ) : st?.request ? (
+                <>
+                  <Text style={styles.result}>Pedido em andamento</Text>
+                  <Body muted>
+                    A administradora está preparando a certidão (protocolo {st.request.protocol}, pedido em {date(st.request.created_at)}). Ela aparece aqui
+                    quando for emitida.
+                  </Body>
+                </>
+              ) : (
+                <>
+                  <Body muted>
+                    Peça a certidão à administradora. Ela confere a unidade, emite e a certidão aparece aqui, com um código para quem receber conferir se é
+                    verdadeira. Com conta vencida em aberto, a certidão não é emitida.
+                  </Body>
+                  <Button title="Pedir certidão" onPress={ask} busy={asking} />
+                </>
+              )}
             </View>
           </Card>
           {items.length > 0 ? <SectionTitle>Emitidas nos últimos 12 meses</SectionTitle> : <Empty text="Nenhuma certidão emitida ainda." />}

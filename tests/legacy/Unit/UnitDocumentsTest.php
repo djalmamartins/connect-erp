@@ -41,4 +41,13 @@ final class UnitDocumentsTest extends TestCase
     {
         self::assertSame(['debt_certificate', 'delinquency_declaration', 'quittance', 'consent_letter'], array_keys(UnitDocuments::KINDS));
     }
+
+    /** ADR 0635: a recusa só informa o débito. */
+    public function testBlockedCertificateMessageInformsTheDebt(): void
+    {
+        $blocked = new \Source\Services\Erp\DebtCertificateBlocked(2, 123456);
+        self::assertInstanceOf(\DomainException::class, $blocked);
+        self::assertSame([2, 123456], [$blocked->overdueCount, $blocked->overdueCents]);
+        self::assertSame('A unidade tem 2 conta(s) vencida(s) em aberto (R$ 1.234,56). A certidão negativa de débitos não é emitida enquanto houver débito.', $blocked->getMessage());
+    }
 }

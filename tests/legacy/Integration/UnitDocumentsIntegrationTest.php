@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\DebtCertificateBlocked;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\UnitDocuments;
@@ -66,12 +67,20 @@ final class UnitDocumentsIntegrationTest extends TestCase
     {
         $this->debt('2026-09', '2026-09-10');
         $this->debt('2026-11', '2026-11-20');   // a vencer
-        $certificate = $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09']);
+        // ADR 0635: certidão negativa com débito não é gerada; só informa o débito (com encargos).
+        try {
+            $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09']);
+            self::fail('Emitiu certidão com débito.');
+        } catch (DebtCertificateBlocked $blocked) {
+            self::assertSame(1, $blocked->overdueCount);
+            self::assertGreaterThan(50000, $blocked->overdueCents, 'Vencida com encargos.');
+            self::assertStringContainsString('não é emitida', $blocked->getMessage());
+        }
+        self::assertSame(0, $this->documents->list($this->admin, $this->alpha)['total']);
+        $certificate = $this->documents->issue($this->admin, ['kind' => 'delinquency_declaration', 'unit_id' => $this->unit, 'as_of' => '2026-11-09']);
         self::assertSame('debts', $certificate['result']);
         self::assertCount(1, $certificate['content']['overdue']);
         self::assertCount(1, $certificate['content']['upcoming']);
-        self::assertGreaterThan(50000, $certificate['total_cents'], 'Vencida com encargos.');
-        self::assertSame('debts', $this->documents->issue($this->admin, ['kind' => 'delinquency_declaration', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
 
         foreach ([
             [['kind' => 'quittance', 'until_competence' => '2026-09'], DomainException::class],
@@ -90,7 +99,7 @@ final class UnitDocumentsIntegrationTest extends TestCase
 
         $cancelled = $this->documents->cancel($this->admin, $certificate['id'], 'Emitida com data errada');
         self::assertSame('cancelled', $this->documents->verify($this->admin, $cancelled['verification_code'])['status'], 'A verificação mostra o cancelamento.');
-        self::assertSame(2, $this->documents->list($this->admin, $this->alpha)['total']);
+        self::assertSame(1, $this->documents->list($this->admin, $this->alpha)['total']);
     }
 
     public function testScope(): void
@@ -112,8 +121,12 @@ final class UnitDocumentsIntegrationTest extends TestCase
     {
         // ADR 0105: paga em 15/10, a conta vencida em 10/09 estava em aberto em 01/10.
         $this->debt('2026-09', '2026-09-10', '2026-10-15');
-        $before = $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-10-01']);
-        self::assertSame(['debts', 1], [$before['result'], count($before['content']['overdue'])], 'Certidão de 01/10 mostra a dívida da época.');
+        try {
+            $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-10-01']);
+            self::fail('Certidão de 01/10 com a dívida da época.');
+        } catch (DebtCertificateBlocked $blocked) {
+            self::assertSame(1, $blocked->overdueCount);
+        }
         self::assertSame('clear', $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
         try {
             $this->documents->issue($this->admin, ['kind' => 'quittance', 'unit_id' => $this->unit, 'as_of' => '2026-10-01', 'until_competence' => '2026-09']);
@@ -126,6 +139,20 @@ final class UnitDocumentsIntegrationTest extends TestCase
         $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, description, amount_cents, competence, due_on, unit_id)
             VALUES (?, 'receita', ?, 'Outro condomínio', 70000, '2026-08', '2026-08-10', ?)")->execute([$this->beta, $this->fee, $this->unit]);
         self::assertSame('clear', $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
+    }
+
+    /** ADR 0635: data de referência antiga sem débito não serve de atalho quando hoje há conta vencida. */
+    public function testPastReferenceDateDoesNotBypassTodaysDebt(): void
+    {
+        $due = date('Y-m-d', strtotime('-5 days'));
+        $this->debt(substr($due, 0, 7), $due);
+        try {
+            $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => date('Y-m-d', strtotime('-30 days'))]);
+            self::fail('Emitiu certidão antiga com débito hoje.');
+        } catch (DebtCertificateBlocked $blocked) {
+            self::assertSame([1, 50000], [$blocked->overdueCount, $blocked->overdueCents]);
+        }
+        self::assertSame(0, $this->documents->list($this->admin, $this->alpha)['total']);
     }
 
     private function debt(string $competence, string $dueOn, ?string $paidOn = null): int

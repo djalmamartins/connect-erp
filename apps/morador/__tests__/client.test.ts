@@ -213,14 +213,30 @@ describe('etapa 4: moradores da unidade', () => {
   });
 });
 
-describe('etapa 5: CND', () => {
-  it('emite com POST sem corpo e monta o PDF com o vínculo', async () => {
+describe('etapa 5: CND (ADR 0635: pedido à administradora)', () => {
+  it('pede com POST sem corpo e monta o PDF com o vínculo', async () => {
     const calls: Call[] = [];
-    const item = { id: 3, as_of: '2026-11-15', result: 'clear', result_label: 'Nada consta', total_cents: 0, verification_code: 'ABCD-EFGH-JKMN-PQRS', issued_at: '2026-11-15 11:00:00' };
-    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4, fetchImpl: fakeFetch(201, { data: item }, calls) }));
-    await expect(api.issueCertificate()).resolves.toEqual(item);
+    const req = { id: 12, protocol: 'CH261122ABCD', status: 'open', created_at: '2026-11-22 09:00:00', created: true };
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4, fetchImpl: fakeFetch(202, { data: req }, calls) }));
+    await expect(api.requestCertificate()).resolves.toEqual(req);
     expect(calls[0]!.url).toBe('https://x/api/v1/resident/certificates?resident_id=4');
     expect(calls[0]!.init.method).toBe('POST');
     expect(api.certificatePdfUrl(3)).toBe('https://x/api/v1/resident/certificates/3/pdf?resident_id=4');
+  });
+
+  it('com débito, o servidor recusa (409 debt_open) e nada é gerado', async () => {
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4,
+      fetchImpl: fakeFetch(409, { error: { code: 'debt_open', message: 'A unidade tem 1 conta(s) vencida(s) em aberto (R$ 510,00).', overdue_count: 1, overdue_cents: 51000 } }, []) }));
+    const e = await failure(api.requestCertificate());
+    expect(e.status).toBe(409);
+    expect(e.code).toBe('debt_open');
+  });
+
+  it('lê a situação em /certificates/status', async () => {
+    const calls: Call[] = [];
+    const status = { blocked: false, message: null, overdue_count: 0, overdue_cents: 0, request: null };
+    const api = residentApi(createClient({ baseUrl: 'https://x', getToken: () => 't', getResidentId: () => 4, fetchImpl: fakeFetch(200, { data: status }, calls) }));
+    await expect(api.certificateStatus()).resolves.toEqual(status);
+    expect(calls[0]!.url).toBe('https://x/api/v1/resident/certificates/status?resident_id=4');
   });
 });

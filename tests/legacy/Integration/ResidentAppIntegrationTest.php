@@ -8,6 +8,8 @@ use DomainException;
 use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Erp\DebtCertificateBlocked;
+use Source\Services\Erp\UnitDocuments;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Services\Erp\ResidentPortalPermissions;
@@ -359,39 +361,82 @@ final class ResidentAppIntegrationTest extends TestCase
         $household->block($this->vizinho, ['relationship' => 'owner'] + $neighbor, $new['id'], '2026-11-15');
     }
 
-    public function testResidentIssuesCndForOwnUnit(): void
+    /** ADR 0635: o morador pede a CND (chamado), a equipe emite no ERP; com débito, ninguém gera a certidão. */
+    public function testResidentRequestsCndAndTeamIssuesOnlyWithoutDebt(): void
     {
         $certificates = new ResidentCertificates($this->pdo);
+        $documents = new UnitDocuments($this->pdo);
         $owner = $this->link($this->morador, ['boletos']);
         try {
-            $certificates->issue($this->morador, $this->link($this->morador));
+            $certificates->request($this->morador, $this->link($this->morador));
             self::fail('Sem a função boletos.');
         } catch (ResidentFeatureDisabled) {
             self::assertTrue(true);
         }
 
-        $clear = $certificates->issue($this->morador, $owner);
-        self::assertSame(['clear', 'Nada consta', 0, date('Y-m-d')], [$clear['result'], $clear['result_label'], $clear['total_cents'], $clear['as_of']]);
+        // Sem débito: o pedido vira chamado do Help Desk da unidade; repetir não duplica.
+        self::assertSame(['blocked' => false, 'request' => null], array_intersect_key($certificates->status($owner), ['blocked' => 1, 'request' => 1]));
+        $request = $certificates->request($this->morador, $owner);
+        self::assertTrue($request['created']);
+        $ticket = $this->pdo->query('SELECT category, origin, unit_id, condominium_id, requester_id, status, area FROM studio_support_tickets WHERE id = ' . $request['id'])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame([ResidentCertificates::CATEGORY, 'residents', $this->unitA, $this->alpha, (int)$this->morador->id, 'open', 'financial'],
+            [$ticket['category'], $ticket['origin'], (int)$ticket['unit_id'], (int)$ticket['condominium_id'], (int)$ticket['requester_id'], $ticket['status'], $ticket['area']]);
+        $again = $certificates->request($this->morador, $owner);
+        self::assertSame([$request['id'], false], [$again['id'], $again['created']]);
+        self::assertSame($request['id'], $certificates->status($owner)['request']['id']);
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_unit_documents')->fetchColumn(), 'Pedir não gera documento.');
+        self::assertSame('chamado', (new ResidentTickets($this->pdo))->list($this->morador, $this->link($this->morador, ['occurrences']))['data'][0]['kind']);
+
+        // A equipe emite no ERP: o pedido é respondido e resolvido, e a certidão aparece no app.
+        $issued = $documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unitA]);
+        self::assertSame('clear', $issued['result']);
+        self::assertSame('resolved', $this->pdo->query('SELECT status FROM studio_support_tickets WHERE id = ' . $request['id'])->fetchColumn());
+        $reply = (string)$this->pdo->query('SELECT message FROM studio_support_ticket_messages WHERE is_internal = 0 AND ticket_id = ' . $request['id'])->fetchColumn();
+        self::assertStringContainsString($issued['verification_display'], $reply);
+        self::assertSame([$issued['id']], array_column($certificates->list($owner), 'id'));
+        self::assertNull($certificates->status($owner)['request']);
+        self::assertStringStartsWith('%PDF', $certificates->pdf($owner, $issued['id']));
+
+        // Com conta vencida: o app só informa o débito, o pedido é recusado e o ERP não emite.
         $account = $this->chartAccount();
         $this->entry($account, $this->unitA, 50000, date('Y-m-d', strtotime('-40 days')));
         $this->entry($account, $this->unitB, 99900, date('Y-m-d', strtotime('-40 days')));
-        $debts = $certificates->issue($this->morador, $owner);
-        self::assertSame('debts', $debts['result']);
-        self::assertGreaterThanOrEqual(50000, $debts['total_cents'], 'Só a conta da própria unidade, com encargos.');
-        self::assertLessThan(99900, $debts['total_cents']);
-        self::assertSame([$debts['id'], $clear['id']], array_column($certificates->list($owner), 'id'));
+        $status = $certificates->status($owner);
+        self::assertSame([true, 1, 50000], [$status['blocked'], $status['overdue_count'], $status['overdue_cents']], 'Só a conta da própria unidade.');
+        self::assertStringContainsString('não é emitida', (string)$status['message']);
+        try {
+            $certificates->request($this->morador, $owner);
+            self::fail('Abriu pedido de CND com débito.');
+        } catch (DebtCertificateBlocked $error) {
+            self::assertSame(1, $error->overdueCount);
+        }
+        try {
+            $documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unitA]);
+            self::fail('O ERP emitiu CND com débito.');
+        } catch (DebtCertificateBlocked) {
+            self::assertTrue(true);
+        }
+        self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_unit_documents')->fetchColumn(), 'Nada gerado com débito.');
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM studio_support_tickets WHERE category = 'Pedido de CND'")->fetchColumn());
+        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_unit_documents' AND action = 'refuse'")->fetchColumn(), 'Recusas auditadas.');
 
-        // O mesmo registro do ERP: código verificável, auditado, e o PDF sai.
-        $row = $this->pdo->query('SELECT kind, issued_by, unit_id FROM erp_unit_documents WHERE id = ' . $debts['id'])->fetch(\PDO::FETCH_ASSOC);
-        self::assertSame(['debt_certificate', (int)$this->morador->id, $this->unitA], [$row['kind'], (int)$row['issued_by'], (int)$row['unit_id']]);
-        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_unit_documents' AND action = 'create'")->fetchColumn());
-        self::assertStringStartsWith('%PDF', $certificates->pdf($owner, $debts['id']));
+        // Certidão antiga "com débitos" (antes da regra) não aparece nem baixa no app.
+        $this->pdo->prepare("INSERT INTO erp_unit_documents (condominium_id, unit_id, kind, as_of, result, total_cents, payload_json, verification_code, issued_by)
+            VALUES (?, ?, 'debt_certificate', ?, 'debts', 50000, '{}', 'ABCDEFGHJKMNPQRS', ?)")->execute([$this->alpha, $this->unitA, date('Y-m-d'), (int)$this->admin->id]);
+        $old = (int)$this->pdo->lastInsertId();
+        self::assertSame([$issued['id']], array_column($certificates->list($owner), 'id'));
+        try {
+            $certificates->pdf($owner, $old);
+            self::fail('Baixou certidão com débitos.');
+        } catch (RegistryNotFound) {
+            self::assertTrue(true);
+        }
 
         // Vizinho não lista nem baixa a certidão da outra unidade.
         $neighbor = $this->link($this->vizinho, ['boletos']);
         self::assertSame([], $certificates->list($neighbor));
         $this->expectException(RegistryNotFound::class);
-        $certificates->pdf($neighbor, $debts['id']);
+        $certificates->pdf($neighbor, $issued['id']);
     }
 
     private function link(User $user, array $extraFeatures = []): array

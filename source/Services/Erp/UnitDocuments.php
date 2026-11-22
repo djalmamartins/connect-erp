@@ -17,8 +17,9 @@ use Source\Support\Audit;
 /**
  * Documentos da unidade (AP-123, 124, 125 e 130; ADR 0044), gerados das contas a receber válidas:
  *
- * - debt_certificate (Certidão de Débitos): sempre emite; "nada consta" sem conta vencida, senão lista
- *   as vencidas com encargos (ADR 0040) e as a vencer em aberto.
+ * - debt_certificate (Certidão Negativa de Débitos): só emite sem conta vencida em aberto, na data de referência
+ *   E hoje (ADR 0635); com débito, recusa (DebtCertificateBlocked) e só informa o débito. Lista as a vencer em aberto.
+ *   Ao emitir, responde e resolve os pedidos de CND do morador abertos para a unidade (ResidentCertificates::fulfil).
  * - delinquency_declaration (Declaração de Inadimplência): só com conta vencida em aberto.
  * - quittance (Comprovante de Quitação): todas as contas até a competência informada pagas (ou
  *   canceladas); com alguma em aberto, recusa.
@@ -106,17 +107,18 @@ final class UnitDocuments
     }
 
     /**
-     * Certidão de débitos pedida pelo próprio morador no aplicativo (revisão de 15/11, etapa 5): a unidade vem do
-     * vínculo já conferido (ResidentLinks), não do escopo de condomínio da equipe. Mesma regra, mesmo registro e
-     * mesmo código de verificação da certidão emitida no ERP, com data de referência de hoje.
+     * Contas vencidas em aberto da unidade numa data (valor original, sem encargos): a trava da certidão (ADR 0635).
      *
-     * @param array{unit_id:int, condominium_id:int, unit_label:string, condominium_name:string} $link
+     * @return array{count:int, cents:int}
      */
-    public function issueForResident(User $user, array $link): array
+    public function overdueSummary(int $unitId, int $condominiumId, string $asOf): array
     {
-        $unit = ['id' => (int)$link['unit_id'], 'condominium_id' => (int)$link['condominium_id'],
-            'label' => (string)$link['unit_label'], 'condominium_name' => (string)$link['condominium_name']];
-        return $this->issueFor($user, $unit, 'debt_certificate', date('Y-m-d'), []);
+        $stmt = $this->pdo->prepare("SELECT COUNT(*), COALESCE(SUM(amount_cents), 0) FROM erp_entries
+            WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL
+                AND (paid_on IS NULL OR paid_on > :d) AND due_on < :d2");
+        $stmt->execute(['u' => $unitId, 'c' => $condominiumId, 'd' => $asOf, 'd2' => $asOf]);
+        [$count, $cents] = $stmt->fetch(PDO::FETCH_NUM);
+        return ['count' => (int)$count, 'cents' => (int)$cents];
     }
 
     /** Documento já gravado, sem conferir escopo (quem chama já conferiu: ERP pelo find(), app pelo vínculo). */
@@ -189,6 +191,18 @@ final class UnitDocuments
             'competence' => (string)$r['competence'], 'due_on' => (string)$r['due_on'], 'amount_cents' => (int)$r['amount_cents']], $parts['upcoming']);
         $hasDebts = $overdue !== [];
 
+        // ADR 0635: certidão negativa nunca sai com débito, nem com data de referência antiga quando hoje há débito.
+        if ($kind === 'debt_certificate') {
+            $today = $asOf === date('Y-m-d') ? null : $this->overdueSummary((int)$unit['id'], (int)$unit['condominium_id'], date('Y-m-d'));
+            if ($hasDebts || ($today !== null && $today['count'] > 0)) {
+                $count = $hasDebts ? count($overdue) : $today['count'];
+                $cents = $hasDebts ? $parts['overdue_cents'] + $charges : $today['cents'];
+                Audit::record('refuse', 'erp_unit_documents', null, null, ['kind' => $kind, 'unit_id' => (int)$unit['id'], 'as_of' => $asOf,
+                    'reason' => 'overdue_debts', 'overdue_count' => $count, 'overdue_cents' => $cents, 'by' => (int)$user->id]);
+                throw new DebtCertificateBlocked($count, $cents);
+            }
+        }
+
         if ($kind === 'delinquency_declaration' && !$hasDebts) {
             throw new DomainException('A unidade não tem contas vencidas em aberto nesta data.');
         }
@@ -205,7 +219,16 @@ final class UnitDocuments
         $payload = ['overdue' => $overdue, 'upcoming' => $upcoming, 'overdue_cents' => $parts['overdue_cents'], 'charges_cents' => $charges,
             'upcoming_cents' => $parts['upcoming_cents'], 'rule' => $rule,
             'missing_index' => array_values(array_unique(array_merge([], ...array_map(static fn (array $o): array => $o['missing_index'], $overdue))))];
-        return $this->store($user, $unit, $kind, $asOf, $reference, $hasDebts ? 'debts' : 'clear', $parts['overdue_cents'] + $charges, $payload);
+        $document = $this->store($user, $unit, $kind, $asOf, $reference, $hasDebts ? 'debts' : 'clear', $parts['overdue_cents'] + $charges, $payload);
+        if ($kind === 'debt_certificate') {
+            try {
+                (new \Source\Services\Resident\ResidentCertificates($this->pdo, $this))->fulfil($user, $document);
+            } catch (\Throwable $error) {
+                // A certidão já está gravada; o pedido fica aberto para a equipe responder à mão.
+                \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'cnd_request_fulfil_failed', 'document_id' => $document['id']]);
+            }
+        }
+        return $document;
     }
 
     /** Documento pelo código (verificação de autenticidade), dentro do escopo do usuário. */
