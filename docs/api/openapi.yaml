@@ -7698,6 +7698,21 @@ paths:
         '422': { description: Nenhum telefone válido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { description: Muitas falhas de token deste IP (20 em 15 minutos), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /talk/tickets:
+    get:
+      operationId: talkTicketFeed
+      tags: [Talk]
+      summary: Respostas da equipe nos chamados do Talk, desde o cursor (ADR 0634, tickets.write)
+      description: >-
+        Mensagens públicas dos chamados de origem talk do escopo, mais antigas primeiro, sem as escritas pelo próprio
+        usuário de integração e nunca as notas internas. Guarde meta.next_after e mande como after no próximo pedido.
+        Sem after (ou 0), começa nas últimas 24 horas. 100 por pedido; has_more diz se tem mais.
+      security: [{ talkIntegration: [] }]
+      parameters: [{ name: after, in: query, schema: { type: integer, minimum: 0, default: 0 } }]
+      responses:
+        '200': { description: Respostas, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, ticket: { type: object, properties: { id: { type: integer }, protocol: { type: string }, status: { type: string }, area: { type: string }, talk_protocol: { type: [string, 'null'] }, condominium_id: { type: [integer, 'null'] }, unit_id: { type: [integer, 'null'] } } }, author: { type: string, description: primeiro nome de quem respondeu }, body: { type: string }, attachments: { type: integer, description: quantos anexos (o arquivo fica no ERP) }, created_at: { type: string } } } }, meta: { type: object, properties: { after: { type: integer }, next_after: { type: integer }, has_more: { type: boolean } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo tickets.write (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: Passou do limite do token, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     post:
       operationId: talkOpenTicket
       tags: [Talk]
@@ -7734,6 +7749,40 @@ paths:
         '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Condomínio fora do escopo do usuário de integração, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '422': { description: Dados inválidos (morador de outro condomínio ou unidade, telefone que não é do morador...), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/tickets/{id}:
+    get:
+      operationId: talkTicket
+      tags: [Talk]
+      summary: O chamado do Talk com a conversa pública (tickets.write)
+      description: from_talk marca as mensagens que vieram do WhatsApp. Notas internas não aparecem.
+      security: [{ talkIntegration: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Chamado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, status: { type: string }, area: { type: string }, talk_protocol: { type: [string, 'null'] }, messages: { type: array, items: { type: object, properties: { id: { type: integer }, from_talk: { type: boolean }, author: { type: string }, body: { type: string }, attachments: { type: integer }, created_at: { type: string } } } } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo tickets.write (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Chamado não é do Talk, fora do escopo ou não existe, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/tickets/{id}/messages:
+    post:
+      operationId: talkTicketMessage
+      tags: [Talk]
+      summary: Mensagem do morador no WhatsApp entra no chamado (tickets.write, idempotente)
+      description: >-
+        Entra como resposta de quem pediu, pela mesma regra do ERP: aguardando o cliente volta para atendimento,
+        resolvido ou fechado reabre, e a equipe é avisada. Texto puro (HTML é removido). Repetir o mesmo
+        talk_message_id devolve a primeira mensagem com duplicate true (200), sem duplicar.
+      security: [{ talkIntegration: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [message], properties: { message: { type: string, minLength: 2, maxLength: 10000 }, talk_message_id: { type: string, maxLength: 64, example: wamid.HBgM } } } } }
+      responses:
+        '201': { description: Mensagem gravada, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { message_id: { type: integer }, status: { type: string }, duplicate: { type: boolean } } } } } } } }
+        '200': { description: Mesmo talk_message_id, já gravado (duplicate true) }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo tickets.write (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Chamado não é do Talk, fora do escopo ou não existe, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /talk/tickets/{id}/transfer:
     post:
       operationId: talkTransferTicket
