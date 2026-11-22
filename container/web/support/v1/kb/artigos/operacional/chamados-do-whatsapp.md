@@ -60,6 +60,10 @@ Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de r
 - no texto, o link **Conversa no Connect Talk**, que abre a conversa no Talk;
 - o número `CH...`, que é o protocolo que o morador recebe no WhatsApp.
 
+Quando alguém da equipe **responde** o chamado no ERP (resposta pública, não nota interna), o Talk pega a resposta em poucos segundos e manda no WhatsApp do morador, com o primeiro nome de quem respondeu. O que o morador escreve de volta no WhatsApp entra no mesmo chamado: se o chamado estava resolvido, ele é **reaberto** e a equipe é avisada, como acontece no aplicativo.
+
+>! Nota interna nunca vai para o WhatsApp. Anexos ficam no ERP; o Talk só avisa que tem anexo.
+
 Quando o atendente do Talk **transfere** a conversa de setor (Financeiro, Manutenção, Administrativo), a área do chamado muda e fica uma nota interna com o setor e a observação. Quando ele **encerra** a conversa, o chamado fica **Resolvido**, com a resolução como resposta.
 
 >! Contato que não está cadastrado também gera chamado, como "Contato do WhatsApp (final 7777)", sem condomínio. Confira e complete na triagem.
