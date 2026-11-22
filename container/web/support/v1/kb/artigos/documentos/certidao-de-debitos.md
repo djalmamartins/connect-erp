@@ -1,7 +1,7 @@
 ---
 codigo: AP-123
 titulo: Emitir a certidão de débitos
-resumo: Emite a certidão de débitos da unidade na data escolhida. Sem conta vencida, ela sai como "nada consta"; com conta vencida, lista as contas e os encargos. Muito pedida em venda e locação.
+resumo: Emite a certidão negativa de débitos ("nada consta") da unidade na data escolhida. Com conta vencida em aberto, na data ou hoje, a certidão não é emitida: o sistema só informa o débito. Atende os pedidos de CND do aplicativo do morador.
 categoria: documentos
 rota: /documentos/certidao-de-debitos
 menu: Documentos > Certidão de Débitos
@@ -12,7 +12,7 @@ palavras: certidão de débitos, documentos, AP-123, nada consta, certidão nega
 rascunho: nao
 ---
 
-Emite a certidão de débitos da unidade na data escolhida. Sem conta vencida, ela sai como "nada consta"; com conta vencida, lista as contas e os encargos. Muito pedida em venda e locação.
+Emite a certidão negativa de débitos ("nada consta") da unidade na data escolhida. Com conta vencida em aberto, na data ou hoje, a certidão não é emitida: o sistema só informa o débito. Atende os pedidos de CND do aplicativo do morador.
 
 ## Onde fica
 
@@ -53,6 +53,16 @@ recorte: main form:not([method=get])
 >! Depois de emitido, o documento não muda. Para corrigir, cancele e emita outro.
 
 > Na tela: *Escolha a unidade acima e emita o primeiro.*
+
+## Com débito, não emite
+
+A certidão negativa só é emitida quando a unidade não tem conta vencida em aberto. Com débito, o sistema recusa e mostra quantas contas estão vencidas e o valor atualizado. Isso vale também para uma data de referência antiga: se hoje há conta vencida, a certidão não sai. A recusa fica registrada no histórico.
+
+>! Com débito, a unidade pode pedir a [declaração de inadimplência](artigo:declaracao-de-inadimplencia), que lista as contas vencidas.
+
+## Pedidos do aplicativo do morador
+
+O morador não emite a certidão sozinho: no aplicativo, em **CND**, ele faz o pedido, que chega como chamado na fila do Help Desk, com a categoria **Pedido de CND** e a unidade. Para atender, emita a certidão da unidade nesta tela. Ao emitir, o chamado é respondido com o número e o código de verificação, fica resolvido e a certidão aparece no aplicativo para o morador baixar.
 
 ## Quem pode usar
 

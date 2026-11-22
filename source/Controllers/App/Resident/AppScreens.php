@@ -350,19 +350,21 @@ final class AppScreens extends Controller
         ]);
     }
 
-    /** GET /cnd — certidão de débitos da unidade (etapa 5 de 15/11); a mais nova fica no topo. */
+    /** GET /cnd — certidões negativas da unidade (ADR 0638): pedir à administradora ou ver o débito que impede. */
     public function certificates(): void
     {
         $this->page('certificates', 'boletos', 'pages/certificates', 'CND', fn (User $u, array $link): array => [
-            'certificates' => (new ResidentCertificates())->list($link)]);
+            'certificates' => (new ResidentCertificates())->list($link), 'certificateStatus' => (new ResidentCertificates())->status($link)]);
     }
 
-    /** POST /cnd — emite a certidão de hoje (mesma regra e código de verificação do ERP). */
+    /** POST /cnd — pede a certidão à administradora (chamado do Help Desk); com débito, só informa (ADR 0638). */
     public function issueCertificate(array $data): void
     {
         $this->action('boletos', '/cnd', $data, function (User $u, array $link): string {
-            $issued = (new ResidentCertificates())->issue($u, $link);
-            return $issued['result'] === 'clear' ? 'Certidão emitida: nada consta.' : 'Certidão emitida. Ela mostra as contas vencidas em aberto.';
+            $request = (new ResidentCertificates())->request($u, $link);
+            return $request['created']
+                ? 'Pedido enviado à administradora (protocolo ' . $request['protocol'] . '). A certidão aparece aqui quando for emitida.'
+                : 'Já existe um pedido em andamento (protocolo ' . $request['protocol'] . '). A certidão aparece aqui quando for emitida.';
         });
     }
 

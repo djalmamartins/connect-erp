@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Propostas do site em Studio > Gestão, com aviso no sininho e som (ADR 0638).
+ * Propostas do site em Studio > Gestão, com aviso no sininho e som (ADR 0639).
  */
 final class StudioProposalsMenuTest extends TestCase
 {

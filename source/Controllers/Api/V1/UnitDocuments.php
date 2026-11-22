@@ -76,6 +76,9 @@ final class UnitDocuments
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Documento ou unidade não encontrado no seu escopo.']]);
         } catch (InvalidArgumentException $exception) {
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
+        } catch (\Source\Services\Erp\DebtCertificateBlocked $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'debt_open', 'message' => $exception->getMessage(),
+                'overdue_count' => $exception->overdueCount, 'overdue_cents' => $exception->overdueCents]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'document_refused', 'message' => $exception->getMessage()]]);
         }

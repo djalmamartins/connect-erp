@@ -28,7 +28,7 @@ $receipt = $documentKind === 'receipt';
 $receiptUnit ??= null;
 $receiptEntries ??= [];
 $intro = [
-    'debt_certificate' => 'Emite a certidão de débitos da unidade na data de referência. Sem conta vencida, a certidão sai como "nada consta"; com conta vencida, lista as contas com os encargos.',
+    'debt_certificate' => 'Emite a certidão negativa de débitos ("nada consta") da unidade na data de referência. Com conta vencida em aberto, na data ou hoje, a certidão não é emitida: o sistema só informa o débito. Ao emitir, o pedido do morador no Help Desk é respondido e a certidão aparece no app.',
     'delinquency_declaration' => 'Declara as contas vencidas em aberto da unidade, com os encargos na data de referência. Só é emitida se houver conta vencida.',
     'quittance' => 'Comprova que todas as contas da unidade até a competência escolhida estão pagas. Com alguma conta em aberto, não é emitido.',
     'consent_letter' => 'Carta em que a administradora declara não haver débito vencido da unidade, para a finalidade informada (por exemplo, venda ou locação).',

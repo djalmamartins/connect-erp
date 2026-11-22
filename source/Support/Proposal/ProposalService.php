@@ -76,7 +76,7 @@ final class ProposalService
     }
 
     /**
-     * Quem recebe o aviso (ADR 0638): quem pode abrir Gestão > Propostas, pela mesma regra da tela
+     * Quem recebe o aviso (ADR 0639): quem pode abrir Gestão > Propostas, pela mesma regra da tela
      * (Access::can com papel e exceções), e não por uma lista fixa de papéis.
      *
      * @return User[]
