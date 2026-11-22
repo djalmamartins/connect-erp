@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ApiError } from '../src/api/client';
@@ -29,6 +30,9 @@ export default function Termos() {
     setBusy(true);
     try {
       await acceptTerms(marketing);
+      // A tela de termos é aberta por um Redirect das abas; sem esta troca ela ficava parada depois do aceite.
+      // O Início decide o próximo passo (boas-vindas no primeiro acesso ou as abas).
+      router.replace('/');
     } catch (e) {
       void dialog.notice({ title: 'Não foi possível registrar', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'danger' });
     } finally {
