@@ -11,7 +11,7 @@ if (is_file($environmentFile)) {
         "CONNECT_ERP_URL", "CONNECT_SUPPORT_HOURS", "CONNECT_SAC_HOURS", "CONNECT_JOB_HOST",
         // CNPJ da Connect no rodapé dos e-mails (ADR 0397).
         "CONNECT_CNPJ",
-        // Push do app do morador (ADR 0641): log (padrão, não envia) ou expo; token de acesso do Expo opcional.
+        // Push do app do morador (ADR 0642): log (padrão, não envia) ou expo; token de acesso do Expo opcional.
         "CONNECT_RESIDENT_PUSH", "EXPO_ACCESS_TOKEN",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
         "MOVESOS_ENV", "MOVESOS_DB_HOST", "MOVESOS_DB_PORT",

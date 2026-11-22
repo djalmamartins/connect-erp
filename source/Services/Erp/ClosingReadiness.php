@@ -107,8 +107,9 @@ final class ClosingReadiness
             'negative_banks' => array_values(array_map(static fn (array $b): array => ['name' => (string)$b['name'], 'closing_cents' => (int)$b['closing_cents']],
                 array_filter($balances['accounts'] ?? [], static fn (array $b): bool => (int)($b['closing_cents'] ?? 0) < 0))),
             'balance_difference_cents' => (int)$sheet['diferenca'],
+            // Encontro de contas do acordo de mês fechado (ADR 0642) é quitado sem banco de propósito.
             'paid_without_bank' => (int)$this->value("SELECT COUNT(*) FROM erp_entries WHERE condominium_id = ? AND competence = ? AND status = 'active' AND deleted_at IS NULL
-                AND paid_on IS NOT NULL AND bank_account_id IS NULL", [$condominiumId, $month]),
+                AND paid_on IS NOT NULL AND bank_account_id IS NULL AND agreement_id IS NULL", [$condominiumId, $month]),
         ];
         return ['condominium_id' => $condominiumId, 'competence' => $month, 'as_of' => $to] + self::evaluate($facts);
     }

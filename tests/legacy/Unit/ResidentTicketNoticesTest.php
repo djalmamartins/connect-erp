@@ -9,7 +9,7 @@ use Source\Services\Resident\ResidentPush;
 use Source\Services\Resident\ResidentTicketNotices;
 use Source\Services\Support\TicketService;
 
-/** ADR 0641: regras puras dos avisos do chamado no app do morador, do push e da lista de equipes. */
+/** ADR 0642: regras puras dos avisos do chamado no app do morador, do push e da lista de equipes. */
 final class ResidentTicketNoticesTest extends TestCase
 {
     private const TICKET = ['protocol' => 'SAC202611220003', 'subject' => 'Vazamento na garagem'];

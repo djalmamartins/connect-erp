@@ -14,7 +14,7 @@ use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
 
 /**
- * ADR 0641: cada movimentação da equipe no chamado vira aviso no app do morador (sininho e push), nota interna não,
+ * ADR 0642: cada movimentação da equipe no chamado vira aviso no app do morador (sininho e push), nota interna não,
  * e a equipe do chamado é uma lista.
  */
 final class ResidentTicketNoticesIntegrationTest extends TestCase

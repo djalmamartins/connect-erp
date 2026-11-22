@@ -5408,7 +5408,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, installments, first_due_on, chart_account_id], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer } }, installments: { type: integer, minimum: 1, maximum: 60 }, first_due_on: { type: string, format: date }, chart_account_id: { type: integer }, fees_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, discount_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, notes: { type: string, maxLength: 255 } } } } }
+        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, installments, first_due_on, chart_account_id], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer } }, installments: { type: integer, minimum: 1, maximum: 60 }, first_due_on: { type: string, format: date }, chart_account_id: { type: integer }, fees_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, discount_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, notes: { type: string, maxLength: 255 }, agreed_on: { type: string, format: date, description: 'Data do acordo (padrão hoje; não futura; mês aberto). Conta de mês fechado é quitada por compensação nesta data e a compensação (conta 2.92) entra neste mês (ADR 0642)' } } } } }
       responses:
         '201': { description: 'Acordo com originals[] e parcels[]' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -5457,6 +5457,7 @@ paths:
         - { name: unit_id, in: query, required: true, schema: { type: integer } }
         - { name: entry_ids, in: query, required: true, schema: { type: string, example: '12,13' } }
         - { name: as_of, in: query, schema: { type: string, format: date } }
+        - { name: without_correction, in: query, schema: { type: string, enum: ["1"] }, description: "Sem a correção pelo índice (só multa e juros), ADR 0642" }
       responses:
         '200': { description: '{ data: { rule, entries[{entry_id, days_late, correction_cents, fine_cents, interest_cents, charges_cents}], original_cents, correction_cents, fine_cents, interest_cents, fees_cents, total_cents, missing_index[] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -9133,7 +9134,7 @@ paths:
       operationId: getResidentNotifications
       tags: [Morador]
       summary: 'Avisos do sininho do morador'
-      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. Desde a ADR 0641, também o andamento dos chamados que o morador pediu no condomínio (kind ticket, path /ocorrencias/{id}). Nota interna nunca aparece. O app guarda quando o morador viu por último.'
+      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. Desde a ADR 0642, também o andamento dos chamados que o morador pediu no condomínio (kind ticket, path /ocorrencias/{id}). Nota interna nunca aparece. O app guarda quando o morador viu por último.'
       security: [{ session: [] }, { residentApp: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade)', schema: { type: integer } }
@@ -9150,7 +9151,7 @@ paths:
       operationId: registerResidentPushToken
       tags: [Morador]
       summary: 'Guarda o celular do morador para o push dos chamados'
-      description: 'ADR 0641. Token do Expo (ExponentPushToken[...]). O mesmo aparelho em outra conta passa para a conta nova; até 10 aparelhos por conta.'
+      description: 'ADR 0642. Token do Expo (ExponentPushToken[...]). O mesmo aparelho em outra conta passa para a conta nova; até 10 aparelhos por conta.'
       security: [{ residentApp: [] }]
       requestBody:
         required: true
@@ -9166,7 +9167,7 @@ paths:
       operationId: forgetResidentPushToken
       tags: [Morador]
       summary: 'Celular deixa de receber o push (ao sair do app)'
-      description: 'ADR 0641.'
+      description: 'ADR 0642.'
       security: [{ residentApp: [] }]
       requestBody:
         required: true

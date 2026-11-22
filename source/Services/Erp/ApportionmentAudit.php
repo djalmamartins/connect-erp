@@ -264,9 +264,19 @@ final class ApportionmentAudit
                 $this->value("SELECT COALESCE(SUM(amount_cents), 0) FROM erp_entries WHERE agreement_id = :a AND agreement_role = 'installment' AND deleted_at IS NULL", ['a' => $id]));
             $this->add('Acordos', "{$label}: parcelas", (int)$a['installments'],
                 $this->value("SELECT COUNT(*) FROM erp_entries WHERE agreement_id = :a AND agreement_role = 'installment' AND deleted_at IS NULL", ['a' => $id]), 'count');
-            $originals = $this->rows("SELECT e.amount_cents, e.due_on, e.status FROM erp_agreement_originals o JOIN erp_entries e ON e.id = o.entry_id WHERE o.agreement_id = :a AND e.condominium_id = :c", ['a' => $id]);
+            $originals = $this->rows("SELECT e.amount_cents, e.due_on, e.status, e.paid_on, e.bank_account_id FROM erp_agreement_originals o JOIN erp_entries e ON e.id = o.entry_id WHERE o.agreement_id = :a AND e.condominium_id = :c", ['a' => $id]);
             $this->add('Acordos', "{$label}: dívida = soma das contas renegociadas", (int)$a['original_cents'], (int)array_sum(array_column($originals, 'amount_cents')));
-            $this->add('Acordos', "{$label}: contas renegociadas que continuam ativas (cobradas duas vezes)", 0, count(array_filter($originals, static fn (array $o): bool => $o['status'] === 'active')), 'count');
+            // ADR 0642: conta de mês fechado fica ativa, quitada por compensação na data do acordo, sem banco; a de mês aberto é cancelada.
+            $compensated = array_filter($originals, static fn (array $o): bool => $o['status'] === 'active');
+            $this->add('Acordos', "{$label}: contas renegociadas ainda em aberto (cobradas duas vezes)", 0,
+                count(array_filter($originals, static fn (array $o): bool => $o['status'] === 'active' && $o['paid_on'] === null)), 'count');
+            $this->add('Acordos', "{$label}: contas de mês fechado quitadas por compensação na data do acordo, sem banco", count($compensated),
+                count(array_filter($compensated, static fn (array $o): bool => (string)$o['paid_on'] === ApportionmentSample::AGREEMENT_ON && $o['bank_account_id'] === null)), 'count');
+            $this->add('Acordos', "{$label}: compensação na 2.92 no mês do acordo = contas compensadas", (int)array_sum(array_column($compensated, 'amount_cents')),
+                $this->value("SELECT COALESCE(SUM(e.amount_cents), 0) FROM erp_entries e JOIN erp_chart_accounts a ON a.id = e.chart_account_id WHERE e.agreement_id = :a
+                    AND e.agreement_role IS NULL AND e.nature = 'despesa' AND a.code = '2.92' AND e.competence = :m AND e.status = 'active' AND e.bank_account_id IS NULL",
+                    ['a' => $id, 'm' => substr(ApportionmentSample::AGREEMENT_ON, 0, 7)]));
+            $this->info('Acordos', "{$label}: contas de mês fechado no acordo (compensadas sem reabrir)", count($compensated));
             // Encargos refeitos: correção pelo IPCA do mês do vencimento até o mês anterior ao acordo, multa 2% e juros 1% a.m.
             $fees = 0;
             $asOf = ApportionmentSample::AGREEMENT_ON;
@@ -335,7 +345,7 @@ final class ApportionmentAudit
         $expectedClosed = array_slice($months, 0, -1);
         $closed = $this->rows("SELECT * FROM erp_month_closings WHERE condominium_id = :c AND status = 'closed' ORDER BY competence");
         $this->add('Fechamentos', 'Meses fechados (janeiro até o mês passado)', count($expectedClosed), count($closed), 'count');
-        $this->info('Fechamentos', 'Reaberturas (para fazer o acordo)', $this->value("SELECT COUNT(*) FROM erp_month_closings WHERE condominium_id = :c AND reopened_at IS NOT NULL"));
+        $this->add('Fechamentos', 'Meses reabertos (o acordo não reabre mês fechado)', 0, $this->value("SELECT COUNT(*) FROM erp_month_closings WHERE condominium_id = :c AND reopened_at IS NOT NULL"), 'count');
         $changed = 0;
         foreach ($closed as $row) {
             $revenue = $this->sum("nature = 'receita' AND competence = :m", ['m' => $row['competence']]);
@@ -356,6 +366,7 @@ final class ApportionmentAudit
         }
         $this->add('Prestação de contas', 'Prestações publicadas (uma por mês fechado)', count($expectedClosed), $current, 'count');
         $this->add('Prestação de contas', 'Prestações publicadas com o conteúdo alterado (sha256 não confere)', 0, $broken, 'count');
+        $this->add('Prestação de contas', 'Prestações publicadas de novo depois de fechadas (versão 2 ou mais)', 0, $this->value("SELECT COUNT(*) FROM erp_accountability_publications WHERE condominium_id = :c AND version > 1"), 'count');
         $this->info('Prestação de contas', 'Prestações que sairiam diferentes se geradas hoje (pagamentos atrasados depois da publicação)', $outdated);
     }
 

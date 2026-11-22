@@ -21,8 +21,12 @@ use Source\Support\Audit;
  * - create(): acordo das contas vencidas escolhidas de uma unidade. Na mesma transação, as contas
  *   originais ficam canceladas (status inactive, agreement_role 'original') e as parcelas viram contas
  *   a receber novas (agreement_role 'installment'), pelo RegistryService (mesmas regras dos lançamentos,
- *   inclusive a trava do fechamento). Conta de competência fechada, com boleto ativo, já paga, de outra
- *   unidade ou já em outro acordo é recusada.
+ *   inclusive a trava do fechamento). Conta com boleto ativo, já paga, de outra unidade ou já em outro acordo é recusada.
+ * - Conta de competência fechada (ADR 0642): o mês fechado e a prestação publicada não mudam. A conta antiga é quitada
+ *   por encontro de contas na data do acordo (paid_on = data do acordo, sem conta bancária, continua ativa) e, no mês
+ *   do acordo, entra uma despesa de compensação do mesmo valor na conta 2.92 "Cotas renegociadas em acordo". Assim a
+ *   receita antiga fica no mês dela, as parcelas entram como receita nos meses delas e nada é contado duas vezes.
+ *   Nenhum dinheiro entra nos bancos por isso. O mês do acordo precisa estar aberto.
  * - cancel(): só sem parcela paga e sem boleto ativo nas parcelas; as parcelas ficam canceladas e as
  *   contas originais voltam a valer.
  * - Multa, juros e desconto são valores informados (a regra de cálculo ainda não foi aprovada).
@@ -35,6 +39,8 @@ final class Agreements
     public const MAX_DELINQUENCY_ROWS = 20000;
     /** Contas por acordo ou simulação: limita o IN (...) e o FOR UPDATE de um único pedido. */
     public const MAX_ENTRIES = 120;
+    /** Despesa de compensação das contas de mês fechado que entram no acordo (ADR 0642). */
+    public const OFFSET_ACCOUNT_CODE = '2.92';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -183,7 +189,7 @@ final class Agreements
      *
      * @param list<int> $entryIds
      */
-    public function suggestion(User $user, int $unitId, array $entryIds, ?string $asOf = null): array
+    public function suggestion(User $user, int $unitId, array $entryIds, ?string $asOf = null, bool $withoutCorrection = false): array
     {
         $asOf ??= date('Y-m-d');
         $unit = $this->unit($user, $unitId);
@@ -200,6 +206,9 @@ final class Agreements
         }
         $rules = new BillingRules($this->pdo, $this->scope);
         $rule = $rules->rule((int)$unit['condominium_id']);
+        if ($withoutCorrection) {
+            $rule['price_index'] = 'NONE';   // ADR 0642: acordo sem a correção do índice, só multa e juros
+        }
         $rates = $rules->rates('IPCA', substr((string)min(array_column($entries, 'due_on')), 0, 7), substr($asOf, 0, 7));
         $sum = ['original_cents' => 0, 'correction_cents' => 0, 'fine_cents' => 0, 'interest_cents' => 0, 'fees_cents' => 0];
         $missing = [];
@@ -217,7 +226,7 @@ final class Agreements
         }
         $missing = array_values(array_unique($missing));
         sort($missing);
-        return ['as_of' => $asOf, 'unit_id' => (int)$unit['id'], 'rule' => $rule, 'entries' => $lines,
+        return ['as_of' => $asOf, 'unit_id' => (int)$unit['id'], 'rule' => $rule, 'without_correction' => $withoutCorrection, 'entries' => $lines,
             'missing_index' => $missing, 'total_cents' => $sum['original_cents'] + $sum['fees_cents']] + $sum;
     }
 
@@ -300,6 +309,7 @@ final class Agreements
         $accountId = (int)filter_var($input['chart_account_id'] ?? 0, FILTER_VALIDATE_INT);
         $notes = is_string($input['notes'] ?? null) ? mb_substr(trim($input['notes']), 0, 255) : null;
         $condominium = (int)$unit['condominium_id'];
+        $agreedOn = $this->agreedOn($input['agreed_on'] ?? null, $condominium);
 
         $this->pdo->beginTransaction();
         try {
@@ -312,10 +322,17 @@ final class Agreements
                 throw new InvalidArgumentException('Alguma conta escolhida não existe.');
             }
             $original = 0;
+            $closedIds = [];
+            $closedCents = 0;
             foreach ($originals as $entry) {
                 $this->assertRenegotiable($entry, $unit);
                 $original += (int)$entry['amount_cents'];
+                if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
+                    $closedIds[] = (int)$entry['id'];
+                    $closedCents += (int)$entry['amount_cents'];
+                }
             }
+            $offsetAccount = $closedIds === [] ? null : $this->offsetAccount($condominium);
             if ($discount > $original + $fees) {
                 throw new InvalidArgumentException('O desconto não pode ser maior que a dívida mais os encargos.');
             }
@@ -330,8 +347,23 @@ final class Agreements
             ]);
             $agreementId = (int)$this->pdo->lastInsertId();
 
-            $this->pdo->prepare("UPDATE erp_entries SET status = 'inactive', agreement_id = :a, agreement_role = 'original', updated_by = :u
-                WHERE id IN ({$in})")->execute(['a' => $agreementId, 'u' => (int)$user->id]);
+            $openIds = array_diff($entryIds, $closedIds);
+            if ($openIds !== []) {
+                $this->pdo->prepare("UPDATE erp_entries SET status = 'inactive', agreement_id = :a, agreement_role = 'original', updated_by = :u
+                    WHERE id IN (" . implode(',', $openIds) . ')')->execute(['a' => $agreementId, 'u' => (int)$user->id]);
+            }
+            if ($closedIds !== []) {
+                // Mês fechado: só o pagamento muda (encontro de contas na data do acordo), e a compensação entra no mês do acordo.
+                $this->pdo->prepare("UPDATE erp_entries SET paid_on = :p, bank_account_id = NULL, agreement_id = :a, agreement_role = 'original', updated_by = :u
+                    WHERE id IN (" . implode(',', $closedIds) . ')')->execute(['p' => $agreedOn, 'a' => $agreementId, 'u' => (int)$user->id]);
+                $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, description, amount_cents, competence, due_on, paid_on,
+                        bank_account_id, unit_id, document_number, status, agreement_id, created_by, updated_by)
+                    VALUES (:c, 'despesa', :acc, :d, :v, :m, :due, :paid, NULL, :unit, :doc, 'active', :a, :u, :u2)")->execute([
+                    'c' => $condominium, 'acc' => $offsetAccount, 'v' => $closedCents, 'm' => substr($agreedOn, 0, 7), 'due' => $agreedOn, 'paid' => $agreedOn,
+                    'd' => mb_substr(sprintf('Cotas de mês fechado renegociadas no acordo %d — %s (compensação, sem dinheiro)', $agreementId, $unit['label']), 0, 160),
+                    'unit' => $unit['id'], 'doc' => 'ACO-' . $agreementId . '-COMP', 'a' => $agreementId, 'u' => (int)$user->id, 'u2' => (int)$user->id,
+                ]);
+            }
             $history = $this->pdo->prepare('INSERT INTO erp_agreement_originals (agreement_id, entry_id, amount_cents) VALUES (:a, :e, :v)');
             foreach ($originals as $entry) {
                 $history->execute(['a' => $agreementId, 'e' => $entry['id'], 'v' => $entry['amount_cents']]);
@@ -360,7 +392,8 @@ final class Agreements
             }
             throw $error;
         }
-        Audit::record('create', 'erp_agreements', $agreementId, null, ['unit_id' => (int)$unit['id'], 'entries' => $entryIds,
+        Audit::record('create', 'erp_agreements', $agreementId, null, ['unit_id' => (int)$unit['id'], 'entries' => $entryIds, 'agreed_on' => $agreedOn,
+            'closed_entries' => $closedIds, 'offset_cents' => $closedCents,
             'original_cents' => $original, 'fees_cents' => $fees, 'discount_cents' => $discount, 'total_cents' => $total, 'installments' => $installments]);
         return $this->find($user, $agreementId);
     }
@@ -379,7 +412,12 @@ final class Agreements
         try {
             $stmt = $this->pdo->prepare('SELECT * FROM erp_entries WHERE agreement_id = :a FOR UPDATE');
             $stmt->execute(['a' => $agreementId]);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $entry) {
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as $entry) {
+                // Conta de mês fechado quitada por encontro de contas (ADR 0642): volta a ficar em aberto sem mexer no mês dela.
+                if ($entry['agreement_role'] === 'original' && $entry['status'] === 'active') {
+                    continue;
+                }
                 if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
                     throw new DomainException("A competência {$entry['competence']} está fechada. Reabra o fechamento mensal para cancelar o acordo.");
                 }
@@ -395,8 +433,12 @@ final class Agreements
             }
             $this->pdo->prepare("UPDATE erp_entries SET status = 'inactive', updated_by = :u WHERE agreement_id = :a AND agreement_role = 'installment'")
                 ->execute(['u' => (int)$user->id, 'a' => $agreementId]);
+            $this->pdo->prepare("UPDATE erp_entries SET paid_on = NULL, agreement_id = NULL, agreement_role = NULL, updated_by = :u
+                WHERE agreement_id = :a AND agreement_role = 'original' AND status = 'active'")->execute(['u' => (int)$user->id, 'a' => $agreementId]);
             $this->pdo->prepare("UPDATE erp_entries SET status = 'active', agreement_id = NULL, agreement_role = NULL, updated_by = :u
                 WHERE agreement_id = :a AND agreement_role = 'original'")->execute(['u' => (int)$user->id, 'a' => $agreementId]);
+            $this->pdo->prepare("UPDATE erp_entries SET status = 'inactive', updated_by = :u WHERE agreement_id = :a AND agreement_role IS NULL")
+                ->execute(['u' => (int)$user->id, 'a' => $agreementId]);
             $this->pdo->prepare("UPDATE erp_agreements SET status = 'cancelled', cancelled_by = :u, cancelled_at = NOW(), cancel_reason = :r WHERE id = :id")
                 ->execute(['u' => (int)$user->id, 'r' => $reason, 'id' => $agreementId]);
             $this->pdo->commit();
@@ -501,14 +543,39 @@ final class Agreements
         if ($entry['agreement_id'] !== null) {
             throw new DomainException("{$label} já está em outro acordo.");
         }
-        if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
-            throw new DomainException("{$label}: a competência {$entry['competence']} está fechada. Reabra o fechamento mensal para renegociar.");
-        }
         $charge = $this->pdo->prepare("SELECT 1 FROM " . \Source\Services\Erp\Banking\BankCharges::COVERAGE . " cv WHERE entry_id = :e AND status IN ('pending','registered') LIMIT 1");
         $charge->execute(['e' => $entry['id']]);
         if ($charge->fetchColumn()) {
             throw new DomainException("{$label} tem boleto ativo. Cancele o boleto antes do acordo.");
         }
+    }
+
+    /** Data do acordo: hoje, ou a informada (não futura) num mês aberto (ADR 0642). */
+    private function agreedOn(mixed $raw, int $condominiumId): string
+    {
+        $today = date('Y-m-d');
+        $date = is_string($raw) && $raw !== '' ? $raw : $today;
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if ($parsed === false || $parsed->format('Y-m-d') !== $date || $date > $today) {
+            throw new InvalidArgumentException('Data do acordo inválida (AAAA-MM-DD, até hoje).');
+        }
+        if ($this->registry->isClosed($condominiumId, substr($date, 0, 7))) {
+            throw new DomainException('O mês do acordo (' . substr($date, 0, 7) . ') está fechado. O acordo entra no mês em que é feito.');
+        }
+        return $date;
+    }
+
+    private function offsetAccount(int $condominiumId): int
+    {
+        $stmt = $this->pdo->prepare("SELECT id FROM erp_chart_accounts WHERE code = :code AND nature = 'despesa' AND kind = 'analitica' AND status = 'active'
+            AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = :c) ORDER BY condominium_id IS NULL, id LIMIT 1");
+        $stmt->execute(['code' => self::OFFSET_ACCOUNT_CODE, 'c' => $condominiumId]);
+        $id = $stmt->fetchColumn();
+        if ($id === false) {
+            throw new DomainException('Há conta de mês fechado no acordo. Cadastre no plano de contas a despesa analítica ' . self::OFFSET_ACCOUNT_CODE
+                . ' "Cotas renegociadas em acordo" para a compensação.');
+        }
+        return (int)$id;
     }
 
     /** @return array{paid_installments:int, paid_cents:int, open_cents:int, settled:bool} */

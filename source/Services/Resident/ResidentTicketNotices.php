@@ -9,7 +9,7 @@ use Source\Core\Connect;
 use Source\Services\Support\TicketService;
 
 /**
- * Avisos do chamado no app do morador (ADR 0641). Cada movimentação da equipe no chamado (abertura, resposta,
+ * Avisos do chamado no app do morador (ADR 0642). Cada movimentação da equipe no chamado (abertura, resposta,
  * situação, equipe, responsável) vira um aviso para quem pediu: aparece no sininho do app (web e celular) e, se o
  * morador tem o app no celular, sai também como push (ResidentPush::dispatch).
  *

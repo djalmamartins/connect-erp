@@ -47,7 +47,7 @@ final class TicketService
     public const ORIGIN_LABELS = ['helpdesk' => 'SAC', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
     public const PRIORITY_LABELS = ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'urgent' => 'Urgente'];
-    /** Equipe que atende o chamado (ADR 0641): lista fixa, guardada pelo nome. */
+    /** Equipe que atende o chamado (ADR 0642): lista fixa, guardada pelo nome. */
     public const TEAMS = ['Administrativo', 'Financeiro', 'Manutenção', 'Geral'];
     public const STATUS_LABELS = ['open' => 'Aberto', 'in_progress' => 'Em atendimento', 'waiting_customer' => 'Aguardando cliente', 'resolved' => 'Resolvido', 'closed' => 'Fechado'];
 
@@ -247,7 +247,7 @@ final class TicketService
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
         }
-        // App do morador (ADR 0641): "Recebemos o seu chamado" com o protocolo, mesmo quando ele mesmo abriu.
+        // App do morador (ADR 0642): "Recebemos o seu chamado" com o protocolo, mesmo quando ele mesmo abriu.
         // Dentro da transação de quem chama (mesma conexão): se ela for desfeita, o aviso também é.
         $this->noticeResident($ticketId, $actor);
         return ['id' => $ticketId, 'protocol' => $protocol, 'due_at' => $dueAt, 'access_token' => $accessToken];
@@ -751,7 +751,7 @@ final class TicketService
 
     /**
      * Avisa a equipe do Help Desk (níveis 5+), o responsável e o solicitante que trabalha no ERP ou no SAC.
-     * Morador que pediu não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0641).
+     * Morador que pediu não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0642).
      */
     private function notifyOpened(int $ticketId, string $protocol, array $data, string $dueAt): void
     {

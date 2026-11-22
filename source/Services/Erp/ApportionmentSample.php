@@ -25,7 +25,7 @@ use Source\Support\Audit;
  * abertura, tipos de fatura, lançamentos fixos e, mês a mês: leituras de água e gás, faturas pela forma de rateio do
  * condomínio, boletos no banco de testes (sandbox), retorno com os pagamentos (em dia, atrasados com multa e juros,
  * por Pix), despesas, transferência do fundo de reserva, rendimento da poupança, fechamento do mês anterior no dia 5,
- * publicação da prestação de contas, acordo de quem ficou três meses sem pagar (com a reabertura dos meses, como o
+ * publicação da prestação de contas, acordo de quem ficou três meses sem pagar (sem reabrir os meses fechados, ADR 0642; como o
  * sistema exige) e a quebra de um acordo.
  *
  * verify() confere, condomínio por condomínio, o rateio (soma 100%, cada unidade pela própria base, só quem
@@ -398,6 +398,7 @@ final class ApportionmentSample
             'limpeza' => ['2.05', 'despesa', 'analitica', 'Limpeza e material de consumo'], 'seguro' => ['2.06', 'despesa', 'analitica', 'Seguros'],
             'adm' => ['2.07', 'despesa', 'analitica', 'Administração e honorários'], 'tarifas' => ['2.08', 'despesa', 'analitica', 'Tarifas bancárias'],
             'gas' => ['2.91', 'despesa', 'analitica', 'Gás (concessionária)'],
+            'compensacao' => ['2.92', 'despesa', 'analitica', 'Cotas renegociadas em acordo'],
             '8.2' => ['8.2', 'liability', 'analitica', 'Fundo de reserva'], '9.1' => ['9.1', 'equity', 'analitica', 'Resultados acumulados'],
         ] as $key => [$code, $nature, $kind, $name]) {
             $this->c['accounts'][$key] = $this->account($code, $nature, $kind, $name);
@@ -749,24 +750,13 @@ final class ApportionmentSample
             $charges->cancel($this->user, (int)$charge);
             $this->count('boletos_cancelados');
         }
-        $closing = new MonthClosing($this->pdo, $this->scope);
-        $reopened = [];
-        foreach (self::AGREEMENT_MONTHS as $competence) {
-            if (($closing->status($this->user, $this->c['id'], $competence)['status'] ?? '') === 'closed') {
-                $closing->reopen($this->user, $this->c['id'], $competence, 'Acordo da unidade ' . array_flip($this->c['units'])[$unit] . ' (dados de teste do rateio)');
-                $reopened[] = $competence;
-                $this->count('reaberturas');
-            }
-        }
+        // Sem reabrir os meses fechados (ADR 0642): o acordo entra no mês em que é feito, com a compensação na 2.92.
         $agreements = new Agreements($this->pdo, $this->scope);
         $suggestion = $agreements->suggestion($this->user, $unit, $ids, self::AGREEMENT_ON);
-        $agreements->create($this->user, ['unit_id' => $unit, 'entry_ids' => $ids, 'installments' => self::AGREEMENT_INSTALLMENTS, 'first_due_on' => self::AGREEMENT_FIRST_DUE,
+        $agreements->create($this->user, ['unit_id' => $unit, 'entry_ids' => $ids, 'agreed_on' => self::AGREEMENT_ON, 'installments' => self::AGREEMENT_INSTALLMENTS, 'first_due_on' => self::AGREEMENT_FIRST_DUE,
             'chart_account_id' => $this->c['accounts']['acordos'], 'fees_cents' => $this->money((int)$suggestion['fees_cents']),
             'notes' => 'Acordo de teste do rateio, encargos sugeridos em ' . self::AGREEMENT_ON]);
         $this->count('acordos');
-        foreach ($reopened as $competence) {
-            $this->close($competence);
-        }
     }
 
     /** Situação de hoje: contato de cobrança do inadimplente e quebra do acordo atrasado. */

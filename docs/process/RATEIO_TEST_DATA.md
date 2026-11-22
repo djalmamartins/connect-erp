@@ -17,7 +17,7 @@ auditoria contábil que confere se todos os números fecham.
 
 Cada condomínio tem moradores (proprietários e inquilinos), plano de contas, conta bancária e fundo de reserva, faturas
 mensais com boletos no sandbox, pagamentos no prazo, por Pix e atrasados com multa e juros, despesas, transferência para
-o fundo, rendimento, um acordo (no Percentual Definido o acordo é quebrado), fechamento de cada mês no dia 5 e a
+o fundo, rendimento, um acordo com contas de meses fechados sem reabrir nenhum mês (ADR 0642; no Percentual Definido o acordo é quebrado), fechamento de cada mês no dia 5 e a
 prestação de contas publicada.
 
 ## Como rodar (Mac, lab)

@@ -10,7 +10,7 @@ use Source\Core\Connect;
 use Source\Support\AppLogger;
 
 /**
- * Push no celular do morador (ADR 0641). O app (apps/morador) registra o token do Expo depois do login e o apaga
+ * Push no celular do morador (ADR 0642). O app (apps/morador) registra o token do Expo depois do login e o apaga
  * ao sair; o cron (tools/resident-push-dispatch.php) envia os avisos pendentes de ResidentTicketNotices.
  *
  * - CONNECT_RESIDENT_PUSH=expo envia pelo serviço de push do Expo (EXPO_ACCESS_TOKEN opcional). Qualquer outro valor
