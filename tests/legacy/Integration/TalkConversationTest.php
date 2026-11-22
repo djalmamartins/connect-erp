@@ -1,0 +1,145 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MovesOSTests\Integration;
+
+use MovesOSTests\TestCase;
+use Source\Controllers\Api\V1\Talk;
+use Source\Models\Auth;
+use Source\Models\User;
+use Source\Services\CondominiumScope;
+use Source\Services\Support\TicketDesk;
+use Source\Services\Support\TicketError;
+use Source\Services\Talk\TalkConversation;
+use Source\Services\Talk\TalkHelpdesk;
+use Source\Services\Talk\TalkTokens;
+use Source\Support\Access;
+
+/**
+ * Conversa dos chamados do Talk (ADR 0634): a resposta da equipe sai pelo feed com cursor, nota interna nunca sai,
+ * a mensagem do WhatsApp entra no chamado e reabre o resolvido, sem duplicar; chamado de outro lugar é 404.
+ */
+final class TalkConversationTest extends TestCase
+{
+    private int $alpha;
+    private int $beta;
+    private User $agent;
+    private User $staff;
+    private int $ticket;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->pdo->exec("INSERT IGNORE INTO access_permissions (name, slug, group_name) VALUES ('Help Desk', 'support.manage', 'Conteúdo')");
+        foreach (['Alpha', 'Beta'] as $name) {
+            $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute([$name, 'active']);
+        }
+        $this->beta = (int)$this->pdo->lastInsertId();
+        $this->alpha = $this->beta - 1;
+        $scope = new CondominiumScope($this->pdo);
+        $agent = $this->createUser(['level' => 5, 'first_name' => 'Connect Talk', 'last_name' => 'Integração']);
+        $scope->grant($agent, $this->alpha);
+        $this->agent = (new User())->findById($agent);
+        $staff = $this->createUser(['level' => 5, 'first_name' => 'Carla', 'last_name' => 'Atendente']);
+        $scope->grant($staff, $this->alpha);
+        $scope->grant($staff, $this->beta);
+        $this->staff = (new User())->findById($staff);
+        Access::clear();
+
+        $opened = (new TalkHelpdesk($this->pdo))->open($this->agent, ['talk_protocol' => 'WA-100', 'requester_phone' => '31999998888',
+            'requester_name' => 'Maria', 'condominium_id' => $this->alpha, 'message' => 'O portão da garagem não abre desde ontem.']);
+        $this->ticket = (int)$opened['ticket']['id'];
+        Auth::actingAs($this->agent);
+        TalkTokens::setCurrent(['id' => 5, 'user' => $this->agent, 'scopes' => ['tickets.write']]);
+    }
+
+    protected function tearDown(): void
+    {
+        Auth::actingAs(null);
+        TalkTokens::setCurrent(null);
+        unset($_GET['after']);
+        parent::tearDown();
+    }
+
+    private function call(callable $action): array
+    {
+        ob_start();
+        $action();
+        return (array)json_decode((string)ob_get_clean(), true);
+    }
+
+    public function testTeamRepliesComeThroughTheFeedWithoutInternalNotes(): void
+    {
+        $desk = new TicketDesk($this->pdo);
+        $desk->reply($this->staff, $this->ticket, 'Nota só da equipe: chamar o técnico.', true);
+        $desk->reply($this->staff, $this->ticket, 'Olá Maria, o técnico vai amanhã às 9h.', false);
+        Auth::actingAs($this->agent);
+
+        $feed = $this->call(static fn () => (new Talk())->feed());
+        self::assertCount(1, $feed['data'], 'A abertura (do próprio Talk) e a nota interna não saem.');
+        $item = $feed['data'][0];
+        self::assertSame('Olá Maria, o técnico vai amanhã às 9h.', $item['body']);
+        self::assertSame('Carla', $item['author'], 'Só o primeiro nome de quem respondeu.');
+        self::assertSame('WA-100', $item['ticket']['talk_protocol']);
+        self::assertSame($item['id'], $feed['meta']['next_after']);
+        self::assertFalse($feed['meta']['has_more']);
+
+        $_GET['after'] = (string)$feed['meta']['next_after'];
+        $again = $this->call(static fn () => (new Talk())->feed());
+        self::assertSame([], $again['data'], 'Com o cursor, nada repetido.');
+        self::assertSame($feed['meta']['next_after'], $again['meta']['next_after']);
+
+        $show = $this->call(fn () => (new Talk())->ticket(['id' => (string)$this->ticket]));
+        $bodies = array_column($show['data']['messages'], 'body');
+        self::assertNotContains('Nota só da equipe: chamar o técnico.', $bodies);
+        self::assertContains('Olá Maria, o técnico vai amanhã às 9h.', $bodies);
+    }
+
+    public function testWhatsAppMessageGoesIntoTheTicketReopensAndIsNotDuplicated(): void
+    {
+        (new TicketDesk($this->pdo))->reply($this->staff, $this->ticket, 'Portão consertado.', false, 0, true);
+        $service = new TalkConversation($this->pdo);
+        $first = $service->post($this->agent, $this->ticket, ['message' => '<b>Voltou</b> a travar hoje cedo.', 'talk_message_id' => 'wamid.ABC']);
+        self::assertFalse($first['duplicate']);
+        self::assertSame('open', $first['status'], 'Resolvido reabre, como no Help Desk.');
+        $again = $service->post($this->agent, $this->ticket, ['message' => 'Voltou a travar hoje cedo.', 'talk_message_id' => 'wamid.ABC']);
+        self::assertTrue($again['duplicate']);
+        self::assertSame($first['message_id'], $again['message_id']);
+        $count = (int)$this->pdo->query("SELECT COUNT(*) FROM studio_support_ticket_messages WHERE ticket_id = {$this->ticket} AND message LIKE '%travar%'")->fetchColumn();
+        self::assertSame(1, $count);
+        self::assertSame('Voltou a travar hoje cedo.', (string)$this->pdo->query("SELECT message FROM studio_support_ticket_messages WHERE id = {$first['message_id']}")->fetchColumn(), 'Sem HTML.');
+
+        $show = $service->show($this->agent, $this->ticket);
+        $mine = array_values(array_filter($show['messages'], static fn (array $m): bool => $m['id'] === $first['message_id']))[0];
+        self::assertTrue($mine['from_talk']);
+        self::assertSame('WhatsApp', $mine['author']);
+
+        $feed = $service->feed($this->agent);
+        self::assertNotContains($first['message_id'], array_column($feed['data'], 'id'), 'O que veio do WhatsApp não volta no feed.');
+    }
+
+    public function testTicketsOutsideTheTalkOrTheScopeAreNotFound(): void
+    {
+        $service = new TalkConversation($this->pdo);
+        $beta = (new TalkHelpdesk($this->pdo))->open(null, ['talk_protocol' => 'WA-200', 'requester_phone' => '31988887777', 'condominium_id' => $this->beta]);
+        $erp = $this->pdo->prepare("INSERT INTO studio_support_tickets (protocol, subject, message, area, origin, condominium_id, priority, status, due_at) VALUES ('CHTESTE00001', 'x', 'y', 'general', 'erp', ?, 'medium', 'open', NOW())");
+        $erp->execute([$this->alpha]);
+        $erpTicket = (int)$this->pdo->lastInsertId();
+        foreach ([(int)$beta['ticket']['id'], $erpTicket, 999999] as $hidden) {
+            try {
+                $service->post($this->agent, $hidden, ['message' => 'Mensagem de teste']);
+                self::fail('Chamado fora do Talk ou do escopo tem de ser 404.');
+            } catch (TicketError $error) {
+                self::assertSame(404, $error->status());
+            }
+            self::assertSame('not_found', $this->call(static fn () => (new Talk())->ticket(['id' => (string)$hidden]))['error']['code']);
+        }
+        (new TicketDesk($this->pdo))->reply($this->staff, (int)$beta['ticket']['id'], 'Resposta no Beta.', false);
+        Auth::actingAs($this->agent);
+        self::assertNotContains('Resposta no Beta.', array_column($service->feed($this->agent)['data'], 'body'));
+
+        TalkTokens::setCurrent(['id' => 5, 'user' => $this->agent, 'scopes' => ['people.read']]);
+        self::assertSame('insufficient_scope', $this->call(static fn () => (new Talk())->feed())['error']['code']);
+    }
+}

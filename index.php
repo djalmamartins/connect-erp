@@ -62,6 +62,9 @@ $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
 // Connect Talk, o atendimento por WhatsApp (ADR 0308): só o token de integração (Bearer ctk_...), sem sessão nem CSRF.
 $route->get("/talk/people", "Talk:people", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets", "Talk:open", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/tickets", "Talk:feed", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/tickets/{id}", "Talk:ticket", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->post("/talk/tickets/{id}/messages", "Talk:message", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
