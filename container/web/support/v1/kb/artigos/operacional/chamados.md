@@ -8,7 +8,7 @@ menu: Agenda > Atendimento > Chamados
 icone: list-outline
 situacao: funciona
 relacionados: pedir-ajuda, ocorrencias, vistorias, manutencoes, chamados-do-whatsapp
-palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendimento, SAC, OCO, número do chamado
+palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendimento, SAC, OCO, número do chamado, equipe, administrativo, financeiro, manutenção, notificação do morador, aviso no app
 rascunho: nao
 ---
 
@@ -97,10 +97,21 @@ Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do SAC:
 - **Cronômetro**: ao abrir o chamado, ele começa a contar o tempo dedicado. Dá para pausar ou zerar. O tempo é somado ao chamado quando você envia a mensagem.
 - **Responder** ou **Nota interna**: a nota interna só a equipe vê.
 - **Resposta rápida**, **Anexos** e **Resolver após enviar**.
-- **Triagem** (à direita, em **Propriedades do chamado**): situação, categoria, prioridade, responsável, equipe e tags, e o botão **Resolver chamado** (ou **Reabrir chamado**).
+- **Triagem** (à direita, em **Propriedades do chamado**): situação, categoria, prioridade, responsável, equipe e tags, e o botão **Resolver chamado** (ou **Reabrir chamado**). A **Equipe** é escolhida numa lista: **Administrativo**, **Financeiro**, **Manutenção** ou **Geral** (ou **Sem equipe**). Escolha e clique em {{Salvar alterações}}. Um chamado antigo com outra equipe escrita à mão mostra esse nome com "(antiga)" até alguém escolher uma da lista.
 - **Detalhes do chamado**: protocolo, origem, condomínio, unidade, quem pediu, primeira resposta, prazo SLA, tempo dedicado e número de respostas.
 - **Histórico de alterações**: quem mudou o quê e quando.
 - Na lista, marque vários chamados e escolha a situação em **Com os selecionados**, à direita da barra de filtros.
+
+## O morador acompanha pelo app
+
+Quando o chamado é de um morador com acesso ao app, cada movimentação da equipe vira um aviso no sino do app (no celular e no navegador) e, se ele usa o app no celular, também uma notificação na tela do aparelho:
+
+- a abertura, com o número do protocolo;
+- cada resposta enviada para ele;
+- a troca de situação (em atendimento, aguardando o morador, resolvido, fechado, reaberto);
+- a escolha da equipe e do responsável (aparece só o primeiro nome de quem atende).
+
+Várias mudanças salvas de uma vez viram um aviso só. A **Nota interna** nunca chega ao morador, e prioridade, categoria e tags também não, porque são da triagem da equipe. Esses avisos não vão por e-mail: o morador recebe por e-mail só os avisos da cobrança, a prestação de contas, o convite e a troca de senha.
 
 > Se o pedido é de um morador, marque **Um morador ou outra pessoa** e informe nome, e-mail e telefone dele: a resposta vai para ele.
 

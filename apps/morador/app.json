@@ -50,6 +50,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#0d2e27"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#078b4c",
+          "defaultChannel": "chamados"
+        }
       ]
     ],
     "extra": {

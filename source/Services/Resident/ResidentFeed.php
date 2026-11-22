@@ -12,7 +12,7 @@ use Source\Core\Connect;
  * mostra para o vínculo, respeitando as funções ligadas no condomínio; não cria dado novo nem tabela.
  *
  * - Avisos: conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia
- *   convocada ou em andamento e reserva dos próximos 7 dias. "Novo" = mais recente que a última vez que o morador
+ *   convocada ou em andamento, reserva dos próximos 7 dias e o andamento dos chamados (ADR 0641). "Novo" = mais recente que a última vez que o morador
  *   abriu os avisos (guardado no navegador; ver AppScreens::notifications).
  * - Busca: funções do menu, comunicados, assembleias, documentos e encomendas, sem diferenciar acentos e maiúsculas.
  */
@@ -35,11 +35,15 @@ final class ResidentFeed
      *
      * @return list<array{kind:string, title:string, detail:string, at:string, path:string, tone:string}>
      */
-    public function notifications(array $link, ?string $today = null): array
+    public function notifications(array $link, ?string $today = null, ?int $userId = null): array
     {
         $today ??= date('Y-m-d');
         $features = $link['features'] ?? [];
         $items = [];
+        // Andamento dos chamados que o morador pediu (ADR 0641): cada movimentação da equipe.
+        if ($userId !== null && $userId > 0) {
+            array_push($items, ...(new ResidentTicketNotices($this->pdo))->feed($userId, (int)$link['condominium_id'], $today));
+        }
         if (in_array('boletos', $features, true)) {
             $stmt = $this->pdo->prepare("SELECT id, description, due_on, amount_cents FROM erp_entries
                 WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL

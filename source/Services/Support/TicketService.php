@@ -11,6 +11,7 @@ use Source\Models\Notification\NotificationCategory;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Environments;
+use Source\Services\Resident\ResidentTicketNotices;
 use Source\Support\Access;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
@@ -46,6 +47,8 @@ final class TicketService
     public const ORIGIN_LABELS = ['helpdesk' => 'SAC', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
     public const PRIORITY_LABELS = ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'urgent' => 'Urgente'];
+    /** Equipe que atende o chamado (ADR 0641): lista fixa, guardada pelo nome. */
+    public const TEAMS = ['Administrativo', 'Financeiro', 'Manutenção', 'Geral'];
     public const STATUS_LABELS = ['open' => 'Aberto', 'in_progress' => 'Em atendimento', 'waiting_customer' => 'Aguardando cliente', 'resolved' => 'Resolvido', 'closed' => 'Fechado'];
 
     private const ADMIN_LEVEL = 5;
@@ -57,6 +60,25 @@ final class TicketService
     {
         $this->pdo = $pdo;
         $this->scope = $scope;
+    }
+
+    /**
+     * Nome da equipe na grafia da lista (regra pura): aceita maiúsculas e sem acento ("manutencao"). Vazio = null;
+     * fora da lista = false.
+     */
+    public static function team(mixed $value): string|false|null
+    {
+        $text = trim(strip_tags((string)$value));
+        if ($text === '') {
+            return null;
+        }
+        $fold = static fn (string $v): string => strtr(mb_strtolower($v), ['ã' => 'a', 'á' => 'a', 'â' => 'a', 'ç' => 'c', 'é' => 'e', 'ê' => 'e', 'í' => 'i', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ú' => 'u']);
+        foreach (self::TEAMS as $team) {
+            if ($fold($team) === $fold($text)) {
+                return $team;
+            }
+        }
+        return false;
     }
 
     public static function slaHours(string $priority): int
@@ -225,6 +247,9 @@ final class TicketService
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
         }
+        // App do morador (ADR 0641): "Recebemos o seu chamado" com o protocolo, mesmo quando ele mesmo abriu.
+        // Dentro da transação de quem chama (mesma conexão): se ela for desfeita, o aviso também é.
+        $this->noticeResident($ticketId, $actor);
         return ['id' => $ticketId, 'protocol' => $protocol, 'due_at' => $dueAt, 'access_token' => $accessToken];
     }
 
@@ -715,10 +740,28 @@ final class TicketService
         return $category->save() ? $category : null;
     }
 
-    /** Avisa a equipe do Help Desk (níveis 5+), o responsável e o solicitante com conta. */
+    private function noticeResident(int $ticketId, ?User $actor): void
+    {
+        try {
+            (new ResidentTicketNotices($this->pdo()))->record($ticketId, 'opened', $actor !== null ? (int)$actor->id : 0);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_resident_notice_failed', 'ticket_id' => $ticketId]);
+        }
+    }
+
+    /**
+     * Avisa a equipe do Help Desk (níveis 5+), o responsável e o solicitante que trabalha no ERP ou no SAC.
+     * Morador que pediu não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0641).
+     */
     private function notifyOpened(int $ticketId, string $protocol, array $data, string $dueAt): void
     {
-        $recipientIds = [$data['requester_id'], $data['assigned_to']];
+        $recipientIds = [$data['assigned_to']];
+        if ($data['requester_id'] !== null) {
+            $requester = (new User())->findById((int)$data['requester_id']);
+            if ($requester && self::linkFor($requester, $ticketId) !== null) {
+                $recipientIds[] = (int)$requester->id;
+            }
+        }
         foreach ((new User())->find('level >= :level', 'level=' . self::ADMIN_LEVEL)->fetch(true) ?: [] as $member) {
             $recipientIds[] = (int)$member->id;
         }

@@ -655,6 +655,9 @@ $route->get("/resident/charges", "ResidentApp:charges", null, \Source\Support\Mi
 $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+// Push dos chamados no celular do morador (ADR 0641).
+$route->post("/resident/push-token", "ResidentApp:registerPushToken", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/push-token/forget", "ResidentApp:forgetPushToken", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 // LGPD (ADR 0604): aceite dos termos, novidades e pedidos do titular.
 $route->get("/resident/privacy", "ResidentApp:privacy", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

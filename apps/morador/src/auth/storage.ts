@@ -12,6 +12,7 @@ const LOGIN_KEY = 'connect.morador.last_login';
 const HIDE_KEY = 'connect.morador.hide_values';
 const APPROVAL_KEY = 'connect.morador.reservation_approvals';
 const SEEN_KEY = 'connect.morador.notifications_seen';
+const PUSH_KEY = 'connect.morador.push_token';
 const memory = new Map<string, string>();
 
 async function read(key: string): Promise<string | null> {
@@ -69,6 +70,9 @@ export const tokenStorage = {
       return { pending: [], unseen: [] };
     }
   },
+  /** Token do push deste aparelho, para tirar do servidor ao sair (ADR 0641). */
+  getPushToken: () => read(PUSH_KEY),
+  setPushToken: (token: string | null) => write(PUSH_KEY, token),
   /** Quando o morador abriu o sininho pela última vez (por morador). */
   getNotificationsSeen: (residentId: number) => read(`${SEEN_KEY}.${residentId}`),
   setNotificationsSeen: (residentId: number, at: string) => write(`${SEEN_KEY}.${residentId}`, at),

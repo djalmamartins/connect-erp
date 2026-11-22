@@ -1,4 +1,4 @@
-import { notificationRoute, stamp, unseenCount } from '../src/lib/notifications';
+import { notificationRoute, pushRoute, stamp, unseenCount } from '../src/lib/notifications';
 
 describe('notificationRoute', () => {
   it('leva o caminho da web para a tela do app', () => {
@@ -26,5 +26,18 @@ describe('chamados (etapa 3)', () => {
     expect(notificationRoute('/chamados')).toBe('/chamados');
     expect(notificationRoute('/chamados/42')).toBe('/chamados/42');
     expect(notificationRoute('/chamados/abc')).toBe('/avisos');
+  });
+});
+
+describe('andamento do chamado (ADR 0641)', () => {
+  it('aviso do sininho com o caminho da web abre a conversa no app', () => {
+    expect(notificationRoute('/ocorrencias/15')).toBe('/chamados/15');
+  });
+  it('toque no push abre o chamado; dado estranho não navega', () => {
+    expect(pushRoute({ path: '/chamados/9' })).toBe('/chamados/9');
+    expect(pushRoute({ path: '/ocorrencias/9' })).toBe('/chamados/9');
+    expect(pushRoute({ path: 'https://fora.example' })).toBeNull();
+    expect(pushRoute(null)).toBeNull();
+    expect(pushRoute({})).toBeNull();
   });
 });

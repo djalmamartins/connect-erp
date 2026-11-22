@@ -1,19 +1,44 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router, Stack, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { ProfileProvider } from '../src/auth/ProfileContext';
+import { pushRoute } from '../src/lib/notifications';
+import { configurePushDisplay } from '../src/lib/push';
 import { colors } from '../src/theme';
 import { DialogHost } from '../src/ui/Dialog';
 import { IntroSplash } from '../src/ui/IntroSplash';
 import { Loading } from '../src/ui/kit';
 import { LockScreen } from '../src/ui/LockScreen';
 
+configurePushDisplay();
+
+/** Toque no push do chamado abre a conversa (ADR 0641), inclusive com o app fechado. */
+function usePushNavigation(signedIn: boolean) {
+  useEffect(() => {
+    if (!signedIn || Platform.OS === 'web') return;
+    const open = (data: unknown) => {
+      const route = pushRoute(data);
+      if (route) router.push(route as Href);
+    };
+    const last = Notifications.getLastNotificationResponse();
+    if (last) {
+      open(last.notification.request.content.data);
+      Notifications.clearLastNotificationResponse();
+    }
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => open(response.notification.request.content.data));
+    return () => sub.remove();
+  }, [signedIn]);
+}
+
 function RootStack() {
   const { status } = useAuth();
+  usePushNavigation(status === 'signedIn');
   if (status === 'loading') {
     return <Loading />;
   }

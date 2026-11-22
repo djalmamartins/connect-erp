@@ -70,7 +70,7 @@ $actions = array_values(array_filter([
 if ($actions !== []) {
     $this->insert('partials/actions', ['items' => $actions, 'label' => 'Principais serviços']);
 }
-$icons = ['charge' => 'receipt', 'delivery' => 'box', 'visit' => 'user-check', 'announcement' => 'megaphone', 'assembly' => 'users', 'reservation' => 'calendar'];
+$icons = ['charge' => 'receipt', 'delivery' => 'box', 'visit' => 'user-check', 'announcement' => 'megaphone', 'assembly' => 'users', 'reservation' => 'calendar', 'ticket' => 'chat'];
 ?>
 <section class="app-section">
     <div class="app-section__head"><h2>Notificações</h2><a href="<?= app_url('/avisos') ?>">Ver todas</a></div>

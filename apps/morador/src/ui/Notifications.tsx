@@ -18,6 +18,7 @@ const KIND: Record<string, { icon: IconName; tint: string; bg: string }> = {
   assembly: { icon: 'podium', tint: '#07884c', bg: colors.successSoft },
   reservation: { icon: 'calendar', tint: colors.brandStrong, bg: colors.brandSoft },
   reservation_approved: { icon: 'checkmark-circle', tint: colors.success, bg: colors.successSoft },
+  ticket: { icon: 'chatbubble-ellipses', tint: colors.brandStrong, bg: colors.brandSoft },
 };
 
 /** Um aviso do sininho, com o ícone do tipo; toca e abre a tela certa. */
