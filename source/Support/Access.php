@@ -9,9 +9,9 @@ final class Access
 {
     /**
      * Prefixos que nunca caem no fallback legado por nível (A3, CONNECT_ERP_V1.md C9):
-     * permissão não cadastrada ou usuário sem papel resulta em acesso negado.
+     * permissão não cadastrada ou usuário sem papel resulta em acesso negado. talk.: o login único do Talk (ADR 0359).
      */
-    public const STRICT_PREFIXES = ['erp.', 'api.', 'security.'];
+    public const STRICT_PREFIXES = ['erp.', 'api.', 'security.', 'talk.'];
 
     private static array $cache = [];
 

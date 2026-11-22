@@ -6,6 +6,7 @@ namespace Source\Controllers\Erp\Connect;
 
 use Source\Core\Controller;
 use Source\Models\Auth;
+use Source\Services\Environments;
 use Source\Support\Access;
 
 /**
@@ -27,7 +28,8 @@ final class Login extends Controller
     public function login(?array $data): void
     {
         if (Access::can('erp.access', Auth::user())) {
-            redirect(erp_url('/dashboard'));
+            $return = Environments::takeReturn();
+            redirect($return !== null ? url($return) : erp_url('/dashboard'));
             return;
         }
 
@@ -63,7 +65,9 @@ final class Login extends Controller
                 echo json_encode(['message' => $this->message->warning('Sua conta não possui acesso ao ERP.')->render()]);
                 return;
             }
-            echo json_encode(['redirect' => erp_url('/dashboard')]);
+            // Veio do Talk sem sessão (ADR 0359): volta para /ambiente/talk, que checa talk.access.
+            $return = Environments::takeReturn();
+            echo json_encode(['redirect' => $return !== null ? url($return) : erp_url('/dashboard')]);
             return;
         }
 

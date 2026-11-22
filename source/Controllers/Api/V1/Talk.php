@@ -16,6 +16,7 @@ use Source\Services\Talk\TalkCharges;
 use Source\Services\Talk\TalkConversation;
 use Source\Services\Talk\TalkHelpdesk;
 use Source\Services\Talk\TalkResidents;
+use Source\Services\Talk\TalkStaffLogin;
 use Source\Services\Talk\TalkTokens;
 use Source\Support\AppLogger;
 
@@ -49,6 +50,27 @@ final class Talk
             return;
         }
         $this->run('talk_me_failed', static fn (): array => [200, (new TalkTokens())->describe($token)]);
+    }
+
+    /** POST /talk/staff/login {code}: troca o código de /ambiente/talk pelo funcionário (escopo staff.login). */
+    public function staffLogin(): void
+    {
+        if ($this->agent('staff.login') === null) {
+            return;
+        }
+        if (request_limit_ip('talk_staff_login', 30, 60)) {
+            JsonResponse::send(429, ['error' => ['code' => 'too_many_requests', 'message' => 'Muitas tentativas de login. Tente de novo em um minuto.']]);
+            return;
+        }
+        $this->run('talk_staff_login_failed', fn (): array => [200, (new TalkStaffLogin())->exchange((string)($this->body()['code'] ?? ''))]);
+    }
+
+    /** GET /talk/staff/{id}: o funcionário ainda pode usar o Talk? (active = talk.access e conta não excluída) */
+    public function staffStatus(array $data): void
+    {
+        if ($this->agent('staff.login') !== null) {
+            $this->run('talk_staff_status_failed', static fn (): array => [200, (new TalkStaffLogin())->status((int)($data['id'] ?? 0))]);
+        }
     }
 
     public function condominiums(): void
