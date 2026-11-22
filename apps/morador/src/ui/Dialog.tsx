@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, space } from '../theme';
 
@@ -76,6 +76,7 @@ export function DialogHost() {
   const [toast, setToast] = useState<string | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const afterDismiss = useRef<(() => void) | null>(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -118,8 +119,24 @@ export function DialogHost() {
     const req = current;
     if (!req) return;
     Animated.timing(fade, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      req.resolve(choice);
-      setCurrent(pending.current.shift() ?? null);
+      const next = pending.current.shift() ?? null;
+      setCurrent(next);
+      // No iPhone, uma tela do sistema (câmera, galeria) não abre enquanto esta janela ainda está saindo:
+      // o pedido é ignorado sem erro. Só devolve a escolha quando o iOS avisa que a janela fechou (onDismiss).
+      if (Platform.OS !== 'ios' || next) {
+        req.resolve(choice);
+        return;
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        afterDismiss.current = null;
+        req.resolve(choice);
+      };
+      afterDismiss.current = finish;
+      // Reserva, caso o aviso de fechamento não chegue.
+      setTimeout(finish, 700);
     });
   }
 
@@ -139,7 +156,14 @@ export function DialogHost() {
 
   return (
     <>
-      <Modal visible={!!current} transparent animationType="none" statusBarTranslucent onRequestClose={() => close(null)}>
+      <Modal
+        visible={!!current}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={() => close(null)}
+        onDismiss={() => afterDismiss.current?.()}
+      >
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
           <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
           <Pressable style={[StyleSheet.absoluteFill, styles.backdrop]} onPress={current?.cancel ? () => close(null) : undefined} accessibilityLabel="Fechar" />
