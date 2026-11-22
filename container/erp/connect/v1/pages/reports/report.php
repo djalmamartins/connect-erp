@@ -39,7 +39,7 @@ $input = fn (string $name, string $type, string $label, $value): string => '<div
 $totals = Screens::totals($report, $reportPage['totalLabels'] ?? []);
 
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
     <?php if ($reportCsv !== null && $reportRows !== [] && $reportError === null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => url($reportCsv), 'downloadTitle' => (string)$currentPage['name'] . ($periodText !== '' ? ' - ' . $periodText : '')]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [

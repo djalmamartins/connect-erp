@@ -19,7 +19,7 @@ $t = static fn (string $key): int => (int)($totals[$key] ?? 0);
 $bankSum = static fn (string $key): int => array_sum(array_map(static fn (array $b): int => (int)$b[$key], $banks));
 
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

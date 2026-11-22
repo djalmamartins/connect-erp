@@ -4,8 +4,8 @@
 - Data: 22/11/2026
 - Relacionados: ADR 0604 (LGPD e CDC no site, aceite no pedido de proposta), 0621 (visual do Moves OS no Studio),
   0388 (mídia das propostas fora de storage/), 0141 (Central de Ajuda).
-- Numeração: faixa avulsa 0600–0799; 0635 está em dois branches abertos (base única de relatório e posição da
-  barra lateral) e 0636 fica livre para um deles. Conferidos índice e branches em 22/11.
+- Numeração: faixa avulsa 0600–0799; 0635 é da base única de relatório e 0636 da rolagem do menu lateral.
+  Conferidos índice e branches em 22/11.
 
 ## Contexto
 O Djalma pediu o item **Propostas** dentro de **Gestão** no menu do Moves Studio, um aviso a cada proposta nova e a
