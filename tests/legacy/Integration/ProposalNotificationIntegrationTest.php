@@ -9,7 +9,7 @@ use Source\Support\Access;
 use Source\Support\Proposal\ProposalService;
 
 /**
- * Proposta do site grava e avisa no sininho do Studio quem pode abrir Gestão > Propostas (ADR 0637).
+ * Proposta do site grava e avisa no sininho do Studio quem pode abrir Gestão > Propostas (ADR 0638).
  */
 final class ProposalNotificationIntegrationTest extends TestCase
 {

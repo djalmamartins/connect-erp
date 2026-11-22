@@ -244,7 +244,7 @@ final class ResidentAppIntegrationTest extends TestCase
         self::assertSame(['residents', (int)$this->morador->id, $this->alpha, $this->unitA, 'high'],
             [$row['origin'], (int)$row['requester_id'], (int)$row['condominium_id'], (int)$row['unit_id'], $row['priority']]);
         self::assertSame(['open', 'alta', 1], [$opened['status'], $opened['priority'], count($opened['messages'])]);
-        self::assertStringStartsWith('CH', $opened['number']);
+        self::assertStringStartsWith('OCO' . date('Ymd'), $opened['number']);
         $occurrence = (new ResidentPortal($this->pdo))->occurrences($link)[0];
         self::assertSame([$opened['occurrence_id'], $opened['number']], [$occurrence['id'], $occurrence['protocol']]);
 
@@ -286,6 +286,8 @@ final class ResidentAppIntegrationTest extends TestCase
         $request = $tickets->open($this->morador, $link, ['kind' => 'chamado', 'subject' => 'Segunda via do regimento', 'description' => 'Preciso do regimento interno atualizado.']);
         $problem = $tickets->open($this->morador, $link, ['subject' => 'Barulho no 302', 'description' => 'Som alto depois das 22h ontem.']);
         self::assertSame(['chamado', 'ocorrencia'], [$request['kind'], $problem['kind']]);
+        // Pedido de chamado é SAC e ocorrência é OCO, cada um com a sua sequência do dia (ADR 0637).
+        self::assertSame(['SAC' . date('Ymd') . '0001', 'OCO' . date('Ymd') . '0001'], [$request['number'], $problem['number']]);
         $categories = $this->pdo->query('SELECT id, category FROM studio_support_tickets WHERE id IN (' . (int)$request['id'] . ',' . (int)$problem['id'] . ') ORDER BY id')->fetchAll(\PDO::FETCH_KEY_PAIR);
         self::assertSame(['Chamado', 'Ocorrência'], array_values($categories));
         // Os dois seguem a regra de toda ocorrência ser chamado (ADR 0305).

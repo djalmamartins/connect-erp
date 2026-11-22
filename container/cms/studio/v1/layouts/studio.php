@@ -73,7 +73,7 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
                 ['testimonials','/studio/testimonials','Depoimentos','chatbox-ellipses-outline','testimonials.manage'],
                 ['faqs','/studio/faqs','FAQ','help-circle-outline','faqs.manage'],
             ]],
-            // Propostas do site ficam em Gestão (ADR 0637); cada proposta nova avisa no sininho com som.
+            // Propostas do site ficam em Gestão (ADR 0638); cada proposta nova avisa no sininho com som.
             ['group', 'Gestão', 'settings-outline', [
                 ['proposals','/studio/proposals','Propostas','document-text-outline','proposals.manage'],
                 ['users','/studio/users','Usuários','people-outline','users.manage'],

@@ -10,6 +10,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Support\TicketProtocol;
 use Source\Services\Support\TicketService;
 use Source\Support\Audit;
 
@@ -77,7 +78,7 @@ final class Occurrences
      * @return array{id:int, protocol:string}
      * @throws \Source\Services\Support\TicketError
      */
-    public function openForNew(User $user, int $occurrenceId, array $values, bool $fromResident): array
+    public function openForNew(User $user, int $occurrenceId, array $values, bool $fromResident, string $kind = TicketProtocol::KIND_OCCURRENCE): array
     {
         $input = self::ticketInput(['id' => $occurrenceId] + $values + ['unit_id' => null, 'occurred_on' => date('Y-m-d')]);
         if ($fromResident) {
@@ -86,7 +87,7 @@ final class Occurrences
         $ticket = $this->tickets->open($input, $fromResident ? 'residents' : 'erp', $fromResident ? null : $user,
             static function (PDO $pdo, int $ticketId) use ($occurrenceId): void {
                 $pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t WHERE id = :id AND ticket_id IS NULL')->execute(['t' => $ticketId, 'id' => $occurrenceId]);
-            });
+            }, $kind);
         return ['id' => (int)$ticket['id'], 'protocol' => (string)$ticket['protocol']];
     }
 
@@ -176,7 +177,7 @@ final class Occurrences
             }
             $pdo->prepare('UPDATE erp_occurrences SET ticket_id = :t, status = CASE WHEN status = \'active\' THEN \'running\' ELSE status END, updated_by = :u
                 WHERE id = :id AND ticket_id IS NULL')->execute(['t' => $ticketId, 'u' => (int)$user->id, 'id' => $occurrenceId]);
-        });
+        }, TicketProtocol::KIND_OCCURRENCE);
         Audit::record('update', 'erp_occurrences', $occurrenceId, ['ticket_id' => null], ['ticket_id' => $ticket['id'], 'protocol' => $ticket['protocol']]);
         return ['occurrence_id' => $occurrenceId, 'ticket_id' => (int)$ticket['id'], 'protocol' => (string)$ticket['protocol']];
     }

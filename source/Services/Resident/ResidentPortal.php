@@ -467,12 +467,13 @@ final class ResidentPortal
             'has_ticket' => $r['ticket_id'] !== null, 'protocol' => $r['protocol'] !== null ? (string)$r['protocol'] : null], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    public function reportOccurrence(User $user, array $link, array $input, ?string $today = null, ?RegistryService $registry = null): array
+    /** $ticketKind: prefixo do protocolo (ADR 0637), OCO para ocorrência e SAC quando o morador pediu chamado. */
+    public function reportOccurrence(User $user, array $link, array $input, ?string $today = null, ?RegistryService $registry = null, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         self::assertFeature($link, 'occurrences');
         $input['occurred_on'] = ($input['occurred_on'] ?? '') !== '' ? $input['occurred_on'] : ($today ?? date('Y-m-d'));
         $input['priority'] = in_array($input['priority'] ?? null, ['baixa', 'media', 'alta'], true) ? $input['priority'] : 'media';
-        return ($registry ?? new RegistryService($this->pdo))->createForResident($user, 'occurrences', $input, $link['condominium_id'], $link['unit_id']);
+        return ($registry ?? new RegistryService($this->pdo))->createForResident($user, 'occurrences', $input, $link['condominium_id'], $link['unit_id'], $ticketKind);
     }
 
     /** Encomendas da unidade: as que aguardam retirada e as dos últimos 90 dias (função deliveries). */

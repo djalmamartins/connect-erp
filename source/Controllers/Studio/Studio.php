@@ -1413,7 +1413,7 @@ class Studio extends Controller
         $assignedFilter=(string)($_GET['assigned_to']??'');$dueFilter=in_array($_GET['due']??'', ['today','overdue'],true)?$_GET['due']:'';
         $terms = []; $params = [];
         if (in_array($status, ["open", "in_progress", "waiting_customer", "resolved", "closed"], true)) { $terms[] = "t.status=:status"; $params["status"] = $status; }
-        if ($search !== "") { $terms[] = "(t.subject LIKE :q OR t.protocol LIKE :q OR t.requester_name LIKE :q OR t.requester_email LIKE :q OR CONCAT(r.first_name,' ',r.last_name) LIKE :q)"; $params["q"] = "%{$search}%"; }
+        if ($search !== "") { $terms[] = "(t.subject LIKE :q OR t.protocol LIKE :q OR t.protocol = :qp OR t.requester_name LIKE :q OR t.requester_email LIKE :q OR CONCAT(r.first_name,' ',r.last_name) LIKE :q)"; $params["q"] = "%{$search}%"; $params["qp"] = \Source\Services\Support\TicketProtocol::normalize($search) ?? $search; }
         if($priorityFilter){$terms[]='t.priority=:priority';$params['priority']=$priorityFilter;}
         if($assignedFilter==='unassigned'){$terms[]='t.assigned_to IS NULL';}elseif(ctype_digit($assignedFilter)&&((int)$assignedFilter)>0){$terms[]='t.assigned_to=:assigned_filter';$params['assigned_filter']=(int)$assignedFilter;}
         if($dueFilter==='today'){$terms[]='DATE(t.due_at)=CURDATE()';}elseif($dueFilter==='overdue'){$terms[]="t.due_at<NOW() AND t.status NOT IN ('resolved','closed')";}

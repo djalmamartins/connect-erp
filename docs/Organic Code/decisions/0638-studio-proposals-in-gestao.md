@@ -1,10 +1,10 @@
-# 0637 — Propostas do site em Studio > Gestão, com aviso no sininho
+# 0638 — Propostas do site em Studio > Gestão, com aviso no sininho
 
 - Status: Aceito
 - Data: 22/11/2026
 - Relacionados: ADR 0604 (LGPD e CDC no site, aceite no pedido de proposta), 0621 (visual do Moves OS no Studio),
   0388 (mídia das propostas fora de storage/), 0141 (Central de Ajuda).
-- Numeração: faixa avulsa 0600–0799; 0635 é da base única de relatório e 0636 da rolagem do menu lateral.
+- Numeração: faixa avulsa 0600–0799; 0635 é da base única de relatório e 0636 da rolagem do menu lateral; 0637 do protocolo SAC/OCO (outra thread).
   Conferidos índice e branches em 22/11.
 
 ## Contexto
