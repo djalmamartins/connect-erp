@@ -20,13 +20,23 @@ use Source\Support\Audit;
  * - O mesmo arquivo (sha256 por conta) não é processado de novo; o mesmo evento (event_key) também não.
  * - Pagamento só dá baixa automática quando o valor pago é igual ao do título e o título está
  *   registrado ou aguardando banco. Valor diferente, título já pago ou cancelado, conta a receber já
- *   baixada à mão ou competência fechada vão para a fila de divergências: nunca baixa silenciosa.
- * - A baixa grava paid_on e a conta bancária do retorno no lançamento (a trava de fatura deixa a baixa).
+ *   baixada à mão ou mês do pagamento fechado vão para a fila de divergências: nunca baixa silenciosa.
+ * - Pagamento depois do vencimento com multa e juros (ADR 0640): o boleto sai com a multa e os juros da regra do
+ *   condomínio, e o banco cobra a mais. Se a diferença cabe na multa + juros da regra até a data do pagamento (mais
+ *   R$ 1,00 de arredondamento do banco), a conta é baixada pelo valor dela e a diferença vira uma receita de
+ *   "Multas e juros" (conta 1.03 do plano) da unidade, paga no mesmo dia e conta. Acima disso, divergência.
+ * - A baixa grava paid_on e a conta bancária do retorno no lançamento (a trava de fatura deixa a baixa). A competência
+ *   da conta pode estar fechada (ADR 0640): a foto do fechamento é por competência e não muda; o que não pode estar
+ *   fechado é o mês do pagamento, onde a receita entra no caixa.
  */
 final class BankReturns
 {
     public const OUTCOMES = ['applied' => 'Aplicado', 'duplicate' => 'Repetido', 'divergence' => 'Divergência', 'unknown_charge' => 'Título não encontrado'];
     private const MAX_BYTES = 2_000_000;
+    /** Folga para o arredondamento do banco no cálculo da multa e dos juros (ADR 0640). */
+    public const LATE_FEE_TOLERANCE_CENTS = 100;
+    /** Conta do plano que recebe a multa e os juros pagos no boleto (plano padrão da Connect). */
+    public const LATE_FEE_ACCOUNT_CODE = '1.03';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -42,11 +52,16 @@ final class BankReturns
     /**
      * Decide o que fazer com um evento (regra pura). $charge null = título não encontrado.
      *
-     * @param array{kind:string, amount_cents:?int} $event
-     * @param array{status:string, amount_cents:int|string}|null $charge
-     * @return array{outcome:string, status:?string, note:?string} status = novo estado do título
+     * $rule (ADR 0640): regra de cobrança do condomínio. Com ela, um pagamento depois do vencimento acima do valor do
+     * título é aceito quando a diferença cabe na multa + juros da regra até a data do pagamento (sem correção pelo
+     * índice, que o banco não cobra), mais LATE_FEE_TOLERANCE_CENTS; a diferença volta em late_fee_cents.
+     *
+     * @param array{kind:string, amount_cents:?int, occurred_on?:?string} $event
+     * @param array{status:string, amount_cents:int|string, due_on?:?string}|null $charge
+     * @param array{fine_bp:int, monthly_interest_bp:int}|null $rule
+     * @return array{outcome:string, status:?string, note:?string, late_fee_cents?:int} status = novo estado do título
      */
-    public static function decide(array $event, ?array $charge): array
+    public static function decide(array $event, ?array $charge, ?array $rule = null): array
     {
         if ($charge === null) {
             return ['outcome' => 'unknown_charge', 'status' => null, 'note' => 'Nosso número não encontrado nesta conta bancária.'];
@@ -59,6 +74,10 @@ final class BankReturns
                 }
                 if (!in_array($status, ['registered', 'pending'], true)) {
                     return ['outcome' => 'divergence', 'status' => null, 'note' => "Pagamento de título {$status}."];
+                }
+                $late = self::lateFee($event, $charge, $rule);
+                if ($late !== null) {
+                    return ['outcome' => 'applied', 'status' => 'paid', 'note' => null, 'late_fee_cents' => $late];
                 }
                 if ($event['amount_cents'] === null || (int)$event['amount_cents'] !== (int)$charge['amount_cents']) {
                     return ['outcome' => 'divergence', 'status' => null, 'note' => sprintf('Valor pago (%s) diferente do título (%s).', $event['amount_cents'] ?? 'vazio', (int)$charge['amount_cents'])];
@@ -79,6 +98,27 @@ final class BankReturns
                     : ['outcome' => 'divergence', 'status' => null, 'note' => "Baixa pelo banco de título {$status}."];
         }
         return ['outcome' => 'divergence', 'status' => null, 'note' => 'Ocorrência desconhecida.'];
+    }
+
+    /**
+     * Multa e juros pagos a mais num boleto atrasado (regra pura, ADR 0640): a diferença, se o pagamento foi depois do
+     * vencimento e ela cabe na multa + juros da regra (sem índice) mais a folga; senão null.
+     */
+    public static function lateFee(array $event, array $charge, ?array $rule): ?int
+    {
+        $paid = $event['amount_cents'] ?? null;
+        $due = $charge['due_on'] ?? null;
+        $on = $event['occurred_on'] ?? null;
+        if ($rule === null || $paid === null || !is_string($due) || !is_string($on) || $on <= $due) {
+            return null;
+        }
+        $surplus = (int)$paid - (int)$charge['amount_cents'];
+        if ($surplus <= 0) {
+            return null;
+        }
+        $max = \Source\Services\Erp\LateCharges::compute((int)$charge['amount_cents'], $due, $on,
+            ['fine_bp' => (int)$rule['fine_bp'], 'monthly_interest_bp' => (int)$rule['monthly_interest_bp'], 'price_index' => 'NONE'])['charges_cents'];
+        return $surplus <= $max + self::LATE_FEE_TOLERANCE_CENTS ? $surplus : null;
     }
 
     /** @return array{file:array, duplicate_file:bool, events:list<array>} */
@@ -240,10 +280,11 @@ final class BankReturns
         $stmt = $this->pdo->prepare('SELECT * FROM erp_bank_charges WHERE bank_account_id = :b AND our_number = :n FOR UPDATE');
         $stmt->execute(['b' => $account['id'], 'n' => $event['our_number']]);
         $charge = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-        $decision = self::decide($event, $charge);
+        $rule = $charge === null ? null : (new \Source\Services\Erp\BillingRules($this->pdo, $this->scope))->rule((int)$account['condominium_id']);
+        $decision = self::decide($event, $charge, $rule);
 
         if ($decision['outcome'] === 'applied' && $decision['status'] === 'paid') {
-            $decision = $this->settle($user, $account, $charge, $event, $fileId) ?? $decision;
+            $decision = $this->settle($user, $account, $charge, $event, $fileId, (int)($decision['late_fee_cents'] ?? 0)) ?? $decision;
         }
         if ($decision['outcome'] === 'applied' && $decision['status'] !== null) {
             $this->pdo->prepare('UPDATE erp_bank_charges SET status = :s, paid_cents = :p, paid_on = :d,
@@ -268,10 +309,23 @@ final class BankReturns
      * Baixa da conta a receber do título e das que entraram junto no boleto (ADR 0331), tudo ou nada; devolve uma
      * divergência quando alguma não dá para baixar com segurança.
      */
-    private function settle(?User $user, array $account, array $charge, array $event, ?int $fileId = null): ?array
+    private function settle(?User $user, array $account, array $charge, array $event, ?int $fileId = null, int $lateFee = 0): ?array
     {
         if ($event['occurred_on'] === null) {
             return ['outcome' => 'divergence', 'status' => null, 'note' => 'Pagamento sem data.'];
+        }
+        // ADR 0640: o mês do pagamento (onde o dinheiro entra no caixa e a multa vira receita) precisa estar aberto.
+        $paidMonth = substr((string)$event['occurred_on'], 0, 7);
+        if ($this->registry->isClosed((int)$account['condominium_id'], $paidMonth)) {
+            return ['outcome' => 'divergence', 'status' => null, 'note' => "Mês do pagamento ({$paidMonth}) fechado: reabra para baixar."];
+        }
+        $feeAccount = null;
+        if ($lateFee > 0) {
+            $feeAccount = $this->lateFeeAccount((int)$account['condominium_id']);
+            if ($feeAccount === null) {
+                return ['outcome' => 'divergence', 'status' => null, 'note' => sprintf('Pago com %d centavos de multa e juros, mas o plano de contas não tem a conta %s (Multas e juros).',
+                    $lateFee, self::LATE_FEE_ACCOUNT_CODE)];
+            }
         }
         $ids = [(int)$charge['entry_id']];
         $extra = $this->pdo->prepare('SELECT entry_id FROM erp_bank_charge_entries WHERE charge_id = :c ORDER BY entry_id');
@@ -291,9 +345,6 @@ final class BankReturns
             if ($entry['paid_on'] !== null) {
                 return ['outcome' => 'divergence', 'status' => null, 'note' => "{$which} já estava baixada à mão."];
             }
-            if ($this->registry->isClosed($entry['condominium_id'], $entry['competence'])) {
-                return ['outcome' => 'divergence', 'status' => null, 'note' => "Competência {$entry['competence']} fechada: reabra para baixar."];
-            }
             $entries[] = $entry;
         }
         $update = $this->pdo->prepare('UPDATE erp_entries SET paid_on = :d, bank_account_id = :b, updated_by = :u WHERE id = :id AND paid_on IS NULL');
@@ -302,7 +353,37 @@ final class BankReturns
             Audit::record('update', 'erp_entries', (int)$entry['id'], ['paid_on' => null], ['paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'],
                 'source' => $fileId === null ? 'bank_api' : 'bank_return', 'charge_id' => (int)$charge['id']]);
         }
+        if ($lateFee > 0 && $user !== null) {
+            $first = $entries[0];
+            $label = $this->pdo->prepare('SELECT label FROM erp_units WHERE id = :id');
+            $label->execute(['id' => (int)($first['unit_id'] ?? 0)]);
+            $unitLabel = (string)($label->fetchColumn() ?: 'sem unidade');
+            $this->registry->save($user, 'entries', [
+                'condominium_id' => (int)$account['condominium_id'], 'nature' => 'receita', 'chart_account_id' => $feeAccount,
+                'description' => mb_substr("Multa e juros por atraso — {$unitLabel} (boleto {$charge['our_number']})", 0, 160),
+                'amount_cents' => number_format($lateFee / 100, 2, ',', ''), 'competence' => $paidMonth, 'due_on' => $event['occurred_on'],
+                'paid_on' => $event['occurred_on'], 'bank_account_id' => (int)$account['id'], 'unit_id' => $first['unit_id'] !== null ? (int)$first['unit_id'] : null,
+                'document_number' => mb_substr('ENC-' . $charge['our_number'], 0, 40),
+            ]);
+        } elseif ($lateFee > 0) {
+            $this->pdo->prepare("INSERT INTO erp_entries (condominium_id, nature, chart_account_id, description, amount_cents, competence, due_on, paid_on, bank_account_id, unit_id, document_number, status)
+                VALUES (:c, 'receita', :a, :d, :v, :m, :due, :paid, :b, :u, :doc, 'active')")->execute([
+                'c' => (int)$account['condominium_id'], 'a' => $feeAccount, 'd' => mb_substr("Multa e juros por atraso (boleto {$charge['our_number']})", 0, 160), 'v' => $lateFee,
+                'm' => $paidMonth, 'due' => $event['occurred_on'], 'paid' => $event['occurred_on'], 'b' => (int)$account['id'],
+                'u' => $entries[0]['unit_id'] !== null ? (int)$entries[0]['unit_id'] : null, 'doc' => mb_substr('ENC-' . $charge['our_number'], 0, 40)]);
+            Audit::record('create', 'erp_entries', (int)$this->pdo->lastInsertId(), null, ['late_fee_cents' => $lateFee, 'charge_id' => (int)$charge['id'], 'source' => 'bank_api']);
+        }
         return null;
+    }
+
+    /** Conta de "Multas e juros" (código 1.03) do plano do condomínio ou do padrão, analítica, de receita e ativa. */
+    private function lateFeeAccount(int $condominiumId): ?int
+    {
+        $stmt = $this->pdo->prepare("SELECT id FROM erp_chart_accounts WHERE code = :code AND nature = 'receita' AND kind = 'analitica' AND status = 'active'
+            AND deleted_at IS NULL AND (condominium_id IS NULL OR condominium_id = :c) ORDER BY condominium_id IS NULL, id LIMIT 1");
+        $stmt->execute(['code' => self::LATE_FEE_ACCOUNT_CODE, 'c' => $condominiumId]);
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int)$id;
     }
 
     private function bankAccount(User $user, int $bankAccountId): array
