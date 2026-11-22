@@ -605,7 +605,7 @@ final class AppScreens extends Controller
             redirect(app_url('/documentos'));
             return;
         }
-        ResidentApp::sendFile($file);
+        ResidentApp::sendFile($file, true);
     }
 
     public function unit(): void

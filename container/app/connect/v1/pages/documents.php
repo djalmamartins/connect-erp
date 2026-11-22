@@ -16,7 +16,7 @@ foreach ($documents as $d) {
         <ul class="app-items">
         <?php foreach ($items as $d):
             $kb = max(1, (int)round($d['size_bytes'] / 1024));
-            $this->insert('partials/item', ['icon' => 'file', 'title' => $d['title'], 'href' => app_url('/documentos/' . $d['id']), 'end' => 'download',
+            $this->insert('partials/item', ['icon' => 'file', 'title' => $d['title'], 'href' => app_url('/documentos/' . $d['id']), 'external' => true,
                 'lines' => [F::date($d['uploaded_at']) . ' · ' . ($kb >= 1024 ? number_format($kb / 1024, 1, ',', '.') . ' MB' : $kb . ' KB')]]);
         endforeach; ?>
         </ul>

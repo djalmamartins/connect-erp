@@ -53,6 +53,7 @@ function RootStack() {
         <Stack.Screen name="moradores/novo" />
         <Stack.Screen name="cnd" />
         <Stack.Screen name="avisos" />
+        <Stack.Screen name="visualizar" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="trocar-unidade" options={{ presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
