@@ -178,10 +178,10 @@ export default function Reservar() {
                 <>
                   <Row>
                     <View style={{ flex: 1 }}>
-                      <Field label="Das" placeholder="HH:MM" value={start} onChangeText={setStart} keyboardType="numbers-and-punctuation" error={errors.starts_time} />
+                      <Field label="Das" mask="time" value={start} onChangeText={setStart} error={errors.starts_time} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Field label="Até" placeholder="HH:MM" value={end} onChangeText={setEnd} keyboardType="numbers-and-punctuation" error={errors.ends_time} />
+                      <Field label="Até" mask="time" value={end} onChangeText={setEnd} error={errors.ends_time} />
                     </View>
                   </Row>
                   {errors.reserved_on ? <Text style={styles.error}>{errors.reserved_on}</Text> : null}

@@ -75,10 +75,10 @@ export default function Visitantes() {
             <Field label="Documento (opcional)" value={doc} onChangeText={setDoc} maxLength={30} error={errors.visitor_document} hint="RG ou CPF, para a portaria conferir." />
             <Row>
               <View style={{ flex: 1 }}>
-                <Field label="Dia" placeholder="DD/MM/AAAA" value={day} onChangeText={setDay} keyboardType="numbers-and-punctuation" error={errors.expected_on} />
+                <Field label="Dia" mask="date" value={day} onChangeText={setDay} error={errors.expected_on} />
               </View>
               <View style={{ flex: 1 }}>
-                <Field label="Até (opcional)" placeholder="DD/MM/AAAA" value={until} onChangeText={setUntil} keyboardType="numbers-and-punctuation" error={errors.expected_until} />
+                <Field label="Até (opcional)" mask="date" value={until} onChangeText={setUntil} error={errors.expected_until} />
               </View>
             </Row>
             <Button title="Avisar a portaria" onPress={save} busy={busy} />
