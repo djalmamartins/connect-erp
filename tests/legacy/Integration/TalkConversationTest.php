@@ -142,4 +142,35 @@ final class TalkConversationTest extends TestCase
         TalkTokens::setCurrent(['id' => 5, 'user' => $this->agent, 'scopes' => ['people.read']]);
         self::assertSame('insufficient_scope', $this->call(static fn () => (new Talk())->feed())['error']['code']);
     }
+
+    /** ADR 0636: o link público mostra a situação e as respostas, sem a descrição nem as notas internas. */
+    public function testTrackingLinkShowsStatusAndPublicRepliesOnly(): void
+    {
+        $summary = (new TalkHelpdesk($this->pdo))->summary($this->ticket);
+        $row = $this->pdo->query('SELECT protocol, access_token FROM studio_support_tickets WHERE id = ' . $this->ticket)->fetch(\PDO::FETCH_ASSOC);
+        self::assertMatchesRegularExpression('#/suporte/chamado/' . $row['protocol'] . '\?c=[a-f0-9]{64}$#', (string)$summary['tracking_url']);
+        self::assertStringEndsWith('?c=' . $row['access_token'], (string)$summary['tracking_url']);
+
+        $desk = new TicketDesk($this->pdo);
+        $desk->reply($this->staff, $this->ticket, 'Nota só da equipe: chamar o técnico.', true);
+        $desk->reply($this->staff, $this->ticket, 'Olá Maria, o técnico vai amanhã às 9h.', false);
+        (new TalkConversation($this->pdo))->post($this->agent, $this->ticket, ['message' => 'Obrigada!', 'talk_message_id' => 'M1']);
+
+        $tracking = new \Source\Services\Support\TicketTracking($this->pdo);
+        $page = $tracking->find(strtolower($row['protocol']), $row['access_token']);
+        self::assertNotNull($page);
+        self::assertSame('Em atendimento', $page['status_label'], 'A resposta de quem pediu volta o chamado para atendimento.');
+        self::assertSame([['Carla', false, 'Olá Maria, o técnico vai amanhã às 9h.'], ['Você', true, 'Obrigada!']],
+            array_map(static fn (array $m): array => [$m['author'], $m['mine'], $m['body']], $page['messages']));
+        self::assertStringNotContainsString('portão da garagem', json_encode($page, JSON_UNESCAPED_UNICODE), 'A descrição da abertura não sai.');
+
+        (new TalkHelpdesk($this->pdo))->close($this->agent, $this->ticket, ['resolution' => 'Técnico trocou o motor.']);
+        $closed = $tracking->find($row['protocol'], $row['access_token']);
+        self::assertTrue($closed['closed']);
+        self::assertSame('Equipe Connect', end($closed['messages'])['author'], 'O encerramento é da equipe, não de quem pediu.');
+
+        self::assertNull($tracking->find($row['protocol'], str_repeat('0', 64)), 'Código errado = não encontrado.');
+        self::assertNull($tracking->find($row['protocol'], ''));
+        self::assertNull($tracking->find('CH000000AAAA', $row['access_token']));
+    }
 }

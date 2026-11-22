@@ -311,3 +311,15 @@ figure[data-align] img{display:block;max-width:100%;height:auto;margin:0}
 figure[data-align="center"] img{margin-left:auto;margin-right:auto}
 figure[data-align="right"] img{margin-left:auto}
 figure[data-align] figcaption{margin-top:8px;font-size:.875em;color:#64748b}
+/* Acompanhar chamado pelo link do WhatsApp (ADR 0636) */
+.hc-track{border:1px solid var(--hc-line);border-radius:var(--hc-radius);padding:20px;margin:0 0 24px;background:#fff}
+.hc-track__status{display:inline-block;margin:0 0 14px;padding:4px 12px;border-radius:999px;font-weight:700;background:var(--hc-gold-soft);color:var(--hc-ink)}
+.hc-track__status--resolved,.hc-track__status--closed{background:var(--hc-mint);color:var(--hc-green)}
+.hc-track__facts{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0}
+.hc-track__facts dt{color:var(--hc-muted)}.hc-track__facts dd{margin:0;overflow-wrap:anywhere}
+.hc-track__h{font-size:1.1rem;margin:0 0 12px}
+.hc-track__msgs{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:12px}
+.hc-track__msgs li{border:1px solid var(--hc-line);border-radius:var(--hc-radius);padding:14px 16px;background:#fff}
+.hc-track__msgs li.mine{background:var(--hc-canvas)}
+.hc-track__msgs small{color:var(--hc-muted)}.hc-track__msgs p{margin:8px 0 0;overflow-wrap:anywhere}
+@media (max-width:640px){.hc-track__facts{grid-template-columns:1fr}.hc-track__facts dd{margin-bottom:6px}}

@@ -8,6 +8,7 @@ use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Environments;
 use Source\Services\Support\TicketDesk;
 use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
@@ -30,6 +31,9 @@ final class TalkHelpdesk
     public const MAX_PHONES = 6;
     public const MAX_PEOPLE = 10;
     public const SECTOR_MAX = 60;
+
+    /** Início da mensagem pública que o Talk deixa ao encerrar (é da equipe, não de quem pediu; ADR 0636). */
+    public const CLOSED_TEXT = 'Atendimento encerrado no WhatsApp';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -267,15 +271,15 @@ final class TalkHelpdesk
             return $this->summary($ticketId);
         }
         $resolution = mb_substr(trim(strip_tags((string)($input['resolution'] ?? ''))), 0, 5000);
-        $text = $resolution !== '' ? 'Atendimento encerrado no WhatsApp: ' . $resolution : 'Atendimento encerrado no WhatsApp (Connect Talk).';
+        $text = $resolution !== '' ? self::CLOSED_TEXT . ': ' . $resolution : self::CLOSED_TEXT . ' (Connect Talk).';
         (new TicketDesk($this->pdo))->reply($agent, $ticketId, $text, false, 0, true);
         return $this->summary($ticketId);
     }
 
-    /** @return array{id:int, protocol:string, status:string, area:string, talk_protocol:?string, condominium_id:?int, unit_id:?int} */
+    /** @return array{id:int, protocol:string, status:string, area:string, talk_protocol:?string, condominium_id:?int, unit_id:?int, tracking_url:?string} */
     public function summary(int $ticketId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, protocol, status, area, external_ref, condominium_id, unit_id FROM studio_support_tickets WHERE id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, protocol, status, area, external_ref, condominium_id, unit_id, origin, access_token FROM studio_support_tickets WHERE id = ?');
         $stmt->execute([$ticketId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
@@ -284,7 +288,20 @@ final class TalkHelpdesk
         return ['id' => (int)$row['id'], 'protocol' => (string)$row['protocol'], 'status' => (string)$row['status'], 'area' => (string)$row['area'],
             'talk_protocol' => $row['external_ref'] !== null ? (string)$row['external_ref'] : null,
             'condominium_id' => $row['condominium_id'] !== null ? (int)$row['condominium_id'] : null,
-            'unit_id' => $row['unit_id'] !== null ? (int)$row['unit_id'] : null];
+            'unit_id' => $row['unit_id'] !== null ? (int)$row['unit_id'] : null,
+            'tracking_url' => $row['origin'] === 'talk' ? self::trackingUrl((string)$row['protocol'], $row['access_token'] !== null ? (string)$row['access_token'] : null) : null];
+    }
+
+    /**
+     * Página pública onde quem escreveu pelo WhatsApp acompanha o chamado (ADR 0636): protocolo + código de acesso
+     * do chamado, sem login. A Jack manda esse link ao cliente junto com o número.
+     */
+    public static function trackingUrl(string $protocol, ?string $accessToken): ?string
+    {
+        if ($accessToken === null || !preg_match('/^[a-f0-9]{64}$/', $accessToken)) {
+            return null;
+        }
+        return Environments::url('site', '/suporte/chamado/' . rawurlencode($protocol) . '?c=' . $accessToken);
     }
 
     /** Chamado aberto pelo Talk e dentro do escopo do usuário de integração; senão 404. */
