@@ -187,7 +187,7 @@ class Support extends Controller
         header('Content-Type: application/json; charset=utf-8');
         if (!$this->validWidgetRequest($data)) { echo json_encode(['success' => false, 'message' => 'Sessão expirada. Reabra o atendimento.']); return; }
         if (request_limit('public_helpdesk_lookup', 20, 900)) { echo json_encode(['success' => false, 'message' => 'Muitas consultas. Aguarde alguns minutos.']); return; }
-        // SAC/OCO + AAAAMMDD + sequência, ou os antigos CH/OC (ADR 0636).
+        // SAC/OCO + AAAAMMDD + sequência, ou os antigos CH/OC (ADR 0637).
         $protocol = \Source\Services\Support\TicketProtocol::normalize((string)($data['protocol'] ?? '')) ?? '';
         $email = mb_strtolower(trim((string)($data['email'] ?? '')));
         $token = preg_replace('/[^a-f0-9]/i', '', (string)($data['token'] ?? ''));

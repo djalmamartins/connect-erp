@@ -286,7 +286,7 @@ final class ResidentAppIntegrationTest extends TestCase
         $request = $tickets->open($this->morador, $link, ['kind' => 'chamado', 'subject' => 'Segunda via do regimento', 'description' => 'Preciso do regimento interno atualizado.']);
         $problem = $tickets->open($this->morador, $link, ['subject' => 'Barulho no 302', 'description' => 'Som alto depois das 22h ontem.']);
         self::assertSame(['chamado', 'ocorrencia'], [$request['kind'], $problem['kind']]);
-        // Pedido de chamado é SAC e ocorrência é OCO, cada um com a sua sequência do dia (ADR 0636).
+        // Pedido de chamado é SAC e ocorrência é OCO, cada um com a sua sequência do dia (ADR 0637).
         self::assertSame(['SAC' . date('Ymd') . '0001', 'OCO' . date('Ymd') . '0001'], [$request['number'], $problem['number']]);
         $categories = $this->pdo->query('SELECT id, category FROM studio_support_tickets WHERE id IN (' . (int)$request['id'] . ',' . (int)$problem['id'] . ') ORDER BY id')->fetchAll(\PDO::FETCH_KEY_PAIR);
         self::assertSame(['Chamado', 'Ocorrência'], array_values($categories));

@@ -284,7 +284,7 @@ final class RegistryService
 
     /**
      * @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident)
-     * @param string $ticketKind prefixo do protocolo do chamado que nasce com a ocorrência (ADR 0636): OCO, ou SAC
+     * @param string $ticketKind prefixo do protocolo do chamado que nasce com a ocorrência (ADR 0637): OCO, ou SAC
      *        quando o morador pediu "chamado" no aplicativo
      */
     private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array

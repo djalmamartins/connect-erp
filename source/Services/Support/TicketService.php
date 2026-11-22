@@ -31,7 +31,7 @@ use Source\Support\RichText;
  * - unidade só junto com o condomínio e pertencendo a ele;
  * - solicitante: um usuário do sistema ou nome + e-mail (morador, visitante do site); do WhatsApp (origem talk),
  *   nome + telefone, porque a conversa não traz e-mail;
- * - prazo (SLA) pela prioridade; protocolo SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0636,
+ * - prazo (SLA) pela prioridade; protocolo SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0637,
  *   TicketProtocol). Do Talk, o chamado fica com o mesmo protocolo da conversa quando ele está no formato SAC e livre.
  */
 final class TicketService
@@ -130,7 +130,7 @@ final class TicketService
      * solicitante e, no portal, com condomínio e unidade definidos pelo servidor).
      * $afterInsert roda na mesma transação (ex.: anexos do widget).
      *
-     * $kind decide o prefixo do protocolo (ADR 0636): TicketProtocol::KIND_OCCURRENCE só para a ocorrência que nasce
+     * $kind decide o prefixo do protocolo (ADR 0637): TicketProtocol::KIND_OCCURRENCE só para a ocorrência que nasce
      * com o chamado (Occurrences); a entrada do formulário ou da API nunca escolhe.
      *
      * @return array{id:int,protocol:string,due_at:string,access_token:?string}
@@ -186,7 +186,7 @@ final class TicketService
             if ($owns) {
                 $pdo->beginTransaction();
             }
-            // Protocolo dentro da transação: a sequência do dia fica travada até o commit (ADR 0636).
+            // Protocolo dentro da transação: a sequência do dia fica travada até o commit (ADR 0637).
             $talkRef = $data['origin'] === 'talk' && $kind === TicketProtocol::KIND_TICKET ? strtoupper((string)$data['external_ref']) : '';
             $protocol = $talkRef !== '' && TicketProtocol::canAdopt($pdo, $talkRef) ? $talkRef : TicketProtocol::next($pdo, $kind);
             $stmt = $pdo->prepare('INSERT INTO studio_support_tickets
@@ -286,7 +286,7 @@ final class TicketService
         }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
-            // "sac 2026 1116 0008" acha SAC202611160008; protocolos antigos (CH, OC) também (ADR 0636).
+            // "sac 2026 1116 0008" acha SAC202611160008; protocolos antigos (CH, OC) também (ADR 0637).
             $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2)';
             $params['q'] = '%' . $search . '%';
             $params['q2'] = '%' . (TicketProtocol::normalize($search) ?? $search) . '%';

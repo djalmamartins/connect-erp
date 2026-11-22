@@ -14,7 +14,7 @@ use Source\Services\Support\TicketService;
 use Source\Services\Talk\TalkHelpdesk;
 
 /**
- * Protocolo no formato do Talk (ADR 0636): SAC para chamado, OCO para ocorrência, sequência própria por dia,
+ * Protocolo no formato do Talk (ADR 0637): SAC para chamado, OCO para ocorrência, sequência própria por dia,
  * número de volta no rollback, número do Talk aproveitado, e busca que acha protocolos novos e antigos.
  */
 final class TicketProtocolSequenceTest extends TestCase
@@ -87,7 +87,7 @@ final class TicketProtocolSequenceTest extends TestCase
         $new = $this->ticket('Chamado novo');
         $userId = (int)$this->admin->id;
         $this->pdo->prepare("INSERT INTO studio_support_tickets (protocol, subject, message, area, priority, status, condominium_id, requester_id, created_by, due_at)
-            VALUES ('CH261109A1B2', 'Chamado antigo', 'Aberto antes do ADR 0636.', 'general', 'medium', 'open', ?, ?, ?, NOW())")->execute([$this->condominium, $userId, $userId]);
+            VALUES ('CH261109A1B2', 'Chamado antigo', 'Aberto antes do ADR 0637.', 'general', 'medium', 'open', ?, ?, ?, NOW())")->execute([$this->condominium, $userId, $userId]);
         $service = new TicketService($this->pdo);
         $find = fn (string $q): array => array_column($service->listFor($this->admin, ['q' => $q]), 'protocol');
         self::assertSame([$new], $find(strtolower(substr($new, 0, 3)) . ' ' . substr($new, 3, 4) . '-' . substr($new, 7, 4) . '-' . substr($new, 11)));

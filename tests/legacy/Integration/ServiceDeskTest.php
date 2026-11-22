@@ -140,7 +140,7 @@ final class ServiceDeskTest extends TestCase
 
     public function testTicketProtocolFitsTheDatabaseColumn(): void
     {
-        $protocol = 'SAC' . date('Ymd') . '12345'; // 5 dígitos quando o dia passa de 9999 (ADR 0636)
+        $protocol = 'SAC' . date('Ymd') . '12345'; // 5 dígitos quando o dia passa de 9999 (ADR 0637)
         self::assertSame(16, strlen($protocol));
         $userId = $this->createUser();
         $this->pdo->prepare('INSERT INTO studio_support_tickets(protocol,subject,message,area,priority,status,requester_id,created_by,due_at) VALUES (?,?,?,?,?,?,?,?,?)')

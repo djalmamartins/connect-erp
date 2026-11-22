@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Source\Services\Support\TicketProtocol;
 
-/** Regras puras do protocolo no formato do Connect Talk (ADR 0636). */
+/** Regras puras do protocolo no formato do Connect Talk (ADR 0637). */
 final class TicketProtocolTest extends TestCase
 {
     public function testFormatIsPrefixDateAndFourDigitSequence(): void

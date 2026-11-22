@@ -467,7 +467,7 @@ final class ResidentPortal
             'has_ticket' => $r['ticket_id'] !== null, 'protocol' => $r['protocol'] !== null ? (string)$r['protocol'] : null], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    /** $ticketKind: prefixo do protocolo (ADR 0636), OCO para ocorrência e SAC quando o morador pediu chamado. */
+    /** $ticketKind: prefixo do protocolo (ADR 0637), OCO para ocorrência e SAC quando o morador pediu chamado. */
     public function reportOccurrence(User $user, array $link, array $input, ?string $today = null, ?RegistryService $registry = null, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         self::assertFeature($link, 'occurrences');

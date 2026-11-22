@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use PDO;
 
 /**
- * Protocolo dos chamados no mesmo formato do Connect Talk (ADR 0636).
+ * Protocolo dos chamados no mesmo formato do Connect Talk (ADR 0637).
  *
  * - Chamado (SAC, Help Desk, site, API, Talk): SAC + AAAAMMDD + sequência do dia com 4 dígitos, ex. SAC202611160008.
  * - Ocorrência (que também é chamado, ADR 0305): OCO + AAAAMMDD + sequência do dia, ex. OCO202611160003.

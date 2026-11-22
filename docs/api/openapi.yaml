@@ -61,7 +61,7 @@ components:
       description: Chamado do Help Desk (ADR 0034)
       properties:
         id: { type: integer }
-        protocol: { type: string, description: "SAC ou OCO + AAAAMMDD + sequência do dia (ADR 0636); antigos CH/OC seguem valendo", example: SAC202611090001 }
+        protocol: { type: string, description: "SAC ou OCO + AAAAMMDD + sequência do dia (ADR 0637); antigos CH/OC seguem valendo", example: SAC202611090001 }
         subject: { type: string }
         message: { type: string, description: Texto puro (sem marcação), também para o app e o WhatsApp }
         message_html: { type: string, description: 'HTML limpo do Moves Editor (ADR 0610); texto antigo vem em parágrafos escapados' }
@@ -97,7 +97,7 @@ components:
       required: [id, protocol, status, area]
       properties:
         id: { type: integer }
-        protocol: { type: string, description: 'Protocolo do SAC, o que o cliente vê: SAC + AAAAMMDD + sequência do dia (ADR 0636). Quando o talk_protocol já está nesse formato e livre, o chamado fica com o mesmo número da conversa', examples: [SAC202611150008] }
+        protocol: { type: string, description: 'Protocolo do SAC, o que o cliente vê: SAC + AAAAMMDD + sequência do dia (ADR 0637). Quando o talk_protocol já está nesse formato e livre, o chamado fica com o mesmo número da conversa', examples: [SAC202611150008] }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
         area: { type: string, enum: [general, technical, financial] }
         talk_protocol: { type: [string, 'null'], description: Protocolo da conversa no Talk (external_ref) }
@@ -459,7 +459,7 @@ components:
       description: Chamado do morador (ADR 0305)
       properties:
         id: { type: integer }
-        number: { type: string, description: "Protocolo: SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0636)", example: OCO202611140003 }
+        number: { type: string, description: "Protocolo: SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0637)", example: OCO202611140003 }
         subject: { type: string }
         kind: { type: string, enum: [chamado, ocorrencia], description: 'chamado = pedido ou dúvida à administração; ocorrência = problema no condomínio' }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }

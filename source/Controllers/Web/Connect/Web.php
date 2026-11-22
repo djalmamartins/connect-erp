@@ -437,7 +437,7 @@ class Web extends Controller
             $granted[] = $key . '=' . (($data[$key] ?? '0') === '1' ? '1' : '0');
         }
         try {
-            (new ConsentLog())->record('cookies', str_contains(implode(',', $granted), '=1'), LegalDocuments::COOKIES, 'site',
+            (new ConsentLog())->record('cookies', str_contains(implode(',', $granted), '=1'), LegalDocuments::cookieVersion(), 'site',
                 ['detail' => implode(',', $granted)]);
         } catch (\Throwable $e) {
             \Source\Support\AppLogger::log('error', 'Escolha de cookies não registrada', ['event_type' => 'privacy_consent_failed', 'error' => $e->getMessage(), 'status' => 'open'], 'privacy');
