@@ -105,6 +105,7 @@ HTML, rotas da API com 422 sem a caixa) e `__tests__/privacy.test.ts` no app de 
   `SITE_META_PIXEL_ID`. O Google Ads e o Pixel da Meta só carregam depois do aceite. A versão do banner passou a incluir as
   categorias ligadas (`LegalDocuments::cookieVersion()`, ex.: `1.msa`): ligar uma categoria nova faz o banner perguntar de
   novo. Quem recusa navega normalmente; só fica a contagem de visitas do próprio site, sem identificar a pessoa.
-- PENDENTE: origem das fotos `gestao-a/b/c.png` (parecem de banco de imagens) e licença delas; `home-featured.jpg` e
-  `home-app.jpg` (tela do Realizze) não são usadas em nenhuma página.
-
+- Origem das fotos `gestao-a/b/c.png` (CONFIRMADO pelo Djalma em 22/11): geradas no ChatGPT. Os termos da OpenAI
+  deixam o uso comercial com quem gerou. Por serem imagens geradas, não podem ser apresentadas como a equipe ou um
+  cliente real da Connect (por isso o texto alternativo neutro). `home-featured.jpg` e `home-app.jpg` (tela do Realizze)
+  não são usadas em nenhuma página.
