@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use MovesOSTests\TestCase;
 
 /**
- * Menu lateral mantém a rolagem entre páginas (ADR 0635, pedido do Djalma em 22/11): ao clicar em
+ * Menu lateral mantém a rolagem entre páginas (ADR 0636, pedido do Djalma em 22/11): ao clicar em
  * Relatórios > Rateio, a página nova abre com o menu na mesma posição e o item ativo à vista.
  */
 final class SidebarScrollPositionTest extends TestCase

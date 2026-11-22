@@ -11,6 +11,8 @@ $erpAsset = static function (string $source, string $bundle): string {
     $path = is_file(__DIR__ . $bundle) && is_file(__DIR__ . $source) && filemtime(__DIR__ . $bundle) >= filemtime(__DIR__ . $source) ? $bundle : $source;
     return themeErp($path) . '?v=' . (is_file(__DIR__ . $path) ? filemtime(__DIR__ . $path) : 0);
 };
+// Base única de relatório (ADR 0635): ?imprimir=1 mostra a tela como folha A4 para imprimir ou salvar em PDF.
+$reportMode = ($withNavigation ?? true) && \Source\Support\Erp\ReportSheet::active();
 $searchIndex = [];
 foreach ($catalog['pages'] as $id => $page) {
     if (!$canSee($id)) {
@@ -42,9 +44,11 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="stylesheet" href="<?= url('/container/shared/assets/moves-editor/moves-editor.css') . '?v=' . filemtime($movesEditorDir . '/moves-editor.css') ?>">
     <?php endif; ?>
 </head>
-<body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?>">
+<body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?><?= $reportMode ? ' erp-report-mode' : '' ?>">
 <a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
-<?php if ($withNavigation ?? true): ?>
+<?php if ($reportMode): ?>
+<?php $this->insert('components/report/sheet', ['reportContent' => $this->section('content')]); ?>
+<?php elseif ($withNavigation ?? true): ?>
 <div class="erp-shell" data-erp-shell>
     <?php $this->insert('components/sidebar/sidebar'); ?>
     <div class="erp-content">

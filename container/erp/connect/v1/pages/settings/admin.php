@@ -23,7 +23,7 @@ $leads = [
     'permissions' => 'O que cada papel pode fazer no ERP e as exceções de cada usuário. Tudo começa fechado: sem papel ou sem permissão, a pessoa não entra.',
 ];
 ob_start(); ?>
-    <?php if (in_array($kind, ['admin', 'sent'], true)): ?><button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button><?php endif; ?>
+    <?php if (in_array($kind, ['admin', 'sent'], true)): ?><button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ($currentPage['section'] ? ' · ' . $currentPage['section'] : ''),

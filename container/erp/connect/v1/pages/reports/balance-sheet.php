@@ -17,7 +17,7 @@ $link = static fn (string $page, string $fallback): string => erp_url($catalog['
 
 ob_start(); ?>
     <?php if ($b !== null): ?><?php $this->insert('components/tables/download', ['downloadUrl' => '/api/v1/reports/balance-sheet?' . http_build_query(['condominium_id' => (int)$b['condominium_id'], 'date' => $b['date']]), 'downloadTitle' => 'Balanço patrimonial']); ?><?php endif; ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

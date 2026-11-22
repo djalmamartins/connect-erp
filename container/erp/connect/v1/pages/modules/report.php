@@ -4,7 +4,7 @@ $this->layout('default');
 $tableId = 'rpt-' . strtolower($currentPageId);
 ob_start(); ?>
     <button type="button" class="erp-btn" data-erp-pending="Exportação pendente: o PDF/planilha repetirá os filtros aplicados quando os dados forem reais."><?= $icon('download', 'erp-icon--sm') ?>Exportar</button>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ($currentPage['section'] ? ' · ' . $currentPage['section'] : ''),

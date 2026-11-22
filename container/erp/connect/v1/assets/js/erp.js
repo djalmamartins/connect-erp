@@ -264,7 +264,7 @@
   window.ErpUI.copy = copyDialog;
   window.ErpUI.ask = askFrom;
 
-  /* Menu lateral: mantém a rolagem entre páginas (ADR 0635) --------------- */
+  /* Menu lateral: mantém a rolagem entre páginas (ADR 0636) --------------- */
   function keepNavPosition(nav, key, activeSelector) {
     var session = {
       get: function () { try { return window.sessionStorage.getItem(key); } catch (e) { return null; } },
@@ -336,7 +336,7 @@
         groups.forEach(function (other) { if (other !== group && other.open) other.open = false; });
       });
     });
-    // Posição do menu (ADR 0635): a página recarrega a cada clique, então guarda a rolagem do menu
+    // Posição do menu (ADR 0636): a página recarrega a cada clique, então guarda a rolagem do menu
     // na aba (sessionStorage) e devolve na próxima página; o item ativo sempre fica à vista.
     var nav = $('.erp-nav', sidebar || document);
     if (nav) keepNavPosition(nav, 'erp.sidebar.scroll', '.erp-nav__link[aria-current="page"], .erp-nav__sub a[aria-current="page"]');
@@ -2118,7 +2118,76 @@
   });
 
   /* AP-123/124/125/130: documentos da unidade pela API /api/v1/unit-documents (ADR 0044 e 0046). */
-  $$('[data-erp-print]').forEach(function (button) { button.addEventListener('click', function () { window.print(); }); });
+  /* Base única de relatório (ADR 0636): todo "Imprimir" abre a mesma tela com ?imprimir=1, como folha A4. */
+  function erpReportUrl(on) {
+    var url = new URL(window.location.href);
+    if (on) { url.searchParams.set('imprimir', '1'); } else { url.searchParams.delete('imprimir'); }
+    url.hash = '';
+    return url.toString();
+  }
+  $$('[data-erp-print]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var tab = window.open(erpReportUrl(true), '_blank');
+      if (!tab) { window.location.href = erpReportUrl(true); }
+    });
+  });
+  if (document.body.classList.contains('erp-report-mode')) {
+    $$('[data-erp-report-print]').forEach(function (b) { b.addEventListener('click', function () { window.print(); }); });
+    $$('[data-erp-report-close]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (window.opener && !window.opener.closed) { window.close(); }
+        window.location.href = erpReportUrl(false);
+      });
+    });
+    /* Os filtros da tela viram a linha de parâmetros do relatório (De, Até, Unidade...). Lê depois do carregamento
+       e aceita campo sem name com rótulo, porque o seletor de datas troca o mês por um campo de texto (ADR 0628). */
+    var reportParams = document.querySelector('[data-erp-report-params]');
+    var readReportParams = function () {
+      var seenParams = {};
+      $$('.erp-report-sheet form.erp-filters').forEach(function (form) {
+        Array.prototype.forEach.call(form.querySelectorAll('input, select'), function (field) {
+          var type = (field.getAttribute('type') || '').toLowerCase();
+          if (type === 'hidden' || type === 'submit' || type === 'button' || field.disabled) { return; }
+          if ((type === 'checkbox' || type === 'radio') && !field.checked) { return; }
+          var label = field.id ? form.querySelector('label[for="' + field.id + '"]') : null;
+          if (!field.name && !label) { return; }
+          var value = '';
+          if (field.tagName === 'SELECT') {
+            var option = field.options[field.selectedIndex];
+            value = option && option.value !== '' ? option.text.trim() : '';
+          } else if (type === 'month' && /^\d{4}-\d{2}$/.test(field.value)) {
+            value = field.value.slice(5, 7) + '/' + field.value.slice(0, 4);
+          } else if (type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(field.value)) {
+            value = field.value.slice(8, 10) + '/' + field.value.slice(5, 7) + '/' + field.value.slice(0, 4);
+          } else if (type === 'checkbox' || type === 'radio') {
+            var wrap = field.closest('label');
+            value = wrap ? wrap.textContent.trim() : 'Sim';
+          } else {
+            value = String(field.value || '').trim();
+          }
+          if (value === '') { return; }
+          var name = label ? label.textContent.trim() : (field.getAttribute('aria-label') || field.name);
+          var fieldset = field.closest('fieldset');
+          var legend = (type === 'checkbox' || type === 'radio') && fieldset ? fieldset.querySelector('legend') : null;
+          if (legend) { name = legend.textContent.trim(); }
+          if (seenParams[name + '|' + value]) { return; }
+          seenParams[name + '|' + value] = true;
+          var item = document.createElement('div');
+          var dt = document.createElement('dt');
+          var dd = document.createElement('dd');
+          dt.textContent = name;
+          dd.textContent = value;
+          item.appendChild(dt);
+          item.appendChild(dd);
+          reportParams.appendChild(item);
+        });
+      });
+      if (reportParams.children.length) { reportParams.hidden = false; }
+    };
+    if (reportParams) {
+      if (document.readyState === 'complete') { readReportParams(); } else { window.addEventListener('load', readReportParams); }
+    }
+  }
   $$('[data-erp-unit-documents]').forEach(function (root) {
     var api = root.getAttribute('data-api');
     var call = apiClient(root);

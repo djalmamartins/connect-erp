@@ -17,7 +17,7 @@ $t = static fn (string $key): int => (int)($totals[$key] ?? 0);
 $natures = ['receita' => ['Receitas', 'revenue'], 'despesa' => ['Despesas', 'expense']];
 
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'],

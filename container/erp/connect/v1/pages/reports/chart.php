@@ -28,7 +28,7 @@ $unitNames = ['cents' => 'em reais', 'percent' => 'em %', 'consumption' => 'cons
 $panelsEmpty = $chartPanels === [] || array_filter($chartPanels, static fn (array $p): bool => !$p['empty']) === [];
 
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · Gráficos',

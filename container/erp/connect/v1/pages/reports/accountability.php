@@ -36,7 +36,7 @@ $hideUnit = ($_GET['ocultar_unidade'] ?? '') === '1';
 // Documento no padrão do PDF de outubro (revisão de 15/11 item 21, ADR 0314): ver no navegador ou baixar o PDF.
 $docUrl = static fn (string $kind, string $month): string => erp_url(Screens::ROUTE . '/' . $kind . '?' . http_build_query(['mes' => $month] + ($hideUnit ? ['ocultar_unidade' => 1] : [])));
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
     <?php if (!$accountabilityNeedsCondo): ?>
         <a class="erp-btn" href="<?= $this->e($docUrl('documento', $accountabilityMonth)) ?>" target="_blank" rel="noopener"><?= $icon('eye', 'erp-icon--sm') ?>Visualizar documento</a>
         <a class="erp-btn erp-btn--primary" href="<?= $this->e($docUrl('pdf', $accountabilityMonth)) ?>" target="_blank" rel="noopener" data-accountability-pdf><?= $icon('file', 'erp-icon--sm') ?>Abrir PDF</a>
