@@ -1,23 +1,36 @@
 <?php
 /**
- * CND (revisão de 15/11, etapa 5): a Certidão de Débitos da unidade, a mesma do ERP, emitida pelo morador com data
- * de hoje e baixada em PDF. Qualquer pessoa confere pelo código em /verificar-certidao-debitos.
+ * CND (ADR 0638): a certidão negativa de débitos da unidade. O morador não emite: pede à administradora (chamado do
+ * Help Desk), a equipe emite no ERP e a certidão aparece aqui para baixar em PDF. Com conta vencida em aberto, não há
+ * botão de pedido e o servidor recusa: a tela só informa o débito. Qualquer pessoa confere pelo código em
+ * /verificar-certidao-debitos.
  *
  * @var array $link
  * @var list<array> $certificates ResidentCertificates::list()
+ * @var array $certificateStatus ResidentCertificates::status()
  */
 use Source\Controllers\App\Resident\Format as F;
 
 $this->layout('default');
+$status = $certificateStatus ?? ['blocked' => false, 'message' => null, 'request' => null];
 ?>
-<header class="app-page-head"><span class="app-eyebrow"><?= $this->e($link['condominium_name']) ?></span><h1>CND</h1><p>Certidão de débitos da unidade <?= $this->e($link['unit_label']) ?>, para venda, aluguel ou financiamento.</p></header>
+<header class="app-page-head"><span class="app-eyebrow"><?= $this->e($link['condominium_name']) ?></span><h1>CND</h1><p>Certidão negativa de débitos da unidade <?= $this->e($link['unit_label']) ?>, para venda, aluguel ou financiamento.</p></header>
 <section class="app-card">
-    <h2>Emitir a certidão de hoje</h2>
-    <p class="app-hint">Sem conta vencida, a certidão sai como <strong>nada consta</strong>. Com conta vencida, ela lista as contas com os encargos. O PDF tem um código para qualquer pessoa conferir a autenticidade.</p>
+<?php if ($status['blocked']): ?>
+    <h2>Há débito em aberto</h2>
+    <p class="app-hint"><?= $this->e((string)$status['message']) ?></p>
+    <a class="app-button" href="<?= app_url('/boletos') ?>">Ver boletos</a>
+<?php elseif ($status['request'] !== null): ?>
+    <h2>Pedido em andamento</h2>
+    <p class="app-hint">A administradora está preparando a certidão (protocolo <?= $this->e($status['request']['protocol']) ?>, pedido em <?= $this->e(F::date(substr((string)$status['request']['created_at'], 0, 10))) ?>). Ela aparece aqui quando for emitida.</p>
+<?php else: ?>
+    <h2>Pedir a certidão</h2>
+    <p class="app-hint">A administradora confere a unidade, emite a certidão e ela aparece aqui, com um código para qualquer pessoa conferir a autenticidade. Com conta vencida em aberto, a certidão não é emitida.</p>
     <form method="post" action="<?= app_url('/cnd') ?>" class="app-form">
         <?= csrf_input() ?>
-        <button class="app-button" type="submit">Emitir certidão</button>
+        <button class="app-button" type="submit">Pedir certidão</button>
     </form>
+<?php endif; ?>
 </section>
 <section class="app-section">
     <h2>Certidões emitidas</h2>

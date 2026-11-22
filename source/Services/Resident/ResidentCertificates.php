@@ -9,23 +9,32 @@ use Dompdf\Options;
 use PDO;
 use Source\Core\Connect;
 use Source\Models\User;
+use Source\Services\Erp\DebtCertificateBlocked;
 use Source\Services\Erp\DocumentVerification;
 use Source\Services\Erp\Registry\RegistryNotFound;
 use Source\Services\Erp\UnitDocuments;
+use Source\Services\Support\TicketDesk;
+use Source\Services\Support\TicketService;
+use Source\Support\Audit;
 use Source\Support\QrCode;
 
 /**
- * CND no aplicativo do morador (revisão de 15/11, etapa 5): a Certidão de Débitos da unidade (AP-123, ADR 0044),
- * a mesma do ERP, emitida pelo próprio morador com data de hoje e baixada em PDF.
- * - "Nada consta" sem conta vencida; com conta vencida, lista as contas com encargos (regra de UnitDocuments).
- * - Fica gravada com código de verificação e pode ser conferida por qualquer pessoa em /verificar-certidao-debitos.
+ * CND no aplicativo do morador (revisão de 15/11, etapa 5; ADR 0638): o morador NÃO emite a certidão. Ele pede, o
+ * pedido vira chamado do Help Desk (ADR 0305) para a administradora, a equipe emite no ERP (AP-123) e a certidão
+ * aparece no app, com o chamado respondido e resolvido sozinho.
+ * - Com conta vencida em aberto, nem o pedido é aberto: o app só informa o débito (DebtCertificateBlocked). O ERP
+ *   recusa a emissão pela mesma regra (UnitDocuments), então nenhum caminho gera certidão com débito.
+ * - Pedido repetido com um aberto para a unidade devolve o mesmo pedido (não duplica chamado).
  * - Mostra débitos, então segue a função boletos do portal, que só vale para proprietário, inquilino e responsável
  *   financeiro (ResidentLinks::FINANCIAL_RELATIONSHIPS).
- * - Lista as certidões válidas da unidade dos últimos 12 meses, emitidas no app ou no ERP.
+ * - Lista só as certidões negativas válidas ("nada consta") da unidade dos últimos 12 meses. As antigas "com débitos",
+ *   de antes da regra, ficam só no histórico do ERP e na verificação pública.
  */
 final class ResidentCertificates
 {
     public const FEATURE = 'boletos';
+    /** Categoria do chamado do pedido (Help Desk). */
+    public const CATEGORY = 'Pedido de CND';
     private const KIND = 'debt_certificate';
 
     private PDO $pdo;
@@ -43,27 +52,94 @@ final class ResidentCertificates
         ResidentPortal::assertFeature($link, self::FEATURE);
         $since = (new \DateTimeImmutable($today ?? date('Y-m-d')))->modify('-12 months')->format('Y-m-d');
         $stmt = $this->pdo->prepare("SELECT id, as_of, result, total_cents, verification_code, created_at FROM erp_unit_documents
-            WHERE unit_id = :u AND condominium_id = :c AND kind = :k AND status = 'issued' AND as_of >= :s
+            WHERE unit_id = :u AND condominium_id = :c AND kind = :k AND status = 'issued' AND result = 'clear' AND as_of >= :s
             ORDER BY created_at DESC, id DESC LIMIT 20");
         $stmt->execute(['u' => (int)$link['unit_id'], 'c' => (int)$link['condominium_id'], 'k' => self::KIND, 's' => $since]);
         return array_map([self::class, 'present'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    /** Emite a certidão de hoje. @return array<string, mixed> */
-    public function issue(User $user, array $link): array
+    /**
+     * Situação para a tela: débito vencido hoje (então não dá para pedir) e o pedido aberto da unidade, se houver.
+     *
+     * @return array{blocked:bool, message:?string, overdue_count:int, overdue_cents:int, request:?array}
+     */
+    public function status(array $link): array
     {
         ResidentPortal::assertFeature($link, self::FEATURE);
-        $doc = $this->documents->issueForResident($user, $link);
-        return self::present(['id' => $doc['id'], 'as_of' => $doc['as_of'], 'result' => $doc['result'], 'total_cents' => $doc['total_cents'],
-            'verification_code' => $doc['verification_code'], 'created_at' => $doc['issued_at']]);
+        $debt = $this->documents->overdueSummary((int)$link['unit_id'], (int)$link['condominium_id'], date('Y-m-d'));
+        return ['blocked' => $debt['count'] > 0, 'message' => $debt['count'] > 0 ? DebtCertificateBlocked::text($debt['count'], $debt['cents']) : null,
+            'overdue_count' => $debt['count'], 'overdue_cents' => $debt['cents'], 'request' => $this->openRequest($link)];
     }
 
-    /** O documento completo, só se for certidão válida da unidade do vínculo. */
+    /**
+     * Pede a certidão à administradora: abre o chamado (ou devolve o aberto). Com débito vencido, recusa.
+     *
+     * @return array{id:int, protocol:string, status:string, created_at:string, created:bool}
+     * @throws DebtCertificateBlocked
+     */
+    public function request(User $user, array $link): array
+    {
+        ResidentPortal::assertFeature($link, self::FEATURE);
+        $debt = $this->documents->overdueSummary((int)$link['unit_id'], (int)$link['condominium_id'], date('Y-m-d'));
+        if ($debt['count'] > 0) {
+            Audit::record('refuse', 'erp_unit_documents', null, null, ['kind' => self::KIND, 'unit_id' => (int)$link['unit_id'],
+                'reason' => 'overdue_debts', 'overdue_count' => $debt['count'], 'overdue_cents' => $debt['cents'], 'by' => (int)$user->id, 'origin' => 'residents']);
+            throw new DebtCertificateBlocked($debt['count'], $debt['cents']);
+        }
+        $open = $this->openRequest($link);
+        if ($open !== null) {
+            return $open + ['created' => false];
+        }
+        $unit = (string)$link['unit_label'];
+        $opened = (new TicketService($this->pdo))->open([
+            'subject' => 'Pedido de certidão negativa de débitos · unidade ' . $unit,
+            'message' => '<p>O morador pediu pelo aplicativo a certidão negativa de débitos da unidade ' . htmlspecialchars($unit, ENT_QUOTES, 'UTF-8')
+                . '.</p><p>Emita no ERP em Documentos › Certidão de Débitos. O sistema só emite sem conta vencida em aberto; ao emitir, este chamado é respondido e resolvido sozinho e a certidão aparece no app.</p>',
+            'area' => 'financial', 'priority' => 'medium', 'category' => self::CATEGORY,
+            'condominium_id' => (int)$link['condominium_id'], 'unit_id' => (int)$link['unit_id'], 'requester_id' => (int)$user->id,
+        ], 'residents');
+        return ['id' => $opened['id'], 'protocol' => $opened['protocol'], 'status' => 'open', 'created_at' => date('Y-m-d H:i:s'), 'created' => true];
+    }
+
+    /**
+     * Depois que a equipe emite a certidão negativa no ERP: responde e resolve os pedidos abertos da unidade.
+     * @return int pedidos atendidos
+     */
+    public function fulfil(User $agent, array $document): int
+    {
+        if (($document['kind'] ?? null) !== self::KIND || ($document['result'] ?? null) !== 'clear' || ($document['status'] ?? null) !== 'issued') {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare("SELECT id FROM studio_support_tickets WHERE category = :cat AND unit_id = :u AND condominium_id = :c
+            AND status NOT IN ('resolved', 'closed')");
+        $stmt->execute(['cat' => self::CATEGORY, 'u' => (int)$document['unit_id'], 'c' => (int)$document['condominium_id']]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        $desk = new TicketDesk($this->pdo);
+        $code = (string)$document['verification_display'];
+        foreach ($ids as $id) {
+            $desk->reply($agent, $id, '<p>A certidão negativa de débitos nº ' . (int)$document['id'] . ' foi emitida e já está no aplicativo, em CND.</p><p>Código de verificação: '
+                . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '.</p>', false, 0, true);
+        }
+        return count($ids);
+    }
+
+    /** O pedido aberto da unidade (de qualquer morador dela), ou null. */
+    private function openRequest(array $link): ?array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, protocol, status, created_at FROM studio_support_tickets WHERE category = :cat AND unit_id = :u
+            AND condominium_id = :c AND status NOT IN ('resolved', 'closed') ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['cat' => self::CATEGORY, 'u' => (int)$link['unit_id'], 'c' => (int)$link['condominium_id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? ['id' => (int)$row['id'], 'protocol' => (string)$row['protocol'], 'status' => (string)$row['status'],
+            'created_at' => (string)$row['created_at']] : null;
+    }
+
+    /** O documento completo, só se for certidão negativa válida da unidade do vínculo. */
     public function document(array $link, int $id): array
     {
         ResidentPortal::assertFeature($link, self::FEATURE);
         $doc = $this->documents->load($id);
-        if ($doc['kind'] !== self::KIND || $doc['status'] !== 'issued' || $doc['unit_id'] !== (int)$link['unit_id']
+        if ($doc['kind'] !== self::KIND || $doc['status'] !== 'issued' || $doc['result'] !== 'clear' || $doc['unit_id'] !== (int)$link['unit_id']
             || $doc['condominium_id'] !== (int)$link['condominium_id']) {
             throw new RegistryNotFound();
         }
@@ -152,7 +228,7 @@ final class ResidentCertificates
             . $date($doc['as_of']) . '</td><td><span>Nº</span>' . (int)$doc['id'] . '</td></tr></table>' . $text . $table . '
             <table class="sign"><tr><td><div class="line">Síndico(a)</div></td><td><div class="line">Connect · administradora de condomínios</div></td></tr></table>
             <div class="foot">' . $qrImg . '<span class="muted">Código de verificação</span><div class="code">' . $e($doc['verification_display']) . '</div>' . $verify
-            . '<p class="muted">Emitida pelo aplicativo do morador em ' . $date($doc['issued_at']) . '. Documento gerado a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p></div>
+            . '<p class="muted">Emitida pela administradora em ' . $date($doc['issued_at']) . '. Documento gerado a partir dos registros da administradora na data de referência; pagamentos posteriores não aparecem.</p></div>
         </body></html>';
     }
 }

@@ -130,6 +130,9 @@ final class ResidentApp
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Boleto não encontrado.']]);
             return;
+        } catch (\Source\Services\Erp\DebtCertificateBlocked $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'debt_open', 'message' => $exception->getMessage(),
+                'overdue_count' => $exception->overdueCount, 'overdue_cents' => $exception->overdueCents]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'conflict', 'message' => $exception->getMessage()]]);
             return;
@@ -151,9 +154,16 @@ final class ResidentApp
         $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->list($link));
     }
 
+    /** Situação da CND (ADR 0638): débito que impede o pedido e o pedido aberto da unidade. */
+    public function certificateStatus(): void
+    {
+        $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->status($link));
+    }
+
+    /** Pede a CND à administradora (chamado do Help Desk). Com débito vencido: 409 debt_open, nada é gerado. */
     public function issueCertificate(): void
     {
-        $this->write(201, fn (User $u, array $link): array => (new ResidentCertificates())->issue($u, $link));
+        $this->write(202, fn (User $u, array $link): array => (new ResidentCertificates())->request($u, $link));
     }
 
     public function certificatePdf(array $data): void
@@ -594,6 +604,9 @@ final class ResidentApp
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Confira os campos.', 'fields' => $exception->errors]]);
         } catch (InvalidArgumentException $exception) {
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
+        } catch (\Source\Services\Erp\DebtCertificateBlocked $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'debt_open', 'message' => $exception->getMessage(),
+                'overdue_count' => $exception->overdueCount, 'overdue_cents' => $exception->overdueCents]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'conflict', 'message' => $exception->getMessage()]]);
         }

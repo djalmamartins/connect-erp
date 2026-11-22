@@ -51,9 +51,10 @@ final class ResidentTickets
         $params = ['u' => (int)$user->id, 'c' => (int)$link['condominium_id']];
         $where = 't.requester_id = :u AND t.condominium_id = :c';
         if ($kind === 'chamado') {
-            $where .= " AND t.category = 'Chamado'";
+            // Pedido de CND (ADR 0638) é um pedido à administração: entra como chamado.
+            $where .= " AND t.category IN ('Chamado', 'Pedido de CND')";
         } elseif ($kind === 'ocorrencia') {
-            $where .= " AND (t.category IS NULL OR t.category <> 'Chamado')";
+            $where .= " AND (t.category IS NULL OR t.category NOT IN ('Chamado', 'Pedido de CND'))";
         }
         $count = $this->pdo->prepare('SELECT COUNT(*) FROM studio_support_tickets t WHERE ' . $where);
         $count->execute($params);
@@ -139,7 +140,7 @@ final class ResidentTickets
             'id' => (int)$row['id'],
             'number' => (string)$row['protocol'],
             'subject' => (string)$row['subject'],
-            'kind' => ($row['category'] ?? null) === self::KINDS['chamado'] ? 'chamado' : 'ocorrencia',
+            'kind' => in_array($row['category'] ?? null, [self::KINDS['chamado'], ResidentCertificates::CATEGORY], true) ? 'chamado' : 'ocorrencia',
             'status' => (string)$row['status'],
             'status_label' => TicketService::STATUS_LABELS[$row['status']] ?? (string)$row['status'],
             'priority' => self::RESIDENT_PRIORITY[$priority] ?? 'media',
