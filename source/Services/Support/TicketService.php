@@ -31,7 +31,8 @@ use Source\Support\RichText;
  * - unidade só junto com o condomínio e pertencendo a ele;
  * - solicitante: um usuário do sistema ou nome + e-mail (morador, visitante do site); do WhatsApp (origem talk),
  *   nome + telefone, porque a conversa não traz e-mail;
- * - prazo (SLA) pela prioridade; protocolo CH + aammdd + 4 hex.
+ * - prazo (SLA) pela prioridade; protocolo SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0636,
+ *   TicketProtocol). Do Talk, o chamado fica com o mesmo protocolo da conversa quando ele está no formato SAC e livre.
  */
 final class TicketService
 {
@@ -129,10 +130,13 @@ final class TicketService
      * solicitante e, no portal, com condomínio e unidade definidos pelo servidor).
      * $afterInsert roda na mesma transação (ex.: anexos do widget).
      *
+     * $kind decide o prefixo do protocolo (ADR 0636): TicketProtocol::KIND_OCCURRENCE só para a ocorrência que nasce
+     * com o chamado (Occurrences); a entrada do formulário ou da API nunca escolhe.
+     *
      * @return array{id:int,protocol:string,due_at:string,access_token:?string}
      * @throws TicketError
      */
-    public function open(array $input, string $origin, ?User $actor = null, ?callable $afterInsert = null): array
+    public function open(array $input, string $origin, ?User $actor = null, ?callable $afterInsert = null, string $kind = TicketProtocol::KIND_TICKET): array
     {
         $data = self::normalize($input, $origin);
         $pdo = $this->pdo();
@@ -171,8 +175,6 @@ final class TicketService
             $data['assigned_to'] = null;
         }
 
-        // A coluna protocol tem 12 caracteres: CH + aammdd + 4 hex.
-        $protocol = 'CH' . date('ymd') . strtoupper(bin2hex(random_bytes(2)));
         $dueAt = date('Y-m-d H:i:s', strtotime('+' . self::slaHours($data['priority']) . ' hours'));
         // Solicitante de fora (sem conta) acompanha o chamado pelo código de acesso.
         $accessToken = $data['requester_id'] === null ? hash('sha256', random_bytes(32)) : null;
@@ -184,6 +186,9 @@ final class TicketService
             if ($owns) {
                 $pdo->beginTransaction();
             }
+            // Protocolo dentro da transação: a sequência do dia fica travada até o commit (ADR 0636).
+            $talkRef = $data['origin'] === 'talk' && $kind === TicketProtocol::KIND_TICKET ? strtoupper((string)$data['external_ref']) : '';
+            $protocol = $talkRef !== '' && TicketProtocol::canAdopt($pdo, $talkRef) ? $talkRef : TicketProtocol::next($pdo, $kind);
             $stmt = $pdo->prepare('INSERT INTO studio_support_tickets
                 (protocol, subject, message, area, origin, external_ref, condominium_id, unit_id, category, priority, requester_id, requester_name, requester_email, requester_phone, access_token, assigned_to, created_by, due_at)
                 VALUES (:protocol, :subject, :message, :area, :origin, :external, :condominium, :unit, :category, :priority, :requester, :name, :email, :phone, :token, :assigned, :creator, :due)');
@@ -281,9 +286,10 @@ final class TicketService
         }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
+            // "sac 2026 1116 0008" acha SAC202611160008; protocolos antigos (CH, OC) também (ADR 0636).
             $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2)';
             $params['q'] = '%' . $search . '%';
-            $params['q2'] = '%' . $search . '%';
+            $params['q2'] = '%' . (TicketProtocol::normalize($search) ?? $search) . '%';
         }
         $stmt = $this->pdo()->prepare(self::SELECT . ' WHERE ' . implode(' AND ', $terms)
             . ' ORDER BY t.created_at DESC, t.id DESC LIMIT ' . max(1, min(200, $limit)));

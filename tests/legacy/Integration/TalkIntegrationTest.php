@@ -126,7 +126,7 @@ final class TalkIntegrationTest extends TestCase
             'conversation_url' => 'https://talk.connect.lab/?c=12'];
         $first = $talk->open($this->agent, $input);
         self::assertTrue($first['created']);
-        self::assertMatchesRegularExpression('/^CH\d{6}[0-9A-F]{4}$/', $first['ticket']['protocol']);
+        self::assertMatchesRegularExpression('/^SAC\d{12}$/', $first['ticket']['protocol']);
         self::assertSame(['open', 'technical', '20261115-00001', $this->alpha, $this->unit], [$first['ticket']['status'], $first['ticket']['area'],
             $first['ticket']['talk_protocol'], $first['ticket']['condominium_id'], $first['ticket']['unit_id']]);
         $row = $this->pdo->query('SELECT origin, requester_name, requester_email, requester_phone, message, created_by FROM studio_support_tickets WHERE id = ' . $first['ticket']['id'])->fetch(\PDO::FETCH_ASSOC);

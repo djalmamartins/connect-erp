@@ -260,7 +260,7 @@ final class RegistryService
      *
      * @param array<string, mixed> $input
      */
-    public function createForResident(User $user, string $slug, array $input, int $condominiumId, int $unitId): array
+    public function createForResident(User $user, string $slug, array $input, int $condominiumId, int $unitId, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         $fields = self::RESIDENT_FIELDS[$slug] ?? null;
         if ($fields === null || $condominiumId < 1 || $unitId < 1) {
@@ -269,7 +269,7 @@ final class RegistryService
         $input = array_intersect_key($input, array_flip($fields));
         $input['condominium_id'] = $condominiumId;
         $input['unit_id'] = $unitId;
-        return $this->persist($user, $slug, $input, null, ['condominium_id' => $condominiumId, 'unit_id' => $unitId]);
+        return $this->persist($user, $slug, $input, null, ['condominium_id' => $condominiumId, 'unit_id' => $unitId], $ticketKind);
     }
 
     /** Campos que o morador preenche em cada cadastro do aplicativo (ADR 0302). */
@@ -282,8 +282,12 @@ final class RegistryService
         'residents' => ['relationship', 'name', 'document', 'email', 'phone', 'starts_on', 'unit_label', 'notes'],
     ];
 
-    /** @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident) */
-    private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident): array
+    /**
+     * @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident)
+     * @param string $ticketKind prefixo do protocolo do chamado que nasce com a ocorrência (ADR 0636): OCO, ou SAC
+     *        quando o morador pediu "chamado" no aplicativo
+     */
+    private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         $definition = self::definition($slug);
         $before = null;
@@ -410,7 +414,7 @@ final class RegistryService
             }
             if ($ticket) {
                 try {
-                    (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->openForNew($user, $id, $values, $resident !== null);
+                    (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->openForNew($user, $id, $values, $resident !== null, $ticketKind);
                 } catch (\Source\Services\Support\TicketError $error) {
                     $field = ['subject' => 'subject', 'message' => 'description', 'unit_id' => 'unit_id', 'condominium_id' => 'condominium_id'][$error->field] ?? '_form';
                     throw new RegistryValidationException([$field => 'O chamado da ocorrência não abriu: ' . $error->getMessage()]);

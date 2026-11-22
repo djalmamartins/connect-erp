@@ -85,7 +85,9 @@ final class ResidentTickets
         $body = ['subject' => $input['subject'] ?? '', 'description' => $input['description'] ?? '', 'priority' => $input['priority'] ?? null,
             'occurred_on' => $input['occurred_on'] ?? ''];
         $kind = self::kind($input['kind'] ?? null);
-        $occurrence = (new ResidentPortal($this->pdo))->reportOccurrence($user, $link, $body, $today);
+        // Pedido de "chamado" ganha protocolo SAC; ocorrência, OCO (ADR 0636).
+        $occurrence = (new ResidentPortal($this->pdo))->reportOccurrence($user, $link, $body, $today, null,
+            $kind === 'chamado' ? \Source\Services\Support\TicketProtocol::KIND_TICKET : \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE);
         $stmt = $this->pdo->prepare('SELECT ticket_id FROM erp_occurrences WHERE id = ?');
         $stmt->execute([(int)$occurrence['id']]);
         $ticketId = (int)$stmt->fetchColumn();
