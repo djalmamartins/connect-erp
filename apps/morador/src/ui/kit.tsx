@@ -22,6 +22,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ApiError } from '../api/client';
 import { statusLabel, statusTone, type StatusKind, type Tone } from '../lib/format';
+import { applyMask, MASK_INPUT, type MaskName } from '../lib/masks';
 import { colors, controlHeight, fonts, radius, space } from '../theme';
 
 /** Espaço livre no fim das telas com a barra de baixo flutuante. */
@@ -284,7 +285,10 @@ export function Button({
   );
 }
 
-export function Field({ label, hint, error, ...input }: TextInputProps & { label: string; hint?: string; error?: string }) {
+/** mask: digita só os números e o campo põe barras, pontos e traço sozinho (src/lib/masks.ts). */
+export function Field({ label, hint, error, mask, ...input }: TextInputProps & { label: string; hint?: string; error?: string; mask?: MaskName }) {
+  const masked = mask ? MASK_INPUT[mask] : null;
+  const onChangeText = mask && input.onChangeText ? (text: string) => input.onChangeText?.(applyMask(mask, text)) : input.onChangeText;
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -292,7 +296,9 @@ export function Field({ label, hint, error, ...input }: TextInputProps & { label
         placeholderTextColor={colors.faint}
         style={[styles.input, input.multiline && styles.inputMultiline, !!error && styles.inputError]}
         accessibilityLabel={label}
+        {...(masked ? { keyboardType: masked.keyboardType, maxLength: masked.maxLength, placeholder: masked.placeholder } : {})}
         {...input}
+        onChangeText={onChangeText}
       />
       {error ? <Text style={styles.fieldError}>{error}</Text> : hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>

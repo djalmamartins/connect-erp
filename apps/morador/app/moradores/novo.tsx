@@ -64,15 +64,15 @@ export default function NovoMorador() {
               : 'Morador mora na unidade com o proprietário ou o inquilino, como cônjuge, filhos ou parentes.'}
           </Body>
           <Field label="Nome completo" value={name} onChangeText={setName} autoCapitalize="words" error={errors.name} />
-          <Field label="CPF (opcional)" value={document} onChangeText={setDocument} keyboardType="number-pad" error={errors.document} />
+          <Field label="CPF (opcional)" mask="cpf" value={document} onChangeText={setDocument} error={errors.document} />
           <Field label="E-mail (opcional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} error={errors.email} />
-          <Field label="Celular (opcional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" error={errors.phone} />
+          <Field label="Celular (opcional)" mask="phone" value={phone} onChangeText={setPhone} error={errors.phone} />
           <Field
             label="Mora desde"
             value={starts}
             onChangeText={setStarts}
+            mask="date"
             placeholder="DD/MM/AAAA (em branco = hoje)"
-            keyboardType="numbers-and-punctuation"
             error={errors.starts_on}
           />
           <Body muted>Os dados ficam com a administração do condomínio e não aparecem para os vizinhos.</Body>
