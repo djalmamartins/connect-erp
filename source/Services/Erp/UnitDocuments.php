@@ -18,7 +18,7 @@ use Source\Support\Audit;
  * Documentos da unidade (AP-123, 124, 125 e 130; ADR 0044), gerados das contas a receber válidas:
  *
  * - debt_certificate (Certidão Negativa de Débitos): só emite sem conta vencida em aberto, na data de referência
- *   E hoje (ADR 0635); com débito, recusa (DebtCertificateBlocked) e só informa o débito. Lista as a vencer em aberto.
+ *   E hoje (ADR 0637); com débito, recusa (DebtCertificateBlocked) e só informa o débito. Lista as a vencer em aberto.
  *   Ao emitir, responde e resolve os pedidos de CND do morador abertos para a unidade (ResidentCertificates::fulfil).
  * - delinquency_declaration (Declaração de Inadimplência): só com conta vencida em aberto.
  * - quittance (Comprovante de Quitação): todas as contas até a competência informada pagas (ou
@@ -107,7 +107,7 @@ final class UnitDocuments
     }
 
     /**
-     * Contas vencidas em aberto da unidade numa data (valor original, sem encargos): a trava da certidão (ADR 0635).
+     * Contas vencidas em aberto da unidade numa data (valor original, sem encargos): a trava da certidão (ADR 0637).
      *
      * @return array{count:int, cents:int}
      */
@@ -191,7 +191,7 @@ final class UnitDocuments
             'competence' => (string)$r['competence'], 'due_on' => (string)$r['due_on'], 'amount_cents' => (int)$r['amount_cents']], $parts['upcoming']);
         $hasDebts = $overdue !== [];
 
-        // ADR 0635: certidão negativa nunca sai com débito, nem com data de referência antiga quando hoje há débito.
+        // ADR 0637: certidão negativa nunca sai com débito, nem com data de referência antiga quando hoje há débito.
         if ($kind === 'debt_certificate') {
             $today = $asOf === date('Y-m-d') ? null : $this->overdueSummary((int)$unit['id'], (int)$unit['condominium_id'], date('Y-m-d'));
             if ($hasDebts || ($today !== null && $today['count'] > 0)) {

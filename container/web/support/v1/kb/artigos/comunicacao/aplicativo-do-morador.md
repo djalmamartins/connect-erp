@@ -71,7 +71,7 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 
   Os dois vão para o SAC, com a categoria Chamado ou Ocorrência, e o morador vê o **número**, a situação e **conversa** com a administração até o registro ser fechado. A lista mostra os dois, com o filtro Todos, Chamados e Ocorrências. Em Resolva fácil, os botões Chamado e Ocorrência já abrem o formulário com o tipo marcado.
 - **Assembleias**: ver a pauta, **baixar o edital de convocação** (para imprimir ou salvar em PDF), o resultado de cada item e a ata depois de encerrada.
-- **Documentos**: baixar os arquivos que a administração marcou como visíveis no Disco Virtual.
+- **Documentos**: os arquivos que a administração marcou como visíveis no Disco Virtual. Tocando no documento (por exemplo, o regimento interno), o PDF abre numa aba para ler; quem quiser guardar salva por ali. Outros tipos de arquivo continuam sendo baixados.
 
 ## Mostrar documentos aos moradores
 

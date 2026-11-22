@@ -14,7 +14,7 @@ import { Body, Button, Card, Empty, ErrorBox, Loading, Screen, SectionTitle } fr
 import { dialog } from '../src/ui/Dialog';
 
 /**
- * CND — certidão negativa de débitos da unidade (ADR 0635). O morador não emite: pede à administradora, o pedido vira
+ * CND — certidão negativa de débitos da unidade (ADR 0637). O morador não emite: pede à administradora, o pedido vira
  * chamado do Help Desk, a equipe emite no ERP e a certidão aparece aqui. Com conta vencida em aberto, o servidor
  * recusa o pedido e o app só mostra o débito (nada é gerado).
  */

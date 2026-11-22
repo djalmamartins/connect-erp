@@ -13,6 +13,7 @@
     "expo-font": "~58.0.12",
     "expo-image-manipulator": "~58.0.16",
     "expo-image-picker": "~58.0.10",
+    "expo-intent-launcher": "~58.0.3",
     "expo-linear-gradient": "~58.0.4",
     "expo-linking": "~58.0.17",
     "expo-local-authentication": "~58.0.3",
@@ -25,7 +26,8 @@
     "react-dom": "^19.3.0",
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.11.1",
-    "react-native-screens": "~4.30.1"
+    "react-native-screens": "~4.30.1",
+    "react-native-webview": "^14.0.1"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

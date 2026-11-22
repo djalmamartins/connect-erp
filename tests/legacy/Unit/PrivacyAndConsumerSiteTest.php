@@ -44,8 +44,10 @@ final class PrivacyAndConsumerSiteTest extends TestCase
         $files = $this->scan(['container', 'apps/morador/app', 'apps/morador/src'], ['php', 'js', 'ts', 'tsx', 'html']);
         foreach ($files as $path) {
             $code = (string)file_get_contents($path);
+            // O Pixel da Meta só pode existir no banner (cookie-consent.js e o bundle), atrás do aceite de "ads".
+            $banner = str_ends_with($path, 'assets/js/cookie-consent.js') || str_ends_with($path, 'assets/site.min.js');
             foreach (['fbq(', 'fbevents.js', 'UA-53658515', 'AW-953362805', 'hotjar', 'clarity.ms'] as $needle) {
-                if (str_contains($code, $needle)) {
+                if (str_contains($code, $needle) && !($banner && in_array($needle, ['fbq(', 'fbevents.js'], true))) {
                     $offenders[] = str_replace(self::root() . '/', '', $path) . ' (' . $needle . ')';
                 }
             }
@@ -75,6 +77,27 @@ final class PrivacyAndConsumerSiteTest extends TestCase
         self::assertSame('G-ABC123', LegalDocuments::analyticsId());
         self::assertArrayHasKey('stats', LegalDocuments::cookieCategories());
         putenv('SITE_GA4_ID');
+    }
+
+    public function testAdsOnlyAfterAdsConsentAndBannerAsksAgainWhenTheyAreTurnedOn(): void
+    {
+        $js = $this->file('container/web/default/v1/assets/js/cookie-consent.js');
+        self::assertStringContainsString('if (granted.ads && aw && !window.__connectAds)', $js);
+        self::assertStringContainsString('if (granted.ads && meta && !window.__connectMeta)', $js);
+        self::assertSame(2, substr_count($js, 'fbq('), 'o Pixel só aparece dentro do bloco de "ads"');
+        putenv('SITE_GOOGLE_ADS_ID');
+        putenv('SITE_META_PIXEL_ID');
+        $before = LegalDocuments::cookieVersion();
+        self::assertArrayNotHasKey('ads', LegalDocuments::cookieCategories(), 'sem ids, nenhum anúncio');
+        putenv('SITE_GOOGLE_ADS_ID=AW-953362805X');
+        self::assertSame('', LegalDocuments::googleAdsId(), 'formato inválido não liga nada');
+        putenv('SITE_GOOGLE_ADS_ID=AW-123456789');
+        putenv('SITE_META_PIXEL_ID=1234567890123');
+        self::assertStringContainsString('Google Ads e Facebook e Instagram', LegalDocuments::cookieCategories()['ads']);
+        self::assertNotSame($before, LegalDocuments::cookieVersion(), 'categoria nova faz o banner perguntar de novo');
+        self::assertLessThanOrEqual(20, strlen(LegalDocuments::cookieVersion()), 'cabe em privacy_consents.version');
+        putenv('SITE_GOOGLE_ADS_ID');
+        putenv('SITE_META_PIXEL_ID');
     }
 
     public function testCookieBannerHasRejectWithTheSameWeightAsAccept(): void

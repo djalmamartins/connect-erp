@@ -100,7 +100,7 @@
 
             <div class="number-content">
                 <strong data-number-target="5">+5</strong>
-                <span>Anos de<br>experiência</span>
+                <span>Anos da<br>Connect</span>
             </div>
         </div>
 
@@ -384,7 +384,7 @@
                     <h3>Seguro</h3>
                     <p>
                         Seus dados protegidos<br>
-                        com segurança total.
+                        com senha e conexão segura.
                     </p>
                 </div>
             </div>
@@ -770,7 +770,7 @@
 
             <div class="about-team-image about-team-image-main">
 
-                <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Equipe Connect Condomínios">
+                <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Reunião de gestão condominial">
 
             </div>
 

@@ -361,7 +361,7 @@ final class ResidentAppIntegrationTest extends TestCase
         $household->block($this->vizinho, ['relationship' => 'owner'] + $neighbor, $new['id'], '2026-11-15');
     }
 
-    /** ADR 0635: o morador pede a CND (chamado), a equipe emite no ERP; com débito, ninguém gera a certidão. */
+    /** ADR 0637: o morador pede a CND (chamado), a equipe emite no ERP; com débito, ninguém gera a certidão. */
     public function testResidentRequestsCndAndTeamIssuesOnlyWithoutDebt(): void
     {
         $certificates = new ResidentCertificates($this->pdo);

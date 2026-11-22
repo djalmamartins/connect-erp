@@ -24,3 +24,12 @@ com ele, e esses PDFs são gerados pelo próprio sistema.
 ## Consequências
 - Testes: `DownloadCacheHeadersTest::testUploadedFilesAreServedSandboxed` (falha sem a mudança); integração do app do
   morador, dos anexos dos chamados e dos documentos da unidade passando.
+
+## Atualização 22/11/2026 — documentos do morador abrem para ver
+
+Pedido do Djalma: no app do morador, tocar no documento abre o PDF em vez de baixar. Só no app web (`/documentos/{id}`)
+e só quando o arquivo é PDF pelo tipo **e** pelo conteúdo (começa com `%PDF-`), `ResidentApp::fileHeaders()` manda
+`inline`, `Content-Type: application/pdf` fixo, `nosniff` e `frame-ancestors 'self'`, sem `sandbox` (o leitor de PDF
+do navegador não abre com sandbox). Qualquer outro arquivo e a API do celular seguem como anexo com sandbox.
+O app do celular baixa no cache e abre no visualizador (iPhone: tela Visualizar; Android: leitor de PDF do aparelho).
+Teste: `ResidentDocumentViewHeadersTest`.

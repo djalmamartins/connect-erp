@@ -37,7 +37,7 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
         <div class="studio-erp-sidebar-head">
             <a class="studio-erp-brand" href="<?= url($environmentHome) ?>" aria-label="Moves <?= $environmentName ?> — início">
                 <img class="studio-erp-brand-logo" src="<?= themeStudio('/assets/images/moves-logo-white.svg', 'default') ?>" alt="Moves <?= $environmentName ?>" width="132" height="19">
-                <img class="studio-erp-brand-mark" src="<?= themeStudio('/assets/images/moves-mark-white.svg', 'default') ?>" alt="" width="34" height="24">
+                <img class="studio-erp-brand-mark" src="<?= themeStudio('/assets/images/moves-icon.svg', 'default') ?>" alt="" width="34" height="34">
             </a>
             <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
         </div>
@@ -175,6 +175,8 @@ studioCollapseButton?.addEventListener('click',()=>{if(studioIsMobile()){documen
 document.querySelector('.studio-sidebar-backdrop')?.addEventListener('click',()=>{document.body.classList.remove('menu-open');studioSetMenuState()});
 window.addEventListener('resize',()=>{if(!studioIsMobile())document.body.classList.remove('menu-open');studioSetMenuState()});
 studioSetMenuState();
+// Posição do menu (ADR 0636): guarda a rolagem do menu na aba e devolve na próxima página; o item ativo fica à vista.
+(()=>{const nav=document.querySelector('.studio-erp-nav');if(!nav)return;const key='studio-menu-scroll-'+(document.body.dataset.environment||'studio');const session={get(){try{return sessionStorage.getItem(key)}catch(e){return null}},set(v){try{sessionStorage.setItem(key,v)}catch(e){}}};const saved=parseInt(session.get()||'',10);if(saved>0)nav.scrollTop=saved;const active=nav.querySelector('a[aria-current="page"]');if(active){const box=nav.getBoundingClientRect(),item=active.getBoundingClientRect();if(item.top<box.top||item.bottom>box.bottom)nav.scrollTop+=(item.top-box.top)-(box.height-item.height)/2}const save=()=>session.set(String(Math.round(nav.scrollTop)));nav.addEventListener('click',e=>{if(e.target.closest('a'))save()});window.addEventListener('pagehide',save)})();
 const studioProfile=document.querySelector('.studio-header-profile');
 const studioToggleProfile=()=>{const open=!studioProfile?.classList.contains('open');studioProfile?.classList.toggle('open',open);studioProfile?.setAttribute('aria-expanded',String(open))};
 studioProfile?.addEventListener('click',e=>{if(!e.target.closest('a'))studioToggleProfile()});

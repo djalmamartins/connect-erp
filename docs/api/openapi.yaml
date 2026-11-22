@@ -445,7 +445,7 @@ components:
         can_block: { type: boolean }
     ResidentCertificate:
       type: object
-      description: Certidão negativa de débitos da unidade (etapa 5 de 15/11; ADR 0635 — no app só as "nada consta")
+      description: Certidão negativa de débitos da unidade (etapa 5 de 15/11; ADR 0637 — no app só as "nada consta")
       properties:
         id: { type: integer }
         as_of: { type: string, format: date }
@@ -456,7 +456,7 @@ components:
         issued_at: { type: string }
     ResidentCertificateRequest:
       type: object
-      description: Pedido de CND à administradora, um chamado do Help Desk (ADR 0635)
+      description: Pedido de CND à administradora, um chamado do Help Desk (ADR 0637)
       properties:
         id: { type: integer, description: 'Id do chamado' }
         protocol: { type: string, example: CH261122ABCD }
@@ -5555,7 +5555,7 @@ paths:
       operationId: issueUnitDocument
       summary: Emite certidão de débitos, declaração de inadimplência, quitação, carta de anuência ou recibo (erp.unit_documents.manage)
       description: >-
-        debt_certificate só emite sem conta vencida em aberto na data de referência e hoje (ADR 0635);
+        debt_certificate só emite sem conta vencida em aberto na data de referência e hoje (ADR 0637);
         com débito, 409 debt_open e nada é gerado. delinquency_declaration exige conta
         vencida em aberto. quittance exige until_competence e todas as contas até ela pagas.
         consent_letter exige não haver conta vencida e uma finalidade (purpose). receipt (AP-040, ADR 0057)
@@ -8440,7 +8440,7 @@ paths:
       operationId: getResidentCertificates
       tags: [Morador]
       summary: 'CND: certidões de débitos da unidade'
-      description: 'Revisão de 15/11, etapa 5 (ADR 0302, 0635). Certidões negativas ("nada consta") válidas da unidade nos últimos 12 meses, emitidas pela administradora no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
+      description: 'Revisão de 15/11, etapa 5 (ADR 0302, 0637). Certidões negativas ("nada consta") válidas da unidade nos últimos 12 meses, emitidas pela administradora no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
@@ -8452,7 +8452,7 @@ paths:
       operationId: issueResidentCertificate
       tags: [Morador]
       summary: 'Pedir a certidão negativa de débitos à administradora'
-      description: 'ADR 0635: o morador não emite a certidão. Sem corpo. Abre um chamado do Help Desk (categoria "Pedido de CND", origem residents) para a unidade, ou devolve o pedido já aberto (created = false). A equipe emite no ERP; ao emitir, o chamado é respondido e resolvido e a certidão aparece em GET /resident/certificates. Com conta vencida em aberto hoje, recusa com 409 debt_open e nada é gerado. Recusa auditada.'
+      description: 'ADR 0637: o morador não emite a certidão. Sem corpo. Abre um chamado do Help Desk (categoria "Pedido de CND", origem residents) para a unidade, ou devolve o pedido já aberto (created = false). A equipe emite no ERP; ao emitir, o chamado é respondido e resolvido e a certidão aparece em GET /resident/certificates. Com conta vencida em aberto hoje, recusa com 409 debt_open e nada é gerado. Recusa auditada.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
@@ -8466,7 +8466,7 @@ paths:
       operationId: getResidentCertificateStatus
       tags: [Morador]
       summary: 'Situação da CND: débito que impede o pedido e o pedido aberto'
-      description: 'ADR 0635. blocked = há conta vencida em aberto hoje (o app mostra só o débito, sem botão de pedido). request = o pedido aberto da unidade, se houver.'
+      description: 'ADR 0637. blocked = há conta vencida em aberto hoje (o app mostra só o débito, sem botão de pedido). request = o pedido aberto da unidade, se houver.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }

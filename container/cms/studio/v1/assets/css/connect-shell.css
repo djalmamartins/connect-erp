@@ -180,7 +180,7 @@ body.studio-erp .studio-erp-sidebar-head { display: flex; min-height: 40px; alig
 body.studio-erp .studio-erp-brand { display: flex; min-width: 0; align-items: center; gap: 10px }
 body.studio-erp .studio-erp-brand:hover { text-decoration: none }
 body.studio-erp .studio-erp-brand-logo { display: block; width: 132px; max-height: 44px; height: auto; object-fit: contain; object-position: left center }
-body.studio-erp .studio-erp-brand-mark { display: none; width: 34px; height: 24px; object-fit: contain }
+body.studio-erp .studio-erp-brand-mark { display: none; width: 34px; height: 34px; object-fit: contain; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) }
 body.studio-erp .studio-erp-collapse { display: grid; width: 34px; height: 34px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 8px; background: var(--cx-sidebar-hover); color: var(--cx-sidebar-strong); font-size: 1.05rem; cursor: pointer }
 body.studio-erp .studio-erp-collapse:hover { background: var(--cx-sidebar-active) }
 

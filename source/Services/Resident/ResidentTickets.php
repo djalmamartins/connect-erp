@@ -51,7 +51,7 @@ final class ResidentTickets
         $params = ['u' => (int)$user->id, 'c' => (int)$link['condominium_id']];
         $where = 't.requester_id = :u AND t.condominium_id = :c';
         if ($kind === 'chamado') {
-            // Pedido de CND (ADR 0635) é um pedido à administração: entra como chamado.
+            // Pedido de CND (ADR 0637) é um pedido à administração: entra como chamado.
             $where .= " AND t.category IN ('Chamado', 'Pedido de CND')";
         } elseif ($kind === 'ocorrencia') {
             $where .= " AND (t.category IS NULL OR t.category NOT IN ('Chamado', 'Pedido de CND'))";

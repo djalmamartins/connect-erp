@@ -19,7 +19,7 @@ use Source\Support\Audit;
 use Source\Support\QrCode;
 
 /**
- * CND no aplicativo do morador (revisão de 15/11, etapa 5; ADR 0635): o morador NÃO emite a certidão. Ele pede, o
+ * CND no aplicativo do morador (revisão de 15/11, etapa 5; ADR 0637): o morador NÃO emite a certidão. Ele pede, o
  * pedido vira chamado do Help Desk (ADR 0305) para a administradora, a equipe emite no ERP (AP-123) e a certidão
  * aparece no app, com o chamado respondido e resolvido sozinho.
  * - Com conta vencida em aberto, nem o pedido é aberto: o app só informa o débito (DebtCertificateBlocked). O ERP

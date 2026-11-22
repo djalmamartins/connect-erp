@@ -1,6 +1,6 @@
 <?php
 /**
- * CND (ADR 0635): a certidão negativa de débitos da unidade. O morador não emite: pede à administradora (chamado do
+ * CND (ADR 0637): a certidão negativa de débitos da unidade. O morador não emite: pede à administradora (chamado do
  * Help Desk), a equipe emite no ERP e a certidão aparece aqui para baixar em PDF. Com conta vencida em aberto, não há
  * botão de pedido e o servidor recusa: a tela só informa o débito. Qualquer pessoa confere pelo código em
  * /verificar-certidao-debitos.

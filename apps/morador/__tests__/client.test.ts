@@ -213,7 +213,7 @@ describe('etapa 4: moradores da unidade', () => {
   });
 });
 
-describe('etapa 5: CND (ADR 0635: pedido à administradora)', () => {
+describe('etapa 5: CND (ADR 0637: pedido à administradora)', () => {
   it('pede com POST sem corpo e monta o PDF com o vínculo', async () => {
     const calls: Call[] = [];
     const req = { id: 12, protocol: 'CH261122ABCD', status: 'open', created_at: '2026-11-22 09:00:00', created: true };
