@@ -68,7 +68,7 @@ final class InspectionTickets
                 continue;
             }
             try {
-                $this->openForPlan($row, $due, $status === 'overdue', $owner);
+                $this->openForPlan($row, $due, $status === 'overdue', $owner, $today);
                 $result['opened']++;
             } catch (PDOException $error) {
                 // Outra execução abriu o mesmo chamado ao mesmo tempo (chave única): nada a fazer.
@@ -140,7 +140,7 @@ final class InspectionTickets
     }
 
     /** @param array<string, mixed> $plan */
-    private function openForPlan(array $plan, DateTimeImmutable $due, bool $overdue, int $owner): void
+    private function openForPlan(array $plan, DateTimeImmutable $due, bool $overdue, int $owner, DateTimeImmutable $today): void
     {
         $frequency = mb_strtolower(Schedule::label((string)$plan['frequency']));
         $this->tickets()->open([
@@ -153,9 +153,9 @@ final class InspectionTickets
             'condominium_id' => (int)$plan['condominium_id'],
             'requester_id' => $owner,
             'assigned_to' => $plan['responsible_id'] !== null ? (int)$plan['responsible_id'] : null,
-        ], 'erp', null, function (PDO $pdo, int $ticketId) use ($plan, $due): void {
-            // O prazo do chamado é o fim do dia da vistoria (vencida: o fim de hoje), não o SLA da prioridade.
-            $deadline = max($due, new DateTimeImmutable('today'))->format('Y-m-d') . ' 18:00:00';
+        ], 'erp', null, function (PDO $pdo, int $ticketId) use ($plan, $due, $today): void {
+            // O prazo do chamado é o fim do dia da vistoria (vencida: o fim do dia da rodada), não o SLA da prioridade.
+            $deadline = max($due, $today)->format('Y-m-d') . ' 18:00:00';
             $pdo->prepare('UPDATE studio_support_tickets SET due_at = ? WHERE id = ?')->execute([$deadline, $ticketId]);
             $pdo->prepare('INSERT INTO inspection_plan_tickets (plan_id, due_on, ticket_id) VALUES (?, ?, ?)')
                 ->execute([(int)$plan['id'], $due->format('Y-m-d'), $ticketId]);
