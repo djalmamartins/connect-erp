@@ -59,11 +59,12 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 - **Reservas**: na aba **Nova reserva**, escolher o espaço (filtro Gratuitos ou Com taxa) e ver o **calendário do mês** com dias livres, de parte do dia e ocupados; tocando no dia aparecem os horários já tomados (sem dizer de quem), o pedido e a lista de espera. Na aba **Minhas reservas**, acompanhar e cancelar uma reserva futura. Valem as mesmas regras da tela de Reservas do ERP (horário, conflito, aprovação). Reserva com taxa já lançada não pode ser cancelada pelo aplicativo.
 - **Encomendas**: ver o que chegou na portaria e o que já foi retirado.
 - **Visitantes**: avisar a portaria de uma visita e cancelar o aviso. O documento do visitante aparece mascarado.
-- **CND** (com a função Boletos): o morador emite a **Certidão de Débitos** da unidade com a data de hoje e baixa o PDF. É a mesma certidão de [[Documentos > Certidão de Débitos]]:
-  - sem conta vencida, sai **nada consta**;
-  - com conta vencida, lista as contas com os encargos.
+- **CND** (com a função Boletos): o morador **pede** a certidão negativa de débitos à administradora, que emite em [[Documentos > Certidão de Débitos]]:
+  - o pedido chega como chamado do Help Desk (**Pedido de CND**); pedir de novo com um pedido aberto não duplica;
+  - ao ser emitida, a certidão aparece na lista do app com o PDF e o código de verificação, e o chamado é respondido;
+  - com conta vencida em aberto, não há pedido nem certidão: a tela só informa o débito e leva aos boletos.
 
-  O PDF tem o código de verificação e o endereço para qualquer pessoa conferir. A lista mostra as certidões válidas da unidade dos últimos 12 meses, também as emitidas pela administração. Como a certidão mostra débitos, só proprietário, inquilino e responsável financeiro a veem.
+  A lista mostra as certidões negativas da unidade dos últimos 12 meses. Como a tela mostra débitos, só proprietário, inquilino e responsável financeiro a veem.
 - **Chamados e ocorrências**: o morador escolhe o que quer registrar:
   - **Chamado** é um pedido ou uma dúvida para a administração (por exemplo, a cópia do regimento);
   - **Ocorrência** é um problema no condomínio (barulho, vazamento, dano).

@@ -445,15 +445,24 @@ components:
         can_block: { type: boolean }
     ResidentCertificate:
       type: object
-      description: Certidão de débitos da unidade (etapa 5 de 15/11)
+      description: Certidão negativa de débitos da unidade (etapa 5 de 15/11; ADR 0635 — no app só as "nada consta")
       properties:
         id: { type: integer }
         as_of: { type: string, format: date }
-        result: { type: string, enum: [clear, debts] }
+        result: { type: string, enum: [clear] }
         result_label: { type: string, description: 'Nada consta ou Com débitos' }
         total_cents: { type: integer, description: 'Vencidas com encargos; 0 em nada consta' }
         verification_code: { type: string, example: ABCD-EFGH-JKMN-PQRS }
         issued_at: { type: string }
+    ResidentCertificateRequest:
+      type: object
+      description: Pedido de CND à administradora, um chamado do Help Desk (ADR 0635)
+      properties:
+        id: { type: integer, description: 'Id do chamado' }
+        protocol: { type: string, example: CH261122ABCD }
+        status: { type: string }
+        created_at: { type: string }
+        created: { type: boolean, description: 'false quando devolve o pedido já aberto' }
     ResidentTicket:
       type: object
       description: Chamado do morador (ADR 0305)
@@ -5546,7 +5555,8 @@ paths:
       operationId: issueUnitDocument
       summary: Emite certidão de débitos, declaração de inadimplência, quitação, carta de anuência ou recibo (erp.unit_documents.manage)
       description: >-
-        debt_certificate sempre emite (result clear = nada consta). delinquency_declaration exige conta
+        debt_certificate só emite sem conta vencida em aberto na data de referência e hoje (ADR 0635);
+        com débito, 409 debt_open e nada é gerado. delinquency_declaration exige conta
         vencida em aberto. quittance exige until_competence e todas as contas até ela pagas.
         consent_letter exige não haver conta vencida e uma finalidade (purpose). receipt (AP-040, ADR 0057)
         exige entry_ids de contas a receber pagas da unidade, sem recibo válido. O conteúdo fica
@@ -8430,7 +8440,7 @@ paths:
       operationId: getResidentCertificates
       tags: [Morador]
       summary: 'CND: certidões de débitos da unidade'
-      description: 'Revisão de 15/11, etapa 5 (ADR 0302). Certidões válidas da unidade nos últimos 12 meses, emitidas no app ou no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
+      description: 'Revisão de 15/11, etapa 5 (ADR 0302, 0635). Certidões negativas ("nada consta") válidas da unidade nos últimos 12 meses, emitidas pela administradora no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
@@ -8441,13 +8451,27 @@ paths:
     post:
       operationId: issueResidentCertificate
       tags: [Morador]
-      summary: 'Emitir a certidão de débitos de hoje'
-      description: 'Mesma regra e mesmo código de verificação da Certidão de Débitos do ERP (ADR 0044), com data de referência de hoje. Sem corpo. Auditada.'
+      summary: 'Pedir a certidão negativa de débitos à administradora'
+      description: 'ADR 0635: o morador não emite a certidão. Sem corpo. Abre um chamado do Help Desk (categoria "Pedido de CND", origem residents) para a unidade, ou devolve o pedido já aberto (created = false). A equipe emite no ERP; ao emitir, o chamado é respondido e resolvido e a certidão aparece em GET /resident/certificates. Com conta vencida em aberto hoje, recusa com 409 debt_open e nada é gerado. Recusa auditada.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
       responses:
-        '201': { description: Emitida, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentCertificate' } } } } } }
+        '202': { description: Pedido aberto (ou o aberto), content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentCertificateRequest' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'debt_open: a unidade tem conta vencida em aberto; a mensagem informa quantas e o valor (overdue_count, overdue_cents)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/certificates/status:
+    get:
+      operationId: getResidentCertificateStatus
+      tags: [Morador]
+      summary: 'Situação da CND: débito que impede o pedido e o pedido aberto'
+      description: 'ADR 0635. blocked = há conta vencida em aberto hoje (o app mostra só o débito, sem botão de pedido). request = o pedido aberto da unidade, se houver.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { blocked: { type: boolean }, message: { type: [string, 'null'] }, overdue_count: { type: integer }, overdue_cents: { type: integer }, request: { oneOf: [{ $ref: '#/components/schemas/ResidentCertificateRequest' }, { type: 'null' }] } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/certificates/{id}/pdf:

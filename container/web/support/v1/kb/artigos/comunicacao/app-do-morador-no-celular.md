@@ -66,7 +66,9 @@ Essa parte depende da função **Moradores da unidade** na matriz do portal, que
 
 ## CND (certidão negativa de débitos)
 
-Em **Resolva fácil > CND**, o morador emite a certidão da unidade com a situação do dia: **Nada consta** ou **Com débitos**, com o total em aberto. Cada certidão traz um código de verificação, que dá para copiar com um toque, e o PDF para baixar e enviar. A lista mostra as certidões emitidas nos últimos 12 meses.
+Em **Resolva fácil > CND**, o morador toca em **Pedir certidão**. O pedido vai para a administradora como chamado do Help Desk, e a tela mostra o protocolo até a certidão ficar pronta. Quando a equipe emite, a certidão aparece na lista com o código de verificação, que dá para copiar com um toque, e o PDF para baixar e enviar.
+
+Com conta vencida em aberto, a certidão não é emitida: a tela só informa quantas contas estão vencidas e o valor, com o botão **Ver boletos**.
 
 A CND segue a função **Boletos** do portal, ou seja, aparece para o proprietário, o inquilino e o responsável financeiro.
 
