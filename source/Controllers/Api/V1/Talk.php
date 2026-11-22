@@ -13,6 +13,7 @@ use Source\Services\Resident\ResidentPortal;
 use Source\Services\Support\TicketError;
 use Source\Services\Talk\TalkCatalog;
 use Source\Services\Talk\TalkCharges;
+use Source\Services\Talk\TalkConversation;
 use Source\Services\Talk\TalkHelpdesk;
 use Source\Services\Talk\TalkResidents;
 use Source\Services\Talk\TalkTokens;
@@ -34,6 +35,9 @@ use Source\Support\AppLogger;
  *   GET  /api/v1/talk/condominiums/{id}/announcements comunicados publicados para todos
  *   GET  /api/v1/talk/residents/{id}[/...]            o que o morador veria no app (ADR 0632, residents.read),
  *                                                     com o telefone dele no cabeçalho X-Resident-Phone
+ *   GET  /api/v1/talk/tickets?after=N                 respostas da equipe nos chamados do Talk (ADR 0634, tickets.write)
+ *   GET  /api/v1/talk/tickets/{id}                    o chamado com a conversa pública
+ *   POST /api/v1/talk/tickets/{id}/messages           mensagem do WhatsApp no chamado (idempotente por talk_message_id)
  * Cada rota pede um escopo do token (TalkTokens::SCOPES); sem ele = 403 insufficient_scope.
  */
 final class Talk
@@ -202,6 +206,35 @@ final class Talk
         $this->run('talk_ticket_open_failed', function () use ($agent): array {
             $result = (new TalkHelpdesk())->open($agent, $this->body());
             return [$result['created'] ? 201 : 200, $result['ticket']];
+        });
+    }
+
+    /** Respostas da equipe desde o cursor (after = último id de mensagem recebido). */
+    public function feed(): void
+    {
+        $agent = $this->agent('tickets.write');
+        if ($agent !== null) {
+            $this->list('talk_ticket_feed_failed', static fn (): array => (new TalkConversation())->feed($agent, $_GET['after'] ?? 0));
+        }
+    }
+
+    public function ticket(array $data): void
+    {
+        $agent = $this->agent('tickets.write');
+        if ($agent !== null) {
+            $this->run('talk_ticket_show_failed', static fn (): array => [200, (new TalkConversation())->show($agent, (int)($data['id'] ?? 0))]);
+        }
+    }
+
+    public function message(array $data): void
+    {
+        $agent = $this->agent('tickets.write');
+        if ($agent === null) {
+            return;
+        }
+        $this->run('talk_ticket_message_failed', function () use ($agent, $data): array {
+            $result = (new TalkConversation())->post($agent, (int)($data['id'] ?? 0), $this->body());
+            return [$result['duplicate'] ? 200 : 201, $result];
         });
     }
 
