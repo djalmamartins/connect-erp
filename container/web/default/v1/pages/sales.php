@@ -363,7 +363,7 @@
 
             <div class="number-content">
                 <strong data-number-target="1300">+1300</strong>
-                <span>Unidades<br>administradas</span>
+                <span>Famílias<br>atendidas</span>
             </div>
         </div>
 
@@ -379,7 +379,7 @@
 
             <div class="number-content">
                 <strong data-number-target="10">+10</strong>
-                <span>Anos de<br>experiência</span>
+                <span>Anos do sócio como<br>síndico profissional</span>
             </div>
         </div>
 
@@ -539,7 +539,7 @@
 
     <div class="about-team-image about-team-image-main">
 
-        <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Equipe Connect Condomínios">
+        <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Reunião de gestão condominial">
 
     </div>
 

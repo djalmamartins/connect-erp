@@ -11,9 +11,11 @@ $cookieCategories = LegalDocuments::cookieCategories();
 <section class="cookie-consent" id="cookie-consent" role="region" aria-labelledby="cookie-consent-title" hidden
          data-cookie-consent
          data-cookie-name="<?= htmlspecialchars(LegalDocuments::COOKIE_NAME) ?>"
-         data-cookie-version="<?= htmlspecialchars(LegalDocuments::COOKIES) ?>"
+         data-cookie-version="<?= htmlspecialchars(LegalDocuments::cookieVersion()) ?>"
          data-cookie-endpoint="<?= htmlspecialchars(url('/cookies')) ?>"
-         <?php if (LegalDocuments::analyticsId() !== ''): ?>data-ga-id="<?= htmlspecialchars(LegalDocuments::analyticsId()) ?>"<?php endif; ?>>
+         <?php if (LegalDocuments::analyticsId() !== ''): ?>data-ga-id="<?= htmlspecialchars(LegalDocuments::analyticsId()) ?>"<?php endif; ?>
+         <?php if (LegalDocuments::googleAdsId() !== ''): ?>data-ads-google="<?= htmlspecialchars(LegalDocuments::googleAdsId()) ?>"<?php endif; ?>
+         <?php if (LegalDocuments::metaPixelId() !== ''): ?>data-ads-meta="<?= htmlspecialchars(LegalDocuments::metaPixelId()) ?>"<?php endif; ?>>
     <form class="cookie-consent__box" data-cookie-form>
         <?= csrf_input() ?>
         <h2 id="cookie-consent-title">Cookies neste site</h2>
