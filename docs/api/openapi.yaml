@@ -179,6 +179,11 @@ components:
         due_on: { type: string, format: date }
         status: { type: string, enum: [draft, issued, cancelled] }
         status_label: { type: string }
+        method: { type: [string, "null"], enum: [fixed, equal, fraction, percent, parking, custom, null] }
+        method_label: { type: [string, "null"] }
+        participants: { type: [string, "null"], enum: [all, blocks, units, null] }
+        participant_blocks: { type: [string, "null"] }
+        requested_cents: { type: [integer, "null"], description: 'Valor informado (por unidade no fixed, total nos demais)' }
         units_count: { type: integer }
         amount_cents: { type: integer }
         notes: { type: [string, "null"] }
@@ -1225,13 +1230,17 @@ paths:
       operationId: prepareInvoice
       summary: Prepara a fatura (rascunho) com um item por unidade ativa (erp.invoices.manage)
       description: >-
-        method fixed = amount_cents por unidade; fraction = amount_cents total rateado pela fração
-        ideal (sobra de centavos para as maiores frações). Sem amount_cents, usa o valor padrão do
-        tipo. Uma fatura ativa por condomínio, tipo e competência.
+        Formas de rateio (ADR 0640): fixed = amount_cents por unidade; equal = total ÷ unidades;
+        fraction = pela fração ideal; percent = pelo percentual definido da unidade (precisa somar 100);
+        parking = pelas vagas de garagem ativas (unidade sem vaga fica fora); custom = unit_amounts
+        (valor de cada unidade) ou amount_cents + unit_percents (somando 100). Sobra de centavos pelo
+        maior resto. participants all = todas menos as isentas de rateio; blocks = só os blocos de
+        blocks; units = só unit_ids (isenta entra). Sem amount_cents, usa o valor padrão do tipo.
+        Uma fatura ativa por condomínio, tipo e competência.
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [condominium_id, invoice_type_id, competence, due_on], properties: { condominium_id: { type: integer }, invoice_type_id: { type: integer }, competence: { type: string }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, fraction], default: fixed }, amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string, example: '1.250,00' }] }, notes: { type: string, maxLength: 255 } } } } }
+        content: { application/json: { schema: { type: object, required: [condominium_id, invoice_type_id, competence, due_on], properties: { condominium_id: { type: integer }, invoice_type_id: { type: integer }, competence: { type: string }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction, percent, parking, custom], default: fixed }, participants: { type: string, enum: [all, blocks, units], default: all }, blocks: { oneOf: [{ type: string, example: 'A, Torre B' }, { type: array, items: { type: string }, maxItems: 30 }] }, unit_ids: { type: array, items: { type: integer } }, unit_amounts: { type: object, additionalProperties: { oneOf: [{ type: integer }, { type: string, example: '120,00' }] }, description: 'custom: valor por unidade (chave = id da unidade)' }, unit_percents: { type: object, additionalProperties: { oneOf: [{ type: number }, { type: string, example: '12,5' }] }, description: 'custom: percentual por unidade (chave = id da unidade)' }, amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string, example: '1.250,00' }] }, notes: { type: string, maxLength: 255 } } } } }
       responses:
         '201': { description: Rascunho criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }

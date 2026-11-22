@@ -388,7 +388,13 @@ final class RegistryService
             // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
             if (isset($definition['closing_lock'])) {
                 $field = $definition['closing_lock'];
-                foreach (array_filter([$before, $values]) as $state) {
+                // ADR 0640: a baixa (só a data do pagamento e a conta bancária, numa conta em aberto) vale em competência
+                // fechada, porque a foto do fechamento não muda; quem não pode estar fechado é o mês do pagamento.
+                $settlement = self::isSettlementOnly($before, $values);
+                if ($settlement !== null && $this->isClosed($before['condominium_id'] ?? null, $settlement)) {
+                    throw new RegistryValidationException(['paid_on' => "O mês do pagamento ({$settlement}) está fechado. Reabra o fechamento mensal para baixar."]);
+                }
+                foreach ($settlement !== null ? [] : array_filter([$before, $values]) as $state) {
                     if ($this->isClosed($state['condominium_id'] ?? null, $state[$field] ?? null)) {
                         throw new RegistryValidationException([$field => (new RegistryLocked((string)$state[$field]))->getMessage()]);
                     }
@@ -654,6 +660,26 @@ final class RegistryService
             }, $stmt->fetchAll(PDO::FETCH_ASSOC));
         }
         return $options;
+    }
+
+    /**
+     * A gravação é só a baixa de uma conta em aberto (regra pura, ADR 0640)? Devolve o mês do pagamento (AAAA-MM) quando
+     * paid_on passa de vazio para uma data e nenhum outro campo muda além da conta bancária; senão null.
+     */
+    public static function isSettlementOnly(?array $before, array $values): ?string
+    {
+        if ($before === null || ($before['paid_on'] ?? null) !== null || !is_string($values['paid_on'] ?? null) || $values['paid_on'] === '') {
+            return null;
+        }
+        foreach ($values as $column => $value) {
+            if (in_array($column, ['paid_on', 'bank_account_id', 'updated_by', 'created_by'], true) || !array_key_exists($column, $before)) {
+                continue;
+            }
+            if ((string)($value ?? '') !== (string)($before[$column] ?? '')) {
+                return null;
+            }
+        }
+        return substr($values['paid_on'], 0, 7);
     }
 
     /** Competência fechada no fechamento mensal (ADR 0031)? Sem condomínio ou competência, não. */

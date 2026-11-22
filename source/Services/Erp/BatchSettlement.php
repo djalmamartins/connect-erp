@@ -18,7 +18,8 @@ use Source\Support\Audit;
  *
  * Mesmas regras da baixa pelo formulário (RegistryService, Definitions 'entries'):
  * - cada conta é do condomínio, válida (não cancelada nem excluída) e está em aberto;
- * - a competência da conta não está fechada (ADR 0031);
+ * - o mês do pagamento não está fechado (ADR 0031); a competência da conta pode estar (ADR 0640: o pagamento atrasado de um
+ *   mês já fechado entra no caixa do mês em que foi pago, e a foto do fechamento da competência não muda);
  * - a conta bancária está ativa e é do condomínio; o pagamento não é antes da abertura dela nem depois de hoje;
  * - conta gerada por fatura ou acordo pode ser baixada (a trava de origem só protege os outros campos).
  *
@@ -111,7 +112,8 @@ final class BatchSettlement
                     $row === null => ['not_found', 'Conta não encontrada neste condomínio.'],
                     $row['status'] !== 'active' => ['cancelled', 'Conta cancelada.'],
                     $row['paid_on'] !== null => ['already_paid', 'Conta já paga em ' . $row['paid_on'] . '.'],
-                    $registry->isClosed((int)$condominium, $row['competence']) => ['closed_competence', 'A competência ' . $row['competence'] . ' está fechada.'],
+                    // ADR 0640: a conta pode ser de competência fechada (a foto do fechamento não muda); o mês do pagamento, não.
+                    $registry->isClosed((int)$condominium, substr($paidOn, 0, 7)) => ['closed_competence', 'O mês do pagamento (' . substr($paidOn, 0, 7) . ') está fechado.'],
                     default => null,
                 };
                 if ($problem !== null) {

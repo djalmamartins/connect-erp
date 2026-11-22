@@ -121,16 +121,40 @@ final class BankingIntegrationTest extends TestCase
         self::assertNotSame($charge['id'], $this->charges->issue($this->admin, $this->entries[0], $this->bank)['id'], 'Cancelado libera novo título.');
     }
 
+    /**
+     * ADR 0640: a competência da conta pode estar fechada (o pagamento atrasado entra no mês em que foi pago); o mês do
+     * pagamento, não. Pago depois do vencimento com multa e juros: baixa pelo valor da conta e a diferença vira receita.
+     */
     public function testClosedCompetenceGoesToReviewAndScope(): void
     {
         $charge = $this->charges->issue($this->admin, $this->entries[0], $this->bank);
-        (new MonthClosing($this->pdo))->close($this->admin, $this->alpha, '2026-11');
-        $result = $this->returns->process($this->admin, $this->bank, 'r.txt', SandboxBankAdapter::buildReturn([
-            ['event_key' => 'PAG-9', 'kind' => 'paid', 'our_number' => $charge['our_number'], 'amount_cents' => 50000, 'occurred_on' => '2026-12-02'],
-        ]));
-        self::assertSame('divergence', $result['events'][0]['outcome']);
-        self::assertStringContainsString('fechada', (string)$result['events'][0]['note']);
+        $closing = new MonthClosing($this->pdo);
+        $closing->close($this->admin, $this->alpha, '2026-11');
+        $closing->close($this->admin, $this->alpha, '2026-12');
+        $snapshot = fn () => $this->pdo->query("SELECT revenue_cents, open_revenue_cents FROM erp_month_closings WHERE competence = '2026-11' AND condominium_id = {$this->alpha}")->fetch(\PDO::FETCH_ASSOC);
+        $november = $snapshot();
+        $pay = fn (string $key, int $cents) => $this->returns->process($this->admin, $this->bank, $key . '.txt', SandboxBankAdapter::buildReturn([
+            ['event_key' => $key, 'kind' => 'paid', 'our_number' => $charge['our_number'], 'amount_cents' => $cents, 'occurred_on' => '2026-12-02'],
+        ]))['events'][0];
+        $event = $pay('PAG-9', 50000);
+        self::assertSame('divergence', $event['outcome']);
+        self::assertStringContainsString('Mês do pagamento (2026-12) fechado', (string)$event['note']);
         self::assertNull($this->service->find($this->admin, 'entries', $this->entries[0])['paid_on']);
+
+        // 22 dias de atraso: multa 2% (1.000) + juros 1% a.m. pro rata (367) = 1.367 a mais.
+        $closing->reopen($this->admin, $this->alpha, '2026-12', 'Pagamento atrasado de novembro');
+        $event = $pay('PAG-10', 51367);
+        self::assertSame('divergence', $event['outcome'], 'Sem a conta 1.03 no plano não baixa.');
+        self::assertStringContainsString('Multas e juros', (string)$event['note']);
+        $fines = $this->service->save($this->admin, 'chart', ['code' => '1.03', 'nature' => 'receita', 'kind' => 'analitica', 'name' => 'Multas e juros'])['id'];
+        $event = $pay('PAG-11', 51367);
+        self::assertSame('applied', $event['outcome'], 'Novembro fechado não impede a baixa em dezembro.');
+        self::assertSame('2026-12-02', $this->service->find($this->admin, 'entries', $this->entries[0])['paid_on']);
+        $fee = $this->pdo->query("SELECT amount_cents, competence, paid_on, bank_account_id, chart_account_id, unit_id FROM erp_entries WHERE document_number = 'ENC-{$charge['our_number']}'")->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame([1367, '2026-12', '2026-12-02', $this->bank, (int)$fines], [(int)$fee['amount_cents'], $fee['competence'], $fee['paid_on'], (int)$fee['bank_account_id'], (int)$fee['chart_account_id']]);
+        self::assertNotNull($fee['unit_id']);
+        self::assertSame(51367, (int)$this->pdo->query('SELECT paid_cents FROM erp_bank_charges WHERE id = ' . (int)$charge['id'])->fetchColumn());
+        self::assertSame($november, $snapshot(), 'A foto do fechamento de novembro não muda.');
 
         $outsider = $this->user([$this->beta]);
         self::assertSame(0, $this->charges->list($outsider)['total']);

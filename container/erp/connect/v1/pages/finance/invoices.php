@@ -6,6 +6,8 @@
  * (só em preparação), emitir e cancelar com motivo. A API valida permissão, escopo e CSRF de novo.
  * Fatura emitida: "Gerar boletos" emite os boletos de todas as unidades em aberto (POST /api/v1/invoices/{id}/bank-charges,
  * em lotes; exige erp.bank_charges.manage).
+ * Formas de rateio (ADR 0640): valor fixo, por unidade, fração ideal, percentual definido, vagas e personalizado; participam todas
+ * as unidades (menos as isentas), só alguns blocos ou só as unidades escolhidas.
  * @var array $currentPage @var array $invoices @var bool $canManageInvoices @var bool $canManageCharges @var list<array> $condoOptions
  */
 $this->layout('default');
@@ -21,6 +23,7 @@ $month = static fn (string $value): string => substr($value, 5, 2) . '/' . subst
 $tones = ['draft' => 'warning', 'issued' => 'success', 'cancelled' => 'plain'];
 $statuses = \Source\Services\Erp\Invoices::STATUSES;
 $methods = \Source\Services\Erp\Invoices::METHODS;
+$participants = \Source\Services\Erp\Invoices::PARTICIPANTS;
 $context = \Source\Support\Erp\CondominiumContext::id();
 $apiBase = url('/api/v1/invoices');
 $rows = $invoices['data'] ?? [];
@@ -37,7 +40,7 @@ $this->insert('components/layout/page-head', [
     'pageActions' => $actions,
 ]);
 ?>
-<div data-erp-invoices data-api="<?= $this->e($apiBase) ?>" data-types-api="<?= $this->e(url('/api/v1/invoice-types')) ?>" data-can-manage="<?= $canManageInvoices ? '1' : '0' ?>" data-accounts-api="<?= $this->e(url('/api/v1/bank-accounts')) ?>">
+<div data-erp-invoices data-api="<?= $this->e($apiBase) ?>" data-types-api="<?= $this->e(url('/api/v1/invoice-types')) ?>" data-can-manage="<?= $canManageInvoices ? '1' : '0' ?>" data-accounts-api="<?= $this->e(url('/api/v1/bank-accounts')) ?>" data-units-api="<?= $this->e(url('/api/v1/units')) ?>">
     <?= csrf_input() ?>
     <form class="erp-filters" method="get" action="<?= $this->e($route) ?>" aria-label="Filtrar faturas">
         <div class="erp-field erp-field--compact"><label for="inv-month">Competência</label><input class="erp-input" type="month" id="inv-month" name="competencia" value="<?= $this->e($filters['competencia']) ?>"></div>
@@ -119,7 +122,7 @@ $this->insert('components/layout/page-head', [
         <form data-invoice-prepare-form>
             <div class="erp-modal__head"><h2 id="invoice-prepare-title">Preparar fatura</h2><button type="button" class="erp-btn erp-btn--ghost erp-btn--sm" data-erp-modal-close aria-label="Fechar"><?= $icon('close', 'erp-icon--sm') ?></button></div>
             <div class="erp-modal__body">
-                <p class="erp-muted">Cria um item para cada unidade ativa do condomínio. Você confere e ajusta os valores antes de emitir.</p>
+                <p class="erp-muted">Cria um item para cada unidade que participa, com o valor calculado pela forma de rateio escolhida. Você confere e ajusta os valores antes de emitir.</p>
                 <div class="erp-form__grid">
                     <div class="erp-field erp-col-6"><label for="inv-condo">Condomínio</label>
                         <?php if ($context !== null): ?>
@@ -132,9 +135,13 @@ $this->insert('components/layout/page-head', [
                     <div class="erp-field erp-col-4"><label for="inv-competence">Competência</label><input class="erp-input" type="month" id="inv-competence" name="competence" value="<?= $this->e($filters['competencia'] !== '' ? $filters['competencia'] : date('Y-m')) ?>" required></div>
                     <div class="erp-field erp-col-4"><label for="inv-due">Vencimento</label><input class="erp-input" type="date" id="inv-due" name="due_on" required></div>
                     <div class="erp-field erp-col-4"><label for="inv-method">Cálculo</label><select class="erp-select" id="inv-method" name="method"><?php foreach ($methods as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
+                    <div class="erp-field erp-col-6"><label for="inv-participants">Quem participa</label><select class="erp-select" id="inv-participants" name="participants"><?php foreach ($participants as $key => $label): ?><option value="<?= $this->e($key) ?>"><?= $this->e($label) ?></option><?php endforeach; ?></select></div>
+                    <div class="erp-field erp-col-6" data-invoice-blocks hidden><label for="inv-blocks">Blocos ou torres</label><input class="erp-input" id="inv-blocks" name="blocks" maxlength="255" placeholder="Ex.: A, Torre B"><small class="erp-muted">Separe por vírgula, com o nome igual ao do cadastro da unidade.</small></div>
                     <div class="erp-field erp-col-6"><label for="inv-amount" data-invoice-amount-label>Valor por unidade (R$)</label><input data-erp-money class="erp-input" id="inv-amount" name="amount_cents" inputmode="decimal" placeholder="Vazio = valor padrão do tipo" pattern="^\d{1,3}(\.?\d{3})*(,\d{1,2})?$"></div>
                     <div class="erp-field erp-col-6"><label for="inv-notes">Observações</label><input class="erp-input" id="inv-notes" name="notes" maxlength="255"></div>
                 </div>
+                <p class="erp-muted" data-invoice-method-help></p>
+                <div data-invoice-units hidden aria-live="polite"></div>
             </div>
             <div class="erp-modal__foot"><button type="button" class="erp-btn" data-erp-modal-close>Voltar</button><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('plus', 'erp-icon--sm') ?>Preparar</button></div>
         </form>

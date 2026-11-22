@@ -103,14 +103,30 @@ final class BatchSettlementTest extends TestCase
         self::assertSame('2026-10-05', $this->pdo->query('SELECT paid_on FROM erp_entries WHERE id = 4')->fetchColumn(), 'Fora do lote não muda.');
     }
 
+    /** ADR 0640: o pagamento atrasado de um mês fechado é baixado; o que não pode estar fechado é o mês do pagamento. */
+    public function testClosedCompetenceSettlesButClosedPaymentMonthDoesNot(): void
+    {
+        try {
+            $this->service->settle($this->user(), ['condominium_id' => 1, 'bank_account_id' => 10, 'paid_on' => '2026-09-20', 'entry_ids' => [1, 7]], self::TODAY);
+            self::fail('Pagamento em mês fechado passou.');
+        } catch (BatchSettlementRejected $e) {
+            self::assertSame([[1, 'closed_competence'], [7, 'closed_competence']], array_map(static fn (array $p): array => [$p['entry_id'], $p['code']], $e->problems));
+            self::assertStringContainsString('2026-09', $e->problems[0]['message']);
+        }
+        $done = $this->service->settle($this->user(), ['condominium_id' => 1, 'bank_account_id' => 10, 'paid_on' => '2026-11-10', 'entry_ids' => [7]], self::TODAY);
+        self::assertSame(1, $done['settled']);
+        self::assertSame('2026-11-10', $this->pdo->query('SELECT paid_on FROM erp_entries WHERE id = 7')->fetchColumn());
+    }
+
     public function testRejectsWholeBatchWithReasons(): void
     {
         try {
             $this->service->settle($this->user(), ['condominium_id' => 1, 'bank_account_id' => 10, 'paid_on' => '2026-11-10', 'entry_ids' => [1, 4, 5, 6, 7, 8, 99]], self::TODAY);
             self::fail('Lote com problema passou.');
         } catch (BatchSettlementRejected $e) {
-            self::assertSame([[4, 'already_paid'], [5, 'cancelled'], [6, 'not_found'], [7, 'closed_competence'], [8, 'not_found'], [99, 'not_found']],
-                array_map(static fn (array $p): array => [$p['entry_id'], $p['code']], $e->problems), 'Mês reaberto (2026-10) e fechamento de outro condomínio não travam.');
+            self::assertSame([[4, 'already_paid'], [5, 'cancelled'], [6, 'not_found'], [8, 'not_found'], [99, 'not_found']],
+                array_map(static fn (array $p): array => [$p['entry_id'], $p['code']], $e->problems),
+                'A conta 7 (competência fechada) entra (ADR 0640); mês reaberto (2026-10) e fechamento de outro condomínio não travam.');
         }
         self::assertNull($this->pdo->query('SELECT paid_on FROM erp_entries WHERE id = 1')->fetchColumn() ?: null, 'Tudo ou nada: a conta 1 continua em aberto.');
 

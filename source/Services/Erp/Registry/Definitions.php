@@ -136,6 +136,9 @@ final class Definitions
                     'floor' => ['label' => 'Andar', 'type' => 'text', 'max' => 10, 'span' => 2],
                     'ideal_fraction' => ['label' => 'Fração ideal', 'type' => 'decimal', 'scale' => 6, 'min' => 0, 'max_value' => 1, 'span' => 3, 'hint' => 'Entre 0 e 1, ex.: 0,012500'],
                     'private_area' => ['label' => 'Área privativa (m²)', 'type' => 'decimal', 'scale' => 2, 'min' => 0, 'max_value' => 99999999.99, 'span' => 3],
+                    // Rateio pelo percentual definido (ADR 0640): o percentual da convenção, separado da fração ideal.
+                    'apportion_percent' => ['label' => 'Percentual definido no rateio (%)', 'type' => 'decimal', 'scale' => 4, 'min' => 0, 'max_value' => 100, 'span' => 3,
+                        'hint' => 'Só para a fatura rateada pelo percentual definido; os das unidades somam 100%'],
                     'cib' => ['label' => 'Código CIB', 'type' => 'cib', 'span' => 3, 'search' => true, 'hint' => 'Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito'],
                     // Revisão de 15/11 (ADR 0310): marca da equipe; 'shown' troca o Sim/Não por Vazia/Ocupada na lista.
                     'is_vacant' => ['label' => 'Unidade vazia', 'type' => 'bool', 'span' => 6, 'list' => true, 'list_label' => 'Ocupação', 'shown' => ['Ocupada', 'Vazia'],

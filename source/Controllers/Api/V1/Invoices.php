@@ -20,6 +20,7 @@ use Source\Support\Access;
  *  GET   /api/v1/invoices?condominium_id=&competence=&status=&page=   lista (erp.invoices.view)
  *  GET   /api/v1/invoices/{id}                                        fatura com itens
  *  POST  /api/v1/invoices  {condominium_id, invoice_type_id, competence, due_on, method, amount_cents, notes}
+ *        method fixed|equal|fraction|percent|parking|custom; participants all|blocks|units; blocks; unit_ids; unit_amounts; unit_percents (ADR 0640)
  *  PATCH /api/v1/invoices/{id}/items/{item}  {amount_cents}           ajusta item (rascunho)
  *  POST  /api/v1/invoices/{id}/issue                                  emite (contas a receber)
  *  POST  /api/v1/invoices/{id}/cancel  {reason}                       cancela
