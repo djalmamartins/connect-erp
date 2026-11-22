@@ -81,15 +81,22 @@ $this->insert('components/layout/page-head', [
     endforeach; ?>
 </section>
 
-<nav class="md-week" aria-label="Agenda da semana">
-    <?php foreach ($day['week'] as $weekDay): ?>
-        <a class="md-week__day<?= $weekDay['today'] ? ' is-today' : '' ?><?= $weekDay['selected'] ? ' is-selected' : '' ?>" href="<?= $link(['data' => $weekDay['date']]) ?>"<?= $weekDay['selected'] ? ' aria-current="date"' : '' ?>
-           aria-label="<?= $this->e($weekDay['weekday'] . ' ' . $weekDay['day'] . ($weekDay['today'] ? ', hoje' : '') . ', ' . $weekDay['count'] . ($weekDay['count'] === 1 ? ' item' : ' itens')) ?>">
-            <small><?= $this->e($weekDay['weekday']) ?></small>
-            <strong><?= (int)$weekDay['day'] ?></strong>
-            <span class="md-week__dot"<?= $weekDay['count'] === 0 ? ' hidden' : '' ?>><?= (int)$weekDay['count'] ?></span>
-        </a>
-    <?php endforeach; ?>
+<?php // Faixa dos dias (pedido do Djalma, 22/11/2026): o dia mostrado sempre no meio, 3 antes e 3 depois. ?>
+<nav class="md-week" aria-label="Dias">
+    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('-7 days')->format('Y-m-d')]) ?>" aria-label="Voltar 7 dias"><?= $icon('chevron-left', 'erp-icon--sm') ?></a>
+    <div class="md-week__days">
+        <?php foreach ($day['strip'] ?? $day['week'] as $weekDay):
+            $classes = 'md-week__day' . ($weekDay['today'] ? ' is-today' : '') . ($weekDay['selected'] ? ' is-selected' : '') . ($weekDay['date'] < $day['today'] ? ' is-past' : ''); ?>
+            <a class="<?= $classes ?>" href="<?= $link(['data' => $weekDay['date']]) ?>"<?= $weekDay['selected'] ? ' aria-current="date"' : '' ?>
+               aria-label="<?= $this->e($weekDay['weekday'] . ' ' . $weekDay['day'] . ($weekDay['today'] ? ', hoje' : '') . ', ' . $weekDay['count'] . ($weekDay['count'] === 1 ? ' item' : ' itens')) ?>">
+                <small><?= $this->e($weekDay['weekday']) ?></small>
+                <strong><?= (int)$weekDay['day'] ?></strong>
+                <?php if ($weekDay['selected'] && $weekDay['today']): ?><em>Hoje</em><?php endif; ?>
+                <span class="md-week__dot"<?= $weekDay['count'] === 0 ? ' hidden' : '' ?>><?= (int)$weekDay['count'] ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
+    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('+7 days')->format('Y-m-d')]) ?>" aria-label="Avançar 7 dias"><?= $icon('chevron-right', 'erp-icon--sm') ?></a>
 </nav>
 
 <div class="md-grid">
