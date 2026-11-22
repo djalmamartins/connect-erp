@@ -101,7 +101,7 @@ final class AppScreens extends Controller
         $seen = self::seenAt();
         $this->page('home', null, 'pages/home', 'Início', function (User $u, array $link) use ($seen): array {
             try {
-                $feed = array_slice((new ResidentFeed())->notifications($link), 0, 5);
+                $feed = array_slice((new ResidentFeed())->notifications($link, null, (int)$u->id), 0, 5);
             } catch (\Throwable) {
                 $feed = [];
             }
@@ -298,7 +298,7 @@ final class AppScreens extends Controller
     {
         $seen = self::seenAt();
         $this->page('notifications', null, 'pages/notifications', 'Avisos', function (User $u, array $link) use ($seen): array {
-            $items = (new ResidentFeed())->notifications($link);
+            $items = (new ResidentFeed())->notifications($link, null, (int)$u->id);
             self::markSeen();
             return ['items' => $items, 'seenAt' => $seen];
         });
@@ -894,7 +894,7 @@ final class AppScreens extends Controller
             return 0;
         }
         try {
-            return ResidentFeed::unseen((new ResidentFeed())->notifications($link), self::seenAt());
+            return ResidentFeed::unseen((new ResidentFeed())->notifications($link, null, (int)(Auth::user()->id ?? 0)), self::seenAt());
         } catch (\Throwable) {
             return 0;
         }

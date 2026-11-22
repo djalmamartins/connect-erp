@@ -9124,7 +9124,7 @@ paths:
       operationId: getResidentNotifications
       tags: [Morador]
       summary: 'Avisos do sininho do morador'
-      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. O app guarda quando o morador viu por último.'
+      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. Desde a ADR 0641, também o andamento dos chamados que o morador pediu no condomínio (kind ticket, path /ocorrencias/{id}). Nota interna nunca aparece. O app guarda quando o morador viu por último.'
       security: [{ session: [] }, { residentApp: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade)', schema: { type: integer } }
@@ -9136,6 +9136,37 @@ paths:
               schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { kind: { type: string }, title: { type: string }, detail: { type: string }, at: { type: string }, path: { type: string }, tone: { type: string } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/push-token:
+    post:
+      operationId: registerResidentPushToken
+      tags: [Morador]
+      summary: 'Guarda o celular do morador para o push dos chamados'
+      description: 'ADR 0641. Token do Expo (ExponentPushToken[...]). O mesmo aparelho em outra conta passa para a conta nova; até 10 aparelhos por conta.'
+      security: [{ residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string, maxLength: 200 }, platform: { type: string, enum: [ios, android] } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { registered: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { description: 'Token inválido' }
+  /resident/push-token/forget:
+    post:
+      operationId: forgetResidentPushToken
+      tags: [Morador]
+      summary: 'Celular deixa de receber o push (ao sair do app)'
+      description: 'ADR 0641.'
+      security: [{ residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string, maxLength: 200 } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { registered: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
   /resident/search:
     get:
       operationId: searchResident

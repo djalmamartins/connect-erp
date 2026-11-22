@@ -145,7 +145,9 @@ $this->insert('components/layout/page-head', [
                     <select class="erp-select" id="tg-priority" name="priority"><?php foreach (TicketService::PRIORITY_LABELS as $key => $label): ?><option value="<?= $key ?>"<?= $ticket['priority'] === $key ? ' selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></div>
                 <div class="erp-field"><label for="tg-assigned">Responsável</label>
                     <select class="erp-select" id="tg-assigned" name="assigned_to"><option value="">Não atribuído</option><?php foreach ($agents as $agent): ?><option value="<?= (int)$agent['id'] ?>"<?= (int)($ticket['assigned_to']['id'] ?? 0) === (int)$agent['id'] ? ' selected' : '' ?>><?= $this->e($agent['name']) ?></option><?php endforeach; ?></select></div>
-                <div class="erp-field"><label for="tg-team">Equipe</label><input class="erp-input" id="tg-team" name="team" maxlength="100" value="<?= $this->e((string)($facts['team'] ?? '')) ?>" placeholder="Ex.: Manutenção"></div>
+                <?php $team = (string)($facts['team'] ?? ''); ?>
+                <div class="erp-field"><label for="tg-team">Equipe</label>
+                    <select class="erp-select" id="tg-team" name="team"><option value="">Sem equipe</option><?php foreach (TicketService::TEAMS as $option): ?><option value="<?= $this->e($option) ?>"<?= $team === $option ? ' selected' : '' ?>><?= $this->e($option) ?></option><?php endforeach; ?><?php if ($team !== '' && !in_array($team, TicketService::TEAMS, true)): ?><option value="<?= $this->e($team) ?>" selected><?= $this->e($team) ?> (antiga)</option><?php endif; ?></select></div>
                 <div class="erp-field"><label for="tg-tags">Tags</label><input class="erp-input" id="tg-tags" name="tags" maxlength="500" value="<?= $this->e((string)($facts['tags'] ?? '')) ?>" placeholder="vazamento, garagem"></div>
                 <div class="erp-form__actions"><button class="erp-btn erp-btn--primary erp-btn--block" type="submit">Salvar alterações</button></div>
             </form>

@@ -325,6 +325,9 @@ export function residentApi(api: ApiClient) {
     me: () => api.get<Me>('/resident/me'),
     summary: () => api.get<Summary>('/resident/summary'),
     notifications: () => api.get<ResidentNotification[]>('/resident/notifications'),
+    /** Push dos chamados neste celular (ADR 0641). */
+    registerPush: (token: string, platform: string) => api.post<unknown>('/resident/push-token', { token, platform }),
+    forgetPush: (token: string) => api.post<unknown>('/resident/push-token/forget', { token }),
     charges: (from?: string, to?: string) => api.get<ChargesResponse>('/resident/charges', { from, to }),
     chargePdfUrl: (id: number) => api.url(`/resident/charges/${id}/pdf`),
     accountability: () => api.get<AccountabilityLink[]>('/resident/accountability'),

@@ -169,15 +169,16 @@ final class ServiceDeskTest extends TestCase
             ->execute(['CH240101ABC2', 'Teste de entrega', 'Teste real de notificação e fila de e-mail.', 'technical', 'urgent', 'open', $requesterId, $requesterId, $dueAt]);
         $ticketId = (int)$this->pdo->lastInsertId();
 
-        // Desde o ADR 0034 todo chamado é aberto pelo TicketService, que avisa a equipe (nível 5+) e o solicitante.
+        // Desde o ADR 0034 todo chamado é aberto pelo TicketService, que avisa a equipe (nível 5+). Solicitante sem ERP
+        // nem SAC (morador) não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0641).
         $notify = (new ReflectionClass(TicketService::class))->getMethod('notifyOpened');
         $notify->invoke(new TicketService($this->pdo), $ticketId, 'CH240101ABC2', ['requester_id' => $requesterId, 'assigned_to' => null, 'priority' => 'urgent',
             'subject' => 'Teste de entrega', 'origin' => 'helpdesk', 'condominium_id' => null, 'unit_id' => null], $dueAt);
 
         $recipients = $this->pdo->query('SELECT users_id FROM mail_queue ORDER BY users_id')->fetchAll(\PDO::FETCH_COLUMN);
-        self::assertSame([$requesterId, $adminId, $developerId], array_map('intval', $recipients));
-        self::assertSame(3, (int)$this->pdo->query('SELECT COUNT(*) FROM notifications')->fetchColumn());
-        self::assertSame(3, (int)$this->pdo->query("SELECT COUNT(*) FROM notifications WHERE title LIKE 'Novo chamado%'")->fetchColumn());
+        self::assertSame([$adminId, $developerId], array_map('intval', $recipients));
+        self::assertSame(2, (int)$this->pdo->query('SELECT COUNT(*) FROM notifications')->fetchColumn());
+        self::assertSame(2, (int)$this->pdo->query("SELECT COUNT(*) FROM notifications WHERE title LIKE 'Novo chamado%'")->fetchColumn());
     }
 
     public function testAgendaEventQueuesEmailAndCentralNotificationForAdminAndDeveloper(): void
@@ -209,15 +210,15 @@ final class ServiceDeskTest extends TestCase
         $ticketId=(int)$this->pdo->lastInsertId();
 
         ob_start();
-        (new Studio())->tickets(['csrf'=>'transition-token','action'=>'update','ticket_id'=>(string)$ticketId,'status'=>'resolved','priority'=>'high','assigned_to'=>(string)$userId,'team'=>'Suporte','category'=>'Acesso','tags'=>'login, urgente']);
+        (new Studio())->tickets(['csrf'=>'transition-token','action'=>'update','ticket_id'=>(string)$ticketId,'status'=>'resolved','priority'=>'high','assigned_to'=>(string)$userId,'team'=>'Geral','category'=>'Acesso','tags'=>'login, urgente']);
         ob_end_clean();
         $resolved=$this->pdo->query("SELECT * FROM studio_support_tickets WHERE id={$ticketId}")->fetch();
         self::assertSame('resolved',$resolved->status);
         self::assertNotNull($resolved->resolved_at);
-        self::assertSame('Suporte',$resolved->team);
+        self::assertSame('Geral',$resolved->team);
 
         ob_start();
-        (new Studio())->tickets(['csrf'=>'transition-token','action'=>'update','ticket_id'=>(string)$ticketId,'status'=>'open','priority'=>'high','assigned_to'=>(string)$userId,'team'=>'Suporte','category'=>'Acesso','tags'=>'login, urgente']);
+        (new Studio())->tickets(['csrf'=>'transition-token','action'=>'update','ticket_id'=>(string)$ticketId,'status'=>'open','priority'=>'high','assigned_to'=>(string)$userId,'team'=>'Geral','category'=>'Acesso','tags'=>'login, urgente']);
         ob_end_clean();
         self::assertSame('open',$this->pdo->query("SELECT status FROM studio_support_tickets WHERE id={$ticketId}")->fetchColumn());
         self::assertNull($this->pdo->query("SELECT resolved_at FROM studio_support_tickets WHERE id={$ticketId}")->fetchColumn());

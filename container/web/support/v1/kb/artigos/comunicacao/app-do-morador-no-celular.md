@@ -5,7 +5,7 @@ resumo: O app Connect Morador (iPhone e Android) mostra ao morador os boletos, a
 categoria: comunicacao
 icone: phone-portrait-outline
 situacao: guia
-palavras: cnd, certidão negativa, nada consta, moradores, inquilino, bloquear inquilino, chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
+palavras: notificação, push, andamento do chamado, cnd, certidão negativa, nada consta, moradores, inquilino, bloquear inquilino, chamado, ocorrência, protocolo, esqueci a senha, recuperar senha, foto do perfil, boas-vindas, primeiro acesso, aplicativo, app, celular, morador, iphone, android, boleto, segunda via, reservas, encomendas, visitantes, face id, digital, biometria
 rascunho: nao
 ---
 
@@ -45,13 +45,13 @@ As telas seguem o jeito do iPhone: o nome da tela aparece grande no topo e vira 
 - **Documentos, boletos e certidões em PDF**: tocando, o arquivo abre para ler, sem baixar. No iPhone ele abre dentro do app, e o botão de compartilhar no canto salva em Arquivos, imprime ou envia. No Android ele abre no leitor de PDF do celular, que também tem a opção de salvar. 
 - **Unidade**: a unidade e o condomínio (com troca, para quem tem mais de uma), Moradores, Autorizar entrada (visitantes), Veículos, Pets, Correspondências (encomendas) e Consultar chamados.
 - **Perfil**: foto, nome e unidade. Tocando na foto, dá para tirar outra, escolher da galeria ou remover. Também tem Rever as dicas do app, Verificação em duas etapas, entrada com Face ID ou digital, trocar de unidade e sair.
-- **Notificações**: o sino abre a lista de avisos (contas vencidas, encomendas, visitas do dia, comunicados, assembleias, reservas chegando e reservas aprovadas); tocando num aviso, abre a tela dele.
+- **Notificações**: o sino abre a lista de avisos (contas vencidas, encomendas, visitas do dia, comunicados, assembleias, reservas chegando, reservas aprovadas e o andamento dos chamados); tocando num aviso, abre a tela dele.
 
 ## Chamados e ocorrências
 
 No **Resolva fácil**, {{Chamado}} abre um pedido ou uma dúvida para a administração, e {{Ocorrência}} registra um problema no condomínio, como barulho, vazamento ou algo quebrado. A ocorrência também pede a data do fato. Os dois viram chamado do SAC e recebem um número de protocolo: o chamado começa com **SAC** e a ocorrência com **OCO**, seguidos da data e da ordem do dia (ex.: SAC202611160008).
 
-Em **Unidade > Consultar chamados** fica a lista **Meus registros**, com os chamados e as ocorrências da pessoa. Dá para filtrar entre Todos, Chamados e Ocorrências. Tocando num registro, abre a conversa: as mensagens do morador ficam à direita, em verde, e as da administração ficam à esquerda. A resposta é escrita embaixo. Um chamado fechado não aceita mais mensagens, e para continuar o assunto é preciso abrir outro. A situação "Aguardando você" quer dizer que a administração espera uma resposta do morador.
+Em **Unidade > Consultar chamados** fica a lista **Meus registros**, com os chamados e as ocorrências da pessoa. Dá para filtrar entre Todos, Chamados e Ocorrências. Tocando num registro, abre a conversa: as mensagens do morador ficam à direita, em verde, e as da administração ficam à esquerda. A resposta é escrita embaixo. Um chamado fechado não aceita mais mensagens, e para continuar o assunto é preciso abrir outro. A situação "Aguardando você" quer dizer que a administração espera uma resposta do morador. Cada movimentação da administração no chamado (abertura, resposta, troca de situação, equipe que vai atender e responsável) aparece no sino e, quando o morador permite as notificações do app no celular, também na tela do aparelho; tocando, abre a conversa do chamado. As notas internas da equipe nunca aparecem.
 
 ## Moradores da unidade
 
