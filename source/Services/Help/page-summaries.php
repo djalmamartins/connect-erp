@@ -629,12 +629,20 @@ return [
                 'title' => 'Preparar a fatura do mês',
             ],
             [
+                'id' => 'formas-de-rateio',
+                'title' => 'Formas de rateio',
+            ],
+            [
                 'id' => 'conferir-e-emitir',
                 'title' => 'Conferir e emitir',
             ],
             [
                 'id' => 'gerar-todos-os-boletos-de-uma-vez',
                 'title' => 'Gerar todos os boletos de uma vez',
+            ],
+            [
+                'id' => 'boleto-pago-com-atraso',
+                'title' => 'Boleto pago com atraso',
             ],
             [
                 'id' => 'como-usar',

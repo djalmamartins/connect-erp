@@ -159,6 +159,52 @@ final class InvoicesIntegrationTest extends TestCase
         $this->invoices->find($outsider, $draft['id']);
     }
 
+    /** ADR 0640: as formas de rateio e os participantes gravados na fatura, com os números conferidos. */
+    public function testApportionmentMethodsAndParticipants(): void
+    {
+        [$u101, $u102, $u201] = $this->units;
+        $this->service->save($this->admin, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'vaga', 'identifier' => 'G-1', 'unit_id' => $u101]);
+        $this->service->save($this->admin, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'vaga', 'identifier' => 'G-2', 'unit_id' => $u201]);
+        $this->service->save($this->admin, 'linkable_areas', ['condominium_id' => $this->alpha, 'kind' => 'vaga', 'identifier' => 'G-3', 'unit_id' => $u201]);
+        $this->pdo->exec("UPDATE erp_units SET block = 'B' WHERE id = {$u201}");
+        $this->pdo->exec("UPDATE erp_units SET block = 'A', apportion_percent = 25 WHERE id IN ({$u101}, {$u102})");
+        $this->pdo->exec("UPDATE erp_units SET apportion_percent = 50 WHERE id = {$u201}");
+        $byUnit = static fn (array $invoice): array => array_combine(array_map('intval', array_column($invoice['items'], 'unit_id')), array_column($invoice['items'], 'amount_cents'));
+
+        $parking = $this->invoices->prepare($this->admin, $this->input(['method' => 'parking', 'amount_cents' => '300,00', 'competence' => '2026-01']));
+        self::assertSame([$u101 => 10000, $u201 => 20000], $byUnit($parking), 'Pelas vagas: 1 e 2; a 102 sem vaga fica fora.');
+        self::assertSame(['parking', 'all', 30000], [$parking['method'], $parking['participants'], $parking['requested_cents']]);
+
+        $percent = $this->invoices->prepare($this->admin, $this->input(['method' => 'percent', 'amount_cents' => '1.000,00', 'competence' => '2026-02']));
+        self::assertSame([$u101 => 25000, $u102 => 25000, $u201 => 50000], $byUnit($percent));
+
+        $tower = $this->invoices->prepare($this->admin, $this->input(['method' => 'equal', 'amount_cents' => '100,01', 'competence' => '2026-03', 'participants' => 'blocks', 'blocks' => 'a']));
+        self::assertSame([$u101 => 5001, $u102 => 5000], $byUnit($tower), 'Só a torre A, dividido por 2.');
+        self::assertSame('a', $tower['participant_blocks']);
+
+        $custom = $this->invoices->prepare($this->admin, $this->input(['method' => 'custom', 'competence' => '2026-04', 'participants' => 'units',
+            'unit_ids' => [$u102, $u201], 'unit_amounts' => [$u102 => '12,34', $u201 => '56,78']]));
+        self::assertSame([$u102 => 1234, $u201 => 5678], $byUnit($custom));
+
+        $this->pdo->exec("UPDATE erp_units SET apportionment_exempt = 1 WHERE id = {$u102}");
+        $shares = $this->invoices->prepare($this->admin, $this->input(['method' => 'custom', 'amount_cents' => '200,00', 'competence' => '2026-05',
+            'unit_percents' => [$u101 => '40', $u201 => '60']]));
+        self::assertSame([$u101 => 8000, $u201 => 12000], $byUnit($shares), 'A isenta fica fora de "todas".');
+
+        foreach ([
+            ['method' => 'custom', 'unit_percents' => [$u101 => '40', $u201 => '50']],
+            ['method' => 'equal', 'participants' => 'blocks', 'blocks' => 'Z'],
+            ['method' => 'custom', 'participants' => 'units', 'unit_ids' => [$u101, 999999], 'unit_amounts' => [$u101 => '1,00']],
+        ] as $i => $bad) {
+            try {
+                $this->invoices->prepare($this->admin, $this->input($bad + ['amount_cents' => '100,00', 'competence' => '2026-0' . ($i + 6)]));
+                self::fail('Aceitou: ' . json_encode($bad));
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     private function input(array $override = []): array
     {
         return $override + ['condominium_id' => $this->alpha, 'invoice_type_id' => $this->type, 'competence' => '2026-11', 'due_on' => '2026-11-10'];

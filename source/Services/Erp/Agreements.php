@@ -100,7 +100,8 @@ final class Agreements
     }
 
     /**
-     * Contas a receber vencidas e em aberto por unidade ($condominiumId null = todos do escopo).
+     * Contas a receber vencidas e em aberto por unidade ($condominiumId null = todos do escopo). Numa data passada
+     * (ADR 0640), entra também a conta paga depois dela, que naquele dia ainda estava em aberto.
      *
      * @return array{as_of:string, units:list<array>, totals:array{units:int, entries:int, amount_cents:int, buckets:array<string,int>}}
      */
@@ -132,10 +133,11 @@ final class Agreements
                 e.description, e.competence, e.due_on, e.amount_cents
             FROM erp_entries e JOIN condominiums c ON c.id = e.condominium_id LEFT JOIN erp_units u ON u.id = e.unit_id
             WHERE e.condominium_id IN (" . implode(',', $ids) . ") AND e.nature = 'receita' AND e.status = 'active'
-              AND e.deleted_at IS NULL AND e.paid_on IS NULL AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . ($from !== null ? ' AND e.due_on >= :f' : '') . "
+              AND e.deleted_at IS NULL AND (e.paid_on IS NULL OR e.paid_on > :paid) AND e.due_on < :d" . ($unitId !== null ? ' AND e.unit_id = :u' : '') . ($from !== null ? ' AND e.due_on >= :f' : '') . "
             ORDER BY c.name, u.label, e.due_on, e.id LIMIT " . (self::MAX_DELINQUENCY_ROWS + 1));
         // $unitId (ADR 0103): o painel da unidade lê só as contas dela, não as do condomínio inteiro.
-        $stmt->execute(['d' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []) + ($from !== null ? ['f' => $from] : []));
+        // ADR 0640: numa data passada, a conta paga depois dela ainda estava em aberto naquele dia (como no Balanço, AP-081).
+        $stmt->execute(['d' => $asOf, 'paid' => $asOf] + ($unitId !== null ? ['u' => $unitId] : []) + ($from !== null ? ['f' => $from] : []));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($rows) > self::MAX_DELINQUENCY_ROWS) {
             throw new InvalidArgumentException(sprintf('Mais de %d contas vencidas em aberto: escolha um condomínio.', self::MAX_DELINQUENCY_ROWS));
