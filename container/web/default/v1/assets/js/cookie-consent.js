@@ -1,6 +1,7 @@
 /**
  * Banner de cookies (LGPD, ADR 0604).
- * - Nada opcional carrega antes da escolha: o mapa só entra pelo [data-consent-src] e o GA4 só com data-ga-id e "stats".
+ * - Nada opcional carrega antes da escolha: o mapa só entra pelo [data-consent-src], o GA4 só com data-ga-id e "stats"
+ *   e o Google Ads e o Pixel da Meta só com data-ads-google/data-ads-meta e "ads".
  * - A escolha fica no cookie necessário (180 dias) e vai para o servidor como prova (POST /cookies).
  * - O link [data-cookie-open] reabre o banner; "Mostrar mapa" libera só o mapa.
  */
@@ -47,15 +48,43 @@
         var ga = root.getAttribute("data-ga-id");
         if (granted.stats && ga && !window.__connectGa) {
             window.__connectGa = true;
+            gtagLoad(ga);
+            window.gtag("config", ga, {anonymize_ip: true});
+        }
+        // Anúncios (Google Ads e Pixel da Meta): só com "ads" aceito e só os ids que o .env traz.
+        var aw = root.getAttribute("data-ads-google");
+        if (granted.ads && aw && !window.__connectAds) {
+            window.__connectAds = true;
+            gtagLoad(aw);
+            window.gtag("config", aw);
+        }
+        var meta = root.getAttribute("data-ads-meta");
+        if (granted.ads && meta && !window.__connectMeta) {
+            window.__connectMeta = true;
+            var f = window.fbq = function () { f.callMethod ? f.callMethod.apply(f, arguments) : f.queue.push(arguments); };
+            if (!window._fbq) window._fbq = f;
+            f.push = f; f.loaded = true; f.version = "2.0"; f.queue = [];
+            var px = document.createElement("script");
+            px.async = true;
+            px.src = "https://connect.facebook.net/en_US/fbevents.js";
+            document.head.appendChild(px);
+            window.fbq("init", meta);
+            window.fbq("track", "PageView");
+        }
+    }
+
+    function gtagLoad(id) {
+        if (!window.gtag) {
             window.dataLayer = window.dataLayer || [];
             window.gtag = function () { window.dataLayer.push(arguments); };
             window.gtag("js", new Date());
-            window.gtag("config", ga, {anonymize_ip: true});
-            var s = document.createElement("script");
-            s.async = true;
-            s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(ga);
-            document.head.appendChild(s);
         }
+        if (window.__connectGtagLoaded) return;
+        window.__connectGtagLoaded = true;
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(id);
+        document.head.appendChild(s);
     }
 
     function loadFrame(holder) {

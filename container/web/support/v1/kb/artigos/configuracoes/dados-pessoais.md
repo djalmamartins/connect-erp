@@ -67,6 +67,7 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - A **Política de Privacidade** e os **Termos de Uso** ficam no rodapé do site, com a data da versão. O texto é fixo no sistema, para que cada aceite fique ligado ao texto que a pessoa leu.
 - A razão social, o CNPJ, o nome do encarregado de dados e o e-mail para o titular são preenchidos no Studio, em **Configurações > Identificação e encarregado de dados**. Eles aparecem no rodapé do site e nas duas páginas. Campo vazio não aparece.
 - O site mostra um aviso de cookies com **Recusar**, **Escolher** e **Aceitar**. Nada opcional carrega antes da escolha: o mapa do Google só aparece depois do clique em **Mostrar mapa** ou do aceite. O link **Cookies** do rodapé reabre a escolha.
+- Estatística (Google Analytics) e anúncios (Google Ads e Pixel do Facebook e Instagram) só existem se o técnico preencher os ids no `.env` do servidor (`SITE_GA4_ID`, `SITE_GOOGLE_ADS_ID`, `SITE_META_PIXEL_ID`). Mesmo assim, cada um só carrega depois que o visitante aceita a categoria no aviso. Quem recusa usa o site normalmente; a contagem de visitas do próprio site continua, sem identificar ninguém. Ao ligar uma categoria nova, o aviso pergunta de novo a todos.
 - O pedido de proposta do site só é enviado com a caixa da Política marcada. Receber novidades é outra caixa, opcional e desmarcada.
 - Cada aceite e cada escolha ficam guardados com a data, a versão e um código do aparelho (nunca o IP).
 
