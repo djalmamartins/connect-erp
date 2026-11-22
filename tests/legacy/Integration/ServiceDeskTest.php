@@ -35,7 +35,7 @@ final class ServiceDeskTest extends TestCase
         ]);
         $created = json_decode((string)ob_get_clean(), true);
         self::assertTrue($created['success'] ?? false);
-        self::assertMatchesRegularExpression('/^CH\d{6}[A-F0-9]{4}$/', $created['protocol']);
+        self::assertMatchesRegularExpression('/^SAC\d{8}\d{4}$/', $created['protocol']);
 
         $ticket = $this->pdo->query("SELECT * FROM studio_support_tickets WHERE protocol=" . $this->pdo->quote($created['protocol']))->fetch();
         self::assertSame('Cliente Externo', $ticket->requester_name);
@@ -140,8 +140,8 @@ final class ServiceDeskTest extends TestCase
 
     public function testTicketProtocolFitsTheDatabaseColumn(): void
     {
-        $protocol = 'CH' . date('ymd') . strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
-        self::assertSame(12, strlen($protocol));
+        $protocol = 'SAC' . date('Ymd') . '12345'; // 5 dígitos quando o dia passa de 9999 (ADR 0637)
+        self::assertSame(16, strlen($protocol));
         $userId = $this->createUser();
         $this->pdo->prepare('INSERT INTO studio_support_tickets(protocol,subject,message,area,priority,status,requester_id,created_by,due_at) VALUES (?,?,?,?,?,?,?,?,?)')
             ->execute([$protocol, 'Validação de protocolo', 'O protocolo deve caber na coluna sem truncamento.', 'general', 'medium', 'open', $userId, $userId, date('Y-m-d H:i:s', time() + 72 * 3600)]);
