@@ -264,6 +264,27 @@
   window.ErpUI.copy = copyDialog;
   window.ErpUI.ask = askFrom;
 
+  /* Menu lateral: mantém a rolagem entre páginas (ADR 0635) --------------- */
+  function keepNavPosition(nav, key, activeSelector) {
+    var session = {
+      get: function () { try { return window.sessionStorage.getItem(key); } catch (e) { return null; } },
+      set: function (value) { try { window.sessionStorage.setItem(key, value); } catch (e) { /* modo privado */ } }
+    };
+    var saved = parseInt(session.get() || '', 10);
+    if (!isNaN(saved) && saved > 0) nav.scrollTop = saved;
+    var active = $(activeSelector, nav);
+    if (active) {
+      var box = nav.getBoundingClientRect();
+      var item = active.getBoundingClientRect();
+      if (item.top < box.top || item.bottom > box.bottom) {
+        nav.scrollTop += (item.top - box.top) - (box.height - item.height) / 2;
+      }
+    }
+    var save = function () { session.set(String(Math.round(nav.scrollTop))); };
+    nav.addEventListener('click', function (event) { if (event.target.closest && event.target.closest('a')) save(); });
+    window.addEventListener('pagehide', save);
+  }
+
   /* Sidebar: recolher (desktop) e gaveta (celular) ------------------------- */
   var shell = $('[data-erp-shell]');
   if (shell) {
@@ -315,6 +336,10 @@
         groups.forEach(function (other) { if (other !== group && other.open) other.open = false; });
       });
     });
+    // Posição do menu (ADR 0635): a página recarrega a cada clique, então guarda a rolagem do menu
+    // na aba (sessionStorage) e devolve na próxima página; o item ativo sempre fica à vista.
+    var nav = $('.erp-nav', sidebar || document);
+    if (nav) keepNavPosition(nav, 'erp.sidebar.scroll', '.erp-nav__link[aria-current="page"], .erp-nav__sub a[aria-current="page"]');
   }
 
   /* Dropdowns (<details>): fecham ao clicar fora ou com Escape ----------- */
