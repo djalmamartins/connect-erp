@@ -41,7 +41,7 @@ $cell = function (array $row, array $column) use ($brl, $date, $statusTone): str
 $numeric = static fn (string $type): bool => in_array($type, ['money', 'int', 'days', 'paid'], true);
 
 ob_start(); ?>
-    <button type="button" class="erp-btn" onclick="window.print()"><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
+    <button type="button" class="erp-btn" data-erp-print><?= $icon('printer', 'erp-icon--sm') ?>Imprimir</button>
     <?php if ($cReportCsv !== null && $cReportRows !== []): ?><?php $this->insert('components/tables/download', ['downloadUrl' => url($cReportCsv), 'downloadTitle' => (string)$currentPage['name']]); ?><?php endif; ?>
 <?php $actions = (string)ob_get_clean();
 $this->insert('components/layout/page-head', [

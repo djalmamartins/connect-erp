@@ -2,8 +2,14 @@
 /**
  * Cabeçalho de página: contexto, título, descrição e ações. Páginas não o recriam.
  * Logo abaixo vem o quadro "Sobre esta tela" (ADR 0309), quando a página tem explicação.
+ * No modo relatório (?imprimir=1, ADR 0635) vira o cabeçalho do relatório (components/report/head), sem ações
+ * nem o quadro "Sobre esta tela".
  * @var string $pageTitle @var ?string $pageEyebrow @var ?string $pageLead @var ?string $pageActions (HTML montado pela página)
  */
+if (\Source\Support\Erp\ReportSheet::active()) {
+    $this->insert('components/report/head', ['reportTitle' => $pageTitle, 'reportEyebrow' => $pageEyebrow ?? null, 'reportLead' => $pageLead ?? null]);
+    return;
+}
 ?>
 <header class="erp-page-head">
     <div>

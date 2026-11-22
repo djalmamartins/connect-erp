@@ -1129,3 +1129,57 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-rich-text blockquote { padding-left: .8em; border-left: 3px solid #cfdcd5; color: #4d5b55; }
 .erp-rich-text a { color: #07884c; text-decoration: underline; }
 .moves-editor-host + .erp-field__error, .erp-field .moves-editor-host { margin-top: 4px; }
+
+/* Base única de relatório: todo "Imprimir" abre a tela com ?imprimir=1 como folha A4 (ADR 0635).
+   Faixa verde-escura com borda dourada e logo Connect, no modelo do Livro caixa (ADR 0174). */
+.erp-report-mode { background: #e4e9e6; }
+.erp-report-toolbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--erp-space-3); padding: 10px max(16px, calc((100vw - 210mm) / 2)); background: var(--erp-surface); border-bottom: 1px solid var(--erp-border); box-shadow: 0 2px 10px rgba(20, 44, 33, .08); }
+.erp-report-toolbar__hint { flex: 1; min-width: 0; color: var(--erp-muted); font-size: 12.5px; }
+.erp-report-sheet.erp-main { width: 210mm; max-width: calc(100% - 32px); min-height: 297mm; margin: 24px auto 40px; padding: 12mm 12mm 10mm; background: #fff; box-shadow: 0 10px 30px rgba(20, 44, 33, .16); font-size: 12.5px; display: flex; flex-direction: column; gap: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.erp-report-sheet > * { min-width: 0; }
+.erp-report-head { display: grid; gap: 10px; }
+.erp-report-band { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; background: var(--erp-sidebar); border-bottom: 4px solid var(--erp-accent); border-radius: 6px 6px 0 0; color: #fff; }
+.erp-report-band__logo { height: 38px; width: auto; }
+.erp-report-band__title { text-align: right; min-width: 0; }
+.erp-report-band__title span { display: block; color: var(--erp-sidebar-ink); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.erp-report-band__title h1 { margin: 2px 0 0; color: #fff; font-size: 19px; line-height: 1.2; }
+.erp-report-meta { display: flex; flex-wrap: wrap; margin: 0; border: 1px solid var(--erp-border); border-radius: 6px; }
+.erp-report-meta > div { flex: 1 1 120px; padding: 6px 10px; border-left: 1px solid var(--erp-border); }
+.erp-report-meta > div:first-child { border-left: 0; }
+.erp-report-meta__wide { flex-grow: 2 !important; }
+.erp-report-meta dt { color: var(--erp-muted); font-size: 9.5px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+.erp-report-meta dd { margin: 1px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.erp-report-meta--params { background: var(--erp-surface-muted); }
+.erp-report-lead { margin: 0; color: var(--erp-muted); font-size: 12px; }
+.erp-report-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--erp-border); color: var(--erp-muted); font-size: 10.5px; }
+/* O que é da tela e não do relatório some: filtros (viram parâmetros), botões, abas, paginação e avisos de ajuda. */
+.erp-report-sheet .erp-filters, .erp-report-sheet .erp-btn, .erp-report-sheet .erp-page-intro, .erp-report-sheet .erp-no-print,
+.erp-report-sheet .erp-tabs, .erp-report-sheet .erp-pagination, .erp-report-sheet .erp-unit-doc__actions, .erp-report-sheet .erp-trace,
+.erp-report-sheet .erp-setup-guide, .erp-report-sheet .erp-flash { display: none !important; }
+.erp-report-sheet .erp-card { padding: 12px 14px; border: 1px solid var(--erp-border); border-radius: 6px; box-shadow: none; }
+.erp-report-sheet .erp-card__head { margin-bottom: 8px; }
+.erp-report-sheet .erp-card__head h2 { font-size: 13.5px; color: var(--erp-sidebar); }
+.erp-report-sheet .erp-table-wrap { overflow: visible; }
+.erp-report-sheet .erp-table { font-size: 11.5px; }
+.erp-report-sheet .erp-table th, .erp-report-sheet .erp-table td { padding: 5px 7px; }
+.erp-report-sheet .erp-table thead th { background: #f3f6f5; }
+.erp-report-sheet .erp-grid--kpi { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.erp-report-sheet .erp-stack { gap: 12px; }
+.erp-report-sheet a { color: inherit; text-decoration: none; }
+.erp-report-sheet .erp-vchart__axis, .erp-report-sheet .erp-vchart__plot { height: 160px; }
+@media screen and (max-width: 860px) {
+  .erp-report-toolbar__hint { display: none; }
+  .erp-report-sheet.erp-main { width: auto; min-height: 0; margin: 12px 8px 24px; max-width: none; padding: 16px 12px; }
+  .erp-report-band { flex-direction: column; align-items: flex-start; }
+  .erp-report-band__title { text-align: left; }
+}
+@media print {
+  @page { size: A4; margin: 12mm 11mm 14mm; @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt Inter, Arial, sans-serif; color: #65746d; } }
+  .erp-report-mode { background: #fff; }
+  .erp-report-toolbar, .erp-report-mode .erp-skip-link { display: none !important; }
+  .erp-report-sheet.erp-main { width: auto; max-width: none; min-height: 0; margin: 0; padding: 0; box-shadow: none; font-size: 10pt; }
+  .erp-report-sheet .erp-card, .erp-report-sheet .erp-report-head, .erp-report-sheet tr { break-inside: avoid; }
+  .erp-report-sheet .erp-card--flush, .erp-report-sheet .erp-card:has(.erp-table) { break-inside: auto; }
+  .erp-report-sheet thead { display: table-header-group; }
+  .erp-report-sheet tfoot { display: table-row-group; }
+}

@@ -761,6 +761,19 @@ $html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', $chCha
 $assert(str_contains($html, 'name="unidade"') && str_contains($html, '<option value="5" selected>Apto &lt;101&gt;</option>') && substr_count($html, 'erp-vchart-card') === 2 && str_contains($html, '12,500'), 'AP-104: um painel por tipo de consumo');
 $html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', null, ['chartNeedsUnit' => true, 'chartFilters' => ['de' => '2026-09', 'ate' => '2026-11', 'natureza' => 'despesa', 'unidade' => null]]));
 $assert(str_contains($html, 'Escolha a unidade') && !str_contains($html, 'class="erp-vchart"'), 'AP-104: pede a unidade antes do gráfico');
+// Base única de relatório (ADR 0635): o Imprimir abre a mesma tela com ?imprimir=1, como folha A4 no modelo do Livro caixa.
+$html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', $chCharts['AP-104']));
+$assert(str_contains($html, 'data-erp-print') && !str_contains($html, 'onclick="window.print()"') && !str_contains($html, 'erp-report-mode'), 'relatório: botão Imprimir abre o modo relatório, tela normal sem a folha');
+$_GET['imprimir'] = '1';
+$html = $agreementPage('AP-104', 'pages/reports/chart', $chData('AP-104', $chCharts['AP-104']));
+$save('report-mode-ap-104', $html);
+$assert(str_contains($html, ' erp-report-mode">') && !str_contains($html, '<aside class="erp-sidebar"') && !str_contains($html, 'class="erp-navbar"') && substr_count($html, '<main') === 1, 'relatório: sem menu e sem barra superior, um <main>');
+$assert(str_contains($html, 'class="erp-report-band"') && str_contains($html, '<h1>Gráfico de consumo (unidade)</h1>') && str_contains($html, 'data-erp-report-params') && str_contains($html, 'Emitido em') && str_contains($html, 'class="erp-report-foot"'), 'relatório: faixa, título, parâmetros, emissão e rodapé');
+$assert(str_contains($html, 'data-erp-report-print') && str_contains($html, 'data-erp-report-close') && !str_contains($html, 'class="erp-page-head"') && !str_contains($html, 'erp-page-intro'), 'relatório: barra de imprimir, sem cabeçalho de tela e sem Sobre esta tela');
+$assert(substr_count($html, 'erp-vchart-card') === 2 && str_contains($html, '12,500') && str_contains($html, 'name="unidade"'), 'relatório: mesmo conteúdo da tela (filtros escondidos pelo CSS, lidos pelo erp.js)');
+unset($_GET['imprimir']);
+$assert(str_contains($css, '.erp-report-sheet .erp-filters') && str_contains($css, '@page { size: A4;') && str_contains($css, 'border-bottom: 4px solid var(--erp-accent)'), 'css: folha A4, faixa dourada e filtros fora do relatório');
+$assert(!preg_match('~onclick="window\.print\(\)"~', implode('', array_map('file_get_contents', array_filter(glob($theme . 'pages/*/*.php'), static fn (string $f): bool => !preg_match('~-document\.php$|/public/~', $f))))), 'relatório: nenhum Imprimir de tela do ERP chama window.print direto');
 $html = $agreementPage('AP-107', 'pages/reports/chart', $chData('AP-107', $chCharts['AP-107']));
 $assert(substr_count($html, 'erp-vchart-card') === 2 && str_contains($html, 'Inadimplência (%)') && str_contains($html, '10,00%') && str_contains($html, '<span class="erp-muted">—</span>'), 'AP-107: taxa em painel próprio, sem total');
 $html = $agreementPage('AP-109', 'pages/reports/chart', $chData('AP-109', ['labels' => $chMonths, 'unit' => 'count', 'series' => []]));
