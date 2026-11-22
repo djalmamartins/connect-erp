@@ -488,16 +488,52 @@ final class ResidentApp
     }
 
     /** @param array{path:string, mime:string, name:string, size:int} $file */
-    public static function sendFile(array $file): void
+    /**
+     * Entrega um documento do Disco Virtual. $view = true (app web, pedido do Djalma 22/11/2026: tocar abre o PDF
+     * para ver, sem baixar) manda PDF conferido como "inline"; o resto continua anexo com sandbox (ADR 0393).
+     */
+    public static function sendFile(array $file, bool $view = false): void
+    {
+        foreach (self::fileHeaders($file, $view) as $line) {
+            header($line);
+        }
+        readfile($file['path']);
+    }
+
+    /**
+     * Cabeçalhos do arquivo. Só abre no navegador o que é PDF pelo tipo E pelo conteúdo (começa com %PDF-): o leitor
+     * de PDF do navegador não abre com CSP sandbox, então nesse caso fica nosniff + tipo fixo application/pdf, que
+     * nunca roda como página. Qualquer outro arquivo segue como anexo com CSP sandbox (ADR 0393).
+     *
+     * @param array{path:string, mime:string, name:string, size:int} $file
+     * @return list<string>
+     */
+    public static function fileHeaders(array $file, bool $view = false): array
     {
         $name = preg_replace('/[^A-Za-z0-9._-]+/', '-', $file['name']) ?: 'documento';
-        header('Content-Type: ' . $file['mime']);
-        header('Content-Length: ' . $file['size']);
-        header('Content-Disposition: attachment; filename="' . $name . '"');
-        header('Cache-Control: no-store, private');
-        header('X-Content-Type-Options: nosniff');
-        header("Content-Security-Policy: default-src 'none'; sandbox"); // ADR 0393: arquivo enviado nunca roda como página
-        readfile($file['path']);
+        $pdf = $view && strtolower($file['mime']) === 'application/pdf' && self::startsWithPdf($file['path']);
+        $headers = [
+            'Content-Type: ' . ($pdf ? 'application/pdf' : $file['mime']),
+            'Content-Length: ' . $file['size'],
+            'Content-Disposition: ' . ($pdf ? 'inline' : 'attachment') . '; filename="' . $name . '"',
+            'Cache-Control: no-store, private',
+            'X-Content-Type-Options: nosniff',
+        ];
+        $headers[] = $pdf
+            ? "Content-Security-Policy: frame-ancestors 'self'"
+            : "Content-Security-Policy: default-src 'none'; sandbox"; // ADR 0393: arquivo enviado nunca roda como página
+        return $headers;
+    }
+
+    private static function startsWithPdf(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+        if ($handle === false) {
+            return false;
+        }
+        $head = (string)fread($handle, 5);
+        fclose($handle);
+        return $head === '%PDF-';
     }
 
     /** @return array{0: ?User, 1: ?array, 2: list<array>} */
