@@ -37,7 +37,7 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
         <div class="studio-erp-sidebar-head">
             <a class="studio-erp-brand" href="<?= url($environmentHome) ?>" aria-label="Moves <?= $environmentName ?> — início">
                 <img class="studio-erp-brand-logo" src="<?= themeStudio('/assets/images/moves-logo-white.svg', 'default') ?>" alt="Moves <?= $environmentName ?>" width="132" height="19">
-                <img class="studio-erp-brand-mark" src="<?= themeStudio('/assets/images/moves-mark-white.svg', 'default') ?>" alt="" width="34" height="24">
+                <img class="studio-erp-brand-mark" src="<?= themeStudio('/assets/images/moves-icon.svg', 'default') ?>" alt="" width="34" height="34">
             </a>
             <button class="studio-erp-collapse" type="button" data-studio-collapse aria-label="Recolher menu" aria-controls="studio-sidebar" aria-expanded="true"><ion-icon name="chevron-back-outline"></ion-icon></button>
         </div>

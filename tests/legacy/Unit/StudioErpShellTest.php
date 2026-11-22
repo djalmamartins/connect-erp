@@ -52,6 +52,9 @@ final class StudioErpShellTest extends TestCase
         self::assertStringContainsString('/assets/css/connect-shell.css', $layout);
         self::assertStringContainsString('moves-logo-white.svg', $layout);
         self::assertFileExists($root . '/assets/images/moves-logo-white.svg');
+        // Menu recolhido mostra o ícone da Moves (quadrado preto com >_), não mais o M.
+        self::assertStringContainsString('moves-icon.svg', $layout);
+        self::assertFileExists($root . '/assets/images/moves-icon.svg');
         self::assertStringNotContainsString('studio-theme-toggle', $layout);
         self::assertStringNotContainsString('studio-logo.svg', $layout);
         self::assertFileExists($root . '/assets/css/connect-shell.css');
