@@ -64,7 +64,6 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
             ['group', 'Visão geral', 'stats-chart-outline', [
                 ['reports','/studio/reports','Relatórios','stats-chart-outline','reports.view'],
                 ['notifications','/studio/notifications','Notificações','notifications-outline','notifications.manage'],
-                ['proposals','/studio/proposals','Propostas','document-text-outline','proposals.manage'],
             ]],
             ['group', 'Conteúdo', 'documents-outline', [
                 ['pages','/studio/pages','Páginas','documents-outline','pages.manage'],
@@ -74,7 +73,9 @@ $siteHome=function_exists('site_home_url')?site_home_url():url('/');
                 ['testimonials','/studio/testimonials','Depoimentos','chatbox-ellipses-outline','testimonials.manage'],
                 ['faqs','/studio/faqs','FAQ','help-circle-outline','faqs.manage'],
             ]],
+            // Propostas do site ficam em Gestão (ADR 0639); cada proposta nova avisa no sininho com som.
             ['group', 'Gestão', 'settings-outline', [
+                ['proposals','/studio/proposals','Propostas','document-text-outline','proposals.manage'],
                 ['users','/studio/users','Usuários','people-outline','users.manage'],
                 ['settings','/studio/settings','Configurações','settings-outline','settings.manage'],
                 ['versions','/studio/versions','Versões','pricetags-outline','settings.manage'],

@@ -75,6 +75,40 @@ final class ProposalService
         }
     }
 
+    /**
+     * Quem recebe o aviso (ADR 0639): quem pode abrir Gestão > Propostas, pela mesma regra da tela
+     * (Access::can com papel e exceções), e não por uma lista fixa de papéis.
+     *
+     * @return User[]
+     */
+    public static function proposalTeam(): array
+    {
+        $stmt = Connect::getInstance()->query("SELECT DISTINCT u.id FROM users u INNER JOIN access_user_roles ur ON ur.user_id=u.id WHERE u.status<>'trash' ORDER BY u.id");
+        $team = [];
+        foreach ($stmt ? ($stmt->fetchAll(\PDO::FETCH_COLUMN) ?: []) : [] as $id) {
+            $user = (new User())->findById((int)$id);
+            if ($user && $user->can('proposals.manage')) $team[] = $user;
+        }
+        return $team;
+    }
+
+    /** Categoria "studio" do sininho; numa instalação nova ela ainda não existe e o aviso sumia calado. */
+    private static function studioCategory(): ?NotificationCategory
+    {
+        $category = (new NotificationCategory())->findByUri('studio');
+        if ($category) return $category;
+        $category = new NotificationCategory();
+        $category->title = 'Studio';
+        $category->uri = 'studio';
+        $category->description = 'Notificações administrativas e alterações do sistema';
+        $category->type = 'system';
+        if (!$category->save()) {
+            AppLogger::log('error', 'Categoria de notificação do Studio não criada', ['event_type' => 'proposal_notify_failed', 'status' => 'open'], 'proposals');
+            return null;
+        }
+        return $category;
+    }
+
     private function queueRequesterEmail(Proposal $proposal): void
     {
         (new Email())->bootstrap('Recebemos sua solicitação de proposta - ' . CONF_SITE_NAME, ProposalMailer::site($proposal), $proposal->email, $proposal->name)
@@ -83,8 +117,7 @@ final class ProposalService
 
     private function notifyTeam(Proposal $proposal): void
     {
-        $pdo = Connect::getInstance();
-        $category = (new NotificationCategory())->findByUri('studio');
+        $category = self::studioCategory();
         if (!$category) return;
 
         $message = new NotificationMessage();
@@ -99,10 +132,7 @@ final class ProposalService
         $message->expires_at = date('Y-m-d H:i:s', strtotime('+30 days'));
         if (!$message->save()) return;
 
-        $stmt = $pdo->query("SELECT DISTINCT u.* FROM users u INNER JOIN access_user_roles ur ON ur.user_id=u.id INNER JOIN access_roles r ON r.id=ur.role_id WHERE u.status<>'trash' AND r.slug IN ('developer','super_admin','client_admin','manager')");
-        foreach ($stmt->fetchAll() ?: [] as $record) {
-            $recipient = (new User())->findById((int)$record->id);
-            if (!$recipient) continue;
+        foreach (self::proposalTeam() as $recipient) {
             $notification = new Notification();
             $notification->message_id = $message->id;
             $notification->users_id = $recipient->id;
