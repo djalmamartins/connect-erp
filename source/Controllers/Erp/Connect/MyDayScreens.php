@@ -27,10 +27,11 @@ final class MyDayScreens extends Controller
 
     private MyDay $service;
 
-    public function __construct(?MyDay $service = null)
+    /** O router passa ele mesmo como primeiro argumento (Source\Core\Router): só um MyDay é aproveitado. */
+    public function __construct(mixed $service = null)
     {
         parent::__construct(moves_container_path('erp', CONF_VIEW_ERP) . '/');
-        $this->service = $service ?? new MyDay();
+        $this->service = $service instanceof MyDay ? $service : new MyDay();
     }
 
     /** GET /meu-dia?data=AAAA-MM-DD&pessoa=ID&visao=dia|semana&condominio=ID */
