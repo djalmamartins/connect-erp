@@ -58,7 +58,7 @@ Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de r
 - origem **WhatsApp (Connect Talk)** (use o filtro de origem para ver só esses);
 - o nome do cadastro do ERP, o condomínio, a unidade e o telefone de quem escreveu;
 - no texto, o link **Conversa no Connect Talk**, que abre a conversa no Talk;
-- o número `CH...`, que é o protocolo que o morador recebe no WhatsApp.
+- o protocolo `SAC...`: quando a conversa do Talk já tem um número SAC, o chamado fica com o mesmo número, e o morador acompanha tudo por ele.
 
 Quando alguém da equipe **responde** o chamado no ERP (resposta pública, não nota interna), o Talk pega a resposta em poucos segundos e manda no WhatsApp do morador, com o primeiro nome de quem respondeu. O que o morador escreve de volta no WhatsApp entra no mesmo chamado: se o chamado estava resolvido, ele é **reaberto** e a equipe é avisada, como acontece no aplicativo.
 

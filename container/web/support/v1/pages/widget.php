@@ -56,7 +56,7 @@ $who = count($names) > 1 ? implode(', ', array_slice($names, 0, -1)) . ' e ' . e
             <button class="back" type="button">← Voltar</button><div data-feedback></div>
             <form id="ticket-track" action="<?= url('/suporte/widget/acompanhar') ?>">
                 <input type="hidden" name="widget_token" value="<?= htmlspecialchars($widgetToken) ?>"><input name="token" type="hidden">
-                <label class="field"><span>Protocolo</span><input name="protocol" autocomplete="off" placeholder="CH0000000000" required></label>
+                <label class="field"><span>Protocolo</span><input name="protocol" autocomplete="off" placeholder="SAC202611220001" required></label>
                 <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="email" required></label>
                 <button class="submit" type="submit">Consultar chamado</button>
             </form><div data-ticket></div>

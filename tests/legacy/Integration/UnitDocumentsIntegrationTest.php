@@ -67,7 +67,7 @@ final class UnitDocumentsIntegrationTest extends TestCase
     {
         $this->debt('2026-09', '2026-09-10');
         $this->debt('2026-11', '2026-11-20');   // a vencer
-        // ADR 0637: certidão negativa com débito não é gerada; só informa o débito (com encargos).
+        // ADR 0638: certidão negativa com débito não é gerada; só informa o débito (com encargos).
         try {
             $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09']);
             self::fail('Emitiu certidão com débito.');
@@ -141,7 +141,7 @@ final class UnitDocumentsIntegrationTest extends TestCase
         self::assertSame('clear', $this->documents->issue($this->admin, ['kind' => 'debt_certificate', 'unit_id' => $this->unit, 'as_of' => '2026-11-09'])['result']);
     }
 
-    /** ADR 0637: data de referência antiga sem débito não serve de atalho quando hoje há conta vencida. */
+    /** ADR 0638: data de referência antiga sem débito não serve de atalho quando hoje há conta vencida. */
     public function testPastReferenceDateDoesNotBypassTodaysDebt(): void
     {
         $due = date('Y-m-d', strtotime('-5 days'));

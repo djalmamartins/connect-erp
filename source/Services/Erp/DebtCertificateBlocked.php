@@ -7,7 +7,7 @@ namespace Source\Services\Erp;
 use DomainException;
 
 /**
- * Certidão de débitos recusada porque a unidade tem conta vencida em aberto (ADR 0637). Nenhum caminho do sistema
+ * Certidão de débitos recusada porque a unidade tem conta vencida em aberto (ADR 0638). Nenhum caminho do sistema
  * (ERP, API, app do morador no web e no celular) gera certidão com débito: só informa o débito.
  */
 final class DebtCertificateBlocked extends DomainException

@@ -8,7 +8,7 @@ menu: Agenda > Atendimento > Chamados
 icone: list-outline
 situacao: funciona
 relacionados: pedir-ajuda, ocorrencias, vistorias, manutencoes, chamados-do-whatsapp
-palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendimento
+palavras: chamados, operacional, CN-004, help desk, protocolo, suporte, atendimento, SAC, OCO, número do chamado
 rascunho: nao
 ---
 
@@ -105,6 +105,17 @@ Quem faz parte da equipe de atendimento usa no ERP os mesmos recursos do SAC:
 > Se o pedido é de um morador, marque **Um morador ou outra pessoa** e informe nome, e-mail e telefone dele: a resposta vai para ele.
 
 > Guarde o protocolo: ele identifica o chamado em qualquer conversa.
+
+## Como é o número do protocolo
+
+O protocolo tem as letras do tipo, a data de abertura e a ordem do dia, igual ao do Connect Talk:
+
+- **SAC202611160008**: chamado (SAC, site, aplicativo, WhatsApp), o 8º aberto em 16/11/2026;
+- **OCO202611160003**: ocorrência, a 3ª registrada em 16/11/2026.
+
+Chamados e ocorrências contam separado, e a contagem recomeça todo dia. Na busca, pode digitar do jeito que estiver anotado, com espaço, traço ou letra minúscula (`sac 2026-1116-0008`).
+
+> Chamados abertos antes de 22/11/2026 mantêm o número antigo (que começa com **CH** ou **OC**) e continuam aparecendo na busca por esse número.
 
 ## Quem pode usar
 

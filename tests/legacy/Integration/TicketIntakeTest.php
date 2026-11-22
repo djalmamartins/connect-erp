@@ -31,7 +31,7 @@ final class TicketIntakeTest extends TestCase
             'requester_name' => 'Maria Moradora', 'requester_email' => 'maria@example.com', 'requester_phone' => '11 98888-7777',
         ], 'erp', $user);
 
-        self::assertMatchesRegularExpression('/^CH\d{6}[A-F0-9]{4}$/', $opened['protocol']);
+        self::assertSame('SAC' . date('Ymd') . '0001', $opened['protocol']);
         $row = $this->pdo->query('SELECT * FROM studio_support_tickets WHERE id = ' . $opened['id'])->fetch();
         self::assertSame('erp', $row->origin);
         self::assertSame($condo, (int)$row->condominium_id);

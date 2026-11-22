@@ -217,7 +217,7 @@ export type Certificate = {
   issued_at: string;
 };
 
-/** Pedido de CND à administradora (ADR 0637): vira chamado do Help Desk; a equipe emite no ERP. */
+/** Pedido de CND à administradora (ADR 0638): vira chamado do Help Desk; a equipe emite no ERP. */
 export type CertificateRequest = { id: number; protocol: string; status: string; created_at: string; created?: boolean };
 
 /** Situação da CND hoje: com débito vencido, o pedido é recusado e só o débito é informado. */

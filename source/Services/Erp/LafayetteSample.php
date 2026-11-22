@@ -530,7 +530,7 @@ final class LafayetteSample
         $this->save('lost_found', ['condominium_id' => $this->condo, 'item' => 'Molho de chaves com chaveiro azul', 'found_on' => $past(3), 'location' => 'Salão de festas']);
         $this->save('visit_forecasts', ['condominium_id' => $this->condo, 'unit_id' => $u['A-202'], 'visitor_name' => 'Técnico da internet', 'expected_on' => $future(2)]);
         // Comprovante de quitação de uma unidade em dia, certidão negativa da mesma unidade e declaração de
-        // inadimplência da unidade em atraso (certidão com débito não é emitida, ADR 0637).
+        // inadimplência da unidade em atraso (certidão com débito não é emitida, ADR 0638).
         $documents = new UnitDocuments($this->pdo, $this->scope);
         $documents->issue($this->user, ['kind' => 'quittance', 'unit_id' => $u['A-301'], 'as_of' => $this->today, 'until_competence' => end($months)]);
         $documents->issue($this->user, ['kind' => 'debt_certificate', 'unit_id' => $u['A-301'], 'as_of' => $this->today]);

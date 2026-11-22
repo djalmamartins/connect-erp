@@ -154,7 +154,7 @@ final class ResidentApp
         $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->list($link));
     }
 
-    /** Situação da CND (ADR 0637): débito que impede o pedido e o pedido aberto da unidade. */
+    /** Situação da CND (ADR 0638): débito que impede o pedido e o pedido aberto da unidade. */
     public function certificateStatus(): void
     {
         $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->status($link));

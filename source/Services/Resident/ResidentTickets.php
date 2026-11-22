@@ -51,7 +51,7 @@ final class ResidentTickets
         $params = ['u' => (int)$user->id, 'c' => (int)$link['condominium_id']];
         $where = 't.requester_id = :u AND t.condominium_id = :c';
         if ($kind === 'chamado') {
-            // Pedido de CND (ADR 0637) é um pedido à administração: entra como chamado.
+            // Pedido de CND (ADR 0638) é um pedido à administração: entra como chamado.
             $where .= " AND t.category IN ('Chamado', 'Pedido de CND')";
         } elseif ($kind === 'ocorrencia') {
             $where .= " AND (t.category IS NULL OR t.category NOT IN ('Chamado', 'Pedido de CND'))";
@@ -86,7 +86,9 @@ final class ResidentTickets
         $body = ['subject' => $input['subject'] ?? '', 'description' => $input['description'] ?? '', 'priority' => $input['priority'] ?? null,
             'occurred_on' => $input['occurred_on'] ?? ''];
         $kind = self::kind($input['kind'] ?? null);
-        $occurrence = (new ResidentPortal($this->pdo))->reportOccurrence($user, $link, $body, $today);
+        // Pedido de "chamado" ganha protocolo SAC; ocorrência, OCO (ADR 0637).
+        $occurrence = (new ResidentPortal($this->pdo))->reportOccurrence($user, $link, $body, $today, null,
+            $kind === 'chamado' ? \Source\Services\Support\TicketProtocol::KIND_TICKET : \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE);
         $stmt = $this->pdo->prepare('SELECT ticket_id FROM erp_occurrences WHERE id = ?');
         $stmt->execute([(int)$occurrence['id']]);
         $ticketId = (int)$stmt->fetchColumn();

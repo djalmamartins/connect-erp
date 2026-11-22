@@ -350,14 +350,14 @@ final class AppScreens extends Controller
         ]);
     }
 
-    /** GET /cnd — certidões negativas da unidade (ADR 0637): pedir à administradora ou ver o débito que impede. */
+    /** GET /cnd — certidões negativas da unidade (ADR 0638): pedir à administradora ou ver o débito que impede. */
     public function certificates(): void
     {
         $this->page('certificates', 'boletos', 'pages/certificates', 'CND', fn (User $u, array $link): array => [
             'certificates' => (new ResidentCertificates())->list($link), 'certificateStatus' => (new ResidentCertificates())->status($link)]);
     }
 
-    /** POST /cnd — pede a certidão à administradora (chamado do Help Desk); com débito, só informa (ADR 0637). */
+    /** POST /cnd — pede a certidão à administradora (chamado do Help Desk); com débito, só informa (ADR 0638). */
     public function issueCertificate(array $data): void
     {
         $this->action('boletos', '/cnd', $data, function (User $u, array $link): string {

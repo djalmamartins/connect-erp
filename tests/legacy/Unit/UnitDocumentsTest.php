@@ -42,7 +42,7 @@ final class UnitDocumentsTest extends TestCase
         self::assertSame(['debt_certificate', 'delinquency_declaration', 'quittance', 'consent_letter'], array_keys(UnitDocuments::KINDS));
     }
 
-    /** ADR 0637: a recusa só informa o débito. */
+    /** ADR 0638: a recusa só informa o débito. */
     public function testBlockedCertificateMessageInformsTheDebt(): void
     {
         $blocked = new \Source\Services\Erp\DebtCertificateBlocked(2, 123456);
