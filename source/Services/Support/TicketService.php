@@ -35,6 +35,9 @@ use Source\Support\RichText;
  */
 final class TicketService
 {
+    /** Protocolo do Connect Talk: aammdd + sequência do dia com 5 dígitos (ADR 0637). */
+    public const TALK_PROTOCOL = '/^\d{11}$/';
+
     public const ORIGINS = ['helpdesk', 'erp', 'site', 'residents', 'api', 'talk'];
     public const AREAS = ['general', 'technical', 'financial'];
     public const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -104,6 +107,8 @@ final class TicketService
             'assigned_to' => $id('assigned_to'),
             // Protocolo do sistema de origem (Talk, ADR 0308): único por origem, garante que o chamado não duplique.
             'external_ref' => preg_replace('/[^0-9A-Za-z._-]/', '', $text('external_ref', 40)) ?: null,
+            // Protocolo único com o Talk (ADR 0637): o atendimento do WhatsApp e o chamado usam o mesmo número.
+            'protocol' => $origin === 'talk' && preg_match(self::TALK_PROTOCOL, (string)($input['protocol'] ?? '')) === 1 ? (string)$input['protocol'] : null,
         ];
         if (mb_strlen($data['subject']) < 4) {
             throw new TicketError('subject', 'Informe um assunto com pelo menos 4 caracteres.');
@@ -171,8 +176,8 @@ final class TicketService
             $data['assigned_to'] = null;
         }
 
-        // A coluna protocol tem 12 caracteres: CH + aammdd + 4 hex.
-        $protocol = 'CH' . date('ymd') . strtoupper(bin2hex(random_bytes(2)));
+        // A coluna protocol tem 12 caracteres: CH + aammdd + 4 hex. O Talk manda o dele (aammdd + 5 dígitos, ADR 0637).
+        $protocol = $data['protocol'] ?? 'CH' . date('ymd') . strtoupper(bin2hex(random_bytes(2)));
         $dueAt = date('Y-m-d H:i:s', strtotime('+' . self::slaHours($data['priority']) . ' hours'));
         // Solicitante de fora (sem conta) acompanha o chamado pelo código de acesso.
         $accessToken = $data['requester_id'] === null ? hash('sha256', random_bytes(32)) : null;
@@ -281,9 +286,11 @@ final class TicketService
         }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
-            $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2)';
+            // o protocolo do Talk também acha o chamado (external_ref), com ou sem o SAC na frente (ADR 0637)
+            $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2 OR t.external_ref LIKE :q3)';
             $params['q'] = '%' . $search . '%';
             $params['q2'] = '%' . $search . '%';
+            $params['q3'] = '%' . preg_replace('/[^0-9A-Za-z._-]/', '', $search) . '%';
         }
         $stmt = $this->pdo()->prepare(self::SELECT . ' WHERE ' . implode(' AND ', $terms)
             . ' ORDER BY t.created_at DESC, t.id DESC LIMIT ' . max(1, min(200, $limit)));

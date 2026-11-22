@@ -7720,7 +7720,8 @@ paths:
       summary: A conversa do WhatsApp vira chamado do Help Desk (idempotente)
       description: >-
         Abre o chamado com origem "talk" pelo mesmo serviço dos outros chamados (ADR 0034) e ele cai na fila do Help
-        Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. Com resident_id, o
+        Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. O talk_protocol no
+        formato do Talk (aammdd + 5 dígitos, com ou sem SAC na frente) vira o protocolo do chamado (ADR 0637). Com resident_id, o
         ERP confere que o morador está no escopo, no condomínio e na unidade informados e que o telefone é dele, e usa o
         nome do cadastro. Sem resident_id, abre como contato não identificado (nome e telefone).
       security: [{ talkIntegration: [] }]

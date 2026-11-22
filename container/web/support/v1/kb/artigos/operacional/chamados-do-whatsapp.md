@@ -53,12 +53,15 @@ Ele só responde quando quem escreve está no telefone do cadastro do morador. O
 
 ## O chamado no SAC
 
-Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
+O chamado só chega ao SAC quando o atendente do Talk clica em **Abrir chamado** e preenche o título, a descrição e o
+setor que vai cuidar. Conversa comum, que termina no próprio WhatsApp, fica só no Talk. Cada conversa vira no máximo
+**um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
 
 - origem **WhatsApp (Connect Talk)** (use o filtro de origem para ver só esses);
 - o nome do cadastro do ERP, o condomínio, a unidade e o telefone de quem escreveu;
 - no texto, o link **Conversa no Connect Talk**, que abre a conversa no Talk;
-- o número `CH...`, que é o protocolo que o morador recebe no WhatsApp.
+- o **mesmo protocolo da conversa no Talk** (ex.: `26112200403`), que é o número que o morador recebe no WhatsApp.
+  Protocolos antigos do Talk, com `SAC` na frente, também acham o chamado na busca.
 
 ### O morador acompanha pelo link
 

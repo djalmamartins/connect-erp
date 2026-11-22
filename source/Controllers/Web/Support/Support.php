@@ -212,7 +212,7 @@ class Support extends Controller
         $protocol = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string)($data['protocol'] ?? '')));
         $email = mb_strtolower(trim((string)($data['email'] ?? '')));
         $token = preg_replace('/[^a-f0-9]/i', '', (string)($data['token'] ?? ''));
-        if (!preg_match('/^CH\d{6}[A-F0-9]{4}$/', $protocol) || !filter_var($email, FILTER_VALIDATE_EMAIL)) { echo json_encode(['success' => false, 'message' => 'Informe o protocolo e o e-mail utilizados na abertura.']); return; }
+        if (!preg_match(\Source\Services\Support\TicketTracking::PROTOCOL, $protocol) || !filter_var($email, FILTER_VALIDATE_EMAIL)) { echo json_encode(['success' => false, 'message' => 'Informe o protocolo e o e-mail utilizados na abertura.']); return; }
         $pdo = Connect::getInstance();
         $sql = 'SELECT id,protocol,subject,status,created_at,updated_at FROM studio_support_tickets WHERE protocol=:protocol AND requester_email=:email';
         $params = ['protocol' => $protocol, 'email' => $email];

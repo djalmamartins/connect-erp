@@ -16,7 +16,7 @@ use Source\Support\RichText;
  */
 final class TicketTracking
 {
-    public const PROTOCOL = '/^CH\d{6}[A-F0-9]{4}$/';
+    public const PROTOCOL = '/^(CH\d{6}[A-F0-9]{4}|\d{11})$/'; // do ERP ou do Talk (ADR 0637)
     public const CODE = '/^[a-f0-9]{64}$/';
 
     private PDO $pdo;
