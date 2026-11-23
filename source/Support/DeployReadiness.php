@@ -124,7 +124,7 @@ final class DeployReadiness
         if ($start === false || $start > $now) {
             $warnings[] = 'CONNECT_2FA_ENFORCE_FROM vazio ou no futuro: a equipe ainda entra sem 2FA.';
         }
-        if (filter_var($get('ALERT_EMAIL'), FILTER_VALIDATE_EMAIL) === false) {
+        if (HostingWatchdog::recipients($get('ALERT_EMAIL')) === []) {
             $warnings[] = 'ALERT_EMAIL vazio ou inválido: o vigia do servidor não manda e-mail (HOSPEDAGEM.md §8).';
         }
         if ($get('ERP_MAIL_DELIVERY') !== 'production') {
