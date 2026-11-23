@@ -8,7 +8,7 @@ $this->layout('default', ['subject' => 'Relatório de vistoria', 'preheader' => 
 <p style="margin:0 0 16px;">Olá.</p>
 <p style="margin:0 0 16px;">Segue o relatório da vistoria presencial <strong><?= $this->e($template) ?></strong> no condomínio <strong><?= $this->e($condominium) ?></strong>, feita em <?= $this->e($date) ?> por <?= $this->e($inspector) ?>. O relatório completo, com as fotos, está no PDF anexo.</p>
 <?php if ($message !== ''): ?>
-    <p style="margin:0 0 16px;padding:12px 14px;background:#f6faf8;border-left:3px solid #c5a131;"><?= nl2br($this->e($message)) ?><br><span style="font-size:13px;color:#65746d;">— <?= $this->e($sender) ?></span></p>
+    <p style="margin:0 0 16px;padding:12px 14px;background:#f6faf8;border-radius:8px;"><?= nl2br($this->e($message)) ?><br><span style="font-size:13px;color:#6f6a5e;">— <?= $this->e($sender) ?></span></p>
 <?php endif; ?>
 <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;margin:0 0 16px;border-collapse:collapse;font-size:14px;">
     <tr>

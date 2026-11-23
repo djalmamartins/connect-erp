@@ -81,9 +81,9 @@ $this->insert('components/layout/page-head', [
     endforeach; ?>
 </section>
 
-<?php // Faixa dos dias (pedido do Djalma, 22/11/2026): o dia mostrado sempre no meio, 3 antes e 3 depois. ?>
+<?php // Faixa dos dias (pedido do Djalma, 22/11/2026): carrossel dia a dia, o dia mostrado sempre no meio, 3 antes e 3 depois. ?>
 <nav class="md-week" aria-label="Dias">
-    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('-7 days')->format('Y-m-d')]) ?>" aria-label="Voltar 7 dias"><?= $icon('chevron-left', 'erp-icon--sm') ?></a>
+    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('-1 day')->format('Y-m-d')]) ?>" aria-label="Dia anterior"><?= $icon('chevron-left', 'erp-icon--sm') ?></a>
     <div class="md-week__days">
         <?php foreach ($day['strip'] ?? $day['week'] as $weekDay):
             $classes = 'md-week__day' . ($weekDay['today'] ? ' is-today' : '') . ($weekDay['selected'] ? ' is-selected' : '') . ($weekDay['date'] < $day['today'] ? ' is-past' : ''); ?>
@@ -96,7 +96,7 @@ $this->insert('components/layout/page-head', [
             </a>
         <?php endforeach; ?>
     </div>
-    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('+7 days')->format('Y-m-d')]) ?>" aria-label="Avançar 7 dias"><?= $icon('chevron-right', 'erp-icon--sm') ?></a>
+    <a class="md-week__nav" href="<?= $link(['data' => $date->modify('+1 day')->format('Y-m-d')]) ?>" aria-label="Próximo dia"><?= $icon('chevron-right', 'erp-icon--sm') ?></a>
 </nav>
 
 <div class="md-grid">
