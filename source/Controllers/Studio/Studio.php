@@ -60,7 +60,7 @@ class Studio extends Controller
         }
 
         if (!empty($data)) {
-            $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $data = sanitize_keep_password($data);
             if (!csrf_verify($data)) {
                 echo json_encode(["message" => $this->message->error("Sessão expirada. Atualize a página e tente novamente.")->render()]);
                 return;

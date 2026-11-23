@@ -300,9 +300,16 @@ class Auth extends Model
             }
         }
 
+        $legacy = false;
         if (!passwd_verify($password, $user->password)) {
-            $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
-            return null;
+            // Senha gravada pela troca antiga, que passava pelo FILTER_SANITIZE_FULL_SPECIAL_CHARS ("a&b" como
+            // "a&amp;b"): aceita uma vez e grava de novo do jeito certo (ADR 0648).
+            $encoded = (string)filter_var($password, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            if ($encoded === $password || !passwd_verify($encoded, $user->password)) {
+                $this->message->error("Credenciais inválidas. Confira os dados e tente novamente.");
+                return null;
+            }
+            $legacy = true;
         }
 
         if ($user->level < $level) {
@@ -310,7 +317,7 @@ class Auth extends Model
             return null;
         }
 
-        if (passwd_rehash($user->password)) {
+        if ($legacy || passwd_rehash($user->password)) {
             $user->password = $password;
             $user->save();
         }

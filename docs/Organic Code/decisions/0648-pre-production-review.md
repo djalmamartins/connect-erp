@@ -40,3 +40,16 @@ arquivos. Os formulários foram enviados de verdade e conferidos no banco.
 | Fale com a gente (`/suporte/mensagem`) | Abre chamado SAC no Help Desk (origem site) e e-mail para a equipe |
 | Busca de artigos | Ok depois da correção dos acentos |
 | Banner de cookies (`/cookies`) | Grava a escolha (ADR 0604) |
+
+## Login do ERP e do Studio com senha que tem & ou aspas (crítico para a produção)
+
+CONFIRMADO na instalação limpa: o administrador criado por `tools/hosting/criar-admin.php` (senha gerada com `&`,
+`=`, `@`) **não entrava no ERP**: "Credenciais inválidas". Os logins do ERP e do Studio e as telas de troca de senha
+do site passavam a senha pelo `FILTER_SANITIZE_FULL_SPECIAL_CHARS` (`a&b` virava `a&amp;b`), enquanto o
+criar-admin, o convite do morador, o app e a API usam a senha como foi digitada. Também quem trocava a senha pelo
+link do e-mail com um desses caracteres não entrava depois no app do morador.
+
+- `sanitize_keep_password()`: limpa o formulário como antes, menos `password` e `password_re`.
+- `Auth::attempt()`: se a senha não confere, tenta a forma antiga (codificada) e, se conferir, grava de novo do
+  jeito certo. Assim ninguém que já trocou a senha pelo caminho antigo fica de fora.
+- Testes de integração em `AuthTest`.

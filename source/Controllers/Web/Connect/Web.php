@@ -507,7 +507,7 @@ class Web extends Controller
             }
         }
 
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {
@@ -627,7 +627,7 @@ class Web extends Controller
         if (Auth::user()) {
             redirect("/redirect");
         }
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {
@@ -691,7 +691,7 @@ class Web extends Controller
             redirect("/redirect");
         }
 
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {

@@ -63,4 +63,26 @@ final class AuthTest extends TestCase
         self::assertTrue(passwd_verify('Nova@123', $user->password));
         self::assertEmpty($user->forget);
     }
+
+    /** ADR 0648: senha com & ou aspas gravada pela troca antiga (HTML-encoded) entra e é regravada. */
+    public function testPasswordSavedHtmlEncodedStillWorksAndIsRehashed(): void
+    {
+        $userId = $this->createUser(['email' => 'legacy@test.local']);
+        $raw = 'Nova&Senha"1';
+        $this->pdo->prepare('UPDATE users SET password=? WHERE id=?')->execute([passwd(htmlspecialchars($raw, ENT_QUOTES)), $userId]);
+
+        self::assertTrue((new Auth())->login('legacy@test.local', $raw));
+        $hash = (string)$this->pdo->query("SELECT password FROM users WHERE id={$userId}")->fetchColumn();
+        self::assertTrue(passwd_verify($raw, $hash), 'regravada com a senha digitada');
+        Auth::logout();
+        self::assertFalse((new Auth())->login('legacy@test.local', 'Nova&amp;Senha&quot;1'), 'a forma codificada não vale como senha');
+    }
+
+    public function testFormSanitizerKeepsThePassword(): void
+    {
+        $clean = sanitize_keep_password(['email' => '<b>a@b.com</b>', 'password' => 'x&y<z>"1', 'password_re' => 'x&y<z>"1']);
+        self::assertSame('x&y<z>"1', $clean['password']);
+        self::assertSame('x&y<z>"1', $clean['password_re']);
+        self::assertStringNotContainsString('<b>', $clean['email']);
+    }
 }

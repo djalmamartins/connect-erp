@@ -703,6 +703,23 @@ function passwd_rehash(string $hash): bool
 /**
  * @return string
  */
+/**
+ * Limpa os campos do formulário como antes (FILTER_SANITIZE_FULL_SPECIAL_CHARS), menos a senha: "a&b" virava
+ * "a&amp;b" e a senha criada fora desse caminho (criar-admin, convite, app, API) não entrava no ERP/Studio
+ * (revisão de 23/11, ADR 0648).
+ */
+function sanitize_keep_password(?array $data): array
+{
+    $data = $data ?? [];
+    $clean = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?: [];
+    foreach (['password', 'password_re'] as $field) {
+        if (array_key_exists($field, $data)) {
+            $clean[$field] = is_string($data[$field]) ? $data[$field] : '';
+        }
+    }
+    return $clean;
+}
+
 function csrf_input(): string
 {
     $session = new \Source\Core\Session();
