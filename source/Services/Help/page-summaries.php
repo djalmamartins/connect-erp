@@ -3178,4 +3178,22 @@ return [
             ],
         ],
     ],
+    'CN-011' => [
+        'faz' => 'Veja no ERP os pedidos de proposta feitos no site, saiba quando chega um novo e acompanhe cada um até virar contrato.',
+        'artigo' => 'propostas-do-site-no-erp',
+        'topicos' => [
+            [
+                'id' => 'como-saber-que-chegou-uma-proposta',
+                'title' => 'Como saber que chegou uma proposta',
+            ],
+            [
+                'id' => 'acompanhar-um-pedido',
+                'title' => 'Acompanhar um pedido',
+            ],
+            [
+                'id' => 'responder-com-a-proposta-em-pdf',
+                'title' => 'Responder com a proposta em PDF',
+            ],
+        ],
+    ],
 ];

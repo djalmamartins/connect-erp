@@ -207,6 +207,11 @@ CONNECT_PAGES = [
      "route": "/meu-dia", "kind": "dashboard", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-010-meu-dia.md", "reference": "",
      "note": "Agenda do dia e da semana de cada pessoa da equipe, chamados para agendar, vistorias e painel da visita (pedido do proprietário, 20/11/2026)"},
+    # Propostas pedidas pelo site, as mesmas do Studio > Gestão > Propostas (ADR 0639 e 0644).
+    {"id": "CN-011", "name": "Propostas do site", "group": "comunicacao", "section": "Comercial", "order": -1,
+     "route": "/comunicacao/propostas", "kind": "list", "status": "CONNECT",
+     "spec": "docs/specs/pages/cn-011-propostas-do-site.md", "reference": "",
+     "note": "Pedidos de proposta feitos no site, com alerta de proposta nova, situação e responsável; mesma tabela do Studio (pedido do proprietário, 22/11/2026)"},
     # Pedidos do titular pela LGPD: relatório dos dados e anonimização (ADR 0328, 0330 e 0332).
     {"id": "CN-009", "name": "Dados pessoais (LGPD)", "group": "configuracoes", "section": "Acesso", "order": 100,
      "route": "/configuracoes/dados-pessoais", "kind": "list", "status": "CONNECT",
@@ -262,6 +267,8 @@ for ap, orig, name, route, status, note in matrix:
         comp, actions, impl = "pages/tickets/index", "abrir chamado (condomínio, unidade, solicitante), filtros, link para a fila do Help Desk", "completa (dados reais)"
     elif p and p["id"] == "CN-009":
         comp, actions, impl = "pages/settings/privacy", "buscar titular por CPF/CNPJ ou e-mail, baixar relatório JSON, anonimizar com motivo e confirmação", "completa (dados reais)"
+    elif p and p["id"] == "CN-011":
+        comp, actions, impl = "pages/communication/proposals", "alerta de proposta nova, buscar e filtrar por situação, abrir o pedido, mudar situação e responsável, responder no Studio", "completa (dados reais)"
     elif p and p["id"] == "CN-005":
         comp, actions, impl = "pages/notifications/index", "filtrar por situação, ver a trilha de entrega mascarada, reenviar aviso com falha", "completa (dados reais)"
     elif p:
