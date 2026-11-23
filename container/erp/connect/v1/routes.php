@@ -186,6 +186,12 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/configuracoes/dados-pessoais/baixar", "PrivacyScreens:download");
     $route->post("/configuracoes/dados-pessoais/anonimizar", "PrivacyScreens:anonymize");
 
+    // Propostas do site (CN-011, ADR 0644): a mesma tabela do Studio > Gestão > Propostas, com CSRF e padrão PRG.
+    $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE, "ProposalScreens:index");
+    $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/p/{page}", "ProposalScreens:index");
+    $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}", "ProposalScreens:show");
+    $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}", "ProposalScreens:update");
+
     // Fila de avisos (CN-005, ADR 0055 e 0072): lista com a trilha e reenvio manual com CSRF.
     $route->get("/configuracoes/fila-de-avisos", "NotificationQueue:index");
     $route->post("/configuracoes/fila-de-avisos/{id}/reenviar", "NotificationQueue:retry");
@@ -200,7 +206,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/meu-dia', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
+        if (in_array($page['route'], ['/dashboard', '/meu-dia', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/comunicacao/propostas', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
             || isset(\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES[$page['route']])) {
             continue;
         }

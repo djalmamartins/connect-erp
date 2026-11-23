@@ -7,13 +7,13 @@ rota: /studio/proposals
 menu: Studio > Gestão > Propostas
 icone: document-text-outline
 situacao: guia
-relacionados: configuracao-geral-do-sistema
+relacionados: configuracao-geral-do-sistema, propostas-do-site-no-erp
 palavras: proposta, orçamento, pedido de proposta, site, comercial, funil, sininho, notificação, aviso, síndico, administradora
 manual: sim
 rascunho: nao
 ---
 
-Quando alguém preenche **Solicite uma proposta** no site (`/solicite-sua-proposta`), o pedido chega na tela **Propostas** do Studio. Só quem tem a permissão de **gerenciar propostas** vê o item no menu e abre a tela.
+Quando alguém preenche **Solicite uma proposta** no site (`/solicite-sua-proposta`), o pedido chega na tela **Propostas** do Studio e também no ERP, em **Comunicação > Comercial > Propostas do site**. Só quem tem a permissão de **gerenciar propostas** vê o item no menu e abre a tela.
 
 ## O que o site pede
 
@@ -55,3 +55,5 @@ No mesmo pedido, em **Gerar proposta em PDF**:
 >! Depois de enviado, o e-mail não volta. Confira os valores antes de clicar em {{Gerar e enviar}}.
 
 Cada PDF gerado aparece em **Respostas geradas**, com a data e se foi enviado.
+
+>> Veja também: [Propostas pedidas pelo site (ERP)](artigo:propostas-do-site-no-erp).

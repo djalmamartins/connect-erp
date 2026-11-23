@@ -49,7 +49,9 @@ final class Panel extends Controller
         'AP-102' => 'erp.entries.view', 'AP-103' => 'erp.entries.view', 'AP-104' => 'erp.meter_readings.view', 'AP-105' => 'erp.meter_readings.view',
         'AP-106' => 'erp.entries.view', 'AP-107' => 'erp.agreements.view', 'AP-108' => 'erp.entries.view', 'AP-109' => 'erp.reservations.view',
         // Dados pessoais (LGPD, ADR 0332).
-        'CN-009' => 'erp.privacy.export'];
+        'CN-009' => 'erp.privacy.export',
+        // Propostas do site (ADR 0644): a mesma permissão do Studio > Gestão > Propostas.
+        'CN-011' => 'proposals.manage'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -578,6 +580,8 @@ final class Panel extends Controller
             // Sem banco (smoke de renderização) cai nas de demonstração, quando ligadas.
             ...$this->bell($user, $dashboard['notifications'] ?? []),
             'supportMenu' => $this->supportMenu($user, $pageId),
+            // Selos do menu lateral (ADR 0644): propostas novas do site, para quem pode abrir a tela.
+            'navBadges' => $this->navBadges($user),
             'withNavigation' => true,
             // Conferência de 10/11/2026: a linha "Ficha: docs/specs/..." (rastreio da spec) é de quem
             // desenvolve; para a equipe da administradora fica escondida (classe erp-body--trace).
@@ -620,6 +624,25 @@ final class Panel extends Controller
             'steps' => $steps,
             'current' => \Source\Services\Erp\CondominiumSetup::currentIndex($steps, CondominiumContext::relativePath()),
         ];
+    }
+
+    /**
+     * Números ao lado de itens do menu lateral (ADR 0644). Hoje só as propostas novas do site (CN-011), para quem
+     * tem proposals.manage. Sem banco (smoke de renderização) não há selo.
+     *
+     * @return array<string, int> id da página => quantidade
+     */
+    private function navBadges(User $user): array
+    {
+        if (Connect::databaseDisabled() || !$user->can('proposals.manage')) {
+            return [];
+        }
+        try {
+            $new = (new \Source\Services\Proposals\ProposalDesk())->newCount();
+        } catch (\Throwable) {
+            return [];
+        }
+        return $new > 0 ? ['CN-011' => $new] : [];
     }
 
     /**

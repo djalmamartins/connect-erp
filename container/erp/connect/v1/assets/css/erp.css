@@ -137,6 +137,21 @@ p { margin: 0; }
 .erp-nav__section[open] > summary::after { transform: rotate(45deg); }
 .erp-nav__section > summary:hover { color: var(--erp-sidebar-strong); }
 .erp-nav__section > a { padding-left: 16px; }
+.erp-nav__sub a:has(.erp-nav__badge) { display: flex; align-items: center; gap: 8px; }
+/* Selo de novidade no menu (ADR 0644): propostas novas do site. No grupo, só com ele fechado. */
+.erp-nav__badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: auto; padding: 0 6px; border-radius: var(--erp-radius-pill); background: var(--erp-sidebar-accent); color: var(--erp-sidebar); font-size: 11px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+.erp-nav__group > summary .erp-nav__badge { margin-right: 4px; }
+.erp-nav__group[open] > summary .erp-nav__badge { display: none; }
+.erp-shell.is-collapsed .erp-nav__group > summary { position: relative; }
+.erp-shell.is-collapsed .erp-nav__group > summary .erp-nav__badge { position: absolute; top: 2px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; }
+.erp-proposal-alert { align-items: center; }
+.erp-proposal-alert .erp-btn { margin-left: auto; }
+.erp-table tr.is-new td:first-child { box-shadow: inset 3px 0 0 var(--erp-warning); }
+.erp-proposal-message__title { margin: 18px 0 6px; font-size: 14px; }
+.erp-proposal-message { margin: 0; padding: 12px 14px; border-radius: var(--erp-radius-md); background: var(--erp-neutral-soft); white-space: normal; }
+.erp-proposal-responses { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.erp-proposal-responses li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-bottom: 1px solid var(--erp-border); }
+.erp-proposal-responses li .erp-badge { margin-left: auto; }
 .erp-sidebar__foot { display: grid; gap: 4px; padding: var(--erp-space-3) var(--erp-space-1) 0; border-top: 1px solid var(--erp-sidebar-line); }
 .erp-sidebar__profile { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--erp-radius-md); color: var(--erp-sidebar-ink); }
 .erp-sidebar__profile:hover { background: var(--erp-sidebar-hover); text-decoration: none; }
