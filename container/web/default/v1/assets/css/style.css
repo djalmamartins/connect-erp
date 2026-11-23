@@ -1446,15 +1446,20 @@ p {
 
 .about-team-images {
     display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    grid-template-rows: 160px 150px;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
+/* Ilustrações próprias da Connect (ADR 0647): desenho na proporção certa e a legenda logo abaixo. */
 .about-team-image {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    border-radius: 13px;
-    background: #eeeeee;
+    border: 1px solid #EEE8D8;
+    border-radius: 14px;
+    background: #FFFFFF;
+    box-shadow: 0 10px 28px rgba(7, 38, 23, .07);
 }
 
 .about-team-image-main {
@@ -1471,14 +1476,35 @@ p {
 
 .about-team-image img {
     width: 100%;
-    height: 100%;
+    height: auto;
     display: block;
-    object-fit: cover;
     transition: transform .5s ease;
 }
 
 .about-team-image:hover img {
-    transform: scale(1.04);
+    transform: scale(1.03);
+}
+
+.about-team-caption {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    color: var(--web-secundary);
+    font-size: .82em;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.about-team-caption::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--web-primary);
+    flex: none;
 }
 
 /* =========================================================
