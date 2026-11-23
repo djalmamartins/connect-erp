@@ -7,7 +7,7 @@
   [Help Desk], para o Moves Studio ... revisão geral no sistema para a gente colocar em produção."
 - Relacionadas: ADR 0396 (instalação limpa), 0361 (update.sh), 0354 (deploy-check), 0604 (LGPD/CDC no site),
   0141 (Central de Ajuda), 0644 (propostas no ERP)
-- Número: 0647 está em uso no branch das ilustrações da gestão do site.
+- Número: 0647 é das ilustrações da gestão do site.
 
 ## Como foi feita
 
