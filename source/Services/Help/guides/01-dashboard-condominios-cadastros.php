@@ -132,6 +132,17 @@ return [
         ],
     ],
 
+    'CN-011' => [
+        'faz' => 'Mostra os pedidos de proposta feitos no site, avisa quando chega um novo e guarda o andamento de cada um até virar contrato.',
+        'por_tras' => [
+            'São os mesmos pedidos do Studio > Gestão > Propostas: mudar a situação ou o responsável aqui muda lá também.',
+            'Cada pedido novo manda um aviso no sino para quem pode abrir esta tela. Enquanto houver pedidos na situação Nova, o menu mostra o número deles e a tela mostra um aviso no alto.',
+            'Na primeira vez que o pedido fica Contatada, a data do primeiro contato é gravada. Toda mudança entra no histórico do sistema.',
+            'O PDF da proposta é gerado e enviado pelo Studio. Aqui aparecem as respostas já geradas.',
+            'Os pedidos não são de um condomínio cadastrado, então a escolha do condomínio na barra superior não muda esta lista.',
+        ],
+    ],
+
     'AP-005' => [
         'faz' => 'Cadastra as pessoas de cada unidade e o vínculo delas: proprietário, inquilino, morador ou responsável financeiro. É daqui que saem os nomes, e-mails e telefones usados nas cobranças, nos comunicados e no painel da unidade.',
         'por_tras' => [

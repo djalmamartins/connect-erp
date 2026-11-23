@@ -7523,6 +7523,64 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /proposals:
+    get:
+      operationId: listProposals
+      tags: [Proposals]
+      summary: Propostas pedidas pelo site (CN-011, ADR 0644), mais recentes primeiro
+      description: As mesmas do Studio > Gestão > Propostas. Exige proposals.manage. meta.new traz quantas estão com a situação new (alerta do menu).
+      security: [{ session: [] }]
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 120 }, description: Nome, e-mail, condomínio ou protocolo }
+        - { name: status, in: query, schema: { type: string, enum: [new, contacted, qualified, proposal_sent, won, lost, archived] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Lista (data) e meta (total, page, pages, per_page, new) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /proposals/{id}:
+    get:
+      operationId: getProposal
+      tags: [Proposals]
+      summary: Uma proposta do site, com as respostas em PDF geradas no Studio
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Proposta (protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, marketing_consent, contacted_at, created_at, responses) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /proposals/{id}/status:
+    post:
+      operationId: setProposalStatus
+      tags: [Proposals]
+      summary: Muda a situação e o responsável (contacted pela primeira vez grava contacted_at; entra na auditoria)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [new, contacted, qualified, proposal_sent, won, lost, archived] }
+                assigned_to: { type: integer, nullable: true, description: Alguém com proposals.manage, ou null }
+      responses:
+        '200': { description: Proposta atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates
