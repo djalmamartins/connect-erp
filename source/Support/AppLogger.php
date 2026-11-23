@@ -141,13 +141,10 @@ final class AppLogger
             $recent = $pdo->prepare("SELECT id,incident_id FROM app_log WHERE fingerprint=:fingerprint AND status='open' AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) ORDER BY id DESC LIMIT 1");
             $recent->execute(['fingerprint' => $fingerprint]);
             $existing = $recent->fetch(PDO::FETCH_OBJ);
-            $logId = null;
-            $isNewIncident = false;
             if ($existing) {
                 $update = $pdo->prepare("UPDATE app_log SET occurrences=occurrences+1,last_seen_at=NOW(),updated_at=NOW(),request_id=:request,context_json=:context,trace=COALESCE(:trace,trace) WHERE id=:id");
                 $update->execute(['request' => self::$requestId, 'context' => json_encode($safeContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'trace' => $trace, 'id' => $existing->id]);
                 self::$lastIncident = (string)$existing->incident_id;
-                $logId = (int)$existing->id;
             } else {
                 $insert = $pdo->prepare("INSERT INTO app_log (incident_id,request_id,corporations_id,condominium_id,users_id,level,channel,event_type,code,ip,msg,exception_class,file,line,url,context_json,trace,user_agent,fingerprint,occurrences,status,first_seen_at,last_seen_at) VALUES (:incident,:request,:corporation,:condominium,:user,:level,:channel,:event_type,:code,:ip,:message,:exception_class,:file,:line,:url,:context,:trace,:agent,:fingerprint,1,:status,NOW(),NOW())");
                 $insert->execute([
@@ -160,20 +157,9 @@ final class AppLogger
                     'context' => json_encode($safeContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     'trace' => $trace, 'agent' => $agent, 'fingerprint' => $fingerprint, 'status' => $status
                 ]);
-                $logId = (int)$pdo->lastInsertId();
-                $isNewIncident = true;
             }
-            if ($isNewIncident && $logId && $status === 'open' && self::isErrorLevel($level)) {
-                try {
-                    self::notifyIncident($pdo, $logId, self::$lastIncident, self::normalizeLevel($level), $channel, $eventType, $code, $cleanMessage, $url);
-                } catch (Throwable $alertFailure) {
-                    self::fallback('warning', 'Não foi possível gerar o alerta do incidente', [
-                        'incident_id' => self::$lastIncident,
-                        'log_id' => $logId,
-                        'alert_failure' => $alertFailure->getMessage()
-                    ], 'logger');
-                }
-            }
+            // O incidente fica registrado em Studio › Logs do sistema; não vira aviso no sininho nem
+            // e-mail "Erro detectado no MovesOS" (ADR 0645). Quem acompanha os erros olha os logs.
             if (random_int(1, 100) === 1) {
                 $pdo->exec("DELETE FROM app_log WHERE (status IN ('resolved','ignored') AND last_seen_at < DATE_SUB(NOW(), INTERVAL 90 DAY)) OR last_seen_at < DATE_SUB(NOW(), INTERVAL 180 DAY)");
             }
@@ -202,73 +188,6 @@ final class AppLogger
         $record = ['time' => date(DATE_ATOM), 'request_id' => self::$requestId, 'level' => $level, 'channel' => $channel, 'message' => self::cleanText($message, 8000), 'context' => self::sanitize($context)];
         @file_put_contents($directory . '/movesos-' . date('Y-m-d') . '.log', json_encode($record, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
         error_log('[MovesOS][' . strtoupper($level) . '] ' . $record['message']);
-    }
-
-    private static function notifyIncident(PDO $pdo, int $logId, string $incident, string $level, string $channel, string $eventType, ?string $code, string $message, string $urlPath): void
-    {
-        $categoryId = (int)$pdo->query("SELECT id FROM notifications_categories WHERE uri='studio' ORDER BY id LIMIT 1")->fetchColumn();
-        if (!$categoryId) {
-            return;
-        }
-
-        $recipients = $pdo->query("SELECT DISTINCT u.id,u.first_name,u.last_name,u.email
-            FROM users u
-            INNER JOIN access_user_roles ur ON ur.user_id=u.id
-            INNER JOIN access_roles r ON r.id=ur.role_id
-            WHERE r.slug='developer' AND u.status<>'trash'")->fetchAll(PDO::FETCH_OBJ) ?: [];
-        if (!$recipients) {
-            return;
-        }
-
-        $title = 'Erro detectado no MovesOS';
-        $summary = mb_substr($message, 0, 500);
-        $requestHost = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
-        $requestHost = preg_match('~^[a-z0-9.-]+(?::[0-9]{1,5})?$~', $requestHost) ? $requestHost : '';
-        $requestScheme = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
-        $siteUrl = $requestHost ? $requestScheme . '://' . $requestHost . $urlPath : rtrim((string)CONF_URL_SSL, '/') . '/' . ltrim($urlPath, '/');
-        $body = "Incidente {$incident} · " . strtoupper($level) . " · {$channel}\nURL do site: {$siteUrl}\n{$summary}";
-        $link = function_exists('url') ? url('/studio/system-logs?q=' . rawurlencode($incident)) : '/studio/system-logs?q=' . rawurlencode($incident);
-        $notification = $pdo->prepare("INSERT INTO notifications
-            (source_log_id,users_id,category,image,title,body,severity,link,view,expires_at)
-            VALUES (:log,:user,:category,'images/default.svg',:title,:body,:severity,:link,0,DATE_ADD(NOW(),INTERVAL 1 MONTH))");
-        $mail = $pdo->prepare("INSERT INTO mail_queue
-            (source_log_id,users_id,subject,body,from_email,from_name,recipient_email,recipient_name,status,scheduled_at)
-            VALUES (:log,:user,:subject,:body,:from_email,:from_name,:recipient_email,:recipient_name,'pending',NOW())");
-
-        $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-        $safeIncident = htmlspecialchars($incident, ENT_QUOTES, 'UTF-8');
-        $safeLevel = htmlspecialchars(strtoupper($level), ENT_QUOTES, 'UTF-8');
-        $safeChannel = htmlspecialchars($channel, ENT_QUOTES, 'UTF-8');
-        $safeType = htmlspecialchars($eventType, ENT_QUOTES, 'UTF-8');
-        $safeCode = htmlspecialchars((string)($code ?: '—'), ENT_QUOTES, 'UTF-8');
-        $safeMessage = nl2br(htmlspecialchars($summary, ENT_QUOTES, 'UTF-8'));
-        $safeSiteUrl = htmlspecialchars($siteUrl, ENT_QUOTES, 'UTF-8');
-        $safeLink = htmlspecialchars($link, ENT_QUOTES, 'UTF-8');
-
-        foreach ($recipients as $recipient) {
-            $notification->execute([
-                'log' => $logId, 'user' => $recipient->id, 'category' => $categoryId,
-                'title' => $title, 'body' => $body, 'severity' => $level, 'link' => $link
-            ]);
-
-            // Falhas do próprio e-mail ficam visíveis no sistema sem criar um ciclo de novas mensagens.
-            if ($channel === 'mail' || !filter_var($recipient->email, FILTER_VALIDATE_EMAIL)) {
-                continue;
-            }
-            $recipientName = trim($recipient->first_name . ' ' . $recipient->last_name);
-            $safeName = htmlspecialchars($recipient->first_name ?: $recipientName, ENT_QUOTES, 'UTF-8');
-            $html = '<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f5f3f7;font-family:Arial,sans-serif;color:#242332"><table role="presentation" width="100%"><tr><td style="padding:32px 15px"><table role="presentation" width="100%" style="max-width:620px;margin:auto;background:#fff;border:1px solid #ebe6ee;border-radius:8px"><tr><td style="padding:25px 32px;border-bottom:3px solid #6E00B3"><strong style="font-size:20px;color:#6E00B3">MovesOS</strong></td></tr><tr><td style="padding:34px 32px"><p>Olá, ' . $safeName . '.</p><h1 style="font-size:22px">' . $safeTitle . '</h1><p>Um novo incidente técnico foi registrado automaticamente.</p><table style="width:100%;border-collapse:collapse"><tr><td><strong>Incidente</strong></td><td>' . $safeIncident . '</td></tr><tr><td><strong>Nível</strong></td><td>' . $safeLevel . '</td></tr><tr><td><strong>Origem</strong></td><td>' . $safeChannel . '</td></tr><tr><td><strong>Tipo</strong></td><td>' . $safeType . '</td></tr><tr><td><strong>Código</strong></td><td>' . $safeCode . '</td></tr><tr><td><strong>URL do site</strong></td><td><a href="' . $safeSiteUrl . '">' . $safeSiteUrl . '</a></td></tr></table><p style="line-height:1.6">' . $safeMessage . '</p><p style="margin:28px 0"><a href="' . $safeLink . '" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#6E00B3;color:#fff;text-decoration:none;font-weight:700">Abrir Log</a></p><p style="color:#8a8490;font-size:12px">Mensagem automática do MovesOS.</p></td></tr></table></td></tr></table></body></html>';
-            $mail->execute([
-                'log' => $logId, 'user' => $recipient->id, 'subject' => '[' . strtoupper($level) . '] ' . $title . ' — ' . $incident,
-                'body' => $html, 'from_email' => CONF_MAIL_SENDER['address'], 'from_name' => CONF_MAIL_SENDER['name'],
-                'recipient_email' => $recipient->email, 'recipient_name' => $recipientName
-            ]);
-        }
-    }
-
-    private static function isErrorLevel(string $level): bool
-    {
-        return in_array(self::normalizeLevel($level), ['error','critical','alert','emergency'], true);
     }
 
     private static function sanitize($value, ?string $key = null, int $depth = 0)

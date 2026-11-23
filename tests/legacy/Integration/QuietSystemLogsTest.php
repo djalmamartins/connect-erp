@@ -8,7 +8,7 @@ use MovesOSTests\TestCase;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
 
-/** ADR 0300: rotina sem usuário não cria aviso "Alteração no sistema" e o mesmo erro aberto não abre um registro a cada 5 minutos. */
+/** ADR 0300 e 0645: rotina sem usuário não cria aviso "Alteração no sistema" e o mesmo erro aberto não abre um registro a cada 5 minutos. */
 final class QuietSystemLogsTest extends TestCase
 {
     protected function setUp(): void
@@ -33,13 +33,29 @@ final class QuietSystemLogsTest extends TestCase
         self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM notifications WHERE title = 'Alteração no sistema'"));
     }
 
-    public function testChangeByAnotherPersonStillNotifiesTheAdministrator(): void
+    public function testChangeByAnotherPersonIsAuditedButDoesNotNotify(): void
     {
         $_SESSION['authUser'] = $this->createUser(['level' => 1]);
 
         Audit::record('update', 'erp_units', 7, ['number' => '101'], ['number' => '102']);
 
-        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM notifications WHERE title = 'Alteração no sistema' AND body = 'alterou o registro erp_units #7'"));
+        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'erp_units' AND entity_id = 7"));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM notifications WHERE title = 'Alteração no sistema'"), 'ADR 0645: auditoria não vai ao sininho.');
+    }
+
+    public function testNewErrorIsLoggedButDoesNotNotifyNorEmail(): void
+    {
+        $developer = $this->createUser(['level' => 1, 'email' => 'dev.' . bin2hex(random_bytes(3)) . '@connect.lab']);
+        $this->pdo->exec("INSERT IGNORE INTO access_roles (slug, name) VALUES ('developer', 'Desenvolvedor')");
+        $role = (int)$this->pdo->query("SELECT id FROM access_roles WHERE slug = 'developer'")->fetchColumn();
+        $this->pdo->prepare('INSERT IGNORE INTO access_user_roles (user_id, role_id) VALUES (?, ?)')->execute([$developer, $role]);
+        $message = 'Falha de teste ' . bin2hex(random_bytes(3));
+
+        AppLogger::log('error', $message, ['event_type' => 'test_failure'], 'tests');
+
+        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM app_log WHERE msg = " . $this->pdo->quote($message) . " AND status = 'open'"));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM notifications WHERE title = 'Erro detectado no MovesOS'"));
+        self::assertSame(0, $this->countRows('SELECT COUNT(*) FROM mail_queue WHERE source_log_id IS NOT NULL'));
     }
 
     public function testSameOpenErrorAfterFiveMinutesAddsAnOccurrence(): void
