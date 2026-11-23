@@ -311,3 +311,4 @@ figure[data-align] img{display:block;max-width:100%;height:auto;margin:0}
 figure[data-align="center"] img{margin-left:auto;margin-right:auto}
 figure[data-align="right"] img{margin-left:auto}
 figure[data-align] figcaption{margin-top:8px;font-size:.875em;color:#64748b}
+.hc-note{margin:10px 0 0;font-size:13px;color:var(--hc-muted,#5d6b66)}.hc-note a{color:inherit;text-decoration:underline}

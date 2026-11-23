@@ -36,7 +36,7 @@
                 Solicitar proposta
             </a>
 
-            <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP)) ?>" target="_blank" rel="noopener noreferrer" class="link icon icon-whatsapp">
+            <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE)) ?>" target="_blank" rel="noopener noreferrer" class="link icon icon-whatsapp">
                 Falar no WhatsApp
             </a>
         </div>
