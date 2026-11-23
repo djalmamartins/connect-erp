@@ -1523,18 +1523,18 @@ paths:
   /bank-credentials:
     get:
       operationId: listBankCredentials
-      summary: Contas do Banco Inter (077), da Cora (403) e do Sicoob (756) no escopo e a situação da credencial, sem segredo (erp.settings.view e erp.bank_accounts.view)
+      summary: Contas do Banco Inter (077), da Cora (403), do Sicoob (756) e da CondoConta (código PENDENTE, ADR 0649) no escopo e a situação da credencial, sem segredo (erp.settings.view e erp.bank_accounts.view)
       description: ADR 0158, 0322 e 0633. needs_secret, needs_certificate e needs_client_number dizem que campos o banco da conta pede. Só metadados (4 últimos caracteres do client ID, titular e validade do certificado).
       security: [{ session: [] }]
       responses:
-        '200': { description: Contas, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, condominium_id: { type: integer }, condominium: { type: string }, adapter: { type: string }, bank: { type: string, enum: [inter, cora, sicoob] }, needs_secret: { type: boolean }, needs_certificate: { type: boolean }, needs_client_number: { type: boolean }, credential: { type: [object, 'null'], properties: { adapter: { type: string }, environment: { type: string }, client_id_hint: { type: string }, certificate_subject: { type: [string, 'null'] }, certificate_expires_on: { type: [string, 'null'], format: date }, updated_at: { type: string } } } } } } } } } } }
+        '200': { description: Contas, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, name: { type: string }, condominium_id: { type: integer }, condominium: { type: string }, adapter: { type: string }, bank: { type: string, enum: [inter, cora, sicoob, condoconta] }, needs_secret: { type: boolean }, needs_certificate: { type: boolean }, needs_client_number: { type: boolean }, credential: { type: [object, 'null'], properties: { adapter: { type: string }, environment: { type: string }, client_id_hint: { type: string }, certificate_subject: { type: [string, 'null'] }, certificate_expires_on: { type: [string, 'null'], format: date }, updated_at: { type: string } } } } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /bank-credentials/{id}:
     post:
       operationId: connectBankCredential
       summary: Abre o pacote do banco (ZIP ou .crt/.key em base64), testa a conexão no sandbox e grava cifrado (erp.settings.manage e erp.bank_accounts.manage)
-      description: 'ADR 0158. Nada é gravado em disco. Cora (ADR 0322) não usa client_secret. Sicoob (ADR 0633, sandbox): client_secret = access token do portal, client_number obrigatório e files opcional. Teste com falha não grava, salvo save_anyway. O endereço do webhook volta só nesta resposta. Limite de 10 tentativas por usuário por hora. Corpo até 1 MB.'
+      description: 'ADR 0158. Nada é gravado em disco. Cora (ADR 0322) não usa client_secret. Sicoob (ADR 0633, sandbox): client_secret = access token do portal, client_number obrigatório e files opcional. CondoConta (ADR 0649, sandbox): client_id e client_secret, sem files. Teste com falha não grava, salvo save_anyway. O endereço do webhook volta só nesta resposta. Limite de 10 tentativas por usuário por hora. Corpo até 1 MB.'
       security: [{ session: [], csrf: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer }, description: 'Conta bancária (banco 077, 403 ou 756)' }]
       requestBody:
@@ -1549,7 +1549,7 @@ paths:
         '409': { description: 'Teste com o banco falhou (nada gravado) ou limite de tentativas' }
         '413': { description: Envio grande demais }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
-        '422': { description: 'Pacote sem certificado/chave, par que não combina, certificado vencido, número do cliente faltando (Sicoob) ou conta que não é do Inter, da Cora ou do Sicoob' }
+        '422': { description: 'Pacote sem certificado/chave, par que não combina, certificado vencido, número do cliente faltando (Sicoob) ou conta que não é do Inter, da Cora, do Sicoob ou da CondoConta' }
     delete:
       operationId: removeBankCredential
       summary: Apaga a credencial; a conta volta ao sandbox interno (erp.settings.manage e erp.bank_accounts.manage)
@@ -7779,7 +7779,7 @@ paths:
     get:
       operationId: talkTicketFeed
       tags: [Talk]
-      summary: Respostas da equipe nos chamados do Talk, desde o cursor (ADR 0634, tickets.write)
+      summary: Respostas da equipe nos chamados do Talk, desde o cursor (ADR 0649, tickets.write)
       description: >-
         Mensagens públicas dos chamados de origem talk do escopo, mais antigas primeiro, sem as escritas pelo próprio
         usuário de integração e nunca as notas internas. Guarde meta.next_after e mande como after no próximo pedido.

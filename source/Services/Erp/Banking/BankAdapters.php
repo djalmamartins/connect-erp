@@ -6,6 +6,7 @@ namespace Source\Services\Erp\Banking;
 
 use InvalidArgumentException;
 use PDO;
+use Source\Services\Erp\Banking\CondoConta\CondoContaBankAdapter;
 use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\CurlInterHttp;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
@@ -13,15 +14,15 @@ use Source\Services\Erp\Banking\Sicoob\SicoobBankAdapter;
 
 /**
  * Catálogo de adaptadores bancários (ADR 0035 e 0156). O sandbox não precisa de credencial; o
- * Inter (ADR 0156, só sandbox do Inter), a Cora (ADR 0322, só stage) e o Sicoob (ADR 0633, só sandbox) são montados por conta bancária com as credenciais do cofre
+ * Inter (ADR 0156, só sandbox do Inter), a Cora (ADR 0322, só stage) e o Sicoob (ADR 0633, só sandbox) e a CondoConta (ADR 0649, só sandbox) são montados por conta bancária com as credenciais do cofre
  * (forAccount). Nome desconhecido = InvalidArgumentException, nunca um adaptador padrão silencioso.
  */
 final class BankAdapters
 {
     public const DEFAULT = 'sandbox';
-    public const NAMES = ['sandbox', InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME];
+    public const NAMES = ['sandbox', InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME, CondoContaBankAdapter::NAME];
     /** Adaptadores de banco de verdade (credencial no cofre, consulta automática, extrato). */
-    public const REAL = [InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME];
+    public const REAL = [InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME, CondoContaBankAdapter::NAME];
 
     /** @var array<string, BankAdapter> adaptadores trocados nos testes */
     private static array $overrides = [];
@@ -33,7 +34,7 @@ final class BankAdapters
         }
         return match ($name) {
             'sandbox' => new SandboxBankAdapter(),
-            InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME => throw new InvalidArgumentException('O adaptador do banco depende da conta bancária (use forAccount).'),
+            InterBankAdapter::NAME, CoraBankAdapter::NAME, SicoobBankAdapter::NAME, CondoContaBankAdapter::NAME => throw new InvalidArgumentException('O adaptador do banco depende da conta bancária (use forAccount).'),
             default => throw new InvalidArgumentException("Adaptador bancário '{$name}' não está disponível."),
         };
     }
@@ -62,6 +63,11 @@ final class BankAdapters
             $secrets = (new BankCredentials($pdo))->secrets((int)$account['id']);
             return new SicoobBankAdapter($secrets + ['account_number' => (string)($account['account_number'] ?? ''),
                 'modality' => (string)SicoobBankAdapter::modality($account['wallet'] ?? null)], new CurlInterHttp());
+        }
+        if ($name === CondoContaBankAdapter::NAME) {
+            // CondoConta (ADR 0649): só o sandbox, client ID e client secret, sem certificado.
+            $secrets = (new BankCredentials($pdo))->secrets((int)$account['id']);
+            return new CondoContaBankAdapter($secrets + ['account_number' => (string)($account['account_number'] ?? '')], new CurlInterHttp());
         }
         throw new InvalidArgumentException("Adaptador bancário '{$name}' não está disponível.");
     }

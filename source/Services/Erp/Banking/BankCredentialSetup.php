@@ -12,6 +12,7 @@ use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\Registry\RegistryNotFound;
+use Source\Services\Erp\Banking\CondoConta\CondoContaBankAdapter;
 use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\CurlInterHttp;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
@@ -21,10 +22,10 @@ use Source\Services\LoginThrottle;
 use Source\Support\AppLogger;
 
 /**
- * Integração do banco pela tela (ADR 0158; Cora no ADR 0322; Sicoob no ADR 0633): quem pode gerenciar configurações e contas
+ * Integração do banco pela tela (ADR 0158; Cora no ADR 0322; Sicoob no ADR 0633; CondoConta no ADR 0649): quem pode gerenciar configurações e contas
  * bancárias envia o pacote do banco (ZIP ou certificado e chave), o client ID e, no Inter, o secret (a Cora não usa secret).
  * No sandbox do Sicoob vão o client ID, o access token do portal (no lugar do secret) e o número do cliente, sem certificado.
- * O banco sai do código da conta: 077 = Inter, 403 = Cora, 756 = Sicoob. O sistema abre o pacote em memória,
+ * O banco sai do código da conta: 077 = Inter, 403 = Cora, 756 = Sicoob, CondoContaBankAdapter::BANK_CODE = CondoConta. O sistema abre o pacote em memória,
  * acha o certificado e a chave pelo conteúdo (não pelo nome), confere o par e a validade, testa a
  * conexão (só pede um token, não emite nada) e só então grava cifrado no cofre (BankCredentials).
  *
@@ -41,7 +42,7 @@ final class BankCredentialSetup
     public const THROTTLE_SCOPE = 'bank-cred';
     public const THROTTLE_MAX = 10;
     public const THROTTLE_WINDOW = 3600;
-    public const ONLY_BANKS = 'Só contas do Banco Inter (código 077), da Cora (código 403) e do Sicoob (código 756) aceitam esta integração por enquanto.';
+    public const ONLY_BANKS = 'Só contas do Banco Inter (código 077), da Cora (código 403), do Sicoob (código 756) e da CondoConta (código ' . CondoContaBankAdapter::BANK_CODE . ') aceitam esta integração por enquanto.';
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -106,6 +107,14 @@ final class BankCredentialSetup
     public static function diagnose(string $error, string $adapter = InterBankAdapter::NAME): string
     {
         $lower = strtolower($error);
+        if ($adapter === CondoContaBankAdapter::NAME) {
+            return match (true) {
+                str_contains($lower, 'recusou a autenticação') => 'A CondoConta recusou o client ID ou o client secret. Use a credencial do sandbox que a CondoConta mandou por e-mail (api@condoconta.com.br), sem espaços.',
+                str_contains($lower, 'limitou') => 'A CondoConta limitou os pedidos. Espere um minuto e teste de novo.',
+                str_contains($lower, 'sem resposta') => 'A CondoConta não respondeu. Tente de novo em alguns minutos.',
+                default => 'O teste com a CondoConta falhou: ' . mb_substr($error, 0, 200),
+            };
+        }
         if ($adapter === SicoobBankAdapter::NAME) {
             return match (true) {
                 str_contains($lower, 'recusou a autenticação') => 'O Sicoob recusou o client ID ou o access token. No sandbox, copie os dois do portal developers.sicoob.com.br (Sandbox), sem espaços.',
@@ -129,7 +138,7 @@ final class BankCredentialSetup
         };
     }
 
-    /** Contas do Inter (077), da Cora (403) e do Sicoob (756) nos condomínios do usuário, com o banco e a situação da credencial (sem segredo). */
+    /** Contas do Inter (077), da Cora (403), do Sicoob (756) e da CondoConta nos condomínios do usuário, com o banco e a situação da credencial (sem segredo). */
     public function accounts(User $user): array
     {
         $ids = array_values(array_filter(array_map('intval', $this->scope->allowedIds($user)), static fn (int $i): bool => $i > 0));
@@ -208,7 +217,7 @@ final class BankCredentialSetup
 
     /**
      * Mesmo teste, pelo terminal do servidor (ADR 0392): `php tools/bank-credentials.php testar --conta=ID`. Sem usuário,
-     * porque quem tem o terminal já tem o .env; escolhe o banco pelo código da conta (Inter, Cora ou Sicoob), como a tela.
+     * porque quem tem o terminal já tem o .env; escolhe o banco pelo código da conta (Inter, Cora, Sicoob ou CondoConta), como a tela.
      *
      * @return array{connected:bool, message:string, bank:string}
      */
@@ -252,12 +261,13 @@ final class BankCredentialSetup
     {
         return match ($bank) {
             CoraBankAdapter::NAME => new CoraBankAdapter($secrets, ($this->httpFactory)()),
+            CondoContaBankAdapter::NAME => new CondoContaBankAdapter($secrets, ($this->httpFactory)()),
             SicoobBankAdapter::NAME => new SicoobBankAdapter($secrets + ['modality' => (string)SicoobBankAdapter::modality($account['wallet'] ?? null)], ($this->httpFactory)()),
             default => new InterBankAdapter($secrets, ($this->httpFactory)()),
         };
     }
 
-    /** Adaptador pelo código do banco da conta (regra pura): 077 = inter, 403 = cora, 756 = sicoob. */
+    /** Adaptador pelo código do banco da conta (regra pura): 077 = inter, 403 = cora, 756 = sicoob, CondoContaBankAdapter::BANK_CODE = condoconta. */
     public static function bankOf(string $bankCode): string
     {
         $bank = array_search($bankCode, BankCredentials::ADAPTERS, true);
@@ -269,6 +279,7 @@ final class BankCredentialSetup
         return match ($bank) {
             CoraBankAdapter::NAME => 'Conexão com a Cora (ambiente de teste) testada: token obtido.',
             SicoobBankAdapter::NAME => 'Conexão com o Sicoob (sandbox) testada: o banco aceitou o client ID e o token.',
+            CondoContaBankAdapter::NAME => 'Conexão com a CondoConta (sandbox) testada: token obtido.',
             default => 'Conexão com o Inter (sandbox) testada: token obtido.',
         };
     }

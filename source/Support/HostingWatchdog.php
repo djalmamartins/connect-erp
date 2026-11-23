@@ -67,7 +67,7 @@ final class HostingWatchdog
             if ($days >= self::BANK_CERT_WARN_DAYS) {
                 continue;
             }
-            $bank = ['inter' => 'Banco Inter', 'cora' => 'Cora', 'sicoob' => 'Sicoob'][strtolower((string)$c['adapter'])] ?? (string)$c['adapter'];
+            $bank = ['inter' => 'Banco Inter', 'cora' => 'Cora', 'sicoob' => 'Sicoob', 'condoconta' => 'CondoConta'][strtolower((string)$c['adapter'])] ?? (string)$c['adapter'];
             $where = trim(implode(' · ', array_filter([(string)($c['condominium'] ?? ''), (string)($c['account'] ?? '')])));
             $env = (string)$c['environment'] === 'production' ? 'produção' : 'teste';
             $label = sprintf('%s (%s%s)', $bank, $env, $where !== '' ? ', ' . $where : '');

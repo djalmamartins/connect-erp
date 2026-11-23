@@ -78,8 +78,10 @@ final class IntegrationStatus
         $banks[] = ['adapter' => 'cora', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
         // Sicoob (ADR 0633): mesma regra, só o sandbox do Sicoob.
         $banks[] = ['adapter' => 'sicoob', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
+        // CondoConta (ADR 0649): mesma regra, só o sandbox da CondoConta.
+        $banks[] = ['adapter' => 'condoconta', 'available' => Banking\BankVault::isConfigured(), 'production' => false];
         return [
-            'bank' => ['adapters' => $banks, 'note' => 'Inter, Cora e Sicoob ligados só no ambiente de teste de cada banco (ADR 0156, 0322 e 0633). Produção só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
+            'bank' => ['adapters' => $banks, 'note' => 'Inter, Cora, Sicoob e CondoConta ligados só no ambiente de teste de cada banco (ADR 0156, 0322, 0633 e 0649). Produção só depois de homologação, com credenciais no cofre e aprovação (ADR 0035).'],
             'mail' => self::mail(defined('CONF_APP_ENV') ? (string)CONF_APP_ENV : 'development', getenv('ERP_MAIL_DELIVERY') ?: 'log', getenv('ERP_MAIL_SANDBOX_TO') ?: null),
             'price_indexes' => $indexes,
             'outbox' => $outbox,
