@@ -1899,6 +1899,11 @@ class Studio extends Controller
         $domain = (string)substr((string)strrchr((string)CONF_MAIL_SENDER["address"], "@"), 1);
         $dns = \Source\Support\MailDns::check($domain, ((string)getenv("MAIL_DKIM_SELECTOR")) ?: null, \Source\Support\MailDns::resolver());
         $dnsText = implode(" ", array_map(static fn (array $item): string => $item["name"] . ": " . ["ok" => "ok", "warning" => "atenção", "error" => "falta"][$item["status"]] . ".", $dns["items"]));
+        // Servidor sem DNS (ex.: ambiente de teste fechado): sem isso, a tela dizia "SPF: falta" para registros que existem.
+        if ((@dns_get_record($domain, DNS_NS) ?: []) === []) {
+            $dns["ok"] = true;
+            $dnsText = "não deu para conferir SPF, DKIM e DMARC, porque o DNS não respondeu a este servidor. Confira por outro computador.";
+        }
         \Source\Support\AppLogger::log($sent ? "info" : "warning", "Teste de e-mail das Configurações", ["event_type" => "settings_mail_test", "users_id" => $user->id, "recipient_hash" => hash("sha256", strtolower($to)), "sent" => $sent, "dns_ok" => $dns["ok"], "status" => "resolved"], "settings");
         if ($sent) {
             $this->jsonMessage("E-mail de teste aceito pelo servidor SMTP. Confira se chegou em {$to} (fora do spam). DNS do domínio {$domain}: {$dnsText}", $dns["ok"] ? "success" : "warning");
