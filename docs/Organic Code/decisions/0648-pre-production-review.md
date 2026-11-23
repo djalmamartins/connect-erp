@@ -62,3 +62,20 @@ link do e-mail com um desses caracteres não entrava depois no app do morador.
 | ERP | 1.500 telas com o administrador | Sem erro de PHP nos logs. "Abrir no Studio" e "Responder no Studio" das propostas iam para `erp.<domínio>/studio/proposals` (404): agora passam pela troca de ambiente (`Environments::link`) |
 | Help Desk | 500 telas | Sem link quebrado |
 | Studio | 1.200 telas | Sem link quebrado |
+
+## Limpeza do código sem uso (aprovada pelo Djalma em 23/11, 08:15)
+
+"Dar ok para apagar o código antigo que ninguém usa ... pode fazer." Antes de apagar, conferido de novo que nenhuma
+rota, classe, teste ou script usa cada item.
+
+- Removidos: `source/Controllers/Web/V1/Web.php`, `Erp/Connect/{Erp,Dash,Finance}.php`, `App/V1/{App,Dash}.php`,
+  `App/Connect/{App,Dash}.php`, `Pay/Pay.php` e o teste `ErpLegacyCondominiumScopeTest` (testava só o `Erp.php`).
+- Em `Web/Connect/Web.php`: as funções sem rota (`supportHome`, `supportSearch`, `supportCategory`,
+  `supportArticle`, `supportVote`, `about`, `benefits`, `services`, `solve`, `pages`, `auth`, `login`,
+  `confirmation`, `privacy`, `redirect`). O `/forget` e o `/forget/{código}` com alguém logado mandavam para
+  `/redirect`, que não existe: agora vão para a home.
+- Telas que nada abria: `pages/page_base.php`, `upkeep.php`, `login/redirect.php`, `login/login.php`,
+  `login/confirmation.php`.
+- Pagamento antigo (Pagar.me): as constantes `CONF_PAGARME_*` e o salvamento de `pay_mode`, `pay_live`, `pay_test`,
+  `pay_back` no Studio. As colunas continuam na tabela `settings` (apagar coluna é mudança de banco; fica para
+  quando houver outra migration nessa tabela).
