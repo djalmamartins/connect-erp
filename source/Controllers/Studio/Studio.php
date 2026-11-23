@@ -225,16 +225,19 @@ class Studio extends Controller
                 }
                 echo json_encode(['redirect' => url('/studio/proposals/' . $proposal->id)]); return;
             }
-            $statuses = ['new','contacted','qualified','proposal_sent','won','lost','archived'];
-            $next = (string)($data['status'] ?? '');
-            if (!in_array($next, $statuses, true)) { $this->jsonMessage('Status inválido.', 'warning'); return; }
-            $proposal->status = $next;
-            $proposal->assigned_to = filter_var($data['assigned_to'] ?? null, FILTER_VALIDATE_INT) ?: null;
-            if ($next === 'contacted' && !$proposal->contacted_at) $proposal->contacted_at = date('Y-m-d H:i:s');
-            if (!$proposal->save()) { $this->jsonMessage('Não foi possível atualizar a proposta.', 'error'); return; }
+            // ADR 0644: o mesmo serviço da tela do ERP e da API (valida situação e responsável e grava a auditoria).
+            try {
+                (new \Source\Services\Proposals\ProposalDesk())->update((int)$proposal->id, (string)($data['status'] ?? ''), filter_var($data['assigned_to'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null);
+            } catch (\Source\Services\Proposals\ProposalDeskError $error) {
+                $this->jsonMessage($error->fields !== [] ? implode(' ', $error->fields) : $error->getMessage(), 'warning'); return;
+            } catch (\Throwable $error) {
+                \Source\Support\AppLogger::exception($error, 'proposals', ['event_type' => 'proposal_update_failed', 'proposal_id' => $proposal->id]);
+                $this->jsonMessage('Não foi possível atualizar a proposta.', 'error'); return;
+            }
             echo json_encode(['redirect' => url('/studio/proposals/' . $proposal->id)]); return;
         }
-        $team = Connect::getInstance()->query("SELECT DISTINCT u.id,u.first_name,u.last_name FROM users u JOIN access_user_roles ur ON ur.user_id=u.id JOIN access_roles r ON r.id=ur.role_id WHERE r.slug IN ('developer','super_admin','client_admin','manager') AND u.status<>'trash' ORDER BY u.first_name")->fetchAll() ?: [];
+        // Responsável: quem tem proposals.manage (ADR 0644), a mesma lista que o serviço aceita ao gravar.
+        $team = array_map(static fn (array $m): object => (object)['id' => $m['id'], 'first_name' => $m['name'], 'last_name' => ''], (new \Source\Services\Proposals\ProposalDesk())->team());
         $responses = (new ProposalResponse())->find('proposal_id=:proposal', 'proposal='.$proposal->id)->order('id DESC')->fetch(true) ?: [];
         echo $this->view->render('components/proposals/detail', $this->viewData('Proposta ' . $proposal->protocol, 'proposals', $user, ['proposal' => $proposal, 'team' => $team, 'responses' => $responses]));
     }
@@ -341,7 +344,6 @@ class Studio extends Controller
                 $this->jsonMessage("Informe uma URL ou ID válido do YouTube.", "warning"); return;
             }
 
-            $isNewPost = !$post;
             $post = $post ?: new Post();
             $post->title = $title;
             $post->uri = str_slug(trim(strip_tags($data["uri"] ?? "")) ?: $title);
@@ -380,25 +382,7 @@ class Studio extends Controller
             if ($oldCoverToRemove) {
                 (new Upload())->remove(dirname(__DIR__, 3) . "/" . CONF_UPLOAD_DIR . "/" . $oldCoverToRemove);
             }
-            if ($isNewPost) {
-                $articleMessage = new NotificationMessage();
-                $articleMessage->sender_id = $user->id;
-                $articleMessage->title = "Novo artigo: " . $post->title;
-                $articleMessage->body = $post->subtitle;
-                $articleMessage->audience = "all";
-                $articleMessage->target_user_id = null;
-                $articleMessage->severity = "info";
-                $articleMessage->delivery_channels = "system";
-                $articleMessage->link = $post->status === "post" ? url("/artigos/{$post->uri}") : url("/artigos");
-                $articleMessage->status = "sent";
-                $articleMessage->expires_at = date("Y-m-d H:i:s", strtotime("+1 month"));
-                if ($articleMessage->save()) {
-                    (new Communication())->deliver($articleMessage);
-                    \Source\Support\Audit::record("create", "article_notification", (int)$articleMessage->id, [], ["post_id" => (int)$post->id, "audience" => "all"]);
-                } else {
-                    \Source\Support\AppLogger::log("warning", "Artigo criado sem concluir a notificação dos usuários", ["event_type" => "article_notification_failed", "post_id" => (int)$post->id], "articles");
-                }
-            }
+            // Artigo novo do blog não vira aviso no sininho de toda a equipe (ADR 0645).
             $this->message->success($status === "post" ? "Artigo publicado com sucesso." : "Rascunho salvo com sucesso.")->flash();
             echo json_encode(["redirect" => url("/studio/blog/post/{$post->id}")]);
             return;
