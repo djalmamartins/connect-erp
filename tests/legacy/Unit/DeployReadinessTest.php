@@ -79,6 +79,18 @@ final class DeployReadinessTest extends TestCase
         self::assertStringNotContainsString('@', implode(' ', array_merge($out['errors'], $out['warnings'])), 'sem e-mail na saída');
     }
 
+    public function testSiteContactMissingInStudioIsAWarning(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        self::assertSame([], DeployReadiness::missingSiteContact($pdo), 'sem tabela settings não quebra');
+        $pdo->exec('CREATE TABLE settings (id INTEGER PRIMARY KEY, site_company_name TEXT, site_cnpj TEXT, site_phone TEXT, mail_suport TEXT, site_street TEXT, site_city TEXT)');
+        $pdo->exec("INSERT INTO settings VALUES (1, 'Connect Ltda', '', '(19) 3333-0000', NULL, 'Rua A', 'Campinas')");
+        self::assertSame(['CNPJ', 'e-mail de atendimento'], DeployReadiness::missingSiteContact($pdo));
+        $out = DeployReadiness::database($pdo);
+        self::assertStringContainsString('CNPJ, e-mail de atendimento', implode(' ', $out['warnings']));
+    }
+
     public function testDeployCheckCallsIt(): void
     {
         $check = (string)file_get_contents(dirname(__DIR__, 3) . '/service/commands/deploy-check.php');

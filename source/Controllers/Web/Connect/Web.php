@@ -80,7 +80,7 @@ class Web extends Controller
         $head = $this->seo->render(
             "Porque escolher a " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
             CONF_SITE_DESC,
-            url("/proposta"),
+            url("/solicite-sua-proposta"),
             theme("/assets/images/share.jpg")
         );
 
@@ -297,7 +297,7 @@ class Web extends Controller
     {
         if (!empty($data['s'])) {
             $search = str_search($data['s']);
-            echo json_encode(["redirect" => url("/artigos/buscar/{$search}/1")]);
+            echo json_encode(["redirect" => url("/artigos/buscar/" . rawurlencode($search) . "/1")]);
             return;
         }
 
@@ -312,7 +312,7 @@ class Web extends Controller
         $head = $this->seo->render(
             "Pesquisa por {$search} - " . CONF_SITE_NAME,
             "Confira os resultados de sua pesquisa para {$search}",
-            url("/artigos/buscar/{$search}/{$page}"),
+            url("/artigos/buscar/" . rawurlencode($search) . "/{$page}"),
             theme("/assets/images/share.jpg")
         );
 
@@ -330,7 +330,7 @@ class Web extends Controller
             return;
         }
 
-        $pager = new Pager(url("artigos/buscar/{$search}/"));
+        $pager = new Pager(url("artigos/buscar/" . rawurlencode($search) . "/"));
         $pager->pager($articlesSearch->count(), 9, $page);
 
 
@@ -507,7 +507,7 @@ class Web extends Controller
             }
         }
 
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {
@@ -627,7 +627,7 @@ class Web extends Controller
         if (Auth::user()) {
             redirect("/redirect");
         }
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {
@@ -691,7 +691,7 @@ class Web extends Controller
             redirect("/redirect");
         }
 
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {

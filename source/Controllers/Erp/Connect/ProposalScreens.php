@@ -78,7 +78,7 @@ final class ProposalScreens extends Controller
             }
             $this->render($user, 'pages/communication/proposal', [
                 'proposal' => $proposal, 'proposalTeam' => $desk->team(), 'proposalResponses' => $desk->responses($id),
-                'studioUrl' => url('/studio/proposals/' . $id), 'flash' => (new Session())->flash(),
+                'studioUrl' => \Source\Services\Environments::link('studio', '/studio/proposals/' . $id), 'flash' => (new Session())->flash(),
             ]);
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'erp', ['event_type' => 'proposal_screen_failed', 'proposal_id' => $id]);

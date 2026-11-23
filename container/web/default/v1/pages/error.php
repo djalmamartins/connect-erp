@@ -87,7 +87,7 @@
 
 
                     <a
-                            href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP)) ?>"
+                            href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE)) ?>"
                             target="_blank"
                             rel="noopener noreferrer"
                             class="error-button error-button-whatsapp"
