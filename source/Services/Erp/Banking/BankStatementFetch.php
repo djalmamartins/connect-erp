@@ -48,7 +48,7 @@ final class BankStatementFetch
             return [];
         }
         $stmt = $this->pdo->prepare("SELECT b.id, b.name, b.account_number, b.adapter FROM erp_bank_accounts b JOIN erp_bank_credentials c ON c.bank_account_id = b.id
-            WHERE b.condominium_id = :c AND b.deleted_at IS NULL AND b.status = 'active' AND b.adapter IN ('inter','cora','sicoob') ORDER BY b.name, b.id");
+            WHERE b.condominium_id = :c AND b.deleted_at IS NULL AND b.status = 'active' AND b.adapter IN ('inter','cora','sicoob','condoconta') ORDER BY b.name, b.id");
         $stmt->execute(['c' => $condominiumId]);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => $r['name'] . ($r['account_number'] ? ' · ' . $r['account_number'] : ''),
             'adapter' => (string)$r['adapter']], $stmt->fetchAll(PDO::FETCH_ASSOC));

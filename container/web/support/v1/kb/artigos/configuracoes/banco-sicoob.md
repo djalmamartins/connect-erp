@@ -33,7 +33,7 @@ O Sicoob é ligado à cobrança do Connect ERP pelo mesmo caminho do Banco Inter
 
 ## 2. Enviar pela tela
 
-1. Abra [[Configurações > Aplicativo e notificações > Integrações]] e vá até o card **Banco Inter, Cora e Sicoob**.
+1. Abra [[Configurações > Aplicativo e notificações > Integrações]] e vá até o card **Banco Inter, Cora, Sicoob e CondoConta**.
 2. Escolha a conta do Sicoob. O campo de secret passa a se chamar **Access token do sandbox** e aparece o campo **Número do cliente**.
 3. Preencha o **client ID**, o **access token** e o **número do cliente** (o código do beneficiário na cooperativa, só números; no sandbox pode ser um número de exemplo). No sandbox não precisa de certificado.
 4. Clique em **Testar e gravar**. O sistema faz uma consulta de teste ao Sicoob, sem emitir nada.

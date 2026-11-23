@@ -7,6 +7,7 @@ namespace Source\Services\Erp\Banking;
 use InvalidArgumentException;
 use PDO;
 use Source\Core\Connect;
+use Source\Services\Erp\Banking\CondoConta\CondoContaBankAdapter;
 use Source\Services\Erp\Banking\Cora\CoraBankAdapter;
 use Source\Services\Erp\Banking\Inter\InterBankAdapter;
 use Source\Services\Erp\Banking\Sicoob\SicoobBankAdapter;
@@ -27,16 +28,18 @@ use Source\Support\Audit;
 final class BankCredentials
 {
     public const ADAPTERS = [InterBankAdapter::NAME => InterBankAdapter::BANK_CODE, CoraBankAdapter::NAME => CoraBankAdapter::BANK_CODE,
-        SicoobBankAdapter::NAME => SicoobBankAdapter::BANK_CODE];
+        SicoobBankAdapter::NAME => SicoobBankAdapter::BANK_CODE, CondoContaBankAdapter::NAME => CondoContaBankAdapter::BANK_CODE];
     /** Nome do banco por adaptador, para as mensagens. */
-    public const BANK_NAMES = [InterBankAdapter::NAME => 'Inter', CoraBankAdapter::NAME => 'Cora', SicoobBankAdapter::NAME => 'Sicoob'];
+    public const BANK_NAMES = [InterBankAdapter::NAME => 'Inter', CoraBankAdapter::NAME => 'Cora', SicoobBankAdapter::NAME => 'Sicoob',
+        CondoContaBankAdapter::NAME => 'CondoConta'];
     /** A Cora (Integração Direta) autentica só com client ID e certificado, sem client secret (ADR 0322). */
     public const WITHOUT_SECRET = [CoraBankAdapter::NAME];
     /**
      * O sandbox do Sicoob (ADR 0633) autentica pelo client ID e pelo access token fixos do portal, sem certificado:
      * o token vai no lugar do client secret e o certificado é opcional. Ele pede também o número do cliente.
+     * A CondoConta (ADR 0649) usa só client ID e client secret (OAuth2), nunca certificado.
      */
-    public const WITHOUT_CERTIFICATE = [SicoobBankAdapter::NAME];
+    public const WITHOUT_CERTIFICATE = [SicoobBankAdapter::NAME, CondoContaBankAdapter::NAME];
     public const NEEDS_CLIENT_NUMBER = [SicoobBankAdapter::NAME];
 
     private PDO $pdo;
