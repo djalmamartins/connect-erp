@@ -341,7 +341,6 @@ class Studio extends Controller
                 $this->jsonMessage("Informe uma URL ou ID válido do YouTube.", "warning"); return;
             }
 
-            $isNewPost = !$post;
             $post = $post ?: new Post();
             $post->title = $title;
             $post->uri = str_slug(trim(strip_tags($data["uri"] ?? "")) ?: $title);
@@ -380,25 +379,7 @@ class Studio extends Controller
             if ($oldCoverToRemove) {
                 (new Upload())->remove(dirname(__DIR__, 3) . "/" . CONF_UPLOAD_DIR . "/" . $oldCoverToRemove);
             }
-            if ($isNewPost) {
-                $articleMessage = new NotificationMessage();
-                $articleMessage->sender_id = $user->id;
-                $articleMessage->title = "Novo artigo: " . $post->title;
-                $articleMessage->body = $post->subtitle;
-                $articleMessage->audience = "all";
-                $articleMessage->target_user_id = null;
-                $articleMessage->severity = "info";
-                $articleMessage->delivery_channels = "system";
-                $articleMessage->link = $post->status === "post" ? url("/artigos/{$post->uri}") : url("/artigos");
-                $articleMessage->status = "sent";
-                $articleMessage->expires_at = date("Y-m-d H:i:s", strtotime("+1 month"));
-                if ($articleMessage->save()) {
-                    (new Communication())->deliver($articleMessage);
-                    \Source\Support\Audit::record("create", "article_notification", (int)$articleMessage->id, [], ["post_id" => (int)$post->id, "audience" => "all"]);
-                } else {
-                    \Source\Support\AppLogger::log("warning", "Artigo criado sem concluir a notificação dos usuários", ["event_type" => "article_notification_failed", "post_id" => (int)$post->id], "articles");
-                }
-            }
+            // Artigo novo do blog não vira aviso no sininho de toda a equipe (ADR 0645).
             $this->message->success($status === "post" ? "Artigo publicado com sucesso." : "Rascunho salvo com sucesso.")->flash();
             echo json_encode(["redirect" => url("/studio/blog/post/{$post->id}")]);
             return;
