@@ -1,5 +1,5 @@
 <?php
-/** Botão do e-mail (layout Connect, ADR 0397). Variáveis: $label, $href. Tabela para funcionar também no Outlook. */
+/** Botão do e-mail (ADR 0397; verde com texto branco, ADR 0646). Variáveis: $label, $href. Tabela para funcionar também no Outlook. */
 ?>
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:4px 0 24px;">
     <tr>
