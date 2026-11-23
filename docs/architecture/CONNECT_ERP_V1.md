@@ -185,7 +185,7 @@ Organic foi movida para `container/shared/assets/organic/`, layouts WEB/Suporte 
 
 **C11. Duplicidade de controllers `V1` e `Connect`.** `Erp/V1` e `Erp/Connect`, `App/V1` e
 `App/Connect`, `Web/V1` e `Web/Connect` são versões legadas lado a lado. Não renomear;
-o ERP v1 usa apenas `Erp/Connect` e as `V1` ficam congeladas até serem descartadas por ADR.
+o ERP v1 usa apenas `Erp/Connect` e as `V1` ficam congeladas até serem descartadas por ADR. **23/11/2026 (ADR 0648):** `Web/V1`, `App/V1`, `App/Connect` e os controladores antigos `Erp/Connect/{Erp,Dash,Finance}` e `Pay/Pay`, todos sem rota, foram removidos.
 
 ## 5. Adaptações propostas (somente as necessárias)
 
