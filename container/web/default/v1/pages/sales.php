@@ -533,41 +533,7 @@
      LADO DIREITO — IMAGENS
 ================================== -->
 
-<div class="about-team-images">
-
-    <!-- IMAGEM GRANDE -->
-
-    <div class="about-team-image about-team-image-main">
-
-        <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Reunião de gestão condominial">
-
-    </div>
-
-
-    <!-- IMAGEM INFERIOR ESQUERDA -->
-
-    <div class="about-team-image about-team-image-bottom-left">
-
-        <img
-                src="<?= theme("/assets/images/gestao-b.png"); ?>"
-                alt="Gestão e planejamento condominial"
-        >
-
-    </div>
-
-
-    <!-- IMAGEM INFERIOR DIREITA -->
-
-    <div class="about-team-image about-team-image-bottom-right">
-
-        <img
-                src="<?= theme("/assets/images/gestao-c.png"); ?>"
-                alt="Reunião da equipe Connect Condomínios"
-        >
-
-    </div>
-
-</div>
+<?= $this->insert("pages/about-team-art"); ?>
 
 </div>
 
