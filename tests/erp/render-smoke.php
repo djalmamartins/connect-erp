@@ -320,6 +320,30 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, 'Honorários indisponíveis'), 'CN-008: sem banco');
         continue;
     }
+    if ($id === 'CN-011') {
+        // Propostas do site (ADR 0644): lista com alerta de novas, filtros, escape e o detalhe com CSRF.
+        $row = ['id' => 7, 'protocol' => 'PROP-261122-ABC123', 'name' => '<b>Ana</b>', 'email' => 'ana@example.test', 'whatsapp' => '(11) 99999-0000', 'condominium' => 'Residencial <i>Teste</i>',
+            'units' => 40, 'profile' => 'sindico', 'profile_label' => 'Síndico', 'message' => "Quero <script>x</script>\nproposta", 'status' => 'new', 'status_label' => 'Nova', 'assigned_to' => null,
+            'source_url' => null, 'marketing_consent' => false, 'contacted_at' => null, 'created_at' => '2026-11-22 10:00:00'];
+        $listData = static fn (array $over = []): array => $over + ['proposalSearch' => '', 'proposalStatus' => '', 'proposalError' => null, 'flash' => null,
+            'proposalStats' => ['total' => 3, 'new' => 2, 'progress' => 1, 'won' => 0], 'proposalList' => ['data' => [$row], 'total' => 1, 'page' => 1, 'pages' => 1, 'per_page' => 20]];
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData()));
+        $common($html, $id, 'Propostas do site');
+        $save('cn-011', $html);
+        $assert(str_contains($html, 'data-erp-proposal-alert') && str_contains($html, '2 propostas novas aguardando contato') && str_contains($html, 'comunicacao/propostas/7"')
+            && !str_contains($html, '<b>Ana') && !str_contains($html, '<i>Teste') && str_contains($html, 'class="is-new"'), 'CN-011: alerta, link do pedido e escape');
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData(['proposalStats' => ['total' => 1, 'new' => 0, 'progress' => 0, 'won' => 1],
+            'proposalList' => ['data' => [], 'total' => 0, 'page' => 1, 'pages' => 1, 'per_page' => 20]])));
+        $assert(!str_contains($html, 'data-erp-proposal-alert') && str_contains($html, 'Nenhuma proposta encontrada'), 'CN-011: sem novas, sem alerta');
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData(['proposalError' => 'Sem banco.', 'proposalList' => null, 'proposalStats' => null])));
+        $assert(str_contains($html, 'Propostas indisponíveis'), 'CN-011: sem banco');
+        $html = $render('pages/communication/proposal', $layoutData->invoke($panel, $user, 'CN-011', ['proposal' => $row, 'proposalTeam' => [['id' => 3, 'name' => 'Equipe <x>']],
+            'proposalResponses' => [['id' => 1, 'subject' => 'Proposta <x>', 'status' => 'sent', 'created_at' => '2026-11-22 11:00:00']], 'studioUrl' => '/studio/proposals/7', 'flash' => null]));
+        $assert(str_contains($html, 'action="' . erp_url('/comunicacao/propostas/7') . '"') && substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"')
+            && !str_contains($html, '<script>x') && !str_contains($html, 'Equipe <x>') && !str_contains($html, 'Proposta <x>') && str_contains($html, '/studio/proposals/7')
+            && str_contains($html, 'name="assigned_to"'), 'CN-011: detalhe com CSRF, escape e Responder no Studio');
+        continue;
+    }
     if ($id === 'CN-009') {
         // Dados pessoais (LGPD, ADR 0332): busca por POST com CSRF, relatório, prévia da anonimização e bloqueios.
         $report = ['total' => 3, 'account' => null, 'residents' => ['rows' => [['id' => 4, 'name' => '<b>Ana</b>', 'condominium' => 'Residencial Teste', 'unit_label' => 'A-101',

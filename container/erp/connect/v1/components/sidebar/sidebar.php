@@ -13,6 +13,7 @@
  * @var callable $icon
  * @var callable $anchor
  * @var callable $canSee  esconde páginas sem a permissão própria (a rota valida de novo)
+ * @var ?array<string,int> $navBadges  número ao lado do item (ADR 0644: propostas novas do site)
  */
 // Menu novo ou atual (ADR 0398): os grupos vêm de ErpNav; o catálogo continua dando nome e endereço de cada página.
 $navMode ??= \Source\Services\Erp\ErpNav::mode();
@@ -27,6 +28,10 @@ foreach ($nav as $groupKey => $group) {
     }
 }
 $currentSection = $currentPageId !== null ? \Source\Services\Erp\ErpNav::sectionOf($nav, $currentPageId) : null;
+$navBadges ??= [];
+// Selo do item e do grupo (ADR 0644): o número aparece no item e, com o grupo fechado, no nome do grupo.
+$badge = static fn (int $count, string $what): string => $count > 0
+    ? '<span class="erp-nav__badge"><span aria-hidden="true">' . ($count > 99 ? '99+' : $count) . '</span><span class="erp-sr-only">, ' . $count . ' ' . $what . '</span></span>' : '';
 $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 1));
 ?>
 <aside class="erp-sidebar" id="erp-sidebar" aria-label="Navegação do ERP">
@@ -47,6 +52,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                 continue;
             }
             $isActive = $navGroup === $groupKey;
+            $groupBadge = array_sum(array_intersect_key($navBadges, $pages));
             if ($groupKey === 'dashboard'): ?>
                 <a class="erp-nav__link" href="<?= erp_url('/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
                 <?php if (isset($pages['CN-010'])): // Meu Dia (ADR 0630): link direto logo abaixo do Dashboard ?>
@@ -59,7 +65,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
             $hubHref = $group['hub'];
             $hasHub = $hubHref !== null && !in_array($hubHref, array_column($catalog['pages'], 'route'), true); ?>
             <details class="erp-nav__group" data-erp-group="<?= $this->e($groupKey) ?>"<?= $isActive ? ' open' : '' ?>>
-                <summary<?= $isActive ? ' class="is-active"' : '' ?> title="<?= $this->e($group['label']) ?>"><?= $icon($group['icon']) ?><span class="erp-nav__label"><?= $this->e($group['label']) ?></span></summary>
+                <summary<?= $isActive ? ' class="is-active"' : '' ?> title="<?= $this->e($group['label']) ?>"><?= $icon($group['icon']) ?><span class="erp-nav__label"><?= $this->e($group['label']) ?></span><?= $badge((int)$groupBadge, 'proposta(s) nova(s)') ?></summary>
                 <div class="erp-nav__sub">
                     <?php if ($hasHub): ?>
                         <a href="<?= erp_url($hubHref) ?>"<?= $isActive && $currentPageId === null ? ' aria-current="page"' : '' ?>>Visão geral</a>
@@ -76,7 +82,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                             <details class="erp-nav__section"<?= $sectionActive ? ' open' : '' ?>>
                                 <summary><?= $this->e($section) ?></summary>
                                 <?php foreach ($sectionPages as $id => $page): ?>
-                                    <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?></a>
+                                    <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?><?= $badge((int)($navBadges[$id] ?? 0), 'nova(s)') ?></a>
                                 <?php endforeach; ?>
                             </details>
                         <?php endforeach;
@@ -87,7 +93,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
                                 $lastSection = $page['section']; ?>
                                 <span class="erp-nav__heading"><?= $this->e($lastSection) ?></span>
                             <?php endif; ?>
-                            <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?></a>
+                            <a href="<?= erp_url($page['route']) ?>"<?= $currentPageId === $id ? ' aria-current="page"' : '' ?>><?= $this->e($page['name']) ?><?= $badge((int)($navBadges[$id] ?? 0), 'nova(s)') ?></a>
                         <?php endforeach;
                     endif; ?>
                 </div>
