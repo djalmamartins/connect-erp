@@ -1,6 +1,6 @@
 <?php
 /**
- * Moldura única dos e-mails do sistema (ambiente send, A4; ADR 0397, visual branco e dourado no ADR 0644).
+ * Moldura única dos e-mails do sistema (ambiente send, A4; ADR 0397, visual branco e dourado no ADR 0646).
  * Cartão branco sem bordas nem linhas douradas, logo Connect dourado sobre branco, fonte Inter (com alternativas),
  * botão verde (#07884c), quadros e rodapé em verde bem claro (#f6faf8) e links em dourado escuro (#8a6d1c).
  * Sem o cabeçalho verde-escuro: o e-mail é leve e limpo.

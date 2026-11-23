@@ -105,6 +105,8 @@ final class SystemSettingsTest extends TestCase
         $controller = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Controllers/Studio/Studio.php');
         self::assertStringContainsString('MailConfig::seal(', $controller);
         self::assertStringContainsString('"settings-mail-test|"', $controller);
+        // DNS que não responde não pode virar "SPF: falta" (falso alarme de 20/11/2026).
+        self::assertStringContainsString('dns_get_record($domain, DNS_NS)', $controller);
         // A lista de temas procurava em container/apps/... e ficava vazia: a tela recusava qualquer gravação.
         self::assertStringNotContainsString('/container/apps/', $controller);
         self::assertStringContainsString('"/v1/default.php"', $controller);

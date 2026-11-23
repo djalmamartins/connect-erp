@@ -1,4 +1,4 @@
-# 0644 — E-mails brancos com logo dourado, sem cabeçalho verde-escuro
+# 0646 — E-mails brancos com logo dourado, sem cabeçalho verde-escuro
 
 - Status: Aceito
 - Data: 22/11/2026
