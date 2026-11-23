@@ -4,7 +4,7 @@
  * Variáveis: $rows (lista de [rótulo, valor]), $mono (opcional, valor em fonte monoespaçada).
  */
 ?>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;background:#fbf8f0;border:1px solid #efe6cc;border-left:4px solid #c5a131;border-radius:8px;border-collapse:separate;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;background:#f6faf8;border-radius:8px;border-collapse:separate;">
     <?php foreach ($rows as [$label, $value]): ?>
         <tr>
             <td style="padding:10px 16px 0;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#6f6a5e;"><?= $this->e($label) ?></td>

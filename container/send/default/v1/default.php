@@ -1,9 +1,9 @@
 <?php
 /**
  * Moldura única dos e-mails do sistema (ambiente send, A4; ADR 0397, visual branco e dourado no ADR 0644).
- * Fundo branco, faixa dourada fina no topo, logo Connect dourado sobre branco, fonte Inter (com alternativas),
- * botão dourado (#c5a131) com texto escuro e links em dourado escuro (#8a6d1c), ambos com contraste AA.
- * Sem o verde forte do ERP: o e-mail é leve e limpo.
+ * Cartão branco sem bordas nem linhas douradas, logo Connect dourado sobre branco, fonte Inter (com alternativas),
+ * botão verde (#07884c), quadros e rodapé em verde bem claro (#f6faf8) e links em dourado escuro (#8a6d1c).
+ * Sem o cabeçalho verde-escuro: o e-mail é leve e limpo.
  *
  * Variáveis: $subject, $preheader, $heading (título no corpo; padrão = assunto; '' esconde),
  * $site_name, $logo_url, $site_url, $footer_note (padrão: "não responda"), $privacy_url, $company_cnpj,
@@ -26,14 +26,14 @@ $siteHost = $siteUrl !== '' ? (string)preg_replace('~^https?://(www\.)?~i', '', 
     <title><?= $this->e($subject ?? '') ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background:#f8f6f1;font-family:Inter,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#3a3730;-webkit-text-size-adjust:100%;">
-<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f8f6f1;"><?= $this->e($preheader ?? '') ?></span>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f6f1;">
+<body style="margin:0;padding:0;background:#eef1ef;font-family:Inter,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#3a3730;-webkit-text-size-adjust:100%;">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1ef;"><?= $this->e($preheader ?? '') ?></span>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef1ef;">
     <tr>
         <td align="center" style="padding:32px 12px;">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #ece5d3;border-top:4px solid #c5a131;border-radius:12px;overflow:hidden;border-collapse:separate;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border-collapse:separate;">
                 <tr>
-                    <td align="center" style="padding:30px 28px 24px;background:#ffffff;border-bottom:1px solid #f0eadb;">
+                    <td align="center" style="padding:32px 28px 8px;background:#ffffff;">
                         <?php if (($logo_url ?? '') !== ''): ?>
                             <img src="<?= $this->e($logo_url) ?>" width="152" height="40" alt="<?= $this->e($siteName) ?>" style="display:block;margin:0 auto;border:0;width:152px;height:40px;color:#8a6d1c;font-size:18px;font-weight:700;">
                         <?php else: ?>
@@ -50,7 +50,7 @@ $siteHost = $siteUrl !== '' ? (string)preg_replace('~^https?://(www\.)?~i', '', 
                     </td>
                 </tr>
                 <tr>
-                    <td align="center" style="padding:22px 36px 26px;background:#ffffff;border-top:1px solid #f0eadb;font-size:12px;line-height:1.7;color:#6f6a5e;text-align:center;border-radius:0 0 12px 12px;">
+                    <td align="center" style="padding:22px 36px 26px;background:#f6faf8;font-size:12px;line-height:1.7;color:#6f6a5e;text-align:center;border-radius:0 0 12px 12px;">
                         <p style="margin:0 0 10px;"><?= $this->e($footer_note ?? "Mensagem automática de {$siteName}. Não responda a este e-mail.") ?></p>
                         <p style="margin:0 0 10px;">
                             <strong style="color:#3a3730;font-weight:600;"><?= $this->e($siteName) ?></strong><?php if (($company_cnpj ?? '') !== ''): ?> · CNPJ <?= $this->e($company_cnpj) ?><?php endif; ?>

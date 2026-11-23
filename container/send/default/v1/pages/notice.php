@@ -26,7 +26,7 @@ $this->layout('default', [
 <?php if (($quote ?? '') !== ''): ?>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
     <tr>
-        <td style="padding:14px 16px;background:#fbf8f0;border-left:4px solid #c5a131;border-radius:0 8px 8px 0;font-size:15px;line-height:1.6;color:#3a3730;">
+        <td style="padding:14px 16px;background:#f6faf8;border-radius:8px;font-size:15px;line-height:1.6;color:#3a3730;">
             <?= nl2br($this->e($quote)) ?>
             <?php if (($quote_author ?? '') !== ''): ?><br><span style="font-size:13px;color:#6f6a5e;">— <?= $this->e($quote_author) ?></span><?php endif; ?>
         </td>
@@ -37,8 +37,8 @@ $this->layout('default', [
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border-collapse:collapse;font-size:14px;">
     <?php foreach ($facts as [$label, $value]): ?>
     <tr>
-        <td style="padding:8px 0;border-bottom:1px solid #f0eadb;color:#6f6a5e;width:40%;"><?= $this->e($label) ?></td>
-        <td style="padding:8px 0;border-bottom:1px solid #f0eadb;font-weight:600;"><?= $this->e($value) ?></td>
+        <td style="padding:8px 0;border-bottom:1px solid #e6eeea;color:#6f6a5e;width:40%;"><?= $this->e($label) ?></td>
+        <td style="padding:8px 0;border-bottom:1px solid #e6eeea;font-weight:600;"><?= $this->e($value) ?></td>
     </tr>
     <?php endforeach; ?>
 </table>

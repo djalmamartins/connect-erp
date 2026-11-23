@@ -79,15 +79,15 @@ final class MailTemplateTest extends TestCase
             'company_cnpj' => '12.345.678/0001-90', 'company_address' => 'Rua A, 10, Centro, Cidade - UF',
             'company_phone' => '(11) 4000-0000', 'company_email' => 'contato@connect.test',
         ]);
-        self::assertStringContainsString('border-top:4px solid #c5a131', $html, 'Faixa dourada no topo (ADR 0644).');
-        self::assertStringContainsString('background:#ffffff;border-bottom', $html, 'Cabeçalho branco com o logo dourado (ADR 0644).');
+        self::assertStringContainsString('padding:32px 28px 8px;background:#ffffff;', $html, 'Cabeçalho branco com o logo dourado (ADR 0644).');
+        self::assertStringNotContainsString('solid #c5a131', $html, 'Sem bordas ou linhas douradas (ADR 0644).');
+        self::assertStringContainsString('background:#f6faf8;font-size:12px', $html, 'Rodapé verde bem claro (ADR 0644).');
         self::assertStringContainsString('alt="Connect Condomínios"', $html, 'Logo com texto alternativo.');
         self::assertStringContainsString('Inter,', $html);
         self::assertStringContainsString('CNPJ 12.345.678/0001-90', $html);
         self::assertStringContainsString('Rua A, 10, Centro, Cidade - UF', $html);
         self::assertStringContainsString('href="https://www.connect.test/politica-de-privacidade"', $html);
-        self::assertStringContainsString('background:#c5a131', $html, 'Botão dourado (ADR 0644).');
-        self::assertStringContainsString('color:#1f1d17;text-decoration:none', $html, 'Texto escuro no botão dourado (contraste AA).');
+        self::assertStringContainsString('background:#07884c', $html, 'Botão verde (ADR 0644).');
         self::assertStringNotContainsString('#0f5fa8', $html);
         self::assertStringNotContainsString('Descadastrar', $html, 'Sem link de descadastro quando o envio não informa.');
 
@@ -101,13 +101,12 @@ final class MailTemplateTest extends TestCase
     public function testEveryTemplateUsesTheFrameWithoutOldColors(): void
     {
         $root = moves_container_path('send', 'default');
-        // ADR 0644: e-mail branco e dourado, sem o verde forte do ERP em nenhuma parte da moldura, partes ou modelos.
+        // ADR 0644: sem o cabeçalho verde-escuro e sem bordas douradas em nenhuma parte da moldura, partes ou modelos.
         $files = array_merge([$root . '/default.php'], glob($root . '/partials/*.php') ?: [], glob($root . '/pages/*.php') ?: []);
         foreach ($files as $file) {
             $source = strtolower((string)file_get_contents($file));
-            foreach (['#0d2e27', '#07884c', '#066f3e', '#eef3f0', '#f6faf8'] as $green) {
-                self::assertStringNotContainsString($green, $source, basename($file) . " ainda usa o verde {$green}.");
-            }
+            self::assertStringNotContainsString('#0d2e27', $source, basename($file) . ' ainda usa o verde-escuro do cabeçalho antigo.');
+            self::assertStringNotContainsString('solid #c5a131', $source, basename($file) . ' com borda dourada.');
         }
         foreach (glob($root . '/pages/*.php') ?: [] as $file) {
             $source = (string)file_get_contents($file);
