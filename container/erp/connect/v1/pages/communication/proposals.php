@@ -24,7 +24,7 @@ $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · Comercial',
     'pageTitle' => $currentPage['name'],
     'pageLead' => 'Pedidos feitos em "Solicite uma proposta" no site. Cada pedido novo avisa a equipe no sino e aparece aqui e no Studio.',
-    'pageActions' => '<a class="erp-btn" href="' . $this->e(url('/studio/proposals')) . '">' . $icon('chevron-right', 'erp-icon--sm') . 'Abrir no Studio</a>',
+    'pageActions' => '<a class="erp-btn" href="' . $this->e(\Source\Services\Environments::link('studio', '/studio/proposals')) . '">' . $icon('chevron-right', 'erp-icon--sm') . 'Abrir no Studio</a>',
 ]);
 ?>
 <?php if (($flash ?? null) !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>

@@ -53,3 +53,12 @@ link do e-mail com um desses caracteres não entrava depois no app do morador.
 - `Auth::attempt()`: se a senha não confere, tenta a forma antiga (codificada) e, se conferir, grava de novo do
   jeito certo. Assim ninguém que já trocou a senha pelo caminho antigo fica de fora.
 - Testes de integração em `AuthTest`.
+
+## Morador, ERP, Help Desk e Studio
+
+| Área | Conferido | Resultado |
+|---|---|---|
+| App web do morador | 600 telas; termos; ocorrência, pedido de CND | Ocorrência vira OCO no Help Desk e o pedido de CND vira chamado "Pedido de CND" (nunca emite sozinho, ADR 0638); sem link quebrado |
+| ERP | 1.500 telas com o administrador | Sem erro de PHP nos logs. "Abrir no Studio" e "Responder no Studio" das propostas iam para `erp.<domínio>/studio/proposals` (404): agora passam pela troca de ambiente (`Environments::link`) |
+| Help Desk | 500 telas | Sem link quebrado |
+| Studio | 1.200 telas | Sem link quebrado |
