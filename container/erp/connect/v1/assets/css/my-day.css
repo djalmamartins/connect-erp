@@ -7,20 +7,22 @@
 .md-kpis { display: grid; gap: var(--erp-space-3); grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: var(--erp-space-4); }
 
 /* Faixa dos dias: o dia mostrado no meio, em verde e maior; hoje com borda dourada quando não está no meio; dias passados apagados. */
-.md-week { display: flex; align-items: center; gap: var(--erp-space-2); margin-bottom: var(--erp-space-4); padding: 16px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); }
+.md-week { display: flex; align-items: center; justify-content: center; gap: var(--erp-space-4); margin-bottom: var(--erp-space-4); padding: 16px 12px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-lg); background: var(--erp-surface); }
 .md-week__nav { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--erp-border); border-radius: var(--erp-radius-md); color: var(--erp-text); }
 .md-week__nav:hover { background: var(--erp-surface-muted); text-decoration: none; }
-.md-week__days { flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: center; }
-.md-week__day { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border: 1px solid var(--erp-border); border-radius: 12px; background: var(--erp-surface-muted); color: var(--erp-text); text-decoration: none; }
+.md-week__days { display: flex; justify-content: center; align-items: center; gap: 18px; }
+.md-week__day { position: relative; flex: none; width: 64px; display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border: 1px solid var(--erp-border); border-radius: 12px; background: var(--erp-surface-muted); color: var(--erp-text); text-decoration: none; }
 .md-week__day:hover { border-color: var(--erp-brand-line); text-decoration: none; }
 .md-week__day small { color: var(--erp-muted); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
-.md-week__day strong { font-size: 22px; font-variant-numeric: tabular-nums; }
+.md-week__day strong { font-size: 20px; font-variant-numeric: tabular-nums; }
 .md-week__day em { font-style: normal; font-size: 11px; font-weight: 700; }
 .md-week__day.is-past { opacity: .55; }
 .md-week__day.is-today { border-color: var(--erp-accent); }
-.md-week__day.is-selected { padding: 14px 4px 10px; background: var(--erp-brand); border-color: var(--erp-brand); color: var(--erp-on-brand); box-shadow: 0 0 0 3px var(--erp-accent-soft), 0 8px 20px rgba(0, 0, 0, .12); transform: scale(1.08); opacity: 1; }
+.md-week__day.is-selected { width: 76px; padding: 12px 4px 10px; background: var(--erp-brand); border-color: var(--erp-brand); color: var(--erp-on-brand); box-shadow: 0 0 0 3px var(--erp-accent-soft), 0 8px 20px rgba(0, 0, 0, .12); opacity: 1; animation: md-day-in .25s ease-out; }
 .md-week__day.is-selected small { color: var(--erp-on-brand); }
-.md-week__day.is-selected strong { font-size: 28px; }
+.md-week__day.is-selected strong { font-size: 24px; }
+@keyframes md-day-in { from { transform: scale(.9); opacity: .6; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .md-week__day.is-selected { animation: none; } }
 .md-week__dot { position: absolute; top: -8px; right: -6px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--erp-accent); color: #2b2205; font-size: 11px; font-weight: 750; line-height: 20px; text-align: center; }
 .md-week__dot[hidden] { display: none; }
 
@@ -99,7 +101,9 @@
     /* No celular, 5 dias: 2 antes, o do meio e 2 depois. */
     .md-week { gap: 6px; padding: 14px 8px 10px; }
     .md-week__nav { width: 28px; height: 28px; }
-    .md-week__days { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .md-week__days { gap: 8px; }
+    .md-week__day { width: 48px; }
+    .md-week__day.is-selected { width: 58px; }
     .md-week__day:first-child, .md-week__day:last-child { display: none; }
     .md-week__day strong { font-size: 18px; }
     .md-week__day.is-selected strong { font-size: 22px; }
