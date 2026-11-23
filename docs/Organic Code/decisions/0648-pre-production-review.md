@@ -79,3 +79,10 @@ rota, classe, teste ou script usa cada item.
 - Pagamento antigo (Pagar.me): as constantes `CONF_PAGARME_*` e o salvamento de `pay_mode`, `pay_live`, `pay_test`,
   `pay_back` no Studio. As colunas continuam na tabela `settings` (apagar coluna é mudança de banco; fica para
   quando houver outra migration nessa tabela).
+
+## E-mails da produção (Djalma, 23/11)
+
+- Remetente do SMTP: `no-reply@connectcondominios.com.br` (`MOVESOS_SMTP_FROM_ADDRESS` no `.env.production.example`).
+- Alertas do vigia: `sac@connectcondominios.com.br` e `djalma.martins@moves.com.br`. O `ALERT_EMAIL` passa a aceitar
+  vários endereços separados por vírgula (`HostingWatchdog::recipients`); o vigia manda para cada um e o
+  `deploy-check` só avisa quando nenhum endereço é válido.
