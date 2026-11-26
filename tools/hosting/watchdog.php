@@ -80,7 +80,7 @@ $host = (string)(parse_url((string)getenv('APP_URL'), PHP_URL_HOST) ?: gethostna
 $mail = HostingWatchdog::message($problems, $host);
 $sent = 0;
 foreach ($recipients as $to) {
-    $sent += (new Email())->bootstrap($mail['subject'], $mail['body'], $to, 'Connect ERP')->send() ? 1 : 0;
+    $sent += (new Email())->bootstrap($mail['subject'], $mail['body'], $to, 'ERP Connect Condomínios')->send() ? 1 : 0;
 }
 if ($sent > 0) {
     @mkdir(dirname($stateFile), 0775, true);

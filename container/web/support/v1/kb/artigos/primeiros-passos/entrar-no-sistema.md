@@ -1,6 +1,6 @@
 ---
 codigo:
-titulo: Entrar no Connect ERP
+titulo: Entrar no ERP Connect Condomínios
 resumo: Como acessar o sistema com o seu e-mail e senha, manter a sessão no computador de confiança e o que fazer se esquecer a senha.
 categoria: primeiros-passos
 rota: /login
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-O Connect ERP é usado no navegador, sem instalar nada. Você entra com o e-mail e a senha que a equipe da Connect cadastrou para você.
+O ERP Connect Condomínios é usado no navegador, sem instalar nada. Você entra com o e-mail e a senha que a equipe da Connect cadastrou para você.
 
 ## Como entrar
 
@@ -24,7 +24,7 @@ O Connect ERP é usado no navegador, sem instalar nada. Você entra com o e-mail
 ```tela entrar-login
 rota: /login
 sessao: nenhuma
-legenda: Tela de entrada do Connect ERP
+legenda: Tela de entrada do ERP Connect Condomínios
 1: input[name=email] | Seu e-mail de acesso
 2: input[name=password] | Sua senha (o olho ao lado mostra o que você digitou)
 3: input[name=save] | Manter conectado neste computador

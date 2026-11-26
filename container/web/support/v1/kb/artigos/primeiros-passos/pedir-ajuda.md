@@ -25,7 +25,7 @@ sessao: nenhuma
 legenda: Página inicial da Central de Ajuda
 1: .hc-search | Pesquise a sua dúvida
 2: .hc-channels | Canais de atendimento
-3: .hc-top .hc-btn | Ir para o Connect ERP
+3: .hc-top .hc-btn | Ir para o ERP Connect Condomínios
 ```
 
 ## Falar com o atendimento

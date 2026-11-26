@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-Todas as telas do Connect ERP ficam no **menu lateral**, separadas por assunto: Condomínios, Cadastros, Financeiro, Cobrança, Prestação de contas e assim por diante.
+Todas as telas do ERP Connect Condomínios ficam no **menu lateral**, separadas por assunto: Condomínios, Cadastros, Financeiro, Cobrança, Prestação de contas e assim por diante.
 
 ## O menu lateral e a barra superior
 
@@ -34,7 +34,7 @@ legenda: Menu lateral e barra superior
 
 ## Trocar de sistema
 
-No alto do menu lateral, o quadro **ERP / Connect ERP** mostra em que sistema você está. Clique nele para abrir **Ambientes Connect** e ir para outro sistema da Connect sem entrar de novo:
+No alto do menu lateral, o quadro **ERP / Connect Condomínios** mostra em que sistema você está. Clique nele para abrir **Ambientes Connect** e ir para outro sistema da Connect sem entrar de novo:
 
 - **Studio**: conteúdo do site, usuários e configurações.
 - **ERP**: a gestão dos condomínios (este sistema).

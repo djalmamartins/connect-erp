@@ -1,7 +1,7 @@
 ---
 codigo:
 titulo: Ligar a cobrança pelo Sicoob
-resumo: Como a administradora liga uma conta do Sicoob à cobrança do Connect ERP: client ID e access token do sandbox no portal do Sicoob, número do cliente, teste automático pela tela Integrações e o que já funciona.
+resumo: Como a administradora liga uma conta do Sicoob à cobrança do ERP Connect Condomínios: client ID e access token do sandbox no portal do Sicoob, número do cliente, teste automático pela tela Integrações e o que já funciona.
 categoria: configuracoes
 rota: /configuracoes/integracoes
 menu: Configurações > Aplicativo e notificações > Integrações
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-O Sicoob é ligado à cobrança do Connect ERP pelo mesmo caminho do Banco Inter. Com a integração ligada, o boleto é registrado direto no Sicoob, já com o QR do Pix, e o pagamento é baixado sozinho pela consulta automática de hora em hora.
+O Sicoob é ligado à cobrança do ERP Connect Condomínios pelo mesmo caminho do Banco Inter. Com a integração ligada, o boleto é registrado direto no Sicoob, já com o QR do Pix, e o pagamento é baixado sozinho pela consulta automática de hora em hora.
 
 >! Por enquanto só o **sandbox do Sicoob** (ambiente de testes) está liberado. Nenhum boleto real é emitido. O uso em produção depende de homologação e de aprovação.
 

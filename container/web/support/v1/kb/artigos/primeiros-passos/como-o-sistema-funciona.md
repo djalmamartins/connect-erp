@@ -1,6 +1,6 @@
 ---
 codigo:
-titulo: Como o Connect ERP funciona: o guia para quem está chegando
+titulo: Como o ERP Connect Condomínios funciona: o guia para quem está chegando
 resumo: Para quem vai usar o sistema pela primeira vez. Explica como as partes se ligam (condomínio, unidades, pessoas, lançamentos, cobrança e prestação de contas) e o que acontece por trás das ações mais comuns, como registrar um pagamento ou emitir uma fatura.
 categoria: primeiros-passos
 rota: /dashboard
