@@ -243,7 +243,7 @@ final class TicketService
             'unit_id' => $data['unit_id'], 'priority' => $data['priority'], 'due_at' => $dueAt,
         ]);
         try {
-            $this->notifyOpened($ticketId, $protocol, $data, $dueAt);
+            $this->notifyOpened($ticketId, $protocol, $data + ['created_by' => $actor !== null ? (int)$actor->id : null], $dueAt);
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
         }
@@ -572,6 +572,7 @@ final class TicketService
         $link = Environments::url('helpdesk', self::helpdeskPath((int)$ticket['id']));
         $title = ($reopened ? 'Chamado reaberto ' : 'Nova mensagem no chamado ') . $ticket['protocol'];
         $summary = mb_strimwidth(trim(preg_replace('/\s+/', ' ', $message) ?? ''), 0, 160, '…');
+        (new \Source\Services\Team\TeamPush($this->pdo()))->send(array_values(array_diff(array_map('intval', $recipientIds), [$authorId])), 'sac', $title, $summary, ['path' => '/chamados/' . (int)$ticket['id']]);
         foreach (array_unique(array_filter($recipientIds)) as $recipientId) {
             if ($recipientId === $authorId) {
                 continue;
@@ -765,6 +766,9 @@ final class TicketService
         foreach ((new User())->find('level >= :level', 'level=' . self::ADMIN_LEVEL)->fetch(true) ?: [] as $member) {
             $recipientIds[] = (int)$member->id;
         }
+        // App do SAC no celular (ADR 0660): quem é da equipe e tem o app recebe o push; quem pediu, não.
+        $team = array_values(array_diff(array_map('intval', array_filter($recipientIds)), [(int)($data['requester_id'] ?? 0), (int)($data['created_by'] ?? 0)]));
+        (new \Source\Services\Team\TeamPush($this->pdo()))->send($team, 'sac', "Novo chamado {$protocol}", (string)$data['subject'], ['path' => '/chamados/' . $ticketId]);
         $category = self::notificationCategory();
         $priorityLabel = self::PRIORITY_LABELS[$data['priority']] ?? 'Média';
         $link = Environments::url('helpdesk', self::helpdeskPath($ticketId));

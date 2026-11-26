@@ -13,6 +13,8 @@ if (is_file($environmentFile)) {
         "CONNECT_CNPJ",
         // Push do app do morador (ADR 0642): log (padrão, não envia) ou expo; token de acesso do Expo opcional.
         "CONNECT_RESIDENT_PUSH", "EXPO_ACCESS_TOKEN",
+        // Push dos apps da equipe, SAC e Meu Dia (ADR 0660): log (padrão, não envia) ou expo.
+        "TEAM_PUSH_DELIVERY",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
         "MOVESOS_ENV", "MOVESOS_DB_HOST", "MOVESOS_DB_PORT",
         "MOVESOS_DB_USER", "MOVESOS_DB_PASS", "MOVESOS_DB_NAME",

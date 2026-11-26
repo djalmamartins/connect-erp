@@ -1,0 +1,24 @@
+name: app-sac
+on:
+  push:
+    paths: ['apps/sac/**', '.github/workflows/app-sac.yml']
+  pull_request:
+    paths: ['apps/sac/**', '.github/workflows/app-sac.yml']
+jobs:
+  expo:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/sac
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/sac/package-lock.json
+      - run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Testes (Jest)
+        run: npm test -- --ci

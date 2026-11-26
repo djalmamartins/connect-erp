@@ -1,0 +1,285 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { BlurView } from 'expo-blur';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { Animated, Easing, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, fonts, radius, space } from '../theme';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+export type DialogTone = 'success' | 'error' | 'info' | 'danger';
+
+type Request = {
+  title: string;
+  message?: string;
+  tone: DialogTone;
+  icon?: IconName;
+  /** Texto do botão principal. */
+  confirm: string;
+  /** Sem cancelar = aviso de um botão só. */
+  cancel?: string;
+  /** Dá para desfazer? Mostra a faixa verde ("Dá para desfazer.") ou vermelha ("Não dá para desfazer."). ADR 0321. */
+  undo?: boolean;
+  /** Complemento da faixa (ex.: "Para voltar, cadastre de novo."). */
+  undoText?: string;
+  /** Várias opções (ex.: Tirar foto / Escolher da galeria). No lugar do botão principal. */
+  options?: ChoiceOption[];
+  /** Índice da opção escolhida (o botão principal é 0) ou null se cancelou. */
+  resolve: (choice: number | null) => void;
+};
+
+export type ChoiceOption = { label: string; icon?: IconName; danger?: boolean };
+
+const TONES: Record<DialogTone, { icon: IconName; tint: string; bg: string; button: string }> = {
+  success: { icon: 'checkmark-circle', tint: colors.success, bg: colors.successSoft, button: colors.brand },
+  error: { icon: 'alert-circle', tint: colors.danger, bg: colors.dangerSoft, button: colors.brand },
+  info: { icon: 'information-circle', tint: colors.brandStrong, bg: colors.brandSoft, button: colors.brand },
+  danger: { icon: 'trash', tint: colors.danger, bg: colors.dangerSoft, button: colors.danger },
+};
+
+/**
+ * Janelas do próprio app no lugar do Alert do sistema (pedido do Djalma, 14/11/2026): confirmação,
+ * aviso e um recado rápido (toast). O DialogHost fica uma vez só no _layout e atende uma fila.
+ */
+let listener: ((r: Request) => void) | null = null;
+let toastListener: ((text: string) => void) | null = null;
+const queue: Request[] = [];
+
+function open(r: Omit<Request, 'resolve'>): Promise<number | null> {
+  return new Promise((resolve) => {
+    const req = { ...r, resolve };
+    if (listener) listener(req);
+    else queue.push(req);
+  });
+}
+
+export const dialog = {
+  /** Pergunta antes de uma ação. Resolve true se a pessoa confirmou. */
+  confirm: (o: { title: string; message?: string; confirm: string; cancel?: string; tone?: DialogTone; icon?: IconName; undo?: boolean; undoText?: string }) =>
+    open({ tone: 'danger', cancel: 'Voltar', ...o }).then((c) => c === 0),
+  /** Aviso com um botão (Entendi). */
+  notice: async (o: { title: string; message?: string; tone?: DialogTone; icon?: IconName; confirm?: string }) => {
+    await open({ tone: 'info', confirm: 'Entendi', ...o });
+  },
+  /** Lista de opções. Resolve o índice escolhido ou null se a pessoa voltou. */
+  choose: (o: { title: string; message?: string; options: ChoiceOption[]; cancel?: string; tone?: DialogTone; icon?: IconName }) =>
+    open({ tone: 'info', confirm: '', cancel: 'Voltar', ...o }),
+  /** Recado rápido no topo, que some sozinho (ex.: "Código copiado"). */
+  toast: (text: string) => {
+    toastListener?.(text);
+  },
+};
+
+export function DialogHost() {
+  const [current, setCurrent] = useState<Request | null>(null);
+  const pending = useRef<Request[]>([]);
+  const fade = useRef(new Animated.Value(0)).current;
+  const [toast, setToast] = useState<string | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const afterDismiss = useRef<(() => void) | null>(null);
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    listener = (r) => {
+      setCurrent((c) => {
+        if (c) {
+          pending.current.push(r);
+          return c;
+        }
+        return r;
+      });
+    };
+    toastListener = (text) => {
+      setToast(text);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      Animated.spring(toastAnim, { toValue: 1, useNativeDriver: true, friction: 8 }).start();
+      toastTimer.current = setTimeout(() => {
+        Animated.timing(toastAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setToast(null));
+      }, 2000);
+    };
+    if (queue.length > 0) {
+      const [first, ...rest] = queue.splice(0);
+      pending.current.push(...rest);
+      setCurrent(first);
+    }
+    return () => {
+      listener = null;
+      toastListener = null;
+    };
+  }, [toastAnim]);
+
+  useEffect(() => {
+    if (current) {
+      fade.setValue(0);
+      Animated.timing(fade, { toValue: 1, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    }
+  }, [current, fade]);
+
+  function close(choice: number | null) {
+    const req = current;
+    if (!req) return;
+    Animated.timing(fade, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+      const next = pending.current.shift() ?? null;
+      setCurrent(next);
+      // No iPhone, uma tela do sistema (câmera, galeria) não abre enquanto esta janela ainda está saindo:
+      // o pedido é ignorado sem erro. Só devolve a escolha quando o iOS avisa que a janela fechou (onDismiss).
+      if (Platform.OS !== 'ios' || next) {
+        req.resolve(choice);
+        return;
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        afterDismiss.current = null;
+        req.resolve(choice);
+      };
+      afterDismiss.current = finish;
+      // Reserva, caso o aviso de fechamento não chegue.
+      setTimeout(finish, 700);
+    });
+  }
+
+  const tone = current ? TONES[current.tone] : TONES.info;
+  const scale = fade.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
+  const toastY = toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-80, 0] });
+
+  // O recado rápido fica acima de tudo: com uma janela aberta, ele é desenhado dentro dela (ADR 0321).
+  const toastView = toast ? (
+    <Animated.View pointerEvents="none" style={[styles.toast, { top: insets.top + 8, opacity: toastAnim, transform: [{ translateY: toastY }] }]}>
+      <Ionicons name="checkmark-circle" size={18} color={colors.onBrand} />
+      <Text style={styles.toastText} accessibilityLiveRegion="polite">
+        {toast}
+      </Text>
+    </Animated.View>
+  ) : null;
+
+  return (
+    <>
+      <Modal
+        visible={!!current}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={() => close(null)}
+        onDismiss={() => afterDismiss.current?.()}
+      >
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <Pressable style={[StyleSheet.absoluteFill, styles.backdrop]} onPress={current?.cancel ? () => close(null) : undefined} accessibilityLabel="Fechar" />
+        </Animated.View>
+        <View style={styles.center} pointerEvents="box-none">
+          {current ? (
+            <Animated.View style={[styles.card, { opacity: fade, transform: [{ scale }] }]} accessibilityViewIsModal accessibilityRole="alert">
+              <View style={[styles.icon, { backgroundColor: tone.bg }]}>
+                <Ionicons name={current.icon ?? tone.icon} size={30} color={tone.tint} />
+              </View>
+              <Text style={styles.title}>{current.title}</Text>
+              {current.message ? <Text style={styles.message}>{current.message}</Text> : null}
+              {current.undo !== undefined ? (
+                <View style={[styles.undo, { backgroundColor: current.undo ? colors.successSoft : colors.dangerSoft }]}>
+                  <Ionicons name={current.undo ? 'arrow-undo' : 'lock-closed'} size={16} color={current.undo ? '#0b5a40' : '#8a1c13'} />
+                  <Text style={[styles.undoText, { color: current.undo ? '#0b5a40' : '#8a1c13' }]}>
+                    <Text style={styles.undoStrong}>{current.undo ? 'Dá para desfazer.' : 'Não dá para desfazer.'}</Text>
+                    {current.undoText ? ' ' + current.undoText : ''}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={styles.buttons}>
+                {current.options ? (
+                  current.options.map((o, i) => (
+                    <Pressable
+                      key={o.label}
+                      onPress={() => close(i)}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.option, o.danger && { backgroundColor: colors.dangerSoft }, pressed && { opacity: 0.7 }]}
+                    >
+                      {o.icon ? <Ionicons name={o.icon} size={20} color={o.danger ? colors.danger : colors.brandStrong} /> : null}
+                      <Text style={[styles.optionText, o.danger && { color: colors.danger }]}>{o.label}</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <Pressable
+                    onPress={() => close(0)}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.primary, { backgroundColor: tone.button }, pressed && { opacity: 0.85 }]}
+                  >
+                    <Text style={styles.primaryText}>{current.confirm}</Text>
+                  </Pressable>
+                )}
+                {current.cancel ? (
+                  <Pressable onPress={() => close(null)} accessibilityRole="button" style={({ pressed }) => [styles.secondary, pressed && { opacity: 0.6 }]}>
+                    <Text style={styles.secondaryText}>{current.cancel}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </Animated.View>
+          ) : null}
+        </View>
+        {current ? toastView : null}
+      </Modal>
+      {toast && !current ? toastView : null}
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: { backgroundColor: 'rgba(13,46,39,0.35)' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[5] },
+  card: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    paddingTop: space[6],
+    paddingHorizontal: space[5],
+    paddingBottom: space[4],
+    alignItems: 'center',
+    shadowColor: '#0d2e27',
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
+  },
+  icon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: space[3] },
+  title: { fontFamily: fonts.bold, fontSize: 19, color: colors.text, textAlign: 'center' },
+  message: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.muted, textAlign: 'center', marginTop: space[2] },
+  undo: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: space[3], paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14 },
+  undoText: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19 },
+  undoStrong: { fontFamily: fonts.bold },
+  buttons: { alignSelf: 'stretch', gap: space[1], marginTop: space[5] },
+  primary: { height: 50, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  primaryText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.onBrand },
+  option: {
+    height: 50,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[2],
+  },
+  optionText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brandStrong },
+  secondary: { height: 46, alignItems: 'center', justifyContent: 'center' },
+  secondaryText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.muted },
+  toast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    maxWidth: '92%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    minHeight: 42,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.sidebar,
+    zIndex: 99999,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  toastText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onBrand, flexShrink: 1 },
+});

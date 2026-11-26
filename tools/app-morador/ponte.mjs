@@ -7,14 +7,20 @@ import http from 'node:http';
 
 const listenPort = Number(process.argv[2] || 8090);
 const targetPort = Number(process.argv[3] || process.env.CONNECT_HTTP_PORT || 8088);
-const allowed = (path) => path === '/api/v1/health' || path.startsWith('/api/v1/resident/');
+// PONTE_APP=sac (tools/app-sac/celular.sh, ADR 0660): repassa só as rotas dos apps da equipe (login, SAC, Meu Dia e anexos).
+const teamApp = process.env.PONTE_APP === 'sac';
+const allowed = (path) =>
+  path === '/api/v1/health' ||
+  (teamApp
+    ? ['/api/v1/team/', '/api/v1/sac/', '/api/v1/ticket-attachments/'].some((p) => path.startsWith(p)) || path === '/api/v1/my-day' || path.startsWith('/api/v1/my-day/')
+    : path.startsWith('/api/v1/resident/'));
 
 const server = http.createServer((req, res) => {
   const parsed = new URL(req.url || '/', 'http://ponte');
   const path = parsed.pathname;
   if (!allowed(path) || path.includes('..')) {
     res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: { code: 'not_found', message: 'A ponte do celular só repassa o app do morador.' } }));
+    res.end(JSON.stringify({ error: { code: 'not_found', message: teamApp ? 'A ponte do celular só repassa os apps da equipe.' : 'A ponte do celular só repassa o app do morador.' } }));
     return;
   }
   const upstream = http.request(
