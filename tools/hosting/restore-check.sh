@@ -5,11 +5,12 @@
 #   bash tools/hosting/restore-check.sh --remoto             # baixa o diário mais novo do BACKUP_RCLONE_REMOTE
 #   bash tools/hosting/restore-check.sh <banco.sql.gz> [<arquivos.tar.gz>]
 #
-# Restaura o banco num banco SEPARADO de teste (BACKUP_RESTORE_DB no .env, criado vazio no hPanel e com o mesmo usuário),
+# Restaura o banco num banco SEPARADO de teste (BACKUP_RESTORE_DB no .env, criado vazio no hPanel; se o hPanel criou um
+# usuário só para ele, BACKUP_RESTORE_USER e BACKUP_RESTORE_PASS no .env),
 # confere o pacote de arquivos e compara tabela por tabela com o banco real: mesmas tabelas e quantas linhas cada uma
 # tem. Diz o tempo que levou e grava uma linha em storage/logs/restore-check.log.
 #
-# Travas: o banco de teste precisa ter "restore" no nome e ser diferente do banco do .env; o script nunca escreve no
+# Travas: o banco de teste precisa ter "restore" no nome (ou "restor": o hPanel corta nomes longos) e ser diferente do banco do .env; o script nunca escreve no
 # banco real (só lê as contagens). O banco de teste é sobrescrito a cada execução.
 set -euo pipefail
 project=$(cd "$(dirname "$0")/../.." && pwd)
@@ -18,7 +19,7 @@ env_value() {
     [ -f "$project/.env" ] || return 0
     { grep -E "^[[:space:]]*$1=" "$project/.env" || true; } | tail -n 1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
 }
-for key in BACKUP_RESTORE_DB BACKUP_RCLONE_REMOTE RCLONE_BIN; do
+for key in BACKUP_RESTORE_DB BACKUP_RESTORE_USER BACKUP_RESTORE_PASS BACKUP_RCLONE_REMOTE RCLONE_BIN; do
     if [ -z "${!key:-}" ]; then
         value=$(env_value "$key")
         if [ -n "$value" ]; then export "$key=$value"; fi
@@ -36,7 +37,7 @@ if [ "$target" = "$production" ]; then
     exit 2
 fi
 case "$target" in
-    *restore*) ;;
+    *restor*) ;;
     *) echo "Recusado: o banco de teste precisa ter \"restore\" no nome (recebido: $target)." >&2; exit 2 ;;
 esac
 if ! [[ "$target" =~ ^[A-Za-z0-9_]+$ ]]; then
@@ -55,7 +56,10 @@ mkdir -p "$project/.local/backups" "$project/storage/logs"
 work=$(mktemp -d "$project/.local/backups/.restore-XXXXXX")
 trap 'rm -rf "$work"' EXIT
 "$php_bin" "$project/tools/hosting/db-client-config.php" >"$work/client.cnf"
+"$php_bin" "$project/tools/hosting/db-client-config.php" restore >"$work/restore.cnf"
+# sql: banco real (só leitura das contagens); sql_restore: banco de teste (pode ter usuário próprio).
 sql() { "$client_bin" --defaults-extra-file="$work/client.cnf" -N -B "$@"; }
+sql_restore() { "$client_bin" --defaults-extra-file="$work/restore.cnf" -N -B "$@"; }
 
 db_file=""
 files_file=""
@@ -83,9 +87,9 @@ started=$(date +%s)
 echo "Restaurando $(basename "$db_file") em $target ..."
 gzip -t "$db_file"
 # Esvazia o banco de teste (só ele) e importa.
-drops=$(sql -e "SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;') FROM information_schema.tables WHERE table_schema = '$target'")
-{ echo "SET FOREIGN_KEY_CHECKS=0;"; echo "$drops"; } | sql "$target"
-gunzip -c "$db_file" | sql "$target"
+drops=$(sql_restore -e "SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;') FROM information_schema.tables WHERE table_schema = '$target'")
+{ echo "SET FOREIGN_KEY_CHECKS=0;"; echo "$drops"; } | sql_restore "$target"
+gunzip -c "$db_file" | sql_restore "$target"
 restored_at=$(date +%s)
 
 files_status="sem pacote de arquivos"
@@ -95,12 +99,12 @@ if [ -n "$files_file" ] && [ -f "$files_file" ]; then
 fi
 
 tables_prod=$(sql -e "SELECT table_name FROM information_schema.tables WHERE table_schema = '$production' AND table_type = 'BASE TABLE' ORDER BY table_name")
-tables_rest=$(sql -e "SELECT table_name FROM information_schema.tables WHERE table_schema = '$target' AND table_type = 'BASE TABLE' ORDER BY table_name")
+tables_rest=$(sql_restore -e "SELECT table_name FROM information_schema.tables WHERE table_schema = '$target' AND table_type = 'BASE TABLE' ORDER BY table_name")
 missing=$(comm -23 <(echo "$tables_prod") <(echo "$tables_rest") | sed '/^$/d' || true)
 total_prod=0
 total_rest=0
 for t in $tables_rest; do
-    r=$(sql -e "SELECT COUNT(*) FROM \`$target\`.\`$t\`")
+    r=$(sql_restore -e "SELECT COUNT(*) FROM \`$target\`.\`$t\`")
     total_rest=$((total_rest + r))
     if echo "$tables_prod" | grep -qx "$t"; then
         p=$(sql -e "SELECT COUNT(*) FROM \`$production\`.\`$t\`")
