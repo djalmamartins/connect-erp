@@ -2,7 +2,7 @@
 -- Registro do que já foi avisado no celular da equipe, para cada aviso sair uma vez só:
 --   kind 'assigned': alguém marcou uma tarefa para você (ref = id do compromisso em studio_calendar_events);
 --   kind 'morning':  resumo das 7h com as tarefas atrasadas e os compromissos do dia (ref = AAAA-MM-DD).
--- O envio em si usa os aparelhos e o serviço de push da equipe (ADR 0657).
+-- O envio em si usa os aparelhos e o serviço de push da equipe (ADR 0660).
 CREATE TABLE IF NOT EXISTS `my_day_push_log` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(11) unsigned NOT NULL,

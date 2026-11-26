@@ -9,7 +9,7 @@ import { badgeCount, dayKey, eventReminders, morningSummary, nextMorning } from 
  * Notificações do Meu Dia no celular.
  * - Locais (no próprio aparelho): 15 min antes de cada compromisso da semana e o resumo das 7h com as atrasadas.
  *   Funcionam sem internet e também no Expo Go. São refeitas a cada vez que o dia carrega.
- * - Push do servidor (ADR 0657/0659): quando alguém marca uma tarefa para você e o alerta das 7h de tarefas
+ * - Push do servidor (ADR 0660/0659): quando alguém marca uma tarefa para você e o alerta das 7h de tarefas
  *   atrasadas. Precisa do projectId do EAS (app.json › extra.eas.projectId); sem ele, só as locais.
  * - O número no ícone do app é a quantidade de tarefas atrasadas.
  */

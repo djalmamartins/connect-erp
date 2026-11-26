@@ -1,7 +1,7 @@
 /**
  * Rotas que o app Meu Dia usa na API REST do Connect ERP (/api/v1).
  *
- * - Sessão do aparelho da equipe (ADR 0657): POST /team/app-sessions (+ /verify para o 2FA), DELETE /team/app-sessions/current,
+ * - Sessão do aparelho da equipe (ADR 0660): POST /team/app-sessions (+ /verify para o 2FA), DELETE /team/app-sessions/current,
  *   GET /team/me e POST/DELETE /team/push-devices com app "meu-dia".
  * - Meu Dia (ADR 0630 e 0658): GET /my-day, GET /my-day/overdue, GET /my-day/team, POST /my-day/events e
  *   POST /my-day/events/{id}/status. As regras são as mesmas da tela /meu-dia do ERP: cada pessoa vê o próprio dia e

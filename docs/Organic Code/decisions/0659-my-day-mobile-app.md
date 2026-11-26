@@ -5,7 +5,7 @@
 - Pedido: Djalma, 26/11/2026 19:30: "um aplicativo para iPhone e Android do meu dia, para ele notificar tudo que
   tem que fazer, ser tipo uma agenda para me consultar todo dia [...] uma pessoa cadastrar para o outro [...] dois
   aplicativos separados (Meu Dia e SAC), mas todos interligados, pela API REST".
-- Depende de: ADR 0630 (Meu Dia), ADR 0657 (sessão e push da equipe no celular, thread do app do SAC) e
+- Depende de: ADR 0630 (Meu Dia), ADR 0660 (sessão e push da equipe no celular, thread do app do SAC) e
   ADR 0658 (tarefas atrasadas em vermelho, levadas para hoje até fechar, thread "Ligar o SAC ao Meu Dia").
 
 ## Contexto
@@ -13,7 +13,7 @@
 - O Meu Dia (CN-010) já tinha tela no ERP e API REST (`/api/v1/my-day`), mas só com sessão e CSRF do navegador.
 - O app do morador (`apps/morador`, ADR 0303) já tem a base em Expo/React Native, com token Bearer no cofre do
   aparelho e push pelo Expo. O app da equipe é separado do do morador: outra conta, outras regras e outro ícone.
-- O login da equipe por token e o registro do aparelho ficam na ADR 0657, comum aos apps Meu Dia e SAC.
+- O login da equipe por token e o registro do aparelho ficam na ADR 0660, comum aos apps Meu Dia e SAC.
 
 ## Decisão
 
@@ -33,7 +33,7 @@
   scheduler do lab): "Fulano marcou uma tarefa para você" para compromisso marcado por outra pessoa nas últimas
   24 h e ainda em aberto; e o resumo das 7h (atrasadas, compromissos, chamados para agendar) uma vez por dia para quem
   tem o app, sem aviso em dia vazio. Cada aviso sai uma vez (`my_day_push_log`, gravado antes do envio). O envio usa
-  o `TeamPush` da ADR 0657 (Expo só com `TEAM_PUSH_DELIVERY=expo`). O texto leva só título, condomínio e horário.
+  o `TeamPush` da ADR 0660 (Expo só com `TEAM_PUSH_DELIVERY=expo`). O texto leva só título, condomínio e horário.
 - **`GET /api/v1/my-day/team`**: a equipe para o "Para quem", só com `erp.myday.team` (403 sem).
 - **Laboratório**: `bash tools/app-meu-dia/celular.sh` abre o app no Expo Go. A ponte do celular
   (`tools/app-morador/ponte.mjs`) ganhou `PONTE_ROTAS` e, para o Meu Dia, repassa só `/api/v1/team/*`,

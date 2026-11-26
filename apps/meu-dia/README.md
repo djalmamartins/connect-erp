@@ -12,7 +12,7 @@ App da equipe da Connect com a agenda do Meu Dia (ADR 0630, 0658 e 0659). Mesma 
 ## Rotas usadas
 
 `POST /team/app-sessions` (+ `/verify`), `DELETE /team/app-sessions/current`, `GET /team/me`,
-`POST|DELETE /team/push-devices` (ADR 0657) e `GET /my-day`, `GET /my-day/team`, `POST /my-day/events`,
+`POST|DELETE /team/push-devices` (ADR 0660) e `GET /my-day`, `GET /my-day/team`, `POST /my-day/events`,
 `POST /my-day/events/{id}/status` (ADR 0630/0659). Contrato em `docs/api/openapi.yaml`.
 
 ## Desenvolvimento

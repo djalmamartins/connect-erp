@@ -20,7 +20,7 @@ use Source\Services\Team\TeamPush;
  *   estão atrasadas (a lista "overdue" do Meu Dia, ADR 0658) e quantos compromissos há no dia. Dia sem nada não avisa.
  *
  * Cada aviso sai uma vez só (my_day_push_log, gravado ANTES do envio: na dúvida, não repete). O envio e a lista de
- * aparelhos são do serviço de push da equipe (TeamPush, ADR 0657), que só chama o Expo com TEAM_PUSH_DELIVERY=expo.
+ * aparelhos são do serviço de push da equipe (TeamPush, ADR 0660), que só chama o Expo com TEAM_PUSH_DELIVERY=expo.
  * O texto não leva dado pessoal de morador nem valor financeiro: título da tarefa, condomínio e horário.
  */
 final class MyDayPush
@@ -46,7 +46,7 @@ final class MyDayPush
     {
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->enabled = $send !== null || class_exists(TeamPush::class);
-        // Sem o serviço de push da equipe (ADR 0657) instalado, não envia nada e ninguém recebe o resumo.
+        // Sem o serviço de push da equipe (ADR 0660) instalado, não envia nada e ninguém recebe o resumo.
         $this->send = $send ?? static function (int $userId, string $title, string $body, array $data): void {
             if (class_exists(TeamPush::class)) {
                 TeamPush::send($userId, self::APP, $title, $body, $data);

@@ -21,7 +21,7 @@ type AuthValue = {
 const AuthContext = createContext<AuthValue | null>(null);
 
 /**
- * Sessão da equipe no aparelho (ADR 0657): o token Bearer fica no cofre do celular; um 401 em qualquer pedido
+ * Sessão da equipe no aparelho (ADR 0660): o token Bearer fica no cofre do celular; um 401 em qualquer pedido
  * volta para o login.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {

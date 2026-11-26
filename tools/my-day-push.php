@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Push do app Meu Dia (ADR 0659): tarefa marcada por outra pessoa e o resumo das 7h com as tarefas atrasadas.
  * Pelo cron de cada minuto (tools/hosting/cron.sh minuto) e pelo scheduler do lab: php tools/my-day-push.php
  *
- * O envio usa o push da equipe (ADR 0657): só chama o Expo com TEAM_PUSH_DELIVERY=expo; sem isso fica no log.
+ * O envio usa o push da equipe (ADR 0660): só chama o Expo com TEAM_PUSH_DELIVERY=expo; sem isso fica no log.
  */
 
 if (PHP_SAPI !== 'cli') {
