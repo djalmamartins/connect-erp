@@ -325,9 +325,26 @@ final class Environments
      *
      * @return array{scheme:string, host:string}|null
      */
+    /** Endereço do Talk gravado na tela Integrações (ErpSettings talk.url); '' se não há ou sem banco. */
+    private static function talkSetting(): string
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            if (Connect::databaseDisabled()) {
+                return $cached = '';
+            }
+            return $cached = (string)\Source\Services\Erp\ErpSettings::value(Connect::getInstance(), null, 'talk.url');
+        } catch (\Throwable) {
+            return $cached = '';
+        }
+    }
+
     public static function talkOrigin(?string $url = null): ?array
     {
-        $url = trim($url ?? (string)(getenv('TALK_URL') ?: ''));
+        $url = trim($url ?? (self::talkSetting() ?: (string)(getenv('TALK_URL') ?: '')));
         if ($url === '') {
             return null;
         }

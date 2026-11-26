@@ -32,6 +32,16 @@ Colunas: **Situação** e **Arquivos**.
 
 > Na tela: *Antivírus desligado Os arquivos enviados entram como "não verificados". Quando o antivírus for ligado, a reverificação passa por eles em lotes.*
 
+## Ligação com o Connect Talk
+
+O quadro **Ligação com o Connect Talk** mostra o endereço do Talk em uso e quantas pessoas podem entrar nele. O Talk não tem usuários próprios: cada funcionário entra com o e-mail e a senha do ERP, e só quem tem a permissão **Atendimento por WhatsApp (Connect Talk)**. A tela Equipe do Talk traz essas pessoas do ERP; lá se escolhem só o papel e os setores.
+
+Para ligar (precisa da permissão de **gerenciar configurações** e acesso a todos os condomínios):
+
+1. Em **Endereço do Connect Talk**, informe só o endereço, por exemplo `https://talk.connectcondominios.com.br`, e clique em **Salvar endereço**.
+2. Crie um token no quadro abaixo com o escopo **Entrar no Talk com o usuário do ERP** e cole no Talk como `ERP_API_TOKEN`.
+3. Dê a permissão a cada funcionário que vai atender, pelo papel ou no cadastro da pessoa, em [[Studio > Usuários]].
+
 ## Tokens de acesso (Connect Talk)
 
 O Connect Talk, o atendimento pelo WhatsApp, entra na API do ERP com um **token de acesso**. No quadro **Tokens de acesso (Connect Talk)** você vê cada token com o nome, os 4 últimos caracteres, o usuário de integração, os escopos, a validade, o último uso (com o IP) e a situação.

@@ -65,6 +65,14 @@ final class Talk
         $this->run('talk_staff_login_failed', fn (): array => [200, (new TalkStaffLogin())->exchange((string)($this->body()['code'] ?? ''))]);
     }
 
+    /** GET /talk/staff: funcionários com talk.access, para a Equipe do Talk (escopo staff.login). */
+    public function staffList(): void
+    {
+        if ($this->agent('staff.login') !== null) {
+            $this->run('talk_staff_list_failed', static fn (): array => [200, (new TalkStaffLogin())->staff()]);
+        }
+    }
+
     /** GET /talk/staff/{id}: o funcionário ainda pode usar o Talk? (active = talk.access e conta não excluída) */
     public function staffStatus(array $data): void
     {

@@ -52,6 +52,29 @@ final class TalkStaffLogin
         return $this->describe($user) + ['active' => $this->allowed($user)];
     }
 
+    /**
+     * Quem pode usar o Talk hoje: funcionários com talk.access (papel ou liberação no cadastro), sem conta excluída.
+     * A tela Equipe do Talk usa esta lista para trazer nome e e-mail do ERP; papel e setores ficam no Talk.
+     *
+     * @return list<array{id:int, name:string, email:string}>
+     */
+    public function staff(?\PDO $pdo = null): array
+    {
+        $pdo ??= \Source\Core\Connect::getInstance();
+        // Candidatos: quem tem papel. Access::can decide (developer, permissão do papel, allow/deny do usuário).
+        $rows = $pdo->query("SELECT DISTINCT u.id FROM users u JOIN access_user_roles ur ON ur.user_id = u.id
+            WHERE u.status <> 'trash' ORDER BY u.id LIMIT 2000")->fetchAll(\PDO::FETCH_COLUMN);
+        $out = [];
+        foreach ($rows as $id) {
+            $user = (new User())->findById((int)$id);
+            if ($this->allowed($user)) {
+                $out[] = $this->describe($user);
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+        return $out;
+    }
+
     private function allowed(?User $user): bool
     {
         return $user !== null && (string)($user->status ?? '') !== 'trash' && Access::can('talk.access', $user);

@@ -7999,6 +7999,17 @@ paths:
         '403': { description: Token sem o escopo staff.login (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Código inválido, vencido, já usado, de outro ambiente ou de quem não tem talk.access, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { description: Muitas tentativas (30 por minuto por IP), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /talk/staff:
+    get:
+      operationId: talkStaffList
+      tags: [Talk]
+      summary: Equipe do Talk, quem tem talk.access (ADR 0643, staff.login)
+      description: Funcionários com a permissão "Atendimento por WhatsApp (Connect Talk)" e conta não excluída, por nome. A tela Equipe do Talk cria, atualiza e desativa a partir desta lista.
+      security: [{ talkIntegration: [] }]
+      responses:
+        '200': { description: Equipe, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, required: [id, name, email], properties: { id: { type: integer }, name: { type: string }, email: { type: string } } } } } } } } }
+        '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Token sem o escopo staff.login, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /talk/staff/{id}:
     get:
       operationId: talkStaffStatus

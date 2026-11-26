@@ -141,6 +141,36 @@ final class TalkStaffLoginTest extends TestCase
         }
     }
 
+    public function testStaffListHasOnlyWhoCanEnterTheTalk(): void
+    {
+        $ana = $this->staff(true);
+        $this->staff(false);
+        $this->staff(true, 'deny');
+        $bia = $this->staff(false, 'allow');
+        $gone = $this->staff(true);
+        $this->pdo->prepare("UPDATE users SET status = 'trash' WHERE id = ?")->execute([(int)$gone->id]);
+        Access::clear();
+        $ids = array_column((new TalkStaffLogin())->staff($this->pdo), 'id');
+        sort($ids);
+        self::assertSame([(int)$ana->id, (int)$bia->id], $ids);
+        $index = (string)file_get_contents(dirname(__DIR__, 3) . '/index.php');
+        self::assertStringContainsString('$route->get("/talk/staff", "Talk:staffList", null, \\Source\\Support\\Middleware\\TalkApiAuthenticated::class);', $index);
+    }
+
+    public function testTalkAddressSettingAcceptsOnlyAnOrigin(): void
+    {
+        self::assertSame('https://talk.connect.com.br', \Source\Services\Erp\ErpSettings::normalize('talk.url', ' https://Talk.Connect.com.br/ '));
+        self::assertSame('', \Source\Services\Erp\ErpSettings::normalize('talk.url', ''));
+        foreach (['ftp://x.y', 'https://x.y/caminho', 'javascript:alert(1)'] as $bad) {
+            try {
+                \Source\Services\Erp\ErpSettings::normalize('talk.url', $bad);
+                self::fail($bad);
+            } catch (\InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     private function noRole(): User
     {
         $id = $this->createUser(['level' => 10]);

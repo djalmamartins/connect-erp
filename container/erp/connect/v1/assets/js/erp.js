@@ -1521,6 +1521,22 @@
 
   /* AP-171 (ADR 0623): tokens de acesso do Connect Talk. O token em claro volta UMA vez, na resposta do POST, e só
      fica nesta caixa até a página recarregar. Escopo de escrita marcado pede confirmação. */
+  /* ADR 0643: endereço do Connect Talk (ErpSettings talk.url, padrão da Connect). */
+  $$('[data-erp-talk-link]').forEach(function (root) {
+    var call = apiClient(root);
+    var form = $('[data-talk-link-form]', root);
+    if (!form) return;
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var button = $('[type="submit"]', form);
+      busy(button, true);
+      call('POST', root.getAttribute('data-api'), { key: 'talk.url', value: $('[name="value"]', form).value.trim() })
+        .then(function () { toast('Endereço do Talk salvo.', 'success'); reload(); })
+        .catch(function (error) { busy(button, false); toast(error.message, 'danger'); });
+    });
+  });
+
   $$('[data-erp-integration-tokens]').forEach(function (root) {
     var call = apiClient(root);
     var api = root.getAttribute('data-api');

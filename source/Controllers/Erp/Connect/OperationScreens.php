@@ -143,6 +143,20 @@ final class OperationScreens
         } catch (\Throwable $error) {
             \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'integration_tokens_screen_failed']);
         }
+        // Ligação com o Connect Talk (ADR 0643): endereço do Talk e quem pode entrar nele (talk.access).
+        $data['talkLink'] = null;
+        try {
+            $origin = \Source\Services\Environments::talkOrigin();
+            $data['talkLink'] = [
+                'saved' => (string)\Source\Services\Erp\ErpSettings::value(Connect::getInstance(), null, 'talk.url'),
+                'env' => (string)(getenv('TALK_URL') ?: ''),
+                'effective' => $origin !== null ? $origin['scheme'] . '://' . $origin['host'] : null,
+                'staff' => count((new \Source\Services\Talk\TalkStaffLogin())->staff()),
+                'canManage' => Access::can('erp.settings.manage', $user) && (new \Source\Services\CondominiumScope())->hasGlobalAccess($user),
+            ];
+        } catch (\Throwable $error) {
+            \Source\Support\AppLogger::exception($error, 'erp', ['event_type' => 'talk_link_screen_failed']);
+        }
         return $data;
     }
 

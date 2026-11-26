@@ -41,3 +41,13 @@ no cadastro (overrides). O alternador `/ambiente/talk` já emitia o código de u
 ## Testes
 `tests/legacy/Integration/TalkStaffLoginTest.php`: uso único, recusas (sem permissão, negado por usuário, sem papel,
 outro ambiente, malformado), liberação por usuário, revalidação, rotas e escopo, volta depois do login e `TALK_URL`.
+
+## Revisão de 26/11/2026
+Pedido do Djalma: "o ERP cria uma parte de configuração para a gente poder fazer a ligação... todas as informações têm que
+vir lá do ERP... essa equipe aqui tem que pegar as informações lá do ERP".
+- **`GET /api/v1/talk/staff`** (escopo `staff.login`): quem tem `talk.access` e conta não excluída (`TalkStaffLogin::staff`).
+  A tela Equipe do Talk cria quem é novo, atualiza nome e e-mail e desativa quem perdeu o acesso.
+- **Quadro "Ligação com o Connect Talk"** na tela Integrações: endereço em uso, quantas pessoas podem entrar e, para quem
+  gerencia configurações com acesso a todos os condomínios, o campo **Endereço do Connect Talk**. Ele grava o parâmetro
+  global `talk.url` (`ErpSettings`, tipo `url`, só origem http/https) e vale antes do `TALK_URL` do `.env`. Também aparece
+  em Configurações › Administrativo.
