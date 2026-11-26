@@ -105,10 +105,13 @@ class Email
             return false;
         }
 
+        // Lab com ERP_MAIL_DELIVERY=sandbox (ADR 0656): todo envio, da fila ou direto (recuperação de senha, teste
+        // do Studio), vai só para a caixa de teste, com [TESTE] no assunto. Produção não muda.
+        $sandboxTo = MailSandbox::current();
         try {
-            $this->mail->Subject = $this->data->subject;
+            $this->mail->Subject = $sandboxTo !== null ? MailSandbox::subject((string)$this->data->subject) : $this->data->subject;
             $this->mail->msgHTML($this->data->body);
-            $this->mail->addAddress($this->data->recipient_email, $this->data->recipient_name);
+            $this->mail->addAddress($sandboxTo ?? $this->data->recipient_email, $this->data->recipient_name);
             $this->mail->setFrom($from, $fromName);
 
             if (!empty($this->data->attach)) {
@@ -183,8 +186,6 @@ class Email
         $perSecond = max(1, min(20, $perSecond));
         $items = $pdo->query("SELECT * FROM mail_queue WHERE status IN ('pending','retry') AND sent_at IS NULL AND cancelled_at IS NULL AND COALESCE(scheduled_at, created_at) <= NOW() AND (next_attempt_at IS NULL OR next_attempt_at <= NOW()) ORDER BY COALESCE(scheduled_at, created_at), id LIMIT {$limit}")->fetchAll();
         $result = ["processed" => 0, "sent" => 0, "failed" => 0, "retry" => 0];
-        // Lab com ERP_MAIL_DELIVERY=sandbox (ADR 0656): tudo vai só para a caixa de teste, com [TESTE] no assunto.
-        $sandboxTo = MailSandbox::current();
         foreach ($items as $send) {
             $claim = $pdo->prepare("UPDATE mail_queue SET status = 'processing', last_attempt_at = NOW(), attempts = attempts + 1 WHERE id = :id AND status IN ('pending','retry')");
             $claim->execute(["id" => $send->id]);
@@ -192,9 +193,8 @@ class Email
                 continue;
             }
             $result["processed"]++;
-            $email = $sandboxTo !== null
-                ? $this->bootstrap(MailSandbox::subject((string)$send->subject), $send->body, $sandboxTo, (string)$send->recipient_name)
-                : $this->bootstrap($send->subject, $send->body, $send->recipient_email, $send->recipient_name);
+            // A caixa de teste do lab (ADR 0656) é aplicada no send(), para a fila e para o envio direto.
+            $email = $this->bootstrap($send->subject, $send->body, $send->recipient_email, $send->recipient_name);
             $attachments = json_decode((string)($send->attachments_json ?? ''), true);
             foreach (is_array($attachments) ? $attachments : [] as $path => $name) {
                 if (is_string($path) && is_file($path)) $email->attach($path, is_string($name) ? $name : basename($path));

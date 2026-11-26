@@ -43,7 +43,8 @@ final class MailSandboxTest extends TestCase
     public function testQueueUsesSandboxAndMailerIsClearedOnFailure(): void
     {
         $email = (string)file_get_contents(dirname(__DIR__, 3) . '/source/Support/Email.php');
-        self::assertStringContainsString('MailSandbox::current()', $email);
+        self::assertMatchesRegularExpression('/function send\(.*?MailSandbox::current\(\).*?addAddress\(\$sandboxTo \?\?/s', $email,
+            'O envio direto (recuperação de senha) também vai para a caixa de teste.');
         self::assertMatchesRegularExpression('/finally \{[^}]*clearAllRecipients\(\)/s', $email,
             'Destinatário de um envio que falhou não pode seguir no próximo e-mail da fila.');
     }

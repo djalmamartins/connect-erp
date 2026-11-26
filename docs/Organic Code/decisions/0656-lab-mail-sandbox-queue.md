@@ -36,3 +36,10 @@
 No lab, ligar o envio nunca manda e-mail para um endereço real gravado na fila, desde que o modo seja
 `sandbox` com a caixa de teste. Sem a caixa de teste, o comportamento é o de antes. Testes:
 `tests/legacy/Unit/MailSandboxTest.php`.
+
+## Ajuste (26/11/2026, 19:05)
+
+Djalma pediu a recuperação de senha de `equipe.teste@connect.lab` e nada chegou: a recuperação de senha e o
+e-mail de teste do Studio não passam pela fila, chamam `Email::send` direto, e iam para o endereço de mentira.
+O redirecionamento para a caixa de teste saiu do `sendQueue` e foi para o `Email::send`, que cobre a fila e o
+envio direto. O endereço gravado na `mail_queue` continua o real (histórico).
