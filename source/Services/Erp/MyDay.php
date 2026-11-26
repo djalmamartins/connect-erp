@@ -88,13 +88,17 @@ final class MyDay
         $today = ($today ?? new DateTimeImmutable('today'))->setTime(0, 0);
         $weekStart = $date->modify('monday this week');
         $weekEnd = $weekStart->modify('+6 days');
+        // Faixa dos dias (pedido do Djalma, 22/11): o dia mostrado no meio, 3 antes e 3 depois.
+        $stripStart = $date->modify('-3 days');
+        $stripEnd = $date->modify('+3 days');
         $userId = (int)$owner->id;
 
-        $events = $this->events($userId, $weekStart, $weekEnd);
+        $allEvents = $this->events($userId, min($weekStart, $stripStart), max($weekEnd, $stripEnd));
+        $events = array_values(array_filter($allEvents, static fn(array $e): bool => substr($e['starts_at'], 0, 10) >= $weekStart->format('Y-m-d') && substr($e['starts_at'], 0, 10) <= $weekEnd->format('Y-m-d')));
         $tickets = $this->tickets($userId, $today);
         $toSchedule = array_values(array_filter($tickets, static fn(array $t): bool => in_array($t['status'], self::OPEN, true) && $t['scheduled_event_id'] === null));
         $waiting = array_values(array_filter($tickets, static fn(array $t): bool => $t['status'] === 'waiting_customer'));
-        $visits = $this->visits($userId, $today, $weekEnd > $today->modify('+14 days') ? $weekEnd : $today->modify('+14 days'));
+        $visits = $this->visits($userId, $today, max($weekEnd, $stripEnd, $today->modify('+14 days')));
         $deadlines = $this->deadlines($userId, $today);
 
         $dayKey = $date->format('Y-m-d');
@@ -102,15 +106,19 @@ final class MyDay
         $dayVisits = array_values(array_filter($visits, static fn(array $v): bool => $v['due_on'] === $dayKey || ($dayKey === $today->format('Y-m-d') && $v['overdue'])));
         $dayDeadlines = array_values(array_filter($tickets, static fn(array $t): bool => $t['due_on'] === $dayKey && in_array($t['status'], self::OPEN, true)));
 
-        $week = [];
-        for ($i = 0; $i < 7; $i++) {
-            $d = $weekStart->modify("+{$i} days");
+        $dayInfo = static function (DateTimeImmutable $d) use ($allEvents, $visits, $tickets, $today, $dayKey): array {
             $key = $d->format('Y-m-d');
-            $count = count(array_filter($events, static fn(array $e): bool => substr($e['starts_at'], 0, 10) === $key && $e['status'] !== 'cancelled'))
+            $count = count(array_filter($allEvents, static fn(array $e): bool => substr($e['starts_at'], 0, 10) === $key && $e['status'] !== 'cancelled'))
                 + count(array_filter($visits, static fn(array $v): bool => $v['due_on'] === $key))
                 + count(array_filter($tickets, static fn(array $t): bool => $t['due_on'] === $key && in_array($t['status'], self::OPEN, true)));
-            $week[] = ['date' => $key, 'weekday' => self::weekday($d), 'day' => (int)$d->format('j'), 'count' => $count,
+            return ['date' => $key, 'weekday' => self::weekday($d), 'day' => (int)$d->format('j'), 'count' => $count,
                 'today' => $key === $today->format('Y-m-d'), 'selected' => $key === $dayKey];
+        };
+        $week = [];
+        $strip = [];
+        for ($i = 0; $i < 7; $i++) {
+            $week[] = $dayInfo($weekStart->modify("+{$i} days"));
+            $strip[] = $dayInfo($stripStart->modify("+{$i} days"));
         }
 
         $scheduled = array_filter($dayEvents, static fn(array $e): bool => $e['status'] !== 'cancelled');
@@ -132,6 +140,7 @@ final class MyDay
                 'week_condominiums' => count(array_unique(array_column($weekVisits, 'condominium_id'))),
             ],
             'week' => $week,
+            'strip' => $strip,
             'events' => $dayEvents,
             'week_events' => $events,
             'day_visits' => $dayVisits,

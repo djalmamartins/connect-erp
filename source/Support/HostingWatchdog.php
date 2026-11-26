@@ -17,6 +17,24 @@ namespace Source\Support;
  */
 final class HostingWatchdog
 {
+    /**
+     * ALERT_EMAIL aceita mais de um endereço, separados por vírgula ou ponto e vírgula (Djalma, 23/11: SAC e o
+     * e-mail dele). Endereço inválido fica de fora; lista vazia = não envia.
+     *
+     * @return list<string>
+     */
+    public static function recipients(string $value): array
+    {
+        $list = [];
+        foreach (preg_split('/[,;\s]+/', $value) ?: [] as $address) {
+            $address = strtolower(trim($address));
+            if ($address !== '' && filter_var($address, FILTER_VALIDATE_EMAIL) !== false && !in_array($address, $list, true)) {
+                $list[] = $address;
+            }
+        }
+        return $list;
+    }
+
     public const REPEAT = 43200;
 
     private const LABELS = ['minuto' => 'a rotina de cada minuto (fila de avisos e e-mails)', 'hora' => 'a rotina de hora em hora (consulta dos boletos)',

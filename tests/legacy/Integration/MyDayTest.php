@@ -69,6 +69,14 @@ final class MyDayTest extends TestCase
         self::assertSame(1, $day['week'][4]['count'], 'reunião do dia 27');
         self::assertSame(1, $day['week'][5]['count'], 'prazo do chamado do dia 28');
 
+        // Faixa dos dias: o dia mostrado no meio, 3 antes e 3 depois, com as mesmas contagens.
+        self::assertSame(['2026-11-22', '2026-11-25', '2026-11-28'], [$day['strip'][0]['date'], $day['strip'][3]['date'], $day['strip'][6]['date']]);
+        self::assertTrue($day['strip'][3]['selected'] && $day['strip'][3]['today']);
+        self::assertSame(1, $day['strip'][6]['count'], 'prazo do chamado do dia 28');
+        $later = $this->service->day($me, new DateTimeImmutable('2026-11-30'), $today);
+        self::assertSame('2026-11-30', $later['strip'][3]['date']);
+        self::assertSame(1, $later['strip'][1]['count'], 'a faixa olha além da semana: o dia 28 aparece mesmo na semana seguinte');
+
         // Agendar um chamado tira ele de "Para agendar"; concluir conta como feito.
         $this->service->createEvent($me, ['title' => 'Ver portão', 'date' => '2026-11-25', 'start' => '10:00', 'ticket_id' => $urgent]);
         $this->service->setEventStatus($me, $eventId, 'completed');

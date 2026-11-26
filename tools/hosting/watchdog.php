@@ -71,14 +71,18 @@ fwrite(STDOUT, $line . PHP_EOL);
 if (!HostingWatchdog::due($problems, $state, $now)) {
     exit(0);
 }
-$to = trim((string)getenv('ALERT_EMAIL'));
-if ($dryRun || $to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+$recipients = HostingWatchdog::recipients((string)getenv('ALERT_EMAIL'));
+if ($dryRun || $recipients === []) {
     fwrite(STDOUT, 'vigia: e-mail não enviado (' . ($dryRun ? '--dry-run' : 'ALERT_EMAIL vazio ou inválido') . ')' . PHP_EOL);
     exit(0);
 }
 $host = (string)(parse_url((string)getenv('APP_URL'), PHP_URL_HOST) ?: gethostname() ?: 'servidor');
 $mail = HostingWatchdog::message($problems, $host);
-if ((new Email())->bootstrap($mail['subject'], $mail['body'], $to, 'Connect ERP')->send()) {
+$sent = 0;
+foreach ($recipients as $to) {
+    $sent += (new Email())->bootstrap($mail['subject'], $mail['body'], $to, 'Connect ERP')->send() ? 1 : 0;
+}
+if ($sent > 0) {
     @mkdir(dirname($stateFile), 0775, true);
     file_put_contents($stateFile, json_encode(['hash' => HostingWatchdog::hash($problems), 'sent_at' => $now]));
     fwrite(STDOUT, 'vigia: aviso enviado' . PHP_EOL);

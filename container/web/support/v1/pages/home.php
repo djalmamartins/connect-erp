@@ -96,6 +96,7 @@ $contact = \Source\Services\Help\SupportContact::data();
             <div class="hc-form__foot">
                 <label class="hc-check"><input type="checkbox" name="whatsapp" value="1"><span>Aceito resposta por WhatsApp</span></label>
                 <button class="hc-btn hc-btn--gold hc-btn--lg" type="submit">Enviar mensagem</button>
+                <p class="hc-note">Usamos seus dados só para responder esta mensagem. Veja a <a href="<?= url('/politica-de-privacidade') ?>" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
             </div>
         </form>
     </div>

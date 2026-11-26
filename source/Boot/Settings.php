@@ -148,11 +148,3 @@ define("CONF_MAIL_OPTION_SECURE", $mailConfig["secure"]);
 unset($mailConfig);
 define("CONF_MAIL_OPTION_CHARSET", "{$setup->mail_charset}");
 
-/**
- * PAGAR.ME
- */
-
-define("CONF_PAGARME_MODE", "{$setup->pay_mode}");
-define("CONF_PAGARME_LIVE", "{$setup->pay_live}");
-define("CONF_PAGARME_TEST", "{$setup->pay_test}");
-define("CONF_PAGARME_BACK", CONF_URL_SSL . "{$setup->pay_back}");

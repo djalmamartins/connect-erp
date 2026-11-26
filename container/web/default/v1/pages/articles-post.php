@@ -130,7 +130,7 @@ $authorPhoto = ($author && $author->photo() ? image($author->photo(), 120, 120) 
             <section class="sidebar-cta">
                 <h2>Gestão profissional faz toda a diferença</h2>
                 <p>Conte com a Connect para uma administração transparente, eficiente e próxima de você.</p>
-                <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP)) ?>" target="_blank" rel="noopener noreferrer" class="cta-whatsapp">
+                <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE)) ?>" target="_blank" rel="noopener noreferrer" class="cta-whatsapp">
                     Falar com um especialista
                 </a>
                 <span class="cta-or">ou</span>

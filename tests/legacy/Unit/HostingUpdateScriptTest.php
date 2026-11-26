@@ -79,7 +79,7 @@ final class HostingUpdateScriptTest extends TestCase
         self::assertSame($this->new, $this->head());
         $short = substr($this->new, 0, 7);
         $order = ['backup', "composer install --no-dev --optimize-autoloader @$short", 'php service/commands/deploy-check.php',
-            "composer db:migrate @$short", 'php tools/hosting/smoke-http.php --domain=example.invalid'];
+            "composer db:migrate @$short", 'php tools/help.php sync', 'php tools/hosting/smoke-http.php --domain=example.invalid'];
         self::assertSame($order, explode("\n", trim($calls)));
         self::assertSame($this->old, trim((string)file_get_contents($this->dir . '/.local/deploy/previous')));
         self::assertStringContainsString('OK: versão ' . $this->new, (string)file_get_contents($this->dir . '/storage/logs/deploy.log'));

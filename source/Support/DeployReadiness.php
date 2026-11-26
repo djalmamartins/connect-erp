@@ -124,7 +124,7 @@ final class DeployReadiness
         if ($start === false || $start > $now) {
             $warnings[] = 'CONNECT_2FA_ENFORCE_FROM vazio ou no futuro: a equipe ainda entra sem 2FA.';
         }
-        if (filter_var($get('ALERT_EMAIL'), FILTER_VALIDATE_EMAIL) === false) {
+        if (HostingWatchdog::recipients($get('ALERT_EMAIL')) === []) {
             $warnings[] = 'ALERT_EMAIL vazio ou inválido: o vigia do servidor não manda e-mail (HOSPEDAGEM.md §8).';
         }
         if ($get('ERP_MAIL_DELIVERY') !== 'production') {
@@ -155,7 +155,39 @@ final class DeployReadiness
         if ($sandbox !== null && $sandbox !== []) {
             $warnings[] = sprintf('%d credencial(is) de banco em ambiente de teste (ids %s): boletos não valem de verdade.', count($sandbox), self::list($sandbox));
         }
+        $missing = self::missingSiteContact($pdo);
+        if ($missing !== []) {
+            $warnings[] = 'Dados da Connect vazios no Studio > Configurações (CDC: o site mostra CNPJ, endereço e contato): '
+                . implode(', ', $missing) . '.';
+        }
         return ['errors' => $errors, 'warnings' => $warnings];
+    }
+
+    /**
+     * Campos do site que precisam estar preenchidos antes de abrir (revisão de 23/11): sem eles o site mostra
+     * rodapé sem CNPJ e cartões de contato vazios.
+     *
+     * @return list<string>
+     */
+    public static function missingSiteContact(PDO $pdo): array
+    {
+        $labels = ['site_company_name' => 'razão social', 'site_cnpj' => 'CNPJ', 'site_phone' => 'telefone',
+            'mail_suport' => 'e-mail de atendimento', 'site_street' => 'endereço', 'site_city' => 'cidade'];
+        try {
+            $row = $pdo->query('SELECT * FROM settings ORDER BY id LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return [];
+        }
+        if (!is_array($row)) {
+            return array_values($labels);
+        }
+        $missing = [];
+        foreach ($labels as $column => $label) {
+            if (array_key_exists($column, $row) && trim((string)$row[$column]) === '') {
+                $missing[] = $label;
+            }
+        }
+        return $missing;
     }
 
     public static function isTestEmail(string $email): bool

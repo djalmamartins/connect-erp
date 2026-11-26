@@ -5,15 +5,10 @@ namespace Source\Controllers\Web\Connect;
 use Source\Core\Controller;
 use Source\Models\Auth;
 use Source\Models\Post\Category;
-use Source\Models\Post\Page;
 use Source\Models\Post\Post;
 use Source\Models\Report\Access;
 use Source\Models\Report\Online;
 use Source\Models\Brief\AppBrief;
-use Source\Models\Slide\AppSlides;
-use Source\Models\Support\SupportArticle;
-use Source\Models\Support\SupportCategory;
-use Source\Models\User;
 use Source\Support\Pager;
 use Source\Support\Proposal\ProposalService;
 use Source\Services\Privacy\ConsentLog;
@@ -80,7 +75,7 @@ class Web extends Controller
         $head = $this->seo->render(
             "Porque escolher a " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
             CONF_SITE_DESC,
-            url("/proposta"),
+            url("/solicite-sua-proposta"),
             theme("/assets/images/share.jpg")
         );
 
@@ -114,116 +109,6 @@ class Web extends Controller
             'message' => $this->message->success($result['message'] . ' Protocolo: ' . ($result['protocol'] ?? ''))->render(),
             'proposal_success' => true,
             'protocol' => $result['protocol'] ?? null,
-        ]);
-    }
-
-    public function supportHome(): void
-    {
-        $categories = (new SupportCategory())->find("status = :status", "status=active")->order("position, title")->fetch(true) ?: [];
-        echo $this->view->render("support/home", ["head" => $this->seo->render("Central de Ajuda - " . CONF_SITE_NAME, "Tutoriais e respostas para usar o sistema.", url("/suporte"), theme("/assets/images/share.jpg")), "categories" => $categories, "popular" => (new SupportArticle())->findPublished()->order("views DESC, helpful_yes DESC")->limit(6)->fetch(true) ?: []]);
-    }
-
-    public function supportSearch(): void
-    {
-        $search = trim(strip_tags((string)($_GET["q"] ?? "")));
-        $articles = [];
-        if (mb_strlen($search) >= 2) {
-            $like = urlencode("%{$search}%");
-            $articles = (new SupportArticle())->findPublished("(title LIKE :q1 OR summary LIKE :q2 OR content LIKE :q3)", "q1={$like}&q2={$like}&q3={$like}")->order("views DESC, title")->limit(40)->fetch(true) ?: [];
-        }
-        echo $this->view->render("support/search", ["head" => $this->seo->render("Busca na Central de Ajuda", "Resultados da busca de suporte.", url("/suporte/buscar?q=" . urlencode($search)), theme("/assets/images/share.jpg")), "search" => $search, "articles" => $articles, "categories" => (new SupportCategory())->find("status = :s", "s=active")->order("position")->fetch(true) ?: []]);
-    }
-
-    public function supportCategory(array $data): void
-    {
-        $category = (new SupportCategory())->findByUri(str_slug($data["category"] ?? ""));
-        if (!$category || $category->status !== "active") { redirect("/suporte"); return; }
-        echo $this->view->render("support/category", ["head" => $this->seo->render($category->title . " - Central de Ajuda", $category->description, url("/suporte/{$category->uri}"), theme("/assets/images/share.jpg")), "category" => $category, "articles" => $category->articles(true)->order("title")->fetch(true) ?: [], "categories" => (new SupportCategory())->find("status = :s", "s=active")->order("position")->fetch(true) ?: []]);
-    }
-
-    public function supportArticle(array $data): void
-    {
-        $category = (new SupportCategory())->findByUri(str_slug($data["category"] ?? ""));
-        $article = (new SupportArticle())->findByUri(str_slug($data["article"] ?? ""), true);
-        if (!$category || !$article || (int)$article->category_id !== (int)$category->id) { redirect("/suporte"); return; }
-        (new \Source\Services\Help\ArticleFeedback())->countView((int)$article->id);
-        $related = (new SupportArticle())->findPublished("category_id = :category AND id != :id", "category={$category->id}&id={$article->id}")->order("views DESC, title")->limit(5)->fetch(true) ?: [];
-        echo $this->view->render("support/article", ["head" => $this->seo->render($article->title . " - Ajuda", $article->summary, url("/suporte/{$category->uri}/{$article->uri}"), $article->cover ? image($article->cover, 1200, 628) : theme("/assets/images/share.jpg")), "article" => $article, "category" => $category, "related" => $related, "categories" => (new SupportCategory())->find("status = :s", "s=active")->order("position")->fetch(true) ?: []]);
-    }
-
-    public function supportVote(array $data): void
-    {
-        header("Content-Type: application/json; charset=utf-8");
-        if (!csrf_verify($data)) { echo json_encode(["message" => "Atualize a página e tente novamente."]); return; }
-        $articleId = filter_var($data["id"] ?? null, FILTER_VALIDATE_INT);
-        $vote = in_array($data["vote"] ?? "", ["yes", "no"], true) ? $data["vote"] : null;
-        if (!$articleId || !$vote || !(new SupportArticle())->findById($articleId)) { echo json_encode(["message" => "Avaliação inválida."]); return; }
-        $hash = \Source\Services\Help\ArticleFeedback::visitorHash($articleId, $_SERVER["REMOTE_ADDR"] ?? null, $_SERVER["HTTP_USER_AGENT"] ?? null);
-        try {
-            (new \Source\Services\Help\ArticleFeedback())->vote($articleId, $vote, $hash);
-            echo json_encode(["success" => true, "message" => "Obrigado pela sua avaliação!"]);
-        } catch (\Throwable $exception) {
-            \Source\Support\AppLogger::exception($exception, 'support', ['event_type' => 'support_vote_failed', 'article_id' => $articleId]);
-            echo json_encode(["message" => "Não foi possível registrar sua avaliação."]);
-        }
-    }
-
-    /**
-     * SITE ABOUT
-     */
-    public function about(): void
-    {
-        $head = $this->seo->render(
-            "Porque escolher a " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
-            CONF_SITE_DESC,
-            url("/sobre"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("about", [
-            "head" => $head,
-        ]);
-    }
-
-    public function benefits(): void
-    {
-        $head = $this->seo->render(
-            "Vantagens " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
-            CONF_SITE_DESC,
-            url("/vantagens"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("benefits", [
-            "head" => $head,
-        ]);
-    }
-
-    public function services(): void
-    {
-        $head = $this->seo->render(
-            "Onde Atuamos " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
-            CONF_SITE_DESC,
-            url("/onde-atuamos"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("services", [
-            "head" => $head,
-        ]);
-    }
-
-    public function solve(): void
-    {
-        $head = $this->seo->render(
-            "Onde Atuamos " . CONF_SITE_NAME . " - " . CONF_SITE_DESC,
-            CONF_SITE_DESC,
-            url("/resolva-facil"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("solve", [
-            "head" => $head,
         ]);
     }
 
@@ -297,7 +182,7 @@ class Web extends Controller
     {
         if (!empty($data['s'])) {
             $search = str_search($data['s']);
-            echo json_encode(["redirect" => url("/artigos/buscar/{$search}/1")]);
+            echo json_encode(["redirect" => url("/artigos/buscar/" . rawurlencode($search) . "/1")]);
             return;
         }
 
@@ -312,7 +197,7 @@ class Web extends Controller
         $head = $this->seo->render(
             "Pesquisa por {$search} - " . CONF_SITE_NAME,
             "Confira os resultados de sua pesquisa para {$search}",
-            url("/artigos/buscar/{$search}/{$page}"),
+            url("/artigos/buscar/" . rawurlencode($search) . "/{$page}"),
             theme("/assets/images/share.jpg")
         );
 
@@ -330,7 +215,7 @@ class Web extends Controller
             return;
         }
 
-        $pager = new Pager(url("artigos/buscar/{$search}/"));
+        $pager = new Pager(url("artigos/buscar/" . rawurlencode($search) . "/"));
         $pager->pager($articlesSearch->count(), 9, $page);
 
 
@@ -396,32 +281,6 @@ class Web extends Controller
         ]);
     }
 
-    public function pages(array $data): void
-    {
-        $page = (new Page())->findByUri($data['uri']);
-        if (!$page) {
-            redirect("/404");
-        }
-
-        $user = Auth::user();
-        if (!$user || $user->level < 5) {
-            $page->views += 1;
-            $page->save();
-        }
-
-        $head = $this->seo->render(
-            "{$page->title} - " . CONF_SITE_NAME,
-            str_limit_chars(strip_tags($page->content), 120),
-            url("/page/{$page->uri}"),
-            ($page->cover ? image($page->cover, 1200, 628) : theme("/assets/images/share.jpg"))
-        );
-
-        echo $this->view->render("page", [
-            "head" => $head,
-            "page" => $page
-        ]);
-    }
-
     /**
      * Prova da escolha do banner de cookies (LGPD art. 8º, § 2º; ADR 0604). Responde 204 sempre que o pedido é válido:
      * o cookie da escolha já foi gravado pelo navegador, aqui só fica o registro (hash do IP e navegador, sem IP).
@@ -473,89 +332,6 @@ class Web extends Controller
         ]);
     }
 
-    public function auth(?array $data):void{
-
-        if(!$this->user = Auth::user()){
-            $this->message->warning("Efetue login para acessar o APP.")->flash();
-            redirect("/login");
-        }
-
-        $head = $this->seo->render(
-            CONF_SITE_NAME . " - " . CONF_SITE_TITLE,
-            CONF_SITE_DESC,
-            url(),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("pages/login/auth", [
-            "head" => $head,
-        ]);
-    }
-
-
-    /**
-     * SITE LOGIN
-     * @param null|array $data
-     */
-    public function login(?array $data): void
-    {
-        if(Auth::user()){
-            if(Auth::user()->privacy == "reject"){
-                redirect("/termos");
-            }else{
-                redirect("/redirect");
-            }
-        }
-
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!empty($data['csrf'])) {
-            if (!csrf_verify($data)) {
-                $json['message'] = $this->message->error("Erro ao enviar, favor use o formulário")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if (request_limit("weblogin", 8, 60 * 5)) {
-                $json['message'] = $this->message->error("Você já efetuou 3 tentativas, esse é o limite. Por favor, aguarde 5 minutos para tentar novamente!")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if (empty($data['email']) || empty($data['password'])) {
-                $json['message'] = $this->message->warning("Informe seu login e senha para entrar")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            $save = (!empty($data['save']) ? true : false);
-            $auth = new Auth();
-            $login = $auth->login($data['email'], $data['password'], $save);
-
-            if ($login) {
-                $this->message->success("Seja bem-vindo(a) " . Auth::user()->first_name . " vamos conhecer os termos de uso para utilizar o sistema.")->flash();
-                $json['redirect'] = url("/termos");
-            } else {
-                $json['message'] = $auth->message()->before("Ooops! ")->render();
-            }
-
-            echo json_encode($json);
-            return;
-        }
-
-        $head = $this->seo->render(
-            "Entrar - " . CONF_SITE_NAME,
-            CONF_SITE_DESC,
-            url("/login"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("pages/login/login", [
-            "head" => $head,
-            "cookie" => filter_input(INPUT_COOKIE, "authEmail")
-        ]);
-    }
-
     /**
      * SITE PASSWORD FORGET
      * @param null|array $data
@@ -563,7 +339,7 @@ class Web extends Controller
     public function forget(?array $data)
     {
         if (Auth::user()) {
-            redirect("/redirect");
+            redirect("/");
         }
 
         $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
@@ -625,9 +401,9 @@ class Web extends Controller
     public function reset(array $data): void
     {
         if (Auth::user()) {
-            redirect("/redirect");
+            redirect("/");
         }
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data = sanitize_keep_password($data);
 
         if (!empty($data['csrf'])) {
             if (!csrf_verify($data)) {
@@ -679,125 +455,6 @@ class Web extends Controller
             "head" => $head,
             "code" => $data["code"]
         ]);
-    }
-
-    /**
-     * SITE CONFIRM
-     * @param array $data
-     */
-    public function confirmation(array $data): void
-    {
-        if (Auth::user()) {
-            redirect("/redirect");
-        }
-
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!empty($data['csrf'])) {
-            if (!csrf_verify($data)) {
-                $json['message'] = $this->message->error("Erro ao enviar, favor use o formulário")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if (empty($data["password"]) || empty($data["password_re"])) {
-                $json["message"] = $this->message->info("Informe e repita a senha para continuar")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            list($code, $email) = explode(":", $data["code"]);
-            $auth = new Auth();
-
-            if ($auth->reset($email, $code, $data["password"], $data["password_re"])) {
-                $user = (new User())->findByEmail($email);
-                if ($user && $user->status != "confirmed") {
-                    $user->status = "confirmed";
-                    $user->send = "1";
-                    $user->save();
-                }
-                $this->message->success("Senha cadastrada com sucesso :)")->flash();
-                $json["redirect"] = url("/login");
-            } else {
-                $json["message"] = $auth->message()->before("Ooops! ")->render();
-            }
-
-            echo json_encode($json);
-            return;
-        }
-
-        $head = $this->seo->render(
-            "Crie sua nova senha no " . CONF_SITE_NAME,
-            CONF_SITE_DESC,
-            url("/forget"),
-            theme("/assets/images/share.jpg")
-        );
-
-        echo $this->view->render("pages/login/confirmation", [
-            "head" => $head,
-            "code" => $data["code"]
-        ]);
-    }
-
-    /**
-     * SITE TERMS
-     */
-    public function privacy(array $data): void
-    {
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!$this->user = Auth::user()) {
-            $this->message->warning("Efetue login para acessar nosso serviços.")->flash();
-            redirect("/login");
-        }
-
-        if (!empty($data['csrf'])) {
-            if (!csrf_verify($data)) {
-                $json['message'] = $this->message->error("Erro ao enviar, favor use o formulário")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if (empty($data['confirm'])) {
-                $json['message'] = $this->message->error("Você precisa aceitar os termos e política de privacidade.")->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if ($this->user && $this->user->privacy != "accept") {
-                $this->user->privacy = "accept";
-            }
-
-            if (!$this->user->save()) {
-                $json["message"] = $this->user->message()->render();
-                echo json_encode($json);
-                return;
-            }
-
-            if ($this->user && $this->user->privacy == "accept") {
-                $json["message"] = $this->message->success("Seja bem-vindo(a) " . Auth::user()->first_name . "!")->flash();
-                echo json_encode(["redirect" => url("/redirect")]);
-                return;
-            }
-
-        }
-    }
-
-    public function redirect(array $data): void
-    {
-        $data = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!$this->user = Auth::user()) {
-            $this->message->warning("Efetue login para acessar nosso serviços.")->flash();
-            redirect("/login");
-        }
-
-        if($this->user->level > 1){
-            redirect("/auth");
-        }else{
-            redirect("/app");
-        }
-
     }
 
     /**
