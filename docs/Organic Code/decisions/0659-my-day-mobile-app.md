@@ -36,8 +36,8 @@
   o `TeamPush` da ADR 0660 (Expo só com `TEAM_PUSH_DELIVERY=expo`). O texto leva só título, condomínio e horário.
 - **`GET /api/v1/my-day/team`**: a equipe para o "Para quem", só com `erp.myday.team` (403 sem).
 - **Laboratório**: `bash tools/app-meu-dia/celular.sh` abre o app no Expo Go. A ponte do celular
-  (`tools/app-morador/ponte.mjs`) ganhou `PONTE_ROTAS` e, para o Meu Dia, repassa só `/api/v1/team/*`,
-  `/api/v1/my-day*` e o health (porta 8091, para rodar junto com a do morador).
+  (`tools/app-morador/ponte.mjs`) roda com `PONTE_APP=sac` (modo dos apps da equipe, ADR 0660), na porta 8091
+  para rodar junto com a do morador.
 - Migration `20261126_2345_my_day_push` (só a tabela `my_day_push_log`).
 
 ## Consequências

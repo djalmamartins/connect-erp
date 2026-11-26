@@ -29,6 +29,10 @@ use Source\Support\ClientIp;
  *   global (ADR 0036) ou se o usuário deixou de ser morador.
  * - revoke() / revokeAll(): sair deste aparelho / de todos.
  * Segurança: só o sha256 do token e do desafio ficam no banco; nada disso vai para log ou auditoria.
+ *
+ * Público (ADR 0660): as mesmas tabelas guardam também as sessões dos apps da equipe (SAC e Meu Dia), com
+ * audience = 'team'. Um token só vale no público em que nasceu: token de morador não entra na API da equipe e
+ * vice-versa. A equipe usa TeamAppSessions::make(), que troca a regra "é morador" por "tem erp.access".
  */
 final class ResidentAppSessions
 {
@@ -47,9 +51,19 @@ final class ResidentAppSessions
     private $isResident;
     /** @var callable(int):bool 2FA obrigatório para a conta (ADR 0304: conta só de morador fica de fora) */
     private $enforced;
+    /** 'resident' (app do morador) ou 'team' (apps da equipe, ADR 0660). */
+    private string $audience;
+    /** @var array{code:string, message:string} resposta 403 para quem não pertence ao público */
+    private array $refusal;
 
-    public function __construct(?PDO $pdo = null, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null, ?callable $isResident = null, ?callable $enforced = null)
+    /** @param array{code:string, message:string}|null $refusal */
+    public function __construct(?PDO $pdo = null, ?TwoFactorService $twoFactor = null, ?LoginThrottle $throttle = null, ?callable $isResident = null, ?callable $enforced = null, string $audience = 'resident', ?array $refusal = null)
     {
+        if (!in_array($audience, ['resident', 'team'], true)) {
+            throw new \InvalidArgumentException('Público de sessão inválido.');
+        }
+        $this->audience = $audience;
+        $this->refusal = $refusal ?? ['code' => 'not_resident', 'message' => 'Esta conta não tem unidade ativa no app do morador. Fale com a administração.'];
         $this->pdo = $pdo ?? Connect::getInstance();
         $this->twoFactor = $twoFactor ?? new TwoFactorService($this->pdo);
         $this->throttle = $throttle ?? new LoginThrottle($this->pdo);
@@ -150,12 +164,12 @@ final class ResidentAppSessions
         $user = (new Auth())->attempt($login, $password, 1);
         if (!$user) {
             $this->throttle->fail(LoginThrottle::LOGIN, $subjects);
-            AppLogger::log('notice', 'Tentativa de login no app do morador não concluída', ['event_type' => 'authentication_failed', 'code' => 'RESIDENT_APP_AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($login))), 'status' => 'resolved'], 'authentication');
+            AppLogger::log('notice', $this->audience === 'team' ? 'Tentativa de login no app da equipe não concluída' : 'Tentativa de login no app do morador não concluída', ['event_type' => 'authentication_failed', 'code' => $this->audience === 'team' ? 'TEAM_APP_AUTH_FAILED' : 'RESIDENT_APP_AUTH_FAILED', 'identity_hash' => hash('sha256', mb_strtolower(trim($login))), 'status' => 'resolved'], 'authentication');
             return self::error(401, 'invalid_credentials', 'E-mail, CPF ou senha não conferem.');
         }
         $this->throttle->clear(LoginThrottle::LOGIN, $subjects);
         if (!($this->isResident)($user)) {
-            return self::error(403, 'not_resident', 'Esta conta não tem unidade ativa no app do morador. Fale com a administração.');
+            return self::error(403, $this->refusal['code'], $this->refusal['message']);
         }
         $userId = (int)$user->id;
         try {
@@ -166,8 +180,8 @@ final class ResidentAppSessions
         }
         if ($enabled) {
             $challenge = self::newToken();
-            $this->pdo->prepare('INSERT INTO erp_resident_app_challenges (user_id, challenge_hash, device_name, expires_at) VALUES (:user, :hash, :device, :expires)')
-                ->execute(['user' => $userId, 'hash' => hash('sha256', $challenge), 'device' => self::deviceName($device), 'expires' => date('Y-m-d H:i:s', time() + self::CHALLENGE_TTL)]);
+            $this->pdo->prepare('INSERT INTO erp_resident_app_challenges (user_id, audience, challenge_hash, device_name, expires_at) VALUES (:user, :audience, :hash, :device, :expires)')
+                ->execute(['user' => $userId, 'audience' => $this->audience, 'hash' => hash('sha256', $challenge), 'device' => self::deviceName($device), 'expires' => date('Y-m-d H:i:s', time() + self::CHALLENGE_TTL)]);
             return ['status' => 202, 'body' => ['data' => ['two_factor_required' => true, 'challenge' => $challenge]]];
         }
         if (($this->enforced)($userId)) {
@@ -186,8 +200,8 @@ final class ResidentAppSessions
         $hash = self::hashOf($challenge);
         $row = null;
         if ($hash !== null) {
-            $stmt = $this->pdo->prepare('SELECT id, user_id, device_name, attempts, expires_at, used_at FROM erp_resident_app_challenges WHERE challenge_hash = :hash LIMIT 1');
-            $stmt->execute(['hash' => $hash]);
+            $stmt = $this->pdo->prepare('SELECT id, user_id, device_name, attempts, expires_at, used_at FROM erp_resident_app_challenges WHERE challenge_hash = :hash AND audience = :audience LIMIT 1');
+            $stmt->execute(['hash' => $hash, 'audience' => $this->audience]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         }
         if ($row === null || $row['used_at'] !== null || strtotime((string)$row['expires_at']) <= time() || (int)$row['attempts'] >= self::CHALLENGE_ATTEMPTS) {
@@ -226,8 +240,8 @@ final class ResidentAppSessions
             return null;
         }
         $now ??= new DateTimeImmutable();
-        $stmt = $this->pdo->prepare('SELECT id, user_id, created_at_ms, last_used_at, expires_at, revoked_at FROM erp_resident_app_tokens WHERE token_hash = :hash LIMIT 1');
-        $stmt->execute(['hash' => $hash]);
+        $stmt = $this->pdo->prepare('SELECT id, user_id, created_at_ms, last_used_at, expires_at, revoked_at FROM erp_resident_app_tokens WHERE token_hash = :hash AND audience = :audience LIMIT 1');
+        $stmt->execute(['hash' => $hash, 'audience' => $this->audience]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row || self::state($row, $now) !== 'active') {
             return null;
@@ -254,14 +268,14 @@ final class ResidentAppSessions
         if ($hash === null) {
             return false;
         }
-        $stmt = $this->pdo->prepare('SELECT id, user_id FROM erp_resident_app_tokens WHERE token_hash = :hash AND revoked_at IS NULL LIMIT 1');
-        $stmt->execute(['hash' => $hash]);
+        $stmt = $this->pdo->prepare('SELECT id, user_id FROM erp_resident_app_tokens WHERE token_hash = :hash AND audience = :audience AND revoked_at IS NULL LIMIT 1');
+        $stmt->execute(['hash' => $hash, 'audience' => $this->audience]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             return false;
         }
         $this->revokeRow((int)$row['id'], 'logout');
-        Audit::record('resident_app.logout', 'erp_resident_app_tokens', (int)$row['id']);
+        Audit::record($this->audience === 'team' ? 'team_app.logout' : 'resident_app.logout', 'erp_resident_app_tokens', (int)$row['id']);
         return true;
     }
 
@@ -279,16 +293,16 @@ final class ResidentAppSessions
         $token = self::newToken();
         $now = time();
         $expires = date('Y-m-d H:i:s', $now + self::TTL_DAYS * 86400);
-        $this->pdo->prepare('INSERT INTO erp_resident_app_tokens (user_id, token_hash, device_name, created_at, created_at_ms, last_used_at, expires_at) VALUES (:user, :hash, :device, :now, :ms, :now, :expires)')
-            ->execute(['user' => (int)$user->id, 'hash' => hash('sha256', $token), 'device' => $device, 'now' => date('Y-m-d H:i:s', $now), 'ms' => SessionRevocation::nowMs() + 1, 'expires' => $expires]);
+        $this->pdo->prepare('INSERT INTO erp_resident_app_tokens (user_id, audience, token_hash, device_name, created_at, created_at_ms, last_used_at, expires_at) VALUES (:user, :audience, :hash, :device, :now, :ms, :now, :expires)')
+            ->execute(['user' => (int)$user->id, 'audience' => $this->audience, 'hash' => hash('sha256', $token), 'device' => $device, 'now' => date('Y-m-d H:i:s', $now), 'ms' => SessionRevocation::nowMs() + 1, 'expires' => $expires]);
         $id = (int)$this->pdo->lastInsertId();
         // Teto de aparelhos: as sessões ativas mais antigas além do limite caem.
-        $old = $this->pdo->prepare('SELECT id FROM erp_resident_app_tokens WHERE user_id = :user AND revoked_at IS NULL ORDER BY id DESC LIMIT 1000 OFFSET ' . self::MAX_DEVICES);
-        $old->execute(['user' => (int)$user->id]);
+        $old = $this->pdo->prepare('SELECT id FROM erp_resident_app_tokens WHERE user_id = :user AND audience = :audience AND revoked_at IS NULL ORDER BY id DESC LIMIT 1000 OFFSET ' . self::MAX_DEVICES);
+        $old->execute(['user' => (int)$user->id, 'audience' => $this->audience]);
         foreach ($old->fetchAll(PDO::FETCH_COLUMN) as $oldId) {
             $this->revokeRow((int)$oldId, 'device_limit');
         }
-        Audit::record('resident_app.login', 'erp_resident_app_tokens', $id, null, ['user_id' => (int)$user->id, 'device_name' => $device]);
+        Audit::record($this->audience === 'team' ? 'team_app.login' : 'resident_app.login', 'erp_resident_app_tokens', $id, null, ['user_id' => (int)$user->id, 'device_name' => $device]);
         return ['token' => $token, 'expires_at' => date('Y-m-d', strtotime($expires)), 'idle_days' => self::IDLE_DAYS];
     }
 

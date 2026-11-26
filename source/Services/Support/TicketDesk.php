@@ -103,6 +103,13 @@ final class TicketDesk
                 $this->notify($ticketId, 'status', (int)$agent->id);
             }
         }
+        // App do SAC (ADR 0660): quem passou a ser o responsável recebe o push, se não foi ele mesmo que assumiu.
+        if (in_array('assigned_to', $changed, true) && $after['assigned_to'] !== null && (int)$after['assigned_to'] !== (int)$agent->id) {
+            $row = $this->pdo->prepare('SELECT protocol, subject FROM studio_support_tickets WHERE id = ?');
+            $row->execute([$ticketId]);
+            $info = $row->fetch(PDO::FETCH_ASSOC) ?: ['protocol' => '', 'subject' => ''];
+            (new \Source\Services\Team\TeamPush($this->pdo))->send((int)$after['assigned_to'], 'sac', 'Chamado ' . $info['protocol'] . ' é seu agora', (string)$info['subject'], ['path' => '/chamados/' . $ticketId]);
+        }
         // App do morador (ADR 0642): situação, equipe e responsável. Prioridade, categoria e tags são da triagem interna.
         $visible = array_intersect($changed, ['status', 'team', 'assigned_to']);
         if ($visible !== []) {

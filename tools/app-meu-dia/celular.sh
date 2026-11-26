@@ -44,7 +44,7 @@ fi
 echo "Mac em ${ip}"
 
 say "4/5 Ponte para o celular (porta ${bridge_port})"
-PONTE_ROTAS="/api/v1/team/,/api/v1/my-day" node tools/app-morador/ponte.mjs "$bridge_port" "$connect_port" &
+PONTE_APP=sac node tools/app-morador/ponte.mjs "$bridge_port" "$connect_port" &
 bridge_pid=$!
 trap 'kill "$bridge_pid" 2>/dev/null || true' EXIT
 sleep 1

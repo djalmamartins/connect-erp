@@ -55,8 +55,10 @@ case "$group" in
         jobs=("$php_bin tools/notifications-dispatch.php 50")
         # Push do app do morador (ADR 0642): só envia com CONNECT_RESIDENT_PUSH=expo no .env; sem isso marca como não enviado.
         jobs+=("$php_bin tools/resident-push-dispatch.php 100")
-        # Push do app Meu Dia (ADR 0659): tarefa marcada por outra pessoa e resumo das 7h com as atrasadas.
+        # Push do app Meu Dia (ADR 0659): tarefa marcada por outra pessoa e resumo das 7h com as atrasadas (põe na fila; o envio é a linha de baixo).
         jobs+=("$php_bin tools/my-day-push.php")
+        # Push dos apps da equipe, SAC e Meu Dia (ADR 0660): só envia com TEAM_PUSH_DELIVERY=expo no .env.
+        jobs+=("$php_bin tools/team-push-dispatch.php 100")
         if [ "${MAIL_QUEUE_SEND:-0}" = "1" ] || [ "${ERP_MAIL_DELIVERY:-}" = "production" ]; then
             jobs+=("$php_bin service/jobs/sendEmail.php")
         fi

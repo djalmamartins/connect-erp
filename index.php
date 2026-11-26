@@ -56,6 +56,10 @@ $route->post("/resident/app-sessions/verify", "ResidentAppSessions:verify");
 $route->delete("/resident/app-sessions/current", "ResidentAppSessions:destroy");
 // Recuperação de senha pelo app nativo (revisão de 15/11): resposta sempre igual e limite por conta e IP no banco.
 $route->post("/resident/password/forgot", "ResidentAppSessions:forgot");
+// Sessão dos apps da equipe, SAC e Meu Dia (ADR 0660): token Bearer, sem cookie nem CSRF; mesmo limite e 2FA do login web.
+$route->post("/team/app-sessions", "TeamApp:store");
+$route->post("/team/app-sessions/verify", "TeamApp:verify");
+$route->delete("/team/app-sessions/current", "TeamApp:destroy");
 // Webhook de cobrança do banco (ADR 0156): sem sessão; protegido pelo segredo do endereço e pela
 // consulta de cada título no banco antes de mudar qualquer estado.
 $route->post("/webhooks/bank/{adapter}/{secret}", "BankWebhook:receive");
@@ -84,6 +88,9 @@ $route->get("/talk/residents/{id}/assemblies", "Talk:residentAssemblies", null, 
 $route->get("/talk/residents/{id}/assemblies/{assembly}", "Talk:residentAssembly", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/residents/{id}/documents", "Talk:residentDocuments", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/me", "Me:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/team/me", "TeamApp:me", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/team/push-devices", "TeamApp:registerPush", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/team/push-devices", "TeamApp:forgetPush", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums", "Condominiums:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}", "Condominiums:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/condominiums/{id}/onboarding", "CondominiumOnboarding:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -651,11 +658,19 @@ $route->post("/proposals", "Proposals:store", null, \Source\Support\Middleware\A
 $route->post("/proposals/{id}/status", "Proposals:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/proposals/{id}/responses", "Proposals:respond", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Chamados (ADR 0034): todo chamado cai na fila do Help Desk, com condomínio e unidade.
+// Atendimento do SAC pelo app do celular (ADR 0660): mesmas regras da tela de chamados; atender exige support.manage.
+$route->get("/sac/summary", "SacDesk:summary", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/sac/options", "SacDesk:options", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/sac/tickets", "SacDesk:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/sac/tickets/{id}", "SacDesk:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/sac/tickets/{id}/take", "SacDesk:take", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/sac/tickets/{id}/triage", "SacDesk:triage", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/sac/tickets/{id}/answers", "SacDesk:answer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets/{id}", "Tickets:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/tickets/{id}/messages", "Tickets:messages", null, \Source\Support\Middleware\ApiAuthenticated::class);
-$route->get("/ticket-attachments/{id}", "TicketAttachments:show", null, \Source\Support\Middleware\ResidentApiAuthenticated::class); // ADR 0339: ResidentApiAuthenticated aceita sessão ou Bearer
+$route->get("/ticket-attachments/{id}", "TicketAttachments:show", null, \Source\Support\Middleware\AppAttachmentApiAuthenticated::class); // ADR 0339/0660: sessão, Bearer do morador ou Bearer da equipe
 $route->get("/help/articles", "Help:articles", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets/{id}/messages", "Tickets:reply", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Aplicativo do morador (ADR 0302): tudo preso ao vínculo morador-unidade e à matriz do portal.
