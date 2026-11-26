@@ -76,4 +76,18 @@ final class MyDayPushTest extends TestCase
         self::assertNull(MyDayPush::morningText(['events' => [], 'summary' => []]));
         self::assertSame(['Bom dia! Seu dia no Connect', 'Nenhum compromisso marcado hoje · 1 chamado para agendar.'], MyDayPush::morningText(['events' => [], 'summary' => ['to_schedule' => 1]]));
     }
+
+    public function testRealTeamPushQueuesOnlyForWhoHasTheApp(): void
+    {
+        $boss = $this->createUser(['first_name' => 'Djalma', 'last_name' => 'Martins', 'level' => 5]);
+        $withApp = $this->createUser(['level' => 5]);
+        $withoutApp = $this->createUser(['level' => 5]);
+        (new \Source\Services\Team\TeamPush($this->pdo))->register($withApp, 'meu-dia', 'ExponentPushToken[abcdefghijklmnop]', 'ios');
+        $this->event($boss, $withApp, 'Ligar para o síndico', '2026-11-27 09:30:00');
+        $this->event($boss, $withoutApp, 'Outra tarefa', '2026-11-27 10:00:00');
+
+        (new MyDayPush($this->pdo))->assigned(new DateTimeImmutable('2026-11-26 22:00:00'));
+        $rows = $this->pdo->query("SELECT user_id, app, title FROM team_push_queue ORDER BY id")->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertSame([['user_id' => $withApp, 'app' => 'meu-dia', 'title' => 'Djalma Martins marcou uma tarefa para você']], array_map(static fn (array $r): array => ['user_id' => (int)$r['user_id'], 'app' => $r['app'], 'title' => $r['title']], $rows));
+    }
 }
