@@ -230,7 +230,7 @@ final class AccountabilityDocument
             }
         }]]);
         $dompdf->loadHtml($this->html($doc, true), 'UTF-8');
-        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->setPaper('A4', 'portrait');   // retrato, "de comprido" (ADR 0652)
         $dompdf->render();
         $files = [];
         foreach ($doc['expenses'] as $line) {
