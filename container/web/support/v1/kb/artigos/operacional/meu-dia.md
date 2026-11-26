@@ -8,7 +8,7 @@ menu: Meu Dia
 icone: time-outline
 situacao: funciona
 relacionados: vistorias, chamados
-palavras: meu dia, agenda, calendário, tarefas, compromisso, agendar, semana, hoje, CN-010
+palavras: meu dia, agenda, calendário, tarefas, compromisso, agendar, semana, hoje, atrasada, atrasado, ficou para trás, vermelho, SAC, sem responsável, CN-010
 rascunho: nao
 ---
 
@@ -21,9 +21,10 @@ No menu lateral, clique em [[Meu Dia]], logo abaixo do Dashboard. A tela abre se
 ## O que a tela mostra
 
 - **Cartões do topo:** quantos compromissos você tem no dia (e quanto tempo somam), quantos chamados esperam uma data, quantos aguardam o cliente, o que está atrasado e quantas vistorias caem na semana.
-- **Faixa dos dias:** o dia que você está vendo fica sempre no meio, em verde e maior, com 3 dias antes e 3 depois (no celular, 2 e 2). Abrindo a tela, o do meio é hoje; os dias que já passaram ficam mais claros. O número dourado em cada dia diz quantos itens ele tem. Clique num dia para ele ir para o meio, ou use as setas das pontas para andar um dia de cada vez (para frente, ver o que vem; para trás, ver se ficou algo pendente).
+- **Faixa dos dias:** o dia que você está vendo fica sempre no meio, em verde e maior, com 3 dias antes e 3 depois (no celular, 2 e 2). Abrindo a tela, o do meio é hoje; os dias que já passaram ficam mais claros. O número dourado em cada dia diz quantos itens ele tem. Dia com algo que ficou para trás fica com a borda e o número em **vermelho**. Clique num dia para ele ir para o meio, ou use as setas das pontas para andar um dia de cada vez (para frente, ver o que vem; para trás, ver se ficou algo pendente).
 - **Agenda:** na aba **Dia**, os compromissos por horário e, no alto, o que vale para o dia todo (vistoria marcada, prazo de chamado). Na aba **Semana**, a lista de cada dia.
 - **Para agendar:** os chamados atribuídos a você que ainda não têm horário, com a etiqueta Urgente, Importante ou Rotina e o prazo.
+- **Sem responsável no SAC:** para quem atende chamados, os chamados abertos que ainda não têm ninguém, com o botão {{Atender}}.
 - **Aguardando cliente**, **Próximas vistorias** e **Documentos e vencimentos**.
 - **Painel da visita:** ao escolher uma vistoria, mostra o que acompanhar no condomínio (chamados abertos, documentos que vencem, pendências da última vistoria e a última visita) e o botão {{Iniciar visita}}.
 
@@ -42,6 +43,21 @@ No menu lateral, clique em [[Meu Dia]], logo abaixo do Dashboard. A tela abre se
 
 Quando terminar, use o botão de concluir (✓) no compromisso. Para desmarcar, use o de cancelar (×).
 
+## Tarefa que ficou para trás
+
+O que não foi feito no dia marcado não some. No dia original ele fica em vermelho com a etiqueta **Atrasada, levada para hoje**, e no dia de hoje aparece no alto da agenda, no quadro vermelho **Ficou para trás**, com a data de origem e há quantos dias está atrasado. Ele continua sendo levado para o dia seguinte até ser fechado.
+
+Entram no quadro:
+
+- compromisso ou tarefa de um dia anterior que não foi concluído nem cancelado (até 30 dias para trás);
+- chamado do SAC atribuído a você com o prazo vencido (o que está aguardando o cliente não entra);
+- vistoria atrasada;
+- item do checklist de chegada vencido.
+
+Para fechar, use {{Concluir}} na tarefa, ou resolva o chamado, faça a vistoria ou regularize o item. Aí ele sai do quadro e o dia volta ao normal.
+
+O item **Meu Dia** do menu lateral mostra em vermelho quantas tarefas estão atrasadas, e todo dia às 7h o sininho avisa "Tarefas atrasadas no Meu Dia" para quem tem alguma.
+
 ## Vistoria que vira chamado
 
 Em [[Agenda > Atendimento > Vistorias]], no {{Configurar}}, cada plano de vistoria tem um **Responsável**. Quando a vistoria está para vencer, o sistema abre um chamado de vistoria para essa pessoa, que aparece no Meu Dia dela. Ao concluir a vistoria, o chamado é resolvido sozinho, e o que teve problema vira um chamado de pendências do condomínio.
@@ -58,6 +74,9 @@ Quando você usa esta tela, o sistema faz o seguinte:
 - "Agendar" um chamado cria um compromisso ligado a ele; o chamado sai da lista "Para agendar" enquanto o compromisso estiver marcado.
 - Quando uma vistoria vence em breve, a rotina das 7h abre um chamado de vistoria para o responsável do plano. Ao concluir a vistoria, esse chamado é resolvido sozinho e os itens com problema viram um chamado de pendências.
 - No balão do SAC, conta como online quem atende chamados, autorizou aparecer e abriu uma tela do ERP ou do SAC nos últimos 5 minutos. A autorização e a retirada entram no histórico.
+- Atrasado é o que tinha data antes de hoje e ainda está aberto. Nada é mudado de data: o item continua no dia original (em vermelho) e só é mostrado de novo em hoje. Um chamado agendado num compromisso atrasado aparece uma vez só.
+- A rotina das 7h manda um aviso por dia no sininho para quem tem atraso e marca como lido o aviso do dia anterior, para o sininho não acumular. Nenhum e-mail vai para morador.
+- Os chamados sem responsável aparecem só para quem tem a permissão de atender chamados e só dos condomínios do seu acesso.
 - Cada pessoa vê o próprio dia. Ver o dia de outra pessoa ou marcar compromisso para ela exige a permissão "Ver o Meu Dia da equipe". Toda marcação, conclusão e cancelamento entra no histórico.
 
 Um exemplo: a gerente abre o chamado "Portão quebrado" e atribui a você. Ele aparece em **Para agendar** com a etiqueta Urgente. Clique em {{Agendar}}, escolha o horário, e ele entra na sua agenda do dia.

@@ -25,6 +25,10 @@
 @media (prefers-reduced-motion: reduce) { .md-week__day.is-selected { animation: none; } }
 .md-week__dot { position: absolute; top: -8px; right: -6px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--erp-accent); color: #2b2205; font-size: 11px; font-weight: 750; line-height: 20px; text-align: center; }
 .md-week__dot[hidden] { display: none; }
+/* Ficou para trás (ADR 0658): vermelho no dia que atrasou e em hoje, até concluir. */
+.md-week__day.has-late { border-color: var(--erp-danger); opacity: 1; }
+.md-week__day.has-late.is-selected { box-shadow: 0 0 0 3px var(--erp-danger-soft, rgba(220, 38, 38, .18)), 0 8px 20px rgba(0, 0, 0, .12); }
+.md-week__dot--late { background: var(--erp-danger); color: #fff; }
 
 .md-grid { display: grid; gap: var(--erp-space-4); grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .95fr); align-items: start; }
 .md-col { display: grid; gap: var(--erp-space-3); align-content: start; }
@@ -49,6 +53,14 @@
 .md-event--completed .md-event__body strong { text-decoration: line-through; }
 .md-event--cancelled { opacity: .55; }
 .md-event.is-now { box-shadow: 0 0 0 2px var(--erp-accent); }
+.md-event.is-late { border-color: var(--erp-danger); border-left-color: var(--erp-danger); background: var(--erp-danger-soft, #fdecec); }
+.md-late-box { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--erp-danger); border-left-width: 4px; border-radius: var(--erp-radius-md); background: var(--erp-danger-soft, #fdecec); }
+.md-late-box h3 { margin: 0; display: flex; gap: 8px; align-items: center; font-size: 15px; color: var(--erp-danger); }
+.md-late-box > p { margin: 0; font-size: 13px; color: var(--erp-text); }
+.md-late-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.md-late-item { display: flex; justify-content: space-between; gap: var(--erp-space-3); align-items: center; padding: 8px 10px; border-radius: var(--erp-radius-sm, 6px); background: var(--erp-surface); }
+.md-late-item > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.md-late-item small { color: var(--erp-muted); }
 .md-event__time { display: grid; font-weight: 750; font-variant-numeric: tabular-nums; }
 .md-event__time small { color: var(--erp-muted); font-weight: 500; }
 .md-event__body { display: grid; gap: 2px; min-width: 0; }

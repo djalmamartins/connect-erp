@@ -3169,6 +3169,10 @@ return [
                 'title' => 'Como agendar um chamado',
             ],
             [
+                'id' => 'tarefa-que-ficou-para-tras',
+                'title' => 'Tarefa que ficou para trás',
+            ],
+            [
                 'id' => 'vistoria-que-vira-chamado',
                 'title' => 'Vistoria que vira chamado',
             ],
