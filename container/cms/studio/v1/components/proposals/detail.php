@@ -1,6 +1,6 @@
 <?php
 /**
- * Proposta no Studio só para consulta (ADR 0650): criar, gerar o PDF, enviar e mudar a situação ficam no ERP
+ * Proposta no Studio só para consulta (ADR 0650): criar, anexar o PDF, enviar e mudar a situação ficam no ERP
  * (Comunicação › Comercial › Propostas). Aqui ficam os dados do pedido, o acompanhamento e as versões em PDF.
  * @var object $proposal @var array<int,string> $team @var array $responses @var string $erpUrl
  */
@@ -9,7 +9,7 @@ $labels=['new'=>'Nova','contacted'=>'Contatada','qualified'=>'Qualificada','prop
 $origin=\Source\Services\Proposals\ProposalComposer::originLabel((string)($proposal->origin ?? 'site'));
 ?>
 <section class="studio-page-header"><div><small><?= htmlspecialchars($proposal->protocol) ?></small><h2><?= htmlspecialchars($proposal->condominium) ?></h2><p>Recebida em <?= date('d/m/Y \à\s H:i',strtotime($proposal->created_at)) ?>.</p></div><div><a class="studio-btn" href="<?= url('/studio/proposals') ?>"><ion-icon name="arrow-back-outline"></ion-icon>Voltar</a> <a class="studio-btn primary" href="<?= htmlspecialchars($erpUrl) ?>"><ion-icon name="open-outline"></ion-icon>Abrir no ERP</a></div></section>
-<div class="studio-panel studio-proposal-moved" role="status"><header><div><small>SÓ CONSULTA</small><h2>As propostas agora ficam no ERP</h2><p>Gerar o PDF, enviar por e-mail e mudar a situação são feitos no ERP, em Comunicação › Comercial › Propostas. Nada foi perdido: os dados e as versões continuam aqui para consulta.</p></div><ion-icon name="information-circle-outline"></ion-icon></header></div>
+<div class="studio-panel studio-proposal-moved" role="status"><header><div><small>SÓ CONSULTA</small><h2>As propostas agora ficam no ERP</h2><p>Anexar o PDF, enviar por e-mail e mudar a situação são feitos no ERP, em Comunicação › Comercial › Propostas. Nada foi perdido: os dados e as versões continuam aqui para consulta.</p></div><ion-icon name="information-circle-outline"></ion-icon></header></div>
 <div class="studio-proposal-detail">
   <section class="studio-panel"><header><div><small>SOLICITANTE</small><h2><?= htmlspecialchars($proposal->name) ?></h2></div><span class="studio-proposal-status <?= htmlspecialchars($proposal->status) ?>"><?= $labels[$proposal->status]??$proposal->status ?></span></header>
     <dl><div><dt>E-mail</dt><dd><a href="mailto:<?= htmlspecialchars($proposal->email) ?>"><?= htmlspecialchars($proposal->email) ?></a></dd></div><div><dt>WhatsApp</dt><dd><a href="https://wa.me/55<?= preg_replace('/\D+/','',$proposal->whatsapp) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($proposal->whatsapp) ?></a></dd></div><div><dt>Condomínio</dt><dd><?= htmlspecialchars($proposal->condominium) ?></dd></div><div><dt>Unidades</dt><dd><?= (int)$proposal->units ?></dd></div><div><dt>Perfil</dt><dd><?= htmlspecialchars(ucfirst($proposal->profile)) ?></dd></div><div><dt>Origem</dt><dd><?= htmlspecialchars($origin) ?></dd></div></dl>

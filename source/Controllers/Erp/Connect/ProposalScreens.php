@@ -22,12 +22,15 @@ use Source\Support\Message;
  * GET  /comunicacao/propostas[/p/{page}]?busca=&situacao=  lista com busca, situação e quadros do topo
  * GET  /comunicacao/propostas/nova                         cadastrar uma proposta pedida por telefone, WhatsApp...
  * POST /comunicacao/propostas/nova                         grava (CSRF) e abre a proposta
- * GET  /comunicacao/propostas/{id}[?modelo=]               pedido, acompanhamento, gerar/enviar o PDF e as versões
+ * GET  /comunicacao/propostas/{id}                         pedido, acompanhamento, anexar/enviar os PDFs e as versões
  * POST /comunicacao/propostas/{id}                         muda situação e responsável (CSRF, padrão PRG)
- * POST /comunicacao/propostas/{id}/resposta                gera o PDF (action=generate) ou gera e envia (action=send)
+ * POST /comunicacao/propostas/{id}/resposta                anexa os PDFs (action=save) ou anexa e envia (action=send)
+ * POST /comunicacao/propostas/{id}/reenviar                envia de novo um PDF já anexado
+ * POST /comunicacao/propostas/{id}/calculo                 grava a conta (preço por unidade e mínimo que compensa)
  * GET  /comunicacao/propostas/{id}/pdf/{response}          abre o PDF de uma versão
  *
- * Desde a ADR 0650 criar, gerar e enviar ficam só aqui (ProposalComposer); o Studio só consulta.
+ * Desde a ADR 0650 criar, anexar e enviar ficam só aqui (ProposalComposer); o Studio só consulta. Os PDFs são feitos
+ * fora do sistema (Canva) e anexados: até dois, administradora e síndico profissional.
  * A situação e o responsável seguem pelo ProposalDesk, que também serve a API /api/v1/proposals.
  * Permissões: erp.access + proposals.manage (a mesma de quem recebe o aviso no sininho).
  */
@@ -108,8 +111,7 @@ final class ProposalScreens extends Controller
         if ($user === null) {
             return;
         }
-        $template = is_string($_GET['modelo'] ?? null) ? $_GET['modelo'] : 'syndic';
-        $this->detail($user, $this->id($data), null, [], $template);
+        $this->detail($user, $this->id($data), null, []);
     }
 
     public function respond(array $data): void
@@ -126,16 +128,26 @@ final class ProposalScreens extends Controller
             return;
         }
         $send = ($data['action'] ?? '') === 'send';
-        $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($data, array_flip(['template_type', 'subject', 'introduction', 'scope', 'commercial_terms', 'payment_terms', 'notes', 'valid_until'])));
+        $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($data, array_flip(['subject', 'introduction', 'valid_until'])));
+        $files = [];
+        foreach (array_keys(ProposalComposer::KINDS) as $kind) {
+            $file = $_FILES['pdf_' . $kind] ?? null;
+            // Só arquivo que chegou de verdade pelo formulário (nunca um caminho vindo de fora).
+            if (is_array($file) && is_string($file['tmp_name'] ?? null) && (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && !is_uploaded_file($file['tmp_name'])) {
+                $file = null;
+            }
+            $files[$kind] = is_array($file) ? $file : null;
+        }
         try {
-            $result = (new ProposalComposer())->respond($id, $form, $user, $send);
+            $result = (new ProposalComposer())->attach($id, $form, $files, $user, $send);
+            $count = count($result['ids']);
             $message = new Message();
             if (!$send) {
-                $message->success('PDF gerado. Abra a versão abaixo para conferir antes de enviar.');
+                $message->success(($count === 1 ? 'PDF anexado.' : 'PDFs anexados.') . ' Abra abaixo para conferir e envie quando estiver pronto.');
             } elseif ($result['queued']) {
-                $message->success('Proposta gerada e enviada por e-mail. O e-mail sai pela fila de avisos em instantes.');
+                $message->success('Proposta enviada por e-mail com ' . ($count === 1 ? '1 PDF' : $count . ' PDFs') . '. O e-mail sai pela fila de avisos em instantes.');
             } else {
-                $message->warning('O PDF foi gerado, mas o e-mail não entrou na fila. Confira a configuração de e-mail e tente de novo.');
+                $message->warning('Os PDFs foram guardados, mas o e-mail não entrou na fila. Confira a configuração de e-mail e use "Enviar de novo".');
             }
             $message->flash();
             redirect(erp_url($back . '#prop-responses'));
@@ -148,11 +160,69 @@ final class ProposalScreens extends Controller
             }
             $errors = $error->fields !== [] ? $error->fields : ['form' => $error->getMessage()];
         } catch (\Throwable $error) {
-            AppLogger::exception($error, 'erp', ['event_type' => 'proposal_respond_failed', 'proposal_id' => $id]);
-            $errors = ['form' => 'Não foi possível gerar a proposta agora. Tente de novo em instantes.'];
+            AppLogger::exception($error, 'erp', ['event_type' => 'proposal_attach_failed', 'proposal_id' => $id]);
+            $errors = ['form' => 'Não foi possível guardar a proposta agora. Tente de novo em instantes.'];
         }
         http_response_code(422);
-        $this->detail($user, $id, $form, $errors, (string)($form['template_type'] ?? 'syndic'));
+        $this->detail($user, $id, $form, $errors);
+    }
+
+    public function resend(array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $id = $this->id($data);
+        $back = self::ROUTE . '/' . $id;
+        if (!csrf_verify($data)) {
+            (new Message())->error('Sua sessão expirou. Tente de novo.')->flash();
+            redirect(erp_url($back));
+            return;
+        }
+        $response = (int)(filter_var($data['response_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0);
+        try {
+            $result = (new ProposalComposer())->resend($id, [$response], $user);
+            $result['queued'] ? (new Message())->success('Proposta enviada de novo por e-mail.')->flash()
+                : (new Message())->warning('O e-mail não entrou na fila. Confira a configuração de e-mail.')->flash();
+        } catch (ProposalDeskError $error) {
+            (new Message())->warning($error->fields !== [] ? implode(' ', $error->fields) : $error->getMessage())->flash();
+            if ($error->status === 404) {
+                $back = self::ROUTE;
+            }
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'proposal_resend_failed', 'proposal_id' => $id]);
+            (new Message())->error('Não foi possível enviar agora. Tente de novo em instantes.')->flash();
+        }
+        redirect(erp_url($back . '#prop-responses'));
+    }
+
+    public function quote(array $data): void
+    {
+        $user = $this->guard();
+        if ($user === null) {
+            return;
+        }
+        $id = $this->id($data);
+        $back = self::ROUTE . '/' . $id;
+        if (!csrf_verify($data)) {
+            (new Message())->error('Sua sessão expirou. Tente de novo.')->flash();
+            redirect(erp_url($back));
+            return;
+        }
+        try {
+            $proposal = (new ProposalComposer())->saveQuote($id, array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($data, array_flip(['price_admin_unit', 'price_syndic_unit', 'min_monthly']))));
+            (new Message())->success('Conta gravada.')->flash();
+        } catch (ProposalDeskError $error) {
+            (new Message())->warning($error->fields !== [] ? implode(' ', $error->fields) : $error->getMessage())->flash();
+            if ($error->status === 404) {
+                $back = self::ROUTE;
+            }
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'erp', ['event_type' => 'proposal_quote_failed', 'proposal_id' => $id]);
+            (new Message())->error('Não foi possível gravar a conta agora.')->flash();
+        }
+        redirect(erp_url($back . '#prop-quote'));
     }
 
     public function pdf(array $data): void
@@ -181,7 +251,7 @@ final class ProposalScreens extends Controller
      * @param ?array<string,string> $form textos digitados (quando a validação falhou) ou null para os do modelo
      * @param array<string,string> $errors
      */
-    private function detail(User $user, int $id, ?array $form, array $errors, string $template): void
+    private function detail(User $user, int $id, ?array $form, array $errors): void
     {
         try {
             $desk = new ProposalDesk();
@@ -191,7 +261,7 @@ final class ProposalScreens extends Controller
                 redirect(erp_url(self::ROUTE));
                 return;
             }
-            $defaults = ProposalComposer::defaults($proposal, $template);
+            $defaults = ProposalComposer::defaults($proposal);
             $this->render($user, 'pages/communication/proposal', [
                 'proposal' => $proposal, 'proposalTeam' => $desk->team(), 'proposalResponses' => $desk->responses($id),
                 'proposalReply' => $form === null ? $defaults : array_merge($defaults, $form), 'proposalErrors' => $errors,

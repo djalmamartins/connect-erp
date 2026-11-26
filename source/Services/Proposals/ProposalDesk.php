@@ -38,7 +38,7 @@ final class ProposalDesk
 
     public const PER_PAGE = 20;
 
-    private const COLUMNS = 'id, protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, source_url, origin, created_by, consent_at, marketing_consent_at, contacted_at, created_at, updated_at';
+    private const COLUMNS = 'id, protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, source_url, origin, created_by, price_admin_unit_cents, price_syndic_unit_cents, min_monthly_cents, consent_at, marketing_consent_at, contacted_at, created_at, updated_at';
 
     public function __construct(private ?PDO $pdo = null)
     {
@@ -188,10 +188,16 @@ final class ProposalDesk
             'origin' => (string)($row['origin'] ?? 'site'),
             'origin_label' => ProposalComposer::originLabel((string)($row['origin'] ?? 'site')),
             'created_by' => isset($row['created_by']) ? (int)$row['created_by'] : null,
+            'quote' => ProposalComposer::quote((int)$row['units'], self::nullableInt($row['price_admin_unit_cents'] ?? null), self::nullableInt($row['price_syndic_unit_cents'] ?? null), self::nullableInt($row['min_monthly_cents'] ?? null)),
             'marketing_consent' => !empty($row['marketing_consent_at']),
             'contacted_at' => $row['contacted_at'] !== null ? (string)$row['contacted_at'] : null,
             'created_at' => (string)$row['created_at'],
         ];
+    }
+
+    private static function nullableInt(mixed $value): ?int
+    {
+        return $value === null ? null : (int)$value;
     }
 
     private function pdo(): PDO

@@ -324,7 +324,8 @@ foreach ($catalog['pages'] as $id => $page) {
         // Propostas (ADR 0644 e 0650): lista com alerta de novas, filtros, escape, o detalhe com gerar/enviar e a nova proposta.
         $row = ['id' => 7, 'protocol' => 'PROP-261122-ABC123', 'name' => '<b>Ana</b>', 'email' => 'ana@example.test', 'whatsapp' => '(11) 99999-0000', 'condominium' => 'Residencial <i>Teste</i>',
             'units' => 40, 'profile' => 'sindico', 'profile_label' => 'Síndico', 'message' => "Quero <script>x</script>\nproposta", 'status' => 'new', 'status_label' => 'Nova', 'assigned_to' => null,
-            'source_url' => null, 'origin' => 'site', 'origin_label' => 'Site (Solicite uma proposta)', 'created_by' => null, 'marketing_consent' => false, 'contacted_at' => null, 'created_at' => '2026-11-22 10:00:00'];
+            'source_url' => null, 'origin' => 'site', 'origin_label' => 'Site (Solicite uma proposta)', 'created_by' => null,
+            'quote' => \Source\Services\Proposals\ProposalComposer::quote(40, 1250, null, 60000), 'marketing_consent' => false, 'contacted_at' => null, 'created_at' => '2026-11-22 10:00:00'];
         $listData = static fn (array $over = []): array => $over + ['proposalSearch' => '', 'proposalStatus' => '', 'proposalError' => null, 'flash' => null,
             'proposalStats' => ['total' => 3, 'new' => 2, 'progress' => 1, 'won' => 0], 'proposalList' => ['data' => [$row], 'total' => 1, 'page' => 1, 'pages' => 1, 'per_page' => 20]];
         $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData()));
@@ -344,12 +345,14 @@ foreach ($catalog['pages'] as $id => $page) {
             'proposalReply' => $reply, 'proposalErrors' => [], 'flash' => null]));
         $assert(str_contains($html, 'action="' . erp_url('/comunicacao/propostas/7') . '"') && substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"')
             && !str_contains($html, '<script>x') && !str_contains($html, 'Equipe <x>') && !str_contains($html, 'Proposta <x>') && !str_contains($html, '/studio/proposals/7')
-            && str_contains($html, 'name="assigned_to"') && str_contains($html, 'action="' . erp_url('/comunicacao/propostas/7/resposta') . '"')
-            && str_contains($html, 'value="generate" data-erp-no-confirm') && str_contains($html, 'value="send"') && str_contains($html, 'data-erp-confirm=')
-            && str_contains($html, erp_url('/comunicacao/propostas/7/pdf/1')) && str_contains($html, 'Emissão de boletos e controle de inadimplência'), 'CN-011: detalhe com CSRF, escape, gerar/enviar e versões');
+            && str_contains($html, 'name="assigned_to"') && str_contains($html, 'action="' . erp_url('/comunicacao/propostas/7/resposta') . '"') && str_contains($html, 'enctype="multipart/form-data"')
+            && str_contains($html, 'name="pdf_administrator"') && str_contains($html, 'name="pdf_syndic"') && str_contains($html, 'value="save" data-erp-no-confirm') && str_contains($html, 'value="send"')
+            && str_contains($html, erp_url('/comunicacao/propostas/7/pdf/1')) && str_contains($html, erp_url('/comunicacao/propostas/7/reenviar')) && str_contains($html, 'Síndico profissional'), 'CN-011: detalhe com CSRF, escape, anexar/enviar e PDFs');
+        $assert(str_contains($html, erp_url('/comunicacao/propostas/7/calculo')) && str_contains($html, 'value="12,50"') && str_contains($html, 'R$ 500,00') && str_contains($html, 'R$ 6.000,00')
+            && str_contains($html, 'Não, abaixo do mínimo') && str_contains($html, 'data-proposal-quote'), 'CN-011: conta da proposta');
         $html = $render('pages/communication/proposal', $layoutData->invoke($panel, $user, 'CN-011', ['proposal' => $row, 'proposalTeam' => [], 'proposalResponses' => [],
-            'proposalReply' => ['subject' => ''] + $reply, 'proposalErrors' => ['subject' => 'Preencha o assunto.'], 'flash' => null]));
-        $assert(str_contains($html, 'Preencha o assunto.') && str_contains($html, 'aria-invalid="true"') && str_contains($html, 'Nenhuma versão gerada'), 'CN-011: erro do formulário da proposta');
+            'proposalReply' => ['subject' => ''] + $reply, 'proposalErrors' => ['subject' => 'Preencha o assunto do e-mail.', 'pdf' => 'Anexe pelo menos um PDF.'], 'flash' => null]));
+        $assert(str_contains($html, 'Preencha o assunto do e-mail.') && str_contains($html, 'aria-invalid="true"') && str_contains($html, 'Nenhum PDF anexado'), 'CN-011: erro do formulário da proposta');
         $html = $render('pages/communication/proposal-new', $layoutData->invoke($panel, $user, 'CN-011', ['proposalForm' => ['name' => '<b>Zé</b>', 'origin' => 'whatsapp'], 'proposalErrors' => ['email' => 'Informe um e-mail válido.']]));
         $assert(str_contains($html, 'action="' . erp_url('/comunicacao/propostas/nova') . '"') && substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"')
             && !str_contains($html, '<b>Zé') && str_contains($html, 'name="requested"') && str_contains($html, 'value="whatsapp" selected') && str_contains($html, 'Informe um e-mail válido.'), 'CN-011: nova proposta com CSRF, escape e aceite');

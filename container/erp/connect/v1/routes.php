@@ -186,13 +186,15 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/configuracoes/dados-pessoais/baixar", "PrivacyScreens:download");
     $route->post("/configuracoes/dados-pessoais/anonimizar", "PrivacyScreens:anonymize");
 
-    // Propostas (CN-011, ADR 0644 e 0650): criar, gerar e enviar ficam só no ERP; CSRF e padrão PRG.
+    // Propostas (CN-011, ADR 0644 e 0650): criar, anexar os PDFs e enviar ficam só no ERP; CSRF e padrão PRG.
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE, "ProposalScreens:index");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/p/{page}", "ProposalScreens:index");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/nova", "ProposalScreens:create");
     $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/nova", "ProposalScreens:store");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}/pdf/{response}", "ProposalScreens:pdf");
     $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}/resposta", "ProposalScreens:respond");
+    $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}/reenviar", "ProposalScreens:resend");
+    $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}/calculo", "ProposalScreens:quote");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}", "ProposalScreens:show");
     $route->post(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/{id}", "ProposalScreens:update");
 

@@ -3179,7 +3179,7 @@ return [
         ],
     ],
     'CN-011' => [
-        'faz' => 'Crie a proposta, gere o PDF no modelo da Connect e envie por e-mail, tudo no ERP. Os pedidos do site chegam aqui com aviso no sino.',
+        'faz' => 'Cadastre a proposta, anexe os PDFs prontos (administradora e síndico profissional) e envie por e-mail, tudo no ERP. Os pedidos do site chegam aqui com aviso no sino.',
         'artigo' => 'propostas-do-site-no-erp',
         'topicos' => [
             [
@@ -3191,8 +3191,12 @@ return [
                 'title' => 'Cadastrar uma proposta pedida por telefone ou WhatsApp',
             ],
             [
-                'id' => 'gerar-e-enviar-a-proposta-em-pdf',
-                'title' => 'Gerar e enviar a proposta em PDF',
+                'id' => 'anexar-e-enviar-a-proposta',
+                'title' => 'Anexar e enviar a proposta',
+            ],
+            [
+                'id' => 'fazer-a-conta-da-proposta',
+                'title' => 'Fazer a conta da proposta',
             ],
             [
                 'id' => 'acompanhar',

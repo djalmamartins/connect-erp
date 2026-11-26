@@ -65,15 +65,22 @@ final class Proposals
         });
     }
 
-    /** POST /api/v1/proposals/{id}/responses  {template_type, subject, introduction, scope, commercial_terms, payment_terms?, notes?, valid_until, send: bool} */
+    /**
+     * POST /api/v1/proposals/{id}/responses  multipart/form-data: pdf_administrator e/ou pdf_syndic (PDF), subject,
+     * valid_until, introduction (opcional), send=1 para enviar por e-mail. ADR 0650.
+     */
     public function respond(array $data): void
     {
         $this->run(function (ProposalDesk $desk, User $user) use ($data): array {
-            $body = $this->body();
-            $send = ($body['send'] ?? false) === true;
-            $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($body, array_flip(['template_type', 'subject', 'introduction', 'scope', 'commercial_terms', 'payment_terms', 'notes', 'valid_until'])));
-            $result = (new ProposalComposer())->respond((int)($data['id'] ?? 0), $form, $user, $send);
-            return [201, ['data' => ['id' => $result['id'], 'status' => $result['status'], 'queued' => $result['queued']]]];
+            $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($_POST, array_flip(['subject', 'introduction', 'valid_until'])));
+            $files = [];
+            foreach (array_keys(ProposalComposer::KINDS) as $kind) {
+                $file = $_FILES['pdf_' . $kind] ?? null;
+                $files[$kind] = is_array($file) && is_string($file['tmp_name'] ?? null) && ((int)($file['error'] ?? 4) !== UPLOAD_ERR_OK || is_uploaded_file($file['tmp_name'])) ? $file : null;
+            }
+            $send = in_array($_POST['send'] ?? '', ['1', 'true'], true);
+            $result = (new ProposalComposer())->attach((int)($data['id'] ?? 0), $form, $files, $user, $send);
+            return [201, ['data' => $result]];
         });
     }
 

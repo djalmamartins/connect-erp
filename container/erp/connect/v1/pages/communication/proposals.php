@@ -23,7 +23,7 @@ $stats = $proposalStats ?? ['total' => 0, 'new' => 0, 'progress' => 0, 'won' => 
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · Comercial',
     'pageTitle' => $currentPage['name'],
-    'pageLead' => 'Pedidos do site e propostas cadastradas pela equipe. Aqui você cria, gera o PDF no modelo da Connect e envia por e-mail. Cada pedido novo do site avisa a equipe no sino.',
+    'pageLead' => 'Pedidos do site e propostas cadastradas pela equipe. Aqui você cadastra, anexa os PDFs prontos (administradora e síndico profissional) e envia por e-mail. Cada pedido novo do site avisa a equipe no sino.',
     'pageActions' => '<a class="erp-btn erp-btn--primary" href="' . $this->e($route . '/nova') . '">' . $icon('plus', 'erp-icon--sm') . 'Nova proposta</a>',
 ]);
 ?>

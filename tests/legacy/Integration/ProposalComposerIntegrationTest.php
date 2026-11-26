@@ -11,7 +11,7 @@ use Source\Services\Proposals\ProposalDesk;
 use Source\Services\Proposals\ProposalDeskError;
 use Source\Support\Access;
 
-/** Criar, gerar e enviar propostas no ERP (ADR 0650): validação, LGPD, PDF no modelo da Connect, fila de e-mail e auditoria. */
+/** Criar, anexar e enviar propostas no ERP (ADR 0650): validação, LGPD, até dois PDFs, antivírus, fila de e-mail e auditoria. */
 final class ProposalComposerIntegrationTest extends TestCase
 {
     /** @var list<string> */
@@ -71,55 +71,142 @@ final class ProposalComposerIntegrationTest extends TestCase
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'proposals' AND action = 'create'")->fetchColumn());
     }
 
-    public function testGenerateThenSendTheConnectModelPdf(): void
+    /** Arquivo temporário como o do upload (fora de storage). */
+    private function upload(string $content = "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"): array
+    {
+        $path = (string)tempnam(sys_get_temp_dir(), 'prop');
+        file_put_contents($path, $content);
+        $this->files[] = $path;
+        return ['tmp_name' => $path, 'name' => 'proposta.pdf', 'size' => strlen($content), 'error' => UPLOAD_ERR_OK];
+    }
+
+    public function testAttachUpToTwoPdfsAndSendThemInOneEmail(): void
     {
         $seller = $this->seller();
         $composer = new ProposalComposer();
         $proposal = $composer->create($this->input(), $seller);
         $id = (int)$proposal['id'];
         $form = ProposalComposer::defaults($proposal);
+        $off = new \Source\Services\Erp\Antivirus\UploadScanPolicy('off');
 
         try {
-            $composer->respond($id, ['valid_until' => '2020-01-01', 'subject' => ''] + $form, $seller, false);
-            self::fail('validade no passado');
+            $composer->attach($id, $form, [], $seller, false, $off);
+            self::fail('sem PDF');
         } catch (ProposalDeskError $error) {
+            self::assertArrayHasKey('pdf', $error->fields);
+        }
+        try {
+            $composer->attach($id, ['valid_until' => '2020-01-01', 'subject' => ''] + $form, ['syndic' => $this->upload('não sou pdf')], $seller, false, $off);
+            self::fail('arquivo que não é PDF, validade no passado e sem assunto');
+        } catch (ProposalDeskError $error) {
+            self::assertArrayHasKey('pdf_syndic', $error->fields);
             self::assertArrayHasKey('valid_until', $error->fields);
             self::assertArrayHasKey('subject', $error->fields);
         }
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM proposal_responses')->fetchColumn());
 
-        $generated = $composer->respond($id, $form, $seller, false);
-        self::assertSame(['generated', false], [$generated['status'], $generated['queued']]);
-        $file = $composer->pdfFile($id, $generated['id']);
+        $saved = $composer->attach($id, $form, ['administrator' => $this->upload()], $seller, false, $off);
+        self::assertSame(['generated', false], [$saved['status'], $saved['queued']]);
+        $file = $composer->pdfFile($id, $saved['ids'][0]);
         self::assertNotNull($file);
         $this->files[] = (string)$file;
         self::assertStringStartsWith('%PDF', (string)file_get_contents((string)$file, false, null, 0, 4));
-        self::assertNull($composer->pdfFile($id + 999, $generated['id']), 'PDF só pela proposta dona da versão');
-        self::assertSame('contacted', (new ProposalDesk())->find($id)['status'], 'só gerar não muda a situação');
+        self::assertStringContainsString('-administradora-v', (string)$file);
+        self::assertNull($composer->pdfFile($id + 999, $saved['ids'][0]), 'PDF só pela proposta dona da versão');
+        self::assertSame('contacted', (new ProposalDesk())->find($id)['status'], 'só anexar não muda a situação');
         self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM mail_queue')->fetchColumn());
 
-        $sent = $composer->respond($id, $form, $seller, true);
-        $this->files[] = (string)$composer->pdfFile($id, $sent['id']);
+        $sent = $composer->attach($id, ['introduction' => 'Conforme conversamos.'] + $form, ['administrator' => $this->upload(), 'syndic' => $this->upload()], $seller, true, $off);
+        foreach ($sent['ids'] as $responseId) {
+            $this->files[] = (string)$composer->pdfFile($id, $responseId);
+        }
+        self::assertCount(2, $sent['ids']);
         self::assertSame(['queued', true], [$sent['status'], $sent['queued']]);
-        $mail = $this->pdo->query('SELECT recipient_email, subject, attachments_json FROM mail_queue')->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM mail_queue')->fetchColumn(), 'um e-mail só');
+        $mail = $this->pdo->query('SELECT recipient_email, subject, body, attachments_json FROM mail_queue')->fetch(\PDO::FETCH_ASSOC);
         self::assertSame('sindico@exemplo.test', $mail['recipient_email']);
         self::assertSame($form['subject'], $mail['subject']);
-        self::assertStringContainsString('.pdf', (string)$mail['attachments_json']);
+        self::assertStringContainsString('Conforme conversamos.', (string)$mail['body']);
+        self::assertStringContainsString('proposta-administradora-', (string)$mail['attachments_json']);
+        self::assertStringContainsString('proposta-sindico-profissional-', (string)$mail['attachments_json']);
         self::assertSame('proposal_sent', (new ProposalDesk())->find($id)['status']);
         $versions = (new ProposalDesk())->responses($id);
-        self::assertSame([$sent['id'], $generated['id']], array_column($versions, 'id'));
-        self::assertTrue($versions[0]['has_pdf']);
+        self::assertCount(3, $versions);
+        self::assertSame(['syndic', 'administrator', 'administrator'], array_column($versions, 'template_type'));
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'proposal_responses' AND action = 'send'")->fetchColumn());
 
         $this->pdo->exec("UPDATE proposals SET status = 'won' WHERE id = {$id}");
-        $again = $composer->respond($id, $form, $seller, true);
-        $this->files[] = (string)$composer->pdfFile($id, $again['id']);
+        $again = $composer->resend($id, [$saved['ids'][0]], $seller);
+        self::assertTrue($again['queued']);
+        self::assertSame(2, (int)$this->pdo->query('SELECT COUNT(*) FROM mail_queue')->fetchColumn());
         self::assertSame('won', (new ProposalDesk())->find($id)['status'], 'enviar de novo não desfaz Fechada');
+        try {
+            $composer->resend($id, [999999], $seller);
+            self::fail('versão de outra proposta');
+        } catch (ProposalDeskError $error) {
+            self::assertSame(422, $error->status);
+        }
 
         try {
-            $composer->respond(999999, $form, $seller, false);
+            $composer->attach(999999, $form, ['syndic' => $this->upload()], $seller, false, $off);
             self::fail('proposta inexistente');
         } catch (ProposalDeskError $error) {
             self::assertSame(404, $error->status);
         }
+    }
+
+    public function testInfectedFileIsRefused(): void
+    {
+        $seller = $this->seller();
+        $composer = new ProposalComposer();
+        $proposal = $composer->create($this->input(), $seller);
+        $scanner = new class implements \Source\Services\Erp\Antivirus\UploadScanner {
+            public function scan(string $path): string { return \Source\Services\Erp\Antivirus\ScanStatus::INFECTED; }
+            public function available(): bool { return true; }
+        };
+        try {
+            $composer->attach((int)$proposal['id'], ProposalComposer::defaults($proposal), ['syndic' => $this->upload()], $seller, true,
+                new \Source\Services\Erp\Antivirus\UploadScanPolicy('enforce', $scanner));
+            self::fail('arquivo infectado');
+        } catch (ProposalDeskError $error) {
+            self::assertArrayHasKey('pdf_syndic', $error->fields);
+        }
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM proposal_responses')->fetchColumn());
+        self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM mail_queue')->fetchColumn());
+    }
+
+    public function testQuoteIsSavedAndAudited(): void
+    {
+        $seller = $this->seller();
+        $composer = new ProposalComposer();
+        $proposal = $composer->create($this->input(['units' => '40']), $seller);
+        $id = (int)$proposal['id'];
+        try {
+            $composer->saveQuote($id, ['price_admin_unit' => 'abc']);
+            self::fail('valor inválido');
+        } catch (ProposalDeskError $error) {
+            self::assertArrayHasKey('price_admin_unit', $error->fields);
+        }
+        $saved = $composer->saveQuote($id, ['price_admin_unit' => '12,50', 'price_syndic_unit' => '', 'min_monthly' => '1.000,00']);
+        self::assertSame([1250, null, 100000, 50000, 600000, false], [$saved['quote']['admin_unit'], $saved['quote']['syndic_unit'], $saved['quote']['min_monthly'],
+            $saved['quote']['monthly'], $saved['quote']['yearly'], $saved['quote']['worth']]);
+        self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'proposals' AND action = 'quote'")->fetchColumn());
+    }
+
+    public function testMigrationKeepsTheProposalPermissionOnlyForAdministrationAndDevelopment(): void
+    {
+        $this->pdo->exec("INSERT IGNORE INTO access_permissions (name, slug, group_name) VALUES ('proposals.manage', 'proposals.manage', 'Teste')");
+        $permission = (int)$this->pdo->query("SELECT id FROM access_permissions WHERE slug = 'proposals.manage'")->fetchColumn();
+        foreach (['developer', 'super_admin', 'client_admin', 'manager', 'operator'] as $slug) {
+            $this->pdo->prepare('INSERT INTO access_roles (name, slug, level) VALUES (?, ?, 10)')->execute([$slug, $slug]);
+            $this->pdo->prepare('INSERT INTO access_role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([(int)$this->pdo->lastInsertId(), $permission]);
+        }
+        $sql = (string)file_get_contents(dirname(__DIR__, 3) . '/database/migrations/20261126_0900_proposals_origin.sql');
+        $sql = (string)preg_replace('/^--.*$/m', '', $sql);
+        foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
+            $this->pdo->exec($statement);
+        }
+        $roles = $this->pdo->query("SELECT r.slug FROM access_role_permissions rp JOIN access_roles r ON r.id = rp.role_id WHERE rp.permission_id = {$permission} ORDER BY r.slug")->fetchAll(\PDO::FETCH_COLUMN);
+        self::assertSame(['client_admin', 'developer', 'super_admin'], $roles);
     }
 }

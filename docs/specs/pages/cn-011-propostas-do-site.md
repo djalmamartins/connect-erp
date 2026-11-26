@@ -3,10 +3,10 @@
 Origem: pedido do proprietário em 22/11/2026 ("ao solicitar a proposta dentro do site, ela poderia cair dentro do ERP,
 talvez em Comunicados, com um alerta para a gente saber que chegou"). Não existe no inventário APControle; é página
 própria da Connect. Decisões: ADR 0639 (Studio > Gestão > Propostas e aviso no sininho), ADR 0644 (esta tela) e
-ADR 0650 (26/11/2026: "passar todas as funções de proposta para dentro do ERP, a criação, a geração e o envio", com o
-PDF no modelo de proposta da Connect).
+ADR 0650 (26/11/2026: "passar todas as funções de proposta para dentro do ERP, a criação, a geração e o envio"; depois
+"ao invés de você criar, deixa a gente anexar", "até dois arquivos, um para administradora e outro para síndico").
 Rota: `/erp/comunicacao/propostas` (Comunicação › Comercial).
-Rotas extras: `/nova` (GET/POST), `/{id}/resposta` (POST), `/{id}/pdf/{versão}` (GET).
+Rotas extras: `/nova` (GET/POST), `/{id}/resposta` (POST, multipart), `/{id}/reenviar` (POST), `/{id}/calculo` (POST), `/{id}/pdf/{versão}` (GET).
 API: `GET /api/v1/proposals`, `POST /api/v1/proposals`, `GET /api/v1/proposals/{id}`, `POST /api/v1/proposals/{id}/status`,
 `POST /api/v1/proposals/{id}/responses`.
 
@@ -16,8 +16,11 @@ API: `GET /api/v1/proposals`, `POST /api/v1/proposals`, `GET /api/v1/proposals/{
 |---|---|
 | Lê a tabela `proposals`: pedidos do site (`ProposalService::submit`) e propostas cadastradas pela equipe (ADR 0650) | CONFIRMADO |
 | Nova proposta: nome, perfil, e-mail, telefone, condomínio, unidades, necessidade, origem e a marca "a pessoa pediu" (obrigatória, LGPD); entra Contatada, sem e-mail e sem aceite de novidades | CONFIRMADO |
-| Gerar PDF (versão nova, sem mudar a situação) e Gerar e enviar (confirmação, e-mail com o PDF na fila, situação Proposta enviada salvo Fechada/Perdida/Arquivada) | CONFIRMADO |
-| PDF no modelo da Connect (capa, conteúdo, sobre, diferenciais, cronograma, mapa de serviços com o valor, formalização e contato), sem fotos de banco de imagens | CONFIRMADO |
+| Anexar até dois PDFs prontos (Administradora e Síndico profissional), só PDF (%PDF- e tipo detectado), até 20 MB cada, antivírus conforme ERP_AV_MODE; pelo menos um | CONFIRMADO |
+| Só anexar (sem mudar a situação) ou Anexar e enviar (confirmação, um e-mail com os PDFs na fila, mensagem opcional, situação Proposta enviada salvo Fechada/Perdida/Arquivada); Enviar de novo um PDF | CONFIRMADO |
+| O sistema não gera o PDF: a Connect faz o arquivo (Canva) e anexa | CONFIRMADO |
+| Conta da proposta: preço por unidade (administradora, síndico profissional), mínimo mensal; totais do mês e do ano e "Compensa?"; só interno | CONFIRMADO |
+| Acesso só para administração e desenvolvimento (developer, super_admin, client_admin), pela permissão proposals.manage | CONFIRMADO |
 | Studio só consulta: sem formulários; POST responde "agora é no ERP" | CONFIRMADO |
 | Acesso: `erp.access` + `proposals.manage` (a mesma permissão do Studio e de quem recebe o aviso) | CONFIRMADO |
 | Alerta no topo da tela e número no menu lateral (item e grupo Comunicação) enquanto houver propostas com situação Nova | CONFIRMADO |

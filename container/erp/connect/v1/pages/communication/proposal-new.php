@@ -1,7 +1,7 @@
 <?php
 /**
  * Nova proposta no ERP (CN-011, ADR 0650): para pedido que chegou por telefone, WhatsApp, e-mail, indicação ou visita.
- * Depois de gravar, a proposta abre para gerar o PDF e enviar. Nenhum e-mail sai só por cadastrar.
+ * Depois de gravar, a proposta abre para anexar o PDF e enviar. Nenhum e-mail sai só por cadastrar.
  * @var array $currentPage @var array<string,string> $proposalForm @var array<string,string> $proposalErrors
  */
 use Source\Services\Proposals\ProposalComposer;
@@ -18,7 +18,7 @@ $required = '<span aria-hidden="true" style="color:var(--erp-danger)">*</span>';
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · Comercial',
     'pageTitle' => 'Nova proposta',
-    'pageLead' => 'Para quem pediu proposta por telefone, WhatsApp, e-mail, indicação ou numa visita. Depois de gravar, você gera o PDF e envia.',
+    'pageLead' => 'Para quem pediu proposta por telefone, WhatsApp, e-mail, indicação ou numa visita. Depois de gravar, você anexa o PDF e envia.',
     'pageActions' => '<a class="erp-btn" href="' . $this->e($route) . '">' . $icon('chevron-left', 'erp-icon--sm') . 'Voltar às propostas</a>',
 ]);
 ?>

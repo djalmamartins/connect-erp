@@ -133,12 +133,13 @@ return [
     ],
 
     'CN-011' => [
-        'faz' => 'Reúne as propostas pedidas no site e as cadastradas pela equipe, gera o PDF no modelo da Connect, envia por e-mail e guarda o andamento de cada uma até virar contrato.',
+        'faz' => 'Reúne as propostas pedidas no site e as cadastradas pela equipe, guarda os PDFs prontos (administradora e síndico profissional), envia por e-mail e acompanha cada uma até virar contrato.',
         'por_tras' => [
             'Os pedidos do site e as propostas cadastradas aqui ficam na mesma lista; a coluna do condomínio mostra a origem.',
-            'Cada geração grava uma versão nova do PDF; as versões antigas, inclusive as feitas antes no Studio, continuam na lista.',
-            'Enviar põe o e-mail com o PDF anexado na fila de avisos e muda a situação para Proposta enviada (a não ser que já esteja Fechada, Perdida ou Arquivada).',
-            'Cadastrar, gerar, enviar e mudar a situação entram no histórico do sistema.',
+            'Cada PDF anexado (só PDF, até 20 MB) fica guardado e aparece na lista; os PDFs feitos antes no Studio também continuam lá.',
+            'Enviar põe um e-mail com os PDFs anexados na fila de avisos e muda a situação para Proposta enviada (a não ser que já esteja Fechada, Perdida ou Arquivada).',
+            'A conta da proposta (preço por unidade e mínimo que compensa) fica guardada só para a equipe e não vai no e-mail.',
+            'Cadastrar, fazer a conta, anexar, enviar e mudar a situação entram no histórico do sistema.',
             'As propostas não são de um condomínio cadastrado, então a escolha do condomínio na barra superior não muda esta lista.',
         ],
     ],

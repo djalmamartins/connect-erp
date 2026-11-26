@@ -37,15 +37,17 @@ final class ProposalMailer
         ]);
     }
 
-    /** Envio da proposta pronta (o PDF vai anexado). */
-    public static function response(Proposal $proposal): string
+    /** Envio da proposta pronta (os PDFs vão anexados). $message: texto opcional da equipe, em parágrafos. */
+    public static function response(Proposal $proposal, string $message = ''): string
     {
+        $extra = array_values(array_filter(array_map('trim', preg_split('/\n\s*\n/', trim($message)) ?: []), static fn (string $p): bool => $p !== ''));
         return (new MailTemplate())->render('notice', [
             'subject' => 'Sua proposta está pronta',
             'preheader' => 'A proposta para o seu condomínio está anexada.',
             'first_name' => (string)$proposal->name,
             'paragraphs' => [
                 "Preparamos a proposta solicitada para {$proposal->condominium}. O documento completo está anexado a este e-mail.",
+                ...$extra,
                 'Caso queira ajustar algum ponto, responda este e-mail e nossa equipe dará continuidade ao atendimento.',
             ],
             'highlight' => [['Protocolo', (string)$proposal->protocol]],

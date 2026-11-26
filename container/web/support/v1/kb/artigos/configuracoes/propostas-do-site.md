@@ -1,7 +1,7 @@
 ---
 codigo:
 titulo: Propostas no Studio (consulta)
-resumo: O que o site pede, como a equipe é avisada de um pedido novo e por que o Studio agora só consulta as propostas (criar, gerar e enviar ficam no ERP).
+resumo: O que o site pede, como a equipe é avisada de um pedido novo e por que o Studio agora só consulta as propostas (criar, anexar e enviar ficam no ERP).
 categoria: configuracoes
 rota: /studio/proposals
 menu: Studio > Gestão > Propostas
@@ -34,8 +34,8 @@ A cada pedido novo, todas as pessoas que podem abrir **Propostas** recebem:
 
 ## O Studio agora só consulta
 
-Desde 26/11/2026, criar uma proposta, gerar o PDF no modelo da Connect, enviar por e-mail e mudar a situação ou o responsável são feitos **só no ERP**. Em [[Studio > Gestão > Propostas]] você ainda vê a lista, os dados de cada pedido, a situação e as versões em PDF já geradas, mas não muda nada. Use {{Abrir no ERP}} para ir à mesma proposta no ERP.
+Desde 26/11/2026, criar uma proposta, anexar os PDFs, enviar por e-mail e mudar a situação ou o responsável são feitos **só no ERP**. Em [[Studio > Gestão > Propostas]] você ainda vê a lista, os dados de cada pedido, a situação e as versões em PDF já geradas, mas não muda nada. Use {{Abrir no ERP}} para ir à mesma proposta no ERP.
 
 Nenhum dado se perdeu: os pedidos e os PDFs feitos antes no Studio aparecem também no ERP.
 
->> Veja como fazer no ERP: [Propostas: criar, gerar e enviar (ERP)](artigo:propostas-do-site-no-erp).
+>> Veja como fazer no ERP: [Propostas: criar, anexar e enviar (ERP)](artigo:propostas-do-site-no-erp).
