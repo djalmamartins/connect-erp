@@ -34,7 +34,7 @@ Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem
 
 O que ficou para trás (um compromisso de ontem que não foi concluído, um chamado com o prazo vencido, uma vistoria vencida) aparece num quadro **vermelho** no alto da aba **Hoje**, com há quantos dias está atrasado. Ele continua aparecendo todos os dias, até ser fechado. Na faixa dos dias, o dia em que a tarefa ficou para trás também fica vermelho. O número no ícone do app é a quantidade de tarefas atrasadas.
 
-Para fechar: toque na tarefa e escolha **Concluir**. Chamado fecha no SAC; no app você pode marcar um horário para atender. Quando fecha, sai do vermelho e tudo volta ao normal.
+Para fechar: toque na tarefa e escolha **Concluir**. Chamado fecha no SAC: toque nele e escolha **Abrir no app do SAC** para responder, ou **Marcar horário para atender**. Quando fecha, sai do vermelho e tudo volta ao normal.
 
 ## Concluir, cancelar ou reabrir
 

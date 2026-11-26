@@ -8,6 +8,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
 import { isLate, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
 import { syncReminders } from '../../src/lib/notify';
+import { openInSac } from '../../src/lib/sac';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
@@ -93,12 +94,29 @@ export default function Today() {
       const choice = await dialog.choose({
         title: item.title,
         message: `${item.protocol ? `Chamado ${item.protocol}. ` : ''}${lateLabel(item.days_late)}. O chamado fecha no SAC; aqui você pode marcar um horário para atender.`,
-        options: [{ label: 'Marcar horário para atender', icon: 'time-outline' }],
+        options: [
+          { label: 'Abrir no app do SAC', icon: 'chatbubbles-outline' },
+          { label: 'Marcar horário para atender', icon: 'time-outline' },
+        ],
       });
-      if (choice === 0) schedule({ id: item.ticket_id ?? item.id, subject: item.title } as Ticket);
+      if (choice === 0) await openInSac(item.ticket_id ?? item.id);
+      if (choice === 1) schedule({ id: item.ticket_id ?? item.id, subject: item.title } as Ticket);
       return;
     }
     await dialog.notice({ title: item.title, message: `${KIND_LABEL[item.kind]} · ${lateLabel(item.days_late)}. Resolva pelo ERP; quando fechar, sai daqui sozinho.` });
+  }
+
+  async function openTicket(ticket: Ticket) {
+    const choice = await dialog.choose({
+      title: ticket.subject,
+      message: [ticket.protocol, ticket.status_label, ticket.condominium].filter(Boolean).join(' · '),
+      options: [
+        { label: 'Abrir no app do SAC', icon: 'chatbubbles-outline' },
+        { label: 'Marcar horário para atender', icon: 'time-outline' },
+      ],
+    });
+    if (choice === 0) await openInSac(ticket.id);
+    if (choice === 1) schedule(ticket);
   }
 
   function schedule(ticket: Pick<Ticket, 'id' | 'subject'>) {
@@ -122,7 +140,7 @@ export default function Today() {
       }
     >
       {day.error && !d ? <ErrorBox error={day.error} onRetry={day.reload} /> : null}
-      {d ? <DayBody d={d} isToday={isToday} onPick={setDate} onEvent={changeStatus} onLate={openLate} onSchedule={schedule} /> : null}
+      {d ? <DayBody d={d} isToday={isToday} onPick={setDate} onEvent={changeStatus} onLate={openLate} onSchedule={openTicket} /> : null}
     </Screen>
   );
 }
@@ -253,7 +271,7 @@ function DayBody({
             <>
               <SectionTitle>Aguardando o cliente</SectionTitle>
               {d.waiting.map((t) => (
-                <TicketRow key={t.id} t={t} />
+                <TicketRow key={t.id} t={t} onPress={() => void openInSac(t.id)} />
               ))}
             </>
           ) : null}
@@ -261,7 +279,7 @@ function DayBody({
             <>
               <SectionTitle>Chamados do SAC sem responsável</SectionTitle>
               {d.unassigned.map((t) => (
-                <TicketRow key={t.id} t={t} />
+                <TicketRow key={t.id} t={t} onPress={() => void openInSac(t.id)} />
               ))}
             </>
           ) : null}
@@ -289,7 +307,7 @@ function TicketRow({ t, onPress }: { t: Ticket; onPress?: () => void }) {
       title={t.subject}
       subtitle={[t.protocol, t.tag, t.condominium, t.overdue ? `Prazo passou (${shortDay(t.due_on)})` : t.due_on ? `Prazo ${shortDay(t.due_on)}` : null].filter(Boolean).join(' · ')}
       onPress={onPress}
-      accessibilityLabel={onPress ? `${t.subject}. Toque para marcar horário` : t.subject}
+      accessibilityLabel={onPress ? `${t.subject}. Toque para abrir` : t.subject}
     />
   );
 }
