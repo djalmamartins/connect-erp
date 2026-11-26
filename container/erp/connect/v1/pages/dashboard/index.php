@@ -87,6 +87,14 @@ $this->insert('components/layout/page-head', [
             $slices[] = ['label' => $bucket['label'], 'value' => $bucket['amount_cents'], 'color' => $bucketColor[$bucket['key']] ?? '#6b7280'];
         }
     }
+    // Centro da rosca: a faixa com mais dinheiro em aberto (ADR 0654).
+    $donutTop = null;
+    foreach ($slices as $slice) {
+        if ($donutTop === null || $slice['value'] > $donutTop['value']) {
+            $donutTop = $slice;
+        }
+    }
+    $slicesTotal = array_sum(array_column($slices, 'value'));
 ?>
     <div class="erp-grid erp-grid--main" data-erp-dashboard-finance>
         <section class="erp-card" aria-labelledby="dash-cash-title">
@@ -111,7 +119,7 @@ $this->insert('components/layout/page-head', [
             </div>
             <p class="erp-dash-open"><strong><?= $this->e($brl($finance['delinquency']['open_cents'])) ?></strong> em aberto</p>
             <?php if ($slices !== []): ?>
-                <?php $this->insert('components/charts/donut', ['slices' => $slices, 'donutLabel' => 'Inadimplência por faixa de atraso']); ?>
+                <?php $this->insert('components/charts/donut', ['slices' => $slices, 'donutLabel' => 'Inadimplência por faixa de atraso', 'donutCenter' => $donutTop !== null && $slicesTotal > 0 ? number_format($donutTop['value'] / $slicesTotal * 100, 0, ',', '.') . '%' : null, 'donutCenterCaption' => $donutTop !== null ? mb_strtolower($donutTop['label']) : null]); ?>
                 <dl class="erp-dash-buckets">
                     <?php foreach ($finance['delinquency']['buckets'] as $bucket): ?><div><dt><?= $this->e($bucket['label']) ?></dt><dd><?= $this->e($brl($bucket['amount_cents'])) ?></dd></div><?php endforeach; ?>
                 </dl>

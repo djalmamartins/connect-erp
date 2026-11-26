@@ -519,11 +519,20 @@ p { margin: 0; }
 @media (max-width: 640px) { .erp-vchart__axis { min-width: 52px; } }
 @media print { .erp-vchart__scroll { overflow: visible; } .erp-vchart__bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 
-.erp-donut { display: flex; align-items: center; gap: var(--erp-space-5); }
-.erp-donut svg { width: 140px; height: 140px; transform: rotate(-90deg); }
-.erp-donut ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
-.erp-donut li { display: flex; align-items: center; gap: 8px; }
+/* Rosca (ADR 0654): anel fino e inteiro, centralizado com a legenda, destaque no centro. */
+.erp-donut { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--erp-space-4) var(--erp-space-5); }
+.erp-donut__chart { position: relative; flex: 0 0 auto; width: 132px; height: 132px; }
+.erp-donut__chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.erp-donut__track { stroke: var(--erp-neutral-soft); }
+.erp-donut__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; line-height: 1.15; pointer-events: none; }
+.erp-donut__center strong { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.erp-donut__center small { max-width: 84px; margin-top: 2px; color: var(--erp-muted); font-size: 11px; }
+.erp-donut ul { flex: 1 1 170px; display: grid; gap: 10px; min-width: 0; max-width: 240px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.erp-donut li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .erp-donut li i { width: 10px; height: 10px; border-radius: 3px; }
+.erp-donut li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.erp-donut li strong { font-variant-numeric: tabular-nums; text-align: right; }
+@media print { .erp-donut circle, .erp-donut li i { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 .erp-progress { height: 8px; border-radius: var(--erp-radius-pill); background: var(--erp-neutral-soft); overflow: hidden; }
 .erp-progress span { display: block; height: 100%; border-radius: inherit; background: var(--erp-brand); }
 
@@ -603,7 +612,8 @@ p { margin: 0; }
   .erp-navbar .erp-breadcrumbs { display: none; }
   .erp-detail-grid { grid-template-columns: minmax(0, 1fr); }
   .erp-filters { display: grid; }
-  .erp-donut { flex-direction: column; align-items: flex-start; }
+  .erp-donut { flex-direction: column; align-items: center; }
+  .erp-donut ul { width: 100%; }
   .erp-dropdown__panel, .erp-navsearch__panel { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; }
   .erp-condo-switch__icon { display: none; }
   .erp-modal__foot > .erp-btn { flex: 1; }
