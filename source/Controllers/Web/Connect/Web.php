@@ -451,10 +451,11 @@ class Web extends Controller
             false
         );
 
+        $resetUserId = (new \Source\Services\PasswordResetService())->findValidUserId((string)$data["code"]);
         echo $this->loginView()->render("components/login/reset", [
             "head" => $head,
             "code" => (string)$data["code"],
-        ] + $this->loginContext());
+        ] + $this->loginContext($resetUserId));
     }
 
     /** Views da tela de entrada (Studio), usadas também pelo ERP, Help Desk e app do morador. */
@@ -468,15 +469,38 @@ class Web extends Controller
      * endereço de "Voltar para o login", para a pessoa voltar à tela de onde veio.
      * @return array{loginEnvironment: string, loginEyebrow: string, loginBack: string}
      */
-    private function loginContext(): array
+    private function loginContext(?int $resetUserId = null): array
     {
         if (erp_host()) {
             return ["loginEnvironment" => "erp", "loginEyebrow" => "ERP CONNECT CONDOMÍNIOS", "loginBack" => erp_url("/login")];
         }
-        if (app_host()) {
+        if (app_host() || self::residentRecovery($resetUserId)) {
             return ["loginEnvironment" => "app", "loginEyebrow" => "CONNECT MORADOR", "loginBack" => app_url("/login")];
         }
         return ["loginEnvironment" => "studio", "loginEyebrow" => "CONNECT CONDOMÍNIOS", "loginBack" => url("/studio/login")];
+    }
+
+    /**
+     * Recuperação do morador fora do host do app (ADR 0657): o login do app manda ?de=app para
+     * /forget, e o link do e-mail (/forget/{token}) é de morador quando a conta tem unidade e não
+     * entra no ERP. Só muda os textos e o "Voltar para o login"; a troca da senha é a mesma.
+     */
+    private static function residentRecovery(?int $resetUserId): bool
+    {
+        if (($_GET["de"] ?? "") === "app" || ($_POST["de"] ?? "") === "app") {
+            return true;
+        }
+        if ($resetUserId === null || $resetUserId <= 0) {
+            return false;
+        }
+        try {
+            $user = (new \Source\Models\User())->findById($resetUserId);
+            return $user !== null
+                && !\Source\Support\Access::can("erp.access", $user)
+                && (new \Source\Services\Resident\ResidentLinks())->forUser($user) !== [];
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
