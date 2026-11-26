@@ -62,7 +62,7 @@ final class ErpProposalScreensTest extends TestCase
         $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
         self::assertStringContainsString("'navBadges' => \$this->navBadges(\$user)", $panel);
         self::assertStringContainsString("\$user->can('proposals.manage')", $panel);
-        self::assertStringContainsString("['CN-011' => \$new]", $panel);
+        self::assertStringContainsString('$badges[\'CN-011\'] = $new', $panel);
         self::assertStringContainsString('data-erp-proposal-alert', $this->file('container/erp/connect/v1/pages/communication/proposals.php'));
     }
 

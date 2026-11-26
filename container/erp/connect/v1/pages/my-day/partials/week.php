@@ -19,7 +19,7 @@ foreach ($day['week'] as $weekDay) {
                 <small class="erp-muted">Livre</small>
             <?php else: ?>
                 <ul>
-                    <?php foreach ($events as $event): ?><li><time><?= $this->e($event['start']) ?></time> <?= $this->e($event['title']) ?><?= $event['condominium'] ? ' · <small>' . $this->e($event['condominium']) . '</small>' : '' ?><?= $event['status'] === 'completed' ? ' <span class="erp-badge erp-badge--success">Feito</span>' : '' ?></li><?php endforeach; ?>
+                    <?php foreach ($events as $event): ?><li><time><?= $this->e($event['start']) ?></time> <?= $this->e($event['title']) ?><?= $event['condominium'] ? ' · <small>' . $this->e($event['condominium']) . '</small>' : '' ?><?= $event['status'] === 'completed' ? ' <span class="erp-badge erp-badge--success">Feito</span>' : '' ?><?= !empty($event['overdue']) ? ' <span class="erp-badge erp-badge--danger">Atrasada</span>' : '' ?></li><?php endforeach; ?>
                     <?php foreach ($visits as $visit): ?><li><time>Dia</time> Vistoria – <?= $this->e($visit['condominium']) ?></li><?php endforeach; ?>
                     <?php foreach ($deadlines as $ticket): ?><li><time>Prazo</time> <?= $this->e($ticket['subject']) ?></li><?php endforeach; ?>
                 </ul>

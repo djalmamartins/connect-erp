@@ -11,6 +11,7 @@
 # - No mesmo horário: boleto que vence hoje e atraso com 10, 15, 30, 45 e 60 dias para o morador
 #   (tools/resident-charge-emails.php, ADR 0601); cada boleto é avisado uma vez por marco.
 # - No mesmo horário: chamado no SAC das vistorias que vencem em breve (tools/inspection-tickets.php, ADR 0630).
+# - Logo depois: aviso no sininho de quem tem tarefa atrasada no Meu Dia (tools/my-day-alerts.php, ADR 0658).
 # - De hora em hora: consulta dos boletos em aberto nos bancos reais (tools/bank-charges-sync.php, ADR 0156).
 #   Dá baixa do que foi pago sem depender do webhook (que precisa de endereço público).
 set -u
@@ -25,6 +26,7 @@ while true; do
         php tools/collection-reminders.php || echo "collection-reminders falhou com código $?" >&2
         php tools/resident-charge-emails.php || echo "resident-charge-emails falhou com código $?" >&2
         php tools/inspection-tickets.php || echo "inspection-tickets falhou com código $?" >&2
+        php tools/my-day-alerts.php || echo "my-day-alerts falhou com código $?" >&2
         last_daily=$today
     fi
     hour_key=$(date +%Y-%m-%dT%H)
