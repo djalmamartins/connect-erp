@@ -8,7 +8,7 @@ menu: Agenda > Atendimento > Chamados
 icone: chatbubbles-outline
 situacao: guia
 relacionados: chamados, proprietarios-e-inquilinos, usuarios-do-sistema
-palavras: whatsapp, talk, connect talk, chamado, protocolo, help desk, integração, token, morador, telefone, boleto, segunda via, 2ª via, pix
+palavras: whatsapp, talk, connect talk, chamado, protocolo, help desk, sac, integração, token, morador, telefone, boleto, segunda via, 2ª via, pix, acompanhar, link, jack, status
 manual: sim
 rascunho: nao
 ---
@@ -53,12 +53,27 @@ Ele só responde quando quem escreve está no telefone do cadastro do morador. O
 
 ## O chamado no SAC
 
-Cada conversa vira **um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
+O chamado só chega ao SAC quando o atendente do Talk clica em **Abrir chamado** e preenche o título, a descrição e o
+setor que vai cuidar. Conversa comum, que termina no próprio WhatsApp, fica só no Talk. Cada conversa vira no máximo
+**um** chamado, mesmo que o Talk tente de novo por falha de rede. Em [[Agenda > Atendimento > Chamados]] ele aparece com:
 
 - origem **WhatsApp (Connect Talk)** (use o filtro de origem para ver só esses);
 - o nome do cadastro do ERP, o condomínio, a unidade e o telefone de quem escreveu;
 - no texto, o link **Conversa no Connect Talk**, que abre a conversa no Talk;
 - o protocolo `SAC...`: quando a conversa do Talk já tem um número SAC, o chamado fica com o mesmo número, e o morador acompanha tudo por ele.
+
+### O morador acompanha pelo link
+
+Quando a Jack (a assistente do Talk) abre o chamado, ela manda ao morador o número `SAC...` e um **link de acompanhamento**. O link abre uma página da Central de Ajuda, sem login, com:
+
+- o assunto, a área, a data de abertura e a situação do chamado (Aberto, Em atendimento, Aguardando cliente, Resolvido ou Fechado);
+- as respostas públicas da equipe, com o primeiro nome de quem respondeu, e o que o morador escreveu pelo WhatsApp.
+
+A descrição da abertura (com telefone, condomínio e a conversa) e as notas internas **não** aparecem. O link leva um código de acesso próprio daquele chamado: sem o código certo, a página diz que o chamado não foi encontrado. A página fica fora da busca do Google.
+
+Se o morador mandar o número do chamado no WhatsApp, a Jack responde a situação na hora. Ela só mostra chamados abertos pelo mesmo número de WhatsApp.
+
+>! Não encaminhe o link do chamado para outras pessoas: quem tem o link vê a situação e as respostas daquele chamado.
 
 Quando alguém da equipe **responde** o chamado no ERP (resposta pública, não nota interna), o Talk pega a resposta em poucos segundos e manda no WhatsApp do morador, com o primeiro nome de quem respondeu. O que o morador escreve de volta no WhatsApp entra no mesmo chamado: se o chamado estava resolvido, ele é **reaberto** e a equipe é avisada, como acontece no aplicativo.
 

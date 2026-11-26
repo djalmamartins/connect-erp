@@ -182,6 +182,28 @@ class Support extends Controller
         }
     }
 
+    /**
+     * GET /suporte/chamado/{protocolo}?c={código} — quem escreveu pelo WhatsApp acompanha o chamado pelo link que a Jack
+     * mandou (ADR 0649). Sem login; o código de acesso do chamado é a chave. Fora da busca e sem referer.
+     */
+    public function ticket(array $data): void
+    {
+        header('X-Robots-Tag: noindex, nofollow');
+        header('Referrer-Policy: no-referrer');
+        header('Cache-Control: private, no-store');
+        $limited = request_limit('public_ticket_track', 30, 900);
+        $ticket = $limited ? null : (new \Source\Services\Support\TicketTracking())->find((string)($data['protocol'] ?? ''), (string)($_GET['c'] ?? ''));
+        if ($ticket === null) {
+            http_response_code($limited ? 429 : 404);
+        }
+        echo $this->view->render("pages/ticket", [
+            "head" => $this->seo->render("Acompanhar chamado - " . CONF_SITE_NAME, "Situação do seu chamado com a Connect.", url("/suporte"), theme("/assets/images/share.jpg"), false),
+            "ticket" => $ticket,
+            "limited" => $limited,
+            "categories" => $this->categories(),
+        ]);
+    }
+
     public function widgetLookup(array $data): void
     {
         header('Content-Type: application/json; charset=utf-8');

@@ -49,6 +49,33 @@ final class ServiceDeskTest extends TestCase
         self::assertSame($created['protocol'], $found['ticket']['protocol'] ?? null);
     }
 
+    /** ADR 0649: a página pública do chamado abre com o código certo e não mostra nada com o código errado. */
+    public function testPublicTicketPageNeedsTheAccessCode(): void
+    {
+        $_SESSION['csrf_token'] = 'widget-token';
+        $support = new Support();
+        ob_start();
+        $support->widgetCreate(['csrf' => 'widget-token', 'name' => 'Cliente Externo', 'email' => 'cliente@example.com',
+            'subject' => 'Portão da garagem', 'message' => 'O portão da garagem não abre desde ontem.']);
+        $created = json_decode((string)ob_get_clean(), true);
+
+        $_GET['c'] = $created['token'];
+        ob_start();
+        $support->ticket(['protocol' => $created['protocol']]);
+        $html = (string)ob_get_clean();
+        self::assertStringContainsString('Chamado ' . $created['protocol'], $html);
+        self::assertStringContainsString('Portão da garagem', $html);
+        self::assertStringNotContainsString('não abre desde ontem', $html, 'A descrição da abertura não aparece no link.');
+
+        $_GET['c'] = str_repeat('a', 64);
+        ob_start();
+        $support->ticket(['protocol' => $created['protocol']]);
+        $html = (string)ob_get_clean();
+        self::assertStringContainsString('Chamado não encontrado', $html);
+        self::assertStringNotContainsString('Portão da garagem', $html);
+        unset($_GET['c']);
+    }
+
     public function testAgendaControllerCreatesAndUpdatesAnEvent(): void
     {
         $userId = $this->createUser(['level' => 10]);

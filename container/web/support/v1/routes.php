@@ -11,5 +11,6 @@ $route->post("/widget/acompanhar", "Support:widgetLookup");
 $route->post("/avaliar/{id}", "Support:vote");
 $route->post("/mensagem", "Support:message");
 $route->get("/tela/{code}", "Support:screen");
+$route->get("/chamado/{protocol}", "Support:ticket");
 $route->get("/{section}", "Support:category");
 $route->get("/{section}/{article}", "Support:article");

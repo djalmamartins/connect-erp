@@ -103,6 +103,7 @@ components:
         talk_protocol: { type: [string, 'null'], description: Protocolo da conversa no Talk (external_ref) }
         condominium_id: { type: [integer, 'null'] }
         unit_id: { type: [integer, 'null'] }
+        tracking_url: { type: [string, 'null'], format: uri, description: 'Página pública onde quem escreveu acompanha o chamado (/suporte/chamado/{protocolo}?c={código}), sem login; o Talk manda no WhatsApp (ADR 0649)' }
     MonthClosingRecord:
       type: object
       description: Fechamento gravado (foto dos totais no momento do fechamento, ADR 0031)
@@ -7797,7 +7798,8 @@ paths:
       summary: A conversa do WhatsApp vira chamado do Help Desk (idempotente)
       description: >-
         Abre o chamado com origem "talk" pelo mesmo serviço dos outros chamados (ADR 0034) e ele cai na fila do Help
-        Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. Com resident_id, o
+        Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. O talk_protocol no
+        formato SAC + AAAAMMDD + sequência, se estiver livre, vira o protocolo do chamado (ADR 0637). Com resident_id, o
         ERP confere que o morador está no escopo, no condomínio e na unidade informados e que o telefone é dele, e usa o
         nome do cadastro. Sem resident_id, abre como contato não identificado (nome e telefone).
       security: [{ talkIntegration: [] }]
@@ -7836,7 +7838,7 @@ paths:
       security: [{ talkIntegration: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: Chamado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, status: { type: string }, area: { type: string }, talk_protocol: { type: [string, 'null'] }, messages: { type: array, items: { type: object, properties: { id: { type: integer }, from_talk: { type: boolean }, author: { type: string }, body: { type: string }, attachments: { type: integer }, created_at: { type: string } } } } } } } } } } }
+        '200': { description: Chamado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, status: { type: string }, area: { type: string }, talk_protocol: { type: [string, 'null'] }, tracking_url: { type: [string, 'null'], format: uri }, messages: { type: array, items: { type: object, properties: { id: { type: integer }, from_talk: { type: boolean }, author: { type: string }, body: { type: string }, attachments: { type: integer }, created_at: { type: string } } } } } } } } } } }
         '401': { description: Token ausente ou inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: Token sem o escopo tickets.write (insufficient_scope), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Chamado não é do Talk, fora do escopo ou não existe, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
