@@ -7523,6 +7523,30 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /my-day/team:
+    get:
+      operationId: listMyDayTeam
+      tags: [MyDay]
+      summary: Equipe para escolher "Para quem" ao marcar uma tarefa (app Meu Dia, ADR 0659); exige erp.myday.team
+      security: [{ session: [] }]
+      responses:
+        '200':
+          description: Pessoas da equipe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /proposals:
     get:
       operationId: listProposals

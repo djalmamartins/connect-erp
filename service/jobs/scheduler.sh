@@ -33,6 +33,8 @@ while true; do
         last_hourly=$hour_key
     fi
     php tools/notifications-dispatch.php 50 || echo "notifications-dispatch falhou com código $?" >&2
+    # Push do app Meu Dia (ADR 0659): tarefa marcada por outra pessoa e resumo das 7h. Sem TEAM_PUSH_DELIVERY=expo, só log.
+    php tools/my-day-push.php >/dev/null || echo "my-day-push falhou com código $?" >&2
     if [ "${LAB_MAIL_QUEUE_SEND:-0}" = "1" ]; then
         php service/jobs/sendEmail.php || echo "sendEmail falhou com código $?" >&2
     fi

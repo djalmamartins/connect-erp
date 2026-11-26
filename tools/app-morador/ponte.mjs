@@ -7,14 +7,16 @@ import http from 'node:http';
 
 const listenPort = Number(process.argv[2] || 8090);
 const targetPort = Number(process.argv[3] || process.env.CONNECT_HTTP_PORT || 8088);
-const allowed = (path) => path === '/api/v1/health' || path.startsWith('/api/v1/resident/');
+// PONTE_ROTAS troca as rotas liberadas (separadas por vírgula), para os apps da equipe (Meu Dia, SAC). Padrão: morador.
+const prefixes = (process.env.PONTE_ROTAS || '/api/v1/resident/').split(',').map((p) => p.trim()).filter(Boolean);
+const allowed = (path) => path === '/api/v1/health' || prefixes.some((p) => path === p.replace(/\/$/, '') || path.startsWith(p.endsWith('/') ? p : `${p}/`));
 
 const server = http.createServer((req, res) => {
   const parsed = new URL(req.url || '/', 'http://ponte');
   const path = parsed.pathname;
   if (!allowed(path) || path.includes('..')) {
     res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: { code: 'not_found', message: 'A ponte do celular só repassa o app do morador.' } }));
+    res.end(JSON.stringify({ error: { code: 'not_found', message: 'A ponte do celular só repassa as rotas do app aberto.' } }));
     return;
   }
   const upstream = http.request(
