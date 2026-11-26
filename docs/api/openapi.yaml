@@ -7540,12 +7540,75 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: createProposal
+      tags: [Proposals]
+      summary: Cadastra uma proposta pedida fora do site (telefone, WhatsApp, e-mail, indicação, visita) (ADR 0650)
+      description: Entra como contacted, com quem cadastrou como responsável se for da equipe. Não envia e-mail para a pessoa nem marca aceite de novidades. requested precisa ser true (a pessoa pediu a proposta; LGPD art. 7º, V).
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, whatsapp, condominium, units, profile, origin, requested]
+              properties:
+                name: { type: string, minLength: 3, maxLength: 180 }
+                email: { type: string, format: email, maxLength: 180 }
+                whatsapp: { type: string, maxLength: 30 }
+                condominium: { type: string, maxLength: 180 }
+                units: { type: integer, minimum: 1 }
+                profile: { type: string, enum: [sindico, conselheiro, morador, administrador, outro] }
+                message: { type: string, maxLength: 5000 }
+                origin: { type: string, enum: [telefone, whatsapp, email, indicacao, presencial, outro] }
+                requested: { type: boolean, description: A pessoa pediu a proposta e aceitou o contato }
+      responses:
+        '201': { description: Proposta criada (mesmo formato de getProposal) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /proposals/{id}/responses:
+    post:
+      operationId: createProposalResponse
+      tags: [Proposals]
+      summary: Gera a proposta em PDF no modelo da Connect e, com send=true, envia por e-mail com o PDF anexado (ADR 0650)
+      description: Cada chamada grava uma versão. Com send=true o e-mail entra na fila e a proposta passa para proposal_sent (salvo won, lost ou archived). Entra na auditoria.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, introduction, scope, commercial_terms, valid_until]
+              properties:
+                template_type: { type: string, enum: [syndic, administrator], default: syndic }
+                subject: { type: string, maxLength: 255 }
+                introduction: { type: string }
+                scope: { type: string, description: Uma atividade por linha }
+                commercial_terms: { type: string }
+                payment_terms: { type: string, maxLength: 500 }
+                notes: { type: string }
+                valid_until: { type: string, format: date, description: Hoje ou depois }
+                send: { type: boolean, default: false }
+      responses:
+        '201': { description: Versão gerada (id, status generated|queued|failed, queued) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /proposals/{id}:
     get:
       operationId: getProposal
       tags: [Proposals]
-      summary: Uma proposta do site, com as respostas em PDF geradas no Studio
+      summary: Uma proposta, com as versões em PDF (responses)
       security: [{ session: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }

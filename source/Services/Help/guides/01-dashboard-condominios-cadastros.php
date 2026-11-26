@@ -133,13 +133,13 @@ return [
     ],
 
     'CN-011' => [
-        'faz' => 'Mostra os pedidos de proposta feitos no site, avisa quando chega um novo e guarda o andamento de cada um até virar contrato.',
+        'faz' => 'Reúne as propostas pedidas no site e as cadastradas pela equipe, gera o PDF no modelo da Connect, envia por e-mail e guarda o andamento de cada uma até virar contrato.',
         'por_tras' => [
-            'São os mesmos pedidos do Studio > Gestão > Propostas: mudar a situação ou o responsável aqui muda lá também.',
-            'Cada pedido novo manda um aviso no sino para quem pode abrir esta tela. Enquanto houver pedidos na situação Nova, o menu mostra o número deles e a tela mostra um aviso no alto.',
-            'Na primeira vez que o pedido fica Contatada, a data do primeiro contato é gravada. Toda mudança entra no histórico do sistema.',
-            'O PDF da proposta é gerado e enviado pelo Studio. Aqui aparecem as respostas já geradas.',
-            'Os pedidos não são de um condomínio cadastrado, então a escolha do condomínio na barra superior não muda esta lista.',
+            'Os pedidos do site e as propostas cadastradas aqui ficam na mesma lista; a coluna do condomínio mostra a origem.',
+            'Cada geração grava uma versão nova do PDF; as versões antigas, inclusive as feitas antes no Studio, continuam na lista.',
+            'Enviar põe o e-mail com o PDF anexado na fila de avisos e muda a situação para Proposta enviada (a não ser que já esteja Fechada, Perdida ou Arquivada).',
+            'Cadastrar, gerar, enviar e mudar a situação entram no histórico do sistema.',
+            'As propostas não são de um condomínio cadastrado, então a escolha do condomínio na barra superior não muda esta lista.',
         ],
     ],
 

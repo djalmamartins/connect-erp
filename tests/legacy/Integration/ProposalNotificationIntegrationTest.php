@@ -51,7 +51,7 @@ final class ProposalNotificationIntegrationTest extends TestCase
         self::assertSame($seller, (int)$rows[0]['users_id']);
         self::assertNotSame($other, (int)$rows[0]['users_id']);
         self::assertSame('Nova proposta: Residencial Exemplo', $rows[0]['title']);
-        self::assertStringEndsWith('/studio/proposals/' . $proposal['id'], (string)$rows[0]['link']);
+        self::assertStringEndsWith('/comunicacao/propostas/' . $proposal['id'], (string)$rows[0]['link'], 'ADR 0650: o aviso abre a proposta no ERP.');
         self::assertSame('0', (string)$rows[0]['view'], 'chega como não lida e conta no sininho');
 
         (new ProposalService())->submit([

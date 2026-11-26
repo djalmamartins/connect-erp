@@ -33,7 +33,7 @@ final class ProposalMailer
             'paragraphs' => ["{$proposal->name} solicitou uma proposta para {$proposal->condominium}, com " . (int)$proposal->units . ' unidades.'],
             'highlight' => [['Protocolo', (string)$proposal->protocol]],
             'button_label' => 'Abrir a proposta',
-            'button_link' => url('/studio/proposals/' . $proposal->id),
+            'button_link' => ProposalService::erpLink((int)$proposal->id),
         ]);
     }
 

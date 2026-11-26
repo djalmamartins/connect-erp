@@ -7,13 +7,14 @@ namespace Source\Controllers\Api\V1;
 use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Proposals\ProposalComposer;
 use Source\Services\Proposals\ProposalDesk;
 use Source\Services\Proposals\ProposalDeskError;
 
 /**
- * API REST das propostas do site (CN-011, ADR 0644; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
- * do ERP e do Studio: só quem tem proposals.manage. Sessão e CSRF no middleware ApiAuthenticated.
- * O pedido em si continua chegando pelo formulário público do site (ProposalService::submit), não por esta API.
+ * API REST das propostas (CN-011, ADR 0644 e 0650; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
+ * do ERP: só quem tem proposals.manage. Sessão e CSRF no middleware ApiAuthenticated.
+ * O pedido do site chega pelo formulário público (ProposalService::submit); a equipe cadastra com POST /proposals.
  */
 final class Proposals
 {
@@ -56,6 +57,26 @@ final class Proposals
         });
     }
 
+    /** POST /api/v1/proposals  {name, email, whatsapp, condominium, units, profile, message?, origin, requested: true} */
+    public function store(): void
+    {
+        $this->run(function (ProposalDesk $desk, User $user): array {
+            return [201, ['data' => (new ProposalComposer())->create($this->body(), $user)]];
+        });
+    }
+
+    /** POST /api/v1/proposals/{id}/responses  {template_type, subject, introduction, scope, commercial_terms, payment_terms?, notes?, valid_until, send: bool} */
+    public function respond(array $data): void
+    {
+        $this->run(function (ProposalDesk $desk, User $user) use ($data): array {
+            $body = $this->body();
+            $send = ($body['send'] ?? false) === true;
+            $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($body, array_flip(['template_type', 'subject', 'introduction', 'scope', 'commercial_terms', 'payment_terms', 'notes', 'valid_until'])));
+            $result = (new ProposalComposer())->respond((int)($data['id'] ?? 0), $form, $user, $send);
+            return [201, ['data' => ['id' => $result['id'], 'status' => $result['status'], 'queued' => $result['queued']]]];
+        });
+    }
+
     private function run(callable $action): void
     {
         $user = Auth::user();
@@ -68,7 +89,7 @@ final class Proposals
             return;
         }
         try {
-            [$status, $payload] = $action(new ProposalDesk());
+            [$status, $payload] = $action(new ProposalDesk(), $user);
             JsonResponse::send($status, $payload);
         } catch (ProposalDeskError $error) {
             $body = ['code' => $error->errorCode, 'message' => $error->getMessage()];

@@ -12,8 +12,9 @@ use Source\Support\Audit;
 use Source\Support\Proposal\ProposalService;
 
 /**
- * Propostas pedidas pelo site (ADR 0639 e 0644): a mesma tabela `proposals` do Studio > Gestão > Propostas,
- * lida e atualizada aqui para a tela do ERP (CN-011), a API /api/v1/proposals e o Studio.
+ * Propostas (ADR 0639, 0644 e 0650): pedidas no site ou cadastradas pela equipe no ERP, na tabela `proposals`,
+ * lidas e atualizadas aqui para a tela do ERP (CN-011), a API /api/v1/proposals e a consulta do Studio.
+ * Criar, gerar e enviar a proposta em PDF: ProposalComposer.
  *
  * Quem pode: `proposals.manage` (a mesma regra do Studio e de quem recebe o aviso no sininho).
  * As propostas são da Connect (comercial), não de um condomínio: não há condominium_id aqui.
@@ -37,7 +38,7 @@ final class ProposalDesk
 
     public const PER_PAGE = 20;
 
-    private const COLUMNS = 'id, protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, source_url, consent_at, marketing_consent_at, contacted_at, created_at, updated_at';
+    private const COLUMNS = 'id, protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, source_url, origin, created_by, consent_at, marketing_consent_at, contacted_at, created_at, updated_at';
 
     public function __construct(private ?PDO $pdo = null)
     {
@@ -111,15 +112,17 @@ final class ProposalDesk
     }
 
     /**
-     * Respostas em PDF já geradas no Studio (só leitura aqui).
+     * Versões da proposta em PDF (geradas no ERP, ADR 0650, ou antes no Studio), mais novas primeiro.
      *
-     * @return list<array{id:int,subject:string,status:string,created_at:string}>
+     * @return list<array{id:int,subject:string,template_type:string,status:string,has_pdf:bool,queued_at:?string,created_at:string}>
      */
     public function responses(int $proposalId): array
     {
-        $stmt = $this->pdo()->prepare('SELECT id, subject, status, created_at FROM proposal_responses WHERE proposal_id = :id ORDER BY id DESC');
+        $stmt = $this->pdo()->prepare('SELECT id, subject, template_type, status, pdf_path, queued_at, created_at FROM proposal_responses WHERE proposal_id = :id ORDER BY id DESC');
         $stmt->execute([':id' => $proposalId]);
-        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'subject' => (string)$r['subject'], 'status' => (string)$r['status'], 'created_at' => (string)$r['created_at']],
+        return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'subject' => (string)$r['subject'], 'template_type' => (string)$r['template_type'],
+            'status' => (string)$r['status'], 'has_pdf' => (string)($r['pdf_path'] ?? '') !== '', 'queued_at' => $r['queued_at'] !== null ? (string)$r['queued_at'] : null,
+            'created_at' => (string)$r['created_at']],
             $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
@@ -182,6 +185,9 @@ final class ProposalDesk
             'status_label' => self::label($status),
             'assigned_to' => $row['assigned_to'] !== null ? (int)$row['assigned_to'] : null,
             'source_url' => $row['source_url'] !== null ? (string)$row['source_url'] : null,
+            'origin' => (string)($row['origin'] ?? 'site'),
+            'origin_label' => ProposalComposer::originLabel((string)($row['origin'] ?? 'site')),
+            'created_by' => isset($row['created_by']) ? (int)$row['created_by'] : null,
             'marketing_consent' => !empty($row['marketing_consent_at']),
             'contacted_at' => $row['contacted_at'] !== null ? (string)$row['contacted_at'] : null,
             'created_at' => (string)$row['created_at'],

@@ -29,8 +29,6 @@ use Source\Support\Upload;
 use Source\Support\Communication;
 use Source\Support\Access as AccessControl;
 use Source\Support\Email;
-use Source\Support\Proposal\ProposalMailer;
-use Source\Support\Proposal\ProposalPdf;
 use Source\Core\Connect;
 
 class Studio extends Controller
@@ -185,6 +183,7 @@ class Studio extends Controller
         $pdo = Connect::getInstance();
         $stats = $pdo->query("SELECT COUNT(*) total, SUM(status='new') new_count, SUM(status IN ('contacted','qualified','proposal_sent')) progress_count, SUM(status='won') won_count FROM proposals")->fetch();
         echo $this->view->render('components/proposals/home', $this->viewData('Propostas', 'proposals', $user, [
+            'erpUrl' => \Source\Services\Environments::link('erp', \Source\Controllers\Erp\Connect\ProposalScreens::ROUTE),
             'proposals' => $query->order('created_at DESC')->limit($pager->limit())->offset($pager->offset())->fetch(true) ?: [],
             'paginator' => $pager->render(), 'stats' => $stats, 'search' => $search, 'status' => $status,
         ]));
@@ -197,49 +196,15 @@ class Studio extends Controller
         if (!$proposal) { redirect('/studio/proposals'); return; }
         if (!empty($data['action'])) {
             if (!csrf_verify($data)) { $this->jsonMessage('Sessão expirada. Atualize a página.', 'error'); return; }
-            if (in_array($data['action'], ['generate_pdf','send_pdf'], true)) {
-                $template = in_array($data['template_type'] ?? '', ['syndic','administrator'], true) ? $data['template_type'] : 'syndic';
-                $subject = trim(strip_tags((string)($data['subject'] ?? '')));
-                $introduction = trim(strip_tags((string)($data['introduction'] ?? '')));
-                $scope = trim(strip_tags((string)($data['scope'] ?? '')));
-                $commercial = trim(strip_tags((string)($data['commercial_terms'] ?? '')));
-                $payment = trim(strip_tags((string)($data['payment_terms'] ?? '')));
-                $notes = trim(strip_tags((string)($data['notes'] ?? '')));
-                $validUntil = (string)($data['valid_until'] ?? '');
-                if ($subject === '' || $introduction === '' || $scope === '' || $commercial === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $validUntil)) { $this->jsonMessage('Preencha assunto, apresentação, escopo, condições e validade.', 'warning'); return; }
-                $response = new ProposalResponse();
-                $response->proposal_id = $proposal->id; $response->created_by = $user->id; $response->template_type = $template;
-                $response->subject = $subject; $response->introduction = $introduction; $response->scope = $scope; $response->commercial_terms = $commercial;
-                $response->payment_terms = $payment ?: null; $response->valid_until = $validUntil; $response->notes = $notes ?: null; $response->status = 'draft';
-                if (!$response->save()) { $this->jsonMessage('Não foi possível salvar a resposta.', 'error'); return; }
-                try { $response->pdf_path = (new ProposalPdf())->generate($proposal, $response); } catch (\Throwable $exception) { \Source\Support\AppLogger::exception($exception, 'proposals', ['event_type'=>'proposal_pdf_failed','proposal_id'=>$proposal->id]); $this->jsonMessage('Não foi possível gerar o PDF.', 'error'); return; }
-                $response->status = 'generated'; $response->save();
-                if ($data['action'] === 'send_pdf') {
-                    $absolute = dirname(__DIR__, 3) . '/storage/' . $response->pdf_path;
-                    $queued = (new Email())->bootstrap($subject, ProposalMailer::response($proposal), $proposal->email, $proposal->name)
-                        ->attach($absolute, 'proposta-' . strtolower($proposal->protocol) . '.pdf')
-                        ->queue(CONF_MAIL_SENDER['address'], CONF_MAIL_SENDER['name'], date('Y-m-d H:i:s'), null, null, (int)$response->id);
-                    if (!$queued) { $response->status = 'failed'; $response->save(); $this->jsonMessage('O PDF foi gerado, mas o e-mail não entrou na fila.', 'warning'); return; }
-                    $response->status = 'queued'; $response->queued_at = date('Y-m-d H:i:s'); $response->save();
-                    $proposal->status = 'proposal_sent'; $proposal->save();
-                }
-                echo json_encode(['redirect' => url('/studio/proposals/' . $proposal->id)]); return;
-            }
-            // ADR 0644: o mesmo serviço da tela do ERP e da API (valida situação e responsável e grava a auditoria).
-            try {
-                (new \Source\Services\Proposals\ProposalDesk())->update((int)$proposal->id, (string)($data['status'] ?? ''), filter_var($data['assigned_to'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null);
-            } catch (\Source\Services\Proposals\ProposalDeskError $error) {
-                $this->jsonMessage($error->fields !== [] ? implode(' ', $error->fields) : $error->getMessage(), 'warning'); return;
-            } catch (\Throwable $error) {
-                \Source\Support\AppLogger::exception($error, 'proposals', ['event_type' => 'proposal_update_failed', 'proposal_id' => $proposal->id]);
-                $this->jsonMessage('Não foi possível atualizar a proposta.', 'error'); return;
-            }
-            echo json_encode(['redirect' => url('/studio/proposals/' . $proposal->id)]); return;
+            // ADR 0650: criar, gerar, enviar e mudar a situação ficam só no ERP; o Studio só consulta (nada é gravado aqui).
+            echo json_encode(['message' => (new \Source\Support\Message())->warning('As propostas agora são feitas no ERP. Use "Abrir no ERP".')->render(),
+                'redirect' => \Source\Services\Environments::link('erp', \Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . '/' . (int)$proposal->id)]);
+            return;
         }
-        // Responsável: quem tem proposals.manage (ADR 0644), a mesma lista que o serviço aceita ao gravar.
-        $team = array_map(static fn (array $m): object => (object)['id' => $m['id'], 'first_name' => $m['name'], 'last_name' => ''], (new \Source\Services\Proposals\ProposalDesk())->team());
+        $team = array_column((new \Source\Services\Proposals\ProposalDesk())->team(), 'name', 'id');
         $responses = (new ProposalResponse())->find('proposal_id=:proposal', 'proposal='.$proposal->id)->order('id DESC')->fetch(true) ?: [];
-        echo $this->view->render('components/proposals/detail', $this->viewData('Proposta ' . $proposal->protocol, 'proposals', $user, ['proposal' => $proposal, 'team' => $team, 'responses' => $responses]));
+        echo $this->view->render('components/proposals/detail', $this->viewData('Proposta ' . $proposal->protocol, 'proposals', $user, ['proposal' => $proposal, 'team' => $team, 'responses' => $responses,
+            'erpUrl' => \Source\Services\Environments::link('erp', \Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . '/' . (int)$proposal->id)]));
     }
 
     public function proposalPdf(array $data): void
