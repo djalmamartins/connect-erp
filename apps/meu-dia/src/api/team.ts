@@ -17,7 +17,7 @@ export type Me = {
   id: number;
   name: string;
   email: string;
-  role?: string;
+  role?: { slug: string; name: string } | null;
   can_see_team: boolean;
   can_attend_sac?: boolean;
 };

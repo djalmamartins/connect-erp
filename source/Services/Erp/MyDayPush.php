@@ -49,11 +49,11 @@ final class MyDayPush
         // Sem o serviço de push da equipe (ADR 0660) instalado, não envia nada e ninguém recebe o resumo.
         $this->send = $send ?? static function (int $userId, string $title, string $body, array $data): void {
             if (class_exists(TeamPush::class)) {
-                TeamPush::send($userId, self::APP, $title, $body, $data);
+                (new TeamPush())->send($userId, self::APP, $title, $body, $data);
             }
         };
         $this->recipients = $recipients ?? static fn (): array => class_exists(TeamPush::class) && method_exists(TeamPush::class, 'usersWithDevices')
-            ? TeamPush::usersWithDevices(self::APP) : [];
+            ? array_values(array_map('intval', (new TeamPush())->usersWithDevices(self::APP))) : [];
         $this->day = $day ?? function (int $userId, DateTimeImmutable $today): ?array {
             $user = (new User())->findById($userId);
             if (!$user || (string)$user->status === 'trash') {
