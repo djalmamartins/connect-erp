@@ -7,7 +7,7 @@
   em vermelho e essa tarefa ser jogada para o próximo dia para ser cumprida. E quando ela fechar, volta ao normal. Para a
   gente nunca esquecer nada e ficar os alertas ... tudo pela API REST".
 - Relacionadas: ADR 0630 (Meu Dia), 0631 (SAC), 0637 (protocolo SAC/OCO), 0645 (sininho só com o básico), 0601 (e-mails
-  do morador). Numeração combinada com as threads abertas no mesmo dia: 0657 login Bearer da equipe e push, 0659 app Meu
+  do morador). Numeração combinada com as threads abertas no mesmo dia: 0657 ficou com o login do app do morador (PR #737); o login Bearer da equipe e o push ficam com a thread do app do SAC, 0659 app Meu
   Dia, 0660 ações do SAC e app do SAC.
 
 ## Contexto (CONFIRMADO na main aeb45b9)
@@ -36,7 +36,7 @@
 5. **API REST junto** (tag MyDay): `GET /api/v1/my-day` ganha `overdue`, `unassigned`, `summary.overdue_oldest`,
    `summary.unassigned`, `events[].overdue`, `week[]/strip[].overdue` e `carried`; novo `GET /api/v1/my-day/overdue`
    (`count`, `oldest`, `items`). `summary.overdue` passa a contar a lista inteira. Os apps de iPhone/Android do Meu Dia
-   e do SAC (ADRs 0659/0660) usam esses campos; o login por token da equipe é da ADR 0657.
+   e do SAC (ADRs 0659/0660) usam esses campos; o login por token da equipe fica com a thread do app do SAC.
 6. Sem migration: tudo sai das tabelas que já existem.
 
 ## Consequências

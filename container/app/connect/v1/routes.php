@@ -15,6 +15,7 @@ foreach (app_host() ? ['', '/app'] : ['/app'] as $appBase) {
     $route->get("/", "AppScreens:home");
     $route->get("/login", "AppLogin:login");
     $route->post("/login", "AppLogin:login");
+    $route->get("/recuperar-senha", "AppLogin:forgot");
     $route->post("/sair", "AppLogin:logout");
     $route->post("/unidade", "AppScreens:chooseUnit");
     $route->get("/seguranca", "AppScreens:security");
