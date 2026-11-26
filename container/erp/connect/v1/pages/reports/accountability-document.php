@@ -29,10 +29,11 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
     <meta name="robots" content="noindex, nofollow">
     <title>Prestação de contas · <?= $this->e((string)$condo['name']) ?> · <?= $this->e($doc['period']) ?></title>
     <style>
-        @page { margin: 26px 28px 40px; }
+        /* A4 retrato ("de comprido", ADR 0652): o dompdf usa setPaper; o size vale para o Imprimir do navegador. */
+        @page { size: A4 portrait; margin: 26px 28px 40px; }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: "DejaVu Sans", Arial, sans-serif; color: #1f2a24; font-size: 8.5pt; line-height: 1.4; background: <?= $forPdf ? '#fff' : '#eef2f0' ?>; }
-        .sheet { background: #fff; <?= $forPdf ? '' : 'max-width: 1120px; margin: 16px auto; padding: 28px; border: 1px solid #dfe5e2;' ?> }
+        .sheet { background: #fff; <?= $forPdf ? '' : 'max-width: 794px; margin: 16px auto; padding: 28px; border: 1px solid #dfe5e2;' ?> }
         .sheet--break { page-break-before: always; }
         .issuer { width: 100%; border-collapse: collapse; }
         .issuer td { vertical-align: top; padding: 0; }
@@ -60,13 +61,19 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
         .grid .sec td { font-weight: bold; background: #f3f6f5; }
         .grid .grp td { font-weight: bold; padding-left: 14px; }
         .grid .acc td { padding-left: 26px; }
-        .grid .item td.d { padding-left: 40px; white-space: nowrap; width: 110px; }
-        .grid .tot td { font-weight: bold; border-top: 1px solid #9aa59f; }
+        .grid .item td.d { padding-left: 26px; white-space: nowrap; width: 80px; }
+        .grid .nw { white-space: nowrap; }
+        /* Leitura (ADR 0652): linhas alternadas branco e verde bem claro; total do grupo em verde claro e total geral mais forte. */
+        .grid tr.z td { background: #f2f8f4; }
+        .grid .tot td { font-weight: bold; border-top: 1px solid #9aa59f; background: #e2efe7; color: #0b3d2e; }
+        .grid .tot--all td { background: #c9e1d3; border-top: 1px solid #0b3d2e; }
+        .grid .grp td { background: #fafcfb; }
+        .grid--lines th, .grid--lines td { padding: 4px 4px; font-size: 7.8pt; }
         .grid .tot td:first-child { padding-left: 14px; }
         .note { color: #5d6b63; font-size: 7.5pt; margin-top: 6px; }
         .centered { text-align: center; font-weight: bold; margin: 18px 0 6px; }
         .proof { text-align: center; margin: 10px 0; page-break-inside: avoid; }
-        .proof img { max-width: 100%; max-height: 150mm; border: 1px solid #dfe5e2; }
+        .proof img { max-width: 100%; max-height: 200mm; border: 1px solid #dfe5e2; }
         .proof p { color: #5d6b63; margin: 4px 0; }
         .toolbar { position: sticky; top: 0; z-index: 2; background: #0b3d2e; padding: 10px 16px; text-align: right; }
         .toolbar a, .toolbar button { color: #fff; margin-left: 14px; font: inherit; font-size: 10pt; background: none; border: 0; cursor: pointer; text-decoration: underline; }
@@ -140,13 +147,13 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
                 <tr class="grp"><td colspan="3"><?= $this->e($group['name']) ?></td></tr>
                 <?php foreach ($group['accounts'] as $account): ?>
                     <tr class="acc"><td colspan="3"><?= $this->e($account['name']) ?></td></tr>
-                    <?php foreach ($account['items'] as $item): ?>
-                        <tr class="item"><td class="d"><?= $date($item['paid_on']) ?></td><td><?= $this->e($item['description']) ?></td><td class="n"><?= $num($item['amount_cents']) ?></td></tr>
+                    <?php foreach ($account['items'] as $k => $item): ?>
+                        <tr class="item<?= $k % 2 === 1 ? ' z' : '' ?>"><td class="d"><?= $date($item['paid_on']) ?></td><td><?= $this->e($item['description']) ?></td><td class="n"><?= $num($item['amount_cents']) ?></td></tr>
                     <?php endforeach; ?>
                 <?php endforeach; ?>
                 <tr class="tot"><td colspan="2">Total Grupo</td><td class="n"><?= $num($group['total_cents']) ?></td></tr>
             <?php endforeach; ?>
-            <tr class="tot"><td colspan="2" style="padding-left:6px">Total Geral</td><td class="n"><?= $num($section['total_cents']) ?></td></tr>
+            <tr class="tot tot--all"><td colspan="2" style="padding-left:6px">Total Geral</td><td class="n"><?= $num($section['total_cents']) ?></td></tr>
         <?php endforeach; ?>
         </tbody>
     </table>
@@ -154,20 +161,20 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
         <thead><tr><th>Resumo</th><th class="n">Valor</th></tr></thead>
         <tbody>
             <tr><td>Receitas</td><td class="n"><?= $num($demo['receita']['total_cents']) ?></td></tr>
-            <tr><td>Despesas</td><td class="n"><?= $num($demo['despesa']['total_cents']) ?></td></tr>
-            <tr class="tot"><td>Total (Receitas - Despesas)</td><td class="n"><?= $num($demo['result_cents']) ?></td></tr>
+            <tr class="z"><td>Despesas</td><td class="n"><?= $num($demo['despesa']['total_cents']) ?></td></tr>
+            <tr class="tot tot--all"><td>Total (Receitas - Despesas)</td><td class="n"><?= $num($demo['result_cents']) ?></td></tr>
         </tbody>
     </table>
     <p class="centered">RESUMO DAS CONTAS*</p>
     <table class="grid">
         <thead><tr><th>Conta</th><th class="n">Saldo anterior</th><th class="n">Entradas (D)</th><th class="n">Saídas (C)</th><th class="n">Saldo atual</th></tr></thead>
         <tbody>
-        <?php foreach ($doc['banks'] as $bank): ?>
-            <tr><td><?= $this->e((string)$bank['name']) ?></td><td class="n"><?= $num((int)$bank['opening_cents']) ?></td><td class="n"><?= $num((int)$bank['received_cents'] + (int)($bank['transfers_in_cents'] ?? 0)) ?></td>
+        <?php foreach ($doc['banks'] as $k => $bank): ?>
+            <tr<?= $k % 2 === 1 ? ' class="z"' : '' ?>><td><?= $this->e((string)$bank['name']) ?></td><td class="n"><?= $num((int)$bank['opening_cents']) ?></td><td class="n"><?= $num((int)$bank['received_cents'] + (int)($bank['transfers_in_cents'] ?? 0)) ?></td>
                 <td class="n"><?= $num((int)$bank['paid_cents'] + (int)($bank['transfers_out_cents'] ?? 0)) ?></td><td class="n"><?= $num((int)$bank['closing_cents']) ?></td></tr>
         <?php endforeach; ?>
         <?php $sum = static fn (string $k): int => array_sum(array_map(static fn (array $b): int => (int)($b[$k] ?? 0), $doc['banks'])); ?>
-            <tr class="tot"><td>Total</td><td class="n"><?= $num($sum('opening_cents')) ?></td><td class="n"><?= $num($sum('received_cents') + $sum('transfers_in_cents')) ?></td>
+            <tr class="tot tot--all"><td>Total</td><td class="n"><?= $num($sum('opening_cents')) ?></td><td class="n"><?= $num($sum('received_cents') + $sum('transfers_in_cents')) ?></td>
                 <td class="n"><?= $num($sum('paid_cents') + $sum('transfers_out_cents')) ?></td><td class="n"><?= $num($sum('closing_cents')) ?></td></tr>
         </tbody>
     </table>
@@ -175,26 +182,26 @@ $head = function (string $title, ?string $subtitle = null, bool $first = false) 
 </div>
 
 <?= $head('Relatório de lançamentos de ' . $range) ?>
-    <table class="grid">
+    <table class="grid grid--lines">
         <thead><tr><th>Data</th><th>Tipo</th><th>Lançamento</th><th class="n">Valor (R$)</th><th class="n">Sobras de Rateio (R$)</th><th class="n">Fundo de Reserva (R$)</th></tr></thead>
         <tbody>
-        <?php foreach ($doc['expenses'] as $line): ?>
-            <tr><td><?= $date($line['paid_on']) ?></td><td>Despesa</td><td><?= $this->e((string)$line['description']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td>
+        <?php foreach ($doc['expenses'] as $k => $line): ?>
+            <tr<?= $k % 2 === 1 ? ' class="z"' : '' ?>><td class="nw"><?= $date($line['paid_on']) ?></td><td>Despesa</td><td><?= $this->e((string)$line['description']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td>
                 <td class="n"><?= $num((int)($line['surplus_cents'] ?? 0)) ?></td><td class="n"><?= $num((int)($line['reserve_cents'] ?? 0)) ?></td></tr>
         <?php endforeach; ?>
         <?php if ($doc['expenses'] === []): ?><tr><td colspan="6" class="note">Nenhuma despesa paga no mês.</td></tr><?php endif; ?>
             <tr class="tot"><td colspan="3">Total</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td><td class="n"><?= $num((int)($doc['surplus_total_cents'] ?? 0)) ?></td><td class="n"><?= $num((int)($doc['reserve_total_cents'] ?? 0)) ?></td></tr>
-            <tr class="tot"><td colspan="3">Total Geral</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td><td colspan="2"></td></tr>
+            <tr class="tot tot--all"><td colspan="3">Total Geral</td><td class="n"><?= $num((int)$doc['expense_total_cents']) ?></td><td colspan="2"></td></tr>
         </tbody>
     </table>
 </div>
 
 <?php foreach ($doc['expenses'] as $line): ?>
 <?= $head('Relatório de lançamentos de ' . $range) ?>
-    <table class="grid">
-        <thead><tr><th>Conta</th><th>Documento</th><th>Descrição</th><th>Lançamento</th><th>Competência</th><th>Pagamento</th><th class="n">Valor</th></tr></thead>
+    <table class="grid grid--lines">
+        <thead><tr><th>Conta</th><th>Documento</th><th>Descrição</th><th>Lançamento</th><th>Compet.</th><th>Pagamento</th><th class="n">Valor</th></tr></thead>
         <tbody><tr><td><?= $this->e((string)($line['bank_name'] ?? '')) ?></td><td><?= $this->e((string)($line['document_number'] ?? '')) ?></td><td><?= $this->e((string)$line['description']) ?></td>
-            <td><?= $date($line['due_on'] ?? null) ?></td><td><?= $this->e(preg_replace('/^(\d{4})-(\d{2})$/', '$2/$1', (string)$line['competence'])) ?></td><td><?= $date($line['paid_on']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td></tr></tbody>
+            <td class="nw"><?= $date($line['due_on'] ?? null) ?></td><td class="nw"><?= $this->e(preg_replace('/^(\d{4})-(\d{2})$/', '$2/$1', (string)$line['competence'])) ?></td><td class="nw"><?= $date($line['paid_on']) ?></td><td class="n"><?= $num((int)$line['amount_cents']) ?></td></tr></tbody>
     </table>
     <?php foreach ($line['annexes'] as $annex): $placement = $annex['placement'] ?? null; ?>
         <div class="proof">
