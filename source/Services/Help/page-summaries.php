@@ -2937,6 +2937,10 @@ return [
                 'title' => 'O que a lista mostra',
             ],
             [
+                'id' => 'ligacao-com-o-connect-talk',
+                'title' => 'Ligação com o Connect Talk',
+            ],
+            [
                 'id' => 'tokens-de-acesso-connect-talk',
                 'title' => 'Tokens de acesso (Connect Talk)',
             ],

@@ -135,6 +135,26 @@ $this->insert('components/layout/page-head', [
 <?php endif; ?>
 
 <?php if ($integrationTokens !== null): $scopeLabels = array_column($integrationTokens['scopes'], 'label', 'scope'); ?>
+<?php if (!empty($talkLink)): ?>
+<section class="erp-card" aria-labelledby="int-talk-title" data-erp-talk-link data-api="<?= $this->e(url('/api/v1/settings')) ?>">
+    <?= csrf_input() ?>
+    <div class="erp-card__head"><div><h2 id="int-talk-title">Ligação com o Connect Talk</h2><p>O Connect Talk (atendimento pelo WhatsApp) não tem usuários próprios: cada funcionário entra no Talk com o e-mail e a senha do ERP, e só quem tem a permissão <strong>Atendimento por WhatsApp (Connect Talk)</strong>.</p></div></div>
+    <dl class="erp-detail-grid">
+        <div><dt>Endereço em uso</dt><dd><?= $talkLink['effective'] !== null ? '<code>' . $this->e($talkLink['effective']) . '</code>' : '<span class="erp-badge erp-badge--warning">Não configurado</span>' ?><?= $talkLink['saved'] === '' && $talkLink['env'] !== '' ? ' <span class="erp-muted">(do .env do servidor)</span>' : '' ?></dd></div>
+        <div><dt>Quem pode entrar no Talk</dt><dd><?= (int)$talkLink['staff'] ?> <?= (int)$talkLink['staff'] === 1 ? 'pessoa' : 'pessoas' ?> com a permissão. Libere ou tire no cadastro de cada usuário, em Studio &gt; Usuários.</dd></div>
+    </dl>
+    <?php if ($talkLink['canManage']): ?>
+    <form data-talk-link-form autocomplete="off">
+        <div class="erp-form__grid">
+            <div class="erp-field erp-col-8"><label for="talk-url">Endereço do Connect Talk</label><input class="erp-input" type="url" id="talk-url" name="value" maxlength="200" spellcheck="false" placeholder="https://talk.connectcondominios.com.br" value="<?= $this->e($talkLink['saved']) ?>"><p class="erp-field__hint">Só o endereço, sem caminho no final. Vazio = usa o TALK_URL do servidor.</p></div>
+        </div>
+        <div class="erp-form__actions"><button type="submit" class="erp-btn erp-btn--primary"><?= $icon('check', 'erp-icon--sm') ?>Salvar endereço</button></div>
+    </form>
+    <?php endif; ?>
+    <p class="erp-field__hint"><?= $icon('info', 'erp-icon--sm') ?> No Talk, use um token com o escopo <strong>Entrar no Talk com o usuário do ERP</strong> (quadro abaixo) no <code>ERP_API_TOKEN</code>.</p>
+</section>
+<?php endif; ?>
+
 <section class="erp-card" aria-labelledby="int-tokens-title" data-erp-integration-tokens data-api="<?= $this->e(url('/api/v1/integration-tokens')) ?>">
     <?= csrf_input() ?>
     <div class="erp-card__head"><div><h2 id="int-tokens-title">Tokens de acesso (Connect Talk)</h2><p>O Connect Talk entra na API do ERP com um token. Cada token tem escopos (o que ele pode ver ou fazer), é de um usuário de integração e só enxerga os condomínios desse usuário.</p></div></div>

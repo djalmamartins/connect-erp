@@ -45,6 +45,7 @@ final class TalkTokens
         'residents.read' => ['Dados do morador identificado (chamados, reservas, encomendas, assembleias, documentos)', 'read'],
         'charges.read' => ['2ª via do boleto', 'read'],
         'tickets.write' => ['Abrir, responder, transferir e encerrar chamados', 'write'],
+        'staff.login' => ['Entrar no Talk com o usuário do ERP (login único, exige talk.access)', 'read'],
     ];
     /** O que o Talk já fazia antes dos escopos (tokens criados pelo terminal e o token que já existia). */
     public const LEGACY_SCOPES = ['people.read', 'charges.read', 'tickets.write'];

@@ -39,6 +39,12 @@ final class Handoff
         $next = Environments::safePath($key, isset($_GET['ir']) ? (string)$_GET['ir'] : null);
         $target = Environments::target($key, null, $next);
         $user = Auth::user();
+        if ($user === null && $key === 'talk') {
+            // O Talk não tem login próprio (ADR 0359): entra pelo login do ERP (senha + 2FA) e volta aqui.
+            Environments::rememberReturn($key);
+            redirect(erp_url('/login'));
+            return;
+        }
         if ($user === null) {
             // Sem sessão: o destino mostra o próprio login.
             redirect(Environments::absolute($target['host'], $target['path']));

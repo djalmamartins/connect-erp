@@ -149,6 +149,10 @@ final class Environments
         $environment = self::ENVIRONMENTS[$key];
         $path ??= $environment['path'];
 
+        // Talk no Raspberry Pi (ADR 0359): TALK_URL no .env do ERP diz onde ele está, mesmo fora de talk.<domínio>.
+        if ($key === 'talk' && ($origin = self::talkOrigin()) !== null) {
+            return ['host' => $origin['host'], 'path' => $path];
+        }
         if ($key === 'talk' && $role === 'main') {
             // O Talk só existe no host próprio (ADR 0324): de um host único, vai para talk.<domínio>.
             return ['host' => 'talk.' . (string)preg_replace('/^www\./', '', $host), 'path' => $path];
@@ -205,6 +209,32 @@ final class Environments
      * controle), fora de /ambiente, e dentro da área do ambiente: Help Desk em /helpdesk, Studio em
      * /studio. O ERP aceita qualquer caminho do host dele.
      */
+    /** Sessão: ambiente a abrir depois do login do ERP (só o Talk, ADR 0359). */
+    public const RETURN_KEY = 'environment_after_login';
+
+    /**
+     * Quem chega em /ambiente/talk sem sessão entra pelo login do ERP e volta para cá.
+     * Guarda só a chave do ambiente, nunca um caminho vindo da requisição.
+     */
+    public static function rememberReturn(string $key): void
+    {
+        if ($key === 'talk') {
+            (new \Source\Core\Session())->set(self::RETURN_KEY, $key);
+        }
+    }
+
+    /** Caminho interno para voltar depois do login (uma vez só) ou null. */
+    public static function takeReturn(): ?string
+    {
+        $session = new \Source\Core\Session();
+        if (!$session->has(self::RETURN_KEY)) {
+            return null;
+        }
+        $key = (string)$session->{self::RETURN_KEY};
+        $session->unset(self::RETURN_KEY);
+        return $key === 'talk' ? '/ambiente/talk' : null;
+    }
+
     public static function safePath(string $key, ?string $path): ?string
     {
         $path = (string)$path;
@@ -284,7 +314,48 @@ final class Environments
 
     public static function absolute(string $host, string $path): string
     {
-        return self::scheme() . '://' . $host . '/' . ltrim($path, '/');
+        $talk = self::talkOrigin();
+        $scheme = $talk !== null && $talk['host'] === $host ? $talk['scheme'] : self::scheme();
+        return $scheme . '://' . $host . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Endereço do Talk vindo de TALK_URL (regra pura sobre o .env): só http/https, sem usuário, caminho ou consulta.
+     * Inválido ou vazio = null, e o Talk segue em talk.<domínio>.
+     *
+     * @return array{scheme:string, host:string}|null
+     */
+    /** Endereço do Talk gravado na tela Integrações (ErpSettings talk.url); '' se não há ou sem banco. */
+    private static function talkSetting(): string
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            if (Connect::databaseDisabled()) {
+                return $cached = '';
+            }
+            return $cached = (string)\Source\Services\Erp\ErpSettings::value(Connect::getInstance(), null, 'talk.url');
+        } catch (\Throwable) {
+            return $cached = '';
+        }
+    }
+
+    public static function talkOrigin(?string $url = null): ?array
+    {
+        $url = trim($url ?? (self::talkSetting() ?: (string)(getenv('TALK_URL') ?: '')));
+        if ($url === '') {
+            return null;
+        }
+        $parts = parse_url($url);
+        $scheme = strtolower((string)($parts['scheme'] ?? ''));
+        $host = strtolower((string)($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '' || isset($parts['user']) || isset($parts['query'])
+            || trim((string)($parts['path'] ?? ''), '/') !== '' || preg_match('/^[a-z0-9.-]+$/', $host) !== 1) {
+            return null;
+        }
+        return ['scheme' => $scheme, 'host' => $host . (isset($parts['port']) ? ':' . (int)$parts['port'] : '')];
     }
 
     private static function scheme(): string

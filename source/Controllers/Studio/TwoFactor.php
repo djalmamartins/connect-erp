@@ -73,6 +73,12 @@ final class TwoFactor extends Controller
                 echo json_encode(["message" => $this->message->warning("Sua conta não possui acesso a este ambiente.")->render()]);
                 return;
             }
+            $return = $next === "/erp" ? \Source\Services\Environments::takeReturn() : null;
+            if ($return !== null) {
+                // Login do ERP iniciado pelo Talk (ADR 0359): volta para /ambiente/talk.
+                echo json_encode(["redirect" => url($return)]);
+                return;
+            }
             echo json_encode(["redirect" => match ($next) { "/erp" => erp_url("/dashboard"), "/app" => app_url("/"), "/helpdesk" => url("/helpdesk/tickets"), default => url("/studio/dash") }]);
             return;
         }

@@ -69,6 +69,10 @@ $route->post("/talk/tickets/{id}/transfer", "Talk:transfer", null, \Source\Suppo
 $route->post("/talk/tickets/{id}/close", "Talk:close", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/charges", "Talk:charges", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/me", "Talk:me", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+// Login único (ADR 0359): o Talk troca o código do ERP pelo funcionário com talk.access e revalida de tempos em tempos.
+$route->post("/talk/staff/login", "Talk:staffLogin", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/staff", "Talk:staffList", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
+$route->get("/talk/staff/{id}", "Talk:staffStatus", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/condominiums", "Talk:condominiums", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/condominiums/{id}", "Talk:condominium", null, \Source\Support\Middleware\TalkApiAuthenticated::class);
 $route->get("/talk/condominiums/{id}/units", "Talk:units", null, \Source\Support\Middleware\TalkApiAuthenticated::class);

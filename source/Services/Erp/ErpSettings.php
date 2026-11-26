@@ -65,6 +65,8 @@ final class ErpSettings
         'alerts.contract_expiry_days' => ['page' => 'AP-159', 'group' => 'Alertas', 'label' => 'Alertar contrato e seguro que vencem em (dias)', 'type' => 'int', 'default' => 30, 'scope' => 'condominium', 'min' => 1, 'max' => 365],
         'alerts.low_balance_cents' => ['page' => 'AP-159', 'group' => 'Alertas', 'label' => 'Alertar conta bancária com saldo abaixo de', 'type' => 'money', 'default' => 0, 'scope' => 'condominium'],
         'params.fraction_tolerance' => ['page' => 'AP-166', 'group' => 'Parâmetros', 'label' => 'Tolerância da soma das frações ideais', 'type' => 'decimal', 'default' => '0.0001', 'scope' => 'global', 'min' => 0, 'max' => 0.01],
+        // ADR 0643: onde está o Connect Talk (Raspberry Pi). Vazio = TALK_URL do .env, ou talk.<domínio>.
+        'talk.url' => ['page' => 'AP-147', 'group' => 'Connect Talk', 'label' => 'Endereço do Connect Talk', 'type' => 'url', 'default' => '', 'scope' => 'global', 'max' => 200],
         'params.report_max_rows' => ['page' => 'AP-166', 'group' => 'Parâmetros', 'label' => 'Máximo de linhas por relatório', 'type' => 'int', 'default' => 5000, 'scope' => 'global', 'min' => 100, 'max' => 20000],
     ];
 
@@ -113,6 +115,14 @@ final class ErpSettings
             case 'email':
                 $text = is_string($value) ? trim($value) : '';
                 return $text === '' || filter_var($text, FILTER_VALIDATE_EMAIL) ? mb_strtolower($text) : throw $fail();
+            case 'url':
+                // Só origem http(s), sem usuário, caminho ou consulta (Environments::talkOrigin); vazio = volta ao .env.
+                $text = is_string($value) ? rtrim(trim($value), '/') : '';
+                if ($text === '') {
+                    return '';
+                }
+                $origin = \Source\Services\Environments::talkOrigin($text);
+                return $origin === null || mb_strlen($text) > ($spec['max'] ?? 200) ? throw $fail() : $origin['scheme'] . '://' . $origin['host'];
             case 'textarea':
                 // Várias linhas: mantém a quebra de linha e tira os outros caracteres de controle e as linhas vazias repetidas.
                 $text = is_string($value) ? str_replace(["\r\n", "\r"], "\n", $value) : '';
