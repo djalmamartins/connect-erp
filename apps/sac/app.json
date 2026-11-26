@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Connect SAC",
+    "slug": "connect-sac",
+    "scheme": "connectsac",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.connectcondominios.sac",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["connectmeudia"]
+      }
+    },
+    "android": {
+      "package": "br.com.connectcondominios.sac",
+      "adaptiveIcon": {
+        "backgroundColor": "#0d2e27",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#078b4c",
+          "defaultChannel": "sac"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://erp.connect.lab"
+    }
+  }
+}

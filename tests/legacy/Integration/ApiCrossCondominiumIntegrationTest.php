@@ -52,6 +52,7 @@ final class ApiCrossCondominiumIntegrationTest extends TestCase
         'GET /inspections/{id}' => ['Inspections', 'show', 'inspections'],
         'GET /tickets/{id}' => ['Tickets', 'show', 'studio_support_tickets'],
         'GET /tickets/{id}/messages' => ['Tickets', 'messages', 'studio_support_tickets'],
+        'GET /sac/tickets/{id}' => ['SacDesk', 'show', 'studio_support_tickets'],
     ];
 
 
@@ -92,6 +93,9 @@ final class ApiCrossCondominiumIntegrationTest extends TestCase
         'GET /entries/{id}/attachments/{attachment}/download' => ['GET', 'EntryAttachments', 'download', 'erp_entries', 'erp_entry_attachments'],
         'DELETE /entries/{id}/attachments/{attachment}' => ['DELETE', 'EntryAttachments', 'destroy', 'erp_entries', 'erp_entry_attachments'],
         'POST /occurrences/{id}/ticket' => ['POST', 'Occurrences', 'ticket', 'erp_occurrences', null],
+        'POST /sac/tickets/{id}/take' => ['POST', 'SacDesk', 'take', 'studio_support_tickets', null],
+        'POST /sac/tickets/{id}/triage' => ['POST', 'SacDesk', 'triage', 'studio_support_tickets', null],
+        'POST /sac/tickets/{id}/answers' => ['POST', 'SacDesk', 'answer', 'studio_support_tickets', null],
         'POST /reservations/{id}/call-waitlist' => ['POST', 'OperationalDashboard', 'callWaitlist', 'erp_reservations', null],
         'POST /maintenances/{id}/next' => ['POST', 'OperationalDashboard', 'nextMaintenance', 'erp_maintenances', null],
         'POST /entries/{id}/discount' => ['POST', 'EntryShortcuts', 'discount', 'erp_entries', null],

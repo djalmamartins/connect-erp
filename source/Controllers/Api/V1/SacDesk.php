@@ -1,0 +1,214 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Source\Controllers\Api\V1;
+
+use Connect\Http\JsonResponse;
+use Source\Models\Auth;
+use Source\Models\User;
+use Source\Services\CondominiumScope;
+use Source\Services\Support\TicketDesk;
+use Source\Services\Support\TicketError;
+use Source\Services\Support\TicketService;
+use Source\Support\Access;
+use Source\Support\AppLogger;
+
+/**
+ * Atendimento do SAC pela API, para o app do SAC no celular (ADR 0660). As mesmas regras da tela
+ * /operacional/chamados do ERP: erp.access e o escopo de condomínio para ver; support.manage para atender
+ * (triagem, resposta, nota interna, assumir). Sessão com CSRF ou o token Bearer da equipe (ADR 0660).
+ *  GET  /api/v1/sac/summary                     números da fila de quem entrou (meus, sem responsável, vencidos, hoje)
+ *  GET  /api/v1/sac/options                     situações, prioridades, equipes, responsáveis e respostas rápidas
+ *  GET  /api/v1/sac/tickets?view=mine|unassigned|overdue|today|all&status=&q=&condominium_id=
+ *  GET  /api/v1/sac/tickets/{id}                chamado, conversa (com notas internas para quem atende), histórico e medições
+ *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
+ *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
+ *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}
+ */
+final class SacDesk
+{
+    public const VIEWS = ['mine', 'unassigned', 'overdue', 'today', 'all'];
+
+    public function summary(): void
+    {
+        $this->run(false, function (User $user): array {
+            $desk = new TicketDesk();
+            $ids = array_column((new CondominiumScope())->allowed($user), 'id');
+            $all = $desk->metrics(array_map('intval', $ids), (int)$user->id);
+            $mine = (new TicketService())->listFor($user, ['assigned' => (string)(int)$user->id], 200);
+            $openMine = array_values(array_filter($mine, static fn (array $t): bool => !in_array($t['status'], ['resolved', 'closed'], true)));
+            return [200, ['data' => [
+                'mine_open' => count($openMine),
+                'mine_overdue' => count(array_filter($openMine, static fn (array $t): bool => self::late($t))),
+                'unassigned' => $all['unassigned'],
+                'overdue' => $all['overdue'],
+                'due_today' => $all['due_today'],
+                'open_total' => $all['open_total'],
+                'by_status' => $all['by_status'],
+                'can_attend' => Access::can('support.manage', $user),
+            ]]];
+        });
+    }
+
+    public function options(): void
+    {
+        $this->run(false, function (User $user): array {
+            $attend = Access::can('support.manage', $user);
+            $desk = new TicketDesk();
+            $pairs = static fn (array $labels): array => array_map(static fn ($k, $v): array => ['value' => $k, 'label' => $v], array_keys($labels), array_values($labels));
+            return [200, ['data' => [
+                'statuses' => $pairs(TicketService::STATUS_LABELS),
+                'priorities' => $pairs(TicketService::PRIORITY_LABELS),
+                'teams' => TicketService::TEAMS,
+                'agents' => $attend ? $desk->agents() : [],
+                'templates' => $attend ? $desk->templates() : [],
+            ]]];
+        });
+    }
+
+    public function index(): void
+    {
+        $this->run(false, function (User $user): array {
+            $view = in_array($_GET['view'] ?? '', self::VIEWS, true) ? (string)$_GET['view'] : 'mine';
+            $filters = [
+                'condominium_id' => (int)($_GET['condominium_id'] ?? 0),
+                'status' => (string)($_GET['status'] ?? ''),
+                'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
+            ] + self::viewFilters($view, (int)$user->id);
+            $tickets = (new TicketService())->listFor($user, $filters, (int)($_GET['limit'] ?? 100));
+            if ($filters['status'] === '' && in_array($view, ['mine', 'unassigned'], true)) {
+                // Na fila de trabalho só o que está em aberto; o histórico fica em view=all.
+                $tickets = array_values(array_filter($tickets, static fn (array $t): bool => !in_array($t['status'], ['resolved', 'closed'], true)));
+            }
+            return [200, ['data' => array_map(static fn (array $t): array => $t + ['late' => self::late($t)], $tickets), 'meta' => ['view' => $view]]];
+        });
+    }
+
+    public function show(array $data): void
+    {
+        $this->run(false, function (User $user) use ($data): array {
+            $service = new TicketService();
+            $ticket = $service->findFor($user, (int)($data['id'] ?? 0));
+            if ($ticket === null) {
+                throw new TicketError('ticket', 'Chamado não encontrado.', 404);
+            }
+            $attend = Access::can('support.manage', $user);
+            $desk = new TicketDesk();
+            return [200, ['data' => [
+                'ticket' => $ticket + ['late' => self::late($ticket)],
+                'messages' => array_map(static fn (array $m): array => array_diff_key($m, ['message_html' => true]), $service->conversation($ticket, $attend)),
+                'facts' => $desk->facts((int)$ticket['id']),
+                'events' => $attend ? $desk->events((int)$ticket['id']) : [],
+                'can_attend' => $attend,
+            ]]];
+        });
+    }
+
+    public function take(array $data): void
+    {
+        $this->run(true, function (User $user) use ($data): array {
+            $id = $this->visible($user, $data);
+            $ticket = (new TicketService())->findFor($user, $id);
+            $input = ['assigned_to' => (int)$user->id];
+            if (($ticket['status'] ?? '') === 'open') {
+                $input['status'] = 'in_progress';
+            }
+            $result = (new TicketDesk())->update($user, $id, $input);
+            return [200, ['data' => $result + ['ticket' => (new TicketService())->findFor($user, $id)]]];
+        });
+    }
+
+    public function triage(array $data): void
+    {
+        $this->run(true, function (User $user) use ($data): array {
+            $id = $this->visible($user, $data);
+            $input = array_intersect_key($this->body(), array_flip(TicketDesk::FIELDS));
+            $result = (new TicketDesk())->update($user, $id, $input);
+            return [200, ['data' => $result + ['ticket' => (new TicketService())->findFor($user, $id)]]];
+        });
+    }
+
+    public function answer(array $data): void
+    {
+        $this->run(true, function (User $user) use ($data): array {
+            $id = $this->visible($user, $data);
+            $body = $this->body();
+            $result = (new TicketDesk())->reply($user, $id, (string)($body['message'] ?? ''), ($body['internal'] ?? false) === true,
+                max(0, min(86400, (int)($body['time_spent'] ?? 0))), ($body['resolve'] ?? false) === true);
+            return [201, ['data' => $result + ['ticket' => (new TicketService())->findFor($user, $id)]]];
+        });
+    }
+
+    /** Filtros de cada aba do app (regra pura). @return array<string,string> */
+    public static function viewFilters(string $view, int $userId): array
+    {
+        return match ($view) {
+            'mine' => ['assigned' => (string)$userId],
+            'unassigned' => ['assigned' => 'unassigned'],
+            'overdue' => ['due' => 'overdue'],
+            'today' => ['due' => 'today'],
+            default => [],
+        };
+    }
+
+    /** Em aberto e com o prazo vencido (regra pura). */
+    public static function late(array $ticket, ?int $now = null): bool
+    {
+        $due = (string)($ticket['due_at'] ?? '');
+        return $due !== '' && TicketDesk::slaState((string)($ticket['status'] ?? ''), $due, $now) === 'late';
+    }
+
+    private function visible(User $user, array $data): int
+    {
+        $id = (int)($data['id'] ?? 0);
+        if ((new TicketService())->findFor($user, $id) === null) {
+            throw new TicketError('ticket', 'Chamado não encontrado.', 404);
+        }
+        return $id;
+    }
+
+    /** @param callable(User):array{0:int,1:array<string,mixed>} $action */
+    private function run(bool $attend, callable $action): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            JsonResponse::send(401, ['error' => ['code' => 'unauthenticated', 'message' => 'Autenticação necessária.']]);
+            return;
+        }
+        if (!Access::can('erp.access', $user)) {
+            JsonResponse::send(403, ['error' => ['code' => 'forbidden', 'message' => 'Sem acesso ao ERP.']]);
+            return;
+        }
+        if ($attend && !Access::can('support.manage', $user)) {
+            JsonResponse::send(403, ['error' => ['code' => 'forbidden', 'message' => 'Só a equipe de atendimento faz a triagem, responde e assume chamados.']]);
+            return;
+        }
+        try {
+            [$status, $payload] = $action($user);
+            JsonResponse::send($status, $payload);
+        } catch (TicketError $error) {
+            $code = match ($error->status()) { 404 => 'not_found', 403 => 'forbidden', default => 'validation_failed' };
+            JsonResponse::send($error->status(), ['error' => ['code' => $code, 'message' => $error->getMessage(), 'fields' => [$error->field => $error->getMessage()]]]);
+        } catch (\JsonException) {
+            JsonResponse::send(400, ['error' => ['code' => 'invalid_json', 'message' => 'Corpo JSON inválido.']]);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'sac_api_failed', 'users_id' => (int)$user->id]);
+            JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível concluir agora. Tente de novo.']]);
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private function body(): array
+    {
+        $raw = (string)file_get_contents('php://input', false, null, 0, 65537);
+        if (strlen($raw) > 65536) {
+            throw new TicketError('message', 'Mensagem grande demais.');
+        }
+        if (trim($raw) === '') {
+            return [];
+        }
+        $body = json_decode($raw, true, 16, JSON_THROW_ON_ERROR);
+        return is_array($body) ? $body : [];
+    }
+}

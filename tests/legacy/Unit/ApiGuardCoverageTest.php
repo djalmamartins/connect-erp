@@ -19,7 +19,7 @@ final class ApiGuardCoverageTest extends TestCase
     private const ROOT = __DIR__ . '/../../..';
     // Sessão do app do morador (ADR 0303): entrar e sair usam o token Bearer próprio, sem sessão; o DELETE só revoga o token
     // que veio no cabeçalho. O pedido de recuperação de senha (revisão de 15/11) é público, com limite por conta e IP no banco.
-    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify', 'POST /resident/app-sessions', 'POST /resident/app-sessions/verify', 'DELETE /resident/app-sessions/current', 'POST /resident/password/forgot', 'POST /webhooks/bank/{adapter}/{secret}'];
+    private const PUBLIC_ROUTES = ['GET /health', 'POST /auth/2fa/verify', 'POST /resident/app-sessions', 'POST /resident/app-sessions/verify', 'DELETE /resident/app-sessions/current', 'POST /resident/password/forgot', 'POST /team/app-sessions', 'POST /team/app-sessions/verify', 'DELETE /team/app-sessions/current', 'POST /webhooks/bank/{adapter}/{secret}'];
 
     public function testEveryApiRouteUsesTheAuthenticatedMiddleware(): void
     {
@@ -59,7 +59,7 @@ final class ApiGuardCoverageTest extends TestCase
                 }
             }
             foreach ($actions as $action) {
-                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify', 'BankWebhook::receive', 'ResidentAppSessions::store', 'ResidentAppSessions::verify', 'ResidentAppSessions::destroy', 'ResidentAppSessions::forgot'], true)) {
+                if (!self::guarded($action, $bodies, []) && !in_array($controller . '::' . $action, ['TwoFactor::verify', 'BankWebhook::receive', 'ResidentAppSessions::store', 'ResidentAppSessions::verify', 'ResidentAppSessions::destroy', 'ResidentAppSessions::forgot', 'TeamApp::store', 'TeamApp::verify', 'TeamApp::destroy'], true)) {
                     $unguarded[] = $controller . '::' . $action;
                 }
             }

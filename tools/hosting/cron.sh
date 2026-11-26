@@ -55,6 +55,8 @@ case "$group" in
         jobs=("$php_bin tools/notifications-dispatch.php 50")
         # Push do app do morador (ADR 0642): só envia com CONNECT_RESIDENT_PUSH=expo no .env; sem isso marca como não enviado.
         jobs+=("$php_bin tools/resident-push-dispatch.php 100")
+        # Push dos apps da equipe, SAC e Meu Dia (ADR 0660): só envia com TEAM_PUSH_DELIVERY=expo no .env.
+        jobs+=("$php_bin tools/team-push-dispatch.php 100")
         if [ "${MAIL_QUEUE_SEND:-0}" = "1" ] || [ "${ERP_MAIL_DELIVERY:-}" = "production" ]; then
             jobs+=("$php_bin service/jobs/sendEmail.php")
         fi

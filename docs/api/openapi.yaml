@@ -28,6 +28,12 @@ components:
       type: http
       scheme: bearer
       description: Token do app nativo do morador (ADR 0303), devolvido por POST /resident/app-sessions. Sem cookie e sem CSRF.
+    teamApp:
+      type: http
+      scheme: bearer
+      description: >-
+        Token dos apps da equipe no celular, SAC e Meu Dia (ADR 0660), devolvido por POST /team/app-sessions. Vale em
+        toda rota de /api/v1 que aceita a sessão (ApiAuthenticated), com as mesmas permissões, sem cookie e sem CSRF.
     talkIntegration:
       type: http
       scheme: bearer
@@ -782,6 +788,262 @@ paths:
         '400': { description: 'invalid_json', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '422': { description: 'validation (login vazio)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /sac/summary:
+    get:
+      operationId: getSacSummary
+      tags: [SAC]
+      summary: Números da fila do SAC para quem entrou (meus em aberto, meus vencidos, sem responsável, vencidos, hoje)
+      description: ADR 0660. Escopo de condomínio do usuário mais os chamados que ele abriu ou pediu, como na tela do ERP.
+      security: [{ teamApp: [] }, { session: [] }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /sac/options:
+    get:
+      operationId: getSacOptions
+      tags: [SAC]
+      summary: Situações, prioridades, equipes, responsáveis e respostas rápidas (os dois últimos só para quem atende)
+      security: [{ teamApp: [] }, { session: [] }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /sac/tickets:
+    get:
+      operationId: listSacTickets
+      tags: [SAC]
+      summary: Fila do SAC por aba (meus, sem responsável, vencidos, hoje, todos)
+      description: Abas mine e unassigned mostram só o que está em aberto quando status não vem. Cada chamado traz late (prazo vencido).
+      security: [{ teamApp: [] }, { session: [] }]
+      parameters:
+        - { name: view, in: query, schema: { type: string, enum: [mine, unassigned, overdue, today, all], default: mine } }
+        - { name: status, in: query, schema: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 80 }, description: 'Assunto ou protocolo (SAC/OCO)' }
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
+      responses:
+        '200': { description: Chamados, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } }, meta: { type: object, properties: { view: { type: string } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /sac/tickets/{id}:
+    get:
+      operationId: getSacTicket
+      tags: [SAC]
+      summary: Chamado com a conversa (notas internas só para quem atende), histórico e medições
+      security: [{ teamApp: [] }, { session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /sac/tickets/{id}/take:
+    post:
+      operationId: takeSacTicket
+      tags: [SAC]
+      summary: Assume o chamado (responsável = quem pediu; aberto passa a em atendimento)
+      description: Exige support.manage.
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+  /sac/tickets/{id}/triage:
+    post:
+      operationId: triageSacTicket
+      tags: [SAC]
+      summary: Triagem (situação, prioridade, responsável, equipe, categoria, tags); só o que vier muda
+      description: Exige support.manage. Mesma regra do TicketDesk::update da tela; o novo responsável recebe push no app do SAC.
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
+                priority: { type: string, enum: [low, medium, high, urgent] }
+                assigned_to: { type: [integer, 'null'] }
+                team: { type: string }
+                category: { type: string, maxLength: 100 }
+                tags: { type: string, maxLength: 500 }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '400': { description: invalid_json, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: validation_failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /sac/tickets/{id}/answers:
+    post:
+      operationId: answerSacTicket
+      tags: [SAC]
+      summary: Resposta para quem pediu ou nota interna, com tempo dedicado e opção de resolver
+      description: Exige support.manage. Quem pediu é avisado (e-mail, sininho e push do app do morador) quando não é nota interna.
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+                internal: { type: boolean, default: false }
+                resolve: { type: boolean, default: false }
+                time_spent: { type: integer, minimum: 0, maximum: 86400, description: Segundos }
+      responses:
+        '201': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
+        '400': { description: invalid_json, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { description: validation_failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /team/app-sessions:
+    post:
+      operationId: createTeamAppSession
+      tags: [Equipe]
+      summary: Entra nos apps da equipe (SAC, Meu Dia) e recebe o token Bearer
+      description: >-
+        ADR 0660. Mesma conta, senha, limite de tentativas e 2FA do login web, com as regras do app do morador (ADR 0303):
+        token de 256 bits guardado só como sha256, 90 dias, cai com 30 dias sem uso ou no logout global. Só entra quem tem
+        erp.access. Com 2FA ativo devolve 202 com um desafio; o token sai em /team/app-sessions/verify.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login: { type: string, maxLength: 191, description: E-mail ou CPF }
+                password: { type: string, maxLength: 1024 }
+                device_name: { type: string, maxLength: 80 }
+      responses:
+        '201': { $ref: '#/components/responses/ResidentAppToken' }
+        '202':
+          description: Falta o segundo fator
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { two_factor_required: { const: true }, challenge: { type: string, pattern: '^[0-9a-f]{64}$' } } }
+        '401': { description: 'invalid_credentials', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: 'not_team (sem erp.access)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: 'two_factor_setup_required; configurar pela web', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: 'validation', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /team/app-sessions/verify:
+    post:
+      operationId: verifyTeamAppSession
+      tags: [Equipe]
+      summary: Conclui o login do app da equipe com o código do autenticador ou de recuperação
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge, code]
+              properties:
+                challenge: { type: string, pattern: '^[0-9a-f]{64}$' }
+                code: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/ResidentAppToken' }
+        '401': { description: 'challenge_expired', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: 'invalid_code', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { description: 'too_many_attempts', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /team/app-sessions/current:
+    delete:
+      operationId: deleteTeamAppSession
+      tags: [Equipe]
+      summary: Sai do app da equipe neste aparelho (revoga o token)
+      security: [{ teamApp: [] }]
+      responses:
+        '200':
+          description: Sessão encerrada
+          content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { revoked: { const: true } } } } } } }
+        '401': { description: 'Token ausente, inválido ou já revogado', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /team/me:
+    get:
+      operationId: getTeamMe
+      tags: [Equipe]
+      summary: Quem entrou no app da equipe e o que pode fazer
+      security: [{ teamApp: [] }, { session: [] }]
+      responses:
+        '200':
+          description: Usuário atual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+                      first_name: { type: string }
+                      email: { type: string }
+                      role: { type: [object, 'null'], properties: { slug: { type: string }, name: { type: string } } }
+                      two_factor_enabled: { type: boolean }
+                      can_see_team: { type: boolean, description: 'erp.myday.team: vê e marca o Meu Dia de outra pessoa' }
+                      can_attend_sac: { type: boolean, description: 'support.manage: atende chamados (triagem, resposta, nota interna)' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /team/push-devices:
+    post:
+      operationId: registerTeamPushDevice
+      tags: [Equipe]
+      summary: Grava o celular para receber o push de um app da equipe
+      description: Token do Expo (ExponentPushToken[...]); até 5 aparelhos por pessoa e app. O mesmo aparelho em outra conta passa para a conta nova.
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, app]
+              properties:
+                token: { type: string }
+                app: { type: string, enum: [sac, meu-dia] }
+                platform: { type: string, enum: [ios, android] }
+      responses:
+        '201': { description: Gravado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { ok: { const: true } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: 'validation (token ou app inválido)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      operationId: forgetTeamPushDevice
+      tags: [Equipe]
+      summary: O celular deixa de receber o push daquele app (ao sair)
+      description: Corpo {token, app} ou, sem corpo, ?token=&app=.
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      parameters:
+        - { name: token, in: query, required: false, schema: { type: string } }
+        - { name: app, in: query, required: false, schema: { type: string, enum: [sac, meu-dia] } }
+      responses:
+        '200': { description: Apagado, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { ok: { const: true } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { description: 'validation', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /users/{id}/2fa:
     delete:
       operationId: resetUserTwoFactor
