@@ -383,15 +383,15 @@ class Web extends Controller
         }
 
         $head = $this->seo->render(
-            "Recuperar Senha - " . CONF_SITE_NAME,
+            "Recuperar senha - " . CONF_SITE_NAME,
             CONF_SITE_DESC,
             url("/forget"),
-            theme("/assets/images/share.jpg")
+            theme("/assets/images/share.jpg"),
+            false
         );
 
-        echo $this->view->render("pages/login/forget", [
-            "head" => $head
-        ]);
+        // Mesma moldura da tela de entrada (ADR 0655): foto, painel e cartão do login.
+        echo $this->loginView()->render("components/login/forget", ["head" => $head] + $this->loginContext());
     }
 
     /**
@@ -428,7 +428,7 @@ class Web extends Controller
             $auth = new Auth();
             if ($auth->resetWithToken((string)($data["code"] ?? ""), $data["password"], $data["password_re"])) {
                 $this->message->success("Senha alterada com sucesso.")->flash();
-                $json["redirect"] = url("/studio/login");
+                $json["redirect"] = $this->loginContext()["loginBack"];
             } else {
                 $json["message"] = $auth->message()->before("Ooops! ")->render();
             }
@@ -451,10 +451,32 @@ class Web extends Controller
             false
         );
 
-        echo $this->view->render("pages/login/reset", [
+        echo $this->loginView()->render("components/login/reset", [
             "head" => $head,
-            "code" => $data["code"]
-        ]);
+            "code" => (string)$data["code"],
+        ] + $this->loginContext());
+    }
+
+    /** Views da tela de entrada (Studio), usadas também pelo ERP, Help Desk e app do morador. */
+    private function loginView(): \Source\Core\View
+    {
+        return new \Source\Core\View(dirname(__DIR__, 4) . "/container/cms/studio/v1/");
+    }
+
+    /**
+     * Ambiente da recuperação de senha pelo host (ADR 0655): textos do cartão e o
+     * endereço de "Voltar para o login", para a pessoa voltar à tela de onde veio.
+     * @return array{loginEnvironment: string, loginEyebrow: string, loginBack: string}
+     */
+    private function loginContext(): array
+    {
+        if (erp_host()) {
+            return ["loginEnvironment" => "erp", "loginEyebrow" => "ERP CONNECT CONDOMÍNIOS", "loginBack" => erp_url("/login")];
+        }
+        if (app_host()) {
+            return ["loginEnvironment" => "app", "loginEyebrow" => "CONNECT MORADOR", "loginBack" => app_url("/login")];
+        }
+        return ["loginEnvironment" => "studio", "loginEyebrow" => "CONNECT CONDOMÍNIOS", "loginBack" => url("/studio/login")];
     }
 
     /**

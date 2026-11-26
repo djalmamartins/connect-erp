@@ -7,7 +7,7 @@ namespace MovesOSTests\Unit;
 use PHPUnit\Framework\TestCase;
 use Source\Support\MailSandbox;
 
-/** ADR 0655: no lab com ERP_MAIL_DELIVERY=sandbox, a fila inteira vai só para a caixa de teste. */
+/** ADR 0656: no lab com ERP_MAIL_DELIVERY=sandbox, a fila inteira vai só para a caixa de teste. */
 final class MailSandboxTest extends TestCase
 {
     public function testSandboxOnlyOutsideProductionWithValidBox(): void

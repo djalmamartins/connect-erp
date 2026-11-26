@@ -124,7 +124,7 @@ class Email
             $this->message->error($exception->getMessage());
             return false;
         } finally {
-            // Também na falha (ADR 0655): a fila reaproveita este PHPMailer, e um destinatário que ficasse aqui
+            // Também na falha (ADR 0656): a fila reaproveita este PHPMailer, e um destinatário que ficasse aqui
             // seguiria junto no próximo e-mail, para outra pessoa.
             $this->mail->clearAllRecipients();
             $this->mail->clearAttachments();
@@ -183,7 +183,7 @@ class Email
         $perSecond = max(1, min(20, $perSecond));
         $items = $pdo->query("SELECT * FROM mail_queue WHERE status IN ('pending','retry') AND sent_at IS NULL AND cancelled_at IS NULL AND COALESCE(scheduled_at, created_at) <= NOW() AND (next_attempt_at IS NULL OR next_attempt_at <= NOW()) ORDER BY COALESCE(scheduled_at, created_at), id LIMIT {$limit}")->fetchAll();
         $result = ["processed" => 0, "sent" => 0, "failed" => 0, "retry" => 0];
-        // Lab com ERP_MAIL_DELIVERY=sandbox (ADR 0655): tudo vai só para a caixa de teste, com [TESTE] no assunto.
+        // Lab com ERP_MAIL_DELIVERY=sandbox (ADR 0656): tudo vai só para a caixa de teste, com [TESTE] no assunto.
         $sandboxTo = MailSandbox::current();
         foreach ($items as $send) {
             $claim = $pdo->prepare("UPDATE mail_queue SET status = 'processing', last_attempt_at = NOW(), attempts = attempts + 1 WHERE id = :id AND status IN ('pending','retry')");

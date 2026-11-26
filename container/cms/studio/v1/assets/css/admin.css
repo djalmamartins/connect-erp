@@ -826,6 +826,7 @@ a {
 
 .connect-login__field {
     display: flex;
+    min-width: 0;
     align-items: center;
     height: 55px;
     border: 1px solid #d7d9d6;
@@ -850,6 +851,7 @@ a {
 
 .connect-login__field input {
     min-width: 0;
+    width: auto !important;
     flex: 1;
     height: 100%;
     padding: 0 13px;
@@ -896,6 +898,14 @@ a {
 
 .connect-login__options > span {
     color: #0d4b39
+}
+
+/* Links do cartão de entrada na cor da marca (ADR 0655), não no azul padrão do navegador. */
+.connect-login__options a {
+    color: #0d4b39;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px
 }
 
 .connect-login__remember {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Source\Support;
 
 /**
- * Caixa de teste da fila de e-mail no laboratório (ADR 0655).
+ * Caixa de teste da fila de e-mail no laboratório (ADR 0656).
  *
  * Fora da produção, com ERP_MAIL_DELIVERY=sandbox e ERP_MAIL_SANDBOX_TO válido, todo e-mail da mail_queue
  * (avisos do ERP, chamados, propostas, código de 2FA, convites) vai só para a caixa de teste, com "[TESTE]"

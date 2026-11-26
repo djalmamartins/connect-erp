@@ -53,8 +53,9 @@ Sem o celular? Clique em **Usar código de recuperação** e digite um dos códi
 ## Esqueci a minha senha
 
 1. Na tela de entrada, clique em **Esqueci a senha**.
-2. Informe o e-mail da sua conta e confirme.
-3. Abra o e-mail que chegou e siga o link para criar uma nova senha. O link vale por pouco tempo e só pode ser usado uma vez.
+2. A tela de recuperação abre com o mesmo visual da entrada. Informe o **e-mail ou CPF** da sua conta e clique em **Enviar link**.
+3. Abra o e-mail que chegou (veja também o spam) e siga o link. Na tela **Criar senha nova**, digite a senha duas vezes, com pelo menos 8 caracteres, e clique em **Salvar senha**. O link vale por pouco tempo e só pode ser usado uma vez.
+4. Depois de salvar, você volta para a tela de entrada. Se mudar de ideia antes, use **Voltar para o login**.
 
 >! A equipe da Connect nunca pede a sua senha por telefone, WhatsApp ou e-mail. Se alguém pedir, não informe e avise o atendimento.
 

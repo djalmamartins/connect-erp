@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Diagnóstico do envio de e-mail (ADR 0655). Só lê, nunca mostra senha:
+ * Diagnóstico do envio de e-mail (ADR 0656). Só lê, nunca mostra senha:
  *
  *   docker compose exec -T app php tools/email-diagnostico.php [--enviar]
  *   docker compose exec -T scheduler php tools/email-diagnostico.php [--enviar]

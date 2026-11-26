@@ -1,4 +1,4 @@
-# 0655 — Caixa de teste para toda a fila de e-mail no lab e diagnóstico do envio
+# 0656 — Caixa de teste para toda a fila de e-mail no lab e diagnóstico do envio
 
 - Status: Aceito
 - Data: 26/11/2026
