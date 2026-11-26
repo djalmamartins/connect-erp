@@ -61,6 +61,17 @@ final class MyDay
         });
     }
 
+    /** GET /api/v1/my-day/team — a equipe para escolher "Para quem" no app Meu Dia (ADR 0659). Exige erp.myday.team. */
+    public function team(): void
+    {
+        $this->run(function (User $user, MyDayService $service): array {
+            if (!$service->canSeeTeam($user)) {
+                throw new MyDayError('person', 'Você só pode marcar tarefas para você.', 403);
+            }
+            return [200, ['data' => $service->team()]];
+        });
+    }
+
     private function run(callable $action): void
     {
         $user = Auth::user();

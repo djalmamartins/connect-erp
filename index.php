@@ -649,6 +649,8 @@ $route->post("/my-day/events", "MyDay:store", null, \Source\Support\Middleware\A
 $route->post("/my-day/events/{id}/status", "MyDay:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ficou para trás (ADR 0658): o que não foi feito em dia anterior, levado para hoje até fechar.
 $route->get("/my-day/overdue", "MyDay:overdue", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Quem aparece em "Para quem" no app Meu Dia (ADR 0659): só para quem pode ver o dia da equipe (erp.myday.team).
+$route->get("/my-day/team", "MyDay:team", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Propostas do site (CN-011, ADR 0644): as mesmas do Studio > Gestão > Propostas; só com proposals.manage.
 $route->get("/proposals", "Proposals:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/proposals/{id}", "Proposals:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

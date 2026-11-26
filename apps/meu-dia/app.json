@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Meu Dia Connect",
+    "slug": "connect-meu-dia",
+    "scheme": "connectmeudia",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.connectcondominios.meudia"
+    },
+    "android": {
+      "package": "br.com.connectcondominios.meudia",
+      "adaptiveIcon": {
+        "backgroundColor": "#078b4c",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/intro-symbol.png",
+          "imageWidth": 58,
+          "resizeMode": "contain",
+          "backgroundColor": "#0d2e27"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#078b4c",
+          "defaultChannel": "meu-dia"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://erp.connect.lab"
+    }
+  }
+}
