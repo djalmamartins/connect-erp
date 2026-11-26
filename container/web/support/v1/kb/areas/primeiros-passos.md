@@ -1,4 +1,4 @@
-O Connect ERP é o sistema da Connect para administrar os condomínios da carteira: cadastros, financeiro, cobrança, prestação de contas, rotina do prédio e comunicação com os moradores. Esta área ensina o básico para começar.
+O ERP Connect Condomínios é o sistema da Connect para administrar os condomínios da carteira: cadastros, financeiro, cobrança, prestação de contas, rotina do prédio e comunicação com os moradores. Esta área ensina o básico para começar.
 
 1. **Entre no sistema** com o seu e-mail e senha (e o código do aplicativo autenticador, se a verificação em duas etapas estiver ligada).
 2. **Escolha o condomínio na barra superior.** Todas as telas passam a mostrar só os dados dele. Em **Todos os condomínios**, você vê a carteira inteira. Cada pessoa só enxerga os condomínios liberados na conta dela.

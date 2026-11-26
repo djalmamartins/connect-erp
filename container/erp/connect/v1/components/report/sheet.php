@@ -17,6 +17,6 @@ $reportSite = defined('CONF_SITE_NAME') && CONF_SITE_NAME !== '' ? CONF_SITE_NAM
     <?= $reportContent ?>
     <footer class="erp-report-foot">
         <span><?= $this->e($reportSite) ?> · administradora de condomínios</span>
-        <span>Relatório gerado pelo Connect ERP com os dados do momento da emissão.</span>
+        <span>Relatório gerado pelo ERP Connect Condomínios com os dados do momento da emissão.</span>
     </footer>
 </main>

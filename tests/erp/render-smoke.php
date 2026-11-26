@@ -1752,7 +1752,7 @@ putenv('ERP_DEMO_DATA=true');
 $studio = static fn (): Source\Core\View => new Source\Core\View($root . '/container/cms/studio/v1/', 'php');
 $html = $studio()->render('components/login/login', ['head' => '<title>Entrar</title>', 'cookie' => null, 'adminBase' => $erpPrefix, 'loginEnvironment' => 'erp', 'forgotUrl' => erp_url('/recuperar-senha')]);
 $assert(str_contains($html, 'action="' . $erpRoot . '/login"'), 'login: envia para o login do ERP');
-$assert(str_contains($html, 'CONNECT ERP') && str_contains($html, 'Esqueci minha senha'), 'login: identidade ERP e recuperação');
+$assert(str_contains($html, 'ERP CONNECT CONDOMÍNIOS') && str_contains($html, 'Esqueci minha senha'), 'login: identidade ERP e recuperação');
 $assert((bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'type="password"'), 'login: CSRF e senha');
 $save('login', $html);
 $html = $studio()->render('components/login/login', ['head' => '', 'cookie' => null, 'adminBase' => '/studio', 'loginEnvironment' => 'studio']);

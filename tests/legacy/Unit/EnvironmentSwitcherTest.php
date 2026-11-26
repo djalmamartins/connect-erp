@@ -20,7 +20,7 @@ final class EnvironmentSwitcherTest extends TestCase
     {
         $rows = [
             ['studio', 'Studio', 'Gestão de conteúdo e operação'],
-            ['erp', 'ERP', 'Gestão administrativa'],
+            ['erp', 'ERP Connect Condomínios', 'Gestão administrativa'],
             ['helpdesk', 'Help Desk', 'Atendimento e chamados'],
             ['residents', 'Moradores', 'Aplicativo do morador'],
             ['talk', 'Talk', 'Atendimento por WhatsApp'],
@@ -35,7 +35,7 @@ final class EnvironmentSwitcherTest extends TestCase
     public function testSameMarkupInEverySystemOnlyTheCurrentItemChanges(): void
     {
         $shapes = [];
-        foreach (['erp' => ['ERP', 'Connect ERP'], 'studio' => ['CMS', 'Moves Studio'], 'helpdesk' => ['Atendimento', 'Moves Help Desk']] as $key => [$kicker, $name]) {
+        foreach (['erp' => ['ERP', 'Connect Condomínios'], 'studio' => ['CMS', 'Moves Studio'], 'helpdesk' => ['Atendimento', 'Moves Help Desk']] as $key => [$kicker, $name]) {
             $html = EnvironmentSwitcher::markup($this->items($key), $key, $kicker, $name);
             self::assertStringContainsString('data-environment="' . $key . '"', $html);
             self::assertStringContainsString('<small>' . $kicker . '</small><strong>' . $name . '</strong>', $html);
@@ -65,7 +65,7 @@ final class EnvironmentSwitcherTest extends TestCase
 
     public function testEveryEnvironmentHasItsOwnIcon(): void
     {
-        $html = EnvironmentSwitcher::markup($this->items('erp'), 'erp', 'ERP', 'Connect ERP');
+        $html = EnvironmentSwitcher::markup($this->items('erp'), 'erp', 'ERP', 'Connect Condomínios');
         preg_match_all('~<svg class="cx-envswitch__icon"[^>]*>(.*?)</svg>~s', $html, $icons);
         self::assertCount(6, $icons[1]);
         self::assertCount(6, array_unique($icons[1]));
@@ -75,7 +75,7 @@ final class EnvironmentSwitcherTest extends TestCase
     {
         $erp = (string)file_get_contents(self::ROOT . '/container/erp/connect/v1/components/sidebar/sidebar.php');
         $studio = (string)file_get_contents(self::ROOT . '/container/cms/studio/v1/layouts/studio.php');
-        self::assertStringContainsString("EnvironmentSwitcher::render(\$user, 'erp', 'ERP', 'Connect ERP')", $erp);
+        self::assertStringContainsString("EnvironmentSwitcher::render(\$user, 'erp', 'ERP', 'Connect Condomínios')", $erp);
         self::assertStringContainsString("EnvironmentSwitcher::render(\$user, \$isHelpDeskEnvironment ? 'helpdesk' : 'studio'", $studio);
         // O desenho antigo de cada sistema saiu.
         self::assertStringNotContainsString('erp-envswitch__panel', $erp);

@@ -553,7 +553,7 @@ final class Panel extends Controller
     {
         $page = $pageId !== null ? ($this->catalog['pages'][$pageId] ?? null) : null;
         $group = $page['group'] ?? ($extra['hubGroup'] ?? null);
-        $title ??= $page['name'] ?? 'Connect ERP';
+        $title ??= $page['name'] ?? 'ERP Connect Condomínios';
         // Menu lateral (ADR 0398): novo ou atual, escolhido pela pessoa; o endereço da página não muda.
         $navMode = ErpNav::mode();
         $nav = ErpNav::build($this->catalog, $navMode);
@@ -563,7 +563,7 @@ final class Panel extends Controller
         (new SacDesk())->touch($user); // balão do SAC (ADR 0631): quem atende e está no ERP conta como online
 
         return array_merge([
-            'head' => $this->seo->render($title . ' · Connect ERP', 'ERP da administradora Connect.', erp_url(), theme('/assets/images/favicon.png'), false),
+            'head' => $this->seo->render($title . ' · ERP Connect Condomínios', 'ERP da administradora Connect.', erp_url(), theme('/assets/images/favicon.png'), false),
             'title' => $title,
             'user' => $user,
             'catalog' => $this->catalog,

@@ -1873,8 +1873,8 @@ class Studio extends Controller
             return;
         }
         $mail = (new \Source\Support\Email())->timeout(20);
-        $sent = $mail->bootstrap("Teste de e-mail do Connect ERP", (new \Source\Support\MailTemplate())->render("notice", [
-            "subject" => "Teste de e-mail do Connect ERP",
+        $sent = $mail->bootstrap("Teste de e-mail do ERP Connect Condomínios", (new \Source\Support\MailTemplate())->render("notice", [
+            "subject" => "Teste de e-mail do ERP Connect Condomínios",
             "paragraphs" => [
                 "Este é um e-mail de teste enviado pela tela de Configurações do Studio (" . date("d/m/Y H:i") . ").",
                 "Se chegou na caixa de entrada (e não no spam), o envio de e-mails do sistema está pronto.",

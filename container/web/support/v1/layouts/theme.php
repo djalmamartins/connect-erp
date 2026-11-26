@@ -81,7 +81,7 @@ $residentsUrl = \Source\Services\Environments::url('residents', '/app');
             <nav class="hc-footer__links" aria-label="Outros acessos">
                 <a href="<?= url('/') ?>"><?= \Source\Services\Help\Icons::svg('globe-outline') ?>Voltar para o site</a>
                 <a href="<?= htmlspecialchars($residentsUrl) ?>"><?= \Source\Services\Help\Icons::svg('home-outline') ?>App do morador</a>
-                <a href="<?= htmlspecialchars($contact['system_url']) ?>"><?= \Source\Services\Help\Icons::svg('log-in-outline') ?>Connect ERP</a>
+                <a href="<?= htmlspecialchars($contact['system_url']) ?>"><?= \Source\Services\Help\Icons::svg('log-in-outline') ?>ERP Connect Condomínios</a>
             </nav>
         </div>
         <div class="hc-footer__legal">

@@ -99,7 +99,7 @@ final class HelpScaffold
         $lead = trim((string)($inv['lead'] ?? '')) ?: ($registry['lead'] ?? '') ?: trim((string)($page['note'] ?? ''));
         $situation = $this->situations[$code] ?? 'funciona';
         $title = $this->title($page, $registry);
-        $summary = $lead !== '' ? $lead : "Como usar a tela {$name} do Connect ERP: onde fica no menu, o que cada parte mostra e o passo a passo.";
+        $summary = $lead !== '' ? $lead : "Como usar a tela {$name} do ERP Connect Condomínios: onde fica no menu, o que cada parte mostra e o passo a passo.";
         if (mb_strlen($summary) < 20) {
             $summary .= ' Veja onde fica e como usar a tela.';
         }
