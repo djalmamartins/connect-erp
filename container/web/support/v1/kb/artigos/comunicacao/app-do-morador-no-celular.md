@@ -15,8 +15,8 @@ O **Connect Morador** é o aplicativo de celular dos moradores. Ele usa os mesmo
 
 1. A administração convida o morador pelo cadastro de moradores. O convite chega por e-mail e vale 7 dias.
 2. O morador cria a senha pelo link do convite.
-3. No app, ele entra com o e-mail (ou CPF) e a senha. A verificação em duas etapas é opcional para o morador: só se ele tiver ligado, o app pede o código do autenticador.
-4. Se o celular tiver Face ID, Touch ID ou digital cadastrada, aparece a opção **Nas próximas vezes, entrar com Face ID** (ou digital). Marcada, o app pede a biometria logo depois de entrar e, nas próximas vezes, abre só com ela, sem digitar a senha. O e-mail usado fica preenchido no login.
+3. No app, ele entra com o e-mail (ou CPF) e a senha. A tela de entrada segue a do ERP: foto do prédio no alto, cartão branco com **CONNECT MORADOR**, botão verde-escuro e, abaixo, dicas de segurança que mudam em cada etapa (entrar, recuperar senha, código de duas etapas). A verificação em duas etapas é opcional para o morador: só se ele tiver ligado, o app pede o código do autenticador.
+4. Se o celular tiver Face ID, Touch ID ou digital cadastrada, aparece a opção **Entrar com Face ID** (ou digital), ao lado de {{Esqueci minha senha}}. Marcada, o app pede a biometria logo depois de entrar e, nas próximas vezes, abre só com ela, sem digitar a senha. O e-mail usado fica preenchido no login.
 5. Esqueceu a senha? No login, {{Esqueci minha senha}} pede o e-mail ou CPF e manda um link para o e-mail cadastrado. A senha nova é criada pelo link, como na web. Por segurança, o app sempre mostra a mesma mensagem, exista a conta ou não, e aceita poucas tentativas seguidas.
 
 ## Primeiro acesso

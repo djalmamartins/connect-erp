@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MovesOSTests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * ADR 0657: o login do app do morador na web usa a tela de entrada do ERP (foto, dicas e cartão),
+ * com o cartão "CONNECT MORADOR", e a recuperação de senha do morador volta ao login do app.
+ */
+final class ResidentLoginErpStyleTest extends TestCase
+{
+    private const ROOT = __DIR__ . '/../../..';
+
+    public function testAppLoginRendersTheErpLoginScreen(): void
+    {
+        $code = (string)file_get_contents(self::ROOT . '/source/Controllers/App/Resident/AppLogin.php');
+        self::assertStringContainsString("render('components/login/login'", $code);
+        self::assertStringContainsString("'loginEnvironment' => 'app'", $code);
+        self::assertStringContainsString("'forgotUrl' => app_url('/recuperar-senha')", $code);
+        self::assertStringContainsString('csrf_verify($data)', $code);
+        self::assertStringContainsString("request_limit('resident_app_login', 8, 300)", $code);
+        self::assertStringContainsString("url('/studio/login/2fa?next=app')", $code);
+        self::assertStringNotContainsString("render('pages/login'", $code);
+    }
+
+    public function testLoginViewHasResidentCardAndTips(): void
+    {
+        $html = (string)file_get_contents(self::ROOT . '/container/cms/studio/v1/components/login/login.php');
+        self::assertStringContainsString("'app' => ['CONNECT MORADOR', 'Área do morador'", $html);
+        self::assertStringContainsString('htmlspecialchars($loginNotice)', $html);
+        self::assertStringContainsString('connect-login__note', $html);
+        self::assertStringContainsString('csrf_input()', $html);
+    }
+
+    public function testRecoveryRouteAndResidentContext(): void
+    {
+        $routes = (string)file_get_contents(self::ROOT . '/container/app/connect/v1/routes.php');
+        self::assertStringContainsString('$route->get("/recuperar-senha", "AppLogin:forgot");', $routes);
+        $web = (string)file_get_contents(self::ROOT . '/source/Controllers/Web/Connect/Web.php');
+        self::assertStringContainsString('residentRecovery', $web);
+        self::assertStringContainsString('!\Source\Support\Access::can("erp.access", $user)', $web);
+        self::assertStringContainsString('.connect-login__note{', (string)file_get_contents(self::ROOT . '/container/cms/studio/v1/assets/studio.min.css'));
+    }
+}

@@ -948,6 +948,15 @@ a {
     font-weight: 400
 }
 
+/* Nota do primeiro acesso no login do app do morador (ADR 0657). */
+.connect-login__note {
+    margin: 20px 0 0;
+    color: #66706c;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center
+}
+
 .connect-login__card footer {
     display: flex;
     justify-content: center;
@@ -11110,4 +11119,11 @@ html[data-theme="dark"] .studio-v2[data-environment="helpdesk"] .studio-system-p
     flex-direction: row;
     align-items: center;
     gap: 8px
+}
+
+/* No celular o cartão sobe 72px sobre a foto: o texto da foto termina acima dele (ADR 0657). */
+@media (max-width: 860px) {
+    .connect-login__visual-content {
+        padding-bottom: 96px
+    }
 }
