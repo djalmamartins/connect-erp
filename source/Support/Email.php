@@ -118,13 +118,16 @@ class Email
             }
 
             $this->mail->send();
-            $this->mail->clearAddresses();
-            $this->mail->clearAttachments();
             return true;
         } catch (Exception $exception) {
             AppLogger::exception($exception, 'mail', ['event_type' => 'mail_send_failed', 'recipient_hash' => hash('sha256', (string)$this->data->recipient_email)]);
             $this->message->error($exception->getMessage());
             return false;
+        } finally {
+            // Também na falha (ADR 0655): a fila reaproveita este PHPMailer, e um destinatário que ficasse aqui
+            // seguiria junto no próximo e-mail, para outra pessoa.
+            $this->mail->clearAllRecipients();
+            $this->mail->clearAttachments();
         }
     }
 
@@ -180,6 +183,8 @@ class Email
         $perSecond = max(1, min(20, $perSecond));
         $items = $pdo->query("SELECT * FROM mail_queue WHERE status IN ('pending','retry') AND sent_at IS NULL AND cancelled_at IS NULL AND COALESCE(scheduled_at, created_at) <= NOW() AND (next_attempt_at IS NULL OR next_attempt_at <= NOW()) ORDER BY COALESCE(scheduled_at, created_at), id LIMIT {$limit}")->fetchAll();
         $result = ["processed" => 0, "sent" => 0, "failed" => 0, "retry" => 0];
+        // Lab com ERP_MAIL_DELIVERY=sandbox (ADR 0655): tudo vai só para a caixa de teste, com [TESTE] no assunto.
+        $sandboxTo = MailSandbox::current();
         foreach ($items as $send) {
             $claim = $pdo->prepare("UPDATE mail_queue SET status = 'processing', last_attempt_at = NOW(), attempts = attempts + 1 WHERE id = :id AND status IN ('pending','retry')");
             $claim->execute(["id" => $send->id]);
@@ -187,7 +192,9 @@ class Email
                 continue;
             }
             $result["processed"]++;
-            $email = $this->bootstrap($send->subject, $send->body, $send->recipient_email, $send->recipient_name);
+            $email = $sandboxTo !== null
+                ? $this->bootstrap(MailSandbox::subject((string)$send->subject), $send->body, $sandboxTo, (string)$send->recipient_name)
+                : $this->bootstrap($send->subject, $send->body, $send->recipient_email, $send->recipient_name);
             $attachments = json_decode((string)($send->attachments_json ?? ''), true);
             foreach (is_array($attachments) ? $attachments : [] as $path => $name) {
                 if (is_string($path) && is_file($path)) $email->attach($path, is_string($name) ? $name : basename($path));

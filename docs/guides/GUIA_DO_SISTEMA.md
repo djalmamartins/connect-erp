@@ -121,7 +121,10 @@ topo (Ctrl + K) acha qualquer página pelo nome.
 10. **Comunicação:** Comunicação → Comunicado geral. No lab **nenhum e-mail sai**: a tela mostra o modo
     de entrega ("só registro" ou "caixa de teste") e o que teria sido enviado fica em Configurações →
     Fila de avisos. Para receber de verdade numa caixa de teste, ponha no `.env`
-    `ERP_MAIL_DELIVERY=sandbox` e `ERP_MAIL_SANDBOX_TO=<sua caixa de teste>`.
+    `ERP_MAIL_DELIVERY=sandbox`, `ERP_MAIL_SANDBOX_TO=<sua caixa de teste>` e `LAB_MAIL_QUEUE_SEND=1`, recrie
+    os containers (`docker compose up -d --force-recreate app scheduler`) e confira com
+    `docker compose exec -T app php tools/email-diagnostico.php --enviar` (ADR 0655). Nesse modo toda a fila de
+    e-mail, não só os avisos, vai só para a caixa de teste.
 
 Se uma tela mostrar o aviso de dados de exemplo, confira na tabela da seção 5 se ela é 🟡 ou ⚪.
 
