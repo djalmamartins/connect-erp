@@ -634,15 +634,44 @@ final class Panel extends Controller
      */
     private function navBadges(User $user): array
     {
-        if (Connect::databaseDisabled() || !$user->can('proposals.manage')) {
+        if (Connect::databaseDisabled()) {
             return [];
+        }
+        $badges = [];
+        if ($user->can('proposals.manage')) {
+            try {
+                $new = (new \Source\Services\Proposals\ProposalDesk())->newCount();
+                if ($new > 0) {
+                    $badges['CN-011'] = $new;
+                }
+            } catch (\Throwable) {
+            }
+        }
+        $late = $this->myDayOverdue($user);
+        if ($late > 0) {
+            $badges['CN-010'] = $late;
+        }
+        return $badges;
+    }
+
+    /**
+     * Selo do Meu Dia no menu (ADR 0658): quantas tarefas ficaram para trás. Guardado na sessão por 2 minutos para não
+     * refazer as consultas a cada tela; concluir no Meu Dia limpa a conta (MyDayScreens::status).
+     */
+    private function myDayOverdue(User $user): int
+    {
+        $session = new Session();
+        $cached = $session->has('erpMyDayLate') ? (array)$session->erpMyDayLate : [];
+        if (($cached['user'] ?? 0) === (int)$user->id && ($cached['at'] ?? 0) > time() - 120) {
+            return (int)($cached['count'] ?? 0);
         }
         try {
-            $new = (new \Source\Services\Proposals\ProposalDesk())->newCount();
+            $count = (new \Source\Services\Erp\MyDay())->overdue($user)['count'];
         } catch (\Throwable) {
-            return [];
+            return 0;
         }
-        return $new > 0 ? ['CN-011' => $new] : [];
+        $session->set('erpMyDayLate', ['user' => (int)$user->id, 'at' => time(), 'count' => $count]);
+        return $count;
     }
 
     /**

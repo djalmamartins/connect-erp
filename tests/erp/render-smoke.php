@@ -215,9 +215,12 @@ foreach ($catalog['pages'] as $id => $page) {
         $visit = ['plan_id' => 1, 'condominium_id' => 7, 'condominium' => $evil, 'address' => 'Rua <x>', 'template_id' => 1, 'template' => 'Ronda', 'frequency' => 'biweekly', 'frequency_label' => 'Quinzenal',
             'due_on' => '2026-11-25', 'overdue' => false, 'last_completed_at' => null, 'open_inspection_id' => null];
         $myDay = ['date' => '2026-11-25', 'today' => '2026-11-25', 'person' => ['id' => 1, 'name' => 'Ana'],
-            'summary' => ['commitments' => 1, 'commitment_minutes' => 90, 'done' => 0, 'to_schedule' => 1, 'waiting' => 0, 'overdue' => 1, 'week_visits' => 1, 'week_condominiums' => 1],
-            'week' => $week, 'strip' => array_map(static fn (int $d): array => ['date' => "2026-11-{$d}", 'weekday' => 'Dia', 'day' => $d, 'count' => $d === 25 ? 2 : 0, 'today' => $d === 25, 'selected' => $d === 25], range(22, 28)), 'events' => [$event], 'week_events' => [$event], 'day_visits' => [$visit], 'day_deadlines' => [], 'to_schedule' => [$ticket], 'waiting' => [], 'visits' => [$visit],
-            'deadlines' => [['id' => 4, 'title' => 'AVCB <b>', 'date' => '2026-12-20', 'days' => 25, 'label' => 'Vence em 25 dias', 'condominium_id' => 7, 'condominium' => $evil]]];
+            'summary' => ['commitments' => 1, 'commitment_minutes' => 90, 'done' => 0, 'to_schedule' => 1, 'waiting' => 0, 'overdue' => 1, 'overdue_oldest' => '2026-11-24', 'unassigned' => 1, 'week_visits' => 1, 'week_condominiums' => 1],
+            'week' => $week, 'strip' => array_map(static fn (int $d): array => ['date' => "2026-11-{$d}", 'weekday' => 'Dia', 'day' => $d, 'count' => $d === 25 ? 2 : 0, 'today' => $d === 25, 'selected' => $d === 25, 'overdue' => $d === 24 ? 1 : 0, 'carried' => $d === 25 ? 1 : 0], range(22, 28)), 'events' => [$event], 'week_events' => [$event], 'day_visits' => [$visit], 'day_deadlines' => [], 'to_schedule' => [$ticket], 'waiting' => [], 'visits' => [$visit],
+            'deadlines' => [['id' => 4, 'title' => 'AVCB <b>', 'date' => '2026-12-20', 'days' => 25, 'label' => 'Vence em 25 dias', 'condominium_id' => 7, 'condominium' => $evil]],
+            // ADR 0658: o que ficou para trás e os chamados do SAC sem responsável.
+            'overdue' => [['kind' => 'event', 'id' => 11, 'title' => 'Ligar <script>', 'due_on' => '2026-11-24', 'days_late' => 1, 'time' => '15:00', 'condominium_id' => 7, 'condominium' => $evil, 'ticket_id' => null, 'protocol' => null, 'status' => 'scheduled']],
+            'unassigned' => [['protocol' => 'SAC202611250001', 'subject' => 'Sem dono <i>', 'id' => 12] + $ticket]];
         $panelData = ['condominium' => ['id' => 7, 'name' => $evil, 'address' => 'Rua <x>'], 'tickets' => [$ticket], 'urgent' => 1, 'documents' => [], 'pending_from_last_visit' => [],
             'last_visit' => ['id' => 5, 'template' => 'Ronda', 'completed_at' => '2026-11-10 10:00:00', 'issues' => 2]];
         foreach (['dia' => [$panelData, null], 'semana' => [null, $ticket]] as $view => [$visitPanel, $schedule]) {
@@ -231,6 +234,11 @@ foreach ($catalog['pages'] as $id => $page) {
             $assert(preg_match_all('/class="md-week__day[ "]/', $html) === 7 && str_contains($html, 'is-today') && str_contains($html, 'aria-current="date"') && str_contains($html, '<em>Hoje</em>') && substr_count($html, 'md-week__nav') === 2, "CN-010 $view: faixa dos dias com hoje no meio");
             $assert(substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"'), "CN-010 $view: formulários com CSRF");
             $assert(str_contains($html, 'agendar=3') && str_contains($html, 'id="md-person"') && str_contains($html, '/meu-dia/compromissos'), "CN-010 $view: agendar, pessoa e novo compromisso");
+            if ($view === 'dia') {
+                $assert(str_contains($html, 'md-late-box') && str_contains($html, 'Atrasada desde 24/11 (1 dia)') && str_contains($html, '/meu-dia/compromissos/11/situacao'), 'CN-010: quadro Ficou para trás com Concluir');
+                $assert(substr_count($html, 'has-late') === 2 && str_contains($html, 'md-week__dot--late'), 'CN-010: dia atrasado e hoje em vermelho na faixa');
+                $assert(str_contains($html, 'Sem responsável no SAC') && str_contains($html, '/operacional/chamados/12'), 'CN-010: chamados sem responsável');
+            }
             $save('cn-010-' . $view, $html);
         }
         $assert(str_contains($html, 'name="ticket_id" value="3"') && str_contains($html, 'data-erp-modal-auto'), 'CN-010: Agendar abre o formulário com o chamado');

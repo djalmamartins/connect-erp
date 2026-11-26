@@ -15,7 +15,8 @@ namespace Source\Support;
  *  - compromisso novo na agenda do Help Desk;
  *  - ação de cobrança marcada para hoje ou atrasada (CollectionActionReminders);
  *  - prazo da prestação de contas (AccountabilityDeadline);
- *  - item do checklist de chegada vencendo ou vencido (OnboardingAlerts).
+ *  - item do checklist de chegada vencendo ou vencido (OnboardingAlerts);
+ *  - tarefas atrasadas no Meu Dia, uma vez por dia às 7h (MyDayAlerts, ADR 0658).
  *
  * SAI do sininho (o registro continua guardado, só não avisa):
  *  - "Erro detectado no MovesOS": o incidente fica em Studio › Logs do sistema, sem aviso nem e-mail;

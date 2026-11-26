@@ -9,6 +9,7 @@ use MovesOSTests\TestCase;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Erp\MyDay;
+use Source\Services\Erp\MyDayAlerts;
 use Source\Services\Erp\MyDayError;
 
 /** Meu Dia (ADR 0630) no MariaDB de teste: o que entra no dia de cada pessoa, escopo e compromissos. */
@@ -58,7 +59,8 @@ final class MyDayTest extends TestCase
         self::assertSame('2026-11-26', $day['visits'][0]['due_on']);
         self::assertSame('AVCB', $day['deadlines'][0]['title']);
         self::assertSame('Vence em 25 dias', $day['deadlines'][0]['label']);
-        self::assertSame(['commitments' => 1, 'commitment_minutes' => 45, 'done' => 0, 'to_schedule' => 2, 'waiting' => 1, 'overdue' => 1, 'week_visits' => 1, 'week_condominiums' => 1], $day['summary']);
+        self::assertSame(['commitments' => 1, 'commitment_minutes' => 45, 'done' => 0, 'to_schedule' => 2, 'waiting' => 1, 'overdue' => 1,
+            'overdue_oldest' => '2026-11-24', 'unassigned' => 0, 'week_visits' => 1, 'week_condominiums' => 1], $day['summary']);
 
         // Semana de segunda a domingo, com o dia de hoje marcado e a contagem de cada dia.
         self::assertSame('2026-11-23', $day['week'][0]['date']);
@@ -84,6 +86,95 @@ final class MyDayTest extends TestCase
         self::assertSame([$routine], array_column($day['to_schedule'], 'id'));
         self::assertSame($this->condo, $day['events'][1]['condominium_id'], 'o compromisso herda o condomínio do chamado');
         self::assertSame(1, $day['summary']['done']);
+    }
+
+    /** ADR 0658: o que não foi feito no dia fica vermelho lá e é levado para hoje até fechar. */
+    public function testOverdueIsCarriedToTodayUntilClosed(): void
+    {
+        $me = $this->user([], [$this->condo]);
+        $today = new DateTimeImmutable('2026-11-26');
+
+        $task = $this->service->createEvent($me, ['title' => 'Ligar para o síndico', 'date' => '2026-11-25', 'start' => '15:00', 'type' => 'task']);
+        $done = $this->service->createEvent($me, ['title' => 'Já feito', 'date' => '2026-11-25', 'start' => '09:00']);
+        $this->service->setEventStatus($me, $done, 'completed');
+        $this->service->createEvent($me, ['title' => 'Muito antigo', 'date' => '2026-10-01', 'start' => '09:00']);
+        $lateTicket = $this->ticket('Infiltração no 302', 'high', 'open', (int)$me->id, '2026-11-24 18:00:00');
+        $scheduled = $this->ticket('Portão', 'medium', 'open', (int)$me->id, '2026-11-25 18:00:00');
+        $visit = $this->service->createEvent($me, ['title' => 'Ver portão', 'date' => '2026-11-25', 'start' => '10:00', 'ticket_id' => $scheduled]);
+        $this->ticket('Esperando o cliente', 'medium', 'waiting_customer', (int)$me->id, '2026-11-20 18:00:00');
+        $this->pdo->prepare("INSERT INTO condominium_onboarding_items (condominium_id, category, title, status, expires_at, responsible_user_id) VALUES (?, 'seguranca', 'AVCB', 'regular', '2026-11-23', ?)")
+            ->execute([$this->condo, $me->id]);
+
+        $day = $this->service->day($me, $today, $today);
+        self::assertSame([['deadline', '2026-11-23', 3], ['ticket', '2026-11-24', 2], ['event', '2026-11-25', 1], ['event', '2026-11-25', 1]],
+            array_map(static fn(array $i): array => [$i['kind'], $i['due_on'], $i['days_late']], $day['overdue']),
+            'do mais antigo para o mais novo; feito, aguardando cliente e o de mais de 30 dias ficam fora');
+        self::assertSame([$lateTicket, $visit, $task], array_column(array_slice($day['overdue'], 1), 'id'));
+        self::assertSame($scheduled, $day['overdue'][2]['ticket_id'], 'o chamado agendado aparece uma vez, pelo compromisso');
+        self::assertSame('10:00', $day['overdue'][2]['time']);
+        self::assertSame(4, $day['summary']['overdue']);
+        self::assertSame('2026-11-23', $day['summary']['overdue_oldest']);
+        self::assertSame(4, $day['strip'][3]['carried'], 'hoje mostra quantos vieram para ele');
+        self::assertSame(2, $day['strip'][2]['overdue'], 'dia 25 fica vermelho');
+        self::assertSame(1, $day['strip'][1]['overdue'], 'dia 24 fica vermelho');
+        self::assertSame(0, $day['strip'][4]['overdue']);
+
+        // No dia 25 o compromisso aparece marcado como atrasado.
+        $yesterday = $this->service->day($me, new DateTimeImmutable('2026-11-25'), $today);
+        $flags = array_column($yesterday['events'], 'overdue', 'title');
+        self::assertSame(['Já feito' => false, 'Ver portão' => true, 'Ligar para o síndico' => true], $flags);
+
+        // Fechar volta ao normal: concluir a tarefa, resolver o chamado agendado e o atrasado.
+        $this->service->setEventStatus($me, $task, 'completed');
+        $this->pdo->prepare("UPDATE studio_support_tickets SET status = 'resolved' WHERE id IN (?, ?)")->execute([$scheduled, $lateTicket]);
+        $left = $this->service->overdue($me, $today);
+        self::assertSame(['count' => 1, 'oldest' => '2026-11-23'], ['count' => $left['count'], 'oldest' => $left['oldest']]);
+        self::assertSame('deadline', $left['items'][0]['kind']);
+        $flags = array_column($this->service->day($me, new DateTimeImmutable('2026-11-25'), $today)['events'], 'overdue', 'title');
+        self::assertFalse($flags['Ver portão'], 'chamado resolvido tira o compromisso dele do atraso');
+    }
+
+    /** ADR 0658: chamado do SAC sem responsável aparece para quem atende, no escopo de condomínios. */
+    public function testUnassignedSacTicketsShowForSupportAgents(): void
+    {
+        $agent = $this->user([MyDay::SUPPORT], [$this->condo]);
+        $plain = $this->user([], [$this->condo]);
+        $mine = $this->ticket('Vazamento na garagem', 'urgent', 'open', null, '2026-11-25 18:00:00');
+        $this->ticket('Já tem dono', 'urgent', 'open', (int)$plain->id, '2026-11-25 18:00:00');
+        $this->ticket('Resolvido', 'urgent', 'resolved', null, '2026-11-25 18:00:00');
+        $this->pdo->prepare("INSERT INTO studio_support_tickets (protocol, subject, message, area, origin, condominium_id, priority, status, due_at)
+            VALUES ('SAC202611260001', 'De outro condomínio', 'x', 'general', 'erp', ?, 'urgent', 'open', '2026-11-25 18:00:00')")->execute([$this->otherCondo]);
+
+        $today = new DateTimeImmutable('2026-11-26');
+        $day = $this->service->day($agent, $today, $today);
+        self::assertSame([$mine], array_column($day['unassigned'], 'id'));
+        self::assertTrue($day['unassigned'][0]['overdue']);
+        self::assertSame(1, $day['summary']['unassigned']);
+        self::assertSame(0, $day['summary']['overdue'], 'chamado sem dono não conta como atraso da pessoa');
+        self::assertSame([], $this->service->day($plain, $today, $today)['unassigned'], 'quem não atende não vê a fila');
+    }
+
+    /** ADR 0658: alerta no sininho uma vez por dia para quem tem atrasadas. */
+    public function testAlertsNotifyOncePerDay(): void
+    {
+        $me = $this->user(['erp.access'], [$this->condo]);
+        $calm = $this->user(['erp.access'], [$this->condo]);
+        $this->service->createEvent($me, ['title' => 'Mandar ata', 'date' => '2026-11-25', 'start' => '09:00']);
+        $this->service->createEvent($calm, ['title' => 'Hoje', 'date' => '2026-11-26', 'start' => '09:00']);
+        $alerts = new MyDayAlerts($this->pdo, $this->service);
+
+        $first = $alerts->run(new DateTimeImmutable('2026-11-26'));
+        self::assertSame(1, $first['notified']);
+        $second = $alerts->run(new DateTimeImmutable('2026-11-26'));
+        self::assertSame(0, $second['notified']);
+        self::assertSame(1, $second['already']);
+        $rows = $this->pdo->prepare('SELECT users_id, body, view FROM notifications WHERE title = ?');
+        $rows->execute([MyDayAlerts::TITLE]);
+        $all = $rows->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertCount(1, $all);
+        self::assertSame((int)$me->id, (int)$all[0]['users_id']);
+        self::assertSame('1 tarefa ficou para trás (a mais antiga é de 25/11). Elas estão em vermelho no Meu Dia de hoje até serem concluídas.', $all[0]['body']);
+        self::assertSame(\Source\Support\StaffNotificationPolicy::silenced(MyDayAlerts::TITLE), false);
     }
 
     public function testOnlyTeamViewersSeeOrScheduleForOthers(): void

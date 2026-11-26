@@ -7449,7 +7449,7 @@ paths:
         - { name: date, in: query, schema: { type: string, format: date } }
         - { name: person_id, in: query, schema: { type: integer } }
       responses:
-        '200': { description: O dia (summary, week, events, to_schedule, waiting, visits, deadlines) }
+        '200': { description: 'O dia (summary, week, strip, events, to_schedule, waiting, visits, deadlines, overdue, unassigned). ADR 0658: overdue é a lista do que ficou para trás (mesmo formato de MyDayOverdueItem), levada para hoje até fechar; cada evento tem overdue (bool); cada dia de week/strip tem overdue (int) e carried (int, só hoje); summary ganha overdue_oldest e unassigned; unassigned são os chamados do SAC sem responsável, só para quem tem support.manage.' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -7522,6 +7522,51 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /my-day/overdue:
+    get:
+      operationId: getMyDayOverdue
+      tags: [MyDay]
+      summary: O que ficou para trás (ADR 0658) — compromissos de dias anteriores não concluídos, chamados com prazo vencido, vistorias atrasadas e itens do checklist vencidos
+      description: Mesma regra do campo overdue de GET /my-day. O item sai da lista quando é concluído ou cancelado, ou quando o chamado ligado é resolvido. Compromissos olham até 30 dias para trás. person_id de outra pessoa exige erp.myday.team.
+      security: [{ session: [] }]
+      parameters:
+        - { name: person_id, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Contagem, dia mais antigo e itens, do mais antigo para o mais novo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [count, oldest, items]
+                    properties:
+                      count: { type: integer }
+                      oldest: { type: string, format: date, nullable: true }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          title: MyDayOverdueItem
+                          required: [kind, id, title, due_on, days_late, status]
+                          properties:
+                            kind: { type: string, enum: [event, ticket, visit, deadline], description: 'event = compromisso/tarefa (id do compromisso; conclua em POST /my-day/events/{id}/status); ticket = chamado do SAC (id do chamado); visit = plano de vistoria (id do plano); deadline = item do checklist de chegada' }
+                            id: { type: integer }
+                            title: { type: string }
+                            due_on: { type: string, format: date, description: Dia original }
+                            days_late: { type: integer, minimum: 1 }
+                            time: { type: string, nullable: true, description: 'HH:MM do compromisso (só kind=event)' }
+                            condominium_id: { type: integer, nullable: true }
+                            condominium: { type: string, nullable: true }
+                            ticket_id: { type: integer, nullable: true }
+                            protocol: { type: string, nullable: true }
+                            status: { type: string }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /my-day/team:
     get:
