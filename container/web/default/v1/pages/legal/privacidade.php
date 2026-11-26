@@ -60,7 +60,7 @@
 <p>Cookies são pequenos arquivos que o site grava no seu navegador.</p>
 <ul>
     <li><strong>Necessários</strong> (sempre ligados): mantêm a sua sessão, protegem os formulários, lembram a sua escolha sobre cookies e fazem a contagem de visitas do próprio site (um cookie de um dia que só soma visitantes, sem identificar você e sem enviar nada a terceiros).</li>
-    <li><strong>Opcionais</strong> (desligados até você aceitar): o mapa do Google na página de contato<?php if (\Source\Services\Privacy\LegalDocuments::analyticsId() !== ''): ?> e a estatística de visitas (Google Analytics, com IP anonimizado)<?php endif; ?>.</li>
+    <li><strong>Opcionais</strong> (desligados até você aceitar): o mapa do Google na página de contato<?php if (\Source\Services\Privacy\LegalDocuments::analyticsId() !== ''): ?> e a estatística de visitas (Google Analytics, com IP anonimizado)<?php endif; ?><?php if (isset(\Source\Services\Privacy\LegalDocuments::cookieCategories()['ads'])): ?> e os cookies de anúncios e medição de campanhas (<?= htmlspecialchars(substr(\Source\Services\Privacy\LegalDocuments::cookieCategories()['ads'], strlen('Anúncios e medição de campanhas ('), -1)) ?>), que ajudam a saber se uma campanha trouxe visitas<?php endif; ?>.</li>
 </ul>
 <p>Você pode mudar a sua escolha a qualquer momento pelo link <a href="#cookies" data-cookie-open>Cookies</a>, no rodapé.</p>
 

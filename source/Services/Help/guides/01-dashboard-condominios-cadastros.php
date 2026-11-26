@@ -60,6 +60,7 @@ return [
             'A lista mostra 50 unidades por página; em **Itens por página** dá para ver 100, 200 ou 500 de uma vez.',
             'Na **configuração em massa**, só muda o que você escolher; o que ficar em **Manter como está** continua como está em cada unidade. Ou todas as unidades marcadas mudam, ou nenhuma, e cada unidade alterada fica com a mudança no histórico.',
             'Unidade **isenta de rateio** fica fora das faturas geradas para o condomínio todo; o valor é dividido entre as outras.',
+            '**Percentual definido no rateio (%)**: a parte da unidade quando a fatura usa o cálculo **Percentual definido** (por exemplo, loja 8% e sala 4,25%). Os percentuais das unidades que participam precisam somar 100%. As formas de rateio estão no artigo Faturas.',
             'Na troca de **inquilino ou proprietário**, o antigo termina na data de saída e o novo começa na data de entrada, tudo junto ou nada. As faturas abertas passam para a pessoa nova só quando ela é quem paga a unidade, conforme a opção escolhida; conta com boleto já gerado não muda. O antigo continua como pagador das contas que ficaram com ele.',
             'O **termo de entrada/saída** usa o texto do condomínio; sem ele, o texto geral da Connect; sem nenhum, o texto padrão. As palavras-chave são trocadas pelos dados da unidade e da pessoa só na hora de gerar o termo, e o texto nunca vira código na página.',
             'O **código CIB** tem 8 caracteres (7 e o dígito) e não pode repetir em outra unidade. O sistema confere o formato; o dígito não é conferido porque a regra dele não é pública.',
@@ -128,6 +129,17 @@ return [
             'Não dá para anonimizar quem ainda mora (cadastro ativo sem data de saída no passado) nem quem tem conta em aberto como pagador.',
             'Não tem volta: os dados só voltam restaurando o backup.',
             'Consultar exige a permissão de dados pessoais; anonimizar exige também a de gerenciar usuários.',
+        ],
+    ],
+
+    'CN-011' => [
+        'faz' => 'Mostra os pedidos de proposta feitos no site, avisa quando chega um novo e guarda o andamento de cada um até virar contrato.',
+        'por_tras' => [
+            'São os mesmos pedidos do Studio > Gestão > Propostas: mudar a situação ou o responsável aqui muda lá também.',
+            'Cada pedido novo manda um aviso no sino para quem pode abrir esta tela. Enquanto houver pedidos na situação Nova, o menu mostra o número deles e a tela mostra um aviso no alto.',
+            'Na primeira vez que o pedido fica Contatada, a data do primeiro contato é gravada. Toda mudança entra no histórico do sistema.',
+            'O PDF da proposta é gerado e enviado pelo Studio. Aqui aparecem as respostas já geradas.',
+            'Os pedidos não são de um condomínio cadastrado, então a escolha do condomínio na barra superior não muda esta lista.',
         ],
     ],
 

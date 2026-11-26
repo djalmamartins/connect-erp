@@ -19,9 +19,9 @@ use Source\Support\Access;
  *  GET  /api/v1/delinquency?condominium_id=&as_of=AAAA-MM-DD   contas vencidas por unidade (erp.agreements.view)
  *  GET  /api/v1/agreements?condominium_id=&status=&page=       lista
  *  GET  /api/v1/agreements/{id}                                acordo com contas originais e parcelas
- *  POST /api/v1/agreements {unit_id, entry_ids[], installments, first_due_on, chart_account_id, fees_cents, discount_cents, notes}
+ *  POST /api/v1/agreements {unit_id, entry_ids[], installments, first_due_on, chart_account_id, fees_cents, discount_cents, notes, agreed_on?}  conta de mês fechado: compensação no mês do acordo (ADR 0642)
  *  POST /api/v1/agreements/{id}/cancel {reason}
- *  GET  /api/v1/agreements/suggestion?unit_id=&entry_ids=1,2&as_of=   encargos sugeridos (ADR 0040)
+ *  GET  /api/v1/agreements/suggestion?unit_id=&entry_ids=1,2&as_of=&without_correction=1   encargos sugeridos (ADR 0040; sem IPCA, ADR 0642)
  *  POST /api/v1/agreements/{id}/breach {reason}               grava a quebra (só se a regra indicar)
  * Gravar exige erp.agreements.manage. CSRF e sessão no middleware ApiAuthenticated. Fora do escopo = 404.
  */
@@ -73,7 +73,7 @@ final class Agreements
         if ($user !== null) {
             $ids = is_string($_GET['entry_ids'] ?? null) ? explode(',', $_GET['entry_ids']) : (is_array($_GET['entry_ids'] ?? null) ? $_GET['entry_ids'] : []);
             $this->run(200, fn () => (new Service())->suggestion($user, (int)$this->int($_GET['unit_id'] ?? null), $ids,
-                is_string($_GET['as_of'] ?? null) ? $this->date($_GET['as_of']) : null));
+                is_string($_GET['as_of'] ?? null) ? $this->date($_GET['as_of']) : null, in_array($_GET['without_correction'] ?? null, ['1', 'true'], true)));
         }
     }
 

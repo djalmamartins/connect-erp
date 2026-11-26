@@ -10,13 +10,12 @@ use Source\Services\Talk\TalkHelpdesk;
 use Source\Support\RichText;
 
 /**
- * Acompanhamento público do chamado pelo link (ADR 0636): protocolo + código de acesso do chamado, sem login.
+ * Acompanhamento público do chamado pelo link (ADR 0649): protocolo + código de acesso do chamado, sem login.
  * É o link que a Jack manda pelo WhatsApp. Mostra só o mínimo (LGPD): assunto, situação, área, datas e as
  * respostas públicas. A descrição da abertura (com telefone, condomínio e a conversa) e as notas internas não saem.
  */
 final class TicketTracking
 {
-    public const PROTOCOL = '/^(CH\d{6}[A-F0-9]{4}|\d{11})$/'; // do ERP ou do Talk (ADR 0637)
     public const CODE = '/^[a-f0-9]{64}$/';
 
     private PDO $pdo;
@@ -34,7 +33,7 @@ final class TicketTracking
     {
         $protocol = strtoupper(trim($protocol));
         $code = strtolower(trim($code));
-        if (!preg_match(self::PROTOCOL, $protocol) || !preg_match(self::CODE, $code)) {
+        if (!TicketProtocol::isValid($protocol) || !preg_match(self::CODE, $code)) {
             return null;
         }
         $stmt = $this->pdo->prepare('SELECT id, protocol, subject, status, area, origin, created_by, access_token, created_at, updated_at

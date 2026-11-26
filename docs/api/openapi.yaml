@@ -61,7 +61,7 @@ components:
       description: Chamado do Help Desk (ADR 0034)
       properties:
         id: { type: integer }
-        protocol: { type: string, example: CH261109A1B2 }
+        protocol: { type: string, description: "SAC ou OCO + AAAAMMDD + sequência do dia (ADR 0637); antigos CH/OC seguem valendo", example: SAC202611090001 }
         subject: { type: string }
         message: { type: string, description: Texto puro (sem marcação), também para o app e o WhatsApp }
         message_html: { type: string, description: 'HTML limpo do Moves Editor (ADR 0610); texto antigo vem em parágrafos escapados' }
@@ -97,13 +97,13 @@ components:
       required: [id, protocol, status, area]
       properties:
         id: { type: integer }
-        protocol: { type: string, description: 'Protocolo do Help Desk (CH + aammdd + 4 hexadecimais), o que o cliente vê', examples: [CH261115A1B2] }
+        protocol: { type: string, description: 'Protocolo do SAC, o que o cliente vê: SAC + AAAAMMDD + sequência do dia (ADR 0637). Quando o talk_protocol já está nesse formato e livre, o chamado fica com o mesmo número da conversa', examples: [SAC202611150008] }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
         area: { type: string, enum: [general, technical, financial] }
         talk_protocol: { type: [string, 'null'], description: Protocolo da conversa no Talk (external_ref) }
         condominium_id: { type: [integer, 'null'] }
         unit_id: { type: [integer, 'null'] }
-        tracking_url: { type: [string, 'null'], format: uri, description: 'Página pública onde quem escreveu acompanha o chamado (/suporte/chamado/{protocolo}?c={código}), sem login; o Talk manda no WhatsApp (ADR 0636)' }
+        tracking_url: { type: [string, 'null'], format: uri, description: 'Página pública onde quem escreveu acompanha o chamado (/suporte/chamado/{protocolo}?c={código}), sem login; o Talk manda no WhatsApp (ADR 0649)' }
     MonthClosingRecord:
       type: object
       description: Fechamento gravado (foto dos totais no momento do fechamento, ADR 0031)
@@ -180,6 +180,11 @@ components:
         due_on: { type: string, format: date }
         status: { type: string, enum: [draft, issued, cancelled] }
         status_label: { type: string }
+        method: { type: [string, "null"], enum: [fixed, equal, fraction, percent, parking, custom, null] }
+        method_label: { type: [string, "null"] }
+        participants: { type: [string, "null"], enum: [all, blocks, units, null] }
+        participant_blocks: { type: [string, "null"] }
+        requested_cents: { type: [integer, "null"], description: 'Valor informado (por unidade no fixed, total nos demais)' }
         units_count: { type: integer }
         amount_cents: { type: integer }
         notes: { type: [string, "null"] }
@@ -446,21 +451,30 @@ components:
         can_block: { type: boolean }
     ResidentCertificate:
       type: object
-      description: Certidão de débitos da unidade (etapa 5 de 15/11)
+      description: Certidão negativa de débitos da unidade (etapa 5 de 15/11; ADR 0638 — no app só as "nada consta")
       properties:
         id: { type: integer }
         as_of: { type: string, format: date }
-        result: { type: string, enum: [clear, debts] }
+        result: { type: string, enum: [clear] }
         result_label: { type: string, description: 'Nada consta ou Com débitos' }
         total_cents: { type: integer, description: 'Vencidas com encargos; 0 em nada consta' }
         verification_code: { type: string, example: ABCD-EFGH-JKMN-PQRS }
         issued_at: { type: string }
+    ResidentCertificateRequest:
+      type: object
+      description: Pedido de CND à administradora, um chamado do Help Desk (ADR 0638)
+      properties:
+        id: { type: integer, description: 'Id do chamado' }
+        protocol: { type: string, example: CH261122ABCD }
+        status: { type: string }
+        created_at: { type: string }
+        created: { type: boolean, description: 'false quando devolve o pedido já aberto' }
     ResidentTicket:
       type: object
       description: Chamado do morador (ADR 0305)
       properties:
         id: { type: integer }
-        number: { type: string, description: Protocolo do chamado, example: CH261114A1B2 }
+        number: { type: string, description: "Protocolo: SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0637)", example: OCO202611140003 }
         subject: { type: string }
         kind: { type: string, enum: [chamado, ocorrencia], description: 'chamado = pedido ou dúvida à administração; ocorrência = problema no condomínio' }
         status: { type: string, enum: [open, in_progress, waiting_customer, resolved, closed] }
@@ -1217,13 +1231,17 @@ paths:
       operationId: prepareInvoice
       summary: Prepara a fatura (rascunho) com um item por unidade ativa (erp.invoices.manage)
       description: >-
-        method fixed = amount_cents por unidade; fraction = amount_cents total rateado pela fração
-        ideal (sobra de centavos para as maiores frações). Sem amount_cents, usa o valor padrão do
-        tipo. Uma fatura ativa por condomínio, tipo e competência.
+        Formas de rateio (ADR 0640): fixed = amount_cents por unidade; equal = total ÷ unidades;
+        fraction = pela fração ideal; percent = pelo percentual definido da unidade (precisa somar 100);
+        parking = pelas vagas de garagem ativas (unidade sem vaga fica fora); custom = unit_amounts
+        (valor de cada unidade) ou amount_cents + unit_percents (somando 100). Sobra de centavos pelo
+        maior resto. participants all = todas menos as isentas de rateio; blocks = só os blocos de
+        blocks; units = só unit_ids (isenta entra). Sem amount_cents, usa o valor padrão do tipo.
+        Uma fatura ativa por condomínio, tipo e competência.
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [condominium_id, invoice_type_id, competence, due_on], properties: { condominium_id: { type: integer }, invoice_type_id: { type: integer }, competence: { type: string }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, fraction], default: fixed }, amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string, example: '1.250,00' }] }, notes: { type: string, maxLength: 255 } } } } }
+        content: { application/json: { schema: { type: object, required: [condominium_id, invoice_type_id, competence, due_on], properties: { condominium_id: { type: integer }, invoice_type_id: { type: integer }, competence: { type: string }, due_on: { type: string, format: date }, method: { type: string, enum: [fixed, equal, fraction, percent, parking, custom], default: fixed }, participants: { type: string, enum: [all, blocks, units], default: all }, blocks: { oneOf: [{ type: string, example: 'A, Torre B' }, { type: array, items: { type: string }, maxItems: 30 }] }, unit_ids: { type: array, items: { type: integer } }, unit_amounts: { type: object, additionalProperties: { oneOf: [{ type: integer }, { type: string, example: '120,00' }] }, description: 'custom: valor por unidade (chave = id da unidade)' }, unit_percents: { type: object, additionalProperties: { oneOf: [{ type: number }, { type: string, example: '12,5' }] }, description: 'custom: percentual por unidade (chave = id da unidade)' }, amount_cents: { oneOf: [{ type: integer, minimum: 1 }, { type: string, example: '1.250,00' }] }, notes: { type: string, maxLength: 255 } } } } }
       responses:
         '201': { description: Rascunho criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/Invoice' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -5391,7 +5409,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, installments, first_due_on, chart_account_id], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer } }, installments: { type: integer, minimum: 1, maximum: 60 }, first_due_on: { type: string, format: date }, chart_account_id: { type: integer }, fees_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, discount_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, notes: { type: string, maxLength: 255 } } } } }
+        content: { application/json: { schema: { type: object, required: [unit_id, entry_ids, installments, first_due_on, chart_account_id], properties: { unit_id: { type: integer }, entry_ids: { type: array, items: { type: integer } }, installments: { type: integer, minimum: 1, maximum: 60 }, first_due_on: { type: string, format: date }, chart_account_id: { type: integer }, fees_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, discount_cents: { oneOf: [{ type: integer, minimum: 0 }, { type: string }] }, notes: { type: string, maxLength: 255 }, agreed_on: { type: string, format: date, description: 'Data do acordo (padrão hoje; não futura; mês aberto). Conta de mês fechado é quitada por compensação nesta data e a compensação (conta 2.92) entra neste mês (ADR 0642)' } } } } }
       responses:
         '201': { description: 'Acordo com originals[] e parcels[]' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -5440,6 +5458,7 @@ paths:
         - { name: unit_id, in: query, required: true, schema: { type: integer } }
         - { name: entry_ids, in: query, required: true, schema: { type: string, example: '12,13' } }
         - { name: as_of, in: query, schema: { type: string, format: date } }
+        - { name: without_correction, in: query, schema: { type: string, enum: ["1"] }, description: "Sem a correção pelo índice (só multa e juros), ADR 0642" }
       responses:
         '200': { description: '{ data: { rule, entries[{entry_id, days_late, correction_cents, fine_cents, interest_cents, charges_cents}], original_cents, correction_cents, fine_cents, interest_cents, fees_cents, total_cents, missing_index[] } }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -5547,7 +5566,8 @@ paths:
       operationId: issueUnitDocument
       summary: Emite certidão de débitos, declaração de inadimplência, quitação, carta de anuência ou recibo (erp.unit_documents.manage)
       description: >-
-        debt_certificate sempre emite (result clear = nada consta). delinquency_declaration exige conta
+        debt_certificate só emite sem conta vencida em aberto na data de referência e hoje (ADR 0638);
+        com débito, 409 debt_open e nada é gerado. delinquency_declaration exige conta
         vencida em aberto. quittance exige until_competence e todas as contas até ela pagas.
         consent_letter exige não haver conta vencida e uma finalidade (purpose). receipt (AP-040, ADR 0057)
         exige entry_ids de contas a receber pagas da unidade, sem recibo válido. O conteúdo fica
@@ -7504,6 +7524,64 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /proposals:
+    get:
+      operationId: listProposals
+      tags: [Proposals]
+      summary: Propostas pedidas pelo site (CN-011, ADR 0644), mais recentes primeiro
+      description: As mesmas do Studio > Gestão > Propostas. Exige proposals.manage. meta.new traz quantas estão com a situação new (alerta do menu).
+      security: [{ session: [] }]
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 120 }, description: Nome, e-mail, condomínio ou protocolo }
+        - { name: status, in: query, schema: { type: string, enum: [new, contacted, qualified, proposal_sent, won, lost, archived] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Lista (data) e meta (total, page, pages, per_page, new) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /proposals/{id}:
+    get:
+      operationId: getProposal
+      tags: [Proposals]
+      summary: Uma proposta do site, com as respostas em PDF geradas no Studio
+      security: [{ session: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Proposta (protocol, name, email, whatsapp, condominium, units, profile, message, status, assigned_to, marketing_consent, contacted_at, created_at, responses) }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /proposals/{id}/status:
+    post:
+      operationId: setProposalStatus
+      tags: [Proposals]
+      summary: Muda a situação e o responsável (contacted pela primeira vez grava contacted_at; entra na auditoria)
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [new, contacted, qualified, proposal_sent, won, lost, archived] }
+                assigned_to: { type: integer, nullable: true, description: Alguém com proposals.manage, ou null }
+      responses:
+        '200': { description: Proposta atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /inspection-templates:
     get:
       operationId: listInspectionTemplates
@@ -7721,7 +7799,7 @@ paths:
       description: >-
         Abre o chamado com origem "talk" pelo mesmo serviço dos outros chamados (ADR 0034) e ele cai na fila do Help
         Desk. Repetir com o mesmo talk_protocol devolve 200 com o mesmo chamado, sem duplicar. O talk_protocol no
-        formato do Talk (aammdd + 5 dígitos, com ou sem SAC na frente) vira o protocolo do chamado (ADR 0637). Com resident_id, o
+        formato SAC + AAAAMMDD + sequência, se estiver livre, vira o protocolo do chamado (ADR 0637). Com resident_id, o
         ERP confere que o morador está no escopo, no condomínio e na unidade informados e que o telefone é dele, e usa o
         nome do cadastro. Sem resident_id, abre como contato não identificado (nome e telefone).
       security: [{ talkIntegration: [] }]
@@ -8432,7 +8510,7 @@ paths:
       operationId: getResidentCertificates
       tags: [Morador]
       summary: 'CND: certidões de débitos da unidade'
-      description: 'Revisão de 15/11, etapa 5 (ADR 0302). Certidões válidas da unidade nos últimos 12 meses, emitidas no app ou no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
+      description: 'Revisão de 15/11, etapa 5 (ADR 0302, 0638). Certidões negativas ("nada consta") válidas da unidade nos últimos 12 meses, emitidas pela administradora no ERP (AP-123), da mais nova para a mais antiga. Segue a função boletos do portal.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
@@ -8443,13 +8521,27 @@ paths:
     post:
       operationId: issueResidentCertificate
       tags: [Morador]
-      summary: 'Emitir a certidão de débitos de hoje'
-      description: 'Mesma regra e mesmo código de verificação da Certidão de Débitos do ERP (ADR 0044), com data de referência de hoje. Sem corpo. Auditada.'
+      summary: 'Pedir a certidão negativa de débitos à administradora'
+      description: 'ADR 0638: o morador não emite a certidão. Sem corpo. Abre um chamado do Help Desk (categoria "Pedido de CND", origem residents) para a unidade, ou devolve o pedido já aberto (created = false). A equipe emite no ERP; ao emitir, o chamado é respondido e resolvido e a certidão aparece em GET /resident/certificates. Com conta vencida em aberto hoje, recusa com 409 debt_open e nada é gerado. Recusa auditada.'
       security: [{ session: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
       responses:
-        '201': { description: Emitida, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentCertificate' } } } } } }
+        '202': { description: Pedido aberto (ou o aberto), content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ResidentCertificateRequest' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+        '409': { description: 'debt_open: a unidade tem conta vencida em aberto; a mensagem informa quantas e o valor (overdue_count, overdue_cents)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/certificates/status:
+    get:
+      operationId: getResidentCertificateStatus
+      tags: [Morador]
+      summary: 'Situação da CND: débito que impede o pedido e o pedido aberto'
+      description: 'ADR 0638. blocked = há conta vencida em aberto hoje (o app mostra só o débito, sem botão de pedido). request = o pedido aberto da unidade, se houver.'
+      security: [{ session: [] }]
+      parameters:
+        - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade); padrão = o da sessão ou o primeiro', schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { blocked: { type: boolean }, message: { type: [string, 'null'] }, overdue_count: { type: integer }, overdue_cents: { type: integer }, request: { oneOf: [{ $ref: '#/components/schemas/ResidentCertificateRequest' }, { type: 'null' }] } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled (boletos: só proprietário, inquilino e responsável financeiro)', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
   /resident/certificates/{id}/pdf:
@@ -9102,7 +9194,7 @@ paths:
       operationId: getResidentNotifications
       tags: [Morador]
       summary: 'Avisos do sininho do morador'
-      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. O app guarda quando o morador viu por último.'
+      description: 'Ajustes de 14/11 do ADR 0302. Conta vencida, encomenda esperando, visita de hoje, comunicado dos últimos 30 dias, assembleia convocada ou aberta e reserva dos próximos 7 dias, só das funções ligadas. Desde a ADR 0642, também o andamento dos chamados que o morador pediu no condomínio (kind ticket, path /ocorrencias/{id}). Nota interna nunca aparece. O app guarda quando o morador viu por último.'
       security: [{ session: [] }, { residentApp: [] }]
       parameters:
         - { name: resident_id, in: query, required: false, description: 'Vínculo (quem tem mais de uma unidade)', schema: { type: integer } }
@@ -9114,6 +9206,37 @@ paths:
               schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { kind: { type: string }, title: { type: string }, detail: { type: string }, at: { type: string }, path: { type: string }, tone: { type: string } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { description: 'not_resident ou feature_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/ResidentError' } } } }
+  /resident/push-token:
+    post:
+      operationId: registerResidentPushToken
+      tags: [Morador]
+      summary: 'Guarda o celular do morador para o push dos chamados'
+      description: 'ADR 0642. Token do Expo (ExponentPushToken[...]). O mesmo aparelho em outra conta passa para a conta nova; até 10 aparelhos por conta.'
+      security: [{ residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string, maxLength: 200 }, platform: { type: string, enum: [ios, android] } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { registered: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { description: 'Token inválido' }
+  /resident/push-token/forget:
+    post:
+      operationId: forgetResidentPushToken
+      tags: [Morador]
+      summary: 'Celular deixa de receber o push (ao sair do app)'
+      description: 'ADR 0642.'
+      security: [{ residentApp: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string, maxLength: 200 } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { registered: { type: boolean } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
   /resident/search:
     get:
       operationId: searchResident

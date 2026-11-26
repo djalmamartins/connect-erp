@@ -202,7 +202,7 @@ foreach ($catalog['pages'] as $id => $page) {
         continue;
     }
     if ($id === 'CN-010') {
-        // Meu Dia (ADR 0630): semana em círculos, agenda, Para agendar, painel da visita, escape e CSRF.
+        // Meu Dia (ADR 0630): faixa dos dias com o dia no meio, agenda, Para agendar, painel da visita, escape e CSRF.
         $evil = '<b>Residencial</b>';
         $week = [];
         foreach (range(23, 29) as $i => $d) {
@@ -216,7 +216,7 @@ foreach ($catalog['pages'] as $id => $page) {
             'due_on' => '2026-11-25', 'overdue' => false, 'last_completed_at' => null, 'open_inspection_id' => null];
         $myDay = ['date' => '2026-11-25', 'today' => '2026-11-25', 'person' => ['id' => 1, 'name' => 'Ana'],
             'summary' => ['commitments' => 1, 'commitment_minutes' => 90, 'done' => 0, 'to_schedule' => 1, 'waiting' => 0, 'overdue' => 1, 'week_visits' => 1, 'week_condominiums' => 1],
-            'week' => $week, 'events' => [$event], 'week_events' => [$event], 'day_visits' => [$visit], 'day_deadlines' => [], 'to_schedule' => [$ticket], 'waiting' => [], 'visits' => [$visit],
+            'week' => $week, 'strip' => array_map(static fn (int $d): array => ['date' => "2026-11-{$d}", 'weekday' => 'Dia', 'day' => $d, 'count' => $d === 25 ? 2 : 0, 'today' => $d === 25, 'selected' => $d === 25], range(22, 28)), 'events' => [$event], 'week_events' => [$event], 'day_visits' => [$visit], 'day_deadlines' => [], 'to_schedule' => [$ticket], 'waiting' => [], 'visits' => [$visit],
             'deadlines' => [['id' => 4, 'title' => 'AVCB <b>', 'date' => '2026-12-20', 'days' => 25, 'label' => 'Vence em 25 dias', 'condominium_id' => 7, 'condominium' => $evil]]];
         $panelData = ['condominium' => ['id' => 7, 'name' => $evil, 'address' => 'Rua <x>'], 'tickets' => [$ticket], 'urgent' => 1, 'documents' => [], 'pending_from_last_visit' => [],
             'last_visit' => ['id' => 5, 'template' => 'Ronda', 'completed_at' => '2026-11-10 10:00:00', 'issues' => 2]];
@@ -228,7 +228,7 @@ foreach ($catalog['pages'] as $id => $page) {
             ], 'Meu Dia'));
             $assert(str_contains($html, '<aside class="erp-sidebar"') && substr_count($html, '<main') === 1 && str_contains($html, 'my-day.css'), "CN-010 $view: moldura e assets");
             $assert(!str_contains($html, '<b>Residencial') && !str_contains($html, '<script>') && !str_contains($html, '<i>') && !str_contains($html, 'Ok <x>') && !str_contains($html, 'Rua <x>'), "CN-010 $view: escape");
-            $assert(substr_count($html, 'md-week__day') === 7 && str_contains($html, 'is-today') && str_contains($html, 'aria-current="date"'), "CN-010 $view: semana em círculos com hoje marcado");
+            $assert(preg_match_all('/class="md-week__day[ "]/', $html) === 7 && str_contains($html, 'is-today') && str_contains($html, 'aria-current="date"') && str_contains($html, '<em>Hoje</em>') && substr_count($html, 'md-week__nav') === 2, "CN-010 $view: faixa dos dias com hoje no meio");
             $assert(substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"'), "CN-010 $view: formulários com CSRF");
             $assert(str_contains($html, 'agendar=3') && str_contains($html, 'id="md-person"') && str_contains($html, '/meu-dia/compromissos'), "CN-010 $view: agendar, pessoa e novo compromisso");
             $save('cn-010-' . $view, $html);
@@ -318,6 +318,30 @@ foreach ($catalog['pages'] as $id => $page) {
             && substr_count($html, "name='csrf'") >= substr_count($html, '<form method="post"') && !str_contains($html, 'Honorários <b>'), 'CN-008: contrato, pedidos e CSRF');
         $html = $render('pages/condominiums/management-fees', $layoutData->invoke($panel, $user, 'CN-008', $feesData(['fees' => null])));
         $assert(str_contains($html, 'Honorários indisponíveis'), 'CN-008: sem banco');
+        continue;
+    }
+    if ($id === 'CN-011') {
+        // Propostas do site (ADR 0644): lista com alerta de novas, filtros, escape e o detalhe com CSRF.
+        $row = ['id' => 7, 'protocol' => 'PROP-261122-ABC123', 'name' => '<b>Ana</b>', 'email' => 'ana@example.test', 'whatsapp' => '(11) 99999-0000', 'condominium' => 'Residencial <i>Teste</i>',
+            'units' => 40, 'profile' => 'sindico', 'profile_label' => 'Síndico', 'message' => "Quero <script>x</script>\nproposta", 'status' => 'new', 'status_label' => 'Nova', 'assigned_to' => null,
+            'source_url' => null, 'marketing_consent' => false, 'contacted_at' => null, 'created_at' => '2026-11-22 10:00:00'];
+        $listData = static fn (array $over = []): array => $over + ['proposalSearch' => '', 'proposalStatus' => '', 'proposalError' => null, 'flash' => null,
+            'proposalStats' => ['total' => 3, 'new' => 2, 'progress' => 1, 'won' => 0], 'proposalList' => ['data' => [$row], 'total' => 1, 'page' => 1, 'pages' => 1, 'per_page' => 20]];
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData()));
+        $common($html, $id, 'Propostas do site');
+        $save('cn-011', $html);
+        $assert(str_contains($html, 'data-erp-proposal-alert') && str_contains($html, '2 propostas novas aguardando contato') && str_contains($html, 'comunicacao/propostas/7"')
+            && !str_contains($html, '<b>Ana') && !str_contains($html, '<i>Teste') && str_contains($html, 'class="is-new"'), 'CN-011: alerta, link do pedido e escape');
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData(['proposalStats' => ['total' => 1, 'new' => 0, 'progress' => 0, 'won' => 1],
+            'proposalList' => ['data' => [], 'total' => 0, 'page' => 1, 'pages' => 1, 'per_page' => 20]])));
+        $assert(!str_contains($html, 'data-erp-proposal-alert') && str_contains($html, 'Nenhuma proposta encontrada'), 'CN-011: sem novas, sem alerta');
+        $html = $render('pages/communication/proposals', $layoutData->invoke($panel, $user, 'CN-011', $listData(['proposalError' => 'Sem banco.', 'proposalList' => null, 'proposalStats' => null])));
+        $assert(str_contains($html, 'Propostas indisponíveis'), 'CN-011: sem banco');
+        $html = $render('pages/communication/proposal', $layoutData->invoke($panel, $user, 'CN-011', ['proposal' => $row, 'proposalTeam' => [['id' => 3, 'name' => 'Equipe <x>']],
+            'proposalResponses' => [['id' => 1, 'subject' => 'Proposta <x>', 'status' => 'sent', 'created_at' => '2026-11-22 11:00:00']], 'studioUrl' => '/studio/proposals/7', 'flash' => null]));
+        $assert(str_contains($html, 'action="' . erp_url('/comunicacao/propostas/7') . '"') && substr_count($html, "name='csrf'") >= substr_count($html, 'method="post"')
+            && !str_contains($html, '<script>x') && !str_contains($html, 'Equipe <x>') && !str_contains($html, 'Proposta <x>') && str_contains($html, '/studio/proposals/7')
+            && str_contains($html, 'name="assigned_to"'), 'CN-011: detalhe com CSRF, escape e Responder no Studio');
         continue;
     }
     if ($id === 'CN-009') {

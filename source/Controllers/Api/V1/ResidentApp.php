@@ -58,6 +58,8 @@ use Source\Services\Resident\ResidentTwoFactor;
  *  GET  /api/v1/resident/pets-vehicles            pets e veículos da unidade
  *  GET  /api/v1/resident/entries/{id}             uma conta da unidade com o boleto e, se paga, o recibo
  *  GET  /api/v1/resident/notifications            avisos do sininho (contas vencidas, encomendas, visitas, comunicados...)
+ *  POST /api/v1/resident/push-token              {token, platform}: celular recebe o push dos chamados (ADR 0642)
+ *  POST /api/v1/resident/push-token/forget       {token}: ao sair do app, o celular deixa de receber
  *  GET  /api/v1/resident/search?q=                busca no que o morador pode ver
  *  GET  /api/v1/resident/2fa                      situação da verificação em duas etapas (opcional, ADR 0304)
  *  POST /api/v1/resident/2fa/confirm              ligar {code}; devolve os códigos de recuperação
@@ -103,7 +105,25 @@ final class ResidentApp
 
     public function notifications(): void
     {
-        $this->read(fn (User $u, array $link): array => (new ResidentFeed())->notifications($link));
+        $this->read(fn (User $u, array $link): array => (new ResidentFeed())->notifications($link, null, (int)$u->id));
+    }
+
+    /** POST /resident/push-token — guarda o celular do morador para o push dos chamados (ADR 0642). */
+    public function registerPushToken(): void
+    {
+        $this->write(200, function (User $u, array $link, array $body): array {
+            (new \Source\Services\Resident\ResidentPush())->register((int)$u->id, (string)($body['token'] ?? ''), (string)($body['platform'] ?? ''));
+            return ['registered' => true];
+        });
+    }
+
+    /** POST /resident/push-token/forget — sair do app: o celular deixa de receber o push desta conta. */
+    public function forgetPushToken(): void
+    {
+        $this->write(200, function (User $u, array $link, array $body): array {
+            (new \Source\Services\Resident\ResidentPush())->forget((int)$u->id, (string)($body['token'] ?? ''));
+            return ['registered' => false];
+        });
     }
 
     public function search(): void
@@ -130,6 +150,9 @@ final class ResidentApp
         } catch (RegistryNotFound) {
             JsonResponse::send(404, ['error' => ['code' => 'not_found', 'message' => 'Boleto não encontrado.']]);
             return;
+        } catch (\Source\Services\Erp\DebtCertificateBlocked $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'debt_open', 'message' => $exception->getMessage(),
+                'overdue_count' => $exception->overdueCount, 'overdue_cents' => $exception->overdueCents]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'conflict', 'message' => $exception->getMessage()]]);
             return;
@@ -151,9 +174,16 @@ final class ResidentApp
         $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->list($link));
     }
 
+    /** Situação da CND (ADR 0638): débito que impede o pedido e o pedido aberto da unidade. */
+    public function certificateStatus(): void
+    {
+        $this->read(fn (User $u, array $link): array => (new ResidentCertificates())->status($link));
+    }
+
+    /** Pede a CND à administradora (chamado do Help Desk). Com débito vencido: 409 debt_open, nada é gerado. */
     public function issueCertificate(): void
     {
-        $this->write(201, fn (User $u, array $link): array => (new ResidentCertificates())->issue($u, $link));
+        $this->write(202, fn (User $u, array $link): array => (new ResidentCertificates())->request($u, $link));
     }
 
     public function certificatePdf(array $data): void
@@ -594,6 +624,9 @@ final class ResidentApp
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => 'Confira os campos.', 'fields' => $exception->errors]]);
         } catch (InvalidArgumentException $exception) {
             JsonResponse::send(422, ['error' => ['code' => 'validation_failed', 'message' => $exception->getMessage()]]);
+        } catch (\Source\Services\Erp\DebtCertificateBlocked $exception) {
+            JsonResponse::send(409, ['error' => ['code' => 'debt_open', 'message' => $exception->getMessage(),
+                'overdue_count' => $exception->overdueCount, 'overdue_cents' => $exception->overdueCents]]);
         } catch (DomainException $exception) {
             JsonResponse::send(409, ['error' => ['code' => 'conflict', 'message' => $exception->getMessage()]]);
         }

@@ -58,6 +58,9 @@ final class TariffCoverageTest extends TestCase
         self::assertSame([true, false, false], array_column($summary['rows'], 'starts_at_zero'));
         self::assertSame([true, false, false], array_column($summary['rows'], 'open_ended'));
         self::assertSame([1, 0, 0], array_column($summary['rows'], 'gaps'), 'De 20 a 25 fica sem faixa.');
+        $next = TariffCoverage::summarize(['agua' => 1], [$t('condominium', 'agua', '2026-01-01', 0, 10), $t('condominium', 'agua', '2026-01-01', 10.001, 20),
+            $t('condominium', 'agua', '2026-01-01', 20.01, null)], '2026-11-12');
+        self::assertSame(0, $next['rows'][0]['gaps'], '10 → 10,001 e 20 → 20,01 continuam a faixa anterior (ADR 0642).');
         self::assertSame(['2027-01-01', '2026-12-01', '2026-12-15'], array_column($summary['rows'], 'next_valid_from'));
         self::assertSame([false, false, true], array_column($summary['rows'], 'missing'));
         self::assertSame([['meters' => 6, 'bands' => 4], ['energia']], [$summary['totals'], $summary['missing_kinds']]);

@@ -95,8 +95,8 @@ export default function NovoChamado() {
             label="Quando aconteceu"
             value={when}
             onChangeText={setWhen}
+            mask="date"
             placeholder="DD/MM/AAAA (em branco = hoje)"
-            keyboardType="numbers-and-punctuation"
             error={errors.occurred_on}
           />
         ) : null}

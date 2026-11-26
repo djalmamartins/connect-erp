@@ -17,7 +17,7 @@
                     Voltar ao site
                 </a>
 
-                <?php $whatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP); ?>
+                <?php $whatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE); ?>
                 <?php if($whatsappDigits): ?><a class="link icon icon-whatsapp" href="https://wa.me/<?= htmlspecialchars($whatsappDigits) ?>" target="_blank" rel="noopener noreferrer">
                     Falar no WhatsApp
                 </a><?php endif; ?>

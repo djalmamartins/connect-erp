@@ -363,7 +363,7 @@
 
             <div class="number-content">
                 <strong data-number-target="1300">+1300</strong>
-                <span>Unidades<br>administradas</span>
+                <span>Famílias<br>atendidas</span>
             </div>
         </div>
 
@@ -379,7 +379,7 @@
 
             <div class="number-content">
                 <strong data-number-target="10">+10</strong>
-                <span>Anos de<br>experiência</span>
+                <span>Anos do sócio como<br>síndico profissional</span>
             </div>
         </div>
 
@@ -533,41 +533,7 @@
      LADO DIREITO — IMAGENS
 ================================== -->
 
-<div class="about-team-images">
-
-    <!-- IMAGEM GRANDE -->
-
-    <div class="about-team-image about-team-image-main">
-
-        <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Equipe Connect Condomínios">
-
-    </div>
-
-
-    <!-- IMAGEM INFERIOR ESQUERDA -->
-
-    <div class="about-team-image about-team-image-bottom-left">
-
-        <img
-                src="<?= theme("/assets/images/gestao-b.png"); ?>"
-                alt="Gestão e planejamento condominial"
-        >
-
-    </div>
-
-
-    <!-- IMAGEM INFERIOR DIREITA -->
-
-    <div class="about-team-image about-team-image-bottom-right">
-
-        <img
-                src="<?= theme("/assets/images/gestao-c.png"); ?>"
-                alt="Reunião da equipe Connect Condomínios"
-        >
-
-    </div>
-
-</div>
+<?= $this->insert("pages/about-team-art"); ?>
 
 </div>
 

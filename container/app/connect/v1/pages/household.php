@@ -32,10 +32,10 @@ $icons = ['owner' => 'key', 'tenant' => 'user', 'resident' => 'users', 'financia
         <input type="hidden" name="relationship" value="<?= $canAdd[0] ?>">
         <?php endif; ?>
         <label class="app-field">Nome completo <input type="text" name="name" maxlength="160" required autocomplete="off"></label>
-        <label class="app-field">CPF (opcional) <input type="text" name="document" maxlength="18" inputmode="numeric" autocomplete="off"></label>
+        <label class="app-field">CPF (opcional) <input type="text" name="document" maxlength="14" inputmode="numeric" autocomplete="off" data-mask="cpf" placeholder="000.000.000-00"></label>
         <div class="app-field-row">
             <label class="app-field">E-mail (opcional) <input type="email" name="email" maxlength="254" autocomplete="off"></label>
-            <label class="app-field">Celular (opcional) <input type="tel" name="phone" maxlength="20" autocomplete="off"></label>
+            <label class="app-field">Celular (opcional) <input type="tel" name="phone" maxlength="15" inputmode="numeric" autocomplete="off" data-mask="phone" placeholder="(00) 00000-0000"></label>
         </div>
         <label class="app-field">Desde <input type="date" name="starts_on" value="<?= date('Y-m-d') ?>"></label>
         <button class="app-button" type="submit">Cadastrar</button>

@@ -19,8 +19,11 @@ use Source\Support\Audit;
  * Faturas (AP-032, ADR 0033): cobrança de um tipo de fatura a todas as unidades ativas de um
  * condomínio numa competência.
  *
- * - prepare(): rascunho com um item por unidade, pelo valor fixo por unidade ou pelo rateio de um
- *   total pela fração ideal. Uma fatura ativa por condomínio, tipo e competência (409).
+ * - prepare(): rascunho com um item por unidade participante. Formas de rateio (ADR 0640): valor fixo por unidade
+ *   (igualitário), total dividido pelo número de unidades, pela fração ideal, pelo percentual definido da unidade,
+ *   pelas vagas de garagem vinculadas ou personalizado (valor ou percentual de cada unidade). Participam todas as
+ *   unidades ativas (menos as isentas de rateio), só as de alguns blocos ou torres, ou só as escolhidas. A soma dos
+ *   itens é sempre o total pedido (Invoices::apportion). Uma fatura ativa por condomínio, tipo e competência (409).
  * - setItemAmount(): ajusta o valor de uma unidade enquanto é rascunho.
  * - issue(): cada item vira uma conta a receber (erp_entries) da unidade, pelo RegistryService (mesmas
  *   regras dos lançamentos, inclusive a trava do fechamento). Tudo ou nada; a chave única em
@@ -32,7 +35,13 @@ use Source\Support\Audit;
 final class Invoices
 {
     public const STATUSES = ['draft' => 'Em preparação', 'issued' => 'Emitida', 'cancelled' => 'Cancelada'];
-    public const METHODS = ['fixed' => 'Valor fixo por unidade', 'fraction' => 'Rateio pela fração ideal'];
+    public const METHODS = ['fixed' => 'Valor fixo por unidade (igualitário)', 'equal' => 'Total dividido pelo número de unidades', 'fraction' => 'Rateio pela fração ideal',
+        'percent' => 'Rateio pelo percentual definido da unidade', 'parking' => 'Rateio pelas vagas de garagem', 'custom' => 'Valor ou percentual de cada unidade (personalizado)'];
+    /** Quem participa do rateio (ADR 0640). */
+    public const PARTICIPANTS = ['all' => 'Todas as unidades (menos as isentas de rateio)', 'blocks' => 'Só os blocos ou torres escolhidos', 'units' => 'Só as unidades escolhidas'];
+    /** Formas em que o valor informado é o total a ratear (no valor fixo é por unidade; no personalizado com valores, não há total). */
+    public const SPLIT_METHODS = ['equal', 'fraction', 'percent', 'parking'];
+    public const MAX_BLOCKS = 30;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -84,6 +93,120 @@ final class Invoices
         return $shares;
     }
 
+    /**
+     * Valor de cada unidade participante pela forma de rateio (regra pura, ADR 0640). A soma é sempre o total pedido.
+     *
+     * - fixed: $amountCents para cada unidade; equal: total dividido igual; fraction: pela fração ideal;
+     * - percent: pelo percentual definido da unidade, que precisa somar 100% entre as participantes;
+     * - parking: pelas vagas de garagem vinculadas (unidade sem vaga fica fora do rateio);
+     * - custom: o valor informado de cada unidade ($amounts) ou, sem valores, o percentual informado ($percents), que
+     *   precisa somar 100%.
+     *
+     * @param list<array{id:int|string, label?:string, ideal_fraction?:mixed, apportion_percent?:mixed, parking_spots?:int|string}> $units
+     * @param array<int|string, mixed> $amounts centavos (int) ou reais em texto, por id de unidade
+     * @param array<int|string, mixed> $percents percentual por id de unidade
+     * @return array<int, int> centavos por id de unidade (só as que participam)
+     */
+    public static function distribute(string $method, ?int $amountCents, array $units, array $amounts = [], array $percents = []): array
+    {
+        if (!isset(self::METHODS[$method])) {
+            throw new InvalidArgumentException('Forma de cálculo inválida.');
+        }
+        if ($units === []) {
+            throw new InvalidArgumentException('Não há unidades participantes para ratear.');
+        }
+        $label = static fn (array $u): string => (string)($u['label'] ?? $u['id']);
+        $ids = array_map(static fn (array $u): int => (int)$u['id'], $units);
+        if ($method === 'custom' && $amounts !== []) {
+            $out = [];
+            foreach ($units as $u) {
+                $cents = self::cents($amounts[(int)$u['id']] ?? $amounts[(string)$u['id']] ?? null);
+                if ($cents === null) {
+                    throw new InvalidArgumentException('Informe o valor de cada unidade participante (falta em ' . $label($u) . ').');
+                }
+                $out[(int)$u['id']] = $cents;
+            }
+            return $out;
+        }
+        if ($amountCents === null || $amountCents <= 0) {
+            throw new InvalidArgumentException($method === 'fixed' ? 'Informe o valor por unidade.' : 'Informe o valor total a ratear.');
+        }
+        if ($method === 'fixed') {
+            return array_fill_keys($ids, $amountCents);
+        }
+        $weights = [];
+        $missing = [];
+        foreach ($units as $u) {
+            $id = (int)$u['id'];
+            $weight = match ($method) {
+                'equal' => 1,
+                'fraction' => $u['ideal_fraction'] ?? null,
+                'percent' => $u['apportion_percent'] ?? null,
+                'parking' => (int)($u['parking_spots'] ?? 0),
+                'custom' => self::percent($percents[$id] ?? $percents[(string)$id] ?? null),
+            };
+            if ($method === 'parking' && $weight === 0) {
+                continue;   // sem vaga vinculada, não entra no rateio das vagas
+            }
+            if (!is_numeric($weight) || (float)$weight <= 0) {
+                $missing[] = $label($u);
+                continue;
+            }
+            $weights[$id] = $weight;
+        }
+        if ($missing !== []) {
+            $what = ['fraction' => 'fração ideal', 'percent' => 'percentual definido', 'custom' => 'percentual'][$method] ?? 'peso';
+            throw new InvalidArgumentException(sprintf('Sem %s maior que zero: %s.', $what, implode(', ', array_slice($missing, 0, 10)) . (count($missing) > 10 ? ' e mais ' . (count($missing) - 10) : '')));
+        }
+        if ($weights === []) {
+            throw new InvalidArgumentException('Nenhuma unidade participante tem vaga de garagem vinculada (cadastre as vagas em Áreas vinculáveis).');
+        }
+        if (in_array($method, ['percent', 'custom'], true)) {
+            $sum = round(array_sum(array_map('floatval', $weights)), 4);
+            if (abs($sum - 100.0) > 0.0001) {
+                throw new InvalidArgumentException(sprintf('Os percentuais das unidades participantes somam %s%%; precisam somar 100%%.', number_format($sum, 4, ',', '.')));
+            }
+        }
+        if ($amountCents < count($weights)) {
+            throw new InvalidArgumentException('O total é menor que um centavo por unidade.');
+        }
+        return self::apportion($amountCents, $weights);
+    }
+
+    /** Percentual em número ou texto ("12,5"); inválido = null. */
+    private static function percent(mixed $value): ?float
+    {
+        if (is_int($value) || is_float($value)) {
+            return (float)$value;
+        }
+        $text = is_string($value) ? str_replace(',', '.', trim($value)) : '';
+        return $text !== '' && is_numeric($text) ? (float)$text : null;
+    }
+
+    /**
+     * Blocos escolhidos (regra pura): lista ou texto separado por vírgula, sem repetição nem vazios, até MAX_BLOCKS.
+     *
+     * @return list<string>
+     */
+    public static function blocks(mixed $raw): array
+    {
+        $list = is_array($raw) ? $raw : (is_string($raw) ? explode(',', $raw) : []);
+        $out = [];
+        foreach ($list as $value) {
+            $block = is_scalar($value) ? trim((string)$value) : '';
+            if ($block !== '') {
+                $out[mb_strtolower($block)] ??= mb_substr($block, 0, 20);
+            }
+        }
+        if ($out === []) {
+            throw new InvalidArgumentException('Escolha ao menos um bloco ou torre.');
+        }
+        if (count($out) > self::MAX_BLOCKS) {
+            throw new InvalidArgumentException('Escolha no máximo ' . self::MAX_BLOCKS . ' blocos.');
+        }
+        return array_values($out);
+    }
+
     /** Teto de um valor em centavos, o mesmo do motor de cadastros (RegistryValidator, campo money). */
     public const MAX_CENTS = 99_999_999_999;
 
@@ -114,6 +237,7 @@ final class Invoices
         $competence = is_string($input['competence'] ?? null) ? $input['competence'] : '';
         $dueOn = is_string($input['due_on'] ?? null) ? $input['due_on'] : '';
         $method = is_string($input['method'] ?? null) && isset(self::METHODS[$input['method']]) ? $input['method'] : 'fixed';
+        $participants = is_string($input['participants'] ?? null) && isset(self::PARTICIPANTS[$input['participants']]) ? $input['participants'] : 'all';
         $notes = is_string($input['notes'] ?? null) ? mb_substr(trim($input['notes']), 0, 255) : null;
 
         if ($condominium === null || !$this->scope->canAccess($user, $condominium)) {
@@ -130,24 +254,56 @@ final class Invoices
         if ($this->registry->isClosed($condominium, $competence)) {
             throw new DomainException("A competência {$competence} está fechada. Reabra o fechamento mensal para faturar.");
         }
+        $customAmounts = $method === 'custom' && is_array($input['unit_amounts'] ?? null) ? array_filter($input['unit_amounts'], static fn ($v): bool => $v !== null && $v !== '') : [];
         $amount = array_key_exists('amount_cents', $input) && $input['amount_cents'] !== null && $input['amount_cents'] !== ''
             ? self::cents($input['amount_cents'])
             : ((int)$type['default_amount_cents'] > 0 ? (int)$type['default_amount_cents'] : null);
-        if ($amount === null) {
-            throw new InvalidArgumentException($method === 'fraction' ? 'Informe o valor total a ratear.' : 'Informe o valor por unidade (o tipo de fatura não tem valor padrão).');
+        if ($amount === null && $customAmounts === []) {
+            throw new InvalidArgumentException($method === 'fixed' ? 'Informe o valor por unidade (o tipo de fatura não tem valor padrão).'
+                : ($method === 'custom' ? 'Informe o valor de cada unidade ou o total a ratear pelos percentuais.' : 'Informe o valor total a ratear.'));
         }
 
-        $stmt = $this->pdo->prepare("SELECT id, label, ideal_fraction FROM erp_units
-            WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active' AND apportionment_exempt = 0 ORDER BY label, id");
-        $stmt->execute(['c' => $condominium]);
+        // Participantes (ADR 0640): todas, os blocos escolhidos ou as unidades escolhidas. Unidade isenta de rateio (ADR 0311)
+        // fica fora das duas primeiras; escolhida uma a uma, entra. A fração e o percentual são normalizados no apportion().
+        $where = "u.condominium_id = :c AND u.deleted_at IS NULL AND u.status = 'active'";
+        $params = ['c' => $condominium];
+        $blocks = null;
+        if ($participants === 'units') {
+            $chosen = EntryShortcuts::unitIds($input['unit_ids'] ?? null);
+            $where .= ' AND u.id IN (' . implode(',', $chosen) . ')';
+        } else {
+            $where .= ' AND u.apportionment_exempt = 0';
+            if ($participants === 'blocks') {
+                $blocks = self::blocks($input['blocks'] ?? null);
+                $marks = [];
+                foreach ($blocks as $i => $block) {
+                    $marks[] = ':b' . $i;
+                    $params['b' . $i] = $block;
+                }
+                $where .= ' AND u.block IN (' . implode(',', $marks) . ')';
+            }
+        }
+        $stmt = $this->pdo->prepare("SELECT u.id, u.label, u.block, u.ideal_fraction, u.apportion_percent,
+                (SELECT COUNT(*) FROM erp_linkable_areas a WHERE a.unit_id = u.id AND a.kind = 'vaga' AND a.status = 'active' AND a.deleted_at IS NULL) AS parking_spots
+            FROM erp_units u WHERE {$where} ORDER BY u.label, u.id");
+        $stmt->execute($params);
         $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // Unidade isenta de rateio (ADR 0311) fica fora; a fração das demais é normalizada no apportion().
         if ($units === []) {
             throw new InvalidArgumentException('O condomínio não tem unidades ativas (fora as isentas de rateio) para faturar.');
         }
-        $amounts = $method === 'fraction'
-            ? self::apportion($amount, array_column($units, 'ideal_fraction', 'id'))
-            : array_fill_keys(array_map('intval', array_column($units, 'id')), $amount);
+        if ($participants === 'units' && count($units) !== count($chosen)) {
+            throw new InvalidArgumentException('Alguma unidade escolhida não existe, está inativa ou não é deste condomínio.');
+        }
+        if ($blocks !== null) {
+            $found = array_unique(array_map(static fn (array $u): string => mb_strtolower((string)$u['block']), $units));
+            $absent = array_filter($blocks, static fn (string $b): bool => !in_array(mb_strtolower($b), $found, true));
+            if ($absent !== []) {
+                throw new InvalidArgumentException('Sem unidades ativas no bloco ou torre: ' . implode(', ', $absent) . '.');
+            }
+        }
+        $amounts = self::distribute($method, $amount, $units, $customAmounts, is_array($input['unit_percents'] ?? null) ? $input['unit_percents'] : []);
+        $units = array_values(array_filter($units, static fn (array $u): bool => isset($amounts[(int)$u['id']])));
+        $requested = in_array($method, self::SPLIT_METHODS, true) || ($method === 'custom' && $customAmounts === []) ? $amount : null;
 
         $this->pdo->beginTransaction();
         try {
@@ -155,9 +311,10 @@ final class Invoices
             if ($this->registry->isClosed($condominium, $competence)) {
                 throw new DomainException("A competência {$competence} está fechada. Reabra o fechamento mensal para faturar.");
             }
-            $this->pdo->prepare('INSERT INTO erp_invoices (condominium_id, invoice_type_id, competence, due_on, status, notes, created_by)
-                VALUES (:c, :t, :m, :d, \'draft\', :n, :u)')
-                ->execute(['c' => $condominium, 't' => $typeId, 'm' => $competence, 'd' => $dueOn, 'n' => $notes, 'u' => (int)$user->id]);
+            $this->pdo->prepare('INSERT INTO erp_invoices (condominium_id, invoice_type_id, competence, due_on, method, participants, participant_blocks, requested_cents, status, notes, created_by)
+                VALUES (:c, :t, :m, :d, :method, :who, :blocks, :requested, \'draft\', :n, :u)')
+                ->execute(['c' => $condominium, 't' => $typeId, 'm' => $competence, 'd' => $dueOn, 'method' => $method, 'who' => $participants,
+                    'blocks' => $blocks === null ? null : mb_substr(implode(', ', $blocks), 0, 255), 'requested' => $requested, 'n' => $notes, 'u' => (int)$user->id]);
             $invoiceId = (int)$this->pdo->lastInsertId();
             $item = $this->pdo->prepare('INSERT INTO erp_invoice_items (invoice_id, unit_id, unit_label, amount_cents) VALUES (:i, :u, :l, :a)');
             foreach ($units as $unit) {
@@ -176,7 +333,7 @@ final class Invoices
         }
         $invoice = $this->find($user, $invoiceId);
         Audit::record('create', 'erp_invoices', $invoiceId, null, ['status' => 'draft', 'competence' => $competence, 'invoice_type_id' => $typeId,
-            'method' => $method, 'units_count' => $invoice['units_count'], 'amount_cents' => $invoice['amount_cents']]);
+            'method' => $method, 'participants' => $participants, 'blocks' => $blocks, 'requested_cents' => $requested, 'units_count' => $invoice['units_count'], 'amount_cents' => $invoice['amount_cents']]);
         return $invoice;
     }
 
@@ -396,6 +553,9 @@ final class Invoices
             'competence' => (string)$row['competence'], 'due_on' => (string)$row['due_on'],
             'status' => (string)$row['status'], 'status_label' => self::STATUSES[$row['status']] ?? (string)$row['status'],
             'units_count' => (int)$row['units_count'], 'amount_cents' => (int)$row['amount_cents'], 'notes' => $row['notes'],
+            'method' => $row['method'] ?? null, 'method_label' => isset($row['method']) ? (self::METHODS[$row['method']] ?? null) : null,
+            'participants' => $row['participants'] ?? null, 'participant_blocks' => $row['participant_blocks'] ?? null,
+            'requested_cents' => isset($row['requested_cents']) ? (int)$row['requested_cents'] : null,
             'issued_at' => $row['issued_at'], 'cancelled_at' => $row['cancelled_at'], 'cancel_reason' => $row['cancel_reason'],
         ];
     }

@@ -70,6 +70,9 @@ final class IpRateLimit
     public function purge(?int $now = null): int
     {
         $now ??= time();
+        // Sem isto o PHP pode responder com a data de um filemtime() anterior (cache de stat), e um contador
+        // antigo ficava sem apagar; no teste, 1 vez em 200 (quando o hit() já tinha chamado o purge()).
+        clearstatcache();
         $removed = 0;
         foreach (glob($this->dir . '/*') ?: [] as $file) {
             if (is_file($file) && (int)@filemtime($file) < $now - 86400 && @unlink($file)) {

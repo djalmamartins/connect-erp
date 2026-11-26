@@ -629,12 +629,20 @@ return [
                 'title' => 'Preparar a fatura do mês',
             ],
             [
+                'id' => 'formas-de-rateio',
+                'title' => 'Formas de rateio',
+            ],
+            [
                 'id' => 'conferir-e-emitir',
                 'title' => 'Conferir e emitir',
             ],
             [
                 'id' => 'gerar-todos-os-boletos-de-uma-vez',
                 'title' => 'Gerar todos os boletos de uma vez',
+            ],
+            [
+                'id' => 'boleto-pago-com-atraso',
+                'title' => 'Boleto pago com atraso',
             ],
             [
                 'id' => 'como-usar',
@@ -649,6 +657,10 @@ return [
             [
                 'id' => 'fazer-um-acordo',
                 'title' => 'Fazer um acordo',
+            ],
+            [
+                'id' => 'contas-de-meses-ja-fechados',
+                'title' => 'Contas de meses já fechados',
             ],
             [
                 'id' => 'como-usar',
@@ -813,6 +825,10 @@ return [
             [
                 'id' => 'como-cadastrar',
                 'title' => 'Como cadastrar',
+            ],
+            [
+                'id' => 'como-as-faixas-se-encadeiam',
+                'title' => 'Como as faixas se encadeiam',
             ],
             [
                 'id' => 'pesquisar-e-filtrar',
@@ -2161,12 +2177,20 @@ return [
         ],
     ],
     'AP-123' => [
-        'faz' => 'Emite a certidão de débitos da unidade na data escolhida. Sem conta vencida, ela sai como "nada consta"; com conta vencida, lista as contas e os encargos. Muito pedida em venda e locação.',
+        'faz' => 'Emite a certidão negativa de débitos ("nada consta") da unidade na data escolhida. Com conta vencida em aberto, na data ou hoje, a certidão não é emitida: o sistema só informa o débito. Atende os pedidos de CND do aplicativo do morador.',
         'artigo' => 'certidao-de-debitos',
         'topicos' => [
             [
                 'id' => 'emitir',
                 'title' => 'Emitir',
+            ],
+            [
+                'id' => 'com-debito-nao-emite',
+                'title' => 'Com débito, não emite',
+            ],
+            [
+                'id' => 'pedidos-do-aplicativo-do-morador',
+                'title' => 'Pedidos do aplicativo do morador',
             ],
         ],
     ],
@@ -3151,6 +3175,24 @@ return [
             [
                 'id' => 'aparecer-no-balao-do-sac',
                 'title' => 'Aparecer no balão do SAC',
+            ],
+        ],
+    ],
+    'CN-011' => [
+        'faz' => 'Veja no ERP os pedidos de proposta feitos no site, saiba quando chega um novo e acompanhe cada um até virar contrato.',
+        'artigo' => 'propostas-do-site-no-erp',
+        'topicos' => [
+            [
+                'id' => 'como-saber-que-chegou-uma-proposta',
+                'title' => 'Como saber que chegou uma proposta',
+            ],
+            [
+                'id' => 'acompanhar-um-pedido',
+                'title' => 'Acompanhar um pedido',
+            ],
+            [
+                'id' => 'responder-com-a-proposta-em-pdf',
+                'title' => 'Responder com a proposta em PDF',
             ],
         ],
     ],

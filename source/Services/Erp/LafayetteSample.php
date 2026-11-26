@@ -529,11 +529,13 @@ final class LafayetteSample
         $this->save('deliveries', ['condominium_id' => $this->condo, 'unit_id' => $u['A-302'], 'recipient' => 'Morador da A-302', 'carrier' => 'correios', 'tracking_code' => 'LB123456789BR', 'received_on' => $past(1)]);
         $this->save('lost_found', ['condominium_id' => $this->condo, 'item' => 'Molho de chaves com chaveiro azul', 'found_on' => $past(3), 'location' => 'Salão de festas']);
         $this->save('visit_forecasts', ['condominium_id' => $this->condo, 'unit_id' => $u['A-202'], 'visitor_name' => 'Técnico da internet', 'expected_on' => $future(2)]);
-        // Comprovante de quitação de uma unidade em dia e certidão de débitos da unidade em atraso.
+        // Comprovante de quitação de uma unidade em dia, certidão negativa da mesma unidade e declaração de
+        // inadimplência da unidade em atraso (certidão com débito não é emitida, ADR 0638).
         $documents = new UnitDocuments($this->pdo, $this->scope);
         $documents->issue($this->user, ['kind' => 'quittance', 'unit_id' => $u['A-301'], 'as_of' => $this->today, 'until_competence' => end($months)]);
-        $documents->issue($this->user, ['kind' => 'debt_certificate', 'unit_id' => $u[self::LATE_UNIT], 'as_of' => $this->today]);
-        $this->count('documentos_unidade', 2);
+        $documents->issue($this->user, ['kind' => 'debt_certificate', 'unit_id' => $u['A-301'], 'as_of' => $this->today]);
+        $documents->issue($this->user, ['kind' => 'delinquency_declaration', 'unit_id' => $u[self::LATE_UNIT], 'as_of' => $this->today]);
+        $this->count('documentos_unidade', 3);
         (new Announcements($this->pdo, $this->scope))->announce($this->user, ['condominium_id' => $this->condo, 'subject' => 'Limpeza da caixa d’água',
             'body' => 'Informamos que a limpeza da caixa d’água será feita no próximo mês. O fornecimento será interrompido das 8h às 14h.', 'audience' => 'all']);
         $this->count('comunicados');

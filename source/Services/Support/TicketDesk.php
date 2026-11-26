@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Source\Services\Support;
 
 use PDO;
+use Source\Services\Resident\ResidentTicketNotices;
 use Source\Core\Connect;
 use Source\Models\User;
 use Source\Services\Erp\Occurrences;
@@ -52,6 +53,17 @@ final class TicketDesk
         if (!is_array($before)) {
             throw new TicketError('ticket', 'Chamado não encontrado.', 404);
         }
+        // Equipe só da lista (ADR 0642). Um texto antigo fora da lista continua até alguém escolher outra.
+        if (array_key_exists('team', $input)) {
+            $team = TicketService::team($input['team']);
+            if ($team === false) {
+                if (trim((string)$input['team']) !== (string)($before['team'] ?? '')) {
+                    throw new TicketError('team', 'Escolha uma equipe da lista: ' . implode(', ', TicketService::TEAMS) . '.');
+                }
+                $team = (string)$before['team'];
+            }
+            $input['team'] = $team;
+        }
         $text = static fn (string $key, int $max): ?string => array_key_exists($key, $input)
             ? (mb_substr(trim(strip_tags((string)$input[$key])), 0, $max) ?: null) : ($before[$key] !== null ? (string)$before[$key] : null);
         $after = [
@@ -90,6 +102,15 @@ final class TicketDesk
             if (in_array($after['status'], ['waiting_customer', 'resolved', 'closed'], true)) {
                 $this->notify($ticketId, 'status', (int)$agent->id);
             }
+        }
+        // App do morador (ADR 0642): situação, equipe e responsável. Prioridade, categoria e tags são da triagem interna.
+        $visible = array_intersect($changed, ['status', 'team', 'assigned_to']);
+        if ($visible !== []) {
+            $changes = [];
+            foreach ($visible as $field) {
+                $changes[$field] = $after[$field];
+            }
+            $this->notifyResident($ticketId, (string)array_values($visible)[0], (int)$agent->id, $changes);
         }
         return ['changed' => $changed, 'status' => $after['status']];
     }
@@ -143,6 +164,11 @@ final class TicketDesk
         }
         if (!$internal) {
             $this->notify($ticketId, 'reply', (int)$agent->id, RichText::plain($message));
+            // Nota interna nunca chega ao morador (ADR 0642).
+            $this->notifyResident($ticketId, 'reply', (int)$agent->id, ['text' => RichText::plain($message)]
+                + ($status !== (string)$before ? ['status' => $status] : []));
+        } elseif ($status !== (string)$before) {
+            $this->notifyResident($ticketId, 'status', (int)$agent->id, ['status' => $status]);
         }
         return ['message_id' => $messageId, 'status' => $status];
     }
@@ -322,6 +348,16 @@ final class TicketDesk
             }
             $this->pdo->prepare('INSERT INTO studio_support_ticket_attachments (ticket_id, message_id, user_id, file_path, original_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?, ?)')
                 ->execute([$ticketId, $messageId, $userId, $path, mb_substr(basename((string)$file['name']), 0, 255), $file['type'] ?: null, (int)$file['size']]);
+        }
+    }
+
+    /** Aviso no app do morador; falha aqui nunca desfaz o atendimento. */
+    private function notifyResident(int $ticketId, string $event, int $authorId, array $changes): void
+    {
+        try {
+            (new ResidentTicketNotices($this->pdo))->record($ticketId, $event === 'assigned_to' ? 'assigned' : $event, $authorId, $changes);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_resident_notice_failed', 'ticket_id' => $ticketId]);
         }
     }
 

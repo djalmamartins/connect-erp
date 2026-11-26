@@ -84,6 +84,11 @@ if ! "$composer_bin" db:migrate 2>&1 | tee -a "$log"; then
     exit 2
 fi
 
+# Central de Ajuda (revisão de 23/11): os artigos ficam em arquivos e só aparecem em /suporte depois do sync.
+if ! "$php_bin" tools/help.php sync 2>&1 | tee -a "$log"; then
+    say "aviso: a Central de Ajuda não foi atualizada (php tools/help.php sync); o resto da versão está no ar"
+fi
+
 if [ -n "$domain" ]; then
     if ! "$php_bin" tools/hosting/smoke-http.php --domain="$domain" 2>&1 | tee -a "$log"; then
         say "ATENÇÃO: a conferência por HTTP falhou em $new. Para voltar o código: bash tools/hosting/update.sh $previous"

@@ -260,7 +260,7 @@ final class RegistryService
      *
      * @param array<string, mixed> $input
      */
-    public function createForResident(User $user, string $slug, array $input, int $condominiumId, int $unitId): array
+    public function createForResident(User $user, string $slug, array $input, int $condominiumId, int $unitId, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         $fields = self::RESIDENT_FIELDS[$slug] ?? null;
         if ($fields === null || $condominiumId < 1 || $unitId < 1) {
@@ -269,7 +269,7 @@ final class RegistryService
         $input = array_intersect_key($input, array_flip($fields));
         $input['condominium_id'] = $condominiumId;
         $input['unit_id'] = $unitId;
-        return $this->persist($user, $slug, $input, null, ['condominium_id' => $condominiumId, 'unit_id' => $unitId]);
+        return $this->persist($user, $slug, $input, null, ['condominium_id' => $condominiumId, 'unit_id' => $unitId], $ticketKind);
     }
 
     /** Campos que o morador preenche em cada cadastro do aplicativo (ADR 0302). */
@@ -282,8 +282,12 @@ final class RegistryService
         'residents' => ['relationship', 'name', 'document', 'email', 'phone', 'starts_on', 'unit_label', 'notes'],
     ];
 
-    /** @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident) */
-    private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident): array
+    /**
+     * @param array{condominium_id:int, unit_id:int}|null $resident vínculo do morador (createForResident)
+     * @param string $ticketKind prefixo do protocolo do chamado que nasce com a ocorrência (ADR 0637): OCO, ou SAC
+     *        quando o morador pediu "chamado" no aplicativo
+     */
+    private function persist(User $user, string $slug, array $input, ?int $id, ?array $resident, string $ticketKind = \Source\Services\Support\TicketProtocol::KIND_OCCURRENCE): array
     {
         $definition = self::definition($slug);
         $before = null;
@@ -384,7 +388,13 @@ final class RegistryService
             // Fechamento mensal (ADR 0031): não grava em competência fechada, nem tira um registro dela.
             if (isset($definition['closing_lock'])) {
                 $field = $definition['closing_lock'];
-                foreach (array_filter([$before, $values]) as $state) {
+                // ADR 0640: a baixa (só a data do pagamento e a conta bancária, numa conta em aberto) vale em competência
+                // fechada, porque a foto do fechamento não muda; quem não pode estar fechado é o mês do pagamento.
+                $settlement = self::isSettlementOnly($before, $values);
+                if ($settlement !== null && $this->isClosed($before['condominium_id'] ?? null, $settlement)) {
+                    throw new RegistryValidationException(['paid_on' => "O mês do pagamento ({$settlement}) está fechado. Reabra o fechamento mensal para baixar."]);
+                }
+                foreach ($settlement !== null ? [] : array_filter([$before, $values]) as $state) {
                     if ($this->isClosed($state['condominium_id'] ?? null, $state[$field] ?? null)) {
                         throw new RegistryValidationException([$field => (new RegistryLocked((string)$state[$field]))->getMessage()]);
                     }
@@ -410,7 +420,7 @@ final class RegistryService
             }
             if ($ticket) {
                 try {
-                    (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->openForNew($user, $id, $values, $resident !== null);
+                    (new \Source\Services\Erp\Occurrences($this->pdo, $this->scope))->openForNew($user, $id, $values, $resident !== null, $ticketKind);
                 } catch (\Source\Services\Support\TicketError $error) {
                     $field = ['subject' => 'subject', 'message' => 'description', 'unit_id' => 'unit_id', 'condominium_id' => 'condominium_id'][$error->field] ?? '_form';
                     throw new RegistryValidationException([$field => 'O chamado da ocorrência não abriu: ' . $error->getMessage()]);
@@ -650,6 +660,26 @@ final class RegistryService
             }, $stmt->fetchAll(PDO::FETCH_ASSOC));
         }
         return $options;
+    }
+
+    /**
+     * A gravação é só a baixa de uma conta em aberto (regra pura, ADR 0640)? Devolve o mês do pagamento (AAAA-MM) quando
+     * paid_on passa de vazio para uma data e nenhum outro campo muda além da conta bancária; senão null.
+     */
+    public static function isSettlementOnly(?array $before, array $values): ?string
+    {
+        if ($before === null || ($before['paid_on'] ?? null) !== null || !is_string($values['paid_on'] ?? null) || $values['paid_on'] === '') {
+            return null;
+        }
+        foreach ($values as $column => $value) {
+            if (in_array($column, ['paid_on', 'bank_account_id', 'updated_by', 'created_by'], true) || !array_key_exists($column, $before)) {
+                continue;
+            }
+            if ((string)($value ?? '') !== (string)($before[$column] ?? '')) {
+                return null;
+            }
+        }
+        return substr($values['paid_on'], 0, 7);
     }
 
     /** Competência fechada no fechamento mensal (ADR 0031)? Sem condomínio ou competência, não. */

@@ -1,5 +1,5 @@
 <?php $this->layout("layouts/theme"); ?>
-<?php $sitePhoneDigits=preg_replace('/\D+/', '', CONF_SITE_PHONE); $siteWhatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP); $siteAddress=trim(CONF_SITE_ADDR_STREET.', '.CONF_SITE_ADDR_NUMBER.(CONF_SITE_ADDR_COMPLEMENT?' - '.CONF_SITE_ADDR_COMPLEMENT:'').', '.CONF_SITE_ADDR_DISTRICT.', '.CONF_SITE_ADDR_CITY.' - '.CONF_SITE_ADDR_STATE.', '.CONF_SITE_ADDR_ZIPCODE, ' ,-'); ?>
+<?php $sitePhoneDigits=preg_replace('/\D+/', '', CONF_SITE_PHONE); $siteWhatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE); $siteAddress=trim(CONF_SITE_ADDR_STREET.', '.CONF_SITE_ADDR_NUMBER.(CONF_SITE_ADDR_COMPLEMENT?' - '.CONF_SITE_ADDR_COMPLEMENT:'').', '.CONF_SITE_ADDR_DISTRICT.', '.CONF_SITE_ADDR_CITY.' - '.CONF_SITE_ADDR_STATE.', '.CONF_SITE_ADDR_ZIPCODE, ' ,-'); ?>
 
 <!--FEATURED-->
 <article class="home_featured" id="home">
@@ -12,7 +12,7 @@
             <p>Gestão transparente, próxima e eficiente para que seu condomínio funcione melhor todos os dias.</p>
             <div class="actions">
                 <a class="link" href="<?= url("/solicite-sua-proposta"); ?>">Solicitar proposta →</a>
-                <a class="link icon-whatsapp" href="https://wa.me/<?= htmlspecialchars($siteWhatsappDigits) ?>" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
+                <?php if ($siteWhatsappDigits): ?><a class="link icon-whatsapp" href="https://wa.me/<?= htmlspecialchars($siteWhatsappDigits) ?>" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a><?php endif; ?>
             </div>
         </div>
     </div>
@@ -100,7 +100,7 @@
 
             <div class="number-content">
                 <strong data-number-target="5">+5</strong>
-                <span>Anos de<br>experiência</span>
+                <span>Anos da<br>Connect</span>
             </div>
         </div>
 
@@ -122,7 +122,7 @@
     </div>
 </section>
 
-<!-- teste-->
+
 <section class="solutions" id="solucoes">
 
     <!-- Cabeçalho -->
@@ -384,7 +384,7 @@
                     <h3>Seguro</h3>
                     <p>
                         Seus dados protegidos<br>
-                        com segurança total.
+                        com senha e conexão segura.
                     </p>
                 </div>
             </div>
@@ -440,9 +440,9 @@
     </div>
 
 </section>
-<!-- teste-->
 
-<section class="method" id="apcontrole">
+
+<section class="method" id="diferenciais">
 
     <div class="method-container">
 
@@ -764,41 +764,7 @@
              LADO DIREITO — IMAGENS
         ================================== -->
 
-        <div class="about-team-images">
-
-            <!-- IMAGEM GRANDE -->
-
-            <div class="about-team-image about-team-image-main">
-
-                <img src="<?= theme("/assets/images/gestao-a.png"); ?>" alt="Equipe Connect Condomínios">
-
-            </div>
-
-
-            <!-- IMAGEM INFERIOR ESQUERDA -->
-
-            <div class="about-team-image about-team-image-bottom-left">
-
-                <img
-                        src="<?= theme("/assets/images/gestao-b.png"); ?>"
-                        alt="Gestão e planejamento condominial"
-                >
-
-            </div>
-
-
-            <!-- IMAGEM INFERIOR DIREITA -->
-
-            <div class="about-team-image about-team-image-bottom-right">
-
-                <img
-                        src="<?= theme("/assets/images/gestao-c.png"); ?>"
-                        alt="Reunião da equipe Connect Condomínios"
-                >
-
-            </div>
-
-        </div>
+        <?= $this->insert("pages/about-team-art"); ?>
 
     </div>
 
@@ -854,7 +820,7 @@
             <div class="contatos-grid">
 
                 <!-- Telefone -->
-                <a href="tel:+<?= htmlspecialchars($sitePhoneDigits) ?>" class="contato-item">
+                <?php if ($sitePhoneDigits): ?><a href="tel:+<?= htmlspecialchars($sitePhoneDigits) ?>" class="contato-item">
 
                     <div class="contato-icon">
                         <svg viewBox="0 0 24 24">
@@ -878,13 +844,13 @@
                         <span><?= htmlspecialchars(CONF_SITE_PHONE) ?></span>
                     </div>
 
-                </a>
+                </a><?php endif; ?>
 
 
                 <!-- WhatsApp -->
-                <a
+                <?php if ($siteWhatsappDigits): ?><a
                         href="https://wa.me/<?= htmlspecialchars($siteWhatsappDigits) ?>"
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         class="contato-item"
                 >
 
@@ -928,14 +894,14 @@
 
                     <div>
                         <strong>WhatsApp</strong>
-                        <span><?= htmlspecialchars(CONF_SITE_PHONE) ?></span>
+                        <span><?= htmlspecialchars(CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE) ?></span>
                     </div>
 
-                </a>
+                </a><?php endif; ?>
 
 
                 <!-- E-mail -->
-                <a
+                <?php if (CONF_MAIL_SUPPORT): ?><a
                         href="mailto:<?= htmlspecialchars(CONF_MAIL_SUPPORT) ?>"
                         class="contato-item"
                 >
@@ -952,7 +918,7 @@
                         <span><?= htmlspecialchars(CONF_MAIL_SUPPORT) ?></span>
                     </div>
 
-                </a>
+                </a><?php endif; ?>
 
 
                 <!-- Horário -->

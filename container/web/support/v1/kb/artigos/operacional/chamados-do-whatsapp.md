@@ -60,12 +60,11 @@ setor que vai cuidar. Conversa comum, que termina no próprio WhatsApp, fica só
 - origem **WhatsApp (Connect Talk)** (use o filtro de origem para ver só esses);
 - o nome do cadastro do ERP, o condomínio, a unidade e o telefone de quem escreveu;
 - no texto, o link **Conversa no Connect Talk**, que abre a conversa no Talk;
-- o **mesmo protocolo da conversa no Talk** (ex.: `26112200403`), que é o número que o morador recebe no WhatsApp.
-  Protocolos antigos do Talk, com `SAC` na frente, também acham o chamado na busca.
+- o protocolo `SAC...`: quando a conversa do Talk já tem um número SAC, o chamado fica com o mesmo número, e o morador acompanha tudo por ele.
 
 ### O morador acompanha pelo link
 
-Quando a Jack (a assistente do Talk) abre o chamado, ela manda ao morador o número `CH...` e um **link de acompanhamento**. O link abre uma página da Central de Ajuda, sem login, com:
+Quando a Jack (a assistente do Talk) abre o chamado, ela manda ao morador o número `SAC...` e um **link de acompanhamento**. O link abre uma página da Central de Ajuda, sem login, com:
 
 - o assunto, a área, a data de abertura e a situação do chamado (Aberto, Em atendimento, Aguardando cliente, Resolvido ou Fechado);
 - as respostas públicas da equipe, com o primeiro nome de quem respondeu, e o que o morador escreveu pelo WhatsApp.

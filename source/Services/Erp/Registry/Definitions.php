@@ -136,6 +136,9 @@ final class Definitions
                     'floor' => ['label' => 'Andar', 'type' => 'text', 'max' => 10, 'span' => 2],
                     'ideal_fraction' => ['label' => 'Fração ideal', 'type' => 'decimal', 'scale' => 6, 'min' => 0, 'max_value' => 1, 'span' => 3, 'hint' => 'Entre 0 e 1, ex.: 0,012500'],
                     'private_area' => ['label' => 'Área privativa (m²)', 'type' => 'decimal', 'scale' => 2, 'min' => 0, 'max_value' => 99999999.99, 'span' => 3],
+                    // Rateio pelo percentual definido (ADR 0640): o percentual da convenção, separado da fração ideal.
+                    'apportion_percent' => ['label' => 'Percentual definido no rateio (%)', 'type' => 'decimal', 'scale' => 4, 'min' => 0, 'max_value' => 100, 'span' => 3,
+                        'hint' => 'Só para a fatura rateada pelo percentual definido; os das unidades somam 100%'],
                     'cib' => ['label' => 'Código CIB', 'type' => 'cib', 'span' => 3, 'search' => true, 'hint' => 'Cadastro Imobiliário Brasileiro (CPF do imóvel): 7 caracteres e o dígito'],
                     // Revisão de 15/11 (ADR 0310): marca da equipe; 'shown' troca o Sim/Não por Vazia/Ocupada na lista.
                     'is_vacant' => ['label' => 'Unidade vazia', 'type' => 'bool', 'span' => 6, 'list' => true, 'list_label' => 'Ocupação', 'shown' => ['Ocupada', 'Vazia'],
@@ -827,12 +830,15 @@ final class Definitions
             'page' => 'AP-043', 'table' => 'erp_tariffs', 'route' => '/operacional/tarifas',
             'api' => 'tariffs', 'permission' => 'erp.tariffs', 'label' => 'Tarifas',
             'entity' => 'faixa de tarifa', 'gender' => 'a', 'scope' => 'optional', 'group' => 'operacional',
-            'lead' => 'Faixas progressivas por tipo e vigência. Sem condomínio, vale o padrão da Connect; a tarifa do condomínio substitui o padrão.',
+            'lead' => 'Faixas progressivas por tipo e vigência. Sem condomínio, vale o padrão da Connect; a tarifa do condomínio substitui o padrão. '
+                . 'A faixa seguinte pode começar no número em que a anterior termina (0 a 10, 10 a 20) ou logo depois (10,001 ou 10,01): '
+                . 'os dois jeitos cobram todo o consumo, sem sobra entre as faixas.',
             'fields' => [
                 'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'span' => 6, 'list' => true, 'hint' => 'Vazio: tarifa padrão da Connect'],
                 'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => $meterKinds],
                 'name' => ['label' => 'Faixa', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 3, 'list' => true, 'search' => true, 'hint' => 'Ex.: Faixa 1'],
-                'from_amount' => ['label' => 'De (m³ ou kWh)', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'required' => true, 'span' => 3, 'list' => true],
+                'from_amount' => ['label' => 'De (m³ ou kWh)', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'required' => true, 'span' => 3, 'list' => true,
+                    'hint' => 'Pode ser o "Até" da faixa anterior (10) ou o número seguinte (10,001): os dois cobram igual'],
                 'to_amount' => ['label' => 'Até', 'type' => 'decimal', 'scale' => 3, 'min' => 0, 'max_value' => 999999999.999, 'span' => 3, 'list' => true, 'not_below' => 'from_amount', 'hint' => 'Vazio = sem limite'],
                 'price_cents' => ['label' => 'Valor por m³ (ou kWh)', 'type' => 'money', 'required' => true, 'positive' => true, 'span' => 3, 'list' => true],
                 'valid_from' => ['label' => 'Vigência a partir de', 'type' => 'date', 'required' => true, 'span' => 3, 'list' => true],

@@ -90,3 +90,22 @@ pedir acesso, correção ou exclusão dos dados nem retirar o consentimento de n
 Testes: `ResidentPrivacyIntegrationTest` (aceite por versão, novidades separadas, chamado LGPD na unidade certa e sem
 HTML, rotas da API com 422 sem a caixa) e `__tests__/privacy.test.ts` no app de celular. Central de Ajuda: seção
 "Termos, novidades e pedidos sobre os dados (LGPD)" em `aplicativo-do-morador`.
+
+## Etapa 3 (22/11/2026) — respostas do Djalma
+
+- **Números do site** (CONFIRMADO pelo Djalma): +40 condomínios e cerca de 1.300 famílias; +5 anos é da Connect e +10
+  anos é a experiência do sócio como síndico profissional. A home diz "Anos da Connect" e a página de proposta diz "Anos do
+  sócio como síndico profissional"; "Unidades administradas" virou "Famílias atendidas" nas duas.
+- **Imagem do app na home** (`assets/images/app-cel.png`): mostrava as telas do aplicativo do AP Controle (concorrente).
+  Trocada por telas do nosso app do morador, geradas no lab com dados fictícios. Foto de banco de imagens não leva mais
+  o texto alternativo "Equipe Connect Condomínios"; "segurança total" virou "senha e conexão segura".
+- **Fonte**: a Gotham é paga e a licença web não foi comprovada. Saíram os quatro arquivos `.otf`; o Organic (Studio,
+  ERP e app) usa a Montserrat (SIL OFL 1.1), servida do próprio servidor (`container/shared/assets/organic/fonts`).
+- **Anúncios só com aceite**: categoria "ads" no banner quando o `.env` traz `SITE_GOOGLE_ADS_ID` (AW-...) ou
+  `SITE_META_PIXEL_ID`. O Google Ads e o Pixel da Meta só carregam depois do aceite. A versão do banner passou a incluir as
+  categorias ligadas (`LegalDocuments::cookieVersion()`, ex.: `1.msa`): ligar uma categoria nova faz o banner perguntar de
+  novo. Quem recusa navega normalmente; só fica a contagem de visitas do próprio site, sem identificar a pessoa.
+- Origem das fotos `gestao-a/b/c.png` (CONFIRMADO pelo Djalma em 22/11): geradas no ChatGPT. Os termos da OpenAI
+  deixam o uso comercial com quem gerou. Por serem imagens geradas, não podem ser apresentadas como a equipe ou um
+  cliente real da Connect (por isso o texto alternativo neutro). `home-featured.jpg` e `home-app.jpg` (tela do Realizze)
+  não são usadas em nenhuma página.

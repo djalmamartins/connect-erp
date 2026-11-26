@@ -146,7 +146,7 @@ Inter e a Cora informarem; vazio aceita qualquer origem. A consulta de hora em h
 Cada grupo do `cron.sh` grava, ao terminar, o sinal de vida em `storage/temp/heartbeat/<grupo>` (hora e quantos comandos
 falharam). Dois vigias leem esse sinal:
 
-1. **Por dentro, de hora em hora:** `tools/hosting/watchdog.php` roda no grupo `hora` e manda e-mail para `ALERT_EMAIL`
+1. **Por dentro, de hora em hora:** `tools/hosting/watchdog.php` roda no grupo `hora` e manda e-mail para `ALERT_EMAIL` (um ou mais, separados por vírgula: sac@connectcondominios.com.br e djalma.martins@moves.com.br, Djalma 23/11)
    (no `.env`) quando uma rotina atrasou ou falhou, o backup passou de 26 horas, avisos da fila falharam nas últimas 24
    horas ou o banco não respondeu. Repete a cada 12 horas enquanto o problema continuar e avisa uma vez quando tudo volta
    ao normal. Testar sem enviar: `php tools/hosting/watchdog.php --dry-run`.

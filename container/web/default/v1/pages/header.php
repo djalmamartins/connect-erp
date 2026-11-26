@@ -21,13 +21,13 @@
                     Soluções
                 </a>
 
-                <a class="link" href="<?= url('/#apcontrole') ?>">
+                <a class="link" href="<?= url('/#diferenciais') ?>">
                     Diferenciais
                 </a>
 
-                <a class="link" href="<?= url('/#sucesso') ?>">
+                <?php if (site_has_testimonials()): ?><a class="link" href="<?= url('/#sucesso') ?>">
                     Histórias de sucesso
-                </a>
+                </a><?php endif; ?>
 
                 <a class="link" href="<?= url('/#blog') ?>">
                     Blog
@@ -41,7 +41,7 @@
                     Solicitar proposta
                 </a>
 
-                <?php $whatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP); ?>
+                <?php $whatsappDigits=preg_replace('/\D+/', '', CONF_SITE_WHATSAPP ?: CONF_SITE_PHONE); ?>
                 <?php if($whatsappDigits): ?><a class="link icon icon-whatsapp" href="https://wa.me/<?= htmlspecialchars($whatsappDigits) ?>" target="_blank" rel="noopener noreferrer">
                     Falar no WhatsApp
                 </a><?php endif; ?>

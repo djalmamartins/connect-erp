@@ -640,6 +640,10 @@ $route->get("/my-day", "MyDay:show", null, \Source\Support\Middleware\ApiAuthent
 $route->get("/my-day/visit/{condominium_id}", "MyDay:visit", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events", "MyDay:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events/{id}/status", "MyDay:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Propostas do site (CN-011, ADR 0644): as mesmas do Studio > Gestão > Propostas; só com proposals.manage.
+$route->get("/proposals", "Proposals:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/proposals/{id}", "Proposals:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/proposals/{id}/status", "Proposals:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Chamados (ADR 0034): todo chamado cai na fila do Help Desk, com condomínio e unidade.
 $route->get("/tickets", "Tickets:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/tickets", "Tickets:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
@@ -655,6 +659,9 @@ $route->get("/resident/charges", "ResidentApp:charges", null, \Source\Support\Mi
 $route->get("/resident/charges/{id}/pdf", "ResidentApp:chargePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/entries/{id}", "ResidentApp:entry", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/notifications", "ResidentApp:notifications", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+// Push dos chamados no celular do morador (ADR 0641).
+$route->post("/resident/push-token", "ResidentApp:registerPushToken", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->post("/resident/push-token/forget", "ResidentApp:forgetPushToken", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/search", "ResidentApp:search", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 // LGPD (ADR 0604): aceite dos termos, novidades e pedidos do titular.
 $route->get("/resident/privacy", "ResidentApp:privacy", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
@@ -667,6 +674,7 @@ $route->get("/resident/profile/photo", "ResidentApp:photo", null, \Source\Suppor
 $route->post("/resident/profile/photo", "ResidentApp:uploadPhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->delete("/resident/profile/photo", "ResidentApp:deletePhoto", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/certificates", "ResidentApp:certificates", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
+$route->get("/resident/certificates/status", "ResidentApp:certificateStatus", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->post("/resident/certificates", "ResidentApp:issueCertificate", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/certificates/{id}/pdf", "ResidentApp:certificatePdf", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);
 $route->get("/resident/accountability", "ResidentApp:accountability", null, \Source\Support\Middleware\ResidentApiAuthenticated::class);

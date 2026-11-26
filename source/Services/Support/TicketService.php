@@ -11,6 +11,7 @@ use Source\Models\Notification\NotificationCategory;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
 use Source\Services\Environments;
+use Source\Services\Resident\ResidentTicketNotices;
 use Source\Support\Access;
 use Source\Support\AppLogger;
 use Source\Support\Audit;
@@ -31,13 +32,11 @@ use Source\Support\RichText;
  * - unidade só junto com o condomínio e pertencendo a ele;
  * - solicitante: um usuário do sistema ou nome + e-mail (morador, visitante do site); do WhatsApp (origem talk),
  *   nome + telefone, porque a conversa não traz e-mail;
- * - prazo (SLA) pela prioridade; protocolo CH + aammdd + 4 hex.
+ * - prazo (SLA) pela prioridade; protocolo SAC (chamado) ou OCO (ocorrência) + AAAAMMDD + sequência do dia (ADR 0637,
+ *   TicketProtocol). Do Talk, o chamado fica com o mesmo protocolo da conversa quando ele está no formato SAC e livre.
  */
 final class TicketService
 {
-    /** Protocolo do Connect Talk: aammdd + sequência do dia com 5 dígitos (ADR 0637). */
-    public const TALK_PROTOCOL = '/^\d{11}$/';
-
     public const ORIGINS = ['helpdesk', 'erp', 'site', 'residents', 'api', 'talk'];
     public const AREAS = ['general', 'technical', 'financial'];
     public const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -48,6 +47,8 @@ final class TicketService
     public const ORIGIN_LABELS = ['helpdesk' => 'SAC', 'erp' => 'ERP', 'site' => 'Site', 'residents' => 'Portal dos moradores', 'api' => 'API', 'talk' => 'WhatsApp (Connect Talk)'];
     public const AREA_LABELS = ['general' => 'Geral', 'technical' => 'Técnico', 'financial' => 'Financeiro'];
     public const PRIORITY_LABELS = ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'urgent' => 'Urgente'];
+    /** Equipe que atende o chamado (ADR 0642): lista fixa, guardada pelo nome. */
+    public const TEAMS = ['Administrativo', 'Financeiro', 'Manutenção', 'Geral'];
     public const STATUS_LABELS = ['open' => 'Aberto', 'in_progress' => 'Em atendimento', 'waiting_customer' => 'Aguardando cliente', 'resolved' => 'Resolvido', 'closed' => 'Fechado'];
 
     private const ADMIN_LEVEL = 5;
@@ -59,6 +60,25 @@ final class TicketService
     {
         $this->pdo = $pdo;
         $this->scope = $scope;
+    }
+
+    /**
+     * Nome da equipe na grafia da lista (regra pura): aceita maiúsculas e sem acento ("manutencao"). Vazio = null;
+     * fora da lista = false.
+     */
+    public static function team(mixed $value): string|false|null
+    {
+        $text = trim(strip_tags((string)$value));
+        if ($text === '') {
+            return null;
+        }
+        $fold = static fn (string $v): string => strtr(mb_strtolower($v), ['ã' => 'a', 'á' => 'a', 'â' => 'a', 'ç' => 'c', 'é' => 'e', 'ê' => 'e', 'í' => 'i', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ú' => 'u']);
+        foreach (self::TEAMS as $team) {
+            if ($fold($team) === $fold($text)) {
+                return $team;
+            }
+        }
+        return false;
     }
 
     public static function slaHours(string $priority): int
@@ -107,8 +127,6 @@ final class TicketService
             'assigned_to' => $id('assigned_to'),
             // Protocolo do sistema de origem (Talk, ADR 0308): único por origem, garante que o chamado não duplique.
             'external_ref' => preg_replace('/[^0-9A-Za-z._-]/', '', $text('external_ref', 40)) ?: null,
-            // Protocolo único com o Talk (ADR 0637): o atendimento do WhatsApp e o chamado usam o mesmo número.
-            'protocol' => $origin === 'talk' && preg_match(self::TALK_PROTOCOL, (string)($input['protocol'] ?? '')) === 1 ? (string)$input['protocol'] : null,
         ];
         if (mb_strlen($data['subject']) < 4) {
             throw new TicketError('subject', 'Informe um assunto com pelo menos 4 caracteres.');
@@ -134,10 +152,13 @@ final class TicketService
      * solicitante e, no portal, com condomínio e unidade definidos pelo servidor).
      * $afterInsert roda na mesma transação (ex.: anexos do widget).
      *
+     * $kind decide o prefixo do protocolo (ADR 0637): TicketProtocol::KIND_OCCURRENCE só para a ocorrência que nasce
+     * com o chamado (Occurrences); a entrada do formulário ou da API nunca escolhe.
+     *
      * @return array{id:int,protocol:string,due_at:string,access_token:?string}
      * @throws TicketError
      */
-    public function open(array $input, string $origin, ?User $actor = null, ?callable $afterInsert = null): array
+    public function open(array $input, string $origin, ?User $actor = null, ?callable $afterInsert = null, string $kind = TicketProtocol::KIND_TICKET): array
     {
         $data = self::normalize($input, $origin);
         $pdo = $this->pdo();
@@ -176,8 +197,6 @@ final class TicketService
             $data['assigned_to'] = null;
         }
 
-        // A coluna protocol tem 12 caracteres: CH + aammdd + 4 hex. O Talk manda o dele (aammdd + 5 dígitos, ADR 0637).
-        $protocol = $data['protocol'] ?? 'CH' . date('ymd') . strtoupper(bin2hex(random_bytes(2)));
         $dueAt = date('Y-m-d H:i:s', strtotime('+' . self::slaHours($data['priority']) . ' hours'));
         // Solicitante de fora (sem conta) acompanha o chamado pelo código de acesso.
         $accessToken = $data['requester_id'] === null ? hash('sha256', random_bytes(32)) : null;
@@ -189,6 +208,9 @@ final class TicketService
             if ($owns) {
                 $pdo->beginTransaction();
             }
+            // Protocolo dentro da transação: a sequência do dia fica travada até o commit (ADR 0637).
+            $talkRef = $data['origin'] === 'talk' && $kind === TicketProtocol::KIND_TICKET ? strtoupper((string)$data['external_ref']) : '';
+            $protocol = $talkRef !== '' && TicketProtocol::canAdopt($pdo, $talkRef) ? $talkRef : TicketProtocol::next($pdo, $kind);
             $stmt = $pdo->prepare('INSERT INTO studio_support_tickets
                 (protocol, subject, message, area, origin, external_ref, condominium_id, unit_id, category, priority, requester_id, requester_name, requester_email, requester_phone, access_token, assigned_to, created_by, due_at)
                 VALUES (:protocol, :subject, :message, :area, :origin, :external, :condominium, :unit, :category, :priority, :requester, :name, :email, :phone, :token, :assigned, :creator, :due)');
@@ -225,6 +247,9 @@ final class TicketService
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_notification_failed', 'ticket_id' => $ticketId]);
         }
+        // App do morador (ADR 0642): "Recebemos o seu chamado" com o protocolo, mesmo quando ele mesmo abriu.
+        // Dentro da transação de quem chama (mesma conexão): se ela for desfeita, o aviso também é.
+        $this->noticeResident($ticketId, $actor);
         return ['id' => $ticketId, 'protocol' => $protocol, 'due_at' => $dueAt, 'access_token' => $accessToken];
     }
 
@@ -286,11 +311,10 @@ final class TicketService
         }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
-            // o protocolo do Talk também acha o chamado (external_ref), com ou sem o SAC na frente (ADR 0637)
-            $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2 OR t.external_ref LIKE :q3)';
+            // "sac 2026 1116 0008" acha SAC202611160008; protocolos antigos (CH, OC) também (ADR 0637).
+            $terms[] = '(t.subject LIKE :q OR t.protocol LIKE :q2)';
             $params['q'] = '%' . $search . '%';
-            $params['q2'] = '%' . $search . '%';
-            $params['q3'] = '%' . preg_replace('/[^0-9A-Za-z._-]/', '', $search) . '%';
+            $params['q2'] = '%' . (TicketProtocol::normalize($search) ?? $search) . '%';
         }
         $stmt = $this->pdo()->prepare(self::SELECT . ' WHERE ' . implode(' AND ', $terms)
             . ' ORDER BY t.created_at DESC, t.id DESC LIMIT ' . max(1, min(200, $limit)));
@@ -716,10 +740,28 @@ final class TicketService
         return $category->save() ? $category : null;
     }
 
-    /** Avisa a equipe do Help Desk (níveis 5+), o responsável e o solicitante com conta. */
+    private function noticeResident(int $ticketId, ?User $actor): void
+    {
+        try {
+            (new ResidentTicketNotices($this->pdo()))->record($ticketId, 'opened', $actor !== null ? (int)$actor->id : 0);
+        } catch (\Throwable $error) {
+            AppLogger::exception($error, 'tickets', ['event_type' => 'ticket_resident_notice_failed', 'ticket_id' => $ticketId]);
+        }
+    }
+
+    /**
+     * Avisa a equipe do Help Desk (níveis 5+), o responsável e o solicitante que trabalha no ERP ou no SAC.
+     * Morador que pediu não recebe e-mail nem o link do SAC (ADR 0601): o aviso dele vai para o app (ADR 0642).
+     */
     private function notifyOpened(int $ticketId, string $protocol, array $data, string $dueAt): void
     {
-        $recipientIds = [$data['requester_id'], $data['assigned_to']];
+        $recipientIds = [$data['assigned_to']];
+        if ($data['requester_id'] !== null) {
+            $requester = (new User())->findById((int)$data['requester_id']);
+            if ($requester && self::linkFor($requester, $ticketId) !== null) {
+                $recipientIds[] = (int)$requester->id;
+            }
+        }
         foreach ((new User())->find('level >= :level', 'level=' . self::ADMIN_LEVEL)->fetch(true) ?: [] as $member) {
             $recipientIds[] = (int)$member->id;
         }

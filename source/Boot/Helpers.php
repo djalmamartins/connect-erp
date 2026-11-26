@@ -258,8 +258,9 @@ function str_search(?string $search): string
         return "all";
     }
 
-    $search = preg_replace("/[^a-z0-9A-Z\@\ ]/", "", $search);
-    return (!empty($search) ? $search : "all");
+    // Letras com acento ficam ("gestão" virava "gesto"; revisão de 23/11). Só letras, números, @ e espaço.
+    $search = trim((string)preg_replace("/[^\p{L}\p{N}@ ]/u", "", rawurldecode($search)));
+    return ($search !== "" ? mb_substr($search, 0, 80) : "all");
 }
 
 /**
@@ -702,6 +703,23 @@ function passwd_rehash(string $hash): bool
 /**
  * @return string
  */
+/**
+ * Limpa os campos do formulário como antes (FILTER_SANITIZE_FULL_SPECIAL_CHARS), menos a senha: "a&b" virava
+ * "a&amp;b" e a senha criada fora desse caminho (criar-admin, convite, app, API) não entrava no ERP/Studio
+ * (revisão de 23/11, ADR 0648).
+ */
+function sanitize_keep_password(?array $data): array
+{
+    $data = $data ?? [];
+    $clean = filter_var_array($data, FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?: [];
+    foreach (['password', 'password_re'] as $field) {
+        if (array_key_exists($field, $data)) {
+            $clean[$field] = is_string($data[$field]) ? $data[$field] : '';
+        }
+    }
+    return $clean;
+}
+
 function csrf_input(): string
 {
     $session = new \Source\Core\Session();
@@ -848,6 +866,23 @@ function request_repeat(string $field, string $value): bool
 /**
  * Return the logo selected in settings when it exists, with a theme fallback.
  */
+/**
+ * Site: há depoimento publicado? O menu e o rodapé só mostram "Histórias de sucesso" quando a seção existe
+ * na home (sem depoimento ela some, ADR 0604; revisão de 23/11).
+ */
+function site_has_testimonials(): bool
+{
+    static $has = null;
+    if ($has === null) {
+        try {
+            $has = (new \Source\Models\Brief\AppBrief())->find("status = :status", "status=published")->count() > 0;
+        } catch (\Throwable) {
+            $has = false;
+        }
+    }
+    return $has;
+}
+
 function site_logo_url(): string
 {
     $photo = trim((string)(defined('CONF_SITE_LOGO_SVG') && CONF_SITE_LOGO_SVG !== '' ? CONF_SITE_LOGO_SVG : (defined('CONF_SITE_PHOTO') ? CONF_SITE_PHOTO : '')));

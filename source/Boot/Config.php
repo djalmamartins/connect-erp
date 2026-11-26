@@ -11,6 +11,8 @@ if (is_file($environmentFile)) {
         "CONNECT_ERP_URL", "CONNECT_SUPPORT_HOURS", "CONNECT_SAC_HOURS", "CONNECT_JOB_HOST",
         // CNPJ da Connect no rodapé dos e-mails (ADR 0397).
         "CONNECT_CNPJ",
+        // Push do app do morador (ADR 0642): log (padrão, não envia) ou expo; token de acesso do Expo opcional.
+        "CONNECT_RESIDENT_PUSH", "EXPO_ACCESS_TOKEN",
         "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
         "MOVESOS_ENV", "MOVESOS_DB_HOST", "MOVESOS_DB_PORT",
         "MOVESOS_DB_USER", "MOVESOS_DB_PASS", "MOVESOS_DB_NAME",
@@ -38,7 +40,7 @@ if (is_file($environmentFile)) {
         "TALK_JACK_MODE", "TALK_JACK_WAIT_SECONDS", "TALK_JACK_MAX_WAIT_SECONDS", "TALK_JACK_TYPING_SECONDS",
         "TALK_QUEUE_WARN_MINUTES", "TALK_QUEUE_LATE_MINUTES", "EVOLUTION_URL", "EVOLUTION_API_KEY", "EVOLUTION_WEBHOOK_URL",
         // Site (ADR 0604): GA4 só depois do aceite no banner de cookies (vazio = nenhum rastreador) e links reais das lojas.
-        "SITE_GA4_ID", "APP_PLAY_STORE_URL", "APP_APPLE_STORE_URL",
+        "SITE_GA4_ID", "SITE_GOOGLE_ADS_ID", "SITE_META_PIXEL_ID", "APP_PLAY_STORE_URL", "APP_APPLE_STORE_URL",
     ];
     foreach ($allowedEnvironmentKeys as $key) {
         if (getenv($key) === false && array_key_exists($key, $environment)) {

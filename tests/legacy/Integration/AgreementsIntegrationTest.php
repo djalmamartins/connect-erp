@@ -107,6 +107,59 @@ final class AgreementsIntegrationTest extends TestCase
         self::assertSame('active', $this->create('101')['status'], 'Depois de cancelado, pode fazer outro acordo.');
     }
 
+    /**
+     * ADR 0642: acordo com conta de mês fechado não reabre o mês nem muda a foto do fechamento. A conta antiga é quitada
+     * por compensação na data do acordo (sem banco) e a despesa de compensação entra no mês do acordo.
+     */
+    public function testClosedMonthAgreementUsesOffsetWithoutReopening(): void
+    {
+        $closing = new MonthClosing($this->pdo);
+        $closing->close($this->admin, $this->alpha, '2026-08');
+        $photo = fn () => $this->pdo->query("SELECT revenue_cents, expense_cents, status FROM erp_month_closings WHERE condominium_id = {$this->alpha} AND competence = '2026-08'")->fetch(\PDO::FETCH_ASSOC);
+        $before = $photo();
+        $this->service->save($this->admin, 'chart', ['code' => '2', 'nature' => 'despesa', 'kind' => 'sintetica', 'name' => 'Despesas']);
+        $offset = $this->service->save($this->admin, 'chart', ['code' => '2.92', 'nature' => 'despesa', 'kind' => 'analitica', 'name' => 'Cotas renegociadas em acordo'])['id'];
+        $today = date('Y-m-d');
+
+        try {
+            $this->create('101', ['agreed_on' => '2026-08-20']);
+            self::fail('Fez acordo com data num mês fechado.');
+        } catch (DomainException) {
+            self::addToAssertionCount(1);
+        }
+
+        $agreement = $this->create('101');
+        [$august, $september] = $this->debts['101'];
+        $row = fn (int $id) => $this->pdo->query("SELECT status, paid_on, bank_account_id, agreement_role FROM erp_entries WHERE id = {$id}")->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['active', $today, null, 'original'], array_values($row($august)), 'Agosto fechado: quitada por compensação hoje, sem banco.');
+        self::assertSame('inactive', $row($september)['status'], 'Setembro aberto: cancelada como antes.');
+        $comp = $this->pdo->query("SELECT nature, amount_cents, competence, paid_on, bank_account_id, chart_account_id, status FROM erp_entries
+            WHERE agreement_id = {$agreement['id']} AND agreement_role IS NULL")->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertSame([['despesa', 50000, substr($today, 0, 7), $today, null, (int)$offset, 'active']],
+            array_map(static fn (array $r): array => [$r['nature'], (int)$r['amount_cents'], $r['competence'], $r['paid_on'], $r['bank_account_id'], (int)$r['chart_account_id'], $r['status']], $comp));
+        self::assertSame($before, $photo(), 'Agosto continua fechado e com a mesma foto.');
+        self::assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_month_closings WHERE condominium_id = {$this->alpha} AND reopened_at IS NOT NULL")->fetchColumn());
+        self::assertContains('101', array_column($this->agreements->delinquency($this->admin, $this->alpha, '2026-09-30')['units'], 'unit_label'), 'Em 30/09 a 101 devia agosto.');
+        self::assertSame(['102'], array_column($this->agreements->delinquency($this->admin, $this->alpha, $today)['units'], 'unit_label'), 'Hoje a 101 está em acordo.');
+
+        $this->agreements->cancel($this->admin, $agreement['id'], 'Proprietário desistiu do acordo');
+        self::assertSame(['active', null, null, null], array_values($row($august)), 'Agosto volta a ficar em aberto, sem reabrir o mês.');
+        self::assertSame('active', $row($september)['status']);
+        self::assertSame('inactive', $this->pdo->query("SELECT status FROM erp_entries WHERE id = " . (int)$this->pdo->query("SELECT id FROM erp_entries WHERE chart_account_id = {$offset}")->fetchColumn())->fetchColumn());
+        self::assertSame($before, $photo());
+    }
+
+    public function testSuggestionWithoutCorrection(): void
+    {
+        $this->pdo->exec("INSERT INTO erp_price_indexes (code, competence, rate_percent) VALUES ('IPCA', '2026-08', 1.0000), ('IPCA', '2026-09', 1.0000), ('IPCA', '2026-10', 1.0000)");
+        $with = $this->agreements->suggestion($this->admin, $this->units['101'], $this->debts['101'], '2026-11-09');
+        $without = $this->agreements->suggestion($this->admin, $this->units['101'], $this->debts['101'], '2026-11-09', true);
+        self::assertGreaterThan(0, $with['correction_cents']);
+        self::assertSame(0, $without['correction_cents'], 'Sem IPCA: só multa e juros.');
+        self::assertTrue($without['without_correction']);
+        self::assertSame($without['fees_cents'], $without['fine_cents'] + $without['interest_cents']);
+    }
+
     public function testRefusalsAndScope(): void
     {
         // Conta de outra unidade, desconto maior que a dívida e competência fechada.
@@ -124,9 +177,9 @@ final class AgreementsIntegrationTest extends TestCase
         (new MonthClosing($this->pdo))->close($this->admin, $this->alpha, '2026-08');
         try {
             $this->create('101');
-            self::fail('Renegociou conta de competência fechada.');
+            self::fail('Fez acordo de mês fechado sem a conta da compensação.');
         } catch (DomainException $error) {
-            self::assertStringContainsString('fechada', $error->getMessage());
+            self::assertStringContainsString('2.92', $error->getMessage(), 'Mês fechado pede a conta 2.92 (ADR 0642).');
         }
         self::assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM erp_agreements')->fetchColumn(), 'Recusa não deixa acordo pela metade.');
 

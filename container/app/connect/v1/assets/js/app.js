@@ -92,4 +92,28 @@
   if (sw && 'serviceWorker' in navigator && window.isSecureContext) {
     navigator.serviceWorker.register(sw, { scope: document.body.getAttribute('data-scope') }).catch(function () {});
   }
+  /* Máscaras automáticas (pedido do Djalma, 22/11/2026; mesma regra do app do celular, apps/morador/src/lib/masks.ts):
+     a pessoa digita só os números e o campo põe pontos, traço e parênteses. Campos com data-mask="cpf|phone|cep|document".
+     As datas usam o calendário do próprio navegador (type="date"). O servidor valida de novo. */
+  var onlyDigits = function (value) { return String(value || '').replace(/\D+/g, ''); };
+  var fit = function (digits, pattern) {
+    var out = '', i = 0;
+    for (var p = 0; p < pattern.length && i < digits.length; p++) {
+      out += pattern[p] === '9' ? digits[i++] : pattern[p];
+    }
+    return out;
+  };
+  var masks = {
+    phone: function (v) { var d = onlyDigits(v).slice(0, 11); return d.length > 10 ? fit(d, '(99) 99999-9999') : fit(d, '(99) 9999-9999'); },
+    cep: function (v) { return fit(onlyDigits(v).slice(0, 8), '99999-999'); },
+    cpf: function (v) { return fit(onlyDigits(v).slice(0, 11), '999.999.999-99'); },
+    document: function (v) { var d = onlyDigits(v).slice(0, 14); return d.length > 11 ? fit(d, '99.999.999/9999-99') : fit(d, '999.999.999-99'); }
+  };
+  document.addEventListener('input', function (event) {
+    var field = event.target;
+    var kind = field && field.getAttribute ? field.getAttribute('data-mask') : null;
+    if (!kind || !masks[kind] || field.value === '') return;
+    var next = masks[kind](field.value);
+    if (next !== field.value) field.value = next;
+  });
 })();

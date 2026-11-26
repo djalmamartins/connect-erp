@@ -28,7 +28,8 @@ use Source\Services\Erp\Registry\RegistryService;
  * - meters: relógios ativos do tipo;
  * - source (condominium, default ou null), valid_from e bands: a tarifa vigente em on e quantas faixas;
  * - starts_at_zero: a primeira faixa começa em 0; open_ended: alguma faixa sem limite (to_amount vazio);
- * - gaps: buracos entre faixas seguidas (a seguinte começa depois do fim da anterior);
+ * - gaps: buracos entre faixas seguidas (a seguinte começa depois do fim da anterior; 10 → 10,001 ou 10,01 não é buraco,
+ *   as leituras tratam como continuação, ADR 0642);
  * - next_valid_from: a próxima vigência já cadastrada depois de on, da mesma origem (null = nenhuma);
  * - missing: há relógio do tipo e nenhuma tarifa vigente.
  * totals soma meters e bands das linhas; missing_kinds lista os tipos em falta.
@@ -78,7 +79,7 @@ final class TariffCoverage
             $gaps = 0;
             for ($i = 1; $i < count($bands); $i++) {
                 $previous = $bands[$i - 1]['to_amount'];
-                if ($previous !== null && $bands[$i]['from_amount'] > $previous) {
+                if ($previous !== null && $bands[$i]['from_amount'] > $previous + MeterReadings::BAND_STEP + 1e-9) {
                     $gaps++;
                 }
             }

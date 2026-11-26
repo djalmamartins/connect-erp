@@ -31,17 +31,8 @@ final class Audit
             $stmt = $pdo->prepare("INSERT INTO system_audit_logs (users_id, action, entity, entity_id, description, context_json, severity, ip, user_agent, url) VALUES (:user, :action, :entity, :entity_id, :description, :context, :severity, :ip, :agent, :url)");
             $stmt->execute(["user" => $userId, "action" => $action, "entity" => mb_substr($entity, 0, 100), "entity_id" => $entityId, "description" => $description, "context" => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "severity" => $severity, "ip" => $ip, "agent" => $agent, "url" => mb_substr((string)$url, 0, 255)]);
 
-            // Só avisa o administrador quando uma pessoa fez a alteração. Rotinas sem usuário
-            // (agendador, fila de avisos, scripts) continuam na trilha de auditoria, mas não
-            // criam um aviso "Alteração no sistema" a cada registro processado (ADR 0258).
-            $master = $userId ? $pdo->query("SELECT id FROM users WHERE level >= 5 ORDER BY (level >= 10) DESC, level DESC, id ASC LIMIT 1")->fetch() : null;
-            if ($master && (int)$master->id !== $userId) {
-                $category = $pdo->query("SELECT id FROM notifications_categories WHERE uri = 'studio' LIMIT 1")->fetch();
-                if ($category) {
-                    $notify = $pdo->prepare("INSERT INTO notifications (users_id, category, image, title, body, severity, link, view) VALUES (:user, :category, :image, :title, :body, :severity, :link, 0)");
-                    $notify->execute(["user" => $master->id, "category" => $category->id, "image" => "images/default.svg", "title" => "Alteração no sistema", "body" => $description, "severity" => $severity, "link" => url("/studio/notifications")]);
-                }
-            }
+            // A trilha de auditoria fica toda aqui (Studio › Logs), mas não vira aviso no sininho:
+            // "Alteração no sistema" a cada registro enchia o sino da equipe (ADR 0645).
         } catch (\Throwable $exception) {
             AppLogger::exception($exception, 'audit', ['event_type' => 'audit_write_failed', 'action' => $action, 'entity' => $entity]);
             error_log("Audit error: " . $exception->getMessage());

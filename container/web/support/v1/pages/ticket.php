@@ -1,5 +1,5 @@
 <?php
-/** Acompanhamento público do chamado (ADR 0636): link que a Jack manda pelo WhatsApp. */
+/** Acompanhamento público do chamado (ADR 0649): link que a Jack manda pelo WhatsApp. */
 $this->layout('layouts/theme');
 $when = static fn (string $at): string => date('d/m/Y \à\s H:i', strtotime($at));
 ?>

@@ -357,7 +357,7 @@ return [
     ],
     'AP-123' => [
         'titulo' => 'Emitir a certidão de débitos',
-        'para' => 'Emite a certidão de débitos da unidade na data escolhida. Sem conta vencida, ela sai como "nada consta"; com conta vencida, lista as contas e os encargos. Muito pedida em venda e locação.',
+        'para' => 'Emite a certidão negativa de débitos ("nada consta") da unidade na data escolhida. Com conta vencida em aberto, na data ou hoje, a certidão não é emitida: o sistema só informa o débito. Atende os pedidos de CND do aplicativo do morador.',
         'dicas' => ['Cada documento tem um código de verificação. Quem recebeu confere a autenticidade no endereço público /verificar-certidao-debitos.'],
         'atencao' => ['Depois de emitido, o documento não muda. Para corrigir, cancele e emita outro.'],
         'relacionados' => ['carta-de-anuencia', 'comprovante-de-quitacao'],

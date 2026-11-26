@@ -31,7 +31,20 @@ final class Inbox
         } catch (\Throwable $error) {
             AppLogger::exception($error, 'notifications', ['event_type' => 'notification_open_failed', 'users_id' => (int)$user->id]);
         }
-        redirect($target ?? erp_url('/dashboard'));
+        redirect(self::erpTarget($target, $user) ?? erp_url('/dashboard'));
+    }
+
+    /**
+     * Aviso de proposta nova aberto no ERP (ADR 0644): leva à proposta no ERP, e não ao Studio, para quem pode abrir
+     * a tela (erp.access + proposals.manage). Os outros links seguem como estão.
+     */
+    public static function erpTarget(?string $target, \Source\Models\User $user): ?string
+    {
+        if ($target !== null && preg_match('#/studio/proposals/(\d+)(?:[/?\#]|$)#', $target, $match)
+            && \Source\Support\Access::can('erp.access', $user) && \Source\Services\Proposals\ProposalDesk::allowed($user)) {
+            return erp_url(ProposalScreens::ROUTE . '/' . (int)$match[1]);
+        }
+        return $target;
     }
 
     /** POST /notificacoes/lidas */

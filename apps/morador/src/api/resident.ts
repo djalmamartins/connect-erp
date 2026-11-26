@@ -217,6 +217,18 @@ export type Certificate = {
   issued_at: string;
 };
 
+/** Pedido de CND à administradora (ADR 0638): vira chamado do Help Desk; a equipe emite no ERP. */
+export type CertificateRequest = { id: number; protocol: string; status: string; created_at: string; created?: boolean };
+
+/** Situação da CND hoje: com débito vencido, o pedido é recusado e só o débito é informado. */
+export type CertificateStatus = {
+  blocked: boolean;
+  message: string | null;
+  overdue_count: number;
+  overdue_cents: number;
+  request: CertificateRequest | null;
+};
+
 export type Delivery = {
   id: number;
   recipient: string;
@@ -313,6 +325,9 @@ export function residentApi(api: ApiClient) {
     me: () => api.get<Me>('/resident/me'),
     summary: () => api.get<Summary>('/resident/summary'),
     notifications: () => api.get<ResidentNotification[]>('/resident/notifications'),
+    /** Push dos chamados neste celular (ADR 0641). */
+    registerPush: (token: string, platform: string) => api.post<unknown>('/resident/push-token', { token, platform }),
+    forgetPush: (token: string) => api.post<unknown>('/resident/push-token/forget', { token }),
     charges: (from?: string, to?: string) => api.get<ChargesResponse>('/resident/charges', { from, to }),
     chargePdfUrl: (id: number) => api.url(`/resident/charges/${id}/pdf`),
     accountability: () => api.get<AccountabilityLink[]>('/resident/accountability'),
@@ -341,7 +356,8 @@ export function residentApi(api: ApiClient) {
     addHouseholdMember: (body: NewHouseholdMember) => api.post<HouseholdMember>('/resident/unit/residents', body),
     blockTenant: (id: number) => api.post<HouseholdMember>(`/resident/unit/residents/${id}/block`),
     certificates: () => api.get<Certificate[]>('/resident/certificates'),
-    issueCertificate: () => api.post<Certificate>('/resident/certificates'),
+    certificateStatus: () => api.get<CertificateStatus>('/resident/certificates/status'),
+    requestCertificate: () => api.post<CertificateRequest>('/resident/certificates'),
     certificatePdfUrl: (id: number) => api.url(`/resident/certificates/${id}/pdf`),
     deliveries: () => api.get<Delivery[]>('/resident/deliveries'),
     visits: () => api.get<Visit[]>('/resident/visits'),

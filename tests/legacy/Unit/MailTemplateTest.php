@@ -68,7 +68,7 @@ final class MailTemplateTest extends TestCase
         $mail->render('nao-existe');
     }
 
-    /** ADR 0397: moldura Connect (logo dourado em cabeçalho verde, rodapé com identificação e privacidade). */
+    /** ADR 0397/0646: moldura Connect branca e dourada (logo dourado sobre branco, rodapé com identificação e privacidade). */
     public function testFrameCarriesConnectIdentityAndLegalFooter(): void
     {
         $html = (new MailTemplate('default'))->render('forget', [
@@ -79,13 +79,15 @@ final class MailTemplateTest extends TestCase
             'company_cnpj' => '12.345.678/0001-90', 'company_address' => 'Rua A, 10, Centro, Cidade - UF',
             'company_phone' => '(11) 4000-0000', 'company_email' => 'contato@connect.test',
         ]);
-        self::assertStringContainsString('background:#0d2e27', $html, 'Cabeçalho verde-escuro do ERP.');
+        self::assertStringContainsString('padding:32px 28px 8px;background:#ffffff;', $html, 'Cabeçalho branco com o logo dourado (ADR 0646).');
+        self::assertStringNotContainsString('solid #c5a131', $html, 'Sem bordas ou linhas douradas (ADR 0646).');
+        self::assertStringContainsString('background:#f6faf8;font-size:12px', $html, 'Rodapé verde bem claro (ADR 0646).');
         self::assertStringContainsString('alt="Connect Condomínios"', $html, 'Logo com texto alternativo.');
         self::assertStringContainsString('Inter,', $html);
         self::assertStringContainsString('CNPJ 12.345.678/0001-90', $html);
         self::assertStringContainsString('Rua A, 10, Centro, Cidade - UF', $html);
         self::assertStringContainsString('href="https://www.connect.test/politica-de-privacidade"', $html);
-        self::assertStringContainsString('background:#07884c', $html, 'Botão verde do ERP, não mais o azul antigo.');
+        self::assertStringContainsString('background:#07884c', $html, 'Botão verde (ADR 0646).');
         self::assertStringNotContainsString('#0f5fa8', $html);
         self::assertStringNotContainsString('Descadastrar', $html, 'Sem link de descadastro quando o envio não informa.');
 
@@ -99,6 +101,13 @@ final class MailTemplateTest extends TestCase
     public function testEveryTemplateUsesTheFrameWithoutOldColors(): void
     {
         $root = moves_container_path('send', 'default');
+        // ADR 0646: sem o cabeçalho verde-escuro e sem bordas douradas em nenhuma parte da moldura, partes ou modelos.
+        $files = array_merge([$root . '/default.php'], glob($root . '/partials/*.php') ?: [], glob($root . '/pages/*.php') ?: []);
+        foreach ($files as $file) {
+            $source = strtolower((string)file_get_contents($file));
+            self::assertStringNotContainsString('#0d2e27', $source, basename($file) . ' ainda usa o verde-escuro do cabeçalho antigo.');
+            self::assertStringNotContainsString('solid #c5a131', $source, basename($file) . ' com borda dourada.');
+        }
         foreach (glob($root . '/pages/*.php') ?: [] as $file) {
             $source = (string)file_get_contents($file);
             self::assertStringContainsString("\$this->layout('default'", $source, basename($file) . ' fora da moldura.');

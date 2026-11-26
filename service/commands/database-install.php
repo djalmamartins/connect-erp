@@ -49,5 +49,10 @@ passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/service/com
 if ($code !== 0) {
     exit($code);
 }
+// Central de Ajuda (revisão de 23/11): publica os artigos dos arquivos em /suporte.
+passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/tools/help.php') . ' sync', $helpCode);
+if ($helpCode !== 0) {
+    echo "Aviso: a Central de Ajuda não foi publicada; rode php tools/help.php sync depois.\n";
+}
 echo "\nPróximos passos: php tools/hosting/criar-admin.php --email=... --nome=... --sobrenome=... --cpf=...\n";
 echo "e depois php service/commands/deploy-check.php.\n";

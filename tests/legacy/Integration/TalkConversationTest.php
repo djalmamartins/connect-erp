@@ -143,7 +143,7 @@ final class TalkConversationTest extends TestCase
         self::assertSame('insufficient_scope', $this->call(static fn () => (new Talk())->feed())['error']['code']);
     }
 
-    /** ADR 0636: o link público mostra a situação e as respostas, sem a descrição nem as notas internas. */
+    /** ADR 0649: o link público mostra a situação e as respostas, sem a descrição nem as notas internas. */
     public function testTrackingLinkShowsStatusAndPublicRepliesOnly(): void
     {
         $summary = (new TalkHelpdesk($this->pdo))->summary($this->ticket);
@@ -174,31 +174,18 @@ final class TalkConversationTest extends TestCase
         self::assertNull($tracking->find('CH000000AAAA', $row['access_token']));
     }
 
-    /** ADR 0637: o chamado aberto pelo Talk usa o protocolo da conversa, e a busca do SAC acha pelo número do Talk. */
-    public function testTicketUsesTheTalkProtocolAndIsFoundBySearch(): void
+    /** ADR 0637 + 0649: o chamado aberto pelo Talk adota o protocolo SAC da conversa, e o link de acompanhamento abre com ele. */
+    public function testTicketAdoptsTheTalkProtocolAndTheLinkOpens(): void
     {
         $helpdesk = new TalkHelpdesk($this->pdo);
-        $new = $helpdesk->open($this->agent, ['talk_protocol' => '26112200403', 'requester_phone' => '31999998888',
+        $ref = 'SAC' . date('Ymd') . '0403';
+        $new = $helpdesk->open($this->agent, ['talk_protocol' => $ref, 'requester_phone' => '31999998888',
             'condominium_id' => $this->alpha, 'subject' => 'Portão da garagem', 'message' => 'O portão não fecha desde ontem.', 'area' => 'technical']);
-        self::assertSame('26112200403', $new['ticket']['protocol'], 'Mesmo número no Talk e no SAC.');
-        self::assertSame('Portão da garagem', (string)$this->pdo->query('SELECT subject FROM studio_support_tickets WHERE id = ' . (int)$new['ticket']['id'])->fetchColumn());
-
-        $old = $helpdesk->open($this->agent, ['talk_protocol' => 'SAC26112200404', 'requester_phone' => '31999998888', 'condominium_id' => $this->alpha]);
-        self::assertSame('26112200404', $old['ticket']['protocol'], 'O protocolo antigo, com SAC na frente, vira só o número.');
-        self::assertSame('SAC26112200404', $old['ticket']['talk_protocol']);
-
-        // número já usado por outro chamado: fica o protocolo do ERP, sem duplicar
-        $this->pdo->prepare("INSERT INTO studio_support_tickets (protocol, subject, message, area, origin, condominium_id, priority, status, due_at) VALUES ('26112200405', 'x', 'y', 'general', 'erp', ?, 'medium', 'open', NOW())")->execute([$this->alpha]);
-        $clash = $helpdesk->open($this->agent, ['talk_protocol' => '26112200405', 'requester_phone' => '31999998888', 'condominium_id' => $this->alpha]);
-        self::assertMatchesRegularExpression('/^CH\d{6}[A-F0-9]{4}$/', $clash['ticket']['protocol']);
+        self::assertSame($ref, $new['ticket']['protocol'], 'Mesmo número no Talk e no SAC.');
+        $token = (string)$this->pdo->query('SELECT access_token FROM studio_support_tickets WHERE id = ' . (int)$new['ticket']['id'])->fetchColumn();
+        self::assertSame($ref, (new \Source\Services\Support\TicketTracking($this->pdo))->find(strtolower($ref), $token)['protocol'] ?? null);
 
         $service = new \Source\Services\Support\TicketService($this->pdo, new CondominiumScope($this->pdo));
-        foreach (['26112200403', 'SAC26112200404', '26112200405'] as $q) {
-            $found = array_column($service->listFor($this->staff, ['q' => $q]), 'protocol');
-            self::assertNotSame([], $found, "A busca do SAC acha $q.");
-        }
-
-        $token = (string)$this->pdo->query('SELECT access_token FROM studio_support_tickets WHERE id = ' . (int)$new['ticket']['id'])->fetchColumn();
-        self::assertNotNull((new \Source\Services\Support\TicketTracking($this->pdo))->find('26112200403', $token), 'O link de acompanhamento aceita o protocolo do Talk.');
+        self::assertContains($ref, array_column($service->listFor($this->staff, ['q' => $ref]), 'protocol'), 'A busca do SAC acha pelo número.');
     }
 }

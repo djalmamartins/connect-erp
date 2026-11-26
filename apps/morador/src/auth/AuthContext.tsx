@@ -4,6 +4,7 @@ import { createClient, type ApiClient } from '../api/client';
 import { residentApi, type LoginResult, type Me, type ResidentApi } from '../api/resident';
 import { apiBaseUrl } from '../config';
 import { askBiometric, biometricInfo, type BiometricInfo } from './biometrics';
+import { forgetPush, registerPush } from '../lib/push';
 import { tokenStorage } from './storage';
 
 type Status = 'loading' | 'signedOut' | 'locked' | 'signedIn';
@@ -168,6 +169,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadMe]);
 
+  // Push dos chamados (ADR 0641): registra o celular assim que a sessão está aberta.
+  useEffect(() => {
+    if (status === 'signedIn') {
+      void registerPush(api);
+    }
+  }, [status, api]);
+
   const value = useMemo<AuthValue>(
     () => ({
       status,
@@ -201,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await startSession(session.token);
       },
       async logout() {
+        await forgetPush(api);
         try {
           await api.logout();
         } catch {

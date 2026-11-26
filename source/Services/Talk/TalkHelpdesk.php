@@ -21,7 +21,7 @@ use Source\Support\Audit;
  * - people(): quem escreveu, pelo telefone, em erp_residents (vínculo ativo e vigente), só nos condomínios do
  *   escopo desse usuário. Devolve o mínimo (nome, vínculo, e-mail, condomínio, unidade): sem CPF nem financeiro.
  * - open(): a conversa vira chamado do Help Desk pelo TicketService (origem "talk"), idempotente pelo protocolo do
- *   Talk (external_ref), que também vira o protocolo do chamado (ADR 0637). O morador informado precisa ser do condomínio e da unidade, e do telefone, da conversa.
+ *   Talk (external_ref). O morador informado precisa ser do condomínio e da unidade, e do telefone, da conversa.
  * - transfer(): muda a área do chamado, com evento e nota interna.
  * - close(): resolve pelo TicketDesk (mesma regra do Help Desk) com a resolução como resposta. Repetir não muda nada.
  * O Talk só mexe em chamado que ele abriu (origem "talk") e do escopo: os outros são 404.
@@ -32,7 +32,7 @@ final class TalkHelpdesk
     public const MAX_PEOPLE = 10;
     public const SECTOR_MAX = 60;
 
-    /** Início da mensagem pública que o Talk deixa ao encerrar (é da equipe, não de quem pediu; ADR 0636). */
+    /** Início da mensagem pública que o Talk deixa ao encerrar (é da equipe, não de quem pediu; ADR 0649). */
     public const CLOSED_TEXT = 'Atendimento encerrado no WhatsApp';
 
     private PDO $pdo;
@@ -190,14 +190,9 @@ final class TalkHelpdesk
             $message .= "\n\nConversa no Connect Talk: " . $url;
         }
 
-        // Protocolo único (ADR 0637): o chamado usa o número do atendimento no Talk (aammdd + 5 dígitos; os antigos vêm com
-        // "SAC" na frente). Se o número já for de outro chamado, fica o protocolo do ERP (CH...) e o do Talk em external_ref.
-        $protocol = preg_match('/^(?:SAC)?(\d{11})$/', $ref, $m) === 1 && !$this->protocolTaken($m[1]) ? $m[1] : null;
-
         $service = new TicketService($this->pdo, $this->scope);
         try {
             $opened = $service->open([
-                'protocol' => $protocol,
                 'subject' => trim((string)($input['subject'] ?? '')) ?: 'WhatsApp ' . $ref,
                 'message' => $message,
                 'area' => $input['area'] ?? 'general',
@@ -298,7 +293,7 @@ final class TalkHelpdesk
     }
 
     /**
-     * Página pública onde quem escreveu pelo WhatsApp acompanha o chamado (ADR 0636): protocolo + código de acesso
+     * Página pública onde quem escreveu pelo WhatsApp acompanha o chamado (ADR 0649): protocolo + código de acesso
      * do chamado, sem login. A Jack manda esse link ao cliente junto com o número.
      */
     public static function trackingUrl(string $protocol, ?string $accessToken): ?string
@@ -334,13 +329,6 @@ final class TalkHelpdesk
             return $this->scope->allowedIds($agent);
         }
         return array_map('intval', $this->pdo->query("SELECT id FROM condominiums WHERE status = 'active'")->fetchAll(PDO::FETCH_COLUMN));
-    }
-
-    private function protocolTaken(string $protocol): bool
-    {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM studio_support_tickets WHERE protocol = ?');
-        $stmt->execute([$protocol]);
-        return $stmt->fetchColumn() !== false;
     }
 
     private function findByRef(string $ref): ?array

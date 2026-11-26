@@ -52,18 +52,19 @@ Tudo começa **desligado**. Em [[Configurações > Acesso > Permissões de Morad
 - **Perfil**: os dados da pessoa no cadastro (nome, e-mail, telefone e CPF mascarado), a **foto** (colocar, trocar ou remover), a verificação em duas etapas, as dicas do primeiro acesso, os avisos, como instalar no celular e o botão **Sair**.
 - **Primeiro acesso**: na primeira vez que entra, o morador vê as **boas-vindas**: coloca uma foto (tirada na hora ou escolhida da galeria) e passa por três dicas rápidas. Ele pode pular a qualquer momento, e as boas-vindas não aparecem de novo. A foto é recortada em quadrado, perde os dados de localização e só a própria pessoa vê.
 - **Esqueci minha senha**: na tela de entrada, o morador informa o e-mail ou o CPF e recebe um link para criar uma senha nova. A resposta é sempre a mesma, exista a conta ou não, e há limite de pedidos.
-- **Barra de cima**: o nome da pessoa e a unidade, a **busca**, o **sininho** ao lado da foto do perfil (comunicados, assembleias, documentos, encomendas e páginas). O sininho mostra os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada e reserva da semana. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
+- **Barra de cima**: o nome da pessoa e a unidade, a **busca**, o **sininho** ao lado da foto do perfil (comunicados, assembleias, documentos, encomendas e páginas). O sininho mostra os avisos que pedem atenção: conta vencida, encomenda na portaria, visita de hoje, comunicado novo, assembleia convocada, reserva da semana e cada andamento dos chamados que a pessoa abriu (abertura, resposta, situação, equipe e responsável; nota interna da equipe nunca aparece). Tocando no aviso do chamado, abre a conversa. O número vermelho mostra quantos avisos chegaram desde a última vez que ele abriu o sininho.
 - **Boletos**: ver a situação de cada conta da unidade; ao rolar até o fim, as contas mais antigas carregam sozinhas, de 6 em 6 meses. Tocando na conta: se estiver paga, abre o **recibo** para imprimir ou salvar em PDF; se estiver em aberto, oferece **baixar o boleto**, copiar a linha digitável ou o Pix.
 - **Prestação de contas**: abrir os links publicados no fechamento do mês.
 - **Comunicados**: ler os avisos gerais e os enviados para a unidade dele.
 - **Reservas**: na aba **Nova reserva**, escolher o espaço (filtro Gratuitos ou Com taxa) e ver o **calendário do mês** com dias livres, de parte do dia e ocupados; tocando no dia aparecem os horários já tomados (sem dizer de quem), o pedido e a lista de espera. Na aba **Minhas reservas**, acompanhar e cancelar uma reserva futura. Valem as mesmas regras da tela de Reservas do ERP (horário, conflito, aprovação). Reserva com taxa já lançada não pode ser cancelada pelo aplicativo.
 - **Encomendas**: ver o que chegou na portaria e o que já foi retirado.
 - **Visitantes**: avisar a portaria de uma visita e cancelar o aviso. O documento do visitante aparece mascarado.
-- **CND** (com a função Boletos): o morador emite a **Certidão de Débitos** da unidade com a data de hoje e baixa o PDF. É a mesma certidão de [[Documentos > Certidão de Débitos]]:
-  - sem conta vencida, sai **nada consta**;
-  - com conta vencida, lista as contas com os encargos.
+- **CND** (com a função Boletos): o morador **pede** a certidão negativa de débitos à administradora, que emite em [[Documentos > Certidão de Débitos]]:
+  - o pedido chega como chamado do Help Desk (**Pedido de CND**); pedir de novo com um pedido aberto não duplica;
+  - ao ser emitida, a certidão aparece na lista do app com o PDF e o código de verificação, e o chamado é respondido;
+  - com conta vencida em aberto, não há pedido nem certidão: a tela só informa o débito e leva aos boletos.
 
-  O PDF tem o código de verificação e o endereço para qualquer pessoa conferir. A lista mostra as certidões válidas da unidade dos últimos 12 meses, também as emitidas pela administração. Como a certidão mostra débitos, só proprietário, inquilino e responsável financeiro a veem.
+  A lista mostra as certidões negativas da unidade dos últimos 12 meses. Como a tela mostra débitos, só proprietário, inquilino e responsável financeiro a veem.
 - **Chamados e ocorrências**: o morador escolhe o que quer registrar:
   - **Chamado** é um pedido ou uma dúvida para a administração (por exemplo, a cópia do regimento);
   - **Ocorrência** é um problema no condomínio (barulho, vazamento, dano).

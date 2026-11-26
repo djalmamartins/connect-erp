@@ -62,9 +62,16 @@
                 </div>
 
 
+                <?php
+                // Só as categorias que existem no Studio (revisão de 23/11: as que faltavam voltavam para /artigos).
+                $siteCategories = [];
+                foreach ((new \Source\Models\Post\Category())->find()->fetch(true) ?? [] as $siteCategory) {
+                    $siteCategories[(string)$siteCategory->uri] = true;
+                }
+                ?>
                 <div class="categories-grid">
 
-                    <a href="<?= url("/artigos/em/gestao-condominial"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["gestao-condominial"])): ?><a href="<?= url("/artigos/em/gestao-condominial"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <!-- Prédio -->
@@ -80,10 +87,10 @@
 
                         <span>Gestão<br>Condominial</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/financas"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["financas"])): ?><a href="<?= url("/artigos/em/financas"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -95,10 +102,10 @@
 
                         <span>Finanças</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/legislacao"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["legislacao"])): ?><a href="<?= url("/artigos/em/legislacao"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -112,10 +119,10 @@
 
                         <span>Legislação</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/manutencao"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["manutencao"])): ?><a href="<?= url("/artigos/em/manutencao"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -125,10 +132,10 @@
 
                         <span>Manutenção</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/tecnologia"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["tecnologia"])): ?><a href="<?= url("/artigos/em/tecnologia"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -141,10 +148,10 @@
 
                         <span>Tecnologia</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/convivencia"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["convivencia"])): ?><a href="<?= url("/artigos/em/convivencia"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -158,10 +165,10 @@
 
                         <span>Convivência</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
 
-                    <a href="<?= url("/artigos/em/sustentabilidade"); ?>" class="category-card">
+                    <?php if (isset($siteCategories["sustentabilidade"])): ?><a href="<?= url("/artigos/em/sustentabilidade"); ?>" class="category-card">
 
                         <div class="category-card__icon">
                             <svg viewBox="0 0 24 24">
@@ -173,7 +180,7 @@
 
                         <span>Sustentabilidade</span>
 
-                    </a>
+                    </a><?php endif; ?>
 
                 </div>
 

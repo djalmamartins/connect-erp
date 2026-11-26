@@ -43,6 +43,14 @@ final class HostingMonitorTest extends TestCase
         }
     }
 
+    public function testAlertEmailAcceptsSeveralAddresses(): void
+    {
+        self::assertSame(['sac@connectcondominios.com.br', 'djalma.martins@moves.com.br'],
+            HostingWatchdog::recipients('sac@connectcondominios.com.br, Djalma.Martins@moves.com.br;sac@connectcondominios.com.br'));
+        self::assertSame(['a@b.com'], HostingWatchdog::recipients('invalido, a@b.com'));
+        self::assertSame([], HostingWatchdog::recipients(''));
+    }
+
     public function testWatchdogProblemsDedupAndRecovery(): void
     {
         $eval = static fn (int $age): array => HostingHealth::evaluate(['backup' => ['at' => self::NOW - $age, 'failures' => 0], 'minuto' => ['at' => self::NOW, 'failures' => 0]], self::NOW);

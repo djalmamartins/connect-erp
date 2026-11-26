@@ -53,6 +53,8 @@ case "$group" in
         # Fila de avisos do ERP (ADR 0055). A mail_queue só sai pelo SMTP com MAIL_QUEUE_SEND=1 ou, na produção,
         # com ERP_MAIL_DELIVERY=production (ADR 0358); no lab fica só no log.
         jobs=("$php_bin tools/notifications-dispatch.php 50")
+        # Push do app do morador (ADR 0642): só envia com CONNECT_RESIDENT_PUSH=expo no .env; sem isso marca como não enviado.
+        jobs+=("$php_bin tools/resident-push-dispatch.php 100")
         if [ "${MAIL_QUEUE_SEND:-0}" = "1" ] || [ "${ERP_MAIL_DELIVERY:-}" = "production" ]; then
             jobs+=("$php_bin service/jobs/sendEmail.php")
         fi
