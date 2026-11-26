@@ -99,7 +99,9 @@ Se o `php` do cron não for o 8.2+, definir `PHP_BIN=/caminho/do/php` antes do `
 4. `BACKUP_RCLONE_REMOTE=connect-backup:` no `.env` e rodar `bash tools/hosting/backup.sh` uma vez à mão.
 5. **Teste de restauração** (ADR 0334): criar no hPanel um banco vazio só para isso, com "restore" no nome (ex.:
    `u123_connect_restore`) e o mesmo usuário do banco do sistema, e pôr `BACKUP_RESTORE_DB=u123_connect_restore` no
-   `.env`. Depois rodar `bash tools/hosting/restore-check.sh --remoto`: baixa o diário mais novo do OneDrive, restaura
+   `.env`. Se o hPanel criar um usuário só para esse banco (é o normal na Hostinger), pôr também `BACKUP_RESTORE_USER` e
+   `BACKUP_RESTORE_PASS`; se cortar o nome (`..._connect_restor`), tudo bem: a trava aceita "restor" (ADR 0651).
+   Depois rodar `bash tools/hosting/restore-check.sh --remoto`: baixa o diário mais novo do OneDrive, restaura
    nesse banco, confere o pacote de arquivos e compara tabela por tabela com o banco real. Sai `OK` ou `FALHOU` com o
    tempo, e a linha fica em `storage/logs/restore-check.log`. O script recusa o banco de produção e qualquer nome sem
    "restore". Repetir uma vez por mês e anotar aqui.

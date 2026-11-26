@@ -17,7 +17,7 @@ final class EnvironmentKeysTest extends TestCase
     /** Chaves que só vêm do processo (testes, build), nunca do .env. */
     private const PROCESS_ONLY = ['MOVESOS_TEST_DB_DISABLED', 'MOVESOS_BUILD_ASSETS'];
     /** Lidas pelos scripts de shell da hospedagem direto do .env (tools/hosting/*.sh). */
-    private const SHELL_ONLY = ['BACKUP_RCLONE_REMOTE', 'BACKUP_KEEP_DAYS', 'BACKUP_KEEP_LOCAL', 'BACKUP_RESTORE_DB', 'RCLONE_BIN'];
+    private const SHELL_ONLY = ['BACKUP_RCLONE_REMOTE', 'BACKUP_KEEP_DAYS', 'BACKUP_KEEP_LOCAL', 'BACKUP_RESTORE_DB', 'BACKUP_RESTORE_USER', 'BACKUP_RESTORE_PASS', 'RCLONE_BIN'];
 
     private static function root(): string
     {

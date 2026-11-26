@@ -40,6 +40,14 @@ final class RestoreCheckGuardTest extends TestCase
         self::assertStringContainsString('nome de banco inválido', $out);
     }
 
+    public function testAcceptsNameCutByHpanel(): void
+    {
+        // O hPanel cortou "connect_restore" para "connect_restor" (ADR 0651): a trava do nome deixa passar.
+        [$code, $out] = $this->runScript('u807812373_connect_restor');
+        self::assertNotSame(2, $code);
+        self::assertStringNotContainsString('precisa ter "restore" no nome', $out);
+    }
+
     public function testRequiresTargetDatabase(): void
     {
         [$code, $out] = $this->runScript('');

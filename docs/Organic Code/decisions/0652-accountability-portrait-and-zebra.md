@@ -7,7 +7,7 @@
   "um branco e um verde bem clarinho ... para ficar mais fácil de ler".
 - Relacionadas: ADR 0314 (prestação de contas no modelo do PDF de outubro), 0323 (comprovantes em PDF juntados),
   0635 (base única de relatório)
-- Número: 0651 está em uso no branch da conferência de restauração.
+- Número: 0651 é do teste de restauração do backup.
 
 ## Contexto
 
