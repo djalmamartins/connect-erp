@@ -31,6 +31,15 @@ final class MyDay
         });
     }
 
+    /** GET /api/v1/my-day/overdue?person_id= — só o que ficou para trás (ADR 0658), para o selo do app e do menu. */
+    public function overdue(): void
+    {
+        $this->run(function (User $user, MyDayService $service): array {
+            $owner = $service->owner($user, (int)($_GET['person_id'] ?? 0) ?: null);
+            return [200, ['data' => $service->overdue($owner)]];
+        });
+    }
+
     /** GET /api/v1/my-day/visit/{condominium_id} */
     public function visit(array $data): void
     {

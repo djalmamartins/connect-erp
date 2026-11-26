@@ -56,7 +56,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
             if ($groupKey === 'dashboard'): ?>
                 <a class="erp-nav__link" href="<?= erp_url('/dashboard') ?>"<?= $currentPageId === 'AP-001' ? ' aria-current="page"' : '' ?> title="Dashboard"><?= $icon($group['icon']) ?><span class="erp-nav__label">Dashboard</span></a>
                 <?php if (isset($pages['CN-010'])): // Meu Dia (ADR 0630): link direto logo abaixo do Dashboard ?>
-                    <a class="erp-nav__link" href="<?= erp_url('/meu-dia') ?>"<?= $currentPageId === 'CN-010' ? ' aria-current="page"' : '' ?> title="Meu Dia"><?= $icon('clock') ?><span class="erp-nav__label">Meu Dia</span></a>
+                    <a class="erp-nav__link" href="<?= erp_url('/meu-dia') ?>"<?= $currentPageId === 'CN-010' ? ' aria-current="page"' : '' ?> title="Meu Dia"><?= $icon('clock') ?><span class="erp-nav__label">Meu Dia</span><?php $late = (int)($navBadges['CN-010'] ?? 0); if ($late > 0): // ADR 0658: tarefas atrasadas, em vermelho ?><span class="erp-nav__badge" style="background:var(--erp-danger);color:#fff"><span aria-hidden="true"><?= $late > 99 ? '99+' : $late ?></span><span class="erp-sr-only">, <?= $late ?> tarefa(s) atrasada(s)</span></span><?php endif; ?></a>
                 <?php endif; ?>
                 <?php continue;
             endif;

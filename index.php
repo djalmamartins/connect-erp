@@ -647,6 +647,8 @@ $route->get("/my-day", "MyDay:show", null, \Source\Support\Middleware\ApiAuthent
 $route->get("/my-day/visit/{condominium_id}", "MyDay:visit", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events", "MyDay:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events/{id}/status", "MyDay:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// Ficou para trás (ADR 0658): o que não foi feito em dia anterior, levado para hoje até fechar.
+$route->get("/my-day/overdue", "MyDay:overdue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Propostas do site (CN-011, ADR 0644): as mesmas do Studio > Gestão > Propostas; só com proposals.manage.
 $route->get("/proposals", "Proposals:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/proposals/{id}", "Proposals:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

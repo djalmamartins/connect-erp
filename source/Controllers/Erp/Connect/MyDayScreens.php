@@ -58,6 +58,10 @@ final class MyDayScreens extends Controller
             $panel = null;
         }
         $session = new Session();
+        if ((int)$owner->id === (int)$user->id) {
+            // Selo do menu (ADR 0658) com a mesma conta da tela.
+            $session->set('erpMyDayLate', ['user' => (int)$user->id, 'at' => time(), 'count' => (int)$day['summary']['overdue']]);
+        }
         $flash = $session->has('erpMyDayFlash') ? (array)$session->erpMyDayFlash : null;
         $errors = $session->has('erpMyDayErrors') ? (array)$session->erpMyDayErrors : [];
         $old = $session->has('erpMyDayOld') ? (array)$session->erpMyDayOld : [];
@@ -104,6 +108,7 @@ final class MyDayScreens extends Controller
             redirect($back . '#novo-compromisso');
             return;
         }
+        (new Session())->unset('erpMyDayLate');
         $this->flash('success', 'Compromisso marcado.');
         redirect($back);
     }
@@ -124,6 +129,7 @@ final class MyDayScreens extends Controller
             redirect($this->backUrl($_POST));
             return;
         }
+        (new Session())->unset('erpMyDayLate');
         $this->flash('success', ['completed' => 'Compromisso concluído.', 'cancelled' => 'Compromisso cancelado.'][$status] ?? 'Compromisso reaberto.');
         redirect($this->backUrl($_POST));
     }

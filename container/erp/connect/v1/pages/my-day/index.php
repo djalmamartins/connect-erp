@@ -74,7 +74,7 @@ $this->insert('components/layout/page-head', [
         ['Compromissos', (string)$summary['commitments'], $summary['commitment_minutes'] > 0 ? $hours($summary['commitment_minutes']) . ' marcados' : 'nada marcado', 'calendar', ''],
         ['Para agendar', (string)$summary['to_schedule'], 'chamados com você', 'clock', $summary['to_schedule'] > 0 ? 'warning' : ''],
         ['Aguardando cliente', (string)$summary['waiting'], 'esperando resposta', 'users', 'info'],
-        ['Atrasados', (string)$summary['overdue'], 'chamados e vistorias', 'alert', $summary['overdue'] > 0 ? 'danger' : ''],
+        ['Atrasados', (string)$summary['overdue'], $summary['overdue'] > 0 && !empty($summary['overdue_oldest']) ? 'desde ' . $fmt($summary['overdue_oldest']) : 'tarefas, chamados e vistorias', 'alert', $summary['overdue'] > 0 ? 'danger' : ''],
         ['Vistorias da semana', (string)$summary['week_visits'], $summary['week_condominiums'] . ' ' . ($summary['week_condominiums'] === 1 ? 'condomínio' : 'condomínios'), 'building', ''],
     ] as $i => [$label, $number, $meta, $kpiIcon, $tone]):
         $this->insert('components/cards/kpi', ['kpi' => ['label' => $label, 'value' => $number, 'meta' => $meta, 'icon' => $kpiIcon, 'tone' => $tone, 'trend' => null], 'delay' => $i * 40]);
@@ -86,13 +86,18 @@ $this->insert('components/layout/page-head', [
     <a class="md-week__nav" href="<?= $link(['data' => $date->modify('-1 day')->format('Y-m-d')]) ?>" aria-label="Dia anterior"><?= $icon('chevron-left', 'erp-icon--sm') ?></a>
     <div class="md-week__days">
         <?php foreach ($day['strip'] ?? $day['week'] as $weekDay):
-            $classes = 'md-week__day' . ($weekDay['today'] ? ' is-today' : '') . ($weekDay['selected'] ? ' is-selected' : '') . ($weekDay['date'] < $day['today'] ? ' is-past' : ''); ?>
+            $lateHere = (int)($weekDay['overdue'] ?? 0) + (int)($weekDay['carried'] ?? 0);
+            $classes = 'md-week__day' . ($weekDay['today'] ? ' is-today' : '') . ($weekDay['selected'] ? ' is-selected' : '') . ($weekDay['date'] < $day['today'] ? ' is-past' : '') . ($lateHere > 0 ? ' has-late' : ''); ?>
             <a class="<?= $classes ?>" href="<?= $link(['data' => $weekDay['date']]) ?>"<?= $weekDay['selected'] ? ' aria-current="date"' : '' ?>
-               aria-label="<?= $this->e($weekDay['weekday'] . ' ' . $weekDay['day'] . ($weekDay['today'] ? ', hoje' : '') . ', ' . $weekDay['count'] . ($weekDay['count'] === 1 ? ' item' : ' itens')) ?>">
+               aria-label="<?= $this->e($weekDay['weekday'] . ' ' . $weekDay['day'] . ($weekDay['today'] ? ', hoje' : '') . ', ' . $weekDay['count'] . ($weekDay['count'] === 1 ? ' item' : ' itens') . ($lateHere > 0 ? ', ' . $lateHere . ($lateHere === 1 ? ' atrasado' : ' atrasados') : '')) ?>">
                 <small><?= $this->e($weekDay['weekday']) ?></small>
                 <strong><?= (int)$weekDay['day'] ?></strong>
                 <?php if ($weekDay['selected'] && $weekDay['today']): ?><em>Hoje</em><?php endif; ?>
-                <span class="md-week__dot"<?= $weekDay['count'] === 0 ? ' hidden' : '' ?>><?= (int)$weekDay['count'] ?></span>
+                <?php if ($lateHere > 0): ?>
+                    <span class="md-week__dot md-week__dot--late"><?= $lateHere ?></span>
+                <?php else: ?>
+                    <span class="md-week__dot"<?= $weekDay['count'] === 0 ? ' hidden' : '' ?>><?= (int)$weekDay['count'] ?></span>
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
     </div>
@@ -111,6 +116,38 @@ $this->insert('components/layout/page-head', [
         <?php if ($view === 'semana'): ?>
             <?php $this->insert('pages/my-day/partials/week', ['day' => $day, 'link' => $link, 'fmt' => $fmt]); ?>
         <?php else: ?>
+            <?php // Ficou para trás (ADR 0658): levado para hoje, em vermelho, até ser concluído ou o chamado ser resolvido.
+            if ($day['date'] === $day['today'] && ($day['overdue'] ?? []) !== []): ?>
+                <div class="md-late-box" role="region" aria-labelledby="md-late-title">
+                    <h3 id="md-late-title"><?= $icon('alert', 'erp-icon--sm') ?>Ficou para trás <span class="erp-badge erp-badge--danger"><?= count($day['overdue']) ?></span></h3>
+                    <p>Não foi feito no dia marcado e veio para hoje. Sai daqui quando for concluído.</p>
+                    <ul class="md-late-list">
+                        <?php foreach ($day['overdue'] as $late):
+                            $since = 'desde ' . $fmt($late['due_on']) . ' (' . $late['days_late'] . ($late['days_late'] === 1 ? ' dia' : ' dias') . ')';
+                            $href = match ($late['kind']) {
+                                'event' => $late['ticket_id'] ? erp_url('/operacional/chamados/' . $late['ticket_id']) : null,
+                                'ticket' => erp_url('/operacional/chamados/' . $late['id']),
+                                'visit' => $link(['visita' => $late['condominium_id']]),
+                                default => erp_url('/condominios/' . $late['condominium_id'] . '/checklist'),
+                            };
+                            $kindLabel = ['event' => 'Tarefa', 'ticket' => 'Chamado', 'visit' => 'Vistoria', 'deadline' => 'Vencimento'][$late['kind']] ?? ''; ?>
+                            <li class="md-late-item">
+                                <div>
+                                    <?php if ($href !== null): ?><a href="<?= $href ?>"><strong><?= $this->e($late['title']) ?></strong></a><?php else: ?><strong><?= $this->e($late['title']) ?></strong><?php endif; ?>
+                                    <small><?= $this->e($kindLabel) ?><?= $late['time'] ? ' das ' . $this->e($late['time']) : '' ?><?= $late['condominium'] ? ' · ' . $this->e($late['condominium']) : '' ?><?= $late['protocol'] ? ' · ' . $this->e($late['protocol']) : '' ?></small>
+                                    <span class="md-late"><?= $this->e('Atrasada ' . $since) ?></span>
+                                </div>
+                                <?php if ($late['kind'] === 'event'): ?>
+                                    <div class="md-event__actions">
+                                        <form method="post" action="<?= erp_url($base . '/compromissos/' . $late['id'] . '/situacao') ?>"><?= $back() ?><input type="hidden" name="status" value="completed"><button class="erp-btn erp-btn--sm" type="submit"><?= $icon('check', 'erp-icon--sm') ?>Concluir</button></form>
+                                        <form method="post" action="<?= erp_url($base . '/compromissos/' . $late['id'] . '/situacao') ?>"><?= $back() ?><input type="hidden" name="status" value="cancelled"><button class="erp-btn erp-btn--sm erp-btn--ghost" type="submit" aria-label="Cancelar <?= $this->e($late['title']) ?>"><?= $icon('close', 'erp-icon--sm') ?></button></form>
+                                    </div>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <?php if ($day['day_visits'] !== [] || $day['day_deadlines'] !== []): ?>
                 <ul class="md-allday" aria-label="O dia todo">
                     <?php foreach ($day['day_visits'] as $visit): ?>
@@ -136,13 +173,14 @@ $this->insert('components/layout/page-head', [
                 <ol class="md-timeline">
                     <?php foreach ($day['events'] as $event):
                         $isNow = $day['date'] === $day['today'] && $event['status'] === 'scheduled' && date('H:i') >= $event['start'] && date('H:i') < ($event['end'] ?? $event['start']); ?>
-                        <li class="md-event md-event--<?= $this->e($typeTone[$event['type']] ?? 'info') ?> md-event--<?= $this->e($event['status']) ?><?= $isNow ? ' is-now' : '' ?>">
+                        <li class="md-event md-event--<?= $this->e($typeTone[$event['type']] ?? 'info') ?> md-event--<?= $this->e($event['status']) ?><?= $isNow ? ' is-now' : '' ?><?= !empty($event['overdue']) ? ' is-late' : '' ?>">
                             <time class="md-event__time" datetime="<?= $this->e($event['starts_at']) ?>"><?= $this->e($event['start']) ?><?= $event['end'] ? '<small>' . $this->e($event['end']) . '</small>' : '' ?></time>
                             <div class="md-event__body">
                                 <strong><?= $this->e($event['title']) ?></strong>
                                 <small>
                                     <?= $this->e($event['type_label']) ?><?= $event['condominium'] ? ' · ' . $this->e($event['condominium']) : '' ?>
                                     <?php if ($event['ticket_id']): ?> · <a href="<?= erp_url('/operacional/chamados/' . $event['ticket_id']) ?>">Chamado <?= $this->e((string)$event['protocol']) ?></a><?php endif; ?>
+                                    <?php if (!empty($event['overdue'])): ?> · <span class="erp-badge erp-badge--danger">Atrasada, levada para hoje</span><?php endif; ?>
                                     <?php if ($event['status'] === 'completed'): ?> · <span class="erp-badge erp-badge--success">Feito</span><?php elseif ($event['status'] === 'cancelled'): ?> · <span class="erp-badge erp-badge--plain">Cancelado</span><?php endif; ?>
                                 </small>
                             </div>
@@ -184,6 +222,24 @@ $this->insert('components/layout/page-head', [
                         <div class="md-task__side">
                             <small class="<?= $ticket['overdue'] ? 'md-late' : '' ?>">Prazo: <?= $ticket['overdue'] ? 'atrasado (' . $fmt($ticket['due_on']) . ')' : ($ticket['due_today'] ? 'hoje' : $fmt($ticket['due_on'])) ?></small>
                             <a class="erp-btn erp-btn--sm" href="<?= $link(['agendar' => $ticket['id']]) ?>#novo-compromisso">Agendar</a>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <?php if (($day['unassigned'] ?? []) !== []): // ADR 0658: chamados do SAC sem ninguém, para quem atende ?>
+            <h3 class="md-subtitle">Sem responsável no SAC <span class="erp-badge erp-badge--warning"><?= count($day['unassigned']) ?></span></h3>
+            <ul class="md-list">
+                <?php foreach ($day['unassigned'] as $ticket): ?>
+                    <li class="md-task">
+                        <div>
+                            <a href="<?= erp_url('/operacional/chamados/' . $ticket['id']) ?>"><strong><?= $this->e($ticket['subject']) ?></strong></a>
+                            <small><?= $this->e($ticket['condominium'] ?? 'Sem condomínio') ?> · <?= $this->e($ticket['protocol']) ?></small>
+                        </div>
+                        <div class="md-task__side">
+                            <?php if ($ticket['due_on'] !== ''): ?><small class="<?= $ticket['overdue'] ? 'md-late' : '' ?>">Prazo: <?= $ticket['overdue'] ? 'atrasado (' . $fmt($ticket['due_on']) . ')' : ($ticket['due_today'] ? 'hoje' : $fmt($ticket['due_on'])) ?></small><?php endif; ?>
+                            <a class="erp-btn erp-btn--sm" href="<?= erp_url('/operacional/chamados/' . $ticket['id']) ?>">Atender</a>
                         </div>
                     </li>
                 <?php endforeach; ?>

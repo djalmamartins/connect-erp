@@ -24,6 +24,11 @@ use Source\Support\Audit;
  * - Vencimentos: itens do checklist de chegada sob responsabilidade da pessoa, com prazo ou validade nos próximos 45 dias.
  * - Painel da visita: o que acompanhar num condomínio (chamados abertos, vencimentos, pendências da última vistoria).
  *
+ * - Ficou para trás (ADR 0658): compromisso/tarefa de dia anterior ainda não concluído, chamado do SAC com prazo vencido,
+ *   vistoria atrasada e item do checklist vencido. Fica em vermelho no dia original e é levado para hoje até ser
+ *   concluído, cancelado ou o chamado ser resolvido; aí volta ao normal. Olha até OVERDUE_DAYS dias para trás.
+ * - Sem responsável (ADR 0658): chamados do SAC em aberto sem ninguém atribuído, para quem atende (support.manage).
+ *
  * Cada pessoa vê o próprio dia; ver o de outra pessoa ou marcar compromisso para ela exige erp.myday.team.
  * Nada aqui muda chamado, vistoria ou checklist: cada linha leva à tela que resolve.
  */
@@ -32,8 +37,14 @@ final class MyDay
     public const TEAM = 'erp.myday.team';
     public const TYPES = ['meeting' => 'Compromisso', 'task' => 'Tarefa', 'deadline' => 'Prazo', 'support' => 'Atendimento'];
     private const OPEN = ['open', 'in_progress'];
+    private const CLOSED = ['resolved', 'closed'];
     private const PRIORITY_ORDER = ['urgent' => 0, 'high' => 1, 'medium' => 2, 'low' => 3];
     private const SOON_DAYS = 45;
+    /** Até quantos dias para trás um compromisso não concluído ainda é levado para hoje (ADR 0658). */
+    public const OVERDUE_DAYS = 30;
+    /** Quem atende chamados do SAC vê os que estão sem responsável (ADR 0631/0658). */
+    public const SUPPORT = 'support.manage';
+    private const UNASSIGNED_LIMIT = 50;
 
     private PDO $pdo;
     private CondominiumScope $scope;
@@ -93,26 +104,32 @@ final class MyDay
         $stripEnd = $date->modify('+3 days');
         $userId = (int)$owner->id;
 
-        $allEvents = $this->events($userId, min($weekStart, $stripStart), max($weekEnd, $stripEnd));
+        $allEvents = $this->events($userId, min($weekStart, $stripStart), max($weekEnd, $stripEnd), $today);
         $events = array_values(array_filter($allEvents, static fn(array $e): bool => substr($e['starts_at'], 0, 10) >= $weekStart->format('Y-m-d') && substr($e['starts_at'], 0, 10) <= $weekEnd->format('Y-m-d')));
         $tickets = $this->tickets($userId, $today);
         $toSchedule = array_values(array_filter($tickets, static fn(array $t): bool => in_array($t['status'], self::OPEN, true) && $t['scheduled_event_id'] === null));
         $waiting = array_values(array_filter($tickets, static fn(array $t): bool => $t['status'] === 'waiting_customer'));
         $visits = $this->visits($userId, $today, max($weekEnd, $stripEnd, $today->modify('+14 days')));
         $deadlines = $this->deadlines($userId, $today);
+        $overdue = $this->overdueItems($userId, $today, $tickets, $visits, $deadlines);
+        $unassigned = $this->unassigned($owner, $today);
 
         $dayKey = $date->format('Y-m-d');
         $dayEvents = array_values(array_filter($events, static fn(array $e): bool => substr($e['starts_at'], 0, 10) === $dayKey));
         $dayVisits = array_values(array_filter($visits, static fn(array $v): bool => $v['due_on'] === $dayKey || ($dayKey === $today->format('Y-m-d') && $v['overdue'])));
         $dayDeadlines = array_values(array_filter($tickets, static fn(array $t): bool => $t['due_on'] === $dayKey && in_array($t['status'], self::OPEN, true)));
 
-        $dayInfo = static function (DateTimeImmutable $d) use ($allEvents, $visits, $tickets, $today, $dayKey): array {
+        $lateByDay = array_count_values(array_column($overdue, 'due_on'));
+        $dayInfo = static function (DateTimeImmutable $d) use ($allEvents, $visits, $tickets, $today, $dayKey, $lateByDay, $overdue): array {
             $key = $d->format('Y-m-d');
+            $isToday = $key === $today->format('Y-m-d');
             $count = count(array_filter($allEvents, static fn(array $e): bool => substr($e['starts_at'], 0, 10) === $key && $e['status'] !== 'cancelled'))
                 + count(array_filter($visits, static fn(array $v): bool => $v['due_on'] === $key))
                 + count(array_filter($tickets, static fn(array $t): bool => $t['due_on'] === $key && in_array($t['status'], self::OPEN, true)));
             return ['date' => $key, 'weekday' => self::weekday($d), 'day' => (int)$d->format('j'), 'count' => $count,
-                'today' => $key === $today->format('Y-m-d'), 'selected' => $key === $dayKey];
+                'today' => $isToday, 'selected' => $key === $dayKey,
+                // Vermelho no círculo: o que daquele dia ficou para trás; hoje mostra quantos foram levados para ele.
+                'overdue' => $lateByDay[$key] ?? 0, 'carried' => $isToday ? count($overdue) : 0];
         };
         $week = [];
         $strip = [];
@@ -135,7 +152,9 @@ final class MyDay
                 'done' => count(array_filter($scheduled, static fn(array $e): bool => $e['status'] === 'completed')),
                 'to_schedule' => count($toSchedule),
                 'waiting' => count($waiting),
-                'overdue' => count(array_filter($toSchedule, static fn(array $t): bool => $t['overdue'])) + count(array_filter($visits, static fn(array $v): bool => $v['overdue'])),
+                'overdue' => count($overdue),
+                'overdue_oldest' => $overdue[0]['due_on'] ?? null,
+                'unassigned' => count($unassigned),
                 'week_visits' => count($weekVisits),
                 'week_condominiums' => count(array_unique(array_column($weekVisits, 'condominium_id'))),
             ],
@@ -149,7 +168,23 @@ final class MyDay
             'waiting' => $waiting,
             'visits' => $visits,
             'deadlines' => $deadlines,
+            'overdue' => $overdue,
+            'unassigned' => $unassigned,
         ];
+    }
+
+    /**
+     * Só o que ficou para trás (ADR 0658), para o selo do menu, o alerta das 7h e GET /api/v1/my-day/overdue.
+     *
+     * @return array{count:int, oldest:?string, items:list<array<string, mixed>>}
+     */
+    public function overdue(User $owner, ?DateTimeImmutable $today = null): array
+    {
+        $today = ($today ?? new DateTimeImmutable('today'))->setTime(0, 0);
+        $userId = (int)$owner->id;
+        $items = $this->overdueItems($userId, $today, $this->tickets($userId, $today),
+            $this->visits($userId, $today, $today), $this->deadlines($userId, $today));
+        return ['count' => count($items), 'oldest' => $items[0]['due_on'] ?? null, 'items' => $items];
     }
 
     /**
@@ -302,10 +337,11 @@ final class MyDay
     /* ---------------------------------------------------------------- consultas */
 
     /** @return list<array<string, mixed>> */
-    private function events(int $userId, DateTimeImmutable $from, DateTimeImmutable $to): array
+    private function events(int $userId, DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $today): array
     {
+        $todayKey = $today->format('Y-m-d');
         $stmt = $this->pdo->prepare("SELECT e.id, e.title, e.description, e.starts_at, e.ends_at, e.type, e.status, e.condominium_id, e.ticket_id,
-                c.name AS condominium, t.protocol
+                c.name AS condominium, t.protocol, t.status AS ticket_status
             FROM studio_calendar_events e
             LEFT JOIN condominiums c ON c.id = e.condominium_id
             LEFT JOIN studio_support_tickets t ON t.id = e.ticket_id
@@ -313,7 +349,7 @@ final class MyDay
               AND e.starts_at >= :from AND e.starts_at < :to
             ORDER BY e.starts_at, e.id");
         $stmt->execute(['user' => $userId, 'creator' => $userId, 'from' => $from->format('Y-m-d 00:00:00'), 'to' => $to->modify('+1 day')->format('Y-m-d 00:00:00')]);
-        return array_map(static function (array $e): array {
+        return array_map(static function (array $e) use ($todayKey): array {
             $start = strtotime((string)$e['starts_at']);
             $end = $e['ends_at'] !== null ? strtotime((string)$e['ends_at']) : null;
             return [
@@ -324,8 +360,95 @@ final class MyDay
                 'type' => (string)$e['type'], 'type_label' => self::TYPES[$e['type']] ?? 'Compromisso', 'status' => (string)$e['status'],
                 'condominium_id' => $e['condominium_id'] !== null ? (int)$e['condominium_id'] : null, 'condominium' => $e['condominium'] !== null ? (string)$e['condominium'] : null,
                 'ticket_id' => $e['ticket_id'] !== null ? (int)$e['ticket_id'] : null, 'protocol' => $e['protocol'] !== null ? (string)$e['protocol'] : null,
+                // Ficou para trás (ADR 0658): dia passou, não foi concluído nem cancelado e o chamado dele não foi resolvido.
+                'overdue' => $e['status'] === 'scheduled' && substr((string)$e['starts_at'], 0, 10) < $todayKey
+                    && !in_array((string)($e['ticket_status'] ?? ''), self::CLOSED, true),
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * Tudo o que ficou para trás e é levado para hoje (ADR 0658), do mais antigo para o mais novo.
+     * Um chamado agendado num compromisso atrasado aparece uma vez só (pelo compromisso); o chamado da vistoria
+     * atrasada também (pela vistoria).
+     *
+     * @param list<array<string, mixed>> $tickets @param list<array<string, mixed>> $visits @param list<array<string, mixed>> $deadlines
+     * @return list<array<string, mixed>>
+     */
+    private function overdueItems(int $userId, DateTimeImmutable $today, array $tickets, array $visits, array $deadlines): array
+    {
+        $todayKey = $today->format('Y-m-d');
+        $late = static fn(string $dueOn): int => max(1, (int)(new DateTimeImmutable($dueOn))->diff($today)->format('%a'));
+        $item = static fn(string $kind, int $id, string $title, string $dueOn, ?int $condoId, ?string $condo, ?int $ticketId, ?string $protocol, string $status, ?string $time = null): array => [
+            'kind' => $kind, 'id' => $id, 'title' => $title, 'due_on' => $dueOn, 'days_late' => $late($dueOn), 'time' => $time,
+            'condominium_id' => $condoId, 'condominium' => $condo, 'ticket_id' => $ticketId, 'protocol' => $protocol, 'status' => $status,
+        ];
+
+        $stmt = $this->pdo->prepare("SELECT e.id, e.title, e.starts_at, e.condominium_id, c.name AS condominium, e.ticket_id, t.protocol
+            FROM studio_calendar_events e
+            LEFT JOIN condominiums c ON c.id = e.condominium_id
+            LEFT JOIN studio_support_tickets t ON t.id = e.ticket_id
+            WHERE (e.assigned_to = :user OR (e.assigned_to IS NULL AND e.created_by = :creator))
+              AND e.status = 'scheduled' AND e.starts_at >= :from AND e.starts_at < :today
+              AND (t.id IS NULL OR t.status NOT IN ('resolved', 'closed'))
+            ORDER BY e.starts_at, e.id");
+        $stmt->execute(['user' => $userId, 'creator' => $userId, 'from' => $today->modify('-' . self::OVERDUE_DAYS . ' days')->format('Y-m-d 00:00:00'), 'today' => $todayKey . ' 00:00:00']);
+        $items = [];
+        $covered = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $e) {
+            $items[] = $item('event', (int)$e['id'], (string)$e['title'], substr((string)$e['starts_at'], 0, 10),
+                $e['condominium_id'] !== null ? (int)$e['condominium_id'] : null, $e['condominium'] !== null ? (string)$e['condominium'] : null,
+                $e['ticket_id'] !== null ? (int)$e['ticket_id'] : null, $e['protocol'] !== null ? (string)$e['protocol'] : null,
+                'scheduled', date('H:i', (int)strtotime((string)$e['starts_at'])));
+            if ($e['ticket_id'] !== null) {
+                $covered[(int)$e['ticket_id']] = true;
+            }
+        }
+        $lateVisitCondos = [];
+        foreach ($visits as $v) {
+            if ($v['overdue']) {
+                $items[] = $item('visit', $v['plan_id'], 'Vistoria ' . mb_strtolower($v['frequency_label']) . ' – ' . $v['condominium'], $v['due_on'],
+                    $v['condominium_id'], $v['condominium'], null, null, $v['open_inspection_id'] !== null ? 'in_progress' : 'due');
+                $lateVisitCondos[$v['condominium_id']] = true;
+            }
+        }
+        foreach ($tickets as $t) {
+            if (!$t['overdue'] || !in_array($t['status'], self::OPEN, true) || isset($covered[$t['id']])
+                || ($t['category'] === 'Vistoria' && isset($lateVisitCondos[$t['condominium_id']]))) {
+                continue;
+            }
+            $items[] = $item('ticket', $t['id'], $t['subject'], $t['due_on'], $t['condominium_id'], $t['condominium'], $t['id'], $t['protocol'], $t['status']);
+        }
+        foreach ($deadlines as $d) {
+            if ($d['days'] < 0) {
+                $items[] = $item('deadline', $d['id'], $d['title'], $d['date'], $d['condominium_id'], $d['condominium'], null, null, $d['label']);
+            }
+        }
+        usort($items, static fn(array $a, array $b): int => [$a['due_on'], (string)$a['time'], $a['kind'], $a['id']] <=> [$b['due_on'], (string)$b['time'], $b['kind'], $b['id']]);
+        return $items;
+    }
+
+    /**
+     * Chamados do SAC em aberto sem responsável, no escopo de condomínios da pessoa, só para quem atende (ADR 0658).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function unassigned(User $owner, DateTimeImmutable $today): array
+    {
+        if (!Access::can(self::SUPPORT, $owner)) {
+            return [];
+        }
+        $ids = $this->scope->allowedIds($owner);
+        $in = $ids === [] ? '' : ' OR t.condominium_id IN (' . implode(',', array_map('intval', $ids)) . ')';
+        $rows = $this->pdo->query("SELECT t.id, t.protocol, t.subject, t.priority, t.status, t.category, t.due_at, t.condominium_id, c.name AS condominium
+            FROM studio_support_tickets t LEFT JOIN condominiums c ON c.id = t.condominium_id
+            WHERE t.assigned_to IS NULL AND t.status IN ('open', 'in_progress') AND (t.condominium_id IS NULL{$in})
+            ORDER BY FIELD(t.priority, 'urgent', 'high', 'medium', 'low'), t.due_at IS NULL, t.due_at, t.id
+            LIMIT " . self::UNASSIGNED_LIMIT)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return array_map(fn(array $t): array => $this->ticketRow($t, $today) + [
+            'condominium_id' => $t['condominium_id'] !== null ? (int)$t['condominium_id'] : null,
+            'condominium' => $t['condominium'] !== null ? (string)$t['condominium'] : null,
+        ], $rows);
     }
 
     /** @return list<array<string, mixed>> chamados atribuídos à pessoa ainda não resolvidos, por prioridade e prazo */
