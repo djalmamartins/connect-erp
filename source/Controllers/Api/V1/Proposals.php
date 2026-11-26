@@ -7,13 +7,14 @@ namespace Source\Controllers\Api\V1;
 use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
+use Source\Services\Proposals\ProposalComposer;
 use Source\Services\Proposals\ProposalDesk;
 use Source\Services\Proposals\ProposalDeskError;
 
 /**
- * API REST das propostas do site (CN-011, ADR 0644; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
- * do ERP e do Studio: só quem tem proposals.manage. Sessão e CSRF no middleware ApiAuthenticated.
- * O pedido em si continua chegando pelo formulário público do site (ProposalService::submit), não por esta API.
+ * API REST das propostas (CN-011, ADR 0644 e 0653; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
+ * do ERP: só quem tem proposals.manage. Sessão e CSRF no middleware ApiAuthenticated.
+ * O pedido do site chega pelo formulário público (ProposalService::submit); a equipe cadastra com POST /proposals.
  */
 final class Proposals
 {
@@ -56,6 +57,33 @@ final class Proposals
         });
     }
 
+    /** POST /api/v1/proposals  {name, email, whatsapp, condominium, units, profile, message?, origin, requested: true} */
+    public function store(): void
+    {
+        $this->run(function (ProposalDesk $desk, User $user): array {
+            return [201, ['data' => (new ProposalComposer())->create($this->body(), $user)]];
+        });
+    }
+
+    /**
+     * POST /api/v1/proposals/{id}/responses  multipart/form-data: pdf_administrator e/ou pdf_syndic (PDF), subject,
+     * valid_until, introduction (opcional), send=1 para enviar por e-mail. ADR 0653.
+     */
+    public function respond(array $data): void
+    {
+        $this->run(function (ProposalDesk $desk, User $user) use ($data): array {
+            $form = array_map(static fn ($v) => is_string($v) ? $v : '', array_intersect_key($_POST, array_flip(['subject', 'introduction', 'valid_until'])));
+            $files = [];
+            foreach (array_keys(ProposalComposer::KINDS) as $kind) {
+                $file = $_FILES['pdf_' . $kind] ?? null;
+                $files[$kind] = is_array($file) && is_string($file['tmp_name'] ?? null) && ((int)($file['error'] ?? 4) !== UPLOAD_ERR_OK || is_uploaded_file($file['tmp_name'])) ? $file : null;
+            }
+            $send = in_array($_POST['send'] ?? '', ['1', 'true'], true);
+            $result = (new ProposalComposer())->attach((int)($data['id'] ?? 0), $form, $files, $user, $send);
+            return [201, ['data' => $result]];
+        });
+    }
+
     private function run(callable $action): void
     {
         $user = Auth::user();
@@ -68,7 +96,7 @@ final class Proposals
             return;
         }
         try {
-            [$status, $payload] = $action(new ProposalDesk());
+            [$status, $payload] = $action(new ProposalDesk(), $user);
             JsonResponse::send($status, $payload);
         } catch (ProposalDeskError $error) {
             $body = ['code' => $error->errorCode, 'message' => $error->getMessage()];

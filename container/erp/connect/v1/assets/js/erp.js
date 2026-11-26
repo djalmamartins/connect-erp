@@ -916,7 +916,9 @@
   $$('form[data-erp-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
       if (!form.checkValidity()) return;
-      if (form._erpConfirmed) { form._erpConfirmed = false; } else {
+      // Botão com data-erp-no-confirm envia sem perguntar (ex.: "Gerar PDF para conferir" ao lado de "Gerar e enviar").
+      var skip = event.submitter && event.submitter.hasAttribute('data-erp-no-confirm');
+      if (form._erpConfirmed || skip) { form._erpConfirmed = false; } else {
         // Pergunta na modal do sistema; com o sim, envia de novo pelo mesmo botão (mantém name/value do submit).
         event.preventDefault();
         var submitter = event.submitter || $('[type="submit"]', form);

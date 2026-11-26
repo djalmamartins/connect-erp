@@ -1,7 +1,7 @@
 <?php
 /**
- * Propostas do site (CN-011, ADR 0644) com dados reais: os pedidos de "Solicite uma proposta" do site, a mesma tabela
- * do Studio > Gestão > Propostas (ADR 0639), pelo ProposalDesk. Alerta no topo quando há propostas novas.
+ * Propostas (CN-011, ADR 0644 e 0653) com dados reais: os pedidos de "Solicite uma proposta" do site e as propostas
+ * cadastradas pela equipe, pelo ProposalDesk. Alerta no topo quando há propostas novas. Criar, gerar e enviar: só aqui.
  * @var array $currentPage @var ?array $proposalList @var ?array $proposalStats @var ?string $proposalError
  * @var string $proposalSearch @var string $proposalStatus
  */
@@ -23,8 +23,8 @@ $stats = $proposalStats ?? ['total' => 0, 'new' => 0, 'progress' => 0, 'won' => 
 $this->insert('components/layout/page-head', [
     'pageEyebrow' => $catalog['groups'][$currentPage['group']]['label'] . ' · Comercial',
     'pageTitle' => $currentPage['name'],
-    'pageLead' => 'Pedidos feitos em "Solicite uma proposta" no site. Cada pedido novo avisa a equipe no sino e aparece aqui e no Studio.',
-    'pageActions' => '<a class="erp-btn" href="' . $this->e(\Source\Services\Environments::link('studio', '/studio/proposals')) . '">' . $icon('chevron-right', 'erp-icon--sm') . 'Abrir no Studio</a>',
+    'pageLead' => 'Pedidos do site e propostas cadastradas pela equipe. Aqui você cadastra, anexa os PDFs prontos (administradora e síndico profissional) e envia por e-mail. Cada pedido novo do site avisa a equipe no sino.',
+    'pageActions' => '<a class="erp-btn erp-btn--primary" href="' . $this->e($route . '/nova') . '">' . $icon('plus', 'erp-icon--sm') . 'Nova proposta</a>',
 ]);
 ?>
 <?php if (($flash ?? null) !== null): $ok = str_contains((string)$flash->getType(), 'success'); ?>
@@ -44,7 +44,7 @@ $this->insert('components/layout/page-head', [
 
     <section class="erp-grid erp-grid--kpi" aria-label="Resumo das propostas">
         <?php foreach ([
-            ['label' => 'Recebidas', 'value' => (string)$stats['total'], 'meta' => 'pedidos do site', 'icon' => 'file', 'tone' => ''],
+            ['label' => 'Recebidas', 'value' => (string)$stats['total'], 'meta' => 'do site e cadastradas', 'icon' => 'file', 'tone' => ''],
             ['label' => 'Novas', 'value' => (string)$stats['new'], 'meta' => 'aguardando contato', 'icon' => 'bell', 'tone' => $stats['new'] > 0 ? 'warning' : ''],
             ['label' => 'Em atendimento', 'value' => (string)$stats['progress'], 'meta' => 'contatadas, qualificadas ou com proposta', 'icon' => 'clock', 'tone' => ''],
             ['label' => 'Fechadas', 'value' => (string)$stats['won'], 'meta' => 'viraram contrato', 'icon' => 'check', 'tone' => ''],
@@ -61,16 +61,16 @@ $this->insert('components/layout/page-head', [
     </form>
 
     <section class="erp-card" aria-labelledby="prop-list">
-        <div class="erp-card__head"><div><h2 id="prop-list">Pedidos de proposta</h2><p><?= (int)($proposalList['total'] ?? 0) ?> pedido(s)</p></div></div>
+        <div class="erp-card__head"><div><h2 id="prop-list">Propostas</h2><p><?= (int)($proposalList['total'] ?? 0) ?> pedido(s)</p></div></div>
         <?php if ($rows === []): ?>
-            <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhuma proposta encontrada</strong><p><?= $proposalStatus !== '' || $proposalSearch !== '' ? 'Nenhum pedido com estes filtros.' : 'Os pedidos feitos no site aparecem aqui assim que chegam.' ?></p></div>
+            <div class="erp-empty"><span class="erp-empty__icon"><?= $icon('file') ?></span><strong>Nenhuma proposta encontrada</strong><p><?= $proposalStatus !== '' || $proposalSearch !== '' ? 'Nenhum pedido com estes filtros.' : 'Os pedidos feitos no site aparecem aqui assim que chegam. Para um pedido por telefone ou WhatsApp, use "Nova proposta".' ?></p></div>
         <?php else: ?>
             <div class="erp-table-wrap" role="region" aria-labelledby="prop-list" tabindex="0"><table class="erp-table">
                 <thead><tr><th scope="col">Solicitante</th><th scope="col">Condomínio</th><th scope="col" class="is-num">Unidades</th><th scope="col">Situação</th><th scope="col">Recebida em</th><th scope="col" class="is-num">Ações</th></tr></thead>
                 <tbody><?php foreach ($rows as $item): $tone = ProposalDesk::STATUSES[$item['status']][1] ?? 'plain'; ?>
                     <tr<?= $item['status'] === 'new' ? ' class="is-new"' : '' ?>>
                         <td><strong><?= $this->e($item['name']) ?></strong><small class="erp-muted"><?= $this->e($item['profile_label']) ?> · <?= $this->e($item['email']) ?></small></td>
-                        <td><?= $this->e($item['condominium']) ?><small class="erp-muted"><?= $this->e($item['protocol']) ?></small></td>
+                        <td><?= $this->e($item['condominium']) ?><small class="erp-muted"><?= $this->e($item['protocol']) ?> · <?= $this->e($item['origin'] === 'site' ? 'Site' : $item['origin_label']) ?></small></td>
                         <td class="is-num"><?= (int)$item['units'] ?></td>
                         <td><span class="erp-badge erp-badge--<?= $tone ?>"><?= $this->e($item['status_label']) ?></span></td>
                         <td class="erp-nowrap"><?= $this->e($when($item['created_at'])) ?></td>

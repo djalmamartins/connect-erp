@@ -1,7 +1,7 @@
 ---
 codigo:
-titulo: Propostas pedidas pelo site (Studio)
-resumo: Onde chegam os pedidos de proposta feitos no site, como a equipe é avisada no sininho do Studio, como acompanhar cada pedido e gerar a proposta em PDF para o solicitante.
+titulo: Propostas no Studio (consulta)
+resumo: O que o site pede, como a equipe é avisada de um pedido novo e por que o Studio agora só consulta as propostas (criar, anexar e enviar ficam no ERP).
 categoria: configuracoes
 rota: /studio/proposals
 menu: Studio > Gestão > Propostas
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-Quando alguém preenche **Solicite uma proposta** no site (`/solicite-sua-proposta`), o pedido chega na tela **Propostas** do Studio e também no ERP, em **Comunicação > Comercial > Propostas do site**. Só quem tem a permissão de **gerenciar propostas** vê o item no menu e abre a tela.
+Quando alguém preenche **Solicite uma proposta** no site (`/solicite-sua-proposta`), o pedido chega no ERP, em **Comunicação > Comercial > Propostas**, e também aparece no Studio para consulta. Só quem tem a permissão de **gerenciar propostas** vê o item no menu e abre a tela.
 
 ## O que o site pede
 
@@ -29,31 +29,13 @@ O formulário pede só o necessário para responder: **nome**, **WhatsApp**, **e
 
 A cada pedido novo, todas as pessoas que podem abrir **Propostas** recebem:
 
-1. um aviso no **sininho** do Studio (o número sobe e toca um som), com o nome do condomínio e o número de unidades;
-2. um e-mail interno com os dados do pedido.
+1. um aviso no **sininho**, com o nome do condomínio e o número de unidades; o aviso abre o pedido no ERP;
+2. um e-mail interno com os dados do pedido e o botão para abrir no ERP.
 
-Clique no aviso e depois em **Ver conteúdo** (a seta) para ir direto ao pedido. O sininho confere avisos novos a cada minuto, mais ou menos.
+## O Studio agora só consulta
 
-> O som só toca com o Studio aberto numa aba do navegador. Alguns navegadores só liberam som depois que você clica em algum lugar da página.
+Desde 26/11/2026, criar uma proposta, anexar os PDFs, enviar por e-mail e mudar a situação ou o responsável são feitos **só no ERP**. Em [[Studio > Gestão > Propostas]] você ainda vê a lista, os dados de cada pedido, a situação e as versões em PDF já geradas, mas não muda nada. Use {{Abrir no ERP}} para ir à mesma proposta no ERP.
 
-## Acompanhar um pedido
+Nenhum dado se perdeu: os pedidos e os PDFs feitos antes no Studio aparecem também no ERP.
 
-1. Em [[Studio > Gestão > Propostas]], use a busca (nome, condomínio ou protocolo) e o filtro de status para achar o pedido.
-2. Clique na seta da linha para abrir.
-3. Em **Atualizar proposta**, escolha o **status** (Nova, Contatada, Qualificada, Proposta enviada, Fechada, Perdida ou Arquivada) e o **responsável**, e clique em {{Salvar acompanhamento}}.
-
-Os quadros do topo mostram o total recebido, os pedidos aguardando contato, os em atendimento e os fechados.
-
-## Gerar a proposta em PDF
-
-No mesmo pedido, em **Gerar proposta em PDF**:
-
-1. Escolha o **modelo** (Síndico e condomínio ou Administradora) e a **validade**.
-2. Revise assunto, apresentação, escopo, condições comerciais, forma de pagamento e observações.
-3. Clique em {{Gerar PDF}} para ver a prévia, ou em {{Gerar e enviar}} para mandar ao e-mail do solicitante.
-
->! Depois de enviado, o e-mail não volta. Confira os valores antes de clicar em {{Gerar e enviar}}.
-
-Cada PDF gerado aparece em **Respostas geradas**, com a data e se foi enviado.
-
->> Veja também: [Propostas pedidas pelo site (ERP)](artigo:propostas-do-site-no-erp).
+>> Veja como fazer no ERP: [Propostas: criar, anexar e enviar (ERP)](artigo:propostas-do-site-no-erp).

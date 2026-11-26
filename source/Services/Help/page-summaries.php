@@ -3179,20 +3179,28 @@ return [
         ],
     ],
     'CN-011' => [
-        'faz' => 'Veja no ERP os pedidos de proposta feitos no site, saiba quando chega um novo e acompanhe cada um até virar contrato.',
+        'faz' => 'Cadastre a proposta, anexe os PDFs prontos (administradora e síndico profissional) e envie por e-mail, tudo no ERP. Os pedidos do site chegam aqui com aviso no sino.',
         'artigo' => 'propostas-do-site-no-erp',
         'topicos' => [
             [
-                'id' => 'como-saber-que-chegou-uma-proposta',
-                'title' => 'Como saber que chegou uma proposta',
+                'id' => 'como-saber-que-chegou-uma-proposta-do-site',
+                'title' => 'Como saber que chegou uma proposta do site',
             ],
             [
-                'id' => 'acompanhar-um-pedido',
-                'title' => 'Acompanhar um pedido',
+                'id' => 'cadastrar-uma-proposta-pedida-por-telefone-ou-whatsapp',
+                'title' => 'Cadastrar uma proposta pedida por telefone ou WhatsApp',
             ],
             [
-                'id' => 'responder-com-a-proposta-em-pdf',
-                'title' => 'Responder com a proposta em PDF',
+                'id' => 'anexar-e-enviar-a-proposta',
+                'title' => 'Anexar e enviar a proposta',
+            ],
+            [
+                'id' => 'fazer-a-conta-da-proposta',
+                'title' => 'Fazer a conta da proposta',
+            ],
+            [
+                'id' => 'acompanhar',
+                'title' => 'Acompanhar',
             ],
         ],
     ],

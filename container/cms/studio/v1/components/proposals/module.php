@@ -3,7 +3,7 @@
 return [
     'slug' => 'proposals',
     'name' => 'Propostas',
-    'description' => 'Recebe e organiza solicitações comerciais enviadas pelo site.',
+    'description' => 'Consulta das propostas; criar, gerar e enviar ficam no ERP (ADR 0653).',
     'version' => '1.1.0',
     'permission' => 'proposals.manage',
     'menu' => [
@@ -14,7 +14,7 @@ return [
     'routes' => [
         ['get', '/proposals', 'Studio:proposals'],
         ['get', '/proposals/{id}', 'Studio:proposal'],
-        ['post', '/proposals/{id}', 'Studio:proposal'],
+        ['post', '/proposals/{id}', 'Studio:proposal'], // só responde "agora é no ERP" (ADR 0653)
     ],
     'dashboard' => 'dashboard.php',
 ];
