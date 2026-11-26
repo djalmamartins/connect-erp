@@ -11,7 +11,7 @@
 </head>
 <body class="studio-login-body" data-environment="<?= htmlspecialchars($loginEnvironment ?? 'studio') ?>">
 <a class="studio-skip-link" href="#main-content">Ir para o conteúdo</a>
-<div class="ajax_load"><div class="ajax_load_box"><div class="ajax_load_box_circle"></div><p class="ajax_load_box_title">Entrando...</p></div></div>
+<div class="ajax_load"><div class="ajax_load_box"><div class="ajax_load_box_circle"></div><p class="ajax_load_box_title"><?= htmlspecialchars($loadingText ?? 'Entrando...') ?></p></div></div>
 <main id="main-content" tabindex="-1"><?= $this->section('content') ?></main>
 <script src="<?= url('/container/shared/assets/vendor/scripts/jquery.min.js') ?>"></script>
 <script src="<?= url('/container/shared/assets/vendor/scripts/jquery-ui.js') ?>"></script>
