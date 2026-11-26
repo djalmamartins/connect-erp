@@ -7543,7 +7543,7 @@ paths:
     post:
       operationId: createProposal
       tags: [Proposals]
-      summary: Cadastra uma proposta pedida fora do site (telefone, WhatsApp, e-mail, indicação, visita) (ADR 0650)
+      summary: Cadastra uma proposta pedida fora do site (telefone, WhatsApp, e-mail, indicação, visita) (ADR 0653)
       description: Entra como contacted, com quem cadastrou como responsável se for da equipe. Não envia e-mail para a pessoa nem marca aceite de novidades. requested precisa ser true (a pessoa pediu a proposta; LGPD art. 7º, V).
       security: [{ session: [], csrf: [] }]
       requestBody:
@@ -7574,7 +7574,7 @@ paths:
     post:
       operationId: createProposalResponse
       tags: [Proposals]
-      summary: Anexa os PDFs prontos da proposta (até dois - administradora e síndico profissional) e, com send=1, envia num e-mail (ADR 0650)
+      summary: Anexa os PDFs prontos da proposta (até dois - administradora e síndico profissional) e, com send=1, envia num e-mail (ADR 0653)
       description: Cada PDF vira uma versão (generated). Com send=1 um único e-mail leva os anexos, as versões ficam queued e a proposta passa para proposal_sent (salvo won, lost ou archived). Só PDF, até 20 MB cada; antivírus conforme ERP_AV_MODE. Entra na auditoria.
       security: [{ session: [], csrf: [] }]
       parameters:

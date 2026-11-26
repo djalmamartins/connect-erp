@@ -1,7 +1,7 @@
 ---
 codigo:
 titulo: Ligar a cobrança pelo Banco Inter
-resumo: Como a administradora liga uma conta do Banco Inter à cobrança do Connect ERP: aplicação no sandbox do Inter, envio do pacote do certificado pela tela Integrações, teste automático e o endereço do aviso de pagamento.
+resumo: Como a administradora liga uma conta do Banco Inter à cobrança do ERP Connect Condomínios: aplicação no sandbox do Inter, envio do pacote do certificado pela tela Integrações, teste automático e o endereço do aviso de pagamento.
 categoria: configuracoes
 rota: /configuracoes/integracoes
 menu: Configurações > Aplicativo e notificações > Integrações
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-O Banco Inter é o primeiro banco ligado à cobrança do Connect ERP. Com a integração ligada, o boleto é registrado direto no Inter, já com Pix, e o pagamento é baixado sozinho quando o banco avisa.
+O Banco Inter é o primeiro banco ligado à cobrança do ERP Connect Condomínios. Com a integração ligada, o boleto é registrado direto no Inter, já com Pix, e o pagamento é baixado sozinho quando o banco avisa.
 
 >! Por enquanto só o **ambiente de testes do Inter** (sandbox) está liberado. Nenhum boleto real é emitido. O uso em produção depende da homologação no sandbox e de aprovação.
 

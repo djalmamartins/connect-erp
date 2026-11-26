@@ -17,7 +17,7 @@ use Source\Support\AppLogger;
 use Source\Support\Message;
 
 /**
- * ERP v1 — Propostas (Comunicação › Comercial, CN-011, ADR 0644 e 0650).
+ * ERP v1 — Propostas (Comunicação › Comercial, CN-011, ADR 0644 e 0653).
  *
  * GET  /comunicacao/propostas[/p/{page}]?busca=&situacao=  lista com busca, situação e quadros do topo
  * GET  /comunicacao/propostas/nova                         cadastrar uma proposta pedida por telefone, WhatsApp...
@@ -29,7 +29,7 @@ use Source\Support\Message;
  * POST /comunicacao/propostas/{id}/calculo                 grava a conta (preço por unidade e mínimo que compensa)
  * GET  /comunicacao/propostas/{id}/pdf/{response}          abre o PDF de uma versão
  *
- * Desde a ADR 0650 criar, anexar e enviar ficam só aqui (ProposalComposer); o Studio só consulta. Os PDFs são feitos
+ * Desde a ADR 0653 criar, anexar e enviar ficam só aqui (ProposalComposer); o Studio só consulta. Os PDFs são feitos
  * fora do sistema (Canva) e anexados: até dois, administradora e síndico profissional.
  * A situação e o responsável seguem pelo ProposalDesk, que também serve a API /api/v1/proposals.
  * Permissões: erp.access + proposals.manage (a mesma de quem recebe o aviso no sininho).

@@ -1,6 +1,6 @@
 <?php
 /**
- * Nova proposta no ERP (CN-011, ADR 0650): para pedido que chegou por telefone, WhatsApp, e-mail, indicação ou visita.
+ * Nova proposta no ERP (CN-011, ADR 0653): para pedido que chegou por telefone, WhatsApp, e-mail, indicação ou visita.
  * Depois de gravar, a proposta abre para anexar o PDF e enviar. Nenhum e-mail sai só por cadastrar.
  * @var array $currentPage @var array<string,string> $proposalForm @var array<string,string> $proposalErrors
  */

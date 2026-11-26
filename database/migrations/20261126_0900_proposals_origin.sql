@@ -1,4 +1,4 @@
--- Propostas criadas no ERP (ADR 0650). Idempotente; só apaga a permissão de propostas dos papéis fora da administração.
+-- Propostas criadas no ERP (ADR 0653). Idempotente; só apaga a permissão de propostas dos papéis fora da administração.
 -- origin: 'site' para o formulário "Solicite uma proposta" (tudo o que já existe) ou como a equipe recebeu o pedido
 -- (telefone, whatsapp, email, indicacao, presencial, outro). created_by: quem cadastrou no ERP (NULL quando veio do site).
 -- Conta da proposta (calculadora da tela): preço por unidade da administradora e do síndico profissional e o mínimo
@@ -10,7 +10,7 @@ ALTER TABLE `proposals`
   ADD COLUMN IF NOT EXISTS `price_syndic_unit_cents` int(10) unsigned DEFAULT NULL AFTER `price_admin_unit_cents`,
   ADD COLUMN IF NOT EXISTS `min_monthly_cents` int(10) unsigned DEFAULT NULL AFTER `price_syndic_unit_cents`;
 
--- ADR 0650: propostas só para administração e desenvolvimento (pedido do Djalma, 26/11). Tira proposals.manage dos
+-- ADR 0653: propostas só para administração e desenvolvimento (pedido do Djalma, 26/11). Tira proposals.manage dos
 -- outros papéis (o módulo antigo do Studio dava ao Gerente). Exceção por usuário (access_user_overrides) continua valendo.
 DELETE rp FROM `access_role_permissions` rp
   JOIN `access_permissions` p ON p.id = rp.permission_id AND p.slug = 'proposals.manage'

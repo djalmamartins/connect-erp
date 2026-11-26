@@ -43,9 +43,9 @@ final class ErpProposalScreensTest extends TestCase
         self::assertSame(5, substr_count($controller, 'csrf_verify($data)'), 'acompanhamento, nova proposta, anexar/enviar, enviar de novo e conta');
         self::assertStringContainsString('(new ProposalDesk())->update(', $controller);
         $studio = $this->file('source/Controllers/Studio/Studio.php');
-        self::assertStringNotContainsString('ProposalDesk())->update(', $studio, 'ADR 0650: o Studio não grava mais.');
-        self::assertStringNotContainsString('ProposalPdf', $studio, 'ADR 0650: o Studio não gera PDF.');
-        self::assertStringNotContainsString('new Email()', substr($studio, (int)strpos($studio, 'public function proposal('), 3000), 'ADR 0650: o Studio não envia proposta.');
+        self::assertStringNotContainsString('ProposalDesk())->update(', $studio, 'ADR 0653: o Studio não grava mais.');
+        self::assertStringNotContainsString('ProposalPdf', $studio, 'ADR 0653: o Studio não gera PDF.');
+        self::assertStringNotContainsString('new Email()', substr($studio, (int)strpos($studio, 'public function proposal('), 3000), 'ADR 0653: o Studio não envia proposta.');
         self::assertStringNotContainsString("r.slug IN ('developer','super_admin','client_admin','manager')", $studio, 'Responsável pela permissão, não por lista de papéis.');
         $detail = $this->file('container/cms/studio/v1/components/proposals/detail.php');
         self::assertStringNotContainsString('<form', $detail, 'Studio só consulta.');

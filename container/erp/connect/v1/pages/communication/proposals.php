@@ -1,6 +1,6 @@
 <?php
 /**
- * Propostas (CN-011, ADR 0644 e 0650) com dados reais: os pedidos de "Solicite uma proposta" do site e as propostas
+ * Propostas (CN-011, ADR 0644 e 0653) com dados reais: os pedidos de "Solicite uma proposta" do site e as propostas
  * cadastradas pela equipe, pelo ProposalDesk. Alerta no topo quando há propostas novas. Criar, gerar e enviar: só aqui.
  * @var array $currentPage @var ?array $proposalList @var ?array $proposalStats @var ?string $proposalError
  * @var string $proposalSearch @var string $proposalStatus

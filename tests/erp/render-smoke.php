@@ -321,7 +321,7 @@ foreach ($catalog['pages'] as $id => $page) {
         continue;
     }
     if ($id === 'CN-011') {
-        // Propostas (ADR 0644 e 0650): lista com alerta de novas, filtros, escape, o detalhe com gerar/enviar e a nova proposta.
+        // Propostas (ADR 0644 e 0653): lista com alerta de novas, filtros, escape, o detalhe com gerar/enviar e a nova proposta.
         $row = ['id' => 7, 'protocol' => 'PROP-261122-ABC123', 'name' => '<b>Ana</b>', 'email' => 'ana@example.test', 'whatsapp' => '(11) 99999-0000', 'condominium' => 'Residencial <i>Teste</i>',
             'units' => 40, 'profile' => 'sindico', 'profile_label' => 'Síndico', 'message' => "Quero <script>x</script>\nproposta", 'status' => 'new', 'status_label' => 'Nova', 'assigned_to' => null,
             'source_url' => null, 'origin' => 'site', 'origin_label' => 'Site (Solicite uma proposta)', 'created_by' => null,
@@ -1766,7 +1766,7 @@ putenv('ERP_DEMO_DATA=true');
 $studio = static fn (): Source\Core\View => new Source\Core\View($root . '/container/cms/studio/v1/', 'php');
 $html = $studio()->render('components/login/login', ['head' => '<title>Entrar</title>', 'cookie' => null, 'adminBase' => $erpPrefix, 'loginEnvironment' => 'erp', 'forgotUrl' => erp_url('/recuperar-senha')]);
 $assert(str_contains($html, 'action="' . $erpRoot . '/login"'), 'login: envia para o login do ERP');
-$assert(str_contains($html, 'CONNECT ERP') && str_contains($html, 'Esqueci minha senha'), 'login: identidade ERP e recuperação');
+$assert(str_contains($html, 'ERP CONNECT CONDOMÍNIOS') && str_contains($html, 'Esqueci minha senha'), 'login: identidade ERP e recuperação');
 $assert((bool)preg_match('~name=[\x27"]csrf[\x27"]~', $html) && str_contains($html, 'type="password"'), 'login: CSRF e senha');
 $save('login', $html);
 $html = $studio()->render('components/login/login', ['head' => '', 'cookie' => null, 'adminBase' => '/studio', 'loginEnvironment' => 'studio']);

@@ -116,10 +116,10 @@ $contact = \Source\Services\Help\SupportContact::data();
     <div class="hc-cta">
         <div class="hc-cta__text">
             <small>Já é cliente da Connect Condomínios?</small>
-            <h2>Acesse o Connect ERP</h2>
+            <h2>Acesse o ERP Connect Condomínios</h2>
             <p>Condomínios, cobrança, prestação de contas e atendimento em um só lugar.</p>
             <a class="hc-btn hc-btn--gold" href="<?= htmlspecialchars($contact['system_url']) ?>">Entrar no sistema <?= \Source\Services\Help\Icons::svg('arrow-forward-outline') ?></a>
         </div>
-        <?php if ($showcase): ?><div class="hc-cta__shot"><img src="<?= htmlspecialchars($showcase) ?>" alt="Painel do Connect ERP" loading="lazy" width="1440" height="900"></div><?php endif; ?>
+        <?php if ($showcase): ?><div class="hc-cta__shot"><img src="<?= htmlspecialchars($showcase) ?>" alt="Painel do ERP Connect Condomínios" loading="lazy" width="1440" height="900"></div><?php endif; ?>
     </div>
 </section>

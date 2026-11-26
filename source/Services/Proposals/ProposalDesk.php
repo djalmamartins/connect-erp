@@ -12,7 +12,7 @@ use Source\Support\Audit;
 use Source\Support\Proposal\ProposalService;
 
 /**
- * Propostas (ADR 0639, 0644 e 0650): pedidas no site ou cadastradas pela equipe no ERP, na tabela `proposals`,
+ * Propostas (ADR 0639, 0644 e 0653): pedidas no site ou cadastradas pela equipe no ERP, na tabela `proposals`,
  * lidas e atualizadas aqui para a tela do ERP (CN-011), a API /api/v1/proposals e a consulta do Studio.
  * Criar, gerar e enviar a proposta em PDF: ProposalComposer.
  *
@@ -112,7 +112,7 @@ final class ProposalDesk
     }
 
     /**
-     * Versões da proposta em PDF (geradas no ERP, ADR 0650, ou antes no Studio), mais novas primeiro.
+     * Versões da proposta em PDF (geradas no ERP, ADR 0653, ou antes no Studio), mais novas primeiro.
      *
      * @return list<array{id:int,subject:string,template_type:string,status:string,has_pdf:bool,queued_at:?string,created_at:string}>
      */

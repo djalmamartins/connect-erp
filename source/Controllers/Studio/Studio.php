@@ -196,7 +196,7 @@ class Studio extends Controller
         if (!$proposal) { redirect('/studio/proposals'); return; }
         if (!empty($data['action'])) {
             if (!csrf_verify($data)) { $this->jsonMessage('Sessão expirada. Atualize a página.', 'error'); return; }
-            // ADR 0650: criar, gerar, enviar e mudar a situação ficam só no ERP; o Studio só consulta (nada é gravado aqui).
+            // ADR 0653: criar, gerar, enviar e mudar a situação ficam só no ERP; o Studio só consulta (nada é gravado aqui).
             echo json_encode(['message' => (new \Source\Support\Message())->warning('As propostas agora são feitas no ERP. Use "Abrir no ERP".')->render(),
                 'redirect' => \Source\Services\Environments::link('erp', \Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . '/' . (int)$proposal->id)]);
             return;
@@ -1838,8 +1838,8 @@ class Studio extends Controller
             return;
         }
         $mail = (new \Source\Support\Email())->timeout(20);
-        $sent = $mail->bootstrap("Teste de e-mail do Connect ERP", (new \Source\Support\MailTemplate())->render("notice", [
-            "subject" => "Teste de e-mail do Connect ERP",
+        $sent = $mail->bootstrap("Teste de e-mail do ERP Connect Condomínios", (new \Source\Support\MailTemplate())->render("notice", [
+            "subject" => "Teste de e-mail do ERP Connect Condomínios",
             "paragraphs" => [
                 "Este é um e-mail de teste enviado pela tela de Configurações do Studio (" . date("d/m/Y H:i") . ").",
                 "Se chegou na caixa de entrada (e não no spam), o envio de e-mails do sistema está pronto.",

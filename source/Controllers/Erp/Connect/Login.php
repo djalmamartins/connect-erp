@@ -68,7 +68,7 @@ final class Login extends Controller
         }
 
         echo $this->view->render('components/login/login', [
-            'head' => $this->seo->render('Entrar · Connect ERP', 'Acesso ao ERP da administradora Connect.', erp_url('/login'), theme('/assets/images/favicon.png'), false),
+            'head' => $this->seo->render('Entrar · ERP Connect Condomínios', 'Acesso ao ERP da administradora Connect.', erp_url('/login'), theme('/assets/images/favicon.png'), false),
             'cookie' => filter_input(INPUT_COOKIE, 'authEmail'),
             'adminBase' => rtrim(erp_base(), '/'),
             'loginEnvironment' => 'erp',

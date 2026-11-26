@@ -23,7 +23,7 @@
                 <img src="<?= theme('/assets/images/logo-connect-condominios.svg') ?>" alt="Connect Condomínios">
                 <?php [$loginEyebrow, $loginTitle, $loginLead] = match ($loginEnvironment ?? 'studio') {
                     'helpdesk' => ['SAC CONNECT', 'SAC', 'Acesse para atender e acompanhar chamados'],
-                    'erp' => ['CONNECT ERP', 'Bem-vindo(a) de volta!', 'Acesse a gestão dos condomínios da Connect'],
+                    'erp' => ['ERP CONNECT CONDOMÍNIOS', 'Bem-vindo(a) de volta!', 'Acesse a gestão dos condomínios da Connect'],
                     default => ['MOVESOS', 'Bem-vindo(a) de volta!', 'Acesse sua conta para continuar'],
                 }; ?>
                 <span><?= $loginEyebrow ?></span>

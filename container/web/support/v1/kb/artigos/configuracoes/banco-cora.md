@@ -1,7 +1,7 @@
 ---
 codigo:
 titulo: Ligar a cobrança pela Cora
-resumo: Como a administradora liga uma conta da Cora à cobrança do Connect ERP: credencial do ambiente de teste na Cora Web, envio do certificado pela tela Integrações, teste automático e o que já funciona.
+resumo: Como a administradora liga uma conta da Cora à cobrança do ERP Connect Condomínios: credencial do ambiente de teste na Cora Web, envio do certificado pela tela Integrações, teste automático e o que já funciona.
 categoria: configuracoes
 rota: /configuracoes/integracoes
 menu: Configurações > Aplicativo e notificações > Integrações
@@ -13,7 +13,7 @@ manual: sim
 rascunho: nao
 ---
 
-A Cora é o segundo banco ligado à cobrança do Connect ERP, pelo mesmo caminho do Banco Inter. Com a integração ligada, o boleto é registrado direto na Cora, já com Pix, e o pagamento é baixado sozinho pela consulta automática de hora em hora.
+A Cora é o segundo banco ligado à cobrança do ERP Connect Condomínios, pelo mesmo caminho do Banco Inter. Com a integração ligada, o boleto é registrado direto na Cora, já com Pix, e o pagamento é baixado sozinho pela consulta automática de hora em hora.
 
 >! Por enquanto só o **ambiente de teste da Cora** (stage) está liberado. Nenhum boleto real é emitido. O uso em produção depende da homologação no ambiente de teste e de aprovação.
 

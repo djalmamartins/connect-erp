@@ -1,4 +1,4 @@
-# 0650 — Propostas só no ERP: cadastrar, anexar os PDFs prontos e enviar
+# 0653 — Propostas só no ERP: cadastrar, anexar os PDFs prontos e enviar
 
 - Status: Aceito
 - Data: 26/11/2026

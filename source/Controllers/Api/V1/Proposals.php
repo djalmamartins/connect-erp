@@ -12,7 +12,7 @@ use Source\Services\Proposals\ProposalDesk;
 use Source\Services\Proposals\ProposalDeskError;
 
 /**
- * API REST das propostas (CN-011, ADR 0644 e 0650; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
+ * API REST das propostas (CN-011, ADR 0644 e 0653; docs/api/openapi.yaml, tag Proposals). As mesmas regras da tela
  * do ERP: só quem tem proposals.manage. Sessão e CSRF no middleware ApiAuthenticated.
  * O pedido do site chega pelo formulário público (ProposalService::submit); a equipe cadastra com POST /proposals.
  */
@@ -67,7 +67,7 @@ final class Proposals
 
     /**
      * POST /api/v1/proposals/{id}/responses  multipart/form-data: pdf_administrator e/ou pdf_syndic (PDF), subject,
-     * valid_until, introduction (opcional), send=1 para enviar por e-mail. ADR 0650.
+     * valid_until, introduction (opcional), send=1 para enviar por e-mail. ADR 0653.
      */
     public function respond(array $data): void
     {

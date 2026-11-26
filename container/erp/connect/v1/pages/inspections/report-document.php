@@ -132,7 +132,7 @@ $statusLabel = ['in_progress' => 'Em andamento (rascunho)', 'completed' => 'Conc
     <?php endforeach; ?>
 
     <div class="foot">
-        Gerado em <?= $this->e($generatedAt) ?> pelo Connect ERP. A localização é a informada pelo aparelho do responsável no momento do check-in e de cada foto.
+        Gerado em <?= $this->e($generatedAt) ?> pelo ERP Connect Condomínios. A localização é a informada pelo aparelho do responsável no momento do check-in e de cada foto.
     </div>
 </div>
 </body>

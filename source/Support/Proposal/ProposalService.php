@@ -57,7 +57,7 @@ final class ProposalService
         return ['success' => true, 'message' => 'Proposta solicitada com sucesso!', 'protocol' => $proposal->protocol];
     }
 
-    /** Endereço da proposta no ERP (Comunicação › Comercial › Propostas), de onde se gera e envia o PDF (ADR 0650). */
+    /** Endereço da proposta no ERP (Comunicação › Comercial › Propostas), de onde se gera e envia o PDF (ADR 0653). */
     public static function erpLink(int $id): string
     {
         return \Source\Services\Environments::link('erp', \Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . '/' . $id);
@@ -132,7 +132,7 @@ final class ProposalService
         $message->audience = 'proposal_team';
         $message->severity = 'info';
         $message->delivery_channels = 'both';
-        // ADR 0650: a proposta é tratada no ERP; o aviso leva direto para lá.
+        // ADR 0653: a proposta é tratada no ERP; o aviso leva direto para lá.
         $message->link = self::erpLink((int)$proposal->id);
         $message->status = 'sent';
         $message->delivered_at = date('Y-m-d H:i:s');

@@ -1,6 +1,6 @@
 <?php
 /**
- * Uma proposta no ERP (CN-011, ADR 0644 e 0650): dados do pedido, acompanhamento (situação e responsável), anexar os
+ * Uma proposta no ERP (CN-011, ADR 0644 e 0653): dados do pedido, acompanhamento (situação e responsável), anexar os
  * PDFs prontos (até dois: administradora e síndico profissional), enviar por e-mail e as versões (também as do Studio).
  * @var array $currentPage @var array $proposal ProposalDesk::present() @var list<array{id:int,name:string}> $proposalTeam
  * @var list<array{id:int,subject:string,template_type:string,status:string,has_pdf:bool,queued_at:?string,created_at:string}> $proposalResponses

@@ -36,7 +36,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
 ?>
 <aside class="erp-sidebar" id="erp-sidebar" aria-label="Navegação do ERP">
     <div class="erp-sidebar__head">
-        <a class="erp-brand" href="<?= erp_url('/dashboard') ?>" aria-label="Connect ERP — início">
+        <a class="erp-brand" href="<?= erp_url('/dashboard') ?>" aria-label="ERP Connect Condomínios — início">
             <img class="erp-brand__logo" src="<?= $this->e(function_exists('site_logo_url') ? site_logo_url() : theme('/assets/images/logo-connect-condominios.svg')) ?>" alt="Connect Condomínios" width="152" height="40">
             <img class="erp-brand__mark" src="<?= theme('/assets/images/marca_connect.svg') ?>" alt="" width="34" height="34">
         </a>
@@ -44,7 +44,7 @@ $initial = mb_strtoupper(mb_substr(trim((string)($user->first_name ?? 'C')), 0, 
         <button type="button" class="erp-sidebar__close" data-erp-nav-close aria-label="Fechar menu"><?= $icon('close') ?></button>
     </div>
     <?php /* Alternador de ambientes único (ADR 0627): o mesmo do Studio e do Help Desk; lista em Source\Services\Environments (ADR 0034). */ ?>
-    <div class="erp-sidebar__envswitch"><?= \Source\Support\EnvironmentSwitcher::render($user, 'erp', 'ERP', 'Connect ERP') ?></div>
+    <div class="erp-sidebar__envswitch"><?= \Source\Support\EnvironmentSwitcher::render($user, 'erp', 'ERP', 'Connect Condomínios') ?></div>
     <nav class="erp-nav" aria-label="Menu principal">
         <?php foreach ($nav as $groupKey => $group):
             $pages = $pagesByGroup[$groupKey] ?? [];

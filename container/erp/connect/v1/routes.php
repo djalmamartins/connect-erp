@@ -186,7 +186,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
     $route->post("/configuracoes/dados-pessoais/baixar", "PrivacyScreens:download");
     $route->post("/configuracoes/dados-pessoais/anonimizar", "PrivacyScreens:anonymize");
 
-    // Propostas (CN-011, ADR 0644 e 0650): criar, anexar os PDFs e enviar ficam só no ERP; CSRF e padrão PRG.
+    // Propostas (CN-011, ADR 0644 e 0653): criar, anexar os PDFs e enviar ficam só no ERP; CSRF e padrão PRG.
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE, "ProposalScreens:index");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/p/{page}", "ProposalScreens:index");
     $route->get(\Source\Controllers\Erp\Connect\ProposalScreens::ROUTE . "/nova", "ProposalScreens:create");

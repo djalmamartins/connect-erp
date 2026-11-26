@@ -11,7 +11,7 @@ use Source\Services\Proposals\ProposalDesk;
 use Source\Services\Proposals\ProposalDeskError;
 use Source\Support\Access;
 
-/** Criar, anexar e enviar propostas no ERP (ADR 0650): validação, LGPD, até dois PDFs, antivírus, fila de e-mail e auditoria. */
+/** Criar, anexar e enviar propostas no ERP (ADR 0653): validação, LGPD, até dois PDFs, antivírus, fila de e-mail e auditoria. */
 final class ProposalComposerIntegrationTest extends TestCase
 {
     /** @var list<string> */

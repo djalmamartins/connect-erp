@@ -192,7 +192,7 @@ $embedded = array_values(array_filter($annexes, static fn (array $a): bool => $a
     </table>
     <?php endif; ?>
 
-    <p class="foot">Gerado em <?= $this->e($generatedAt) ?> pelo Connect ERP. Regime de caixa: entram os lançamentos válidos com pagamento ou recebimento no mês. Transferências entre contas do condomínio não alteram o caixa e aparecem só no quadro das contas bancárias.</p>
+    <p class="foot">Gerado em <?= $this->e($generatedAt) ?> pelo ERP Connect Condomínios. Regime de caixa: entram os lançamentos válidos com pagamento ou recebimento no mês. Transferências entre contas do condomínio não alteram o caixa e aparecem só no quadro das contas bancárias.</p>
 
     <?php foreach ($embedded as $annex): $src = $forPdf ? $imageSrc($annex) : ''; ?>
         <div class="annex">

@@ -1,6 +1,6 @@
 <?php
 /**
- * Proposta no Studio só para consulta (ADR 0650): criar, anexar o PDF, enviar e mudar a situação ficam no ERP
+ * Proposta no Studio só para consulta (ADR 0653): criar, anexar o PDF, enviar e mudar a situação ficam no ERP
  * (Comunicação › Comercial › Propostas). Aqui ficam os dados do pedido, o acompanhamento e as versões em PDF.
  * @var object $proposal @var array<int,string> $team @var array $responses @var string $erpUrl
  */

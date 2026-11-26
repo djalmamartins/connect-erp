@@ -15,7 +15,7 @@ use Source\Support\Email;
 use Source\Support\Proposal\ProposalMailer;
 
 /**
- * Criar, anexar e enviar propostas no ERP (ADR 0650). Antes o PDF era gerado e enviado no Studio (ADR 0639);
+ * Criar, anexar e enviar propostas no ERP (ADR 0653). Antes o PDF era gerado e enviado no Studio (ADR 0639);
  * agora o Studio só consulta e tudo passa por aqui: tela CN-011 e API /api/v1/proposals.
  *
  * - create(): proposta cadastrada pela equipe (telefone, WhatsApp, indicação...), sem e-mail automático para a pessoa.
@@ -36,7 +36,7 @@ final class ProposalComposer
     ];
 
     /**
-     * Os dois PDFs que podem ir na proposta (ADR 0650): o da administradora e o do síndico profissional.
+     * Os dois PDFs que podem ir na proposta (ADR 0653): o da administradora e o do síndico profissional.
      * A chave é o valor de proposal_responses.template_type (o enum antigo, reaproveitado).
      */
     public const KINDS = ['administrator' => 'Administradora', 'syndic' => 'Síndico profissional'];

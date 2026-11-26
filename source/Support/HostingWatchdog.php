@@ -122,10 +122,10 @@ final class HostingWatchdog
     public static function message(array $problems, string $host): array
     {
         if ($problems === []) {
-            return ['subject' => '[Connect ERP] Tudo voltou ao normal em ' . $host, 'body' => '<p>As rotinas do servidor voltaram a rodar normalmente.</p>'];
+            return ['subject' => '[ERP Connect Condomínios] Tudo voltou ao normal em ' . $host, 'body' => '<p>As rotinas do servidor voltaram a rodar normalmente.</p>'];
         }
         $items = implode('', array_map(static fn (string $p): string => '<li>' . htmlspecialchars($p, ENT_QUOTES, 'UTF-8') . '</li>', $problems));
-        return ['subject' => '[Connect ERP] Atenção no servidor ' . $host . ' (' . count($problems) . ')',
+        return ['subject' => '[ERP Connect Condomínios] Atenção no servidor ' . $host . ' (' . count($problems) . ')',
             'body' => '<p>O vigia do servidor encontrou:</p><ul>' . $items . '</ul><p>O roteiro está em docs/process/HOSPEDAGEM.md, seção Monitoramento.</p>'];
     }
 

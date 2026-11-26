@@ -47,10 +47,10 @@ if (!isset($options['so-dns'])) {
     }
     $mail = new \Source\Support\Email();
     // Na moldura dos e-mails (ADR 0397): o teste também mostra o layout como o morador vai ver.
-    $sent = $mail->bootstrap('Teste de e-mail do Connect ERP', (new \Source\Support\MailTemplate())->render('notice', [
-        'subject' => 'Teste de e-mail do Connect ERP',
+    $sent = $mail->bootstrap('Teste de e-mail do ERP Connect Condomínios', (new \Source\Support\MailTemplate())->render('notice', [
+        'subject' => 'Teste de e-mail do ERP Connect Condomínios',
         'paragraphs' => [
-            'Este é um e-mail de teste do servidor do Connect ERP (' . date('d/m/Y H:i') . ').',
+            'Este é um e-mail de teste do servidor do ERP Connect Condomínios (' . date('d/m/Y H:i') . ').',
             'Se chegou na caixa de entrada (e não no spam), o envio está pronto.',
         ],
     ]), $to, 'Teste')->send();
