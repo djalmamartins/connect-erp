@@ -10,9 +10,9 @@ import { colors, fonts, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
 import { Body, Button, Card, CardTitle, Choice, Screen } from '../../src/ui/kit';
 
-/** Conta: quem está conectado, de quem é o dia mostrado (equipe), lembretes e sair. */
+/** Conta: quem está conectado, de quem é o dia mostrado (equipe), lembretes, Face ID / digital e sair. */
 export default function Account() {
-  const { me, api, logout } = useAuth();
+  const { me, api, logout, biometric, setBiometric } = useAuth();
   const { person, setPerson } = usePerson();
   const [team, setTeam] = useState<Person[]>([]);
   const [reminders, setReminders] = useState(true);
@@ -27,6 +27,11 @@ export default function Account() {
     await storage.setReminders(on);
     if (!on) await clearReminders();
     dialog.toast(on ? 'Lembretes ligados. Abra a aba Hoje para agendar.' : 'Lembretes desligados');
+  }
+
+  async function toggleBiometric(on: boolean) {
+    const ok = await setBiometric(on);
+    if (ok) dialog.toast(on ? `O app vai pedir ${biometric.label} ao abrir` : `${biometric.label} desligado`);
   }
 
   async function signOut() {
@@ -65,6 +70,20 @@ export default function Account() {
           <Switch value={reminders} onValueChange={toggleReminders} trackColor={{ true: colors.brand, false: colors.border }} accessibilityLabel="Lembretes neste celular" />
         </View>
       </Card>
+
+      {biometric.available ? (
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+            <View style={{ flex: 1 }}>
+              <CardTitle>Abrir com {biometric.label}</CardTitle>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: colors.muted }}>
+                Pede ao abrir o app e ao voltar depois de 5 minutos fora. A sua agenda fica protegida se alguém pegar o celular.
+              </Text>
+            </View>
+            <Switch value={biometric.enabled} onValueChange={toggleBiometric} trackColor={{ true: colors.brand, false: colors.border }} accessibilityLabel={`Abrir com ${biometric.label}`} />
+          </View>
+        </Card>
+      ) : null}
 
       <Button title="Sair" variant="danger" onPress={signOut} />
       <Body muted style={{ textAlign: 'center', fontSize: 12 }}>

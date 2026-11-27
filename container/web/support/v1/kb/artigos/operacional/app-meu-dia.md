@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: meu-dia, chamados
-palavras: app, aplicativo, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
+palavras: app, aplicativo, face id, digital, biometria, touch id, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
 manual: sim
 rascunho: nao
 ---
@@ -21,6 +21,8 @@ O app **Meu Dia** é a mesma agenda da tela [[Meu Dia]] do ERP, no celular. Ele 
 2. Entre com o **mesmo e-mail e senha do ERP**. Se a sua conta usa verificação em duas etapas, digite o código do aplicativo autenticador.
 3. Na primeira vez, o celular pergunta se pode mostrar notificações. Toque em **Permitir**: é assim que chegam os lembretes.
 
+Quer abrir sem digitar a senha? Em **Conta**, ligue **Abrir com Face ID** (ou digital, no Android). A partir daí o app pede o Face ID ou a digital ao abrir e ao voltar depois de 5 minutos fora. Se não der certo, toque em {{Entrar com e-mail e senha}}.
+
 Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem tem acesso ao ERP.
 
 ## As quatro abas
@@ -28,7 +30,7 @@ Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem
 - **Hoje:** a faixa dos dias (toque num dia para ver), o quadro verde do progresso (quantos compromissos já foram feitos, as atrasadas e o próximo da agenda), os números do dia, a agenda por horário, os prazos de chamados, as vistorias, os chamados **Para agendar** e os que aguardam o cliente.
 - **Semana:** de segunda a domingo, com os compromissos de cada dia. As setas mudam a semana; toque num dia para abrir ele em Hoje.
 - **Nova tarefa:** marca uma tarefa ou compromisso na agenda.
-- **Conta:** quem está conectado, de quem é o dia mostrado, os lembretes e o botão {{Sair}}.
+- **Conta:** quem está conectado, de quem é o dia mostrado, os lembretes, o Face ID ou a digital e o botão {{Sair}}.
 
 ## Tarefas atrasadas ficam em vermelho
 

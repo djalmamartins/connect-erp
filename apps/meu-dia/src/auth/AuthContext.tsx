@@ -1,18 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { createClient } from '../api/client';
 import { teamApi, type LoginResult, type Me, type TeamApi } from '../api/team';
 import { apiBaseUrl } from '../config';
 import { clearReminders, forgetPush, registerPush } from '../lib/notify';
+import { askBiometric, biometricInfo, type BiometricInfo } from './biometrics';
 import { storage } from './storage';
 
-type Status = 'loading' | 'signedOut' | 'signedIn';
+/** Voltando de mais de 5 minutos em segundo plano, pede a biometria de novo. */
+const RELOCK_MS = 5 * 60 * 1000;
+
+type Status = 'loading' | 'signedOut' | 'locked' | 'signedIn';
 
 type AuthValue = {
   status: Status;
   me: Me | null;
   api: TeamApi;
   lastLogin: string | null;
+  /** Face ID / digital do aparelho e se a pessoa ligou a trava (ADR 0667). */
+  biometric: BiometricInfo & { enabled: boolean };
+  unlock(): Promise<boolean>;
+  setBiometric(on: boolean): Promise<boolean>;
   login(login: string, password: string): Promise<LoginResult>;
   verifyTwoFactor(challenge: string, code: string): Promise<void>;
   logout(): Promise<void>;
@@ -22,13 +30,17 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 /**
  * Sessão da equipe no aparelho (ADR 0660): o token Bearer fica no cofre do celular; um 401 em qualquer pedido
- * volta para o login.
+ * volta para o login. Com a trava ligada em Conta, o app pede Face ID / digital ao abrir e ao voltar de mais de
+ * 5 minutos em segundo plano (ADR 0667); a biometria só destrava o token do cofre, a senha nunca é guardada.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [me, setMe] = useState<Me | null>(null);
   const [lastLogin, setLastLogin] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
+  const [bio, setBio] = useState<BiometricInfo>({ available: false, label: 'biometria' });
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const backgroundAt = useRef<number | null>(null);
 
   const signOutLocally = useCallback(async () => {
     tokenRef.current = null;
@@ -66,13 +78,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLastLogin(await storage.getLastLogin());
+      const [info, enabled, remembered] = await Promise.all([biometricInfo(), storage.getBiometric(), storage.getLastLogin()]);
+      if (!alive) return;
+      setBio(info);
+      setLastLogin(remembered);
+      const locked = enabled && info.available;
+      setBioEnabled(locked);
       const token = await storage.getToken();
       if (!token) {
         if (alive) setStatus('signedOut');
         return;
       }
       tokenRef.current = token;
+      if (locked) {
+        // A agenda só carrega depois do Face ID / digital.
+        if (alive) setStatus('locked');
+        return;
+      }
       try {
         const data = await api.me();
         if (alive) {
@@ -93,12 +115,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (status === 'signedIn') void registerPush(api);
   }, [status, api]);
 
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        backgroundAt.current = Date.now();
+      } else if (next === 'active' && backgroundAt.current !== null) {
+        const away = Date.now() - backgroundAt.current;
+        backgroundAt.current = null;
+        if (bioEnabled && tokenRef.current && away > RELOCK_MS) {
+          setStatus((current) => (current === 'signedIn' ? 'locked' : current));
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [bioEnabled]);
+
+  const unlock = useCallback(async () => {
+    if (!(await askBiometric(bio.label))) return false;
+    backgroundAt.current = null;
+    try {
+      setMe(await api.me());
+    } catch {
+      // Sem rede: entra com o token guardado; um 401 já teria limpado a sessão.
+    }
+    if (tokenRef.current) setStatus('signedIn');
+    return true;
+  }, [api, bio]);
+
   const value = useMemo<AuthValue>(
     () => ({
       status,
       me,
       api,
       lastLogin,
+      biometric: { ...bio, enabled: bioEnabled },
+      unlock,
+      async setBiometric(on) {
+        if (on && !(bio.available && (await askBiometric(bio.label)))) return false;
+        await storage.setBiometric(on);
+        setBioEnabled(on);
+        return true;
+      },
       async login(login, password) {
         const result = await api.login(login, password, `App Meu Dia (${Platform.OS})`);
         await storage.setLastLogin(login);
@@ -120,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOutLocally();
       },
     }),
-    [status, me, api, lastLogin, start, signOutLocally],
+    [status, me, api, lastLogin, bio, bioEnabled, unlock, start, signOutLocally],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

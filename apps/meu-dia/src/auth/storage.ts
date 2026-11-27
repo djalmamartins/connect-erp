@@ -9,6 +9,7 @@ const TOKEN_KEY = 'connect.meudia.token';
 const LOGIN_KEY = 'connect.meudia.last_login';
 const PUSH_KEY = 'connect.meudia.push_token';
 const REMINDERS_KEY = 'connect.meudia.reminders';
+const BIOMETRIC_KEY = 'connect.meudia.biometric';
 const ARRIVAL_KEY = 'connect.meudia.arrival';
 const memory = new Map<string, string>();
 
@@ -39,6 +40,11 @@ export const storage = {
     return (await read(REMINDERS_KEY)) !== '0';
   },
   setReminders: (on: boolean) => write(REMINDERS_KEY, on ? null : '0'),
+  /** Pedir Face ID / digital ao abrir o app (escolha da pessoa, só neste aparelho; ADR 0667). */
+  async getBiometric(): Promise<boolean> {
+    return (await read(BIOMETRIC_KEY)) === '1';
+  },
+  setBiometric: (on: boolean) => write(BIOMETRIC_KEY, on ? '1' : null),
   /** Checklist de chegada da visita em andamento (só a última: prédio e dia). */
   getArrival: () => read(ARRIVAL_KEY),
   setArrival: (value: string | null) => write(ARRIVAL_KEY, value),
