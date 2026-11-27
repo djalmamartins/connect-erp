@@ -54,4 +54,12 @@ final class ResidentLoginErpStyleTest extends TestCase
         }
         self::assertFileExists(self::ROOT . '/container/web/default/v1/assets/images/bkg_login_morador_dia.jpg');
     }
+
+    /** ADR 0680: a tela de entrada cabe na janela (cartão compacto em telas baixas, coluna flexível no celular). */
+    public function testLoginFitsTheWindow(): void
+    {
+        $min = (string)file_get_contents(self::ROOT . '/container/cms/studio/v1/assets/studio.min.css');
+        self::assertStringContainsString('@media (min-width:861px) and (max-height:940px){', $min);
+        self::assertStringContainsString('.connect-login__access{flex:1 0 auto;min-height:0', $min);
+    }
 }
