@@ -21,7 +21,7 @@ use Source\Support\AppLogger;
  * (triagem, resposta, nota interna, assumir). Sessão com CSRF ou o token Bearer da equipe (ADR 0660).
  *  GET  /api/v1/sac/summary?condominium_id=    números da fila de quem entrou (meus, sem responsável, vencidos, hoje)
  *  GET  /api/v1/sac/options                     situações, prioridades, equipes, responsáveis e respostas rápidas
- *  GET  /api/v1/sac/tickets?view=mine|unassigned|overdue|today|all&status=&q=&condominium_id=
+ *  GET  /api/v1/sac/tickets?view=mine|unassigned|overdue|today|all&status=&q=&condominium_id=&limit=&before=
  *  GET  /api/v1/sac/tickets/{id}                chamado, conversa (com notas internas para quem atende), histórico e medições
  *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
  *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
@@ -96,13 +96,15 @@ final class SacDesk
                 'condominium_id' => (int)($_GET['condominium_id'] ?? 0),
                 'status' => (string)($_GET['status'] ?? ''),
                 'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80),
-            ] + self::viewFilters($view, (int)$user->id);
-            $tickets = (new TicketService())->listFor($user, $filters, (int)($_GET['limit'] ?? 100));
-            if ($filters['status'] === '' && in_array($view, ['mine', 'unassigned'], true)) {
                 // Na fila de trabalho só o que está em aberto; o histórico fica em view=all.
-                $tickets = array_values(array_filter($tickets, static fn (array $t): bool => !in_array($t['status'], ['resolved', 'closed'], true)));
-            }
-            return [200, ['data' => array_map(static fn (array $t): array => $t + ['late' => self::late($t)], $tickets), 'meta' => ['view' => $view]]];
+                'open' => ($_GET['status'] ?? '') === '' && in_array($view, ['mine', 'unassigned'], true),
+                'before' => (int)($_GET['before'] ?? 0),
+            ] + self::viewFilters($view, (int)$user->id);
+            $limit = max(1, min(200, (int)($_GET['limit'] ?? 100)));
+            $tickets = (new TicketService())->listFor($user, $filters, $limit);
+            // Carregar mais (ADR 0672): next é o id para pedir a página seguinte em before; null quando acabou.
+            $next = count($tickets) === $limit ? (int)end($tickets)['id'] : null;
+            return [200, ['data' => array_map(static fn (array $t): array => $t + ['late' => self::late($t)], $tickets), 'meta' => ['view' => $view, 'next' => $next]]];
         });
     }
 

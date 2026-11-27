@@ -2,10 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { sortQueue } from '../../src/lib/tickets';
-import { useResource } from '../../src/lib/useResource';
+import { usePagedTickets } from '../../src/lib/usePagedTickets';
 import { useAuth } from '../../src/auth/AuthContext';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Empty, ErrorBox, Loading, Screen } from '../../src/ui/kit';
+import { LoadMore } from '../../src/ui/LoadMore';
 import { TicketRow } from '../../src/ui/TicketRow';
 
 /** Busca em todos os chamados do escopo (abertos e fechados) por assunto ou protocolo SAC/OCO. */
@@ -13,8 +14,8 @@ export default function Buscar() {
   const { api } = useAuth();
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
-  const list = useResource(() => (search.length >= 2 ? api.tickets('all', search) : Promise.resolve(null)), [search]);
-  const tickets = list.data ? sortQueue(list.data) : [];
+  const list = usePagedTickets((before) => (search.length >= 2 ? api.tickets('all', search, 0, before) : null), [search]);
+  const tickets = list.tickets ? sortQueue(list.tickets) : [];
 
   return (
     <Screen title="Buscar" tab refreshing={list.refreshing} onRefresh={search ? list.reload : undefined}>
@@ -46,7 +47,12 @@ export default function Buscar() {
       ) : tickets.length === 0 ? (
         <Empty text="Nenhum chamado encontrado." />
       ) : (
-        tickets.map((t) => <TicketRow key={t.id} ticket={t} />)
+        <>
+          {tickets.map((t) => (
+            <TicketRow key={t.id} ticket={t} />
+          ))}
+          <LoadMore hasMore={list.hasMore} busy={list.loadingMore} error={list.moreError} onPress={() => void list.loadMore()} />
+        </>
       )}
     </Screen>
   );

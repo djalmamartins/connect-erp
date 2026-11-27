@@ -1,5 +1,5 @@
 import type { Ticket } from '../src/api/sac';
-import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, queueCondominium, sortQueue, ticketKind, when } from '../src/lib/tickets';
+import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, queueCondominium, appendPage, sortQueue, ticketKind, when } from '../src/lib/tickets';
 
 function ticket(over: Partial<Ticket>): Ticket {
   return {
@@ -122,4 +122,12 @@ describe('queueCondominium (ADR 0670)', () => {
     expect(queueCondominium('abc', list)).toBe(0);
     expect(queueCondominium('3', [{ id: 3 }])).toBe(0);
   });
+});
+
+test('appendPage junta a página seguinte sem repetir (ADR 0672)', () => {
+  const a = ticket({ id: 3 });
+  const b = ticket({ id: 2 });
+  const c = ticket({ id: 1 });
+  expect(appendPage([a, b], [b, c]).map((t) => t.id)).toEqual([3, 2, 1]);
+  expect(appendPage([], [a]).map((t) => t.id)).toEqual([3]);
 });

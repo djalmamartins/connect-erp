@@ -311,6 +311,19 @@ final class TicketService
         } elseif (($filters['kind'] ?? '') === 'other') {
             $terms[] = 'o.id IS NULL';
         }
+        // Só em aberto, direto na consulta, para a página seguinte não vir vazia (ADR 0672).
+        if (!empty($filters['open'])) {
+            $terms[] = "t.status NOT IN ('resolved', 'closed')";
+        }
+        // Página seguinte (ADR 0672): os chamados depois do último já recebido, na mesma ordem da lista.
+        $before = (int)($filters['before'] ?? 0);
+        if ($before > 0) {
+            $terms[] = '(t.created_at < (SELECT b1.created_at FROM studio_support_tickets b1 WHERE b1.id = :before1)'
+                . ' OR (t.created_at = (SELECT b2.created_at FROM studio_support_tickets b2 WHERE b2.id = :before2) AND t.id < :before3))';
+            $params['before1'] = $before;
+            $params['before2'] = $before;
+            $params['before3'] = $before;
+        }
         $search = trim((string)($filters['q'] ?? ''));
         if ($search !== '') {
             // "sac 2026 1116 0008" acha SAC202611160008; protocolos antigos (CH, OC) também (ADR 0637).

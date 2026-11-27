@@ -11,9 +11,11 @@ import { apiBaseUrl } from '../../src/config';
 import { meuDiaWebUrl, openMeuDia } from '../../src/lib/apps';
 import { setBadge } from '../../src/lib/push';
 import { badgeCount, presenceText, queueCondominium, sortQueue, VIEWS } from '../../src/lib/tickets';
+import { usePagedTickets } from '../../src/lib/usePagedTickets';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Card, Empty, ErrorBox, Loading, Screen } from '../../src/ui/kit';
+import { LoadMore } from '../../src/ui/LoadMore';
 import { TicketRow } from '../../src/ui/TicketRow';
 
 /**
@@ -35,7 +37,7 @@ export default function Fila() {
   const ready = condominium !== null;
   const summary = useResource(() => (ready ? api.summary(condominium) : Promise.resolve(null)), [condominium]);
   const day = useResource(() => api.myDay(), []);
-  const list = useResource(() => (ready ? api.tickets(view, '', condominium) : Promise.resolve(null)), [view, condominium]);
+  const list = usePagedTickets((before) => (ready ? api.tickets(view, '', condominium, before) : null), [view, condominium]);
 
   function chooseCondominium(id: number) {
     setCondominium(id);
@@ -76,7 +78,7 @@ export default function Fila() {
   };
   const s = summary.data;
   const counts: Partial<Record<QueueView, number>> = s ? { mine: s.mine_open, unassigned: s.unassigned, overdue: s.overdue } : {};
-  const tickets = list.data ? sortQueue(list.data) : [];
+  const tickets = list.tickets ? sortQueue(list.tickets) : [];
 
   return (
     <Screen title="Atendimento" eyebrow={me ? `Olá, ${me.first_name || me.name}` : undefined} tab refreshing={list.refreshing} onRefresh={reload}>
@@ -163,7 +165,12 @@ export default function Fila() {
       ) : tickets.length === 0 ? (
         <Empty text={view === 'mine' ? 'Nenhum chamado seu em aberto. Veja os sem responsável.' : condominium ? 'Nada por aqui neste condomínio.' : 'Nada por aqui.'} />
       ) : (
-        tickets.map((t) => <TicketRow key={t.id} ticket={t} />)
+        <>
+          {tickets.map((t) => (
+            <TicketRow key={t.id} ticket={t} />
+          ))}
+          <LoadMore hasMore={list.hasMore} busy={list.loadingMore} error={list.moreError} onPress={() => void list.loadMore()} />
+        </>
       )}
     </Screen>
   );

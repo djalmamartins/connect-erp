@@ -835,8 +835,9 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 80 }, description: 'Assunto ou protocolo (SAC/OCO)' }
         - { name: condominium_id, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
+        - { name: before, in: query, schema: { type: integer }, description: 'Página seguinte (ADR 0672): o meta.next da resposta anterior' }
       responses:
-        '200': { description: Chamados, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } }, meta: { type: object, properties: { view: { type: string } } } } } } } }
+        '200': { description: Chamados, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } }, meta: { type: object, properties: { view: { type: string }, next: { type: integer, nullable: true, description: 'Id para pedir a próxima página em before; null quando acabou' } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
     post:

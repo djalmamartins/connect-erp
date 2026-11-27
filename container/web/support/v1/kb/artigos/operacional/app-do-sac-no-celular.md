@@ -34,6 +34,8 @@ Quando há chamado atrasado, aparece uma faixa vermelha no topo com o total. Toq
 
 **Filtrar por condomínio:** se você atende mais de um condomínio, aparece uma fileira de botões acima das abas. Toque em um condomínio para ver só os chamados dele; os números das abas e a faixa de atrasados passam a contar só aquele condomínio. Toque em **Todos os condomínios** para voltar. O app lembra a sua escolha neste aparelho. O número no ícone do app continua contando a fila inteira.
 
+**Carregar mais:** a lista mostra 50 chamados por vez. No fim dela, toque em **Carregar mais** para ver os seguintes, mais antigos. O botão some quando não há mais nada. Puxar a lista para baixo volta para os mais recentes. Na aba Buscar funciona do mesmo jeito.
+
 ## Online no balão do site
 
 No topo da Fila fica a chave **Você está online no balão do site**. Ligada, o site mostra o seu primeiro nome e a sua foto no balão do SAC enquanto você está com o app ou o ERP aberto, no horário de atendimento. Desligada, você atende normalmente, só não aparece no site. É a mesma escolha da tela Meu Dia do ERP: mudar num lugar muda no outro.
