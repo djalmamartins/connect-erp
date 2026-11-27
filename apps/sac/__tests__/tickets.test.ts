@@ -1,5 +1,5 @@
 import type { Ticket } from '../src/api/sac';
-import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, queueCondominium, appendPage, sortQueue, ticketKind, when } from '../src/lib/tickets';
+import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, queueCondominium, appendPage, searchReady, sortQueue, ticketKind, when } from '../src/lib/tickets';
 
 function ticket(over: Partial<Ticket>): Ticket {
   return {
@@ -130,4 +130,11 @@ test('appendPage junta a página seguinte sem repetir (ADR 0672)', () => {
   const c = ticket({ id: 1 });
   expect(appendPage([a, b], [b, c]).map((t) => t.id)).toEqual([3, 2, 1]);
   expect(appendPage([], [a]).map((t) => t.id)).toEqual([3]);
+});
+
+test('Buscar consulta com 2 letras ou só com a situação', () => {
+  expect(searchReady('', '')).toBe(false);
+  expect(searchReady(' a ', '')).toBe(false);
+  expect(searchReady('ga', '')).toBe(true);
+  expect(searchReady('', 'waiting_customer')).toBe(true);
 });

@@ -86,3 +86,10 @@ test('carregar mais pede a página seguinte com before (ADR 0672)', async () => 
   expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=all&q=vaz&limit=50&before=81');
   expect(page.meta.next).toBeNull();
 });
+
+test('situação vai junto na busca', async () => {
+  const { calls, fetchImpl } = fake([{ status: 200, body: { data: [], meta: { view: 'all', next: null } } }]);
+  const api = sacApi(createClient({ baseUrl: 'https://erp.x', getToken: () => 't', fetchImpl }));
+  await api.tickets('all', '', 0, 0, 'resolved');
+  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=all&status=resolved&limit=50');
+});

@@ -137,10 +137,11 @@ export function sacApi(client: ApiClient) {
     summary: (condominiumId = 0) => client.get<Summary>('/sac/summary', { condominium_id: condominiumId > 0 ? condominiumId : undefined }),
     options: () => client.get<Options>('/sac/options'),
     /** Uma página da fila (ADR 0672): meta.next vai em before para pedir a seguinte; null quando acabou. */
-    tickets: (view: View, q = '', condominiumId = 0, before = 0) =>
+    tickets: (view: View, q = '', condominiumId = 0, before = 0, status: TicketStatus | '' = '') =>
       client.getWithMeta<Ticket[], TicketPageMeta>('/sac/tickets', {
         view,
         q,
+        status,
         condominium_id: condominiumId > 0 ? condominiumId : undefined,
         limit: PAGE_SIZE,
         before: before > 0 ? before : undefined,
