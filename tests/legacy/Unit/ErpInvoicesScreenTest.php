@@ -21,7 +21,9 @@ final class ErpInvoicesScreenTest extends TestCase
     {
         $panel = $this->file('source/Controllers/Erp/Connect/Panel.php');
         self::assertStringContainsString("\$id === 'AP-032' && (\$data['invoices'] ?? null) !== null => 'pages/finance/invoices'", $panel);
-        self::assertStringContainsString("self::ownTemplate(\$id, \$data) ?? 'pages/modules/' . \$kind", $panel);
+        self::assertStringContainsString("\$template = self::ownTemplate(\$id, \$data);", $panel);
+        // Sem dados por falta de permissão vira 403 com a permissão (ADR 0681); sem banco segue a demonstração.
+        self::assertStringContainsString("return [\$template ?? 'pages/modules/' . \$kind", $panel);
     }
 
     public function testViewOnlyOffersWritesToManagers(): void
