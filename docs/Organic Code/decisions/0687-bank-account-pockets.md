@@ -1,4 +1,4 @@
-# 0685 — Caixinha: aplicação no mesmo banco da conta corrente
+# 0687 — Caixinha: aplicação no mesmo banco da conta corrente
 
 - Status: Aceito
 - Data: 27/11/2026
@@ -16,7 +16,7 @@ agência e conta são os mesmos da conta corrente, e a regra "Esta conta já est
 
 ## Decisão
 
-- Coluna `erp_bank_accounts.is_pocket` (migration `20261127_2130_bank_account_pockets`, com `.down.sql`,
+- Coluna `erp_bank_accounts.is_pocket` (migration `20261127_2200_bank_account_pockets`, com `.down.sql`,
   só acrescenta). No formulário, caixa **Caixinha no mesmo banco da conta corrente**, só para Aplicação.
 - Caixinha marcada: banco, agência e conta somem do formulário e o servidor copia os da conta corrente ligada
   (mesmo condomínio, dentro do escopo); o que vier digitado é ignorado. A conta corrente passa a ser

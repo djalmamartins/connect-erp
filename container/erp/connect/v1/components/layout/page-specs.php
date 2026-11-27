@@ -276,6 +276,16 @@ return [
         'tabs' => ['Dados', 'Vínculos', 'Histórico'],
         'kpis' => [],
     ],
+    'CN-013' => [
+        'kind' => 'list',
+        'entity' => 'síndico profissional',
+        'gender' => 'o',
+        'columns' => ['Nome ou razão social:person', 'CPF/CNPJ:doc', 'E-mail:email', 'Telefone:phone', 'Situação:status(Ativo|Inativo)'],
+        'fields' => ['Nome ou razão social:person!@8', 'CPF/CNPJ:doc@4', 'Responsável:text@12', 'E-mail:email!@6', 'Telefone:phone!@6', 'Observações:longtext@12'],
+        'filters' => ['search'],
+        'tabs' => ['Dados', 'Vínculos', 'Histórico'],
+        'kpis' => [],
+    ],
     'CN-002' => [
         'kind' => 'list',
         'entity' => 'centro de custo',

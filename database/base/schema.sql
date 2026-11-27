@@ -921,7 +921,7 @@ CREATE TABLE `erp_bank_accounts` (
   `account_number` varchar(20) NOT NULL,
   `kind` enum('corrente','poupanca','aplicacao') NOT NULL DEFAULT 'corrente',
   `parent_bank_account_id` int(10) unsigned DEFAULT NULL COMMENT 'Aplicação: conta corrente ligada (ADR 0170)',
-  `is_pocket` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Caixinha: aplicação no mesmo banco da conta corrente (ADR 0685)',
+  `is_pocket` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Caixinha: aplicação no mesmo banco da conta corrente (ADR 0687)',
   `wallet` varchar(20) DEFAULT NULL COMMENT 'Carteira de cobrança, quando houver',
   `adapter` varchar(30) NOT NULL DEFAULT 'sandbox' COMMENT 'Adaptador bancário (sandbox, inter)',
   `opening_balance_cents` bigint(20) unsigned DEFAULT NULL,

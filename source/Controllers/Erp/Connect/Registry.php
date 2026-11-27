@@ -233,13 +233,19 @@ final class Registry extends Controller
             'history' => $history,
             'condominiums' => $service->condominiums($user),
             'units' => RegistryService::hasUnitField($definition) ? self::formUnits($service->units($user), $values) : [],
-            'refs' => $service->references($user, $definition),
+            'refs' => $service->references($user, $definition, $values),
             'canManage' => $canManage && ($id === null || $service->canWrite($user, $definition['slug'], $values)),
             'registryAttachment' => self::attachmentData($user, $definition, $values),
             'entryAttachments' => EntryAttachmentScreens::cardData($user, $definition['slug'], $id),
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
             'unitOccupants' => $definition['slug'] === 'units' && $id !== null ? self::occupantsData($user, $id) : null,
+            // ADR 0686: síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais.
+            'boardPicker' => $definition['slug'] === 'board' && $canManage && ($id === null || $service->canWrite($user, 'board', $values)) ? [
+                'api' => url('/api/v1/board-members/candidates'),
+                'newProfessional' => erp_url('/cadastros/sindicos-profissionais/novo'),
+                'residentsAllowed' => Access::can('erp.residents.view', $user),
+            ] : null,
             'entryUnits' => $id === null && $canManage && in_array($definition['slug'], \Source\Services\Erp\EntryUnits::SLUGS, true),
         ]));
     }

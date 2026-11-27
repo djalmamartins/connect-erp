@@ -37,7 +37,7 @@ namespace Source\Services\Erp\Registry;
  *   'month' => true num texto AAAA-MM mostra o seletor de mês e aceita 11/2026 ou nov/2026.
  * 'only_if' => [campo => valor] no campo (ADR 0149): preenchido só quando o outro campo tem o valor; o
  *   formulário esconde o campo nos outros casos e o validador recusa ('only_if_message').
- * ADR 0685: 'hide_if' => campo bool: o formulário esconde o campo (e deixa de exigi-lo) com a caixa marcada.
+ * ADR 0687: 'hide_if' => campo bool: o formulário esconde o campo (e deixa de exigi-lo) com a caixa marcada.
  *   'inherit' => ['when' => bool, 'from' => campo ref, 'fields' => [...]] no cadastro: com a caixa marcada, os
  *   campos são copiados do registro apontado (do mesmo cadastro e do mesmo condomínio), não do formulário.
  *   'unique' aceita 'unless' => campo bool: com a caixa marcada não compara, e os registros marcados não contam.
@@ -220,18 +220,52 @@ final class Definitions
                     ]],
                     'name' => ['label' => 'Nome ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'search' => true, 'hint' => 'CNPJ para síndico profissional'],
-                    'unit_id' => $unit(4),
-                    'unit_label' => $unitText('Unidade (texto)', false, 4, 'Vazio para síndico profissional'),
+                    'unit_id' => $unit(6),
+                    'unit_label' => $unitText('Unidade (texto)', false, 6, 'Vazio para síndico profissional'),
+                    // Mandato de 1 ou 2 anos (o máximo é 2): ao informar o início, a tela calcula o fim (início + anos − 1 dia).
+                    'term_years' => ['label' => 'Duração do mandato', 'type' => 'select', 'required' => true, 'default' => '2', 'span' => 4, 'options' => ['1' => '1 ano', '2' => '2 anos'],
+                        'hint' => 'O máximo é 2 anos'],
                     'term_starts_on' => ['label' => 'Início do mandato', 'type' => 'date', 'required' => true, 'span' => 4],
-                    'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on'],
+                    'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on',
+                        'max_years' => ['from' => 'term_starts_on', 'years' => 'term_years'], 'hint' => 'Calculado pela duração; dá para ajustar'],
                     // ADR 0151 (Djalma, 10/11/2026): e-mail e telefone obrigatórios; são o canal de comunicação com o conselho.
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
+                    // ADR 0686 (Djalma, 27/11/2026): a pessoa vem dos moradores do prédio ou dos síndicos profissionais,
+                    // escolhida no quadro "Escolher a pessoa" ou nas sugestões do nome (GET /api/v1/board-members/candidates).
+                    // 'ref_lazy': as opções não vão no formulário (um prédio grande tem centenas de moradores); o servidor
+                    // confere do mesmo jeito que existe, está ativo e é do mesmo condomínio.
+                    'resident_id' => ['label' => 'Morador do prédio', 'type' => 'ref', 'ref' => 'residents', 'ref_label' => ['name'], 'ref_lazy' => true, 'span' => 6,
+                        'not_with' => 'professional_manager_id', 'not_with_message' => 'Escolha o morador ou o síndico profissional, não os dois.',
+                        'ref_message' => 'O morador escolhido não está ativo neste condomínio. Escolha outro ou desvincule.'],
+                    'professional_manager_id' => ['label' => 'Síndico profissional', 'type' => 'ref', 'ref' => 'professional_managers', 'ref_label' => ['name'], 'ref_lazy' => true, 'span' => 6,
+                        'only_if' => ['role' => ['sindico', 'subsindico']], 'only_if_message' => 'Síndico profissional só como síndico ou subsíndico. O conselho é formado por moradores.',
+                        'ref_message' => 'Síndico profissional não encontrado ou inativo. Escolha outro em Cadastros › Síndicos profissionais.'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12, 'hint' => 'Ex.: ata da assembleia que elegeu'],
                 ],
                 'single_active' => [['field' => 'role', 'value' => 'sindico', 'per' => 'condominium_id', 'message' => 'Este condomínio já tem um síndico ativo. Inative o atual antes de cadastrar outro.']],
                 'order' => 'role',
                 'title' => 'name',
+            ],
+            // ADR 0686 (Djalma, 27/11/2026): síndicos profissionais da Connect, escolhidos no cadastro "Síndico e conselho".
+            // Da administradora (escopo none, como fornecedores e advogados): o mesmo síndico atende vários prédios.
+            // Usa as permissões de "Síndico e conselho" (erp.board), sem permissão nova.
+            'professional_managers' => [
+                'page' => 'CN-013', 'table' => 'erp_professional_managers', 'route' => '/cadastros/sindicos-profissionais',
+                'api' => 'professional-managers', 'permission' => 'erp.board', 'label' => 'Síndicos profissionais',
+                'entity' => 'síndico profissional', 'gender' => 'o', 'scope' => 'none',
+                'lead' => 'Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Escolha-os em Síndico e conselho.',
+                'fields' => [
+                    'name' => ['label' => 'Nome ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true,
+                        'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone'], 'hint' => 'Com o CNPJ, buscamos os dados na Receita'],
+                    'contact_name' => ['label' => 'Responsável', 'type' => 'text', 'max' => 160, 'span' => 12, 'search' => true, 'hint' => 'Quem atende, quando o síndico profissional é uma empresa'],
+                    'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6, 'list' => true],
+                    'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['document'], 'message' => 'Já existe um síndico profissional com este CPF/CNPJ.']],
+                'order' => 'name',
             ],
             'employees' => [
                 'page' => 'AP-009', 'table' => 'erp_employees', 'route' => '/cadastros/funcionarios',
@@ -530,7 +564,7 @@ final class Definitions
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
                     'name' => ['label' => 'Apelido', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Conta movimento'],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'filter' => true, 'options' => ['corrente' => 'Conta corrente', 'poupanca' => 'Poupança', 'aplicacao' => 'Aplicação']],
-                    // ADR 0685: caixinha = aplicação no mesmo banco da conta corrente, como os bancos fazem hoje.
+                    // ADR 0687: caixinha = aplicação no mesmo banco da conta corrente, como os bancos fazem hoje.
                     // Banco, agência e conta vêm da conta corrente ligada e não se digitam de novo.
                     'is_pocket' => ['label' => 'Caixinha no mesmo banco da conta corrente', 'type' => 'bool', 'span' => 3,
                         'only_if' => ['kind' => 'aplicacao'], 'only_if_message' => 'Só uma conta de tipo aplicação pode ser caixinha.'],
@@ -555,7 +589,7 @@ final class Definitions
                         'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.', 'hint' => 'Opcional; sugerido nos lançamentos desta conta'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                // ADR 0685: a caixinha repete banco, agência e conta da conta corrente, por isso fica fora da comparação.
+                // ADR 0687: a caixinha repete banco, agência e conta da conta corrente, por isso fica fora da comparação.
                 'unique' => [['fields' => ['condominium_id', 'bank_code', 'branch', 'account_number'], 'unless' => 'is_pocket',
                     'message' => 'Esta conta já está cadastrada neste condomínio. Se for uma aplicação no mesmo banco, marque "Caixinha no mesmo banco da conta corrente".']],
                 'inherit' => ['when' => 'is_pocket', 'from' => 'parent_bank_account_id', 'fields' => ['bank_code', 'branch', 'account_number']],

@@ -301,6 +301,17 @@ final class RegistryService
 
         $input = $this->inherit($user, $definition, $input);
         [$values, $errors] = RegistryValidator::validate($definition, $input);
+        // ADR 0686: o limite de 'max_years' vale para o mandato novo ou alterado; registro antigo editado sem mexer nas
+        // datas (ex.: só o telefone) continua gravando, mesmo com mandato anterior à regra.
+        if ($before !== null) {
+            foreach ($definition['fields'] as $name => $field) {
+                $from = $field['max_years']['from'] ?? null;
+                if (is_string($from) && isset($errors[$name]) && (string)($before[$name] ?? '') === (string)($values[$name] ?? '')
+                    && (string)($before[$from] ?? '') === (string)($values[$from] ?? '')) {
+                    unset($errors[$name]);
+                }
+            }
+        }
         // 'fixed' (ADR 0024): colunas que a visão grava sempre com o mesmo valor (ex.: natureza
         // despesa em contas a pagar). Não vêm do formulário e não podem ser trocadas pela entrada.
         $values = array_merge($values, $definition['fixed'] ?? []);
@@ -320,7 +331,7 @@ final class RegistryService
             $errors = $this->unitRules($definition, $values);
         }
         if ($errors === []) {
-            $errors = $this->refRules($definition, $values);
+            $errors = $this->refRules($definition, $values, $before);
         }
         if ($errors === []) {
             $errors = $this->attachmentRules($definition, $values);
@@ -623,7 +634,7 @@ final class RegistryService
      *
      * @return array<string, list<array{id:int,condominium_id:?int,label:string}>> por nome do campo
      */
-    public function references(User $user, array $definition): array
+    public function references(User $user, array $definition, array $values = []): array
     {
         $options = [];
         foreach ($definition['fields'] as $name => $field) {
@@ -632,7 +643,18 @@ final class RegistryService
             }
             $target = self::definition((string)$field['ref']);
             [$where, $params] = $this->scopeWhere($user, $target);
-            $where[] = "t.status = 'active'";
+            if (!empty($field['ref_lazy'])) {
+                // ADR 0686: sem lista; só o registro já vinculado (mesmo inativo), para o formulário mostrar o nome.
+                $current = filter_var($values[$name] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                if ($current === false || $current === null) {
+                    $options[$name] = [];
+                    continue;
+                }
+                $where[] = 't.id = :lazy_id';
+                $params['lazy_id'] = $current;
+            } else {
+                $where[] = "t.status = 'active'";
+            }
             foreach ($field['ref_where'] ?? [] as $column => $value) {
                 [$sql, $bound] = self::refCondition("t.`{$column}`", "w_{$column}", $value);
                 $where[] = $sql;
@@ -869,11 +891,17 @@ final class RegistryService
         return ["{$column} IN (" . implode(', ', $names) . ')', $params];
     }
 
-    private function refRules(array $definition, array $values): array
+    private function refRules(array $definition, array $values, ?array $before = null): array
     {
         $errors = [];
         foreach ($definition['fields'] as $name => $field) {
             if ($field['type'] !== 'ref' || $values[$name] === null) {
+                continue;
+            }
+            // ADR 0686: vínculo 'ref_lazy' que não mudou continua valendo mesmo se a pessoa ficou inativa (o morador saiu
+            // do prédio), para o mandato antigo poder ser editado e encerrado. Vínculo novo é conferido inteiro.
+            if (!empty($field['ref_lazy']) && $before !== null && (string)($before[$name] ?? '') === (string)$values[$name]
+                && (string)($before['condominium_id'] ?? '') === (string)($values['condominium_id'] ?? '')) {
                 continue;
             }
             $target = self::definition((string)$field['ref']);
@@ -918,7 +946,7 @@ final class RegistryService
     }
 
     /**
-     * 'inherit' (ADR 0685): com a caixa marcada (ex.: caixinha), os campos vêm do registro apontado do mesmo
+     * 'inherit' (ADR 0687): com a caixa marcada (ex.: caixinha), os campos vêm do registro apontado do mesmo
      * cadastro e do mesmo condomínio (ex.: banco, agência e conta da conta corrente), nunca do formulário. Sem
      * registro válido, os campos ficam vazios e o validador e a conferência do 'ref' explicam o erro.
      *
@@ -950,7 +978,7 @@ final class RegistryService
     }
 
     /**
-     * 'inherit' (ADR 0685): quando a conta apontada muda (ex.: a conta corrente troca de agência), os registros
+     * 'inherit' (ADR 0687): quando a conta apontada muda (ex.: a conta corrente troca de agência), os registros
      * marcados que herdam dela (as caixinhas) acompanham, com auditoria.
      */
     private function propagateInherited(array $definition, int $id, ?array $before, ?array $after): void
@@ -986,7 +1014,7 @@ final class RegistryService
             $where = ['deleted_at IS NULL'];
             $params = [];
             $complete = true;
-            // ADR 0685: 'unless' => campo bool. Marcado, não compara; os registros marcados não contam.
+            // ADR 0687: 'unless' => campo bool. Marcado, não compara; os registros marcados não contam.
             if (isset($rule['unless'])) {
                 if (!empty($values[$rule['unless']])) {
                     continue;

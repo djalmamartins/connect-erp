@@ -301,7 +301,7 @@ else
   fi
 fi
 
-# --- 6b2. Cofre dos bancos do lab (ADR 0685) ---------------------------------------------------
+# --- 6b2. Cofre dos bancos do lab (ADR 0687) ---------------------------------------------------
 # Integrações > Banco Inter grava as credenciais do sandbox cifradas com CONNECT_BANK_VAULT_KEY (32 bytes em
 # base64, separada da chave do 2FA). Sem ela, "Testar e gravar" falhava (teste 6.3 do manual). O script cria
 # a chave que faltar no .env local (fora do Git) e nunca troca uma existente: trocar a chave faz as
