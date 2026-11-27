@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ApiError } from '../../src/api/client';
+import { dialog } from '../../src/ui/Dialog';
 import type { View as QueueView } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
 import { apiBaseUrl } from '../../src/config';
 import { meuDiaWebUrl, openMeuDia } from '../../src/lib/apps';
 import { setBadge } from '../../src/lib/push';
-import { badgeCount, sortQueue, VIEWS } from '../../src/lib/tickets';
+import { badgeCount, presenceText, sortQueue, VIEWS } from '../../src/lib/tickets';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Card, Empty, ErrorBox, Loading, Screen } from '../../src/ui/kit';
@@ -23,6 +25,21 @@ export default function Fila() {
     const summary = useResource(() => api.summary(), []);
   const day = useResource(() => api.myDay(), []);
   const list = useResource(() => api.tickets(view), [view]);
+  // Chave do balão do site só para quem atende (a API devolve 403 para quem só acompanha).
+  const presence = useResource(() => (me?.can_attend_sac ? api.presence() : Promise.resolve(null)), [me?.can_attend_sac]);
+  const [saving, setSaving] = useState(false);
+
+  async function togglePresence(value: boolean) {
+    setSaving(true);
+    try {
+      await api.setPresence(value);
+      await presence.reload();
+    } catch (e) {
+      await dialog.notice({ title: 'Não deu certo', message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.', tone: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     void setBadge(badgeCount(summary.data));
@@ -38,7 +55,7 @@ export default function Fila() {
   );
 
   const reload = async () => {
-    await Promise.all([summary.reload(), list.reload(), day.reload()]);
+    await Promise.all([summary.reload(), list.reload(), day.reload(), presence.reload()]);
   };
   const s = summary.data;
   const counts: Partial<Record<QueueView, number>> = s ? { mine: s.mine_open, unassigned: s.unassigned, overdue: s.overdue } : {};
@@ -46,6 +63,24 @@ export default function Fila() {
 
   return (
     <Screen title="Atendimento" eyebrow={me ? `Olá, ${me.first_name || me.name}` : undefined} tab refreshing={list.refreshing} onRefresh={reload}>
+      {presence.data ? (
+        <View style={[styles.online, !(presence.data.shown) && styles.offline]}>
+          <View style={[styles.dot, !presence.data.shown && styles.dotOff]} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.onlineTitle}>{presenceText(presence.data).title}</Text>
+            <Text style={styles.onlineDetail}>{presenceText(presence.data).detail}</Text>
+          </View>
+          <Switch
+            value={presence.data.public}
+            onValueChange={(v) => void togglePresence(v)}
+            disabled={saving}
+            trackColor={{ true: colors.success, false: colors.border }}
+            thumbColor={colors.surface}
+            accessibilityLabel="Aparecer no balão do site"
+          />
+        </View>
+      ) : null}
+
       {s && s.mine_overdue + s.overdue > 0 ? (
         <Pressable onPress={() => setView('overdue')} accessibilityRole="button" style={styles.alert}>
           <Ionicons name="alarm" size={22} color={colors.danger} />
@@ -109,6 +144,12 @@ const styles = StyleSheet.create({
   dayIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
   dayTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
   daySub: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
+  online: { flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: '#f1f8f3', borderWidth: 1, borderColor: '#cfe8d8', borderRadius: radius.md, paddingVertical: space[2], paddingHorizontal: space[3] },
+  offline: { backgroundColor: colors.surface, borderColor: colors.border },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#16a34a', borderWidth: 3, borderColor: '#d4f0dd' },
+  dotOff: { backgroundColor: colors.faint, borderColor: colors.surfaceMuted },
+  onlineTitle: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  onlineDetail: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
   seg: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: 10, padding: 3 },
   segItem: { flex: 1, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   segOn: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },

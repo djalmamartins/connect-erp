@@ -32,6 +32,10 @@ Cada chamado mostra o protocolo (em dourado), há quanto tempo chegou, o assunto
 
 Quando há chamado atrasado, aparece uma faixa vermelha no topo com o total. Toque nela para ir direto aos atrasados. Puxe a lista para baixo para atualizar.
 
+## Online no balão do site
+
+No topo da Fila fica a chave **Você está online no balão do site**. Ligada, o site mostra o seu primeiro nome e a sua foto no balão do SAC enquanto você está com o app ou o ERP aberto, no horário de atendimento. Desligada, você atende normalmente, só não aparece no site. É a mesma escolha da tela Meu Dia do ERP: mudar num lugar muda no outro.
+
 ## Aba Novo
 
 Para registrar o pedido de quem **ligou**, mandou **WhatsApp** ou veio **ao escritório**:

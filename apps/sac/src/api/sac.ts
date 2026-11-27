@@ -89,6 +89,9 @@ export type Options = {
 
 export type Unit = { id: number; label: string };
 
+/** Balão do SAC no site (ADR 0666): autorizou aparecer, no horário, aparece agora, quem está online. */
+export type Presence = { public: boolean; open: boolean; hours: string; shown: boolean; online: string[] };
+
 /** Chamado que a equipe abre pelo app (POST /sac/tickets, ADR 0661). */
 export type NewTicket = {
   condominium_id: number;
@@ -129,6 +132,8 @@ export function sacApi(client: ApiClient) {
     summary: () => client.get<Summary>('/sac/summary'),
     options: () => client.get<Options>('/sac/options'),
     tickets: (view: View, q = '') => client.get<Ticket[]>('/sac/tickets', { view, q }),
+    presence: () => client.get<Presence>('/sac/presence'),
+    setPresence: (isPublic: boolean) => client.post<Presence>('/sac/presence', { public: isPublic }),
     units: (condominiumId: number) => client.get<Unit[]>('/sac/units', { condominium_id: condominiumId }),
     open: (input: NewTicket, files: UploadFile[] = []) =>
       files.length > 0
