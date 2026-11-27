@@ -11,11 +11,11 @@ export const STATUS_LABELS: Record<TicketStatus, string> = {
 
 export const PRIORITY_LABELS: Record<TicketPriority, string> = { low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente' };
 
-export const VIEWS: { key: View; label: string }[] = [
-  { key: 'mine', label: 'Meus' },
-  { key: 'unassigned', label: 'Sem responsável' },
-  { key: 'overdue', label: 'Atrasados' },
-  { key: 'all', label: 'Todos' },
+export const VIEWS: { key: View; label: string; short: string }[] = [
+  { key: 'mine', label: 'Meus', short: 'Meus' },
+  { key: 'unassigned', label: 'Sem responsável', short: 'Sem resp.' },
+  { key: 'overdue', label: 'Atrasados', short: 'Atrasados' },
+  { key: 'all', label: 'Todos', short: 'Todos' },
 ];
 
 export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
@@ -94,4 +94,79 @@ export function pushRoute(data: unknown): string | null {
 /** Selo do ícone: chamados meus em aberto mais os atrasados sem responsável. */
 export function badgeCount(summary: { mine_open: number; unassigned: number } | null): number {
   return summary ? summary.mine_open + summary.unassigned : 0;
+}
+
+/** Por onde o chamado chegou, para o selo da fila (ADR 0661). */
+export type Channel = 'whatsapp' | 'app' | 'telefone' | 'presencial' | 'site' | 'email' | 'equipe';
+
+export const CHANNEL_LABELS: Record<Channel, string> = {
+  whatsapp: 'WhatsApp',
+  app: 'App',
+  telefone: 'Telefone',
+  presencial: 'Presencial',
+  site: 'Site',
+  email: 'E-mail',
+  equipe: 'Equipe',
+};
+
+/** Canais que a equipe escolhe ao abrir um chamado pelo app (POST /sac/tickets). */
+export const NEW_CHANNELS: Channel[] = ['telefone', 'whatsapp', 'presencial'];
+
+/**
+ * Canal do chamado: a tag "canal:..." gravada quando a equipe abre pelo app vale primeiro;
+ * senão a origem (Talk = WhatsApp, portal do morador = App, site = Site, ERP e Help Desk = Equipe).
+ */
+export function channelOf(ticket: Pick<Ticket, 'origin' | 'tags'>): Channel {
+  const tag = /(?:^|[,;\s])canal:(telefone|whatsapp|presencial)\b/i.exec(ticket.tags ?? '');
+  if (tag) return tag[1].toLowerCase() as Channel;
+  switch (ticket.origin) {
+    case 'talk':
+      return 'whatsapp';
+    case 'residents':
+      return 'app';
+    case 'site':
+      return 'site';
+    case 'api':
+      return 'email';
+    default:
+      return 'equipe';
+  }
+}
+
+/** Iniciais do responsável no círculo da fila: "Ana Nunes" vira "AN", "Ana" vira "AN". */
+export function initials(name: string | null | undefined): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Há quanto tempo: "agora", "há 4 min", "há 2 h", "ontem" ou "25/11". */
+export function ago(value: string, now: Date = new Date()): string {
+  const d = parseServer(value);
+  if (!d) return value;
+  const minutes = Math.floor((now.getTime() - d.getTime()) / 60_000);
+  if (minutes < 1) return 'agora';
+  if (minutes < 60) return `há ${minutes} min`;
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((day(now) - day(d)) / 86_400_000);
+  if (days === 0) return `há ${Math.floor(minutes / 60)} h`;
+  if (days === 1) return 'ontem';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Onde e quem, na linha de baixo da fila: "Cond. Solar · 302 B · Carla". */
+export function placeLine(ticket: Pick<Ticket, 'requester' | 'condominium' | 'unit'>): string {
+  return [ticket.condominium?.name, ticket.unit?.label, ticket.requester.name].filter((v): v is string => !!v && v.trim() !== '').join(' · ');
+}
+
+/** Campos do Novo chamado antes de enviar; devolve o primeiro problema, em palavras, ou null. */
+export function newTicketProblem(input: { condominium_id: number | null; requester_name: string; requester_phone: string; requester_email: string; subject: string; message: string }): string | null {
+  if (!input.condominium_id) return 'Escolha o condomínio.';
+  if (input.requester_name.trim().length < 2) return 'Informe o nome de quem pediu.';
+  if (input.requester_phone.replace(/\D/g, '').length < 10 && input.requester_email.trim() === '') return 'Informe o telefone (com DDD) ou o e-mail de quem pediu.';
+  if (input.requester_email.trim() !== '' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.requester_email.trim())) return 'Confira o e-mail.';
+  if (input.subject.trim().length < 4) return 'Escreva um assunto com pelo menos 4 letras.';
+  if (input.message.trim().length < 10) return 'Descreva o pedido com pelo menos 10 caracteres.';
+  return null;
 }

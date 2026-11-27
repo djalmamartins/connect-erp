@@ -826,6 +826,47 @@ paths:
         '200': { description: Chamados, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object } }, meta: { type: object, properties: { view: { type: string } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createSacTicket
+      tags: [SAC]
+      summary: Abre chamado recebido por telefone, WhatsApp ou presencial (app do SAC, ADR 0661)
+      description: Só para quem atende (support.manage). Origem helpdesk, canal gravado nas tags como canal:<valor>. Telefone ou e-mail de quem pediu. Protocolo SAC na resposta.
+      security: [{ teamApp: [] }, { session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condominium_id, requester_name, channel, subject, message]
+              properties:
+                condominium_id: { type: integer, minimum: 1 }
+                unit_id: { type: integer, minimum: 1, nullable: true }
+                requester_name: { type: string, maxLength: 160 }
+                requester_phone: { type: string, maxLength: 30 }
+                requester_email: { type: string, format: email, maxLength: 190 }
+                channel: { type: string, enum: [telefone, whatsapp, presencial] }
+                subject: { type: string, minLength: 4, maxLength: 180 }
+                message: { type: string, minLength: 10, maxLength: 10000 }
+                priority: { type: string, enum: [low, medium, high, urgent], default: medium }
+                assign_me: { type: boolean, default: true }
+      responses:
+        '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, due_at: { type: string }, ticket: { type: object } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /sac/units:
+    get:
+      operationId: listSacUnits
+      tags: [SAC]
+      summary: Unidades ativas de um condomínio do escopo de quem entrou (Novo chamado no app do SAC)
+      security: [{ teamApp: [] }, { session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Unidades, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: integer }, label: { type: string } } } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /sac/tickets/{id}:
     get:
       operationId: getSacTicket

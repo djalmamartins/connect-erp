@@ -25,10 +25,16 @@ use Source\Support\AppLogger;
  *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
  *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
  *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}
+ *  GET  /api/v1/sac/units?condominium_id=       unidades ativas do condomínio (escopo de quem entrou)
+ *  POST /api/v1/sac/tickets                     abre chamado recebido por telefone, WhatsApp ou presencial
+ *        {condominium_id, unit_id?, requester_name, requester_phone?, requester_email?, channel, subject, message, priority?, assign_me?}
  */
 final class SacDesk
 {
     public const VIEWS = ['mine', 'unassigned', 'overdue', 'today', 'all'];
+
+    /** Como o chamado chegou quando a equipe abre pelo app; fica nas tags como "canal:<valor>". */
+    public const CHANNELS = ['telefone' => 'Telefone', 'whatsapp' => 'WhatsApp', 'presencial' => 'Presencial'];
 
     public function summary(): void
     {
@@ -63,6 +69,8 @@ final class SacDesk
                 'teams' => TicketService::TEAMS,
                 'agents' => $attend ? $desk->agents() : [],
                 'templates' => $attend ? $desk->templates() : [],
+                'condominiums' => array_map(static fn (array $c): array => ['id' => $c['id'], 'name' => $c['name']], (new CondominiumScope())->allowed($user)),
+                'channels' => $pairs(self::CHANNELS),
             ]]];
         });
     }
@@ -82,6 +90,45 @@ final class SacDesk
                 $tickets = array_values(array_filter($tickets, static fn (array $t): bool => !in_array($t['status'], ['resolved', 'closed'], true)));
             }
             return [200, ['data' => array_map(static fn (array $t): array => $t + ['late' => self::late($t)], $tickets), 'meta' => ['view' => $view]]];
+        });
+    }
+
+    public function units(): void
+    {
+        $this->run(false, function (User $user): array {
+            $condominium = (int)($_GET['condominium_id'] ?? 0);
+            if ($condominium <= 0 || !(new CondominiumScope())->canAccess($user, $condominium)) {
+                throw new TicketError('condominium_id', 'Condomínio indisponível para a sua conta.', 403);
+            }
+            return [200, ['data' => (new TicketService())->units($condominium)]];
+        });
+    }
+
+    /** Chamado aberto pela equipe com quem ligou, mandou mensagem ou veio ao escritório (protocolo SAC, ADR 0637). */
+    public function store(): void
+    {
+        $this->run(true, function (User $user): array {
+            $body = $this->body();
+            $channel = (string)($body['channel'] ?? '');
+            if (!isset(self::CHANNELS[$channel])) {
+                throw new TicketError('channel', 'Escolha como o chamado chegou: telefone, WhatsApp ou presencial.');
+            }
+            if ((int)($body['condominium_id'] ?? 0) <= 0) {
+                throw new TicketError('condominium_id', 'Escolha o condomínio.');
+            }
+            if (trim((string)($body['requester_name'] ?? '')) === '') {
+                throw new TicketError('requester_name', 'Informe o nome de quem pediu.');
+            }
+            $input = array_intersect_key($body, array_flip(['condominium_id', 'unit_id', 'requester_name', 'requester_phone', 'requester_email', 'subject', 'message', 'priority']));
+            $input = array_map(static fn ($v) => is_scalar($v) ? $v : '', $input);
+            if (($body['assign_me'] ?? true) === true) {
+                $input['assigned_to'] = (int)$user->id;
+            }
+            $service = new TicketService();
+            $opened = $service->open($input, 'helpdesk', $user);
+            (new TicketDesk())->update($user, $opened['id'], ['tags' => 'canal:' . $channel]);
+            return [201, ['data' => ['id' => $opened['id'], 'protocol' => $opened['protocol'], 'due_at' => $opened['due_at'],
+                'ticket' => $service->findFor($user, $opened['id'])]]];
         });
     }
 

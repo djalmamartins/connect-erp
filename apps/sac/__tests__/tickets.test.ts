@@ -1,12 +1,12 @@
 import type { Ticket } from '../src/api/sac';
-import { authorLabel, badgeCount, context, dueText, pushRoute, sortQueue, ticketKind, when } from '../src/lib/tickets';
+import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, sortQueue, ticketKind, when } from '../src/lib/tickets';
 
 function ticket(over: Partial<Ticket>): Ticket {
   return {
     id: 1, protocol: 'SAC202611260001', subject: 'Lâmpada', message: '', origin: 'residents', category: null, priority: 'medium',
     status: 'open', condominium: { id: 1, name: 'Lafayette' }, unit: { id: 2, label: 'Apto 101' },
     requester: { user_id: 9, name: 'Ana', email: null, phone: null }, assigned_to: null, due_at: '2026-11-27 18:00:00',
-    created_at: '2026-11-26 09:00:00', updated_at: '2026-11-26 09:00:00', team: null, occurrence_id: null, late: false, ...over,
+    created_at: '2026-11-26 09:00:00', updated_at: '2026-11-26 09:00:00', team: null, tags: null, occurrence_id: null, late: false, ...over,
   };
 }
 
@@ -51,4 +51,44 @@ test('tipo, contexto, autor, push e selo', () => {
   expect(pushRoute(null)).toBeNull();
   expect(badgeCount({ mine_open: 3, unassigned: 2 })).toBe(5);
   expect(badgeCount(null)).toBe(0);
+});
+
+test('canal: tag do app vale primeiro, depois a origem', () => {
+  expect(channelOf(ticket({ origin: 'talk' }))).toBe('whatsapp');
+  expect(channelOf(ticket({ origin: 'residents' }))).toBe('app');
+  expect(channelOf(ticket({ origin: 'helpdesk', tags: 'canal:telefone' }))).toBe('telefone');
+  expect(channelOf(ticket({ origin: 'helpdesk', tags: 'urgente, canal:presencial' }))).toBe('presencial');
+  expect(channelOf(ticket({ origin: 'erp', tags: 'canalizacao' }))).toBe('equipe');
+  expect(channelOf(ticket({ origin: 'site' }))).toBe('site');
+});
+
+test('iniciais do responsável', () => {
+  expect(initials('Ana Nunes')).toBe('AN');
+  expect(initials('ana maria de souza')).toBe('AS');
+  expect(initials('Ana')).toBe('AN');
+  expect(initials(null)).toBe('');
+});
+
+test('há quanto tempo', () => {
+  expect(ago('2026-11-26 14:56:00', now)).toBe('há 4 min');
+  expect(ago('2026-11-26 13:00:00', now)).toBe('há 2 h');
+  expect(ago('2026-11-25 22:00:00', now)).toBe('ontem');
+  expect(ago('2026-11-20 08:00:00', now)).toBe('20/11');
+  expect(ago('2026-11-26 15:00:00', now)).toBe('agora');
+});
+
+test('linha de onde e quem', () => {
+  expect(placeLine(ticket({}))).toBe('Lafayette · Apto 101 · Ana');
+  expect(placeLine(ticket({ unit: null, requester: { user_id: null, name: null, email: null, phone: null } }))).toBe('Lafayette');
+});
+
+test('novo chamado: confere antes de enviar', () => {
+  const ok = { condominium_id: 1, requester_name: 'Carla', requester_phone: '(11) 98888-7777', requester_email: '', subject: 'Vazamento', message: 'Pingando desde cedo na vaga 22' };
+  expect(newTicketProblem(ok)).toBeNull();
+  expect(newTicketProblem({ ...ok, condominium_id: null })).toMatch(/condomínio/);
+  expect(newTicketProblem({ ...ok, requester_phone: '' })).toMatch(/telefone/);
+  expect(newTicketProblem({ ...ok, requester_phone: '', requester_email: 'carla@exemplo.com' })).toBeNull();
+  expect(newTicketProblem({ ...ok, requester_email: 'carla@' })).toMatch(/e-mail/);
+  expect(newTicketProblem({ ...ok, subject: 'Oi' })).toMatch(/assunto/);
+  expect(newTicketProblem({ ...ok, message: 'curto' })).toMatch(/Descreva/);
 });

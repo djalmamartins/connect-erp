@@ -189,9 +189,11 @@ final class TicketService
         } elseif ($data['requester_name'] === null && $actor !== null) {
             $data['requester_id'] = (int)$actor->id;
         }
-        $reachable = $data['requester_email'] !== null || ($data['origin'] === 'talk' && $data['requester_phone'] !== null);
+        // Telefone basta no Talk e quando a equipe registra o pedido de quem ligou ou veio ao escritório (app do SAC, ADR 0661).
+        $byPhone = $data['origin'] === 'talk' || ($data['origin'] === 'helpdesk' && $actor !== null);
+        $reachable = $data['requester_email'] !== null || ($byPhone && $data['requester_phone'] !== null);
         if ($data['requester_id'] === null && ($data['requester_name'] === null || !$reachable)) {
-            throw new TicketError('requester_name', $data['origin'] === 'talk' ? 'Informe nome e telefone do solicitante.' : 'Informe nome e e-mail do solicitante.');
+            throw new TicketError('requester_name', $byPhone ? 'Informe o nome e o telefone ou o e-mail de quem pediu.' : 'Informe nome e e-mail do solicitante.');
         }
         if ($data['assigned_to'] !== null && !(new User())->findById($data['assigned_to'])) {
             $data['assigned_to'] = null;

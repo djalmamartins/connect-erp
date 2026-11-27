@@ -5,7 +5,7 @@ import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-nat
 import { ApiError } from '../../src/api/client';
 import type { Message, TicketPriority, TicketStatus } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
-import { authorLabel, context, dueText, isFinal, PRIORITY_LABELS, priorityTone, STATUS_LABELS, statusTone, when } from '../../src/lib/tickets';
+import { authorLabel, CHANNEL_LABELS, channelOf, context, dueText, isFinal, PRIORITY_LABELS, priorityTone, STATUS_LABELS, statusTone, when } from '../../src/lib/tickets';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Badge } from '../../src/ui/Badge';
@@ -132,6 +132,9 @@ export default function Chamado() {
           ) : null}
 
           <Text style={styles.section}>Conversa</Text>
+          <Text style={styles.sys}>
+            {channelOf(t) === 'equipe' ? 'Aberto pela equipe' : `Aberto pelo ${CHANNEL_LABELS[channelOf(t)]}`} · {when(t.created_at)}
+          </Text>
           <Bubble message={{ id: 0, author: t.requester.name ?? 'Quem pediu', from_team: false, message: t.message, internal: false, created_at: t.created_at, attachments: [] }} />
           {d.messages.map((m) => (
             <Bubble key={m.id} message={m} />
@@ -231,10 +234,12 @@ const styles = StyleSheet.create({
   pill: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, height: 40, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   section: { fontFamily: fonts.semibold, fontSize: 13, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: space[2] },
   bubble: { borderRadius: radius.lg, padding: space[3], maxWidth: '88%', gap: 4 },
-  bubbleRequester: { alignSelf: 'flex-start', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  bubbleTeam: { alignSelf: 'flex-end', backgroundColor: colors.brandSoft },
-  bubbleNote: { backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#f1dca8' },
-  author: { fontFamily: fonts.semibold, fontSize: 12, color: colors.brandStrong },
+  bubbleRequester: { alignSelf: 'flex-start', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4 },
+  // Resposta da equipe em dourado-claro; nota interna no centro, tracejada em amarelo (prévia aprovada em 27/11).
+  bubbleTeam: { alignSelf: 'flex-end', backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: colors.accentLine, borderBottomRightRadius: 4 },
+  bubbleNote: { alignSelf: 'center', maxWidth: '94%', backgroundColor: colors.warningSoft, borderWidth: 1, borderStyle: 'dashed', borderColor: '#d9b54a', borderRadius: radius.md, borderBottomRightRadius: radius.md },
+  author: { fontFamily: fonts.semibold, fontSize: 12, color: colors.muted },
+  sys: { alignSelf: 'center', fontFamily: fonts.medium, fontSize: 12, color: colors.muted, backgroundColor: '#e6e8e6', borderRadius: radius.pill, paddingHorizontal: space[3], paddingVertical: 3, overflow: 'hidden' },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.text },
   attachment: { fontFamily: fonts.medium, fontSize: 13, color: colors.info },
   time: { fontFamily: fonts.regular, fontSize: 11, color: colors.faint, alignSelf: 'flex-end' },
