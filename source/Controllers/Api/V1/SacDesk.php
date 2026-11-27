@@ -19,7 +19,7 @@ use Source\Support\AppLogger;
  * Atendimento do SAC pela API, para o app do SAC no celular (ADR 0660). As mesmas regras da tela
  * /operacional/chamados do ERP: erp.access e o escopo de condomínio para ver; support.manage para atender
  * (triagem, resposta, nota interna, assumir). Sessão com CSRF ou o token Bearer da equipe (ADR 0660).
- *  GET  /api/v1/sac/summary                     números da fila de quem entrou (meus, sem responsável, vencidos, hoje)
+ *  GET  /api/v1/sac/summary?condominium_id=    números da fila de quem entrou (meus, sem responsável, vencidos, hoje)
  *  GET  /api/v1/sac/options                     situações, prioridades, equipes, responsáveis e respostas rápidas
  *  GET  /api/v1/sac/tickets?view=mine|unassigned|overdue|today|all&status=&q=&condominium_id=
  *  GET  /api/v1/sac/tickets/{id}                chamado, conversa (com notas internas para quem atende), histórico e medições
@@ -46,8 +46,16 @@ final class SacDesk
             (new SacBalloon())->touch($user);
             $desk = new TicketDesk();
             $ids = array_column((new CondominiumScope())->allowed($user), 'id');
+            // Filtro de condomínio da Fila (ADR 0670): os números acompanham o condomínio escolhido.
+            $condominium = (int)($_GET['condominium_id'] ?? 0);
+            if ($condominium > 0) {
+                if (!(new CondominiumScope())->canAccess($user, $condominium)) {
+                    throw new TicketError('condominium_id', 'Condomínio indisponível para a sua conta.', 403);
+                }
+                $ids = [$condominium];
+            }
             $all = $desk->metrics(array_map('intval', $ids), (int)$user->id);
-            $mine = (new TicketService())->listFor($user, ['assigned' => (string)(int)$user->id], 200);
+            $mine = (new TicketService())->listFor($user, ['assigned' => (string)(int)$user->id, 'condominium_id' => $condominium], 200);
             $openMine = array_values(array_filter($mine, static fn (array $t): bool => !in_array($t['status'], ['resolved', 'closed'], true)));
             return [200, ['data' => [
                 'mine_open' => count($openMine),

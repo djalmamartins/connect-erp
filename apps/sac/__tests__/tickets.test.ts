@@ -1,5 +1,5 @@
 import type { Ticket } from '../src/api/sac';
-import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, sortQueue, ticketKind, when } from '../src/lib/tickets';
+import { ago, authorLabel, badgeCount, channelOf, context, dueText, initials, newTicketProblem, placeLine, pushRoute, queueCondominium, sortQueue, ticketKind, when } from '../src/lib/tickets';
 
 function ticket(over: Partial<Ticket>): Ticket {
   return {
@@ -109,4 +109,17 @@ test('cronômetro do tempo dedicado', () => {
   expect(clock(42)).toBe('0:42');
   expect(clock(725)).toBe('12:05');
   expect(clock(3729)).toBe('1:02:09');
+});
+
+describe('queueCondominium (ADR 0670)', () => {
+  const list = [{ id: 3 }, { id: 7 }];
+  it('mantém o condomínio guardado que ainda está no escopo', () => {
+    expect(queueCondominium('7', list)).toBe(7);
+  });
+  it('volta para todos quando não há filtro, o salvo saiu do escopo ou só há um condomínio', () => {
+    expect(queueCondominium(null, list)).toBe(0);
+    expect(queueCondominium('9', list)).toBe(0);
+    expect(queueCondominium('abc', list)).toBe(0);
+    expect(queueCondominium('3', [{ id: 3 }])).toBe(0);
+  });
 });

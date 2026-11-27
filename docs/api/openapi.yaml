@@ -804,8 +804,10 @@ paths:
       operationId: getSacSummary
       tags: [SAC]
       summary: Números da fila do SAC para quem entrou (meus em aberto, meus vencidos, sem responsável, vencidos, hoje)
-      description: ADR 0660. Escopo de condomínio do usuário mais os chamados que ele abriu ou pediu, como na tela do ERP.
+      description: ADR 0660. Escopo de condomínio do usuário mais os chamados que ele abriu ou pediu, como na tela do ERP. Com condominium_id (ADR 0670), os números são só daquele condomínio; fora do escopo devolve 403.
       security: [{ teamApp: [] }, { session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: false, schema: { type: integer } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }

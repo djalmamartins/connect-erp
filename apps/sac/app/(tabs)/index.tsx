@@ -1,15 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import { dialog } from '../../src/ui/Dialog';
 import type { View as QueueView } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
+import { storage } from '../../src/auth/storage';
 import { apiBaseUrl } from '../../src/config';
 import { meuDiaWebUrl, openMeuDia } from '../../src/lib/apps';
 import { setBadge } from '../../src/lib/push';
-import { badgeCount, presenceText, sortQueue, VIEWS } from '../../src/lib/tickets';
+import { badgeCount, presenceText, queueCondominium, sortQueue, VIEWS } from '../../src/lib/tickets';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Card, Empty, ErrorBox, Loading, Screen } from '../../src/ui/kit';
@@ -18,13 +19,28 @@ import { TicketRow } from '../../src/ui/TicketRow';
 /**
  * Fila do SAC: Meus, Sem responsável, Atrasados e Todos, com o número de cada um em dourado;
  * atrasado fica em vermelho e vai para o topo. A busca fica na aba Buscar.
+ * Quem atende mais de um condomínio filtra a fila e os números por condomínio (ADR 0670).
  */
 export default function Fila() {
   const { api, me } = useAuth();
   const [view, setView] = useState<QueueView>('mine');
-    const summary = useResource(() => api.summary(), []);
+  const options = useResource(() => api.options(), []);
+  const condominiums = options.data?.condominiums ?? [];
+  // null = ainda lendo o filtro guardado; 0 = todos os condomínios.
+  const [condominium, setCondominium] = useState<number | null>(null);
+  useEffect(() => {
+    if (!options.data) return;
+    void storage.getQueueCondominium().then((saved) => setCondominium(queueCondominium(saved, options.data?.condominiums ?? [])));
+  }, [options.data]);
+  const ready = condominium !== null;
+  const summary = useResource(() => (ready ? api.summary(condominium) : Promise.resolve(null)), [condominium]);
   const day = useResource(() => api.myDay(), []);
-  const list = useResource(() => api.tickets(view), [view]);
+  const list = useResource(() => (ready ? api.tickets(view, '', condominium) : Promise.resolve(null)), [view, condominium]);
+
+  function chooseCondominium(id: number) {
+    setCondominium(id);
+    void storage.setQueueCondominium(id);
+  }
   // Chave do balão do site só para quem atende (a API devolve 403 para quem só acompanha).
   const presence = useResource(() => (me?.can_attend_sac ? api.presence() : Promise.resolve(null)), [me?.can_attend_sac]);
   const [saving, setSaving] = useState(false);
@@ -41,9 +57,10 @@ export default function Fila() {
     }
   }
 
+  // O número no ícone é sempre da fila inteira: com um condomínio escolhido, fica o último valor geral.
   useEffect(() => {
-    void setBadge(badgeCount(summary.data));
-  }, [summary.data]);
+    if (condominium === 0) void setBadge(badgeCount(summary.data));
+  }, [summary.data, condominium]);
 
   // Volta de um chamado: atualiza a fila e os números.
   useFocusEffect(
@@ -109,6 +126,21 @@ export default function Fila() {
         </Card>
       ) : null}
 
+      {condominiums.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} accessibilityLabel="Filtrar por condomínio">
+          {[{ id: 0, name: 'Todos os condomínios' }, ...condominiums].map((c) => {
+            const on = c.id === (condominium ?? 0);
+            return (
+              <Pressable key={c.id} onPress={() => chooseCondominium(c.id)} accessibilityRole="button" accessibilityState={{ selected: on }} style={[styles.chip, on && styles.chipOn]}>
+                <Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
+                  {c.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
+
       <View style={styles.seg} accessibilityRole="tablist">
         {VIEWS.map((v) => {
           const active = v.key === view;
@@ -124,12 +156,12 @@ export default function Fila() {
         })}
       </View>
 
-      {list.loading ? (
+      {list.loading || !ready ? (
         <Loading />
       ) : list.error ? (
         <ErrorBox error={list.error} onRetry={list.reload} />
       ) : tickets.length === 0 ? (
-        <Empty text={view === 'mine' ? 'Nenhum chamado seu em aberto. Veja os sem responsável.' : 'Nada por aqui.'} />
+        <Empty text={view === 'mine' ? 'Nenhum chamado seu em aberto. Veja os sem responsável.' : condominium ? 'Nada por aqui neste condomínio.' : 'Nada por aqui.'} />
       ) : (
         tickets.map((t) => <TicketRow key={t.id} ticket={t} />)
       )}
@@ -150,6 +182,11 @@ const styles = StyleSheet.create({
   dotOff: { backgroundColor: colors.faint, borderColor: colors.surfaceMuted },
   onlineTitle: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
   onlineDetail: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  chips: { gap: space[2], paddingRight: space[2] },
+  chip: { height: 32, maxWidth: 220, paddingHorizontal: space[3], borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  chipText: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  chipTextOn: { fontFamily: fonts.semibold, color: colors.text },
   seg: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: 10, padding: 3 },
   segItem: { flex: 1, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   segOn: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },

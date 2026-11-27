@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 const TOKEN_KEY = 'connect.sac.token';
 const LOGIN_KEY = 'connect.sac.last_login';
 const PUSH_KEY = 'connect.sac.push_token';
+const QUEUE_CONDOMINIUM_KEY = 'connect.sac.queue_condominium';
 const memory = new Map<string, string>();
 
 async function read(key: string): Promise<string | null> {
@@ -30,4 +31,7 @@ export const storage = {
   setLastLogin: (login: string | null) => write(LOGIN_KEY, login),
   getPushToken: () => read(PUSH_KEY),
   setPushToken: (token: string | null) => write(PUSH_KEY, token),
+  /** Condomínio escolhido no filtro da Fila (ADR 0670); 0 ou vazio = todos. */
+  getQueueCondominium: () => read(QUEUE_CONDOMINIUM_KEY),
+  setQueueCondominium: (id: number) => write(QUEUE_CONDOMINIUM_KEY, id > 0 ? String(id) : null),
 };
