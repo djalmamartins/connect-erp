@@ -14,7 +14,7 @@
     "android": {
       "package": "br.com.connectcondominios.meudia",
       "adaptiveIcon": {
-        "backgroundColor": "#078b4c",
+        "backgroundColor": "#0d2e27",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -40,8 +40,9 @@
       [
         "expo-notifications",
         {
-          "color": "#078b4c",
-          "defaultChannel": "meu-dia"
+          "color": "#c5a131",
+          "defaultChannel": "meu-dia",
+          "icon": "./assets/notification-icon.png"
         }
       ]
     ],
