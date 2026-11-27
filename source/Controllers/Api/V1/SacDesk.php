@@ -24,7 +24,7 @@ use Source\Support\AppLogger;
  *  GET  /api/v1/sac/tickets/{id}                chamado, conversa (com notas internas para quem atende), histórico e medições
  *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
  *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
- *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}; multipart com attachments[] (ADR 0663)
+ *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}; multipart com attachments[] (ADR 0664)
  *  GET  /api/v1/sac/units?condominium_id=       unidades ativas do condomínio (escopo de quem entrou)
  *  POST /api/v1/sac/tickets                     abre chamado recebido por telefone, WhatsApp ou presencial
  *        {condominium_id, unit_id?, requester_name, requester_phone?, requester_email?, channel, subject, message, priority?, assign_me?}

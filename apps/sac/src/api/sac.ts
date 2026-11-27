@@ -59,7 +59,7 @@ export type TicketEvent = { type: string; label: string; old: string | null; new
 export type TicketDetail = {
   ticket: Ticket;
   messages: Message[];
-  /** Fotos e arquivos mandados na abertura do chamado (ADR 0663). */
+  /** Fotos e arquivos mandados na abertura do chamado (ADR 0664). */
   opening_attachments?: { name: string; url: string }[];
   facts: { first_response_at: string | null; work_seconds: number; replies: number; internal_notes: number };
   events: TicketEvent[];

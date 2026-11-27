@@ -364,7 +364,7 @@ final class TicketService
         $creator->execute([$ticketId]);
         $creatorId = (int)$creator->fetchColumn();
         // No Help Desk e no app do SAC quem registra é a equipe, em nome de quem ligou ou veio ao escritório
-        // (ADR 0663): as respostas dela são da equipe, não de quem pediu.
+        // (ADR 0664): as respostas dela são da equipe, não de quem pediu.
         if (($ticket['origin'] ?? '') === 'helpdesk' && $creatorId !== $requesterId) {
             $creatorId = -1;
         }

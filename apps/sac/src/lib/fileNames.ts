@@ -1,6 +1,6 @@
 /** Regras puras dos anexos do app do SAC (testadas em __tests__/sac-api.test.ts). */
 
-/** Até 5 fotos por resposta ou abertura, como o servidor (TicketDesk::MAX_FILES, ADR 0663). */
+/** Até 5 fotos por resposta ou abertura, como o servidor (TicketDesk::MAX_FILES, ADR 0664). */
 export const MAX_PHOTOS = 5;
 /** Lado maior da foto enviada; o servidor guarda até 1600 px. */
 export const PHOTO_SIDE = 1600;

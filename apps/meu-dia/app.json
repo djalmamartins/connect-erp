@@ -44,6 +44,20 @@
           "defaultChannel": "meu-dia",
           "icon": "./assets/notification-icon.png"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Meu Dia usa as suas fotos para anexar à vistoria.",
+          "cameraPermission": "O Meu Dia usa a câmera para tirar as fotos da vistoria.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Meu Dia usa a localização só no check-in da vistoria, para confirmar que você está no condomínio."
+        }
       ]
     ],
     "extra": {

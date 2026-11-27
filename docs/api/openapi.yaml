@@ -854,7 +854,7 @@ paths:
             schema:
               type: object
               required: [condominium_id, requester_name, channel, subject, message]
-              description: Os mesmos campos como texto, mais as fotos da abertura em attachments[] (até 5, ADR 0663).
+              description: Os mesmos campos como texto, mais as fotos da abertura em attachments[] (até 5, ADR 0664).
               properties:
                 condominium_id: { type: string }
                 channel: { type: string, enum: [telefone, whatsapp, presencial] }
@@ -959,7 +959,7 @@ paths:
             schema:
               type: object
               required: [message]
-              description: Com fotos ou arquivos (ADR 0663). Até 5 por vez; foto reduzida a 1600 px e sem EXIF.
+              description: Com fotos ou arquivos (ADR 0664). Até 5 por vez; foto reduzida a 1600 px e sem EXIF.
               properties:
                 message: { type: string }
                 internal: { type: string, enum: ['true', 'false'] }
@@ -1066,6 +1066,7 @@ paths:
                       two_factor_enabled: { type: boolean }
                       can_see_team: { type: boolean, description: 'erp.myday.team: vê e marca o Meu Dia de outra pessoa' }
                       can_attend_sac: { type: boolean, description: 'support.manage: atende chamados (triagem, resposta, nota interna)' }
+                      can_inspect: { type: boolean, description: 'erp.inspections.perform: faz a vistoria pelo app Meu Dia (ADR 0663)' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /team/push-devices:

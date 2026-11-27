@@ -337,7 +337,7 @@ final class TicketDesk
             ->execute([$ticketId, $userId, $type, $old, $new]);
     }
 
-    /** Mais que isso numa resposta ou abertura pelo app é recusado (ADR 0663). */
+    /** Mais que isso numa resposta ou abertura pelo app é recusado (ADR 0664). */
     public const MAX_FILES = 5;
 
     /**
@@ -361,7 +361,7 @@ final class TicketDesk
             $file = ['name' => $files['name'][$index] ?? 'arquivo', 'type' => $files['type'][$index] ?? '', 'tmp_name' => $temporary,
                 'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE, 'size' => $files['size'][$index] ?? 0];
             $name = 'ticket-' . $ticketId . '-' . bin2hex(random_bytes(4));
-            // Foto (do celular ou da tela) vai pelo tratamento de imagem: reduzida a 1600 px e sem EXIF (ADR 0389, 0663).
+            // Foto (do celular ou da tela) vai pelo tratamento de imagem: reduzida a 1600 px e sem EXIF (ADR 0389, 0664).
             // O tipo vem do conteúdo, nunca do nome; documento segue pelo envio de arquivo.
             $mime = is_file((string)$temporary) ? strtolower((string)(new \finfo(FILEINFO_MIME_TYPE))->file((string)$temporary)) : '';
             $path = str_starts_with($mime, 'image/') ? (new Upload())->image($file, $name, 1600) : (new Upload())->file($file, $name);
