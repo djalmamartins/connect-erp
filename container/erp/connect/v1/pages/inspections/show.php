@@ -157,7 +157,7 @@ $this->insert('components/layout/page-head', [
                 <?= csrf_input() ?>
                 <div class="erp-field">
                     <label for="insp-recipients">Destinatários</label>
-                    <input class="erp-input" id="insp-recipients" name="recipients" type="text" inputmode="email" autocomplete="off" placeholder="sindico@exemplo.com, conselho@exemplo.com" required<?= isset($errors['recipients']) ? ' aria-invalid="true"' : '' ?>>
+                    <input class="erp-input" id="insp-recipients" name="recipients" type="text" inputmode="email" autocomplete="off" data-cx-suggest="email" data-cx-suggest-multiple data-cx-suggest-condominium="<?= (int)$inspection['condominium_id'] ?>" placeholder="sindico@exemplo.com, conselho@exemplo.com" required<?= isset($errors['recipients']) ? ' aria-invalid="true"' : '' ?>>
                     <?php if (isset($errors['recipients'])): ?><span class="erp-field__error"><?= $this->e($errors['recipients']) ?></span><?php endif; ?>
                 </div>
                 <div class="erp-field">

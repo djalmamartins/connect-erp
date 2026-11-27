@@ -1033,5 +1033,7 @@ function connect_fields_assets(string $part): string
         return '<link rel="stylesheet" href="' . $src('connect-fields.css') . '">';
     }
     return '<script src="' . $src('connect-upload.js') . '" defer></script>'
-        . '<script src="' . $src('connect-datepicker.js') . '" defer></script>';
+        . '<script src="' . $src('connect-datepicker.js') . '" defer></script>'
+        // Sugestão de pessoa e e-mail ao digitar (ADR 0687): o endereço da busca vem daqui, do host em que a tela está.
+        . '<script src="' . $src('connect-suggest.js') . '" data-api="' . htmlspecialchars(url('/api/v1/suggest/people'), ENT_QUOTES) . '" defer></script>';
 }

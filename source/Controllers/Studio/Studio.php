@@ -1345,6 +1345,14 @@ class Studio extends Controller
                 echo json_encode(["redirect" => url("/helpdesk/tickets?ticket=" . $ticketId)]); return;
             }
             // Abertura pelo serviço único (ADR 0034): mesma regra do ERP, do site e da API.
+            // Solicitante escolhido na sugestão (ADR 0687): o id só vale se o e-mail é o da conta e a pessoa está no escopo.
+            $suggest = new \Source\Services\Directory\PeopleSuggest();
+            if ((int)($data['requester_id'] ?? 0) > 0 && !$suggest->accountAllowed($user, (int)$data['requester_id'], (string)($data['requester_email'] ?? ''))) {
+                unset($data['requester_id']);
+            }
+            if ((int)($data['assigned_to'] ?? 0) > 0 && !$suggest->isTeam((int)$data['assigned_to'])) {
+                unset($data['assigned_to']);
+            }
             try {
                 $opened = (new \Source\Services\Support\TicketService())->open($data, 'helpdesk', $user);
             } catch (\Source\Services\Support\TicketError $error) {
