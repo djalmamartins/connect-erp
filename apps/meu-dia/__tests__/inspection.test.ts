@@ -1,5 +1,5 @@
 import type { InspectionItem } from '../src/api/team';
-import { answered, cancelReasonError, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath } from '../src/lib/inspection';
+import { answered, cancelReasonError, visibleItems, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath } from '../src/lib/inspection';
 
 const item = (id: number, over: Partial<InspectionItem> = {}): InspectionItem => ({
   id,
@@ -58,5 +58,13 @@ describe('cancelar a vistoria pelo app', () => {
     expect(cancelReasonError('fila')).toMatch(/Explique/);
     expect(cancelReasonError('Portaria fechada')).toBeNull();
     expect(cancelReasonError('x'.repeat(1001))).toMatch(/1000/);
+  });
+});
+
+describe('vistoria concluída', () => {
+  it('mostra só os problemas quando pedido', () => {
+    const items = [{ result: 'ok' as const }, { result: 'issue' as const }, { result: 'not_applicable' as const }];
+    expect(visibleItems(items, false)).toHaveLength(3);
+    expect(visibleItems(items, true)).toEqual([{ result: 'issue' }]);
   });
 });
