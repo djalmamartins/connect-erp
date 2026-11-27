@@ -1,5 +1,5 @@
 import type { InspectionItem } from '../src/api/team';
-import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath } from '../src/lib/inspection';
+import { answered, cancelReasonError, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath } from '../src/lib/inspection';
 
 const item = (id: number, over: Partial<InspectionItem> = {}): InspectionItem => ({
   id,
@@ -49,5 +49,14 @@ describe('foto da vistoria no app', () => {
   it('usa o endereço da API que vem do servidor, ou monta o mesmo', () => {
     expect(photoPath(12, { id: 5, api_path: '/inspections/12/photos/5' })).toBe('/inspections/12/photos/5');
     expect(photoPath(12, { id: 7 })).toBe('/inspections/12/photos/7');
+  });
+});
+
+describe('cancelar a vistoria pelo app', () => {
+  it('pede o motivo com as regras do servidor', () => {
+    expect(cancelReasonError('  ')).toMatch(/Explique/);
+    expect(cancelReasonError('fila')).toMatch(/Explique/);
+    expect(cancelReasonError('Portaria fechada')).toBeNull();
+    expect(cancelReasonError('x'.repeat(1001))).toMatch(/1000/);
   });
 });

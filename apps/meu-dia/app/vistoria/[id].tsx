@@ -5,7 +5,7 @@ import { type ImageURISource, Pressable, StyleSheet, Text, View } from 'react-na
 import { ApiError } from '../../src/api/client';
 import type { Inspection, InspectionItem, InspectionResult } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
-import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath, RESULT_LABEL } from '../../src/lib/inspection';
+import { answered, blockers, bySection, cancelReasonError, checkinLabel, needsPhoto, noteError, photoPath, RESULT_LABEL } from '../../src/lib/inspection';
 import { currentPosition } from '../../src/lib/location';
 import { pickPhoto } from '../../src/lib/photo';
 import { useResource } from '../../src/lib/useResource';
@@ -27,6 +27,8 @@ export default function InspectionScreen() {
   const [data, setData] = useState<Inspection | null>(null);
   const [summary, setSummary] = useState('');
   const [busy, setBusy] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     if (resource.data) setData(resource.data);
@@ -124,6 +126,31 @@ export default function InspectionScreen() {
     }
   }
 
+  async function cancel() {
+    const error = cancelReasonError(reason);
+    if (error) {
+      await dialog.notice({ title: 'Falta o motivo', message: error, tone: 'error' });
+      return;
+    }
+    const ok = await dialog.confirm({
+      title: 'Cancelar a vistoria?',
+      message: 'As respostas e as fotos ficam guardadas, mas a vistoria não pode mais ser concluída. Para visitar de novo, comece outra.',
+      confirm: 'Cancelar vistoria',
+      undo: false,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      setData(await api.cancelInspection(insp.id, reason));
+      setCancelling(false);
+      dialog.toast('Vistoria cancelada');
+    } catch (e) {
+      await dialog.notice({ title: 'Não deu para cancelar', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const finished = insp.status !== 'in_progress';
 
   return (
@@ -162,6 +189,17 @@ export default function InspectionScreen() {
           <Field label="Resumo da vistoria (opcional)" value={summary} onChangeText={setSummary} multiline maxLength={4000} placeholder="O que o síndico precisa saber" />
           <Button title={missing.length > 0 ? `Concluir (faltam ${missing.length})` : 'Concluir vistoria'} onPress={() => void complete()} busy={busy} />
         </Card>
+      ) : null}
+      {insp.editable && !finished ? (
+        cancelling ? (
+          <Card>
+            <Field label="Por que a vistoria não vai ser feita" value={reason} onChangeText={setReason} multiline maxLength={1000} placeholder="Ex.: a portaria não liberou a entrada" />
+            <Button title="Cancelar vistoria" variant="danger" onPress={() => void cancel()} busy={busy} />
+            <Button title="Voltar" variant="secondary" onPress={() => setCancelling(false)} />
+          </Card>
+        ) : (
+          <Button title="Não dá para fazer a vistoria" variant="secondary" onPress={() => setCancelling(true)} />
+        )
       ) : (
         <Button title="Voltar para Hoje" variant="secondary" onPress={() => router.navigate('/')} />
       )}

@@ -239,6 +239,8 @@ final class InspectionServiceTest extends TestCase
         $this->expectStatus(404, fn() => $this->service->deletePhoto($inspector, $id, 999999));
 
         $this->assertInvalid(fn() => $this->service->cancel($inspector, $id, ''), 'reason');
+        // Cancelar pela API do app (ADR 0676): quem só vê não cancela.
+        $this->expectStatus(403, fn() => $this->service->cancel($viewer, $id, 'Portaria fechada'));
         $this->service->cancel($inspector, $id, 'Portaria não liberou a entrada');
         self::assertSame('cancelled', $this->service->get($inspector, $id)['status']);
         $this->expectConflict(fn() => $this->service->addPhoto($inspector, $id, $item, ['tmp_name' => $this->jpeg(), 'error' => UPLOAD_ERR_OK]));
