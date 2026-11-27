@@ -82,6 +82,48 @@ final class Inspections
         });
     }
 
+    /**
+     * GET /api/v1/inspections/{id}/photos/{photo} — a própria foto (JPEG sem EXIF), para o app
+     * mostrar com o token da equipe (ADR 0674). Mesmo escopo da tela: fora dele, 404.
+     */
+    public function photoFile(array $data): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            JsonResponse::send(401, ['error' => ['code' => 'unauthenticated', 'message' => 'Autenticação necessária.']]);
+            return;
+        }
+        try {
+            $file = (new InspectionService())->photoFile($user, (int)($data['id'] ?? 0), (int)($data['photo'] ?? 0));
+        } catch (InspectionError $error) {
+            JsonResponse::send($error->status, ['error' => ['code' => $error->errorCode, 'message' => $error->getMessage()]]);
+            return;
+        }
+        foreach (self::photoHeaders($file) as $line) {
+            header($line);
+        }
+        readfile($file['path']);
+    }
+
+    /**
+     * Cabeçalhos da foto: só imagem (nosniff, CSP sem nada), cache privado (nunca em proxy) e ETag do conteúdo.
+     *
+     * @param array{path: string, mime: string, sha256: string} $file
+     * @return list<string>
+     */
+    public static function photoHeaders(array $file): array
+    {
+        $mime = in_array($file['mime'], ['image/jpeg', 'image/png', 'image/webp'], true) ? $file['mime'] : 'application/octet-stream';
+        return [
+            'Content-Type: ' . $mime,
+            'Content-Length: ' . (string)filesize($file['path']),
+            'Cache-Control: private, max-age=3600',
+            'ETag: "' . (preg_match('/^[a-f0-9]{64}$/', $file['sha256']) === 1 ? $file['sha256'] : '') . '"',
+            'X-Content-Type-Options: nosniff',
+            "Content-Security-Policy: default-src 'none'",
+        ];
+    }
+
     /** POST /api/v1/inspections/{id}/complete */
     public function complete(array $data): void
     {
@@ -131,6 +173,7 @@ final class Inspections
         foreach ($inspection['items'] as &$item) {
             foreach ($item['photos'] as &$photo) {
                 $photo['url'] = erp_url('/operacional/vistorias/' . $inspection['id'] . '/fotos/' . $photo['id']);
+                $photo['api_path'] = '/inspections/' . $inspection['id'] . '/photos/' . $photo['id'];
             }
         }
         unset($item, $photo);

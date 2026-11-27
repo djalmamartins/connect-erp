@@ -1,17 +1,18 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { type ImageURISource, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import type { Inspection, InspectionItem, InspectionResult } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
-import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError, RESULT_LABEL } from '../../src/lib/inspection';
+import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath, RESULT_LABEL } from '../../src/lib/inspection';
 import { currentPosition } from '../../src/lib/location';
 import { pickPhoto } from '../../src/lib/photo';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
 import { Button, Card, ErrorBox, Field, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { PhotoStrip } from '../../src/ui/PhotoStrip';
 
 /**
  * Vistoria pelo app (ADR 0663): os itens do modelo por seção, Conforme / Com problema / Não se aplica, foto por item
@@ -124,7 +125,14 @@ export default function InspectionScreen() {
         <View key={group.section} style={{ gap: space[2] }}>
           <SectionTitle>{group.section}</SectionTitle>
           {group.items.map((item) => (
-            <ItemCard key={item.id} item={item} editable={insp.editable && !finished} onSave={save} onPhoto={() => void photo(item)} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              photos={item.photos.map((p) => api.photoSource(photoPath(insp.id, p)))}
+              editable={insp.editable && !finished}
+              onSave={save}
+              onPhoto={() => void photo(item)}
+            />
           ))}
         </View>
       ))}
@@ -145,11 +153,13 @@ const CHOICES: InspectionResult[] = ['ok', 'issue', 'not_applicable'];
 
 function ItemCard({
   item,
+  photos,
   editable,
   onSave,
   onPhoto,
 }: {
   item: InspectionItem;
+  photos: ImageURISource[];
   editable: boolean;
   onSave: (item: InspectionItem, result: InspectionResult, note: string) => Promise<boolean>;
   onPhoto: () => void;
@@ -217,6 +227,7 @@ function ItemCard({
           </Pressable>
         ) : null}
       </View>
+      <PhotoStrip sources={photos} label={item.label} />
     </Card>
   );
 }

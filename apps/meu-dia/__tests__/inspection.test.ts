@@ -1,5 +1,5 @@
 import type { InspectionItem } from '../src/api/team';
-import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError } from '../src/lib/inspection';
+import { answered, blockers, bySection, checkinLabel, needsPhoto, noteError, photoPath } from '../src/lib/inspection';
 
 const item = (id: number, over: Partial<InspectionItem> = {}): InspectionItem => ({
   id,
@@ -42,5 +42,12 @@ describe('vistoria no app', () => {
     expect(noteError('ok', '')).toBeNull();
     expect(checkinLabel({ checkin: { at: '', status: 'outside', distance_m: 312.4, note: 'portaria' } })).toBe('Check-in a 312 m do condomínio');
     expect(checkinLabel({ checkin: { at: '', status: 'inside', distance_m: 10, note: null } })).toBe('Check-in no condomínio');
+  });
+});
+
+describe('foto da vistoria no app', () => {
+  it('usa o endereço da API que vem do servidor, ou monta o mesmo', () => {
+    expect(photoPath(12, { id: 5, api_path: '/inspections/12/photos/5' })).toBe('/inspections/12/photos/5');
+    expect(photoPath(12, { id: 7 })).toBe('/inspections/12/photos/7');
   });
 });

@@ -55,7 +55,7 @@ O painel mostra só os prédios que você atende, com as mesmas regras de acesso
 1. No **Painel da visita**, toque em {{Iniciar vistoria}}. Na primeira vez, o celular pergunta se pode usar a localização: toque em **Permitir**. Ela serve só para o check-in e para marcar onde cada foto foi tirada.
 2. Se você estiver longe do condomínio, ou o celular estiver sem sinal de localização, o app pede o **Motivo do check-in** (por exemplo, "estou na portaria dos fundos"). Escreva e toque em {{Iniciar com o motivo}}.
 3. Em cada item, toque em **Conforme**, **Com problema** ou **Não se aplica**. Em **Com problema**, descreva o que está errado e toque em {{Salvar problema}}. Cada resposta é salva na hora.
-4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto.
+4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto. As fotos já enviadas aparecem em miniatura embaixo do item: toque numa delas para ver na tela inteira e no **X** para fechar.
 5. No fim, escreva o resumo se quiser e toque em {{Concluir vistoria}}. Se faltar algum item, o app mostra qual.
 
 Ao concluir, o chamado da vistoria é resolvido e os itens **Com problema** viram um chamado de pendências, igual à vistoria feita no ERP. Só quem tem a permissão de fazer vistorias vê o botão.
@@ -103,6 +103,7 @@ Se o celular ficar sem internet, as abas **Hoje** e **Semana** continuam mostran
 - O login fica guardado no cofre do celular (Keychain no iPhone, Keystore no Android). A senha nunca é guardada. A sessão termina sozinha depois de 30 dias sem uso, e o **Sair de todos os aparelhos** do ERP também desconecta o app.
 - Os lembretes de 15 minutos ficam no próprio celular e funcionam mesmo sem internet; são refeitos toda vez que a aba Hoje carrega. O aviso de tarefa nova e o resumo das 7h vêm do servidor.
 - A cópia para usar sem internet fica dentro do app, só com os últimos 7 dias abertos pela pessoa conectada, e é apagada ao tocar em **Sair**.
+- As fotos da vistoria são mostradas pela API, com o login do app, e só para quem tem o condomínio no escopo, como na tela do ERP. O app não guarda as fotos fora da vistoria.
 - O texto dos avisos traz só o título da tarefa, o condomínio e o horário: nada de dado de morador nem valor.
 
 >> Veja também: [Meu Dia: a sua agenda e as suas tarefas](artigo:meu-dia) e [Abrir e acompanhar chamados](artigo:chamados).
