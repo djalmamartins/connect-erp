@@ -22,6 +22,11 @@ final class ResidentLinks
 {
     /** Quem vê o financeiro da unidade: proprietário, inquilino e responsável financeiro. */
     public const FINANCIAL_RELATIONSHIPS = ['owner', 'tenant', 'financial'];
+    /**
+     * Funções só do proprietário (ADR 0683): prestação de contas (também do responsável financeiro) e assembleias
+     * (voto do condômino, Código Civil art. 1.335). O inquilino fica com o dia a dia e com as contas que ele paga.
+     */
+    public const OWNER_FEATURES = ['accountability' => ['owner', 'financial'], 'assemblies' => ['owner']];
     public const RELATIONSHIPS = ['owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro'];
 
     private PDO $pdo;
@@ -62,6 +67,9 @@ final class ResidentLinks
                 continue;
             }
             if ($feature === 'boletos' && !in_array($relationship, self::FINANCIAL_RELATIONSHIPS, true)) {
+                continue;
+            }
+            if (isset(self::OWNER_FEATURES[$feature]) && !in_array($relationship, self::OWNER_FEATURES[$feature], true)) {
                 continue;
             }
             $out[] = $feature;

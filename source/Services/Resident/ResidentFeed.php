@@ -45,10 +45,11 @@ final class ResidentFeed
             array_push($items, ...(new ResidentTicketNotices($this->pdo))->feed($userId, (int)$link['condominium_id'], $today));
         }
         if (in_array('boletos', $features, true)) {
-            $stmt = $this->pdo->prepare("SELECT id, description, due_on, amount_cents FROM erp_entries
-                WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL
-                  AND paid_on IS NULL AND due_on < :t ORDER BY due_on LIMIT 10");
-            $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 't' => $today]);
+            [$payerSql, $payer] = ResidentPortal::payerFilter($link);
+            $stmt = $this->pdo->prepare("SELECT e.id, e.description, e.due_on, e.amount_cents FROM erp_entries e
+                WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.status = 'active' AND e.deleted_at IS NULL
+                  AND e.paid_on IS NULL AND e.due_on < :t{$payerSql} ORDER BY e.due_on LIMIT 10");
+            $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 't' => $today] + $payer);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $items[] = ['kind' => 'charge', 'title' => 'Conta vencida', 'detail' => (string)$r['description'] . ' · R$ ' . number_format((int)$r['amount_cents'] / 100, 2, ',', '.'),
                     'at' => (string)$r['due_on'] . ' 00:00:00', 'path' => '/boletos/' . (int)$r['id'], 'tone' => 'danger'];

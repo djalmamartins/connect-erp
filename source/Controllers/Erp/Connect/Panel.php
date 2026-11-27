@@ -51,7 +51,9 @@ final class Panel extends Controller
         // Dados pessoais (LGPD, ADR 0332).
         'CN-009' => 'erp.privacy.export',
         // Propostas do site (ADR 0644): a mesma permissão do Studio > Gestão > Propostas.
-        'CN-011' => 'proposals.manage'];
+        'CN-011' => 'proposals.manage',
+        // Unidades da imobiliária (ADR 0684): só para a imobiliária parceira.
+        'CN-012' => PartnerUnitScreens::PERMISSION];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
@@ -85,6 +87,10 @@ final class Panel extends Controller
     {
         $user = $this->guard();
         if ($user === null) {
+            return;
+        }
+        if (PartnerUnitScreens::partnerOnly($user)) {
+            redirect(erp_url(PartnerUnitScreens::ROUTE));   // a imobiliária não tem painel da equipe (ADR 0684)
             return;
         }
         echo $this->view->render('pages/dashboard/index', $this->layoutData($user, 'AP-001', [
@@ -640,7 +646,10 @@ final class Panel extends Controller
             'setupGuide' => $this->setupGuide($user),
             'anchor' => static fn (string $text): string => self::anchor($text),
             // Esconder o item é conveniência: a rota valida a mesma permissão no servidor.
-            'canSee' => static fn (string $pageId): bool => !isset(self::pagePermissions()[$pageId]) || $user->can(self::pagePermissions()[$pageId]),
+            // Conta só de imobiliária (ADR 0684): o menu mostra só as unidades dela; as telas da equipe dariam 403.
+            'canSee' => PartnerUnitScreens::partnerOnly($user)
+                ? static fn (string $pageId): bool => $pageId === PartnerUnitScreens::PAGE_ID
+                : static fn (string $pageId): bool => !isset(self::pagePermissions()[$pageId]) || $user->can(self::pagePermissions()[$pageId]),
             'icon' => static function (string $name, string $class = '') use ($icons): string {
                 $paths = $icons[$name] ?? $icons['info'];
                 return '<svg class="erp-icon ' . htmlspecialchars($class, ENT_QUOTES) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths . '</svg>';

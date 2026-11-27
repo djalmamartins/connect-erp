@@ -48,6 +48,22 @@ final class ResidentPortal
     }
 
     /** Período do extrato: do 1º dia de 12 meses atrás ao último dia de daqui a 3 meses (regra pura). */
+    /**
+     * Contas que o vínculo enxerga (ADR 0683): o inquilino só vê o que ele paga, isto é, a conta com ele como pagador
+     * gravado ou, sem pagador gravado, a da unidade cujo "Responsável pela cobrança" é o inquilino. Proprietário e
+     * responsável financeiro veem todas as contas da unidade. Devolve o trecho SQL (com AND na frente) e os parâmetros.
+     *
+     * @return array{0:string, 1:array<string, int>}
+     */
+    public static function payerFilter(array $link, string $alias = 'e'): array
+    {
+        if (($link['relationship'] ?? '') !== 'tenant') {
+            return ['', []];
+        }
+        return [" AND ({$alias}.payer_resident_id = :payer OR ({$alias}.payer_resident_id IS NULL AND EXISTS (SELECT 1 FROM erp_units pu"
+            . " WHERE pu.id = {$alias}.unit_id AND pu.billing_responsible = 'inquilino')))", ['payer' => (int)$link['resident_id']]];
+    }
+
     public static function defaultPeriod(string $today): array
     {
         $base = new \DateTimeImmutable(substr($today, 0, 7) . '-01');
@@ -72,11 +88,12 @@ final class ResidentPortal
         $features = $link['features'] ?? [];
         $out = ['features' => $features];
         if (in_array('boletos', $features, true)) {
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount_cents), 0) AS total, MIN(due_on) AS next_due,
-                    COALESCE(SUM(CASE WHEN due_on < :t THEN amount_cents ELSE 0 END), 0) AS overdue
-                FROM erp_entries WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND status = 'active'
-                  AND deleted_at IS NULL AND paid_on IS NULL");
-            $stmt->execute(['t' => $today, 'u' => $link['unit_id'], 'c' => $link['condominium_id']]);
+            [$payerSql, $payer] = self::payerFilter($link);
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(e.amount_cents), 0) AS total, MIN(e.due_on) AS next_due,
+                    COALESCE(SUM(CASE WHEN e.due_on < :t THEN e.amount_cents ELSE 0 END), 0) AS overdue
+                FROM erp_entries e WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.status = 'active'
+                  AND e.deleted_at IS NULL AND e.paid_on IS NULL{$payerSql}");
+            $stmt->execute(['t' => $today, 'u' => $link['unit_id'], 'c' => $link['condominium_id']] + $payer);
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $out['charges'] = ['open_count' => (int)($row['n'] ?? 0), 'open_cents' => (int)($row['total'] ?? 0),
                 'overdue_cents' => (int)($row['overdue'] ?? 0), 'next_due_on' => $row['next_due'] ?? null, 'next_entry_id' => null, 'next_code' => null];
@@ -86,8 +103,8 @@ final class ResidentPortal
                 (SELECT ce.charge_id FROM erp_bank_charge_entries ce JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1
                 WHERE ce.entry_id = e.id LIMIT 1))
                 WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.status = 'active'
-                  AND e.deleted_at IS NULL AND e.paid_on IS NULL ORDER BY e.due_on, e.id LIMIT 1");
-            $next->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id']]);
+                  AND e.deleted_at IS NULL AND e.paid_on IS NULL{$payerSql} ORDER BY e.due_on, e.id LIMIT 1");
+            $next->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id']] + $payer);
             if (is_array($n = $next->fetch(PDO::FETCH_ASSOC))) {
                 $out['charges']['next_entry_id'] = (int)$n['id'];
                 $out['charges']['next_code'] = ($n['digitable_line'] ?? '') !== '' ? (string)$n['digitable_line'] : (($n['pix_copy_paste'] ?? '') !== '' ? (string)$n['pix_copy_paste'] : null);
@@ -123,6 +140,7 @@ final class ResidentPortal
         if ($from > $to) {
             throw new InvalidArgumentException('A data inicial precisa ser antes da final.');
         }
+        [$payerSql, $payer] = self::payerFilter($link);
         $stmt = $this->pdo->prepare("SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.status, e.agreement_role,
                 b.id AS charge_id, b.status AS charge_status, b.adapter, b.external_id, b.digitable_line, b.barcode, b.pix_copy_paste
             FROM erp_entries e
@@ -131,9 +149,9 @@ final class ResidentPortal
                 WHERE ce.entry_id = e.id LIMIT 1))
             WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
               AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original'))
-              AND e.due_on BETWEEN :f AND :t
+              AND e.due_on BETWEEN :f AND :t{$payerSql}
             ORDER BY e.due_on DESC, e.id DESC LIMIT 500");
-        $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 'f' => $from, 't' => $to]);
+        $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 'f' => $from, 't' => $to] + $payer);
         $lines = [];
         $totals = ['open_cents' => 0, 'overdue_cents' => 0, 'paid_cents' => 0];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -162,9 +180,10 @@ final class ResidentPortal
     public function hasChargesBefore(array $link, string $date): bool
     {
         self::assertFeature($link, 'boletos');
-        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_entries WHERE unit_id = :u AND condominium_id = :c AND nature = 'receita' AND deleted_at IS NULL
-            AND (status = 'active' OR (status = 'inactive' AND agreement_role = 'original')) AND due_on < :d LIMIT 1");
-        $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 'd' => $date]);
+        [$payerSql, $payer] = self::payerFilter($link);
+        $stmt = $this->pdo->prepare("SELECT 1 FROM erp_entries e WHERE e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
+            AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original')) AND e.due_on < :d{$payerSql} LIMIT 1");
+        $stmt->execute(['u' => $link['unit_id'], 'c' => $link['condominium_id'], 'd' => $date] + $payer);
         return (bool)$stmt->fetchColumn();
     }
 
@@ -242,6 +261,7 @@ final class ResidentPortal
     {
         self::assertFeature($link, 'boletos');
         $today ??= date('Y-m-d');
+        [$payerSql, $payer] = self::payerFilter($link);
         $stmt = $this->pdo->prepare("SELECT e.id, e.description, e.competence, e.due_on, e.paid_on, e.amount_cents, e.status, e.agreement_role,
                 b.id AS charge_id, b.status AS charge_status, b.adapter, b.external_id, b.digitable_line, b.barcode, b.pix_copy_paste,
                 c.name AS condominium_name, c.document AS condominium_document
@@ -251,8 +271,8 @@ final class ResidentPortal
                 (SELECT ce.charge_id FROM erp_bank_charge_entries ce JOIN erp_bank_charges x ON x.id = ce.charge_id AND x.active_key = 1
                 WHERE ce.entry_id = e.id LIMIT 1))
             WHERE e.id = :id AND e.unit_id = :u AND e.condominium_id = :c AND e.nature = 'receita' AND e.deleted_at IS NULL
-              AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original'))");
-        $stmt->execute(['id' => $entryId, 'u' => $link['unit_id'], 'c' => $link['condominium_id']]);
+              AND (e.status = 'active' OR (e.status = 'inactive' AND e.agreement_role = 'original')){$payerSql}");
+        $stmt->execute(['id' => $entryId, 'u' => $link['unit_id'], 'c' => $link['condominium_id']] + $payer);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
             throw new RegistryNotFound();
@@ -310,6 +330,17 @@ final class ResidentPortal
     public function chargePdf(array $link, int $chargeId, ?BankCharges $charges = null): string
     {
         self::assertFeature($link, 'boletos');
+        [$payerSql, $payer] = self::payerFilter($link);
+        if ($payerSql !== '') {
+            // Inquilino: só o boleto de uma conta que ele paga (o mesmo filtro do extrato).
+            $stmt = $this->pdo->prepare("SELECT 1 FROM erp_bank_charges b JOIN erp_entries e ON e.id = b.entry_id OR e.id IN
+                (SELECT ce.entry_id FROM erp_bank_charge_entries ce WHERE ce.charge_id = b.id)
+                WHERE b.id = :id AND e.unit_id = :u AND e.condominium_id = :c AND e.deleted_at IS NULL{$payerSql} LIMIT 1");
+            $stmt->execute(['id' => $chargeId, 'u' => $link['unit_id'], 'c' => $link['condominium_id']] + $payer);
+            if ($stmt->fetchColumn() === false) {
+                throw new RegistryNotFound();
+            }
+        }
         return ($charges ?? new BankCharges($this->pdo))->residentPdf($chargeId, $link['condominium_id'], $link['unit_id']);
     }
 
