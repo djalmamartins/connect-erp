@@ -37,7 +37,7 @@ namespace Source\Services\Erp\Registry;
  *   'month' => true num texto AAAA-MM mostra o seletor de mês e aceita 11/2026 ou nov/2026.
  * 'only_if' => [campo => valor] no campo (ADR 0149): preenchido só quando o outro campo tem o valor; o
  *   formulário esconde o campo nos outros casos e o validador recusa ('only_if_message').
- * ADR 0687: 'hide_if' => campo bool: o formulário esconde o campo (e deixa de exigi-lo) com a caixa marcada.
+ * ADR 0688: 'hide_if' => campo bool: o formulário esconde o campo (e deixa de exigi-lo) com a caixa marcada.
  *   'inherit' => ['when' => bool, 'from' => campo ref, 'fields' => [...]] no cadastro: com a caixa marcada, os
  *   campos são copiados do registro apontado (do mesmo cadastro e do mesmo condomínio), não do formulário.
  *   'unique' aceita 'unless' => campo bool: com a caixa marcada não compara, e os registros marcados não contam.
@@ -188,9 +188,11 @@ final class Definitions
                     'relationship' => ['label' => 'Vínculo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => [
                         'owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro',
                     ]],
-                    'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                    // ADR 0687: ao digitar, sugere quem já está cadastrado (outra unidade, outro vínculo); quem não está é digitado inteiro.
+                    'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true,
+                        'suggest' => ['kind' => 'person', 'sources' => 'residents', 'fill_email' => 'email']],
                     'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true, 'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone']],
-                    'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
+                    'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6, 'suggest' => ['kind' => 'email', 'sources' => 'residents', 'fill_name' => 'name']],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'starts_on' => ['label' => 'Início do vínculo', 'type' => 'date', 'span' => 4],
                     'ends_on' => ['label' => 'Fim do vínculo', 'type' => 'date', 'span' => 4, 'after' => 'starts_on'],
@@ -564,7 +566,7 @@ final class Definitions
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
                     'name' => ['label' => 'Apelido', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Conta movimento'],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'filter' => true, 'options' => ['corrente' => 'Conta corrente', 'poupanca' => 'Poupança', 'aplicacao' => 'Aplicação']],
-                    // ADR 0687: caixinha = aplicação no mesmo banco da conta corrente, como os bancos fazem hoje.
+                    // ADR 0688: caixinha = aplicação no mesmo banco da conta corrente, como os bancos fazem hoje.
                     // Banco, agência e conta vêm da conta corrente ligada e não se digitam de novo.
                     'is_pocket' => ['label' => 'Caixinha no mesmo banco da conta corrente', 'type' => 'bool', 'span' => 3,
                         'only_if' => ['kind' => 'aplicacao'], 'only_if_message' => 'Só uma conta de tipo aplicação pode ser caixinha.'],
@@ -589,7 +591,7 @@ final class Definitions
                         'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.', 'hint' => 'Opcional; sugerido nos lançamentos desta conta'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                // ADR 0687: a caixinha repete banco, agência e conta da conta corrente, por isso fica fora da comparação.
+                // ADR 0688: a caixinha repete banco, agência e conta da conta corrente, por isso fica fora da comparação.
                 'unique' => [['fields' => ['condominium_id', 'bank_code', 'branch', 'account_number'], 'unless' => 'is_pocket',
                     'message' => 'Esta conta já está cadastrada neste condomínio. Se for uma aplicação no mesmo banco, marque "Caixinha no mesmo banco da conta corrente".']],
                 'inherit' => ['when' => 'is_pocket', 'from' => 'parent_bank_account_id', 'fields' => ['bank_code', 'branch', 'account_number']],

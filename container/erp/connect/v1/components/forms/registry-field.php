@@ -32,7 +32,7 @@ $attachment ??= null;
 ?>
 <?php // 'only_if' aceita uma lista de valores (ADR 0686): data-only-if="f-role=sindico|subsindico".
 $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . implode('|', array_map('strval', (array)$expected))) . '"'; }
-// ADR 0687: 'hide_if' esconde o campo com a caixa marcada (ex.: banco, agência e conta da caixinha vêm da conta corrente).
+// ADR 0688: 'hide_if' esconde o campo com a caixa marcada (ex.: banco, agência e conta da caixinha vêm da conta corrente).
 if (isset($field['hide_if'])) { $onlyIf .= ' data-hide-if="' . $this->e('f-' . $field['hide_if']) . '"'; } ?>
 <div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>"<?= $onlyIf ?>>
     <?php if ($field['type'] === 'bool'): ?>
@@ -175,6 +175,14 @@ if (isset($field['hide_if'])) { $onlyIf .= ' data-hide-if="' . $this->e('f-' . $
             <?php if (!empty($field['month'])) { $extra .= ' data-erp-month'; } // ADR 0152: seletor de mês e ano (erp.js) ?>
             <?php if (!empty($field['cnpj_lookup']) && !$readonly) { // ADR 0312: CNPJ completo busca na Receita e preenche os campos mapeados que estiverem vazios
                 $extra .= ' data-erp-cnpj-lookup data-cnpj-map="' . $this->e((string)json_encode($field['cnpj_lookup'])) . '"';
+            } ?>
+            <?php if (!empty($field['suggest']) && !$readonly) { // ADR 0687: sugere pessoas e e-mails do banco ao digitar (connect-suggest.js)
+                $suggest = (array)$field['suggest'];
+                $extra .= ' data-cx-suggest="' . (($suggest['kind'] ?? 'person') === 'email' ? 'email' : 'person') . '"';
+                foreach (['fill_email' => 'fill-email', 'fill_name' => 'fill-name', 'condominium' => 'condominium', 'unit' => 'unit'] as $key => $attr) {
+                    if (!empty($suggest[$key])) { $extra .= ' data-cx-suggest-' . $attr . '="#f-' . $this->e((string)$suggest[$key]) . '"'; }
+                }
+                if (!empty($suggest['sources'])) { $extra .= ' data-cx-suggest-sources="' . $this->e((string)$suggest['sources']) . '"'; }
             } ?>
             <input class="erp-input" type="<?= $type ?>" id="<?= $id ?>" name="<?= $this->e($name) ?>" value="<?= $this->e($display) ?>"<?= $extra ?><?= $placeholder !== '' ? ' placeholder="' . $this->e($placeholder) . '"' : '' ?><?= $required . $disabled . $invalid ?>>
         <?php endif; ?>

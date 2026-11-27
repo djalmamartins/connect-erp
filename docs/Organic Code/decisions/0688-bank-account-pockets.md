@@ -1,4 +1,4 @@
-# 0687 — Caixinha: aplicação no mesmo banco da conta corrente
+# 0688 — Caixinha: aplicação no mesmo banco da conta corrente
 
 - Status: Aceito
 - Data: 27/11/2026

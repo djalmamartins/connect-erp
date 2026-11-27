@@ -5418,6 +5418,29 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /suggest/people:
+    get:
+      operationId: suggestPeople
+      summary: Sugestões de pessoa e e-mail enquanto se digita (ADR 0687), só do escopo de quem busca
+      description: >
+        Fontes "residents" (erp.access + erp.residents.view, só condomínios do escopo) e "team" (equipe da Connect, para quem é da
+        equipe). O e-mail só sai com kind=email ou with=email. Nunca sai documento nem telefone. Cada busca vai para a auditoria
+        sem o texto digitado; limite de 900 buscas por hora.
+      security: [{ session: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 3, maxLength: 80 } }
+        - { name: kind, in: query, schema: { type: string, enum: [person, email], default: person } }
+        - { name: with, in: query, schema: { type: string, enum: [email] }, description: "Devolve também o e-mail (campo de nome que preenche o e-mail ao lado)" }
+        - { name: sources, in: query, schema: { type: string, example: "residents,team" } }
+        - { name: condominium_id, in: query, schema: { type: integer } }
+        - { name: unit_id, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 15, default: 8 } }
+      responses:
+        '200': { description: '{ data: [{ source: resident|team, id, account_id, name, email, context, role }] }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Limite de buscas por hora }
   /reports/people:
     get:
       operationId: reportPeople

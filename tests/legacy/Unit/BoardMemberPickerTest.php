@@ -102,11 +102,13 @@ final class BoardMemberPickerTest extends TestCase
     public function testPickerAssetsAndApi(): void
     {
         $js = (string)file_get_contents(self::THEME . 'assets/js/erp.js');
-        foreach (['[data-erp-board-picker]', "COUNCIL = ['fiscal', 'consultivo', 'suplente']", 'aria-activedescendant', 'end.setUTCDate(end.getUTCDate() - 1)', "split('|')"] as $needle) {
+        foreach (['[data-erp-board-picker]', "COUNCIL = ['fiscal', 'consultivo', 'suplente']", 'end.setUTCDate(end.getUTCDate() - 1)', "split('|')"] as $needle) {
             self::assertStringContainsString($needle, $js, $needle);
         }
         self::assertStringContainsString('data-erp-board-picker', (string)file_get_contents(self::THEME . 'assets/erp.min.js'), 'erp.min.js regenerado');
-        self::assertStringContainsString('.erp-board-suggest', (string)file_get_contents(self::THEME . 'assets/erp.min.css'), 'erp.min.css regenerado');
+        self::assertStringContainsString('.erp-board-picker', (string)file_get_contents(self::THEME . 'assets/erp.min.css'), 'erp.min.css regenerado');
+        // ADR 0687: as sugestões ao digitar o nome usam o componente de todo o sistema, com a lista do prédio já carregada.
+        self::assertStringContainsString('window.ConnectSuggest.enhance(nameInput', $js);
         $index = (string)file_get_contents('index.php');
         self::assertLessThan(strpos($index, 'Definitions::all() as $registrySlug'), strpos($index, '"/board-members/candidates"'), 'Antes de /board-members/{id}.');
         $controller = (string)file_get_contents('source/Controllers/Api/V1/BoardCandidates.php');

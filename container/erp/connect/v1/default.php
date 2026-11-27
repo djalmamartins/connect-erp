@@ -44,7 +44,7 @@ foreach ($catalog['pages'] as $id => $page) {
     <link rel="stylesheet" href="<?= url('/container/shared/assets/moves-editor/moves-editor.css') . '?v=' . filemtime($movesEditorDir . '/moves-editor.css') ?>">
     <?php endif; ?>
 </head>
-<body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?><?= $reportMode ? ' erp-report-mode' : '' ?>">
+<body class="erp-body<?= !empty($showTrace) ? ' erp-body--trace' : '' ?><?= $reportMode ? ' erp-report-mode' : '' ?>"<?php $cxCondominium = \Source\Support\Erp\CondominiumContext::booted() ? \Source\Support\Erp\CondominiumContext::id() : null; ?><?= $cxCondominium ? ' data-cx-condominium="' . (int)$cxCondominium . '"' : '' /* sugestões do condomínio da barra superior (ADR 0687) */ ?>>
 <a class="erp-skip-link" href="#erp-main">Ir para o conteúdo</a>
 <?php if ($reportMode): ?>
 <?php $this->insert('components/report/sheet', ['reportContent' => $this->section('content')]); ?>

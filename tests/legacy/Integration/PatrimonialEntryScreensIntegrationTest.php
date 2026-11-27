@@ -105,7 +105,7 @@ final class PatrimonialEntryScreensIntegrationTest extends TestCase
     }
 
     /**
-     * ADR 0687 (teste 6.2 do manual): a aplicação no mesmo banco repetia banco, agência e conta da conta corrente e
+     * ADR 0688 (teste 6.2 do manual): a aplicação no mesmo banco repetia banco, agência e conta da conta corrente e
      * caía em "Esta conta já está cadastrada". A caixinha herda os dados da conta corrente e acompanha a mudança dela.
      */
     public function testPocketUsesTheCheckingAccountNumbers(): void

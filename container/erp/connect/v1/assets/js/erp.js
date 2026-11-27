@@ -2150,7 +2150,7 @@
     var sync = function () {
       var on = accepted.indexOf(other.value) !== -1;
       wrap.hidden = !on;
-      // Caixa (bool) é desmarcada; o "0" escondido que acompanha a caixa fica como está (ADR 0687).
+      // Caixa (bool) é desmarcada; o "0" escondido que acompanha a caixa fica como está (ADR 0688).
       if (!on) $$('select, input', wrap).forEach(function (field) {
         if (field.type === 'checkbox') {
           if (field.checked) { field.checked = false; field.dispatchEvent(new Event('change')); }
@@ -2163,7 +2163,7 @@
     sync();
   });
 
-  /* Cadastros: campo escondido com a caixa marcada (ADR 0687, 'hide_if'), como banco, agência e conta da caixinha,
+  /* Cadastros: campo escondido com a caixa marcada (ADR 0688, 'hide_if'), como banco, agência e conta da caixinha,
      que vêm da conta corrente ligada. Escondido, o navegador deixa de exigir; o servidor preenche. */
   $$('[data-hide-if]').forEach(function (wrap) {
     var box = document.getElementById(wrap.getAttribute('data-hide-if') || '');
@@ -4302,61 +4302,23 @@
       });
     });
 
-    // Sugestões ao digitar o nome: moradores do prédio e, para síndico e subsíndico, os síndicos profissionais.
-    if (nameInput && !nameInput.disabled) {
-      var wrap = nameInput.closest('.erp-field');
-      var box = document.createElement('ul');
-      box.className = 'erp-board-suggest';
-      box.id = 'f-name-suggest';
-      box.setAttribute('role', 'listbox');
-      box.setAttribute('aria-label', 'Pessoas sugeridas');
-      box.hidden = true;
-      wrap.classList.add('erp-board-suggest__wrap');
-      wrap.appendChild(box);
-      nameInput.setAttribute('autocomplete', 'off');
-      nameInput.setAttribute('aria-autocomplete', 'list');
-      nameInput.setAttribute('aria-controls', box.id);
-      nameInput.setAttribute('aria-expanded', 'false');
-      var options = [];
-      var active = -1;
-      var close = function () { box.hidden = true; box.innerHTML = ''; options = []; active = -1; nameInput.setAttribute('aria-expanded', 'false'); nameInput.removeAttribute('aria-activedescendant'); };
-      var highlight = function (i) {
-        active = i;
-        $$('[role="option"]', box).forEach(function (o, k) { o.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
-        if (i >= 0) nameInput.setAttribute('aria-activedescendant', 'f-name-opt-' + i); else nameInput.removeAttribute('aria-activedescendant');
-      };
-      var suggest = function () {
-        var q = nameInput.value.trim();
-        if (q.length < 2 || loadedFor !== (condo && condo.value)) { close(); return; }
-        options = [];
-        // No campo do nome, só pelo nome (ou CPF/CNPJ): "Ca" não traz todo mundo da "Casa 5".
-        var byName = function (p) { var qd = digits(q); return norm(p.name).indexOf(norm(q)) !== -1 || (qd.length >= 3 && digits(p.document).indexOf(qd) !== -1); };
-        (data.residents || []).forEach(function (p) { if (byName(p)) options.push(['residents', p]); });
-        if (!council()) (data.professionals || []).forEach(function (p) { if (byName(p)) options.push(['professionals', p]); });
-        options = options.slice(0, 8);
-        if (!options.length) { close(); return; }
-        box.innerHTML = options.map(function (o, i) {
-          var tag = o[0] === 'residents' ? 'Morador' : 'Síndico profissional';
-          return '<li role="option" id="f-name-opt-' + i + '" aria-selected="false" data-suggest="' + i + '"><strong>' + esc(o[1].name) + '</strong><small>' + esc([tag, who(o[1], o[0])].filter(Boolean).join(' · ')) + '</small></li>';
-        }).join('');
-        box.hidden = false;
-        nameInput.setAttribute('aria-expanded', 'true');
-        highlight(-1);
-      };
-      var take = function (i) { var o = options[i]; close(); if (o) choose(o[1], o[0]); };
-      nameInput.addEventListener('input', function (event) { if (event.isTrusted) suggest(); });
+    // Sugestões ao digitar o nome: moradores do prédio e, para síndico e subsíndico, os síndicos profissionais. Mesmo
+    // componente de todo o sistema (connect-suggest.js, ADR 0687), com a lista do prédio já carregada.
+    if (nameInput && !nameInput.disabled && window.ConnectSuggest) {
       nameInput.addEventListener('focus', function () { load(false); });
-      nameInput.addEventListener('keydown', function (event) {
-        if (box.hidden) return;
-        if (event.key === 'ArrowDown') { event.preventDefault(); highlight(Math.min(active + 1, options.length - 1)); }
-        else if (event.key === 'ArrowUp') { event.preventDefault(); highlight(Math.max(active - 1, 0)); }
-        else if (event.key === 'Enter' && active >= 0) { event.preventDefault(); take(active); }
-        else if (event.key === 'Escape') { close(); }
-      });
-      nameInput.addEventListener('blur', function () { window.setTimeout(close, 150); });
-      box.addEventListener('mousedown', function (event) {
-        var li = event.target.closest('[data-suggest]');
-        if (li) { event.preventDefault(); take(parseInt(li.getAttribute('data-suggest'), 10)); }
+      window.ConnectSuggest.enhance(nameInput, {
+        min: 2,
+        local: function (q) {
+          if (loadedFor !== (condo && condo.value)) return [];
+          // No campo do nome, só pelo nome (ou CPF/CNPJ): "Ca" não traz todo mundo da "Casa 5".
+          var qd = digits(q);
+          var byName = function (p) { return norm(p.name).indexOf(norm(q)) !== -1 || (qd.length >= 3 && digits(p.document).indexOf(qd) !== -1); };
+          var out = [];
+          (data.residents || []).forEach(function (p) { if (byName(p)) out.push({ name: p.name, context: ['Morador', who(p, 'residents')].filter(Boolean).join(' · '), kind: 'residents', person: p }); });
+          if (!council()) (data.professionals || []).forEach(function (p) { if (byName(p)) out.push({ name: p.name, context: who(p, 'professionals'), tag: 'Síndico profissional', kind: 'professionals', person: p }); });
+          return out;
+        },
+        choose: function (item) { choose(item.person, item.kind); }
       });
     }
     load(false);

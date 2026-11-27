@@ -231,12 +231,13 @@ $slaLabel = static function (array $ticket): array {
         </fieldset>
         <div class="erp-field erp-col-4">
             <label for="tk-rname">Nome do solicitante</label>
-            <input class="erp-input" id="tk-rname" name="requester_name" maxlength="160" value="<?= $this->e($value('requester_name')) ?>"<?= $invalid('requester_name', 'tk-rname') ?>>
+            <input type="hidden" id="tk-rid" name="requester_id" value="">
+            <input class="erp-input" id="tk-rname" name="requester_name" maxlength="160" data-cx-suggest="person" data-cx-suggest-fill-email="#tk-remail" data-cx-suggest-id="#tk-rid" data-cx-suggest-condominium="#tk-condo" value="<?= $this->e($value('requester_name')) ?>"<?= $invalid('requester_name', 'tk-rname') ?>>
             <span class="erp-field__error" id="tk-rname-error"><?= $this->e($error('requester_name')) ?></span>
         </div>
         <div class="erp-field erp-col-4">
             <label for="tk-remail">E-mail do solicitante</label>
-            <input class="erp-input" id="tk-remail" name="requester_email" type="email" maxlength="190" value="<?= $this->e($value('requester_email')) ?>"<?= $invalid('requester_email', 'tk-remail') ?>>
+            <input class="erp-input" id="tk-remail" name="requester_email" type="email" maxlength="190" data-cx-suggest="email" data-cx-suggest-fill-name="#tk-rname" data-cx-suggest-id="#tk-rid" data-cx-suggest-condominium="#tk-condo" value="<?= $this->e($value('requester_email')) ?>"<?= $invalid('requester_email', 'tk-remail') ?>>
             <span class="erp-field__error" id="tk-remail-error"><?= $this->e($error('requester_email')) ?></span>
         </div>
         <div class="erp-field erp-col-4">

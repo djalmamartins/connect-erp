@@ -95,7 +95,7 @@ $this->insert('components/layout/page-head', [
             <form class="erp-card erp-form" data-access-form data-api="<?= $this->e($api('/erp-users/invite')) ?>" data-done="Acesso concedido." aria-labelledby="ad-invite-title" novalidate>
                 <div class="erp-card__head"><div><h2 id="ad-invite-title">Dar acesso a uma conta</h2><p>A conta precisa existir em Studio › Usuários, com um papel que entre no ERP. Aqui você só escolhe os condomínios.</p></div></div>
                 <div class="erp-form__grid">
-                    <div class="erp-field erp-col-6"><label for="ad-email">E-mail da conta</label><input class="erp-input" type="email" id="ad-email" name="email" maxlength="254" required autocomplete="off"></div>
+                    <div class="erp-field erp-col-6"><label for="ad-email">E-mail da conta</label><input class="erp-input" type="email" id="ad-email" name="email" maxlength="254" required autocomplete="off" data-cx-suggest="email" data-cx-suggest-sources="team"></div>
                 </div>
                 <fieldset class="erp-field erp-charge-units"><legend>Condomínios <span class="erp-muted" data-access-count>(0 marcados)</span></legend>
                     <div class="erp-charge-units__grid erp-charge-units__grid--people"><?php foreach ($scopeCondominiums as $cid => $cname): ?><label class="erp-check"><input type="checkbox" name="condominium_ids[]" value="<?= (int)$cid ?>"<?= (int)($condo['id'] ?? 0) === (int)$cid ? ' checked' : '' ?>> <?= $this->e($cname) ?></label><?php endforeach; ?></div>

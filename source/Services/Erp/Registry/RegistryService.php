@@ -946,7 +946,7 @@ final class RegistryService
     }
 
     /**
-     * 'inherit' (ADR 0687): com a caixa marcada (ex.: caixinha), os campos vêm do registro apontado do mesmo
+     * 'inherit' (ADR 0688): com a caixa marcada (ex.: caixinha), os campos vêm do registro apontado do mesmo
      * cadastro e do mesmo condomínio (ex.: banco, agência e conta da conta corrente), nunca do formulário. Sem
      * registro válido, os campos ficam vazios e o validador e a conferência do 'ref' explicam o erro.
      *
@@ -978,7 +978,7 @@ final class RegistryService
     }
 
     /**
-     * 'inherit' (ADR 0687): quando a conta apontada muda (ex.: a conta corrente troca de agência), os registros
+     * 'inherit' (ADR 0688): quando a conta apontada muda (ex.: a conta corrente troca de agência), os registros
      * marcados que herdam dela (as caixinhas) acompanham, com auditoria.
      */
     private function propagateInherited(array $definition, int $id, ?array $before, ?array $after): void
@@ -1014,7 +1014,7 @@ final class RegistryService
             $where = ['deleted_at IS NULL'];
             $params = [];
             $complete = true;
-            // ADR 0687: 'unless' => campo bool. Marcado, não compara; os registros marcados não contam.
+            // ADR 0688: 'unless' => campo bool. Marcado, não compara; os registros marcados não contam.
             if (isset($rule['unless'])) {
                 if (!empty($values[$rule['unless']])) {
                     continue;

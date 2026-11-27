@@ -60,7 +60,7 @@ final class Investments
             $parent = (int)$row['id'];
         }
         if ($investment['is_pocket']) {
-            // Caixinha (ADR 0687): sempre ligada a uma conta corrente, com o banco, a agência e a conta dela.
+            // Caixinha (ADR 0688): sempre ligada a uma conta corrente, com o banco, a agência e a conta dela.
             if ($parent === null) {
                 throw new InvalidArgumentException('A caixinha precisa ficar ligada a uma conta corrente.');
             }

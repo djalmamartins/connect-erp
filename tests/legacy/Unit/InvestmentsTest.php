@@ -84,7 +84,7 @@ final class InvestmentsTest extends TestCase
         self::assertNull($service->link($this->user(), 11, null)['parent_bank_account_id'], 'Desligar.');
     }
 
-    /** ADR 0687: a caixinha nunca fica sem conta corrente e, ao trocar de conta, leva o banco, a agência e a conta dela. */
+    /** ADR 0688: a caixinha nunca fica sem conta corrente e, ao trocar de conta, leva o banco, a agência e a conta dela. */
     public function testPocketFollowsItsCheckingAccount(): void
     {
         $this->pdo->exec("UPDATE erp_bank_accounts SET bank_code = '077', branch = '0001', account_number = '1234-5' WHERE id = 10");
