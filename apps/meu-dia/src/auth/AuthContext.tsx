@@ -4,6 +4,7 @@ import { createClient } from '../api/client';
 import { teamApi, type LoginResult, type Me, type TeamApi } from '../api/team';
 import { apiBaseUrl } from '../config';
 import { clearReminders, forgetPush, registerPush } from '../lib/notify';
+import { offline } from '../lib/offline';
 import { askBiometric, biometricInfo, type BiometricInfo } from './biometrics';
 import { storage } from './storage';
 
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signedOut');
     await storage.setToken(null);
     await clearReminders();
+    offline.clear();
   }, []);
 
   const api = useMemo(

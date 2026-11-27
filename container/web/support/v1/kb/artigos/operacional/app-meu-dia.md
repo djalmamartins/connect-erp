@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: meu-dia, chamados
-palavras: app, aplicativo, adiar, remarcar, mudar horário, face id, digital, biometria, touch id, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
+palavras: app, aplicativo, sem internet, offline, sem conexão, adiar, remarcar, mudar horário, face id, digital, biometria, touch id, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
 manual: sim
 rascunho: nao
 ---
@@ -93,11 +93,16 @@ Quem tem a permissão **Ver o Meu Dia da equipe** escolhe em **Para quem** qualq
 
 Os lembretes podem ser desligados em **Conta > Lembretes neste celular**. Ao sair do app, o celular para de receber os avisos da sua conta.
 
+## Sem internet
+
+Se o celular ficar sem internet, a aba **Hoje** continua mostrando o último dia que você abriu, com um aviso amarelo: "Sem conexão. Mostrando os dados de hoje às 14:32". Quando a internet voltar, puxe a tela para baixo para atualizar. Sem internet não dá para concluir, adiar nem marcar tarefas: faça isso quando a conexão voltar. Os lembretes de 15 minutos continuam funcionando, porque ficam no próprio celular.
+
 ## O que acontece por trás
 
 - O app usa a mesma API do ERP. As regras são as mesmas da tela: cada pessoa vê o próprio dia, e só quem tem a permissão da equipe vê o dia de outra pessoa ou marca tarefa para ela. Toda marcação, conclusão e cancelamento entra no histórico.
 - O login fica guardado no cofre do celular (Keychain no iPhone, Keystore no Android). A senha nunca é guardada. A sessão termina sozinha depois de 30 dias sem uso, e o **Sair de todos os aparelhos** do ERP também desconecta o app.
 - Os lembretes de 15 minutos ficam no próprio celular e funcionam mesmo sem internet; são refeitos toda vez que a aba Hoje carrega. O aviso de tarefa nova e o resumo das 7h vêm do servidor.
+- A cópia para usar sem internet fica dentro do app, só com os últimos 7 dias abertos pela pessoa conectada, e é apagada ao tocar em **Sair**.
 - O texto dos avisos traz só o título da tarefa, o condomínio e o horário: nada de dado de morador nem valor.
 
 >> Veja também: [Meu Dia: a sua agenda e as suas tarefas](artigo:meu-dia) e [Abrir e acompanhar chamados](artigo:chamados).
