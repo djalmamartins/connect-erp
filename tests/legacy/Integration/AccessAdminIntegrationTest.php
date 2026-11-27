@@ -62,6 +62,13 @@ final class AccessAdminIntegrationTest extends TestCase
         $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id) VALUES (?, ?)')->execute([(int)$withRole->id, (int)$this->pdo->lastInsertId()]);
         $this->expectFailure(fn () => $service->linkUser($this->admin, $agency['id'], (int)$withRole->id), DomainException::class, 'usuário que já tem papel');
         $this->expectFailure(fn () => $service->grant($this->admin, (int)$withRole->id, $this->alpha), DomainException::class, 'conceder condomínio a quem não é parceiro');
+        // Conta criada no Studio nasce com o papel Morador: serve para a imobiliária e vira Imobiliária (ADR 0684).
+        $fromStudio = $this->user(1, []);
+        $this->pdo->exec("INSERT IGNORE INTO access_roles (name, slug, level) VALUES ('Morador', 'user', 10)");
+        $this->pdo->prepare("INSERT INTO access_user_roles (user_id, role_id) SELECT ?, id FROM access_roles WHERE slug = 'user'")->execute([(int)$fromStudio->id]);
+        self::assertContains((int)$fromStudio->id, array_column($service->eligibleUsers((int)$this->admin->id), 'id'));
+        $service->linkUser($this->admin, $agency['id'], (int)$fromStudio->id);
+        self::assertSame('erp_partner', (string)$this->pdo->query('SELECT r.slug FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id WHERE ur.user_id = ' . (int)$fromStudio->id)->fetchColumn());
 
         // O parceiro vê unidades e moradores com contato mascarado, e só isso.
         $registry = new RegistryService($this->pdo);

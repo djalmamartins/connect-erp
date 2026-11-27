@@ -142,14 +142,17 @@ final class PartnerAccess
             if ((int)$user['level'] > self::MAX_USER_LEVEL) {
                 throw new DomainException('Só um usuário comum pode ser parceiro: este usuário tem nível administrativo.');
             }
-            $check = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM access_user_roles WHERE user_id = :u1) AS roles,
+            // Conta criada no Studio já nasce com papel: Morador ou Imobiliária sem mais nada servem (ADR 0684); o papel vira Imobiliária.
+            $check = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id
+                    WHERE ur.user_id = :u1 AND r.slug NOT IN (\'user\', \'' . self::PARTNER_ROLE . '\')) AS roles,
                 (SELECT COUNT(*) FROM user_condominium_access WHERE user_id = :u2) AS grants, (SELECT COUNT(*) FROM access_user_overrides WHERE user_id = :u3) AS overrides');
             $check->execute(['u1' => $userId, 'u2' => $userId, 'u3' => $userId]);
             $state = $check->fetch(PDO::FETCH_ASSOC) ?: [];
             if ((int)($state['roles'] ?? 0) > 0 || (int)($state['grants'] ?? 0) > 0 || (int)($state['overrides'] ?? 0) > 0) {
                 throw new DomainException('O usuário já tem papel, acesso a condomínio ou permissão própria: use uma conta nova para o parceiro.');
             }
-            $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id, assigned_by) VALUES (:u, :r, :by)')->execute(['u' => $userId, 'r' => $role, 'by' => (int)$admin->id]);
+            $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id, assigned_by) VALUES (:u, :r, :by)
+                ON DUPLICATE KEY UPDATE role_id = VALUES(role_id), assigned_by = VALUES(assigned_by)')->execute(['u' => $userId, 'r' => $role, 'by' => (int)$admin->id]);
             $this->pdo->prepare('INSERT INTO erp_partner_agency_users (user_id, agency_id, linked_by) VALUES (:u, :a, :by)')->execute(['u' => $userId, 'a' => $agencyId, 'by' => (int)$admin->id]);
             $this->pdo->commit();
         } catch (\Throwable $error) {
@@ -390,10 +393,11 @@ final class PartnerAccess
      */
     public function eligibleUsers(int $self): array
     {
-        $stmt = $this->pdo->prepare('SELECT u.id, u.first_name, u.last_name, u.email FROM users u WHERE u.level <= :level AND u.id <> :self
-            AND NOT EXISTS (SELECT 1 FROM access_user_roles r WHERE r.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM user_condominium_access a WHERE a.user_id = u.id)
+        $stmt = $this->pdo->prepare("SELECT u.id, u.first_name, u.last_name, u.email FROM users u WHERE u.level <= :level AND u.id <> :self
+            AND NOT EXISTS (SELECT 1 FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id WHERE ur.user_id = u.id AND r.slug NOT IN ('user', '" . self::PARTNER_ROLE . "'))
+            AND NOT EXISTS (SELECT 1 FROM user_condominium_access a WHERE a.user_id = u.id)
             AND NOT EXISTS (SELECT 1 FROM access_user_overrides o WHERE o.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM erp_partner_agency_users p WHERE p.user_id = u.id)
-            ORDER BY u.first_name, u.last_name, u.id LIMIT 500');
+            ORDER BY u.first_name, u.last_name, u.id LIMIT 500");
         $stmt->execute(['level' => self::MAX_USER_LEVEL, 'self' => $self]);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => trim($r['first_name'] . ' ' . $r['last_name']) . ' · ' . RegistryReports::maskEmail($r['email'])],
             $stmt->fetchAll(PDO::FETCH_ASSOC));

@@ -25,6 +25,10 @@ para isso basta saber, por unidade, se há conta vencida e desde quando.
 - Conta só de imobiliária (`erp.partner.view` sem `erp.condominiums.view`): o menu mostra só a CN-012 e
   o `/dashboard` redireciona para ela.
 
+- Ligar a pessoa à imobiliária aceita a conta criada no Studio com o papel Morador ou Imobiliária e sem
+  mais nada (antes exigia conta sem papel, e o Studio sempre grava um papel); o papel vira Imobiliária.
+  Papel da equipe, condomínio liberado ou exceção individual continuam barrando.
+
 ## Consequências
 
 - Condomínio liberado sem unidade marcada com a imobiliária aparece vazio: a equipe marca a imobiliária
