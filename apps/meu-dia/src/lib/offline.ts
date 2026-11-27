@@ -1,5 +1,6 @@
 import { File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
+import { ApiError } from '../api/client';
 import type { Day } from '../api/team';
 
 /**
@@ -7,6 +8,11 @@ import type { Day } from '../api/team';
  * (pasta de documentos do próprio app, que o sistema protege), só da pessoa conectada e dos últimos 7 dias vistos.
  * Sem conexão, a aba Hoje mostra a cópia com o aviso da hora em que foi salva. O arquivo é apagado ao sair.
  */
+
+/** Só falta de conexão (sem rede ou sem resposta) usa a cópia; erro do servidor continua aparecendo como erro. */
+export function isOfflineError(e: unknown): boolean {
+  return e instanceof ApiError && (e.code === 'network' || e.code === 'timeout');
+}
 
 export const MAX_ENTRIES = 7;
 const FILE_NAME = 'meu-dia-offline.json';
