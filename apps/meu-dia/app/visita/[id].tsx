@@ -111,10 +111,19 @@ export default function VisitScreen() {
         </View>
         <Text style={[styles.heroLine, attention && { color: '#ffd9db' }]}>{visitHeadline(c)}</Text>
         {p.last_visit ? (
-          <Text style={styles.heroLine}>
-            Última vistoria: {p.last_visit.template} · {sinceLabel(p.last_visit.completed_at, today)}
-            {p.last_visit.issues > 0 ? ` · ${p.last_visit.issues} ${p.last_visit.issues === 1 ? 'problema' : 'problemas'}` : ''}
-          </Text>
+          <Pressable
+            onPress={() => router.push({ pathname: '/vistoria/[id]', params: { id: String(p.last_visit!.id) } })}
+            style={styles.lastVisit}
+            accessibilityRole="button"
+            accessibilityLabel="Ver a última vistoria"
+          >
+            <Text style={[styles.heroLine, { flex: 1 }]}>
+              Última vistoria: {p.last_visit.template} · {sinceLabel(p.last_visit.completed_at, today)}
+              {p.last_visit.issues > 0 ? ` · ${p.last_visit.issues} ${p.last_visit.issues === 1 ? 'problema' : 'problemas'}` : ''}
+            </Text>
+            <Text style={styles.lastVisitLink}>Ver</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </Pressable>
         ) : (
           <Text style={styles.heroLine}>Nenhuma vistoria concluída neste prédio ainda.</Text>
         )}
@@ -209,6 +218,8 @@ const styles = StyleSheet.create({
   count: { flex: 1, gap: 2 },
   countValue: { fontFamily: fonts.bold, fontSize: 28 },
   countLabel: { fontFamily: fonts.regular, fontSize: 12, color: colors.sidebarInk },
+  lastVisit: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40 },
+  lastVisitLink: { fontFamily: fonts.semibold, fontSize: 13, color: colors.accent },
   heroLine: { fontFamily: fonts.regular, fontSize: 13, color: colors.sidebarInk },
   progress: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, marginBottom: space[1] },
   step: { flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 44 },

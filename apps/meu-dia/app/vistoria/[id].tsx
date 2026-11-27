@@ -5,7 +5,7 @@ import { type ImageURISource, Pressable, StyleSheet, Text, View } from 'react-na
 import { ApiError } from '../../src/api/client';
 import type { Inspection, InspectionItem, InspectionResult } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
-import { answered, blockers, bySection, cancelReasonError, checkinLabel, needsPhoto, noteError, photoPath, RESULT_LABEL } from '../../src/lib/inspection';
+import { answered, blockers, bySection, cancelReasonError, checkinLabel, needsPhoto, noteError, photoPath, RESULT_LABEL, visibleItems } from '../../src/lib/inspection';
 import { currentPosition } from '../../src/lib/location';
 import { pickPhoto } from '../../src/lib/photo';
 import { useResource } from '../../src/lib/useResource';
@@ -29,6 +29,7 @@ export default function InspectionScreen() {
   const [busy, setBusy] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState('');
+  const [onlyIssues, setOnlyIssues] = useState(false);
 
   useEffect(() => {
     if (resource.data) setData(resource.data);
@@ -167,7 +168,32 @@ export default function InspectionScreen() {
         </Text>
       </View>
 
-      {bySection(insp.items).map((group) => (
+      {finished && insp.counts.issue > 0 ? (
+        <View style={styles.filter} accessibilityRole="radiogroup">
+          {[
+            { on: false, label: `Todos (${insp.items.length})` },
+            { on: true, label: `Só os problemas (${insp.counts.issue})` },
+          ].map((f) => (
+            <Pressable
+              key={f.label}
+              onPress={() => setOnlyIssues(f.on)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: onlyIssues === f.on }}
+              style={[styles.chip, onlyIssues === f.on && { backgroundColor: f.on ? colors.danger : colors.brand, borderColor: f.on ? colors.danger : colors.brand }]}
+            >
+              <Text style={[styles.chipText, onlyIssues === f.on && { color: colors.onBrand }]}>{f.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {finished && insp.summary ? (
+        <Card>
+          <Text style={styles.itemLabel}>Resumo</Text>
+          <Text style={styles.note}>{insp.summary}</Text>
+        </Card>
+      ) : null}
+
+      {bySection(visibleItems(insp.items, finished && onlyIssues)).map((group) => (
         <View key={group.section} style={{ gap: space[2] }}>
           <SectionTitle>{group.section}</SectionTitle>
           {group.items.map((item) => (
@@ -298,6 +324,7 @@ const styles = StyleSheet.create({
   track: { height: 8, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
   fill: { height: 8, borderRadius: radius.pill, backgroundColor: colors.accent },
   progressLine: { fontFamily: fonts.regular, fontSize: 13, color: colors.sidebarInk },
+  filter: { flexDirection: 'row', gap: space[2], flexWrap: 'wrap' },
   itemLabel: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text, marginBottom: space[2] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
   chip: { minHeight: 40, paddingHorizontal: space[3], borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', backgroundColor: colors.surface },

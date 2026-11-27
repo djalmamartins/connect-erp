@@ -74,3 +74,8 @@ export function cancelReasonError(reason: string): string | null {
   if (n > 1000) return 'Use no máximo 1000 caracteres.';
   return null;
 }
+
+/** Na vistoria concluída, "Só os problemas" mostra só os itens Com problema (ADR 0677). */
+export function visibleItems<T extends Pick<InspectionItem, 'result'>>(items: T[], onlyIssues: boolean): T[] {
+  return onlyIssues ? items.filter((i) => i.result === 'issue') : items;
+}
