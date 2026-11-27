@@ -142,6 +142,12 @@ export function createClient(options: ClientOptions) {
         body: JSON.stringify(body),
       });
     },
+    put<T>(path: string, body: unknown = {}): Promise<T> {
+      return send<T>('PUT', path, {}, {
+        headers: headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body),
+      });
+    },
     delete<T>(path: string, query: Query = {}): Promise<T> {
       return send<T>('DELETE', path, query, { headers: headers() });
     },

@@ -1,17 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { storage } from '../../src/auth/storage';
 import { dayKey, shortDay } from '../../src/lib/day';
+import { currentPosition } from '../../src/lib/location';
 import { openInSac } from '../../src/lib/sac';
 import { useResource } from '../../src/lib/useResource';
 import { ARRIVAL_STEPS, type ArrivalStepId, arrivalKey, readArrival, sinceLabel, toggleStep, visitCounts, visitHeadline, writeArrival } from '../../src/lib/visit';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
-import { Button, Card, CardTitle, Empty, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
+import { Button, Card, CardTitle, Empty, ErrorBox, Field, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
 
 /**
  * Painel da visita (ADR 0662): antes de entrar no prédio, o que acompanhar (chamados abertos, documentos e
@@ -19,8 +21,13 @@ import { Button, Card, CardTitle, Empty, ErrorBox, IconRow, Loading, Screen, Sec
  * Os dados vêm de GET /api/v1/my-day/visit/{condominium_id}, com o mesmo acesso por condomínio do ERP.
  */
 export default function VisitScreen() {
-  const { api } = useAuth();
-  const params = useLocalSearchParams<{ id: string; template?: string }>();
+  const { api, me } = useAuth();
+  const params = useLocalSearchParams<{ id: string; template?: string; template_id?: string; open?: string }>();
+  const templateId = Number(params.template_id) || 0;
+  const openId = Number(params.open) || 0;
+  const [starting, setStarting] = useState(false);
+  const [noteAsk, setNoteAsk] = useState<string | null>(null);
+  const [checkinNote, setCheckinNote] = useState('');
   const id = Number(params.id);
   const panel = useResource(() => api.visit(id), [id]);
   const today = dayKey(new Date());
@@ -42,6 +49,34 @@ export default function VisitScreen() {
       await Linking.openURL('connectsac://novo');
     } catch {
       await dialog.notice({ title: 'App do SAC não encontrado', message: 'Instale o app do SAC neste celular para abrir o chamado com foto, ou registre pelo ERP no computador.' });
+    }
+  }
+
+  /** Check-in com a localização do aparelho. Longe do prédio ou sem sinal, o servidor pede um motivo. */
+  async function start() {
+    if (openId) {
+      router.push({ pathname: '/vistoria/[id]', params: { id: String(openId) } });
+      return;
+    }
+    setStarting(true);
+    try {
+      const position = await currentPosition();
+      const inspection = await api.startInspection({
+        condominium_id: id,
+        template_id: templateId,
+        ...(position ?? {}),
+        ...(noteAsk !== null ? { checkin_note: checkinNote } : {}),
+      });
+      setNoteAsk(null);
+      router.replace({ pathname: '/vistoria/[id]', params: { id: String(inspection.id) } });
+    } catch (e) {
+      if (e instanceof ApiError && e.fields.checkin_note) {
+        setNoteAsk(e.fields.checkin_note);
+      } else {
+        await dialog.notice({ title: 'Não deu para iniciar', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
+      }
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -109,7 +144,15 @@ export default function VisitScreen() {
       </Card>
 
       <View style={{ gap: space[2] }}>
-        <Button title="＋ Abrir chamado com foto no SAC" onPress={() => void newTicket()} />
+        {templateId > 0 && me?.can_inspect !== false ? (
+          <>
+            {noteAsk !== null ? (
+              <Field label="Motivo do check-in" error={noteAsk} value={checkinNote} onChangeText={setCheckinNote} placeholder="Ex.: estou na portaria dos fundos" maxLength={500} />
+            ) : null}
+            <Button title={openId ? 'Continuar vistoria' : noteAsk !== null ? 'Iniciar com o motivo' : 'Iniciar vistoria'} onPress={() => void start()} busy={starting} />
+          </>
+        ) : null}
+        <Button title="＋ Abrir chamado com foto no SAC" variant={templateId > 0 ? 'secondary' : 'primary'} onPress={() => void newTicket()} />
       </View>
 
       <SectionTitle>Chamados abertos</SectionTitle>

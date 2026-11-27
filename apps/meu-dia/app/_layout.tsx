@@ -45,6 +45,7 @@ function RootStack() {
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="visita/[id]" />
+        <Stack.Screen name="vistoria/[id]" />
       </Stack.Protected>
     </Stack>
   );

@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: meu-dia, chamados
-palavras: app, aplicativo, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
+palavras: app, aplicativo, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
 manual: sim
 rascunho: nao
 ---
@@ -42,10 +42,21 @@ Na aba **Hoje**, toque numa **vistoria** para abrir o **Painel da visita** do pr
 
 - **O que acompanhar:** quantos chamados estão abertos (em vermelho quando há urgente), os documentos e vencimentos do prédio (em vermelho quando algum já venceu) e as pendências da última vistoria, com a data dela.
 - **Checklist de chegada:** portaria e livro de ocorrências, zelador ou síndico, pendências da última vistoria, áreas comuns e fotos. Marque cada item ao fazer. O checklist fica só no seu celular e recomeça na visita seguinte.
+- **Iniciar vistoria:** faz o check-in com a localização do celular e abre a vistoria (veja abaixo). Se já tem uma vistoria em andamento no prédio, o botão vira **Continuar vistoria**.
 - **Abrir chamado com foto no SAC:** abre o **Novo chamado** no app do SAC.
 - **Chamados abertos** e **documentos e vencimentos** do prédio: toque num chamado para abrir no app do SAC.
 
 O painel mostra só os prédios que você atende, com as mesmas regras de acesso do ERP.
+
+## Fazer a vistoria pelo celular
+
+1. No **Painel da visita**, toque em {{Iniciar vistoria}}. Na primeira vez, o celular pergunta se pode usar a localização: toque em **Permitir**. Ela serve só para o check-in e para marcar onde cada foto foi tirada.
+2. Se você estiver longe do condomínio, ou o celular estiver sem sinal de localização, o app pede o **Motivo do check-in** (por exemplo, "estou na portaria dos fundos"). Escreva e toque em {{Iniciar com o motivo}}.
+3. Em cada item, toque em **Conforme**, **Com problema** ou **Não se aplica**. Em **Com problema**, descreva o que está errado e toque em {{Salvar problema}}. Cada resposta é salva na hora.
+4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto.
+5. No fim, escreva o resumo se quiser e toque em {{Concluir vistoria}}. Se faltar algum item, o app mostra qual.
+
+Ao concluir, o chamado da vistoria é resolvido e os itens **Com problema** viram um chamado de pendências, igual à vistoria feita no ERP. Só quem tem a permissão de fazer vistorias vê o botão.
 
 ## Concluir, cancelar ou reabrir
 
