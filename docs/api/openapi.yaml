@@ -87,6 +87,17 @@ components:
     TalkPageMeta:
       type: object
       properties: { page: { type: integer }, per_page: { type: integer }, total: { type: integer } }
+    SacPresence:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            public: { type: boolean }
+            open: { type: boolean }
+            hours: { type: string }
+            shown: { type: boolean }
+            online: { type: array, items: { type: string } }
     Error:
       type: object
       required: [error]
@@ -864,6 +875,32 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /sac/presence:
+    get:
+      operationId: getSacPresence
+      tags: [SAC]
+      summary: Balão do SAC no site para quem atende (ADR 0666)
+      description: Só support.manage. Marca a pessoa como ativa. public = autorizou aparecer; open = no horário; shown = aparece agora; online = primeiros nomes mostrados no balão.
+      security: [{ teamApp: [] }, { session: [] }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SacPresence' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: setSacPresence
+      tags: [SAC]
+      summary: Autoriza ou retira o próprio primeiro nome e foto do balão do site
+      security: [{ teamApp: [] }, { session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [public], properties: { public: { type: boolean } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SacPresence' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: public ausente ou não booleano, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /sac/units:
     get:
       operationId: listSacUnits

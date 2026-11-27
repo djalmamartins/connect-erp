@@ -8,6 +8,7 @@ use Connect\Http\JsonResponse;
 use Source\Models\Auth;
 use Source\Models\User;
 use Source\Services\CondominiumScope;
+use Source\Services\Support\SacDesk as SacBalloon;
 use Source\Services\Support\TicketDesk;
 use Source\Services\Support\TicketError;
 use Source\Services\Support\TicketService;
@@ -25,6 +26,8 @@ use Source\Support\AppLogger;
  *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
  *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
  *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}; multipart com attachments[] (ADR 0664)
+ *  GET  /api/v1/sac/presence                    no balão do site: autorizou aparecer, no horário, quem está online (ADR 0666)
+ *  POST /api/v1/sac/presence                    {public: bool} autoriza ou retira o próprio nome e foto do balão
  *  GET  /api/v1/sac/units?condominium_id=       unidades ativas do condomínio (escopo de quem entrou)
  *  POST /api/v1/sac/tickets                     abre chamado recebido por telefone, WhatsApp ou presencial
  *        {condominium_id, unit_id?, requester_name, requester_phone?, requester_email?, channel, subject, message, priority?, assign_me?}
@@ -39,6 +42,8 @@ final class SacDesk
     public function summary(): void
     {
         $this->run(false, function (User $user): array {
+            // Com a fila aberta no celular, quem atende conta como online no balão do site (ADR 0666).
+            (new SacBalloon())->touch($user);
             $desk = new TicketDesk();
             $ids = array_column((new CondominiumScope())->allowed($user), 'id');
             $all = $desk->metrics(array_map('intval', $ids), (int)$user->id);
@@ -91,6 +96,37 @@ final class SacDesk
             }
             return [200, ['data' => array_map(static fn (array $t): array => $t + ['late' => self::late($t)], $tickets), 'meta' => ['view' => $view]]];
         });
+    }
+
+    public function presence(): void
+    {
+        $this->run(true, function (User $user): array {
+            $balloon = new SacBalloon();
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+                $body = $this->body();
+                if (!array_key_exists('public', $body) || !is_bool($body['public'])) {
+                    throw new TicketError('public', 'Informe public: true ou false.');
+                }
+                $balloon->setPublic($user, $body['public']);
+            }
+            $balloon->touch($user);
+            return [200, ['data' => self::presenceOf($balloon, $user)]];
+        });
+    }
+
+    /** @return array{public:bool, open:bool, hours:string, shown:bool, online:list<string>} */
+    private static function presenceOf(SacBalloon $balloon, User $user): array
+    {
+        $status = $balloon->status();
+        $public = $balloon->isPublic($user);
+        return [
+            'public' => $public,
+            'open' => $status['open'],
+            'hours' => $status['hours'],
+            // Aparece agora no balão: as mesmas regras de SacDesk::status para esta pessoa (acabou de ser marcada ativa).
+            'shown' => $status['open'] && $balloon->isShown($user),
+            'online' => array_column($status['agents'], 'name'),
+        ];
     }
 
     public function units(): void

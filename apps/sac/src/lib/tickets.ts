@@ -170,3 +170,10 @@ export function newTicketProblem(input: { condominium_id: number | null; request
   if (input.message.trim().length < 10) return 'Descreva o pedido com pelo menos 10 caracteres.';
   return null;
 }
+
+/** Frase da chave do balão do site, conforme autorização e horário (ADR 0666). */
+export function presenceText(p: { public: boolean; open: boolean; shown: boolean; hours: string }): { title: string; detail: string } {
+  if (!p.public) return { title: 'Você não aparece no balão do site', detail: 'Ligue para o site mostrar seu primeiro nome e foto quando você estiver atendendo.' };
+  if (!p.open) return { title: 'Fora do horário do balão', detail: `O balão mostra a equipe ${p.hours}.` };
+  return p.shown ? { title: 'Você está online no balão do site', detail: 'Com o app aberto, você aparece para quem visita o site.' } : { title: 'Quase online no balão', detail: 'Abra a fila para aparecer no site.' };
+}

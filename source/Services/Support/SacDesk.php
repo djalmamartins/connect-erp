@@ -73,6 +73,14 @@ final class SacDesk
         return (bool)$stmt->fetchColumn();
     }
 
+    /** Entra na lista do balão agora (sem olhar o horário): autorizou, ativo, com nível de equipe e ativa nos últimos minutos. */
+    public function isShown(User $user): bool
+    {
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE id = ? AND sac_public = 1 AND status <> 'trash' AND level >= 5 AND sac_seen_at >= ?");
+        $stmt->execute([(int)$user->id, (new DateTimeImmutable())->modify('-' . self::ONLINE_MINUTES . ' minutes')->format('Y-m-d H:i:s')]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
     /** @return array{0:string,1:string} início e fim do expediente (HH:MM) */
     public static function hours(?string $setting = null): array
     {
