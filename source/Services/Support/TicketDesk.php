@@ -337,11 +337,22 @@ final class TicketDesk
             ->execute([$ticketId, $userId, $type, $old, $new]);
     }
 
-    /** @param array<string, mixed>|null $files */
-    private function attach(int $ticketId, int $messageId, int $userId, ?array $files): void
+    /** Mais que isso numa resposta ou abertura pelo app é recusado (ADR 0664). */
+    public const MAX_FILES = 5;
+
+    /**
+     * Grava os anexos ($_FILES['attachments'], vários) no chamado. message_id null = anexos da abertura.
+     * Público para a abertura pelo app do SAC (SacDesk::store), que roda dentro da transação do open().
+     *
+     * @param array<string, mixed>|null $files
+     */
+    public function attach(int $ticketId, ?int $messageId, int $userId, ?array $files): void
     {
         if ($files === null || empty($files['tmp_name']) || !is_array($files['tmp_name'])) {
             return;
+        }
+        if (count(array_filter($files['tmp_name'])) > self::MAX_FILES) {
+            throw new TicketError('attachments', 'Envie até ' . self::MAX_FILES . ' arquivos por vez.');
         }
         foreach ($files['tmp_name'] as $index => $temporary) {
             if (!$temporary) {
@@ -349,7 +360,11 @@ final class TicketDesk
             }
             $file = ['name' => $files['name'][$index] ?? 'arquivo', 'type' => $files['type'][$index] ?? '', 'tmp_name' => $temporary,
                 'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE, 'size' => $files['size'][$index] ?? 0];
-            $path = (new Upload())->file($file, 'ticket-' . $ticketId . '-' . bin2hex(random_bytes(4)));
+            $name = 'ticket-' . $ticketId . '-' . bin2hex(random_bytes(4));
+            // Foto (do celular ou da tela) vai pelo tratamento de imagem: reduzida a 1600 px e sem EXIF (ADR 0389, 0664).
+            // O tipo vem do conteúdo, nunca do nome; documento segue pelo envio de arquivo.
+            $mime = is_file((string)$temporary) ? strtolower((string)(new \finfo(FILEINFO_MIME_TYPE))->file((string)$temporary)) : '';
+            $path = str_starts_with($mime, 'image/') ? (new Upload())->image($file, $name, 1600) : (new Upload())->file($file, $name);
             if (!$path) {
                 throw new TicketError('attachments', 'Um dos anexos não é válido.');
             }

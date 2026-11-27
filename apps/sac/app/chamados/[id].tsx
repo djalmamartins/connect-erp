@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../src/api/client';
+import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ApiError, type UploadFile } from '../../src/api/client';
 import type { Message, TicketPriority, TicketStatus } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
 import { authorLabel, CHANNEL_LABELS, channelOf, context, dueText, isFinal, PRIORITY_LABELS, priorityTone, STATUS_LABELS, statusTone, when } from '../../src/lib/tickets';
+import { MAX_PHOTOS, openAttachment, pickPhotos, type PhotoSource } from '../../src/lib/files';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Badge } from '../../src/ui/Badge';
@@ -25,6 +26,7 @@ export default function Chamado() {
   const [text, setText] = useState('');
   const [internal, setInternal] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<UploadFile[]>([]);
   const d = detail.data;
   const t = d?.ticket;
 
@@ -48,9 +50,23 @@ export default function Chamado() {
       return;
     }
     await act(resolve ? 'resolve' : 'send', async () => {
-      await api.answer(ticketId, body, internal, resolve && !internal);
+      await api.answer(ticketId, body, internal, resolve && !internal, photos);
       setText('');
+      setPhotos([]);
     }, internal ? 'Nota interna registrada' : resolve ? 'Resposta enviada e chamado resolvido' : 'Resposta enviada');
+  }
+
+  async function addPhotos(source: PhotoSource) {
+    const picked = await pickPhotos(source, MAX_PHOTOS - photos.length);
+    if (picked.length > 0) setPhotos((cur) => [...cur, ...picked].slice(0, MAX_PHOTOS));
+  }
+
+  async function open(url: string, name: string) {
+    try {
+      await openAttachment(url, api.authHeaders(), name);
+    } catch (e) {
+      await dialog.notice({ title: 'Não abriu', message: e instanceof ApiError ? e.message : 'Tente de novo em instantes.', tone: 'error' });
+    }
   }
 
   async function pickStatus() {
@@ -135,9 +151,9 @@ export default function Chamado() {
           <Text style={styles.sys}>
             {channelOf(t) === 'equipe' ? 'Aberto pela equipe' : `Aberto pelo ${CHANNEL_LABELS[channelOf(t)]}`} · {when(t.created_at)}
           </Text>
-          <Bubble message={{ id: 0, author: t.requester.name ?? 'Quem pediu', from_team: false, message: t.message, internal: false, created_at: t.created_at, attachments: [] }} />
+          <Bubble message={{ id: 0, author: t.requester.name ?? 'Quem pediu', from_team: false, message: t.message, internal: false, created_at: t.created_at, attachments: d.opening_attachments ?? [] }} onOpen={open} />
           {d.messages.map((m) => (
-            <Bubble key={m.id} message={m} />
+            <Bubble key={m.id} message={m} onOpen={open} />
           ))}
 
           {attend ? (
@@ -159,6 +175,28 @@ export default function Chamado() {
                 style={[styles.input, internal && { backgroundColor: colors.warningSoft }]}
                 accessibilityLabel={internal ? 'Nota interna' : 'Resposta'}
               />
+              {photos.length > 0 ? (
+                <View style={styles.thumbs}>
+                  {photos.map((p, i) => (
+                    <Pressable key={p.uri} onPress={() => setPhotos((cur) => cur.filter((_, j) => j !== i))} accessibilityRole="button" accessibilityLabel={`Tirar a foto ${i + 1}`}>
+                      <Image source={{ uri: p.uri }} style={styles.thumb} />
+                      <View style={styles.thumbX}>
+                        <Ionicons name="close" size={12} color={colors.onBrand} />
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+              <View style={styles.photoRow}>
+                <Pressable onPress={() => void addPhotos('camera')} style={styles.template} accessibilityRole="button" accessibilityLabel="Tirar foto">
+                  <Ionicons name="camera-outline" size={16} color={colors.accent} />
+                  <Text style={styles.chipText}>Câmera</Text>
+                </Pressable>
+                <Pressable onPress={() => void addPhotos('library')} style={styles.template} accessibilityRole="button" accessibilityLabel="Escolher fotos">
+                  <Ionicons name="images-outline" size={16} color={colors.accent} />
+                  <Text style={styles.chipText}>Fotos</Text>
+                </Pressable>
+              </View>
               {(options.data?.templates.length ?? 0) > 0 && !internal ? (
                 <Pressable onPress={useTemplate} style={styles.template} accessibilityRole="button">
                   <Ionicons name="flash-outline" size={15} color={colors.brandStrong} />
@@ -204,16 +242,19 @@ function Pill({ icon, label, onPress }: { icon: React.ComponentProps<typeof Ioni
   );
 }
 
-function Bubble({ message: m }: { message: Message }) {
+function Bubble({ message: m, onOpen }: { message: Message; onOpen: (url: string, name: string) => void }) {
   const team = m.from_team || m.internal;
   return (
     <View style={[styles.bubble, team ? styles.bubbleTeam : styles.bubbleRequester, m.internal && styles.bubbleNote]}>
       <Text style={[styles.author, m.internal && { color: colors.warning }]}>{authorLabel(m)}</Text>
       <Text style={styles.body}>{m.message}</Text>
       {m.attachments.map((a) => (
-        <Text key={a.url} style={styles.attachment}>
-          📎 {a.name}
-        </Text>
+        <Pressable key={a.url} onPress={() => onOpen(a.url, a.name)} accessibilityRole="button" accessibilityLabel={`Abrir ${a.name}`} style={styles.file}>
+          <Ionicons name={/\.(jpe?g|png|webp|gif)$/i.test(a.name) ? 'image-outline' : 'document-attach-outline'} size={15} color={colors.accent} />
+          <Text style={styles.attachment} numberOfLines={1}>
+            {a.name}
+          </Text>
+        </Pressable>
       ))}
       <Text style={styles.time}>{when(m.created_at)}</Text>
     </View>
@@ -241,7 +282,12 @@ const styles = StyleSheet.create({
   author: { fontFamily: fonts.semibold, fontSize: 12, color: colors.muted },
   sys: { alignSelf: 'center', fontFamily: fonts.medium, fontSize: 12, color: colors.muted, backgroundColor: '#e6e8e6', borderRadius: radius.pill, paddingHorizontal: space[3], paddingVertical: 3, overflow: 'hidden' },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.text },
-  attachment: { fontFamily: fonts.medium, fontSize: 13, color: colors.info },
+  attachment: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 13, color: colors.text, textDecorationLine: 'underline' },
+  file: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginTop: space[3] },
+  thumb: { width: 60, height: 60, borderRadius: radius.sm, backgroundColor: colors.surfaceMuted },
+  thumbX: { position: 'absolute', top: -5, right: -5, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.sidebar, alignItems: 'center', justifyContent: 'center' },
+  photoRow: { flexDirection: 'row', gap: space[4] },
   time: { fontFamily: fonts.regular, fontSize: 11, color: colors.faint, alignSelf: 'flex-end' },
   toggle: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: 3, marginBottom: space[3] },
   seg: { flex: 1, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },

@@ -41,7 +41,8 @@ Para registrar o pedido de quem **ligou**, mandou **WhatsApp** ou veio **ao escr
 3. Informe **quem pediu** e o **telefone** ou o **e-mail** (um dos dois basta).
 4. Escreva o **assunto** e a **descrição** e escolha a prioridade.
 5. Deixe **Fica comigo** ligado para o chamado já ficar com você, ou desligue para ir para "Sem responsável".
-6. Toque em **Abrir chamado**. O protocolo SAC aparece na hora; passe para a pessoa. Sem e-mail, ela não recebe o aviso por e-mail.
+6. Se quiser, junte até 5 **fotos**: o botão da câmera tira na hora e o das imagens escolhe da galeria. Toque numa foto para tirá-la.
+7. Toque em **Abrir chamado**. O protocolo SAC aparece na hora; passe para a pessoa. Sem e-mail, ela não recebe o aviso por e-mail.
 
 Só quem atende chamados vê o formulário.
 
@@ -57,6 +58,7 @@ O cartão **Meu Dia de hoje** mostra os seus compromissos e o que está para age
 - **Situação**, **Prioridade** e **Passar** (para outra pessoa da equipe). Quem recebe o chamado ganha um aviso no celular.
 - **Responder**: a mensagem vai para quem pediu (e-mail, sininho e app do morador).
 - **Nota interna**: fica no meio da conversa, com borda amarela tracejada, e só a equipe vê. As respostas da equipe ficam em dourado-claro à direita.
+- **Câmera** e **Fotos**: juntam até 5 fotos à resposta ou à nota interna. Toque num anexo da conversa para ver, salvar ou mandar.
 - **Enviar e resolver**: responde e marca o chamado como resolvido de uma vez.
 - **Ligar** e **E-mail** aparecem quando o chamado tem o telefone ou o e-mail de quem pediu.
 

@@ -46,6 +46,9 @@ final class SacDeskIntegrationTest extends TestCase
     {
         Auth::actingAs(null);
         $_GET = [];
+        $_POST = [];
+        $_FILES = [];
+        unset($_SERVER['CONTENT_TYPE']);
         @stream_wrapper_restore('php');
         parent::tearDown();
     }
@@ -183,6 +186,73 @@ final class SacDeskIntegrationTest extends TestCase
         [$status] = $this->call($this->viewer, 'store', [], $input);
         self::assertSame(403, $status);
         self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM studio_support_tickets')->fetchColumn());
+    }
+
+    /** @return array{name:list<string>,type:list<string>,tmp_name:list<string>,error:list<int>,size:list<int>} */
+    private function photos(int $count): array
+    {
+        $files = ['name' => [], 'type' => [], 'tmp_name' => [], 'error' => [], 'size' => []];
+        for ($i = 0; $i < $count; $i++) {
+            $tmp = (string)tempnam(sys_get_temp_dir(), 'sac');
+            $image = imagecreatetruecolor(20, 20);
+            imagejpeg($image, $tmp);
+            $files['name'][] = 'foto' . $i . '.jpg';
+            $files['type'][] = 'image/jpeg';
+            $files['tmp_name'][] = $tmp;
+            $files['error'][] = UPLOAD_ERR_OK;
+            $files['size'][] = (int)filesize($tmp);
+        }
+        return $files;
+    }
+
+    /** Multipart do app: campos em $_POST e fotos em $_FILES['attachments']. */
+    private function multipart(User $user, string $action, array $args, array $fields, array $files): array
+    {
+        $_SERVER['CONTENT_TYPE'] = 'multipart/form-data; boundary=x';
+        $_POST = $fields;
+        $_FILES = ['attachments' => $files];
+        try {
+            return $this->call($user, $action, $args);
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+    }
+
+    public function testPhotosOnReplyAndOnOpeningAndTeamRepliesStayFromTeam(): void
+    {
+        $id = $this->openTicket();
+        [$status, $body] = $this->multipart($this->agent, 'answer', ['id' => (string)$id], ['message' => 'Segue a foto do conserto.', 'internal' => 'false'], $this->photos(2));
+        self::assertSame(201, $status, json_encode($body));
+        [, $body] = $this->call($this->agent, 'show', ['id' => (string)$id]);
+        self::assertSame(['foto0.jpg', 'foto1.jpg'], array_column($body['data']['messages'][0]['attachments'], 'name'));
+        self::assertStringContainsString('/api/v1/ticket-attachments/', $body['data']['messages'][0]['attachments'][0]['url']);
+
+        [$status] = $this->multipart($this->agent, 'answer', ['id' => (string)$id], ['message' => 'Muitas fotos.'], $this->photos(6));
+        self::assertSame(422, $status);
+
+        $this->pdo->prepare("INSERT INTO erp_units (condominium_id, block, number, type) VALUES (?, 'A', '101', 'apartamento')")->execute([$this->alpha]);
+        [$status, $body] = $this->multipart($this->agent, 'store', [], ['condominium_id' => (string)$this->alpha, 'requester_name' => 'Marcos',
+            'requester_phone' => '11977776666', 'channel' => 'presencial', 'subject' => 'Rachadura na garagem', 'message' => 'Rachadura grande perto da vaga 3.',
+            'assign_me' => 'true'], $this->photos(1));
+        self::assertSame(201, $status, json_encode($body));
+        $newId = (int)$body['data']['id'];
+        self::assertSame('canal:presencial', $body['data']['ticket']['tags']);
+        // A equipe registrou o chamado: a resposta dela aparece como da equipe, não de quem pediu.
+        $this->call($this->agent, 'answer', ['id' => (string)$newId], ['message' => 'Vamos olhar amanhã cedo.']);
+        [, $body] = $this->call($this->agent, 'show', ['id' => (string)$newId]);
+        self::assertSame(['foto0.jpg'], array_column($body['data']['opening_attachments'], 'name'));
+        self::assertTrue($body['data']['messages'][0]['from_team']);
+    }
+
+    public function testFlagReadsFormAndJson(): void
+    {
+        self::assertTrue(SacDesk::flag(true));
+        self::assertTrue(SacDesk::flag('true'));
+        self::assertTrue(SacDesk::flag('1'));
+        self::assertFalse(SacDesk::flag('false'));
+        self::assertFalse(SacDesk::flag(null));
     }
 
     public function testViewFiltersArePure(): void
