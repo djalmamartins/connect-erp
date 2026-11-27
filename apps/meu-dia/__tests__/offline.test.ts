@@ -1,5 +1,6 @@
 import type { Day } from '../src/api/team';
-import { cacheKey, getEntry, MAX_ENTRIES, putEntry, savedLabel } from '../src/lib/offline';
+import { ApiError } from '../src/api/client';
+import { cacheKey, getEntry, isOfflineError, MAX_ENTRIES, putEntry, savedLabel } from '../src/lib/offline';
 
 jest.mock('expo-file-system', () => ({ File: jest.fn(), Paths: {} }));
 
@@ -25,5 +26,13 @@ describe('dia sem internet', () => {
     expect(savedLabel(new Date(2026, 10, 27, 14, 32).toISOString(), now)).toBe('de hoje às 14:32');
     expect(savedLabel(new Date(2026, 10, 26, 18, 5).toISOString(), now)).toBe('de ontem às 18:05');
     expect(savedLabel(new Date(2026, 10, 25, 9, 10).toISOString(), now)).toBe('de 25/11 às 09:10');
+  });
+
+  it('só usa a cópia quando falta conexão', () => {
+    expect(isOfflineError(new ApiError(0, 'network', 'x'))).toBe(true);
+    expect(isOfflineError(new ApiError(0, 'timeout', 'x'))).toBe(true);
+    expect(isOfflineError(new ApiError(500, 'server_error', 'x'))).toBe(false);
+    expect(isOfflineError(new ApiError(403, 'forbidden', 'x'))).toBe(false);
+    expect(isOfflineError(new Error('x'))).toBe(false);
   });
 });

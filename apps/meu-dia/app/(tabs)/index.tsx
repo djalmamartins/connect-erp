@@ -10,11 +10,12 @@ import { dayProgress, eventTone, type EventTone, KIND_LABEL, lateLabel, longDay,
 import { syncReminders } from '../../src/lib/notify';
 import { openInSac } from '../../src/lib/sac';
 import { eventActions } from '../../src/lib/eventActions';
-import { cacheKey, offline, savedLabel } from '../../src/lib/offline';
+import { useDay } from '../../src/lib/useDay';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { EVENT_TONE as TONE } from '../../src/ui/tones';
 import { dialog } from '../../src/ui/Dialog';
+import { OfflineBanner } from '../../src/ui/OfflineBanner';
 import { Body, Card, Empty, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
 
 /**
@@ -33,25 +34,7 @@ export default function Today() {
 
   const personId = person && person.id !== me?.id ? person.id : null;
   // Sem internet, mostra a última cópia deste dia guardada no aparelho (ADR 0669).
-  const [staleAt, setStaleAt] = useState<string | null>(null);
-  const day = useResource(async () => {
-    const key = cacheKey(date, personId);
-    try {
-      const fresh = await api.day(date, personId);
-      setStaleAt(null);
-      if (me) void offline.save(me.id, key, fresh);
-      return fresh;
-    } catch (e) {
-      if (me && e instanceof ApiError && (e.code === 'network' || e.code === 'timeout')) {
-        const saved = await offline.load(me.id, key);
-        if (saved) {
-          setStaleAt(saved.savedAt);
-          return saved.day;
-        }
-      }
-      throw e;
-    }
-  }, [date, personId]);
+  const { day, staleAt } = useDay(date, personId);
 
   // Ao voltar para a aba (por exemplo, depois de criar uma tarefa), atualiza.
   useFocusEffect(
@@ -143,12 +126,7 @@ export default function Today() {
       }
     >
       {day.error && !d ? <ErrorBox error={day.error} onRetry={day.reload} /> : null}
-      {staleAt && d ? (
-        <View style={styles.offline} accessibilityRole="alert">
-          <Ionicons name="cloud-offline-outline" size={18} color={colors.warning} />
-          <Text style={styles.offlineText}>Sem conexão. Mostrando os dados {savedLabel(staleAt, new Date())}. Puxe para atualizar.</Text>
-        </View>
-      ) : null}
+      {staleAt && d ? <OfflineBanner savedAt={staleAt} /> : null}
       {d ? <DayBody d={d} isToday={isToday} onPick={setDate} onEvent={changeStatus} onLate={openLate} onSchedule={openTicket} /> : null}
     </Screen>
   );
@@ -415,8 +393,6 @@ const styles = StyleSheet.create({
   eventMeta: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted },
   eventDoneText: { color: colors.muted, textDecorationLine: 'line-through' },
   eventIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  offline: { flexDirection: 'row', alignItems: 'center', gap: space[2], backgroundColor: colors.warningSoft, borderRadius: radius.md, padding: space[3] },
-  offlineText: { flex: 1, fontFamily: fonts.medium, fontSize: 13, color: colors.warning },
   todayBtn: { paddingHorizontal: space[3], paddingVertical: space[2], borderRadius: radius.pill, backgroundColor: colors.brandSoft },
   todayText: { fontFamily: fonts.semibold, color: colors.brandStrong },
 });

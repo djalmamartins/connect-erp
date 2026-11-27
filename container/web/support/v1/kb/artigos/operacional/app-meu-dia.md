@@ -95,7 +95,7 @@ Os lembretes podem ser desligados em **Conta > Lembretes neste celular**. Ao sai
 
 ## Sem internet
 
-Se o celular ficar sem internet, a aba **Hoje** continua mostrando o último dia que você abriu, com um aviso amarelo: "Sem conexão. Mostrando os dados de hoje às 14:32". Quando a internet voltar, puxe a tela para baixo para atualizar. Sem internet não dá para concluir, adiar nem marcar tarefas: faça isso quando a conexão voltar. Os lembretes de 15 minutos continuam funcionando, porque ficam no próprio celular.
+Se o celular ficar sem internet, as abas **Hoje** e **Semana** continuam mostrando o último dia e a última semana que você abriu, com um aviso amarelo: "Sem conexão. Mostrando os dados de hoje às 14:32". Quando a internet voltar, puxe a tela para baixo para atualizar. Sem internet não dá para concluir, adiar nem marcar tarefas: faça isso quando a conexão voltar. Os lembretes de 15 minutos continuam funcionando, porque ficam no próprio celular.
 
 ## O que acontece por trás
 

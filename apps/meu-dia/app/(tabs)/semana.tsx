@@ -6,21 +6,23 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
 import { addDays, eventTone, longDay, overdueItems, shortDay, stripTone } from '../../src/lib/day';
 import { eventActions } from '../../src/lib/eventActions';
-import { useResource } from '../../src/lib/useResource';
+import { useDay } from '../../src/lib/useDay';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Card, ErrorBox, Loading, Screen } from '../../src/ui/kit';
+import { OfflineBanner } from '../../src/ui/OfflineBanner';
 import { EVENT_TONE } from '../../src/ui/tones';
 
 /**
  * Semana: de segunda a domingo, com os compromissos de cada dia nas cores de Hoje (ADR 0665). Tocar no compromisso abre o
- * mesmo menu de Hoje (concluir, cancelar, adiar; ADR 0670); tocar no resto do dia abre o dia na aba Hoje.
+ * mesmo menu de Hoje (concluir, cancelar, adiar; ADR 0671); tocar no resto do dia abre o dia na aba Hoje.
  */
 export default function Week() {
   const { api, me } = useAuth();
   const { person } = usePerson();
   const [anchor, setAnchor] = useState<string | undefined>(undefined);
   const personId = person && person.id !== me?.id ? person.id : null;
-  const week = useResource(() => api.day(anchor, personId), [anchor, personId]);
+  // Sem internet, mostra a cópia da semana guardada no aparelho, a mesma de Hoje (ADR 0673).
+  const { day: week, staleAt } = useDay(anchor, personId);
   useFocusEffect(
     useCallback(() => {
       void week.reload();
@@ -44,6 +46,7 @@ export default function Week() {
       onRefresh={week.reload}
     >
       {week.error && !d ? <ErrorBox error={week.error} onRetry={week.reload} /> : null}
+      {staleAt && d ? <OfflineBanner savedAt={staleAt} /> : null}
       {d ? (
         <>
           <View style={styles.nav}>
