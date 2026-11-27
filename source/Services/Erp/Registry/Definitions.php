@@ -216,18 +216,52 @@ final class Definitions
                     ]],
                     'name' => ['label' => 'Nome ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
                     'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'search' => true, 'hint' => 'CNPJ para síndico profissional'],
-                    'unit_id' => $unit(4),
-                    'unit_label' => $unitText('Unidade (texto)', false, 4, 'Vazio para síndico profissional'),
+                    'unit_id' => $unit(6),
+                    'unit_label' => $unitText('Unidade (texto)', false, 6, 'Vazio para síndico profissional'),
+                    // Mandato de 1 ou 2 anos (o máximo é 2): ao informar o início, a tela calcula o fim (início + anos − 1 dia).
+                    'term_years' => ['label' => 'Duração do mandato', 'type' => 'select', 'required' => true, 'default' => '2', 'span' => 4, 'options' => ['1' => '1 ano', '2' => '2 anos'],
+                        'hint' => 'O máximo é 2 anos'],
                     'term_starts_on' => ['label' => 'Início do mandato', 'type' => 'date', 'required' => true, 'span' => 4],
-                    'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on'],
+                    'term_ends_on' => ['label' => 'Fim do mandato', 'type' => 'date', 'required' => true, 'span' => 4, 'list' => true, 'after' => 'term_starts_on',
+                        'max_years' => ['from' => 'term_starts_on', 'years' => 'term_years'], 'hint' => 'Calculado pela duração; dá para ajustar'],
                     // ADR 0151 (Djalma, 10/11/2026): e-mail e telefone obrigatórios; são o canal de comunicação com o conselho.
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
+                    // ADR 0686 (Djalma, 27/11/2026): a pessoa vem dos moradores do prédio ou dos síndicos profissionais,
+                    // escolhida no quadro "Escolher a pessoa" ou nas sugestões do nome (GET /api/v1/board-members/candidates).
+                    // 'ref_lazy': as opções não vão no formulário (um prédio grande tem centenas de moradores); o servidor
+                    // confere do mesmo jeito que existe, está ativo e é do mesmo condomínio.
+                    'resident_id' => ['label' => 'Morador do prédio', 'type' => 'ref', 'ref' => 'residents', 'ref_label' => ['name'], 'ref_lazy' => true, 'span' => 6,
+                        'not_with' => 'professional_manager_id', 'not_with_message' => 'Escolha o morador ou o síndico profissional, não os dois.',
+                        'ref_message' => 'O morador escolhido não está ativo neste condomínio. Escolha outro ou desvincule.'],
+                    'professional_manager_id' => ['label' => 'Síndico profissional', 'type' => 'ref', 'ref' => 'professional_managers', 'ref_label' => ['name'], 'ref_lazy' => true, 'span' => 6,
+                        'only_if' => ['role' => ['sindico', 'subsindico']], 'only_if_message' => 'Síndico profissional só como síndico ou subsíndico. O conselho é formado por moradores.',
+                        'ref_message' => 'Síndico profissional não encontrado ou inativo. Escolha outro em Cadastros › Síndicos profissionais.'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12, 'hint' => 'Ex.: ata da assembleia que elegeu'],
                 ],
                 'single_active' => [['field' => 'role', 'value' => 'sindico', 'per' => 'condominium_id', 'message' => 'Este condomínio já tem um síndico ativo. Inative o atual antes de cadastrar outro.']],
                 'order' => 'role',
                 'title' => 'name',
+            ],
+            // ADR 0686 (Djalma, 27/11/2026): síndicos profissionais da Connect, escolhidos no cadastro "Síndico e conselho".
+            // Da administradora (escopo none, como fornecedores e advogados): o mesmo síndico atende vários prédios.
+            // Usa as permissões de "Síndico e conselho" (erp.board), sem permissão nova.
+            'professional_managers' => [
+                'page' => 'CN-013', 'table' => 'erp_professional_managers', 'route' => '/cadastros/sindicos-profissionais',
+                'api' => 'professional-managers', 'permission' => 'erp.board', 'label' => 'Síndicos profissionais',
+                'entity' => 'síndico profissional', 'gender' => 'o', 'scope' => 'none',
+                'lead' => 'Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Escolha-os em Síndico e conselho.',
+                'fields' => [
+                    'name' => ['label' => 'Nome ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                    'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true,
+                        'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone'], 'hint' => 'Com o CNPJ, buscamos os dados na Receita'],
+                    'contact_name' => ['label' => 'Responsável', 'type' => 'text', 'max' => 160, 'span' => 12, 'search' => true, 'hint' => 'Quem atende, quando o síndico profissional é uma empresa'],
+                    'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6, 'list' => true],
+                    'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
+                    'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
+                ],
+                'unique' => [['fields' => ['document'], 'message' => 'Já existe um síndico profissional com este CPF/CNPJ.']],
+                'order' => 'name',
             ],
             'employees' => [
                 'page' => 'AP-009', 'table' => 'erp_employees', 'route' => '/cadastros/funcionarios',

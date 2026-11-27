@@ -269,12 +269,24 @@ return [
         ],
     ],
     'AP-014' => [
-        'faz' => 'Registre quem é síndico, subsíndico e membro dos conselhos fiscal e consultivo, com o início e o fim do mandato. O síndico aparece nos documentos e nas assinaturas da prestação de contas.',
+        'faz' => 'Registre quem é síndico, subsíndico e membro dos conselhos fiscal e consultivo, escolhendo entre os moradores do prédio ou os síndicos profissionais, com mandato de 1 ou 2 anos. O síndico aparece nos documentos e nas assinaturas da prestação de contas.',
         'artigo' => 'sindico-e-conselho',
         'topicos' => [
             [
                 'id' => 'como-cadastrar',
                 'title' => 'Como cadastrar',
+            ],
+            [
+                'id' => 'sindico-morador-ou-sindico-profissional',
+                'title' => 'Síndico morador ou síndico profissional',
+            ],
+            [
+                'id' => 'conselho-fiscal-e-consultivo',
+                'title' => 'Conselho fiscal e consultivo',
+            ],
+            [
+                'id' => 'duracao-do-mandato',
+                'title' => 'Duração do mandato',
             ],
             [
                 'id' => 'pesquisar-e-filtrar',
@@ -283,10 +295,6 @@ return [
             [
                 'id' => 'o-que-a-lista-mostra',
                 'title' => 'O que a lista mostra',
-            ],
-            [
-                'id' => 'acoes-de-cada-linha',
-                'title' => 'Ações de cada linha',
             ],
         ],
     ],
@@ -3227,6 +3235,20 @@ return [
             [
                 'id' => 'cuidados',
                 'title' => 'Cuidados',
+            ],
+        ],
+    ],
+    'CN-013' => [
+        'faz' => 'Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Cadastre uma vez e escolha-os em Síndico e conselho, em qualquer prédio.',
+        'artigo' => 'sindicos-profissionais',
+        'topicos' => [
+            [
+                'id' => 'como-cadastrar',
+                'title' => 'Como cadastrar',
+            ],
+            [
+                'id' => 'escolher-o-sindico-profissional-de-um-predio',
+                'title' => 'Escolher o síndico profissional de um prédio',
             ],
         ],
     ],

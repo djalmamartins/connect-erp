@@ -51,3 +51,27 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 | Telefone (`phone`) | phone | não |
 | Observações (`notes`) | longtext | não |
 | Situação (`status`) | Ativo, Inativo | sim |
+
+## Escolha entre moradores e síndicos profissionais e mandato de 1 ou 2 anos (27/11/2026, ADR 0686)
+
+Pedido do proprietário durante os testes: ao digitar o nome, sugerir as pessoas do prédio (síndico morador); poder
+cadastrar síndicos profissionais e escolhê-los; no conselho, mostrar a lista de moradores para escolher; e um campo de
+mandato de 1 ou 2 anos (máximo 2) que calcula o fim pelo início.
+
+| Regra | Situação |
+|---|---|
+| Sugestões ao digitar o nome (2 letras ou mais): moradores ativos do condomínio e, para síndico e subsíndico, síndicos profissionais | CONFIRMADO |
+| Quadro "Escolher a pessoa" ao lado do formulário, acima do histórico, com abas Moradores do prédio e Síndicos profissionais, busca e "Cadastrar síndico profissional" | CONFIRMADO |
+| Escolher preenche nome, CPF/CNPJ, e-mail, telefone e unidade e grava o vínculo `resident_id` ou `professional_manager_id` | CONFIRMADO |
+| Conselho fiscal, consultivo e suplente: só moradores (a aba de síndicos profissionais some; o servidor recusa `professional_manager_id`) | INFERIDO (condôminos compõem o conselho; o proprietário pediu a lista de moradores) |
+| Morador e síndico profissional juntos no mesmo membro são recusados | CONFIRMADO |
+| Morador vinculado precisa estar ativo e ser do mesmo condomínio; síndico profissional precisa estar ativo | CONFIRMADO |
+| Duração do mandato (`term_years`): 1 ou 2 anos, obrigatória (padrão 2 na API antiga, sem o campo); fim calculado = início + anos − 1 dia | CONFIRMADO |
+| Fim do mandato até início + anos da duração (recusa depois disso) | CONFIRMADO |
+| Lista de moradores só com `erp.residents.view` (LGPD: mesma regra da tela de moradores) | CONFIRMADO |
+
+API: `GET /api/v1/board-members/candidates?condominium_id=` (erp.access + erp.board.manage). Síndicos profissionais:
+CN-013, `/erp/cadastros/sindicos-profissionais`, `/api/v1/professional-managers`.
+
+Campos novos: Morador do prédio (`resident_id`, ref lazy), Síndico profissional (`professional_manager_id`, ref lazy,
+só síndico/subsíndico), Duração do mandato (`term_years`). Migration `20261127_2130_board_member_picker`.

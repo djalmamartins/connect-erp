@@ -146,6 +146,8 @@ SPECS = {
     # Cadastros base do núcleo financeiro (páginas próprias da Connect).
     "CN-002": L("centro de custo", ["Código:text", "Centro de custo:text", "Condomínio:condo", "Situação:" + ATIVO], ["Condomínio:condo@6", "Código:text!@3", "Situação:select(Ativo|Inativo)@3", "Nome:text!@12", "Observações:longtext@12"], filters=("condo", "search")),
     "CN-003": L("conta bancária", ["Condomínio:condo", "Banco:bank", "Agência:text", "Conta:text", "Tipo:select(Corrente|Poupança|Aplicação)", "Situação:" + ATIVO], ["Condomínio:condo!@6", "Banco:bank!@6", "Agência:text!@3", "Dígito da agência:text@1", "Conta:text!@4", "Dígito da conta:text@1", "Tipo:select(Corrente|Poupança|Aplicação)!@3", "Carteira de cobrança:text@4", "Saldo inicial:money@4", "Data do saldo:date@4", "Conta principal:bool@4"], tabs=("Dados", "Cobrança", "Histórico"), gender="a"),
+    # Síndicos profissionais da Connect (ADR 0686).
+    "CN-013": L("síndico profissional", ["Nome ou razão social:person", "CPF/CNPJ:doc", "E-mail:email", "Telefone:phone", "Situação:" + ATIVO], ["Nome ou razão social:person!@8", "CPF/CNPJ:doc@4", "Responsável:text@12", "E-mail:email!@6", "Telefone:phone!@6", "Observações:longtext@12"], filters=("search",)),
     "AP-171": L("integração", ["Serviço:text", "Tipo:select(Banco|E-mail|SMS)", "Condomínios:int", "Última sincronização:date", "Situação:status(Conectada|Pendente|Erro)"], ["Serviço:select(Banco|E-mail|SMS)!@6", "Identificação:text!@6"], filters=("status",), gender="a"),
 }
 

@@ -32,10 +32,10 @@ final class BoardCompositionTest extends TestCase
     public function testCompositionFromTheRegistry(): void
     {
         $this->member('sindico', -365, 20);
-        $this->member('fiscal', -365, 400);
-        $old = $this->member('fiscal', -800, -10);
+        $this->member('fiscal', -365, 360); // ADR 0686: até 2 anos
+        $old = $this->member('fiscal', -700, -10); // ADR 0686: mandato de até 2 anos
         $this->member('consultivo', 5, 700);
-        $gone = $this->member('suplente', -365, 400);
+        $gone = $this->member('suplente', -365, 360);
         $this->pdo->prepare("UPDATE erp_board_members SET status = 'inactive' WHERE id = ?")->execute([$gone]);
         $this->pdo->prepare("UPDATE erp_board_members SET email = NULL WHERE id = ?")->execute([$old]);
         $audits = (int)$this->pdo->query('SELECT COUNT(*) FROM system_audit_logs')->fetchColumn();

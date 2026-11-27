@@ -58,9 +58,26 @@ final class RegistryValidator
             }
         }
         foreach ($definition['fields'] as $name => $field) {
+            // 'only_if' aceita um valor ou uma lista de valores aceitos (ADR 0686).
             foreach ($field['only_if'] ?? [] as $other => $expected) {
-                if (!isset($errors[$name]) && ($clean[$name] ?? null) !== null && (string)($clean[$other] ?? '') !== (string)$expected) {
+                if (!isset($errors[$name]) && ($clean[$name] ?? null) !== null && !in_array((string)($clean[$other] ?? ''), array_map('strval', (array)$expected), true)) {
                     $errors[$name] = $field['only_if_message'] ?? 'Campo não se aplica.';
+                }
+            }
+            // 'not_with' (ADR 0686): os dois campos não podem vir preenchidos juntos (morador ou síndico profissional).
+            $other = $field['not_with'] ?? null;
+            if (is_string($other) && !isset($errors[$name]) && ($clean[$name] ?? null) !== null && ($clean[$other] ?? null) !== null) {
+                $errors[$name] = $field['not_with_message'] ?? 'Preencha só um dos dois campos.';
+            }
+            // 'max_years' (ADR 0686): a data não passa de "from" + anos. 'years' é um número ou o nome do campo com os
+            // anos; o fim calculado pela tela é início + anos − 1 dia, e até início + anos é aceito.
+            $limit = $field['max_years'] ?? null;
+            if (is_array($limit) && !isset($errors[$name]) && is_string($clean[$name] ?? null) && is_string($clean[$limit['from']] ?? null)) {
+                $years = is_int($limit['years']) ? $limit['years'] : (int)($clean[$limit['years']] ?? 0);
+                $until = self::addYears((string)$clean[$limit['from']], $years);
+                if ($years > 0 && $until !== null && $clean[$name] > $until) {
+                    $errors[$name] = sprintf('O mandato de %d %s vai no máximo até %s. Confira a data ou a duração.', $years, $years === 1 ? 'ano' : 'anos',
+                        \DateTimeImmutable::createFromFormat('!Y-m-d', $until)->format('d/m/Y'));
                 }
             }
         }
@@ -72,6 +89,20 @@ final class RegistryValidator
             }
         }
         return [$clean, $errors];
+    }
+
+    /**
+     * Data AAAA-MM-DD + anos inteiros (29/02 vira 28/02 no ano sem 29). null se a data for inválida.
+     */
+    public static function addYears(string $date, int $years): ?string
+    {
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if ($day === false) {
+            return null;
+        }
+        $target = $day->setDate((int)$day->format('Y') + $years, (int)$day->format('n'), 1);
+        $last = (int)$target->format('t');
+        return $target->setDate((int)$target->format('Y'), (int)$target->format('n'), min((int)$day->format('j'), $last))->format('Y-m-d');
     }
 
     /**
