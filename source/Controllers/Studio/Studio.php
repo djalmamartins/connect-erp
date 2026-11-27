@@ -1929,7 +1929,7 @@ class Studio extends Controller
             $roleSlugStmt = $pdo->prepare("SELECT slug FROM access_roles WHERE id=:id");
             $roleSlugStmt->execute(["id" => $roleId]);
             $roleSlug = (string)$roleSlugStmt->fetchColumn();
-            $level = in_array($roleSlug, ["developer", "super_admin"], true) ? 10 : ($roleSlug === "client_admin" ? 5 : (in_array($roleSlug, ["manager", "operator"], true) ? 2 : 1));
+            $level = in_array($roleSlug, ["developer", "super_admin"], true) ? 10 : ($roleSlug === "client_admin" ? 5 : (in_array($roleSlug, ["manager", "financial", "operator", "attendant"], true) ? 2 : 1));
             $stmt = $pdo->prepare("INSERT INTO access_user_roles (user_id,role_id,assigned_by) VALUES (:user,:role,:by) ON DUPLICATE KEY UPDATE role_id=VALUES(role_id),assigned_by=VALUES(assigned_by)");
             $stmt->execute(["user" => $userId, "role" => $roleId, "by" => $assignedBy]);
             $pdo->prepare("UPDATE users SET level=:level WHERE id=:user")->execute(["level" => $level, "user" => $userId]);
