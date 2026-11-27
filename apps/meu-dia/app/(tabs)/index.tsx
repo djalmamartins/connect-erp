@@ -3,15 +3,17 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
-import type { Day, DayEvent, EventStatus, OverdueItem, Ticket } from '../../src/api/team';
+import type { Day, DayEvent, OverdueItem, Ticket } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
-import { dayProgress, eventTone, postponeOptions, type EventTone, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
+import { dayProgress, eventTone, type EventTone, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
 import { syncReminders } from '../../src/lib/notify';
 import { openInSac } from '../../src/lib/sac';
+import { eventActions } from '../../src/lib/eventActions';
 import { cacheKey, offline, savedLabel } from '../../src/lib/offline';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
+import { EVENT_TONE as TONE } from '../../src/ui/tones';
 import { dialog } from '../../src/ui/Dialog';
 import { Body, Card, Empty, ErrorBox, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
 
@@ -70,60 +72,9 @@ export default function Today() {
   const isToday = !!d && d.date === d.today;
   const title = d ? relativeDay(d.date, d.today) : 'Hoje';
 
+  /** Concluir, cancelar, reabrir ou adiar (o mesmo menu da Semana). */
   async function changeStatus(event: DayEvent) {
-    const done = event.status === 'completed';
-    const options: { label: string; status: EventStatus; danger?: boolean }[] =
-      event.status === 'scheduled'
-        ? [
-            { label: 'Concluir', status: 'completed' },
-            { label: 'Cancelar', status: 'cancelled', danger: true },
-          ]
-        : [{ label: done ? 'Reabrir' : 'Marcar de novo', status: 'scheduled' }];
-    const canMove = event.status === 'scheduled';
-    const choice = await dialog.choose({
-      title: event.title,
-      message: [event.start + (event.end ? `–${event.end}` : ''), event.condominium, event.protocol ? `Chamado ${event.protocol}` : null, event.description || null].filter(Boolean).join('\n'),
-      options: [
-        ...options.map((o) => ({ label: o.label, danger: o.danger, icon: o.status === 'completed' ? ('checkmark-circle-outline' as const) : o.status === 'cancelled' ? ('close-circle-outline' as const) : ('refresh' as const) })),
-        ...(canMove ? [{ label: 'Adiar ou mudar o horário', icon: 'time-outline' as const }] : []),
-      ],
-    });
-    if (choice === null) return;
-    if (choice === options.length) {
-      await postpone(event);
-      return;
-    }
-    try {
-      await api.setStatus(event.id, options[choice]!.status);
-      dialog.toast(options[choice]!.status === 'completed' ? 'Concluída' : options[choice]!.status === 'cancelled' ? 'Cancelada' : 'Reaberta');
-      await day.reload();
-    } catch (e) {
-      await dialog.notice({ title: 'Não deu certo', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
-    }
-  }
-
-  /** Adiar (ADR 0668): atalhos rápidos ou outro dia e hora na tela de adiar. */
-  async function postpone(event: DayEvent) {
-    const today = d?.today ?? event.starts_at.slice(0, 10);
-    const shortcuts = postponeOptions(event, today);
-    const choice = await dialog.choose({
-      title: 'Adiar para quando?',
-      message: event.title,
-      options: [...shortcuts.map((o) => ({ label: o.label, icon: 'arrow-forward-circle-outline' as const })), { label: 'Outro dia e hora', icon: 'calendar-outline' as const }],
-    });
-    if (choice === null) return;
-    const pick = shortcuts[choice];
-    if (!pick) {
-      router.push({ pathname: '/adiar/[id]', params: { id: String(event.id), title: event.title, date: event.starts_at.slice(0, 10) < today ? today : event.starts_at.slice(0, 10), start: event.start } });
-      return;
-    }
-    try {
-      await api.moveEvent(event.id, pick.date, pick.start);
-      dialog.toast(`Adiado para ${shortDay(pick.date)} às ${pick.start}`);
-      await day.reload();
-    } catch (e) {
-      await dialog.notice({ title: 'Não deu para adiar', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
-    }
+    await eventActions(api, event, d?.today ?? event.starts_at.slice(0, 10), day.reload);
   }
 
   async function openLate(item: OverdueItem) {
@@ -371,14 +322,6 @@ function Progress({ d, late }: { d: Day; late: number }) {
   );
 }
 
-const TONE: Record<EventTone, { bar: string; icon: string; bg: string }> = {
-  done: { bar: colors.success, icon: colors.success, bg: colors.successSoft },
-  late: { bar: colors.danger, icon: colors.danger, bg: colors.dangerSoft },
-  meeting: { bar: colors.info, icon: colors.info, bg: colors.infoSoft },
-  task: { bar: colors.brand, icon: colors.brandStrong, bg: colors.brandSoft },
-  deadline: { bar: colors.warning, icon: colors.warning, bg: colors.warningSoft },
-  support: { bar: colors.accent, icon: colors.warning, bg: colors.accentSoft },
-};
 
 /** Compromisso com a hora à esquerda e a borda colorida pelo tipo (verde feito, vermelho atrasado). */
 function EventCard({ e, tone, onPress }: { e: DayEvent; tone: EventTone; onPress: () => void }) {
