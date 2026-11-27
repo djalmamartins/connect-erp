@@ -187,3 +187,30 @@ export function morningSummary(day: Day, on: string): { title: string; body: str
 export function badgeCount(day: Day): number {
   return Array.isArray(day.overdue) ? day.overdue.length : overdueItems(day).length;
 }
+
+/**
+ * Progresso do dia no topo de Hoje (ADR 0665): quantos compromissos já foram feitos, quantos faltam, quantas
+ * atrasadas e qual o próximo pelo horário. Cancelados não contam.
+ */
+export function dayProgress(d: Pick<Day, 'events'>, late: number, now: string): {
+  done: number;
+  total: number;
+  percent: number;
+  late: number;
+  next: DayEvent | null;
+} {
+  const events = d.events.filter((e) => e.status !== 'cancelled');
+  const done = events.filter((e) => e.status === 'completed').length;
+  const open = events.filter((e) => e.status === 'scheduled').sort((a, b) => a.start.localeCompare(b.start));
+  const next = open.find((e) => (e.end ?? e.start) >= now) ?? null;
+  return { done, total: events.length, percent: events.length ? Math.round((done / events.length) * 100) : 0, late, next };
+}
+
+/** Cor da borda do compromisso: verde feito, vermelho atrasado, e no resto uma cor por tipo. */
+export type EventTone = 'done' | 'late' | 'meeting' | 'task' | 'deadline' | 'support';
+
+export function eventTone(e: Pick<DayEvent, 'status' | 'type' | 'starts_at' | 'overdue'>, today: string): EventTone {
+  if (e.status === 'completed') return 'done';
+  if (isLate(e as DayEvent, today)) return 'late';
+  return e.type;
+}
