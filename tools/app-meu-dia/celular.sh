@@ -6,7 +6,9 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
-bridge_port="${PONTE_PORTA:-8091}"
+# Portas próprias (ADR 0662): o app do SAC usa a ponte 8091 e o Expo 8082, então os dois abrem juntos.
+bridge_port="${PONTE_PORTA:-8092}"
+expo_port="${EXPO_PORTA:-8083}"
 connect_port="${CONNECT_HTTP_PORT:-8088}"
 
 say() { printf '\n== %s\n' "$*"; }
@@ -54,4 +56,4 @@ echo "Ponte ok: http://${ip}:${bridge_port}"
 say "5/5 Expo (leia o QR code com o celular)"
 cd apps/meu-dia
 [ -d node_modules ] && [ node_modules -nt package-lock.json ] || npm install
-EXPO_PUBLIC_API_URL="http://${ip}:${bridge_port}" npx expo start --lan --clear
+EXPO_PUBLIC_API_URL="http://${ip}:${bridge_port}" npx expo start --lan --clear --port "$expo_port"
