@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../src/api/client';
+import { Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ApiError, type UploadFile } from '../../src/api/client';
 import type { NewTicket, TicketPriority } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
 import { CHANNEL_LABELS, NEW_CHANNELS, newTicketProblem, PRIORITY_LABELS } from '../../src/lib/tickets';
+import { MAX_PHOTOS, pickPhotos, type PhotoSource } from '../../src/lib/files';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
@@ -33,6 +34,12 @@ export default function Novo() {
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [assignMe, setAssignMe] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [photos, setPhotos] = useState<UploadFile[]>([]);
+
+  async function addPhotos(source: PhotoSource) {
+    const picked = await pickPhotos(source, MAX_PHOTOS - photos.length);
+    if (picked.length > 0) setPhotos((cur) => [...cur, ...picked].slice(0, MAX_PHOTOS));
+  }
 
   const reset = () => {
     setUnit(null);
@@ -42,6 +49,7 @@ export default function Novo() {
     setSubject('');
     setMessage('');
     setPriority('medium');
+    setPhotos([]);
   };
 
   async function save() {
@@ -63,7 +71,7 @@ export default function Novo() {
         message: message.trim(),
         priority,
         assign_me: assignMe,
-      });
+      }, photos);
       reset();
       dialog.toast(`Chamado ${opened.protocol} aberto`);
       router.push(`/chamados/${opened.id}`);
@@ -128,6 +136,29 @@ export default function Novo() {
       <Field label="E-mail (opcional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} placeholder="nome@exemplo.com" />
       <Field label="Assunto" value={subject} onChangeText={setSubject} placeholder="Ex.: Vazamento no teto da garagem" maxLength={180} />
       <Field label="Descrição" value={message} onChangeText={setMessage} multiline placeholder="O que a pessoa contou" />
+      <View style={styles.field}>
+        <Text style={styles.label}>Fotos (até {MAX_PHOTOS})</Text>
+        <View style={styles.photoRow}>
+          {photos.map((p, i) => (
+            <Pressable key={p.uri} onPress={() => setPhotos((cur) => cur.filter((_, j) => j !== i))} accessibilityRole="button" accessibilityLabel={`Tirar a foto ${i + 1}`}>
+              <Image source={{ uri: p.uri }} style={styles.thumb} />
+              <View style={styles.thumbX}>
+                <Ionicons name="close" size={12} color={colors.onBrand} />
+              </View>
+            </Pressable>
+          ))}
+          {photos.length < MAX_PHOTOS ? (
+            <>
+              <Pressable onPress={() => void addPhotos('camera')} style={styles.add} accessibilityRole="button" accessibilityLabel="Tirar foto">
+                <Ionicons name="camera-outline" size={22} color={colors.accent} />
+              </Pressable>
+              <Pressable onPress={() => void addPhotos('library')} style={styles.add} accessibilityRole="button" accessibilityLabel="Escolher fotos">
+                <Ionicons name="images-outline" size={22} color={colors.accent} />
+              </Pressable>
+            </>
+          ) : null}
+        </View>
+      </View>
       <Choice label="Prioridade" options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] }))} value={priority} onChange={setPriority} />
 
       <View style={styles.assign}>
@@ -197,6 +228,10 @@ const styles = StyleSheet.create({
   option: { paddingHorizontal: space[3], paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   optionText: { fontFamily: fonts.regular, fontSize: 15, color: colors.text },
   empty: { fontFamily: fonts.regular, fontSize: 14, color: colors.faint, padding: space[3] },
+  photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  thumb: { width: 60, height: 60, borderRadius: radius.sm, backgroundColor: colors.surfaceMuted },
+  thumbX: { position: 'absolute', top: -5, right: -5, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.sidebar, alignItems: 'center', justifyContent: 'center' },
+  add: { width: 60, height: 60, borderRadius: radius.sm, borderWidth: 1, borderStyle: 'dashed', borderColor: '#c5a131', backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   assign: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   assignText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
   proto: { flexDirection: 'row', alignItems: 'center', gap: space[2], backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accentLine, borderRadius: radius.md, padding: space[3] },

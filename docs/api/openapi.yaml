@@ -850,6 +850,15 @@ paths:
                 message: { type: string, minLength: 10, maxLength: 10000 }
                 priority: { type: string, enum: [low, medium, high, urgent], default: medium }
                 assign_me: { type: boolean, default: true }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [condominium_id, requester_name, channel, subject, message]
+              description: Os mesmos campos como texto, mais as fotos da abertura em attachments[] (até 5, ADR 0663).
+              properties:
+                condominium_id: { type: string }
+                channel: { type: string, enum: [telefone, whatsapp, presencial] }
+                'attachments[]': { type: array, maxItems: 5, items: { type: string, format: binary } }
       responses:
         '201': { description: Chamado aberto, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: integer }, protocol: { type: string }, due_at: { type: string }, ticket: { type: object } } } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -871,7 +880,7 @@ paths:
     get:
       operationId: getSacTicket
       tags: [SAC]
-      summary: Chamado com a conversa (notas internas só para quem atende), histórico e medições
+      summary: Chamado com a conversa (notas internas só para quem atende), anexos da abertura (opening_attachments), histórico e medições
       security: [{ teamApp: [] }, { session: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
@@ -946,6 +955,16 @@ paths:
                 internal: { type: boolean, default: false }
                 resolve: { type: boolean, default: false }
                 time_spent: { type: integer, minimum: 0, maximum: 86400, description: Segundos }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [message]
+              description: Com fotos ou arquivos (ADR 0663). Até 5 por vez; foto reduzida a 1600 px e sem EXIF.
+              properties:
+                message: { type: string }
+                internal: { type: string, enum: ['true', 'false'] }
+                resolve: { type: string, enum: ['true', 'false'] }
+                'attachments[]': { type: array, maxItems: 5, items: { type: string, format: binary } }
       responses:
         '201': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }
         '400': { description: invalid_json, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

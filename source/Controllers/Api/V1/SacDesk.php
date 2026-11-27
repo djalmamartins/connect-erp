@@ -24,7 +24,7 @@ use Source\Support\AppLogger;
  *  GET  /api/v1/sac/tickets/{id}                chamado, conversa (com notas internas para quem atende), histórico e medições
  *  POST /api/v1/sac/tickets/{id}/take           assume o chamado (responsável = eu; aberto passa a "em atendimento")
  *  POST /api/v1/sac/tickets/{id}/triage         {status?, priority?, assigned_to?, team?, category?, tags?}
- *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}
+ *  POST /api/v1/sac/tickets/{id}/answers        {message, internal?, resolve?, time_spent?}; multipart com attachments[] (ADR 0663)
  *  GET  /api/v1/sac/units?condominium_id=       unidades ativas do condomínio (escopo de quem entrou)
  *  POST /api/v1/sac/tickets                     abre chamado recebido por telefone, WhatsApp ou presencial
  *        {condominium_id, unit_id?, requester_name, requester_phone?, requester_email?, channel, subject, message, priority?, assign_me?}
@@ -108,7 +108,7 @@ final class SacDesk
     public function store(): void
     {
         $this->run(true, function (User $user): array {
-            $body = $this->body();
+            [$body, $files] = $this->input();
             $channel = (string)($body['channel'] ?? '');
             if (!isset(self::CHANNELS[$channel])) {
                 throw new TicketError('channel', 'Escolha como o chamado chegou: telefone, WhatsApp ou presencial.');
@@ -121,11 +121,13 @@ final class SacDesk
             }
             $input = array_intersect_key($body, array_flip(['condominium_id', 'unit_id', 'requester_name', 'requester_phone', 'requester_email', 'subject', 'message', 'priority']));
             $input = array_map(static fn ($v) => is_scalar($v) ? $v : '', $input);
-            if (($body['assign_me'] ?? true) === true) {
+            if (self::flag($body['assign_me'] ?? true)) {
                 $input['assigned_to'] = (int)$user->id;
             }
             $service = new TicketService();
-            $opened = $service->open($input, 'helpdesk', $user);
+            // Fotos da abertura entram na mesma transação: anexo inválido = nenhum chamado criado.
+            $opened = $service->open($input, 'helpdesk', $user, $files === null ? null
+                : static fn (\PDO $pdo, int $ticketId) => (new TicketDesk($pdo))->attach($ticketId, null, (int)$user->id, $files));
             (new TicketDesk())->update($user, $opened['id'], ['tags' => 'canal:' . $channel]);
             return [201, ['data' => ['id' => $opened['id'], 'protocol' => $opened['protocol'], 'due_at' => $opened['due_at'],
                 'ticket' => $service->findFor($user, $opened['id'])]]];
@@ -145,6 +147,7 @@ final class SacDesk
             return [200, ['data' => [
                 'ticket' => $ticket + ['late' => self::late($ticket)],
                 'messages' => array_map(static fn (array $m): array => array_diff_key($m, ['message_html' => true]), $service->conversation($ticket, $attend)),
+                'opening_attachments' => self::openingAttachments((int)$ticket['id']),
                 'facts' => $desk->facts((int)$ticket['id']),
                 'events' => $attend ? $desk->events((int)$ticket['id']) : [],
                 'can_attend' => $attend,
@@ -180,9 +183,9 @@ final class SacDesk
     {
         $this->run(true, function (User $user) use ($data): array {
             $id = $this->visible($user, $data);
-            $body = $this->body();
-            $result = (new TicketDesk())->reply($user, $id, (string)($body['message'] ?? ''), ($body['internal'] ?? false) === true,
-                max(0, min(86400, (int)($body['time_spent'] ?? 0))), ($body['resolve'] ?? false) === true);
+            [$body, $files] = $this->input();
+            $result = (new TicketDesk())->reply($user, $id, (string)($body['message'] ?? ''), self::flag($body['internal'] ?? false),
+                max(0, min(86400, (int)($body['time_spent'] ?? 0))), self::flag($body['resolve'] ?? false), $files);
             return [201, ['data' => $result + ['ticket' => (new TicketService())->findFor($user, $id)]]];
         });
     }
@@ -243,6 +246,36 @@ final class SacDesk
             AppLogger::exception($error, 'tickets', ['event_type' => 'sac_api_failed', 'users_id' => (int)$user->id]);
             JsonResponse::send(500, ['error' => ['code' => 'internal_error', 'message' => 'Não foi possível concluir agora. Tente de novo.']]);
         }
+    }
+
+    /** "true", "1", "on" do formulário multipart ou true do JSON. */
+    public static function flag(mixed $value): bool
+    {
+        return $value === true || (is_string($value) && in_array(strtolower($value), ['1', 'true', 'on', 'sim'], true)) || $value === 1;
+    }
+
+    /**
+     * Corpo da requisição: multipart/form-data (com fotos em attachments[]) ou JSON.
+     *
+     * @return array{0:array<string,mixed>, 1:?array<string,mixed>}
+     */
+    private function input(): array
+    {
+        $type = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+        if (str_starts_with($type, 'multipart/form-data') || isset($_FILES['attachments'])) {
+            $files = $_FILES['attachments'] ?? null;
+            return [$_POST, is_array($files) ? $files : null];
+        }
+        return [$this->body(), null];
+    }
+
+    /** @return list<array{name:string,url:string}> anexos enviados na abertura do chamado (sem mensagem) */
+    private static function openingAttachments(int $ticketId): array
+    {
+        $stmt = \Source\Core\Connect::getInstance()->prepare('SELECT id, original_name FROM studio_support_ticket_attachments WHERE ticket_id = ? AND message_id IS NULL ORDER BY id');
+        $stmt->execute([$ticketId]);
+        return array_map(static fn (array $r): array => ['name' => (string)$r['original_name'], 'url' => \Source\Services\Support\TicketAttachmentAccess::url((int)$r['id'])],
+            $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /** @return array<string,mixed> */

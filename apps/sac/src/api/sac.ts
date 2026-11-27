@@ -1,4 +1,4 @@
-import { ApiError, type ApiClient } from './client';
+import { ApiError, type ApiClient, type UploadFile } from './client';
 
 /**
  * Rotas que o app do SAC usa (docs/api/openapi.yaml, tags Equipe e SAC; ADR 0660).
@@ -59,6 +59,8 @@ export type TicketEvent = { type: string; label: string; old: string | null; new
 export type TicketDetail = {
   ticket: Ticket;
   messages: Message[];
+  /** Fotos e arquivos mandados na abertura do chamado (ADR 0663). */
+  opening_attachments?: { name: string; url: string }[];
   facts: { first_response_at: string | null; work_seconds: number; replies: number; internal_notes: number };
   events: TicketEvent[];
   can_attend: boolean;
@@ -128,12 +130,20 @@ export function sacApi(client: ApiClient) {
     options: () => client.get<Options>('/sac/options'),
     tickets: (view: View, q = '') => client.get<Ticket[]>('/sac/tickets', { view, q }),
     units: (condominiumId: number) => client.get<Unit[]>('/sac/units', { condominium_id: condominiumId }),
-    open: (input: NewTicket) => client.post<{ id: number; protocol: string; due_at: string; ticket: Ticket }>('/sac/tickets', input),
+    open: (input: NewTicket, files: UploadFile[] = []) =>
+      files.length > 0
+        ? client.upload<{ id: number; protocol: string; due_at: string; ticket: Ticket }>('/sac/tickets', formFields(input), files.map((file) => ({ field: 'attachments[]', file })))
+        : client.post<{ id: number; protocol: string; due_at: string; ticket: Ticket }>('/sac/tickets', input),
     ticket: (id: number) => client.get<TicketDetail>(`/sac/tickets/${id}`),
     take: (id: number) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/take`),
     triage: (id: number, input: Triage) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/triage`, input),
-    answer: (id: number, message: string, internal: boolean, resolve: boolean) =>
-      client.post<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal, resolve }),
+    /** Com fotos vai em multipart (attachments[]); sem fotos, JSON. */
+    answer: (id: number, message: string, internal: boolean, resolve: boolean, files: UploadFile[] = []) =>
+      files.length > 0
+        ? client.upload<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal: String(internal), resolve: String(resolve) }, files.map((file) => ({ field: 'attachments[]', file })))
+        : client.post<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal, resolve }),
+    /** Cabeçalho com o token, para baixar anexo protegido. */
+    authHeaders: () => client.authHeaders(),
 
     /** Meu Dia de hoje; sem acesso ao Meu Dia (403) volta null e o cartão some. */
     async myDay(): Promise<MyDayToday | null> {
@@ -148,3 +158,12 @@ export function sacApi(client: ApiClient) {
 }
 
 export type SacApi = ReturnType<typeof sacApi>;
+
+/** Campos do Novo chamado como texto para o multipart (null vira vazio). */
+export function formFields(input: NewTicket): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input)) {
+    out[key] = value === null || value === undefined ? '' : String(value);
+  }
+  return out;
+}

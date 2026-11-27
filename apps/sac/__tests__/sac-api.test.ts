@@ -50,3 +50,20 @@ test('Meu Dia sem acesso some (null); 401 chama a saída', async () => {
   await expect(api.summary()).rejects.toBeInstanceOf(ApiError);
   expect(out).toBe(1);
 });
+
+import { formFields } from '../src/api/sac';
+import { mimeFor, photoName, safeFileName } from '../src/lib/fileNames';
+
+test('campos do Novo chamado em texto para o multipart', () => {
+  expect(
+    formFields({ condominium_id: 3, unit_id: null, requester_name: 'Carla', requester_phone: '11', requester_email: '', channel: 'telefone', subject: 'Vazamento', message: 'Pingando na vaga', priority: 'high', assign_me: true }),
+  ).toEqual({ condominium_id: '3', unit_id: '', requester_name: 'Carla', requester_phone: '11', requester_email: '', channel: 'telefone', subject: 'Vazamento', message: 'Pingando na vaga', priority: 'high', assign_me: 'true' });
+});
+
+test('anexos: tipo pelo nome, nome seguro e nome da foto', () => {
+  expect(mimeFor('foto-1.JPG')).toBe('image/jpeg');
+  expect(mimeFor('ata.pdf')).toBe('application/pdf');
+  expect(mimeFor('sem-extensao')).toBe('application/octet-stream');
+  expect(safeFileName('../conta luz.pdf')).toBe('conta-luz.pdf');
+  expect(photoName(0)).toBe('foto-1.jpg');
+});

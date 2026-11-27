@@ -363,6 +363,11 @@ final class TicketService
         $creator = $this->pdo()->prepare('SELECT created_by FROM studio_support_tickets WHERE id = ?');
         $creator->execute([$ticketId]);
         $creatorId = (int)$creator->fetchColumn();
+        // No Help Desk e no app do SAC quem registra é a equipe, em nome de quem ligou ou veio ao escritório
+        // (ADR 0663): as respostas dela são da equipe, não de quem pediu.
+        if (($ticket['origin'] ?? '') === 'helpdesk' && $creatorId !== $requesterId) {
+            $creatorId = -1;
+        }
         $stmt = $this->pdo()->prepare("SELECT m.id, m.user_id, m.message, m.is_internal, m.created_at,
                 NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), '') AS author
             FROM studio_support_ticket_messages m LEFT JOIN users u ON u.id = m.user_id
