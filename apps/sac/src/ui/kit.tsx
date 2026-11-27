@@ -398,7 +398,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: 'rgba(18,26,49,0.12)',
     overflow: 'hidden',
   },
-  compactTint: { backgroundColor: 'rgba(238,248,242,0.72)' },
+  compactTint: { backgroundColor: 'rgba(241,242,241,0.78)' },
   compactTitle: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text, paddingHorizontal: 64 },
   backButton: {
     width: 38,
@@ -417,7 +417,7 @@ export const styles = StyleSheet.create({
   muted: { color: colors.muted },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: space[4],
@@ -471,9 +471,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingVertical: 8,
   },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipActive: { backgroundColor: colors.accentSoft, borderColor: '#c5a131' },
   chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
-  chipTextActive: { color: colors.onBrand },
+  chipTextActive: { color: '#6b5510', fontFamily: fonts.semibold },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[7], backgroundColor: colors.canvas },
   emptyCard: { alignItems: 'flex-start' },
 });

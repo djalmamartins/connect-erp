@@ -1,32 +1,37 @@
 /**
- * Tokens do app do morador. Mesmas cores do design system do ERP
- * (container/erp/connect/v1/assets/css/erp.css): verde-escuro da barra lateral,
- * verde das ações, dourado Connect só em detalhes, fonte Inter.
+ * Tokens do app do SAC (ADR 0661): cinza-claro com dourado, as mesmas cores do balão do SAC no site
+ * e do ícone aprovado (opção A, 27/11/2026). Botão principal verde-escuro do ERP com texto dourado-claro;
+ * verde só no WhatsApp e no "online". Fonte Inter.
+ *
+ * Os nomes (brand, accent...) são os do app do morador para o kit de componentes compartilhado:
+ * aqui brand é o verde-escuro dos botões e accent o dourado dos destaques.
  */
 export const colors = {
   sidebar: '#0d2e27',
-  sidebarInk: '#d5e4dc',
-  brand: '#07884c',
-  brandStrong: '#066f3e',
-  brandSoft: '#eaf7ef',
-  accent: '#c5a131',
-  accentSoft: '#fbf4dd',
-  canvas: '#eef8f2',
+  sidebarInk: '#e9d48a',
+  brand: '#0d2e27',
+  brandStrong: '#a9871f',
+  brandSoft: '#f6efd9',
+  accent: '#a9871f',
+  accentSoft: '#f6efd9',
+  accentLine: '#e9dcb2',
+  canvas: '#f1f2f1',
   surface: '#ffffff',
-  surfaceMuted: '#f6faf8',
-  border: '#dfe8e3',
-  text: '#121a31',
-  muted: '#65746d',
-  faint: '#8a9a92',
-  success: '#12805c',
-  successSoft: '#e3f4ec',
-  warning: '#9a6400',
-  warningSoft: '#fff8e8',
+  surfaceMuted: '#eceeed',
+  border: '#e3e5e3',
+  text: '#1c2421',
+  muted: '#6b7571',
+  faint: '#8a938f',
+  success: '#128c4a',
+  successSoft: '#e3f6ea',
+  warning: '#8a6d12',
+  warningSoft: '#fff8e1',
   danger: '#d92d36',
   dangerSoft: '#fdecee',
-  info: '#18587d',
-  infoSoft: '#eaf3fc',
+  info: '#4b5551',
+  infoSoft: '#eceeed',
   onBrand: '#ffffff',
+  onDark: '#e9d48a',
 } as const;
 
 export const fonts = {

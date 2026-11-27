@@ -39,6 +39,7 @@ export type Ticket = {
   created_at: string;
   updated_at: string;
   team: string | null;
+  tags: string | null;
   occurrence_id: number | null;
   late: boolean;
 };
@@ -80,6 +81,24 @@ export type Options = {
   teams: string[];
   agents: { id: number; name: string }[];
   templates: { id: number; title: string; body: string }[];
+  condominiums?: { id: number; name: string }[];
+  channels?: Option[];
+};
+
+export type Unit = { id: number; label: string };
+
+/** Chamado que a equipe abre pelo app (POST /sac/tickets, ADR 0661). */
+export type NewTicket = {
+  condominium_id: number;
+  unit_id: number | null;
+  requester_name: string;
+  requester_phone: string;
+  requester_email: string;
+  channel: 'telefone' | 'whatsapp' | 'presencial';
+  subject: string;
+  message: string;
+  priority: TicketPriority;
+  assign_me: boolean;
 };
 
 /** Só o resumo do Meu Dia de hoje (o app Meu Dia mostra o resto). */
@@ -108,6 +127,8 @@ export function sacApi(client: ApiClient) {
     summary: () => client.get<Summary>('/sac/summary'),
     options: () => client.get<Options>('/sac/options'),
     tickets: (view: View, q = '') => client.get<Ticket[]>('/sac/tickets', { view, q }),
+    units: (condominiumId: number) => client.get<Unit[]>('/sac/units', { condominium_id: condominiumId }),
+    open: (input: NewTicket) => client.post<{ id: number; protocol: string; due_at: string; ticket: Ticket }>('/sac/tickets', input),
     ticket: (id: number) => client.get<TicketDetail>(`/sac/tickets/${id}`),
     take: (id: number) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/take`),
     triage: (id: number, input: Triage) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/triage`, input),

@@ -137,6 +137,54 @@ final class SacDeskIntegrationTest extends TestCase
         self::assertSame(['path' => '/chamados/' . $id], json_decode($rows[0]['data_json'], true));
     }
 
+    public function testOpenByPhoneWithChannelUnitsAndScope(): void
+    {
+        $this->pdo->prepare("INSERT INTO erp_units (condominium_id, block, number, type) VALUES (?, 'B', '302', 'apartamento')")->execute([$this->alpha]);
+        $unit = (int)$this->pdo->lastInsertId();
+        $label = (string)$this->pdo->query('SELECT label FROM erp_units WHERE id = ' . $unit)->fetchColumn();
+        $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Beta', 'active']);
+        $beta = (int)$this->pdo->lastInsertId();
+        // Atendente só do Alpha: erp.access e support.manage, sem acesso a todos os condomínios.
+        $agentId = $this->createUser(['level' => 5, 'first_name' => 'Caio']);
+        $this->pdo->prepare('INSERT INTO access_roles (name, slug, level) VALUES (?, ?, ?)')->execute(['Atendente', 'atendente', 30]);
+        $role = (int)$this->pdo->lastInsertId();
+        $this->pdo->prepare("INSERT INTO access_role_permissions (role_id, permission_id) SELECT ?, id FROM access_permissions WHERE slug IN ('erp.access', 'support.manage')")->execute([$role]);
+        $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id) VALUES (?, ?)')->execute([$agentId, $role]);
+        (new CondominiumScope($this->pdo))->grant($agentId, $this->alpha);
+        $this->agent = (new User())->findById($agentId);
+
+        [$status, $body] = $this->call($this->agent, 'options');
+        self::assertSame(200, $status);
+        self::assertSame(['Alpha'], array_column($body['data']['condominiums'], 'name'));
+        self::assertSame(['telefone', 'whatsapp', 'presencial'], array_column($body['data']['channels'], 'value'));
+
+        [$status, $body] = $this->call($this->agent, 'units', [], null, ['condominium_id' => (string)$this->alpha]);
+        self::assertSame([200, [['id' => $unit, 'label' => $label]]], [$status, $body['data']]);
+        [$status] = $this->call($this->agent, 'units', [], null, ['condominium_id' => (string)$beta]);
+        self::assertSame(403, $status);
+
+        // Só telefone, sem e-mail: vale quando a equipe registra o pedido.
+        $input = ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'requester_name' => 'Carla', 'requester_phone' => '(11) 98888-7777',
+            'channel' => 'telefone', 'subject' => 'Vazamento no teto da garagem', 'message' => 'Mancha de água na vaga 22, pingando desde cedo.', 'priority' => 'high'];
+        [$status, $body] = $this->call($this->agent, 'store', [], $input);
+        self::assertSame(201, $status, json_encode($body));
+        self::assertMatchesRegularExpression('/^SAC/', $body['data']['protocol']);
+        $ticket = $body['data']['ticket'];
+        self::assertSame(['helpdesk', 'canal:telefone', 'high', (int)$this->agent->id, $label, 'Carla'],
+            [$ticket['origin'], $ticket['tags'], $ticket['priority'], $ticket['assigned_to']['id'], $ticket['unit']['label'], $ticket['requester']['name']]);
+
+        // Outro condomínio, canal inválido, sem contato, e quem só acompanha.
+        [$status] = $this->call($this->agent, 'store', [], ['condominium_id' => $beta] + $input);
+        self::assertSame(403, $status);
+        [$status, $body] = $this->call($this->agent, 'store', [], ['channel' => 'fax'] + $input);
+        self::assertSame([422, 'channel'], [$status, array_key_first($body['error']['fields'])]);
+        [$status] = $this->call($this->agent, 'store', [], ['requester_phone' => ''] + $input);
+        self::assertSame(422, $status);
+        [$status] = $this->call($this->viewer, 'store', [], $input);
+        self::assertSame(403, $status);
+        self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM studio_support_tickets')->fetchColumn());
+    }
+
     public function testViewFiltersArePure(): void
     {
         self::assertSame(['assigned' => '7'], SacDesk::viewFilters('mine', 7));

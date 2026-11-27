@@ -28,7 +28,26 @@ Use a **mesma conta do ERP** (e-mail ou CPF e senha). Se você usa a verificaç�
 - **Atrasados**: os que passaram do prazo de atendimento. Ficam com a borda e o prazo **em vermelho** e sempre no topo da lista.
 - **Todos**: tudo o que você pode ver, inclusive os resolvidos.
 
-Quando há chamado atrasado, aparece uma faixa vermelha no topo com o total. Toque nela para ir direto aos atrasados. A busca aceita o assunto ou o protocolo (SAC... ou OCO...). Puxe a lista para baixo para atualizar.
+Cada chamado mostra o protocolo (em dourado), há quanto tempo chegou, o assunto, **por onde chegou** (WhatsApp, App, Telefone, Presencial, Site ou Equipe), o condomínio, a unidade, quem pediu e as iniciais de quem está atendendo. Um círculo tracejado quer dizer que ninguém pegou ainda.
+
+Quando há chamado atrasado, aparece uma faixa vermelha no topo com o total. Toque nela para ir direto aos atrasados. Puxe a lista para baixo para atualizar.
+
+## Aba Novo
+
+Para registrar o pedido de quem **ligou**, mandou **WhatsApp** ou veio **ao escritório**:
+
+1. Escolha o **condomínio** e, se for de uma unidade, a **unidade**.
+2. Marque **como chegou**: Telefone, WhatsApp ou Presencial.
+3. Informe **quem pediu** e o **telefone** ou o **e-mail** (um dos dois basta).
+4. Escreva o **assunto** e a **descrição** e escolha a prioridade.
+5. Deixe **Fica comigo** ligado para o chamado já ficar com você, ou desligue para ir para "Sem responsável".
+6. Toque em **Abrir chamado**. O protocolo SAC aparece na hora; passe para a pessoa. Sem e-mail, ela não recebe o aviso por e-mail.
+
+Só quem atende chamados vê o formulário.
+
+## Aba Buscar
+
+Procura em todos os chamados que você pode ver, abertos e fechados, pelo assunto ou pelo protocolo (SAC... ou OCO...).
 
 O cartão **Meu Dia de hoje** mostra os seus compromissos e o que está para agendar. Tocar nele abre o app **Meu Dia** (ou a página do Meu Dia, se o app não estiver instalado).
 
@@ -37,7 +56,7 @@ O cartão **Meu Dia de hoje** mostra os seus compromissos e o que está para age
 - **Assumir**: o chamado passa a ser seu e, se estava aberto, vai para "Em atendimento".
 - **Situação**, **Prioridade** e **Passar** (para outra pessoa da equipe). Quem recebe o chamado ganha um aviso no celular.
 - **Responder**: a mensagem vai para quem pediu (e-mail, sininho e app do morador).
-- **Nota interna**: fica em amarelo e só a equipe vê.
+- **Nota interna**: fica no meio da conversa, com borda amarela tracejada, e só a equipe vê. As respostas da equipe ficam em dourado-claro à direita.
 - **Enviar e resolver**: responde e marca o chamado como resolvido de uma vez.
 - **Ligar** e **E-mail** aparecem quando o chamado tem o telefone ou o e-mail de quem pediu.
 

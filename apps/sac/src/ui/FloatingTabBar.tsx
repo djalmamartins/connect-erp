@@ -9,7 +9,9 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 
 /** Ícone de cada aba: contorno quando parada, cheio quando aberta. */
 export const TAB_ICONS: Record<string, [IconName, IconName]> = {
-  index: ['chatbubbles-outline', 'chatbubbles'],
+  index: ['headset-outline', 'headset'],
+  novo: ['add-circle-outline', 'add-circle'],
+  buscar: ['search-outline', 'search'],
   perfil: ['person-circle-outline', 'person-circle'],
 };
 
@@ -46,7 +48,7 @@ export function FloatingTabBar({ state, descriptors, emitter, navigateToTab, ins
               style={({ pressed }) => [styles.item, pressed && { opacity: 0.6 }]}
             >
               <View style={[styles.pill, focused && styles.pillActive]}>
-                <Ionicons name={focused ? filled : outline} size={23} color={focused ? colors.brandStrong : colors.text} />
+                <Ionicons name={focused ? filled : outline} size={23} color={focused ? colors.accent : colors.muted} />
                 <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
                   {label}
                 </Text>
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
   glass: { backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.55)' },
   item: { flex: 1 },
   pill: { flex: 1, borderRadius: 28, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  pillActive: { backgroundColor: 'rgba(7,136,76,0.13)' },
-  label: { fontFamily: fonts.medium, fontSize: 10.5, color: colors.text },
-  labelActive: { fontFamily: fonts.semibold, color: colors.brandStrong },
+  pillActive: { backgroundColor: 'rgba(169,135,31,0.14)' },
+  label: { fontFamily: fonts.medium, fontSize: 10.5, color: colors.muted },
+  labelActive: { fontFamily: fonts.semibold, color: colors.accent },
 });

@@ -662,6 +662,8 @@ $route->post("/proposals/{id}/responses", "Proposals:respond", null, \Source\Sup
 $route->get("/sac/summary", "SacDesk:summary", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/sac/options", "SacDesk:options", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/sac/tickets", "SacDesk:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->get("/sac/units", "SacDesk:units", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/sac/tickets", "SacDesk:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/sac/tickets/{id}", "SacDesk:show", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/sac/tickets/{id}/take", "SacDesk:take", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/sac/tickets/{id}/triage", "SacDesk:triage", null, \Source\Support\Middleware\ApiAuthenticated::class);
