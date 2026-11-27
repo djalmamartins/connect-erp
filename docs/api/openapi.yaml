@@ -7883,6 +7883,45 @@ paths:
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /my-day/events/{id}/move:
+    post:
+      operationId: moveMyDayEvent
+      tags: [MyDay]
+      summary: Adia ou muda o horário de um compromisso em aberto (ADR 0668)
+      description: Mesmas regras de quem pode mexer de /status (responsável, quem criou ou quem tem erp.myday.team). Sem end, mantém a duração. Concluído ou cancelado devolve 422.
+      security: [{ session: [], csrf: [] }, { teamApp: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, start]
+              properties:
+                date: { type: string, format: date }
+                start: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+                end: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+      responses:
+        '200':
+          description: Novo horário
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      starts_at: { type: string }
+                      ends_at: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '419': { $ref: '#/components/responses/CsrfInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
   /my-day/overdue:
     get:
       operationId: getMyDayOverdue

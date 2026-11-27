@@ -6,7 +6,7 @@ import { ApiError } from '../../src/api/client';
 import type { Day, DayEvent, EventStatus, OverdueItem, Ticket } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
-import { dayProgress, eventTone, type EventTone, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
+import { dayProgress, eventTone, postponeOptions, type EventTone, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
 import { syncReminders } from '../../src/lib/notify';
 import { openInSac } from '../../src/lib/sac';
 import { useResource } from '../../src/lib/useResource';
@@ -59,18 +59,50 @@ export default function Today() {
             { label: 'Cancelar', status: 'cancelled', danger: true },
           ]
         : [{ label: done ? 'Reabrir' : 'Marcar de novo', status: 'scheduled' }];
+    const canMove = event.status === 'scheduled';
     const choice = await dialog.choose({
       title: event.title,
       message: [event.start + (event.end ? `–${event.end}` : ''), event.condominium, event.protocol ? `Chamado ${event.protocol}` : null, event.description || null].filter(Boolean).join('\n'),
-      options: options.map((o) => ({ label: o.label, danger: o.danger, icon: o.status === 'completed' ? 'checkmark-circle-outline' : o.status === 'cancelled' ? 'close-circle-outline' : 'refresh' })),
+      options: [
+        ...options.map((o) => ({ label: o.label, danger: o.danger, icon: o.status === 'completed' ? ('checkmark-circle-outline' as const) : o.status === 'cancelled' ? ('close-circle-outline' as const) : ('refresh' as const) })),
+        ...(canMove ? [{ label: 'Adiar ou mudar o horário', icon: 'time-outline' as const }] : []),
+      ],
     });
     if (choice === null) return;
+    if (choice === options.length) {
+      await postpone(event);
+      return;
+    }
     try {
       await api.setStatus(event.id, options[choice]!.status);
       dialog.toast(options[choice]!.status === 'completed' ? 'Concluída' : options[choice]!.status === 'cancelled' ? 'Cancelada' : 'Reaberta');
       await day.reload();
     } catch (e) {
       await dialog.notice({ title: 'Não deu certo', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
+    }
+  }
+
+  /** Adiar (ADR 0668): atalhos rápidos ou outro dia e hora na tela de adiar. */
+  async function postpone(event: DayEvent) {
+    const today = d?.today ?? event.starts_at.slice(0, 10);
+    const shortcuts = postponeOptions(event, today);
+    const choice = await dialog.choose({
+      title: 'Adiar para quando?',
+      message: event.title,
+      options: [...shortcuts.map((o) => ({ label: o.label, icon: 'arrow-forward-circle-outline' as const })), { label: 'Outro dia e hora', icon: 'calendar-outline' as const }],
+    });
+    if (choice === null) return;
+    const pick = shortcuts[choice];
+    if (!pick) {
+      router.push({ pathname: '/adiar/[id]', params: { id: String(event.id), title: event.title, date: event.starts_at.slice(0, 10) < today ? today : event.starts_at.slice(0, 10), start: event.start } });
+      return;
+    }
+    try {
+      await api.moveEvent(event.id, pick.date, pick.start);
+      dialog.toast(`Adiado para ${shortDay(pick.date)} às ${pick.start}`);
+      await day.reload();
+    } catch (e) {
+      await dialog.notice({ title: 'Não deu para adiar', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
     }
   }
 
