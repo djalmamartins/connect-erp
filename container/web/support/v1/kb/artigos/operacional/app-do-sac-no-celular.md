@@ -58,11 +58,15 @@ O cartão **Meu Dia de hoje** mostra os seus compromissos e o que está para age
 
 ## Dentro do chamado
 
+No topo ficam o assunto e, logo abaixo, o protocolo, o condomínio e a unidade.
+
+
 - **Assumir**: o chamado passa a ser seu e, se estava aberto, vai para "Em atendimento".
 - **Situação**, **Prioridade** e **Passar** (para outra pessoa da equipe). Quem recebe o chamado ganha um aviso no celular.
 - **Responder**: a mensagem vai para quem pediu (e-mail, sininho e app do morador).
 - **Nota interna**: fica no meio da conversa, com borda amarela tracejada, e só a equipe vê. As respostas da equipe ficam em dourado-claro à direita.
 - **Câmera** e **Fotos**: juntam até 5 fotos à resposta ou à nota interna. Toque num anexo da conversa para ver, salvar ou mandar.
+- **Cronômetro**: acima da resposta conta o tempo dedicado desde que você abriu o chamado (só com o app na frente). Ao enviar, o tempo vai junto e aparece nas medições do chamado no ERP; **Pausar** e **Zerar** funcionam como na tela do ERP.
 - **Enviar e resolver**: responde e marca o chamado como resolvido de uma vez.
 - **Ligar** e **E-mail** aparecem quando o chamado tem o telefone ou o e-mail de quem pediu.
 

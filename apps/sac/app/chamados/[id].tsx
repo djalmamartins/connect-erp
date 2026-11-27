@@ -5,9 +5,10 @@ import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 're
 import { ApiError, type UploadFile } from '../../src/api/client';
 import type { Message, TicketPriority, TicketStatus } from '../../src/api/sac';
 import { useAuth } from '../../src/auth/AuthContext';
-import { authorLabel, CHANNEL_LABELS, channelOf, context, dueText, isFinal, PRIORITY_LABELS, priorityTone, STATUS_LABELS, statusTone, when } from '../../src/lib/tickets';
+import { authorLabel, CHANNEL_LABELS, channelOf, dueText, isFinal, PRIORITY_LABELS, priorityTone, STATUS_LABELS, statusTone, when } from '../../src/lib/tickets';
 import { MAX_PHOTOS, openAttachment, pickPhotos, type PhotoSource } from '../../src/lib/files';
 import { useResource } from '../../src/lib/useResource';
+import { clock, useTimer } from '../../src/lib/useTimer';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Badge } from '../../src/ui/Badge';
 import { dialog } from '../../src/ui/Dialog';
@@ -15,6 +16,10 @@ import { Button, Card, ErrorBox, Loading, Screen } from '../../src/ui/kit';
 
 const STATUSES: TicketStatus[] = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent'];
+
+function isFinalStatus(status: TicketStatus | undefined): boolean {
+  return status !== undefined && isFinal(status);
+}
 
 /** Um chamado do SAC: dados, conversa (com notas internas), resposta, assumir, situação, prioridade e responsável. */
 export default function Chamado() {
@@ -27,6 +32,7 @@ export default function Chamado() {
   const [internal, setInternal] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [photos, setPhotos] = useState<UploadFile[]>([]);
+  const timer = useTimer(detail.data?.can_attend === true && !isFinalStatus(detail.data?.ticket.status));
   const d = detail.data;
   const t = d?.ticket;
 
@@ -50,9 +56,10 @@ export default function Chamado() {
       return;
     }
     await act(resolve ? 'resolve' : 'send', async () => {
-      await api.answer(ticketId, body, internal, resolve && !internal, photos);
+      await api.answer(ticketId, body, internal, resolve && !internal, photos, timer.seconds);
       setText('');
       setPhotos([]);
+      timer.reset();
     }, internal ? 'Nota interna registrada' : resolve ? 'Resposta enviada e chamado resolvido' : 'Resposta enviada');
   }
 
@@ -98,7 +105,7 @@ export default function Chamado() {
   const attend = d?.can_attend ?? false;
 
   return (
-    <Screen title={t?.protocol ?? 'Chamado'} back refreshing={detail.refreshing} onRefresh={detail.reload}>
+    <Screen title={t?.subject ?? 'Chamado'} subtitle={t ? [t.protocol, t.condominium?.name, t.unit?.label].filter(Boolean).join(' · ') : undefined} back refreshing={detail.refreshing} onRefresh={detail.reload}>
       {detail.loading ? (
         <Loading />
       ) : detail.error ? (
@@ -111,8 +118,7 @@ export default function Chamado() {
               <Badge tone={priorityTone(t.priority)} label={PRIORITY_LABELS[t.priority]} />
               {t.late ? <Badge tone="danger" label="Atrasado" /> : null}
             </View>
-            <Text style={styles.subject}>{t.subject}</Text>
-            {context(t) ? <Text style={styles.meta}>{context(t)}</Text> : null}
+            {t.requester.name ? <Text style={styles.who}>Quem pediu: {t.requester.name}</Text> : null}
             <View style={styles.due}>
               <Ionicons name={t.late ? 'alarm' : 'time-outline'} size={15} color={t.late ? colors.danger : colors.muted} />
               <Text style={[styles.meta, t.late && { color: colors.danger, fontFamily: fonts.semibold }]}>{dueText(t)}</Text>
@@ -166,6 +172,20 @@ export default function Chamado() {
                   <Text style={[styles.segText, internal && { color: colors.warning }]}>Nota interna</Text>
                 </Pressable>
               </View>
+              {!isFinal(t.status) ? (
+                <View style={styles.timer}>
+                  <Ionicons name={timer.running ? 'stopwatch' : 'stopwatch-outline'} size={16} color={timer.running ? colors.accent : colors.faint} />
+                  <Text style={styles.timerText} accessibilityLabel={`Tempo dedicado ${clock(timer.seconds)}`}>
+                    {clock(timer.seconds)}
+                  </Text>
+                  <Pressable onPress={timer.toggle} accessibilityRole="button" hitSlop={8}>
+                    <Text style={styles.chipText}>{timer.running ? 'Pausar' : 'Continuar'}</Text>
+                  </Pressable>
+                  <Pressable onPress={timer.reset} accessibilityRole="button" hitSlop={8}>
+                    <Text style={[styles.chipText, { color: colors.muted }]}>Zerar</Text>
+                  </Pressable>
+                </View>
+              ) : null}
               <TextInput
                 value={text}
                 onChangeText={setText}
@@ -264,7 +284,9 @@ function Bubble({ message: m, onOpen }: { message: Message; onOpen: (url: string
 const styles = StyleSheet.create({
   lateCard: { borderColor: colors.danger, borderLeftWidth: 4 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
-  subject: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginTop: space[3] },
+  who: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text, marginTop: space[3] },
+  timer: { flexDirection: 'row', alignItems: 'center', gap: space[3], marginBottom: space[2] },
+  timerText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text, fontVariant: ['tabular-nums'], minWidth: 52 },
   meta: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, marginTop: 4 },
   due: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   contact: { flexDirection: 'row', gap: space[2], marginTop: space[3] },

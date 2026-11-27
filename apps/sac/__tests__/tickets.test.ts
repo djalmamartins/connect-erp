@@ -101,3 +101,12 @@ test('chave do balão do site', () => {
   expect(presenceText({ ...base, public: false }).title).toBe('Você não aparece no balão do site');
   expect(presenceText({ ...base, open: false, shown: false }).detail).toContain('das 8h às 18h');
 });
+
+import { clock } from '../src/lib/useTimer';
+
+test('cronômetro do tempo dedicado', () => {
+  expect(clock(0)).toBe('0:00');
+  expect(clock(42)).toBe('0:42');
+  expect(clock(725)).toBe('12:05');
+  expect(clock(3729)).toBe('1:02:09');
+});
