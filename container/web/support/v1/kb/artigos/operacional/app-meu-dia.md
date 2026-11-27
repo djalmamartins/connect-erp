@@ -75,6 +75,10 @@ Toque no compromisso na aba **Hoje** e escolha **Concluir** ou **Cancelar**. Se 
 
 Toque no compromisso e escolha **Adiar ou mudar o horário**. Os atalhos são **+1 hora**, **Amanhã** e **Segunda**, no mesmo horário. Um compromisso que ficou para trás ganha também o atalho **Hoje**. Para outro dia, toque em **Outro dia e hora**, escolha o dia e a hora e toque em {{Adiar}}. Se você não informar a hora de fim, o compromisso mantém a mesma duração. Só dá para adiar um compromisso em aberto: um concluído precisa ser reaberto antes. A mudança entra no histórico e o lembrete do celular muda junto.
 
+## Repetir em outro dia
+
+Para fazer de novo a mesma tarefa (por exemplo, a ronda da semana que vem), toque no compromisso e escolha **Repetir em outro dia**. A aba **Nova** abre já preenchida com o título, o tipo, a descrição e o horário, no dia seguinte. Mude o dia se precisar e toque em {{Salvar tarefa}}. O compromisso original não muda, e a cópia não fica ligada a chamado.
+
 ## Marcar uma tarefa
 
 1. Abra a aba **Nova tarefa**.
