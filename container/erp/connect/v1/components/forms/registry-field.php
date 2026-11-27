@@ -31,7 +31,9 @@ $units ??= [];
 $attachment ??= null;
 ?>
 <?php // 'only_if' aceita uma lista de valores (ADR 0686): data-only-if="f-role=sindico|subsindico".
-$onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . implode('|', array_map('strval', (array)$expected))) . '"'; } ?>
+$onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . implode('|', array_map('strval', (array)$expected))) . '"'; }
+// ADR 0688: 'hide_if' esconde o campo com a caixa marcada (ex.: banco, agência e conta da caixinha vêm da conta corrente).
+if (isset($field['hide_if'])) { $onlyIf .= ' data-hide-if="' . $this->e('f-' . $field['hide_if']) . '"'; } ?>
 <div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>"<?= $onlyIf ?>>
     <?php if ($field['type'] === 'bool'): ?>
         <span class="erp-field__label" aria-hidden="true">&nbsp;</span>

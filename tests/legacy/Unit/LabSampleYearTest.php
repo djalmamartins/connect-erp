@@ -79,7 +79,7 @@ final class LabSampleYearTest extends TestCase
                 invoice_item_id INTEGER, recurring_entry_id INTEGER, agreement_id INTEGER, agreement_role TEXT, agreement_installment INTEGER, extra_charge_id INTEGER,
                 status TEXT DEFAULT 'active', created_by INTEGER, updated_by INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT, deleted_at TEXT)",
             "CREATE TABLE erp_bank_accounts (id INTEGER PRIMARY KEY, condominium_id INTEGER, name TEXT, bank_code TEXT, branch TEXT, account_number TEXT,
-                kind TEXT DEFAULT 'corrente', parent_bank_account_id INTEGER, opening_balance_cents INTEGER DEFAULT 0, opened_on TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
+                kind TEXT DEFAULT 'corrente', parent_bank_account_id INTEGER, is_pocket INTEGER DEFAULT 0, opening_balance_cents INTEGER DEFAULT 0, opened_on TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_bank_transfers (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL, from_bank_account_id INTEGER, to_bank_account_id INTEGER, amount_cents INTEGER,
                 transferred_on TEXT, description TEXT, status TEXT DEFAULT 'active', created_by INTEGER, cancelled_by INTEGER, cancelled_at TEXT, cancel_reason TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT)",

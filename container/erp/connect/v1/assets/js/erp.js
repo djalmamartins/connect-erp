@@ -2150,9 +2150,31 @@
     var sync = function () {
       var on = accepted.indexOf(other.value) !== -1;
       wrap.hidden = !on;
-      if (!on) $$('select, input', wrap).forEach(function (field) { field.value = ''; });
+      // Caixa (bool) é desmarcada; o "0" escondido que acompanha a caixa fica como está (ADR 0688).
+      if (!on) $$('select, input', wrap).forEach(function (field) {
+        if (field.type === 'checkbox') {
+          if (field.checked) { field.checked = false; field.dispatchEvent(new Event('change')); }
+        } else if (field.type !== 'hidden') {
+          field.value = '';
+        }
+      });
     };
     other.addEventListener('change', sync);
+    sync();
+  });
+
+  /* Cadastros: campo escondido com a caixa marcada (ADR 0688, 'hide_if'), como banco, agência e conta da caixinha,
+     que vêm da conta corrente ligada. Escondido, o navegador deixa de exigir; o servidor preenche. */
+  $$('[data-hide-if]').forEach(function (wrap) {
+    var box = document.getElementById(wrap.getAttribute('data-hide-if') || '');
+    if (!box) return;
+    var fields = $$('input, select', wrap).filter(function (field) { return field.type !== 'hidden'; });
+    fields.forEach(function (field) { field.setAttribute('data-was-required', field.required ? '1' : '0'); });
+    var sync = function () {
+      wrap.hidden = box.checked;
+      fields.forEach(function (field) { field.required = !box.checked && field.getAttribute('data-was-required') === '1'; });
+    };
+    box.addEventListener('change', sync);
     sync();
   });
 

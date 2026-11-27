@@ -103,4 +103,45 @@ final class PatrimonialEntryScreensIntegrationTest extends TestCase
             }
         }
     }
+
+    /**
+     * ADR 0688 (teste 6.2 do manual): a aplicação no mesmo banco repetia banco, agência e conta da conta corrente e
+     * caía em "Esta conta já está cadastrada". A caixinha herda os dados da conta corrente e acompanha a mudança dela.
+     */
+    public function testPocketUsesTheCheckingAccountNumbers(): void
+    {
+        $checking = (int)$this->registry->save($this->admin, 'bank_accounts', ['condominium_id' => $this->alpha, 'name' => 'Cobrança Inter', 'bank_code' => '077',
+            'branch' => '0001', 'account_number' => '1234567-8', 'kind' => 'corrente'])['id'];
+        $same = ['condominium_id' => $this->alpha, 'name' => 'Caixinha reserva', 'bank_code' => '077', 'branch' => '0001', 'account_number' => '1234567-8',
+            'kind' => 'aplicacao', 'parent_bank_account_id' => $checking];
+        $errors = $this->errors(fn () => $this->registry->save($this->admin, 'bank_accounts', $same));
+        self::assertStringContainsString('Caixinha no mesmo banco', $errors['account_number'] ?? '', 'Sem a caixinha, a mensagem explica o caminho.');
+
+        $pocket = $this->registry->save($this->admin, 'bank_accounts', ['bank_code' => '', 'branch' => '', 'account_number' => '', 'is_pocket' => '1'] + $same);
+        $row = $this->pdo->query('SELECT bank_code, branch, account_number, is_pocket, parent_bank_account_id FROM erp_bank_accounts WHERE id = ' . (int)$pocket['id'])->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(['077', '0001', '1234567-8', 1, $checking], [$row['bank_code'], $row['branch'], $row['account_number'], (int)$row['is_pocket'], (int)$row['parent_bank_account_id']]);
+        $second = $this->registry->save($this->admin, 'bank_accounts', ['name' => 'Caixinha obra', 'bank_code' => '999', 'is_pocket' => '1'] + $same);
+        self::assertSame('077', (string)$this->pdo->query('SELECT bank_code FROM erp_bank_accounts WHERE id = ' . (int)$second['id'])->fetchColumn(), 'O banco digitado não vale na caixinha.');
+
+        self::assertArrayHasKey('parent_bank_account_id', $this->errors(fn () => $this->registry->save($this->admin, 'bank_accounts', ['name' => 'Sem conta', 'is_pocket' => '1', 'parent_bank_account_id' => ''] + $same)));
+        self::assertArrayHasKey('is_pocket', $this->errors(fn () => $this->registry->save($this->admin, 'bank_accounts', ['name' => 'Corrente', 'kind' => 'corrente', 'is_pocket' => '1', 'parent_bank_account_id' => '', 'account_number' => '55-1'] + $same)));
+        self::assertArrayHasKey('account_number', $this->errors(fn () => $this->registry->save($this->admin, 'bank_accounts', ['name' => 'Repetida', 'kind' => 'corrente', 'parent_bank_account_id' => ''] + $same)), 'Conta comum repetida continua recusada.');
+        // Conta comum (não caixinha) num condomínio sem a caixinha não muda: o desmarcado não dispara only_if.
+        $this->registry->save($this->admin, 'bank_accounts', ['condominium_id' => $this->beta, 'name' => 'Beta', 'bank_code' => '341', 'branch' => '1', 'account_number' => '1-1', 'kind' => 'corrente', 'is_pocket' => '0']);
+
+        $this->registry->save($this->admin, 'bank_accounts', ['condominium_id' => $this->alpha, 'name' => 'Cobrança Inter', 'bank_code' => '077',
+            'branch' => '0002', 'account_number' => '1234567-8', 'kind' => 'corrente'], $checking);
+        self::assertSame(['0002', '0002'], array_map('strval', $this->pdo->query('SELECT branch FROM erp_bank_accounts WHERE is_pocket = 1 ORDER BY id')->fetchAll(\PDO::FETCH_COLUMN)), 'A caixinha acompanha a conta corrente.');
+    }
+
+    /** @return array<string, string> */
+    private function errors(callable $save): array
+    {
+        try {
+            $save();
+        } catch (RegistryValidationException $error) {
+            return $error->errors;
+        }
+        self::fail('Deveria ter sido recusado.');
+    }
 }

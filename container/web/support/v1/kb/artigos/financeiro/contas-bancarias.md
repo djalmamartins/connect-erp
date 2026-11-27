@@ -8,7 +8,7 @@ menu: Financeiro > Cadastros financeiros > Contas bancárias
 icone: list-outline
 situacao: funciona
 relacionados: saldos-de-contas, extrato-conta, boletos, centros-de-custo
-palavras: contas bancárias, financeiro, CN-003, banco, agência, conta corrente, convênio
+palavras: contas bancárias, financeiro, CN-003, banco, agência, conta corrente, convênio, aplicação, caixinha, cofrinho, investimento
 rascunho: nao
 ---
 
@@ -31,7 +31,7 @@ legenda: Tela Contas bancárias
 ## Como cadastrar
 
 1. Clique em {{Nova conta bancária}}, no alto da lista.
-2. Preencha os campos obrigatórios: **Condomínio**, **Apelido**, **Banco (código)**, **Agência**, **Conta**, **Tipo** e **Situação**. Os outros podem ficar para depois.
+2. Preencha os campos obrigatórios: **Condomínio**, **Apelido**, **Tipo**, **Banco (código)**, **Agência**, **Conta** e **Situação**. Os outros podem ficar para depois. Na caixinha, banco, agência e conta não aparecem (veja abaixo).
 3. Clique em {{Salvar}}.
 4. O registro aparece na lista. Se faltar algo, o campo fica marcado em vermelho com a explicação.
 
@@ -52,11 +52,12 @@ recorte: main form:not([method=get])
 
 - **Condomínio** (obrigatório).
 - **Apelido** (obrigatório): Ex.: Conta movimento.
-- **Banco (código)** (obrigatório).
-- **Agência** (obrigatório).
-- **Conta** (obrigatório).
 - **Tipo** (obrigatório): Opções: Conta corrente, Poupança e Aplicação.
-- **Conta corrente da aplicação**: aparece só quando o tipo é **Aplicação**. É a conta corrente do mesmo condomínio de onde sai o dinheiro ao aplicar e para onde ele volta no resgate.
+- **Caixinha no mesmo banco da conta corrente**: aparece só quando o tipo é **Aplicação**. Marque quando o dinheiro fica guardado no mesmo banco da conta corrente, como as caixinhas e os cofrinhos dos bancos digitais.
+- **Conta corrente da aplicação**: aparece só quando o tipo é **Aplicação**. É a conta corrente do mesmo condomínio de onde sai o dinheiro ao aplicar e para onde ele volta no resgate. Na caixinha é obrigatória.
+- **Banco (código)** (obrigatório, menos na caixinha).
+- **Agência** (obrigatório, menos na caixinha).
+- **Conta** (obrigatório, menos na caixinha).
 - **Carteira de cobrança**: Quando houver.
 - **Saldo inicial**.
 - **Data do saldo inicial**.
@@ -67,7 +68,14 @@ recorte: main form:not([method=get])
 
 ## Aplicação financeira
 
-Cadastre a aplicação como uma conta de tipo **Aplicação** e escolha a **Conta corrente da aplicação**. O rendimento é lançado como receita e o IR/IOF como despesa, com a aplicação como conta bancária. Aplicar e resgatar são transferências entre as duas contas: não entram na DRE. No [Balanço Patrimonial](artigo:balanco-patrimonial), o Disponível mostra cada conta com o tipo dela.
+A aplicação pode ficar em outro banco ou no mesmo banco da conta corrente:
+
+- **No mesmo banco (caixinha):** escolha o tipo **Aplicação**, marque **Caixinha no mesmo banco da conta corrente** e escolha a **Conta corrente da aplicação**. Banco, agência e conta somem do formulário: o sistema usa os da conta corrente e acompanha se eles mudarem. Dá para ter várias caixinhas na mesma conta (ex.: fundo de reserva e obra).
+- **Em outro banco:** escolha o tipo **Aplicação**, deixe a caixinha desmarcada, preencha banco, agência e conta da aplicação e escolha a **Conta corrente da aplicação**.
+
+>! Se aparecer "Esta conta já está cadastrada neste condomínio" ao cadastrar uma aplicação com os mesmos dados da conta corrente, marque **Caixinha no mesmo banco da conta corrente**.
+
+Nos dois casos, a aplicação fica ligada à conta corrente. O rendimento é lançado como receita e o IR/IOF como despesa, com a aplicação como conta bancária. Aplicar e resgatar são transferências entre as duas contas: não entram na DRE. No [Balanço Patrimonial](artigo:balanco-patrimonial), o Disponível mostra cada conta com o tipo dela.
 
 ## Pesquisar e filtrar
 

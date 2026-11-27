@@ -299,6 +299,7 @@ final class RegistryService
             $this->assertWritable($user, $definition, $before);
         }
 
+        $input = $this->inherit($user, $definition, $input);
         [$values, $errors] = RegistryValidator::validate($definition, $input);
         // ADR 0686: o limite de 'max_years' vale para o mandato novo ou alterado; registro antigo editado sem mexer nas
         // datas (ex.: só o telefone) continua gravando, mesmo com mandato anterior à regra.
@@ -453,6 +454,7 @@ final class RegistryService
 
         $after = $this->rawRow($definition, $id);
         Audit::record($before === null ? 'create' : 'update', $definition['table'], $id, $before ? $this->auditable($definition, $before, $columns) : null, $this->auditable($definition, $after ?? [], $columns));
+        $this->propagateInherited($definition, $id, $before, $after);
         return $this->present($definition, $after ?? []);
     }
 
@@ -943,6 +945,67 @@ final class RegistryService
         return trim((string)preg_replace('/\s+/', ' ', mb_strtolower($plain !== '' ? $plain : $name)));
     }
 
+    /**
+     * 'inherit' (ADR 0688): com a caixa marcada (ex.: caixinha), os campos vêm do registro apontado do mesmo
+     * cadastro e do mesmo condomínio (ex.: banco, agência e conta da conta corrente), nunca do formulário. Sem
+     * registro válido, os campos ficam vazios e o validador e a conferência do 'ref' explicam o erro.
+     *
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    private function inherit(User $user, array $definition, array $input): array
+    {
+        $rule = $definition['inherit'] ?? null;
+        if (!is_array($rule) || !filter_var($input[$rule['when']] ?? false, FILTER_VALIDATE_BOOL)) {
+            return $input;
+        }
+        foreach ($rule['fields'] as $field) {
+            $input[$field] = null;
+        }
+        $parent = filter_var($input[$rule['from']] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $condominium = filter_var($input['condominium_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($parent === false || $condominium === false) {
+            return $input;
+        }
+        [$where, $params] = $this->scopeWhere($user, $definition);
+        $where[] = 't.id = :inherit_id';
+        $where[] = 't.condominium_id = :inherit_condo';
+        $columns = implode(', ', array_map(static fn (string $c): string => "t.`{$c}`", $rule['fields']));
+        $stmt = $this->pdo->prepare("SELECT {$columns} FROM `{$definition['table']}` t WHERE " . implode(' AND ', $where) . ' LIMIT 1');
+        $stmt->execute($params + ['inherit_id' => $parent, 'inherit_condo' => $condominium]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row === false ? $input : array_merge($input, $row);
+    }
+
+    /**
+     * 'inherit' (ADR 0688): quando a conta apontada muda (ex.: a conta corrente troca de agência), os registros
+     * marcados que herdam dela (as caixinhas) acompanham, com auditoria.
+     */
+    private function propagateInherited(array $definition, int $id, ?array $before, ?array $after): void
+    {
+        $rule = $definition['inherit'] ?? null;
+        if (!is_array($rule) || $before === null || $after === null) {
+            return;
+        }
+        $changed = array_values(array_filter($rule['fields'], static fn (string $f): bool => (string)($before[$f] ?? '') !== (string)($after[$f] ?? '')));
+        if ($changed === []) {
+            return;
+        }
+        $stmt = $this->pdo->prepare("SELECT id FROM `{$definition['table']}` WHERE `{$rule['from']}` = :p AND `{$rule['when']}` = 1 AND deleted_at IS NULL");
+        $stmt->execute(['p' => $id]);
+        $children = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        if ($children === []) {
+            return;
+        }
+        $sets = implode(', ', array_map(static fn (string $c): string => "`{$c}` = :{$c}", $rule['fields']));
+        $values = array_intersect_key($after, array_flip($rule['fields']));
+        $update = $this->pdo->prepare("UPDATE `{$definition['table']}` SET {$sets} WHERE id = :id");
+        foreach ($children as $child) {
+            $update->execute($values + ['id' => $child]);
+            Audit::record('update', $definition['table'], $child, array_intersect_key($before, array_flip($changed)), array_intersect_key($after, array_flip($changed)));
+        }
+    }
+
     /** @return array<string, string> */
     private function businessRules(array $definition, array $values, ?int $id): array
     {
@@ -951,6 +1014,13 @@ final class RegistryService
             $where = ['deleted_at IS NULL'];
             $params = [];
             $complete = true;
+            // ADR 0688: 'unless' => campo bool. Marcado, não compara; os registros marcados não contam.
+            if (isset($rule['unless'])) {
+                if (!empty($values[$rule['unless']])) {
+                    continue;
+                }
+                $where[] = "COALESCE(`{$rule['unless']}`, 0) = 0";
+            }
             foreach ($rule['fields'] as $field) {
                 if ($values[$field] === null) {
                     // 'nullable': vazio conta como valor (ex.: unidade "101" sem bloco).
