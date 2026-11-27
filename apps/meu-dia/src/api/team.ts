@@ -222,6 +222,7 @@ export function teamApi(client: ApiClient) {
     deletePhoto: (id: number, photoId: number) => client.delete<Inspection>(`/inspections/${id}/photos/${photoId}`),
     /** Origem da imagem com o cabeçalho do token, para o <Image> do React Native. */
     photoSource: (path: string) => ({ uri: client.url(path), headers: client.authHeaders() }),
+    cancelInspection: (id: number, reason: string) => client.post<Inspection>(`/inspections/${id}/cancel`, { reason }),
     completeInspection: (id: number, summary: string) => client.post<Inspection>(`/inspections/${id}/complete`, { summary }),
     createTask: (task: NewTask) => client.post<{ id: number }>('/my-day/events', task),
     moveEvent: (id: number, date: string, start: string, end?: string) =>

@@ -66,3 +66,11 @@ export function checkinLabel(i: Pick<Inspection, 'checkin'>): string {
 export function photoPath(inspectionId: number, photo: { id: number; api_path?: string }): string {
   return photo.api_path ?? `/inspections/${inspectionId}/photos/${photo.id}`;
 }
+
+/** Motivo do cancelamento (ADR 0676): as mesmas regras do servidor, 5 a 1000 caracteres. */
+export function cancelReasonError(reason: string): string | null {
+  const n = reason.trim().length;
+  if (n < 5) return 'Explique por que a vistoria foi cancelada.';
+  if (n > 1000) return 'Use no máximo 1000 caracteres.';
+  return null;
+}

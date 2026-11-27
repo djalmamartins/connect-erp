@@ -58,6 +58,8 @@ O painel mostra só os prédios que você atende, com as mesmas regras de acesso
 4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto. As fotos já enviadas aparecem em miniatura embaixo do item: toque numa delas para ver na tela inteira e no **X** para fechar. Se mandou a foto errada, abra a foto e toque em {{Remover foto}}: ela sai do item e o arquivo é apagado. Depois de concluída, a vistoria não muda mais.
 5. No fim, escreva o resumo se quiser e toque em {{Concluir vistoria}}. Se faltar algum item, o app mostra qual.
 
+Se a vistoria não puder ser feita (por exemplo, a portaria não liberou a entrada), toque em {{Não dá para fazer a vistoria}}, escreva o motivo e toque em {{Cancelar vistoria}}. As respostas e as fotos ficam guardadas, mas a vistoria não pode mais ser concluída; para visitar de novo, comece outra.
+
 Ao concluir, o chamado da vistoria é resolvido e os itens **Com problema** viram um chamado de pendências, igual à vistoria feita no ERP. Só quem tem a permissão de fazer vistorias vê o botão.
 
 ## As cores da agenda

@@ -137,6 +137,19 @@ final class Inspections
         });
     }
 
+    /**
+     * POST /api/v1/inspections/{id}/cancel {reason} — vistoria que não pôde ser feita (ADR 0676). Mesmas regras da
+     * tela: permissão de fazer vistoria, escopo, só em andamento, motivo de 5 a 1000 caracteres; entra na auditoria.
+     */
+    public function cancel(array $data): void
+    {
+        $this->run(function (User $user, InspectionService $service) use ($data): array {
+            $id = (int)($data['id'] ?? 0);
+            $service->cancel($user, $id, (string)($this->body()['reason'] ?? ''));
+            return [200, ['data' => $this->public($service->get($user, $id))]];
+        });
+    }
+
     /** POST /api/v1/inspections/{id}/complete */
     public function complete(array $data): void
     {

@@ -8280,6 +8280,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: Foto não encontrada ou fora do escopo }
         '409': { description: Vistoria concluída ou cancelada }
+  /inspections/{id}/cancel:
+    post:
+      operationId: cancelInspection
+      tags: [Inspections]
+      summary: Cancela a vistoria em andamento com o motivo (respostas e fotos ficam guardadas; auditado; ADR 0676)
+      security: [{ session: [], csrf: [] }, { teamApp: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 5, maxLength: 1000 }
+      responses:
+        '200': { description: Vistoria cancelada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Não encontrada }
+        '409': { description: Vistoria já concluída ou cancelada }
+        '422': { description: Motivo faltando ou longo demais }
   /inspections/{id}/complete:
     post:
       operationId: completeInspection
