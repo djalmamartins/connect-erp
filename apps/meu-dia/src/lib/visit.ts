@@ -71,3 +71,16 @@ export function sinceLabel(completedAt: string, today: string): string {
   if (days === 1) return 'Ontem';
   return `Há ${days} dias`;
 }
+
+export type MapApp = 'native' | 'google' | 'waze';
+
+/**
+ * Endereço do prédio para "Como chegar" (ADR 0678). Só https/geo, sem esquemas próprios dos apps, para não pedir
+ * permissão de consulta no iPhone: o sistema abre o app de mapas se estiver instalado, ou o site.
+ */
+export function mapsUrl(app: MapApp, name: string, address: string, os: string): string {
+  const q = encodeURIComponent([name, address].filter((v) => v.trim() !== '').join(', '));
+  if (app === 'google') return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  if (app === 'waze') return `https://waze.com/ul?q=${q}&navigate=yes`;
+  return os === 'android' ? `geo:0,0?q=${q}` : `https://maps.apple.com/?q=${q}`;
+}

@@ -1,5 +1,5 @@
 import type { VisitPanel } from '../src/api/team';
-import { arrivalKey, readArrival, sinceLabel, toggleStep, visitCounts, visitHeadline, writeArrival } from '../src/lib/visit';
+import { arrivalKey, readArrival, sinceLabel, toggleStep, visitCounts, visitHeadline, writeArrival, mapsUrl } from '../src/lib/visit';
 
 const ticket = (id: number, priority = 'medium') =>
   ({ id, protocol: `SAC${id}`, subject: 'Vazamento', priority, priority_label: '', tag: '', status: 'open', status_label: 'Aberto', category: '', due_at: '', due_on: '', overdue: false, due_today: false }) as VisitPanel['tickets'][number];
@@ -40,5 +40,14 @@ describe('painel da visita', () => {
     expect(sinceLabel('2026-11-15 10:00:00', '2026-11-27')).toBe('Há 12 dias');
     expect(sinceLabel('2026-11-26', '2026-11-27')).toBe('Ontem');
     expect(sinceLabel('2026-11-27 08:00:00', '2026-11-27')).toBe('Hoje');
+  });
+});
+
+describe('como chegar', () => {
+  it('monta o endereço para cada app de mapas', () => {
+    expect(mapsUrl('native', 'Ed. Aurora', 'Rua A, 10 - Centro', 'ios')).toBe('https://maps.apple.com/?q=Ed.%20Aurora%2C%20Rua%20A%2C%2010%20-%20Centro');
+    expect(mapsUrl('native', 'Ed. Aurora', 'Rua A, 10', 'android')).toBe('geo:0,0?q=Ed.%20Aurora%2C%20Rua%20A%2C%2010');
+    expect(mapsUrl('google', 'Ed. Aurora', 'Rua A, 10', 'ios')).toBe('https://www.google.com/maps/search/?api=1&query=Ed.%20Aurora%2C%20Rua%20A%2C%2010');
+    expect(mapsUrl('waze', '', 'Rua A, 10', 'android')).toBe('https://waze.com/ul?q=Rua%20A%2C%2010&navigate=yes');
   });
 });

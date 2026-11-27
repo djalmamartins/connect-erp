@@ -43,6 +43,7 @@ Para fechar: toque na tarefa e escolha **Concluir**. Chamado fecha no SAC: toque
 Na aba **Hoje**, toque numa **vistoria** para abrir o **Painel da visita** do prédio, para ver antes de entrar:
 
 - **O que acompanhar:** quantos chamados estão abertos (em vermelho quando há urgente), os documentos e vencimentos do prédio (em vermelho quando algum já venceu) e as pendências da última vistoria, com a data dela. Toque em **Ver** na linha da última vistoria para abrir o que foi respondido, com as fotos e o resumo; em {{Só os problemas}} ficam só os itens com problema.
+- **Como chegar:** abre o endereço do prédio no Mapas do iPhone (ou no app de mapas do Android), no Google Maps ou no Waze. O app só passa o nome e o endereço do prédio para o mapa escolhido.
 - **Checklist de chegada:** portaria e livro de ocorrências, zelador ou síndico, pendências da última vistoria, áreas comuns e fotos. Marque cada item ao fazer. O checklist fica só no seu celular e recomeça na visita seguinte.
 - **Iniciar vistoria:** faz o check-in com a localização do celular e abre a vistoria (veja abaixo). Se já tem uma vistoria em andamento no prédio, o botão vira **Continuar vistoria**.
 - **Abrir chamado com foto no SAC:** abre o **Novo chamado** no app do SAC.

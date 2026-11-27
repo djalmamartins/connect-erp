@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { storage } from '../../src/auth/storage';
@@ -10,7 +10,7 @@ import { dayKey, shortDay } from '../../src/lib/day';
 import { currentPosition } from '../../src/lib/location';
 import { openInSac } from '../../src/lib/sac';
 import { useResource } from '../../src/lib/useResource';
-import { ARRIVAL_STEPS, type ArrivalStepId, arrivalKey, readArrival, sinceLabel, toggleStep, visitCounts, visitHeadline, writeArrival } from '../../src/lib/visit';
+import { ARRIVAL_STEPS, type ArrivalStepId, arrivalKey, type MapApp, mapsUrl, readArrival, sinceLabel, toggleStep, visitCounts, visitHeadline, writeArrival } from '../../src/lib/visit';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { dialog } from '../../src/ui/Dialog';
 import { Button, Card, CardTitle, Empty, ErrorBox, Field, IconRow, Loading, Screen, SectionTitle } from '../../src/ui/kit';
@@ -49,6 +49,21 @@ export default function VisitScreen() {
       await Linking.openURL('connectsac://novo');
     } catch {
       await dialog.notice({ title: 'App do SAC não encontrado', message: 'Instale o app do SAC neste celular para abrir o chamado com foto, ou registre pelo ERP no computador.' });
+    }
+  }
+
+  async function directions(name: string, address: string) {
+    const apps: { app: MapApp; label: string }[] = [
+      { app: 'native', label: Platform.OS === 'ios' ? 'Mapas' : 'App de mapas' },
+      { app: 'google', label: 'Google Maps' },
+      { app: 'waze', label: 'Waze' },
+    ];
+    const choice = await dialog.choose({ title: 'Como chegar', message: address, options: apps.map((a) => ({ label: a.label, icon: 'navigate-outline' as const })) });
+    if (choice === null) return;
+    try {
+      await Linking.openURL(mapsUrl(apps[choice].app, name, address, Platform.OS));
+    } catch {
+      await dialog.notice({ title: 'Não deu para abrir o mapa', message: 'Copie o endereço e procure no app de mapas.' });
     }
   }
 
@@ -128,6 +143,10 @@ export default function VisitScreen() {
           <Text style={styles.heroLine}>Nenhuma vistoria concluída neste prédio ainda.</Text>
         )}
       </View>
+
+      {p.condominium.address ? (
+        <Button title="Como chegar" variant="secondary" onPress={() => void directions(p.condominium.name, p.condominium.address)} />
+      ) : null}
 
       <Card>
         <CardTitle>Checklist de chegada</CardTitle>
