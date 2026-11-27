@@ -20,7 +20,7 @@ use Source\Support\Message;
 /**
  * ERP v1 — Honorários (Condomínios › Honorários, CN-008, ADR 0402).
  *
- * GET  /condominios/honorarios?competencia=AAAA-MM[&condominio=ID]  contratos, total mensal e nota da competência
+ * GET  /condominios/honorarios?competencia=AAAA-MM[&editar=ID]     contratos, total mensal e nota da competência
  * POST /condominios/honorarios/{id}                                  grava o contrato do condomínio {id}
  * POST /condominios/honorarios/{id}/nota                             pede a nota da competência (exige nfse.enabled)
  * POST /condominios/honorarios/pedidos/{id}/cancelar                 cancela pedido ainda não emitido, com motivo
@@ -32,6 +32,12 @@ final class ManagementFeeScreens extends Controller
 {
     public const PAGE_ID = 'CN-008';
     public const ROUTE = '/condominios/honorarios';
+    /**
+     * Condomínio aberto para editar. Não pode ser ?condominio=: esse parâmetro é o filtro global da barra
+     * superior (CondominiumContext::FILTER_PARAM), que troca o contexto e some da URL antes do dispatch,
+     * e o botão Cadastrar/Abrir parecia não fazer nada (relato do Djalma, 27/11/2026).
+     */
+    public const EDIT_PARAM = 'editar';
 
     public function __construct()
     {
@@ -45,7 +51,7 @@ final class ManagementFeeScreens extends Controller
             return;
         }
         $competence = is_string($_GET['competencia'] ?? null) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $_GET['competencia']) ? $_GET['competencia'] : date('Y-m');
-        $editing = filter_var($_GET['condominio'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $editing = filter_var($_GET[self::EDIT_PARAM] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $data = ['fees' => null, 'feesCompetence' => $competence, 'feesEditing' => null, 'feesRequests' => [], 'feesError' => null,
             'canManage' => Access::can('erp.management_fees.manage', $user), 'flash' => (new Session())->flash()];
         if (!Connect::databaseDisabled()) {
@@ -75,7 +81,7 @@ final class ManagementFeeScreens extends Controller
     public function save(array $data): void
     {
         $id = $this->id($data);
-        $this->post($data, self::ROUTE . '?condominio=' . $id . '#contrato', function (ManagementFees $service, User $user) use ($data, $id): string {
+        $this->post($data, self::ROUTE . '?' . self::EDIT_PARAM . '=' . $id . '#contrato', function (ManagementFees $service, User $user) use ($data, $id): string {
             $input = array_intersect_key($data, array_flip(['monthly_fee', 'start_date', 'end_date', 'due_day', 'service_description', 'status', 'notes']));
             $service->save($user, $id, $input);
             return 'Honorários gravados.';
@@ -95,7 +101,7 @@ final class ManagementFeeScreens extends Controller
     public function cancel(array $data): void
     {
         $id = $this->id($data);
-        $back = self::ROUTE . (is_string($data['back'] ?? null) && ctype_digit($data['back']) ? '?condominio=' . $data['back'] . '#pedidos' : '');
+        $back = self::ROUTE . (is_string($data['back'] ?? null) && ctype_digit($data['back']) ? '?' . self::EDIT_PARAM . '=' . $data['back'] . '#pedidos' : '');
         $this->post($data, $back, function (ManagementFees $service, User $user) use ($data, $id): string {
             $service->cancel($user, $id, $data['reason'] ?? null);
             return 'Pedido de nota cancelado.';

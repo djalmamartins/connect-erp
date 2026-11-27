@@ -151,6 +151,15 @@ final class ErpCondominiumContextTest extends TestCase
         self::assertSame('/edificio-sao-joao/cadastros/veiculos?q=abc', CondominiumContext::resolve(self::OPTIONS, 3, 'GET', ['condominio' => '7', 'q' => 'abc']));
     }
 
+    public function testManagementFeeEditParameterIsNotTheContextFilter(): void
+    {
+        // Honorários abrem o contrato por ?editar=; ?condominio= sumiria da URL e o Cadastrar não abriria nada.
+        self::assertNotSame(CondominiumContext::FILTER_PARAM, \Source\Controllers\Erp\Connect\ManagementFeeScreens::EDIT_PARAM);
+        $_SERVER['REQUEST_URI'] = '/residencial-exemplo/condominios/honorarios?competencia=2026-11&editar=7';
+        CondominiumContext::boot(self::RESERVED, '');
+        self::assertNull(CondominiumContext::resolve(self::OPTIONS, 3, 'GET', ['competencia' => '2026-11', 'editar' => '7']));
+    }
+
     public function testFilterAllClearsTheCondominium(): void
     {
         $_SERVER['REQUEST_URI'] = '/residencial-exemplo/cadastros/veiculos?condominio=';

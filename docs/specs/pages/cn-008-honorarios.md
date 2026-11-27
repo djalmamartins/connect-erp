@@ -30,4 +30,4 @@ API: `GET /api/v1/management-fees`, `POST /api/v1/condominiums/{id}/management-f
 
 - Sem banco: "Honorários indisponíveis".
 - Sem condomínios no escopo: estado vazio.
-- Condomínio fora do escopo em `?condominio=`: aviso de erro, lista continua.
+- Condomínio fora do escopo em `?editar=`: aviso de erro, lista continua. O parâmetro não pode ser `?condominio=`, que é o filtro da barra superior (ADR 0030) e some da URL antes da tela abrir.

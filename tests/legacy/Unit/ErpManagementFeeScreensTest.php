@@ -39,6 +39,10 @@ final class ErpManagementFeeScreensTest extends TestCase
         $view = $this->file('container/erp/connect/v1/pages/condominiums/management-fees.php');
         self::assertStringContainsString('$canManage && $enabled &&', $view, 'Sem a chave ligada, o botão Solicitar nota não aparece.');
         self::assertSame(substr_count($view, '<form method="post"'), substr_count($view, 'csrf_input()'));
+        // Cadastrar/Abrir usam ?editar=, nunca ?condominio= (filtro da barra superior, que some da URL).
+        self::assertStringContainsString("'editar' => \$id", $view);
+        self::assertStringNotContainsString("'condominio' => \$id", $view);
+        self::assertStringNotContainsString("'?condominio='", $controller);
         $migration = $this->file('database/migrations/20261114_1100_management_fees_nfse.sql');
         self::assertStringContainsString("'erp.management_fees.view'", $migration);
         self::assertStringContainsString('uq_erp_nfse_requests_open', $migration);
