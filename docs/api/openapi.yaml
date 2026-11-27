@@ -342,6 +342,7 @@ components:
               latitude: { type: [number, 'null'] }
               longitude: { type: [number, 'null'] }
               url: { type: string, description: Rota autorizada do ERP que serve a foto }
+              api_path: { type: string, description: 'Caminho da foto na API (GET /inspections/{id}/photos/{photo}), que aceita o token do app (ADR 0674)' }
     Inspection:
       type: object
       required: [id, condominium_id, status, checkin, items]
@@ -8248,6 +8249,23 @@ paths:
         '404': { description: Não encontrada }
         '409': { description: Vistoria concluída ou cancelada }
         '422': { description: Arquivo inválido ou limite de fotos }
+  /inspections/{id}/photos/{photo}:
+    get:
+      operationId: getInspectionPhoto
+      tags: [Inspections]
+      summary: A foto do item (JPEG sem EXIF), com o mesmo escopo de condomínio da tela; usada pelo app Meu Dia (ADR 0674)
+      security: [{ session: [] }, { teamApp: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: photo, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: A imagem
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Foto não encontrada ou fora do escopo }
   /inspections/{id}/complete:
     post:
       operationId: completeInspection

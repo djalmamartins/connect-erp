@@ -152,7 +152,7 @@ export type InspectionItem = {
   requires_photo: boolean;
   result: InspectionResult;
   note: string | null;
-  photos: { id: number; url: string; created_at: string }[];
+  photos: InspectionPhoto[];
 };
 
 /** Vistoria presencial (CN-001, rotas /inspections): check-in, itens, fotos e conclusão. */
@@ -185,6 +185,9 @@ export type NewTask = {
   ticket_id?: number;
 };
 
+/** Foto do item; api_path é o GET /inspections/{id}/photos/{photo} (ADR 0674), que aceita o token do app. */
+export type InspectionPhoto = { id: number; url: string; api_path?: string; created_at: string };
+
 export function teamApi(client: ApiClient) {
   return {
     async login(login: string, password: string, deviceName: string): Promise<LoginResult> {
@@ -216,6 +219,8 @@ export function teamApi(client: ApiClient) {
         position ? { latitude: String(position.latitude), longitude: String(position.longitude) } : {},
         [{ field: 'photo', file }],
       ),
+    /** Origem da imagem com o cabeçalho do token, para o <Image> do React Native. */
+    photoSource: (path: string) => ({ uri: client.url(path), headers: client.authHeaders() }),
     completeInspection: (id: number, summary: string) => client.post<Inspection>(`/inspections/${id}/complete`, { summary }),
     createTask: (task: NewTask) => client.post<{ id: number }>('/my-day/events', task),
     moveEvent: (id: number, date: string, start: string, end?: string) =>

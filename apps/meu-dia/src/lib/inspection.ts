@@ -61,3 +61,8 @@ export function checkinLabel(i: Pick<Inspection, 'checkin'>): string {
       return 'Check-in sem localização do aparelho';
   }
 }
+
+/** Caminho da foto na API; servidores antigos não mandam api_path, então o app monta o mesmo endereço. */
+export function photoPath(inspectionId: number, photo: { id: number; api_path?: string }): string {
+  return photo.api_path ?? `/inspections/${inspectionId}/photos/${photo.id}`;
+}
