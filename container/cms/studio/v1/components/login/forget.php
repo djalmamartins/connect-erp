@@ -5,7 +5,7 @@
  */
 $this->layout('layouts/login', ['loadingText' => 'Enviando...']);
 ?>
-<main class="connect-login connect-login--recovery" style="--login-cover:url('<?= theme('/assets/images/bkg_home_connect.jpg') ?>')">
+<main class="connect-login connect-login--recovery" style="--login-cover:url('<?= theme(($loginEnvironment ?? '') === 'app' ? '/assets/images/bkg_login_morador_dia.jpg' : '/assets/images/bkg_home_connect.jpg') /* morador: foto de dia (ADR 0657) */ ?>')">
     <?= $this->insert('components/login/_recovery-visual', [
         'visualTitle' => 'Esqueceu a senha?<br><strong>A gente ajuda</strong>',
         'visualLead' => 'Informe o e-mail ou CPF da sua conta. Se ele estiver cadastrado, você recebe um link para criar uma senha nova.',

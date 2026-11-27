@@ -7,7 +7,7 @@ $this->layout('layouts/login', ['loadingText' => 'Salvando...']);
 $eye = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5z"/><circle cx="12" cy="12" r="2.5"/></svg>';
 $lock = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v10H6zM8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></svg>';
 ?>
-<main class="connect-login connect-login--recovery" style="--login-cover:url('<?= theme('/assets/images/bkg_home_connect.jpg') ?>')">
+<main class="connect-login connect-login--recovery" style="--login-cover:url('<?= theme(($loginEnvironment ?? '') === 'app' ? '/assets/images/bkg_login_morador_dia.jpg' : '/assets/images/bkg_home_connect.jpg') /* morador: foto de dia (ADR 0657) */ ?>')">
     <?= $this->insert('components/login/_recovery-visual', [
         'visualTitle' => 'Crie a sua<br><strong>senha nova</strong>',
         'visualLead' => 'Escolha uma senha que você não usa em outros sites. Depois de salvar, entre com ela normalmente.',

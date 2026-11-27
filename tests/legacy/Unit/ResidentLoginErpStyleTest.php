@@ -44,4 +44,14 @@ final class ResidentLoginErpStyleTest extends TestCase
         self::assertStringContainsString('!\Source\Support\Access::can("erp.access", $user)', $web);
         self::assertStringContainsString('.connect-login__note{', (string)file_get_contents(self::ROOT . '/container/cms/studio/v1/assets/studio.min.css'));
     }
+
+    public function testResidentScreensUseTheDayPhoto(): void
+    {
+        $views = self::ROOT . '/container/cms/studio/v1/components/login/';
+        foreach (['login', 'forget', 'reset', 'two-factor'] as $view) {
+            $html = (string)file_get_contents($views . $view . '.php');
+            self::assertStringContainsString("'/assets/images/bkg_login_morador_dia.jpg' : '/assets/images/bkg_home_connect.jpg'", $html, $view);
+        }
+        self::assertFileExists(self::ROOT . '/container/web/default/v1/assets/images/bkg_login_morador_dia.jpg');
+    }
 }
