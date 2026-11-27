@@ -67,3 +67,14 @@ test('anexos: tipo pelo nome, nome seguro e nome da foto', () => {
   expect(safeFileName('../conta luz.pdf')).toBe('conta-luz.pdf');
   expect(photoName(0)).toBe('foto-1.jpg');
 });
+
+test('filtro de condomínio vai na fila e nos números só quando escolhido (ADR 0670)', async () => {
+  const { calls, fetchImpl } = fake([{ status: 200, body: { data: [] } }, { status: 200, body: { data: {} } }, { status: 200, body: { data: {} } }]);
+  const api = sacApi(createClient({ baseUrl: 'https://erp.x', getToken: () => 't', fetchImpl }));
+  await api.tickets('mine', '', 12);
+  await api.summary(12);
+  await api.summary(0);
+  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=mine&condominium_id=12');
+  expect(calls[1].url).toBe('https://erp.x/api/v1/sac/summary?condominium_id=12');
+  expect(calls[2].url).toBe('https://erp.x/api/v1/sac/summary');
+});

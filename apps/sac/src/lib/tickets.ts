@@ -177,3 +177,13 @@ export function presenceText(p: { public: boolean; open: boolean; shown: boolean
   if (!p.open) return { title: 'Fora do horário do balão', detail: `O balão mostra a equipe ${p.hours}.` };
   return p.shown ? { title: 'Você está online no balão do site', detail: 'Com o app aberto, você aparece para quem visita o site.' } : { title: 'Quase online no balão', detail: 'Abra a fila para aparecer no site.' };
 }
+
+/**
+ * Condomínio guardado no filtro da Fila (ADR 0670). Volta para "todos" (0) quando o salvo
+ * não está mais no escopo de quem entrou, ou quando a pessoa só atende um condomínio.
+ */
+export function queueCondominium(saved: string | null, condominiums: { id: number }[]): number {
+  const id = Number(saved);
+  if (!Number.isInteger(id) || id <= 0 || condominiums.length < 2) return 0;
+  return condominiums.some((c) => c.id === id) ? id : 0;
+}

@@ -129,9 +129,9 @@ export function sacApi(client: ApiClient) {
     registerPush: (token: string, platform: string) => client.post('/team/push-devices', { token, app: 'sac', platform }),
     forgetPush: (token: string) => client.delete('/team/push-devices', { token, app: 'sac' }),
 
-    summary: () => client.get<Summary>('/sac/summary'),
+    summary: (condominiumId = 0) => client.get<Summary>('/sac/summary', { condominium_id: condominiumId > 0 ? condominiumId : undefined }),
     options: () => client.get<Options>('/sac/options'),
-    tickets: (view: View, q = '') => client.get<Ticket[]>('/sac/tickets', { view, q }),
+    tickets: (view: View, q = '', condominiumId = 0) => client.get<Ticket[]>('/sac/tickets', { view, q, condominium_id: condominiumId > 0 ? condominiumId : undefined }),
     presence: () => client.get<Presence>('/sac/presence'),
     setPresence: (isPublic: boolean) => client.post<Presence>('/sac/presence', { public: isPublic }),
     units: (condominiumId: number) => client.get<Unit[]>('/sac/units', { condominium_id: condominiumId }),

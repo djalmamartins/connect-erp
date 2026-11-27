@@ -287,6 +287,29 @@ final class SacDeskIntegrationTest extends TestCase
         self::assertFalse(SacDesk::flag(null));
     }
 
+    public function testCondominiumFilterOnQueueAndNumbers(): void
+    {
+        $this->pdo->prepare('INSERT INTO condominiums (name, status) VALUES (?, ?)')->execute(['Beta', 'active']);
+        $beta = (int)$this->pdo->lastInsertId();
+        (new CondominiumScope($this->pdo))->grant((int)$this->agent->id, $beta);
+        $alphaTicket = $this->openTicket();
+        $betaTicket = (int)(new TicketService($this->pdo))->open(['subject' => 'Portão travado', 'message' => 'O portão da garagem não abre.', 'condominium_id' => $beta,
+            'requester_name' => 'Rui', 'requester_email' => 'rui@test.local'], 'erp', $this->agent)['id'];
+
+        [, $body] = $this->call($this->agent, 'summary');
+        self::assertSame(2, $body['data']['unassigned']);
+        [$status, $body] = $this->call($this->agent, 'summary', [], null, ['condominium_id' => (string)$beta]);
+        self::assertSame([200, 1], [$status, $body['data']['unassigned']]);
+        [, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'unassigned', 'condominium_id' => (string)$this->alpha]);
+        self::assertSame([$alphaTicket], array_column($body['data'], 'id'));
+        [, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'unassigned', 'condominium_id' => (string)$beta]);
+        self::assertSame([$betaTicket], array_column($body['data'], 'id'));
+
+        // Quem só tem o Alpha não lê os números do Beta.
+        [$status] = $this->call($this->viewer, 'summary', [], null, ['condominium_id' => (string)$beta]);
+        self::assertSame(403, $status);
+    }
+
     public function testViewFiltersArePure(): void
     {
         self::assertSame(['assigned' => '7'], SacDesk::viewFilters('mine', 7));
