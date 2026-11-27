@@ -20,6 +20,10 @@
  * com listbox (aria-expanded, aria-activedescendant) e aviso da quantidade encontrada.
  *
  *   ConnectSuggest.enhance(input) / ConnectSuggest.refresh(root)
+ *
+ * Tela com lista própria já carregada (ex.: síndico e conselho, ADR 0686) usa o mesmo componente, sem a API:
+ *   ConnectSuggest.enhance(input, { min: 2, local: function (term) { return [{ name, context, tag, ... }]; },
+ *                                   choose: function (item) { ... } })
  */
 (function () {
   'use strict';
@@ -62,8 +66,10 @@
     node.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
-  function Field(input) {
+  function Field(input, opts) {
     this.input = input;
+    this.opts = opts || {};
+    this.min = this.opts.min || MIN;
     this.kind = input.getAttribute('data-cx-suggest') === 'email' ? 'email' : 'person';
     this.multiple = input.hasAttribute('data-cx-suggest-multiple');
     this.url = input.getAttribute('data-cx-suggest-url') || defaultUrl;
@@ -85,7 +91,7 @@
     input.addEventListener('input', function () { if (filling) { return; } self.typed(); });
     input.addEventListener('keydown', function (e) { self.key(e); });
     input.addEventListener('blur', function () { window.setTimeout(function () { if (document.activeElement !== input) { self.close(); } }, 150); });
-    input.addEventListener('focus', function () { if (self.term().length >= MIN && self.items.length) { self.show(); } });
+    input.addEventListener('focus', function () { if (self.term().length >= self.min && self.items.length) { self.show(); } });
   }
 
   /* Texto que está sendo buscado: o campo todo, ou o último e-mail da lista. */
@@ -104,7 +110,12 @@
     }
     window.clearTimeout(this.timer);
     var term = this.term();
-    if (term.length < MIN) { this.items = []; this.close(); return; }
+    if (term.length < this.min) { this.items = []; this.close(); return; }
+    if (typeof this.opts.local === 'function') {
+      var found = this.opts.local(term) || [];
+      if (found.length) { this.render(found.slice(0, 8), term); } else { this.items = []; this.close(); }
+      return;
+    }
     this.timer = window.setTimeout(function () { self.fetch(term); }, WAIT);
   };
 
@@ -183,7 +194,7 @@
       return '<li class="cx-suggest__item" role="option" id="' + self.id + '-' + i + '" data-index="' + i + '" aria-selected="false">'
         + '<span class="cx-suggest__avatar" aria-hidden="true">' + esc((it.name || '?').trim().charAt(0).toUpperCase()) + '</span>'
         + '<span class="cx-suggest__text"><strong>' + mark(main) + '</strong>' + (sub ? '<small>' + mark(sub) + '</small>' : '') + '</span>'
-        + (it.source === 'team' ? '<span class="cx-suggest__tag">Equipe</span>' : '') + '</li>';
+        + (it.tag || it.source === 'team' ? '<span class="cx-suggest__tag">' + esc(it.tag || 'Equipe') + '</span>' : '') + '</li>';
     }).join('');
     node.querySelector('.cx-suggest__hint').textContent = items.length
       ? 'Não é ninguém da lista? Continue digitando normalmente.'
@@ -247,6 +258,12 @@
     var it = this.items[index];
     if (!it) { return; }
     var input = this.input;
+    if (typeof this.opts.choose === 'function') {
+      this.close();
+      this.opts.choose(it);
+      this.picked = input.value;
+      return;
+    }
     var text = this.kind === 'email' ? (it.email || '') : it.name;
     if (this.multiple) {
       var parts = input.value.split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
@@ -269,9 +286,9 @@
     input.dispatchEvent(new CustomEvent('cx-suggest:choose', { bubbles: true, detail: it }));
   };
 
-  var enhance = function (input) {
+  var enhance = function (input, opts) {
     if (!input || fields.has(input) || input.tagName !== 'INPUT') { return null; }
-    var f = new Field(input);
+    var f = new Field(input, opts);
     fields.set(input, f);
     return f;
   };

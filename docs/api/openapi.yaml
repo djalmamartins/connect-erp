@@ -4382,6 +4382,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '419': { $ref: '#/components/responses/CsrfInvalid' }
         '422': { description: 'Entrada inválida ou ocorrência recusada (errors com _form e _occurrence); nada é gravado' }
+  /board-members/candidates:
+    get:
+      operationId: boardMemberCandidates
+      summary: Moradores do prédio e síndicos profissionais para escolher o síndico e o conselho, somente leitura (erp.access e erp.board.manage; moradores só com erp.residents.view, ADR 0686)
+      description: >-
+        residents são os vínculos ativos de Proprietários e inquilinos do condomínio (a mesma pessoa aparece uma vez por
+        unidade), com unidade e vínculo; professionals são os síndicos profissionais ativos da Connect (valem para todos
+        os condomínios). Sem erp.residents.view, residents vem vazio e residents_allowed = false. A tela usa a lista para
+        sugerir nomes e preencher o formulário; o vínculo (resident_id ou professional_manager_id) é conferido de novo ao
+        gravar o membro. Não grava nada.
+      security: [{ session: [] }]
+      parameters:
+        - { name: condominium_id, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{ data: { condominium_id, residents_allowed, residents[{ id, name, document, document_formatted, email, phone, unit_id, unit_label, relationship, relationship_label }], professionals[{ id, name, document, document_formatted, email, phone, contact_name }] } }' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /reports/board-composition:
     get:
       operationId: boardComposition

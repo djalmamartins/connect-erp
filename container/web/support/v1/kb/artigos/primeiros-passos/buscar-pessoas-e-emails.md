@@ -29,6 +29,7 @@ Para fechar a lista sem escolher, aperte **Esc** ou clique fora dela. **Tab** se
 ## Onde aparece
 
 - **Chamados** (ERP e Help Desk): nome e e-mail de quem pediu. Se a pessoa escolhida tem conta no app, o chamado aparece para ela no app do morador. No Help Desk, o **Responsável** também é escolhido digitando o nome de alguém da equipe.
+- **Síndico e conselho**: moradores do prédio e, para síndico e subsíndico, os síndicos profissionais.
 - **Proprietários e inquilinos**: ao cadastrar alguém que já existe em outra unidade, escolha na lista e o e-mail vem junto.
 - **Encomendas** (quem retirou), **Assembleias** (quem está presente, filtrado pela unidade escolhida) e **Atendimento de cobrança** (com quem falou, filtrado pela unidade).
 - **Vistorias**: os destinatários do relatório. Dá para escolher vários e-mails, um depois do outro; o sistema põe a vírgula sozinho.

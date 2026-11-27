@@ -45,7 +45,7 @@ final class BoardTermExpiryTest extends TestCase
             "CREATE TABLE condominiums (id INTEGER PRIMARY KEY, name TEXT, document TEXT, status TEXT DEFAULT 'active')",
             'CREATE TABLE user_condominium_access (user_id INTEGER, condominium_id INTEGER)',
             'CREATE TABLE erp_units (id INTEGER PRIMARY KEY, condominium_id INTEGER, label TEXT, status TEXT, deleted_at TEXT)',
-            'CREATE TABLE erp_board_members (id INTEGER PRIMARY KEY, condominium_id INTEGER, role TEXT, name TEXT, document TEXT, unit_id INTEGER, unit_label TEXT,
+            'CREATE TABLE erp_board_members (id INTEGER PRIMARY KEY, condominium_id INTEGER, role TEXT, name TEXT, document TEXT, unit_id INTEGER, resident_id INTEGER, professional_manager_id INTEGER, unit_label TEXT, term_years INTEGER,
                 term_starts_on TEXT, term_ends_on TEXT, email TEXT, phone TEXT, notes TEXT, status TEXT, deleted_at TEXT)'] as $sql) {
             $this->pdo->exec($sql);
         }

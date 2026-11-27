@@ -39,8 +39,9 @@ Campos ligados: chamado do ERP (nome e e-mail do solicitante), Help Desk › Nov
 telefone e responsável, no lugar dos dois `<select>` com todas as contas), Proprietários e inquilinos (nome e e-mail,
 pela chave `suggest` da definição do cadastro), Encomendas (quem retirou), Assembleia (quem está presente, pela unidade),
 Atendimento de cobrança (com quem falou, pela unidade), Vistoria (destinatários, vários e-mails) e Usuários do ERP
-(e-mail da conta, só equipe). Síndico e conselho ganha a sugestão de moradores pela thread própria (ADR 0686) e passa
-para este componente depois do merge dela.
+(e-mail da conta, só equipe). Síndico e conselho (ADR 0686) continua com a própria lista do prédio (moradores e síndicos
+profissionais, GET /api/v1/board-members/candidates), mas as sugestões ao digitar o nome passam a usar este componente
+(`ConnectSuggest.enhance(input, {local, choose})`), com o mesmo visual e teclado; a lista própria `.erp-board-suggest` saiu.
 
 Fora: telas públicas e do morador (site, Central, app), que não buscam pessoas no banco; campos de e-mail que são
 dados da própria Connect (remetente, encarregado, imobiliária nova, proposta para cliente novo).

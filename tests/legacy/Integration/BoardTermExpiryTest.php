@@ -73,7 +73,7 @@ final class BoardTermExpiryTest extends TestCase
             self::assertStringNotContainsString($needle, $json, $needle);
         }
 
-        $this->member('sindico', 700);   // a regra de um síndico ativo agora deixa cadastrar o novo
+        $this->member('sindico', 600);   // a regra de um síndico ativo agora deixa cadastrar o novo
         self::assertSame(1, (int)$this->pdo->query("SELECT COUNT(*) FROM erp_board_members WHERE condominium_id = {$this->condominium} AND role = 'sindico'
             AND status = 'active'")->fetchColumn());
     }
@@ -103,7 +103,7 @@ final class BoardTermExpiryTest extends TestCase
     private function member(string $role, int $endDays, ?string $unit = null): int
     {
         return (int)$this->registry->save($this->admin, 'board', ['condominium_id' => $this->condominium, 'role' => $role, 'name' => 'Pessoa de teste',
-            'unit_id' => $unit !== null ? $this->units[$unit] : null, 'term_starts_on' => (new \DateTimeImmutable('-730 days'))->format('Y-m-d'),
+            'unit_id' => $unit !== null ? $this->units[$unit] : null, 'term_starts_on' => (new \DateTimeImmutable('-40 days'))->format('Y-m-d'),
             'term_ends_on' => (new \DateTimeImmutable("{$endDays} days"))->format('Y-m-d'), 'email' => 'conselho@example.invalid', 'phone' => '11999990000'])['id'];
     }
 
