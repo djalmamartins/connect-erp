@@ -143,10 +143,14 @@ export function sacApi(client: ApiClient) {
     take: (id: number) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/take`),
     triage: (id: number, input: Triage) => client.post<{ changed: string[]; status: string; ticket: Ticket }>(`/sac/tickets/${id}/triage`, input),
     /** Com fotos vai em multipart (attachments[]); sem fotos, JSON. */
-    answer: (id: number, message: string, internal: boolean, resolve: boolean, files: UploadFile[] = []) =>
+    answer: (id: number, message: string, internal: boolean, resolve: boolean, files: UploadFile[] = [], timeSpent = 0) =>
       files.length > 0
-        ? client.upload<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal: String(internal), resolve: String(resolve) }, files.map((file) => ({ field: 'attachments[]', file })))
-        : client.post<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal, resolve }),
+        ? client.upload<{ message_id: number; status: string; ticket: Ticket }>(
+            `/sac/tickets/${id}/answers`,
+            { message, internal: String(internal), resolve: String(resolve), time_spent: String(timeSpent) },
+            files.map((file) => ({ field: 'attachments[]', file })),
+          )
+        : client.post<{ message_id: number; status: string; ticket: Ticket }>(`/sac/tickets/${id}/answers`, { message, internal, resolve, time_spent: timeSpent }),
     /** Cabeçalho com o token, para baixar anexo protegido. */
     authHeaders: () => client.authHeaders(),
 

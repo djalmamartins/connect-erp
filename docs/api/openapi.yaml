@@ -1001,6 +1001,7 @@ paths:
                 message: { type: string }
                 internal: { type: string, enum: ['true', 'false'] }
                 resolve: { type: string, enum: ['true', 'false'] }
+                time_spent: { type: string, description: 'Segundos do cronômetro (0 a 86400)' }
                 'attachments[]': { type: array, maxItems: 5, items: { type: string, format: binary } }
       responses:
         '201': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: object } } } } } }

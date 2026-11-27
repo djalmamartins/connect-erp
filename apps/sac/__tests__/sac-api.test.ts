@@ -34,7 +34,7 @@ test('fila, Bearer e ações do atendimento', async () => {
   expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=unassigned&q=SAC2026');
   expect((calls[0].init.headers as Record<string, string>).Authorization).toBe('Bearer t0k');
   expect(calls[1].url).toBe('https://erp.x/api/v1/sac/tickets/7/answers');
-  expect(JSON.parse(String(calls[1].init.body))).toEqual({ message: 'Oi', internal: true, resolve: false });
+  expect(JSON.parse(String(calls[1].init.body))).toEqual({ message: 'Oi', internal: true, resolve: false, time_spent: 0 });
   expect(calls[2].init.method).toBe('DELETE');
   expect(calls[2].url).toBe('https://erp.x/api/v1/team/push-devices?token=ExponentPushToken%5Babc%5D&app=sac');
 });
