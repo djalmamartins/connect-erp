@@ -28,7 +28,7 @@ Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem
 ## As quatro abas
 
 - **Hoje:** a faixa dos dias (toque num dia para ver), o quadro verde do progresso (quantos compromissos já foram feitos, as atrasadas e o próximo da agenda), os números do dia, a agenda por horário, os prazos de chamados, as vistorias, os chamados **Para agendar** e os que aguardam o cliente.
-- **Semana:** de segunda a domingo, com os compromissos de cada dia. As setas mudam a semana; toque num dia para abrir ele em Hoje.
+- **Semana:** de segunda a domingo, com os compromissos de cada dia. As setas mudam a semana; toque num dia para abrir ele em Hoje. Os compromissos têm as mesmas cores de Hoje (verde feito, vermelho atrasado, uma cor por tipo), e tocar num deles abre as mesmas ações: concluir, cancelar, reabrir ou adiar.
 - **Nova tarefa:** marca uma tarefa ou compromisso na agenda.
 - **Conta:** quem está conectado, de quem é o dia mostrado, os lembretes, o Face ID ou a digital e o botão {{Sair}}.
 

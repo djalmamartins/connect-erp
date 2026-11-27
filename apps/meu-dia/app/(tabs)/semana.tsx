@@ -4,12 +4,17 @@ import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
-import { addDays, isLate, longDay, overdueItems, shortDay, stripTone } from '../../src/lib/day';
+import { addDays, eventTone, longDay, overdueItems, shortDay, stripTone } from '../../src/lib/day';
+import { eventActions } from '../../src/lib/eventActions';
 import { useResource } from '../../src/lib/useResource';
 import { colors, fonts, radius, space } from '../../src/theme';
 import { Card, ErrorBox, Loading, Screen } from '../../src/ui/kit';
+import { EVENT_TONE } from '../../src/ui/tones';
 
-/** Semana: de segunda a domingo, com os compromissos de cada dia. Tocar no dia abre o dia na aba Hoje. */
+/**
+ * Semana: de segunda a domingo, com os compromissos de cada dia nas cores de Hoje (ADR 0665). Tocar no compromisso abre o
+ * mesmo menu de Hoje (concluir, cancelar, adiar; ADR 0670); tocar no resto do dia abre o dia na aba Hoje.
+ */
 export default function Week() {
   const { api, me } = useAuth();
   const { person } = usePerson();
@@ -67,16 +72,24 @@ export default function Week() {
                 </View>
                 {events.length === 0 ? <Text style={styles.free}>Livre</Text> : null}
                 {events.map((e) => {
-                  const red = isLate(e, d.today);
+                  const tone = eventTone(e, d.today);
+                  const t = EVENT_TONE[tone];
+                  const done = tone === 'done';
                   return (
-                    <View key={e.id} style={styles.event}>
-                      <Text style={[styles.time, red && { color: colors.danger }]}>{e.start}</Text>
-                      <Text style={[styles.eventTitle, e.status === 'completed' && styles.done, red && { color: colors.danger }]} numberOfLines={1}>
+                    <Pressable
+                      key={e.id}
+                      onPress={() => void eventActions(api, e, d.today, week.reload)}
+                      style={({ pressed }) => [styles.event, { borderLeftColor: t.bar }, pressed && { opacity: 0.7 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${e.start}, ${e.title}${done ? ', concluída' : tone === 'late' ? ', atrasada' : ''}. Toque para concluir ou adiar`}
+                    >
+                      <Text style={[styles.time, tone === 'late' && { color: colors.danger }]}>{e.start}</Text>
+                      <Text style={[styles.eventTitle, done && styles.done, tone === 'late' && { color: colors.danger }]} numberOfLines={1}>
                         {e.title}
                         {e.condominium ? ` · ${e.condominium}` : ''}
                       </Text>
-                      {e.status === 'completed' ? <Ionicons name="checkmark-circle" size={16} color={colors.success} /> : null}
-                    </View>
+                      {done ? <Ionicons name="checkmark-circle" size={16} color={colors.success} /> : tone === 'late' ? <Ionicons name="alert-circle" size={16} color={colors.danger} /> : null}
+                    </Pressable>
                   );
                 })}
               </Card>
@@ -107,7 +120,7 @@ const styles = StyleSheet.create({
   dayTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
   count: { fontFamily: fonts.bold, fontSize: 13, color: colors.brandStrong, backgroundColor: colors.brandSoft, paddingHorizontal: space[2], paddingVertical: 2, borderRadius: radius.pill, overflow: 'hidden' },
   free: { fontFamily: fonts.regular, fontSize: 13, color: colors.faint },
-  event: { flexDirection: 'row', alignItems: 'center', gap: space[2], paddingVertical: 3 },
+  event: { flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: 40, paddingVertical: 6, paddingLeft: space[2], borderLeftWidth: 3, borderRadius: 4, marginVertical: 2 },
   time: { fontFamily: fonts.semibold, fontSize: 13, color: colors.brandStrong, width: 44 },
   eventTitle: { flex: 1, fontFamily: fonts.regular, fontSize: 14, color: colors.text },
   done: { color: colors.muted, textDecorationLine: 'line-through' },
