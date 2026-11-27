@@ -53,7 +53,14 @@ final class Panel extends Controller
         // Propostas do site (ADR 0644): a mesma permissão do Studio > Gestão > Propostas.
         'CN-011' => 'proposals.manage',
         // Unidades da imobiliária (ADR 0684): só para a imobiliária parceira.
-        'CN-012' => PartnerUnitScreens::PERMISSION];
+        'CN-012' => PartnerUnitScreens::PERMISSION,
+        // Telas que já pediam a permissão nos dados mas apareciam no menu para todos (ADR 0685): agora o menu esconde.
+        'AP-003' => 'erp.units.view', 'AP-167' => 'erp.units.view', 'CN-008' => 'erp.management_fees.view',
+        'AP-030' => 'erp.closing.view', 'AP-032' => 'erp.invoices.view', 'AP-033' => 'erp.agreements.view', 'AP-034' => 'erp.agreements.view',
+        'AP-035' => 'erp.bank_charges.view', 'AP-036' => 'erp.bank_charges.view', 'AP-037' => 'erp.bank_charges.view', 'AP-038' => 'erp.bank_charges.view',
+        'AP-051' => 'erp.entries.view', 'AP-079' => 'erp.entries.view', 'AP-042' => 'erp.meter_readings.view', 'AP-122' => 'erp.documents.view',
+        'AP-123' => 'erp.unit_documents.view', 'AP-124' => 'erp.unit_documents.view', 'AP-125' => 'erp.unit_documents.view', 'AP-130' => 'erp.unit_documents.view',
+        'AP-165' => 'erp.billing_rules.view'];
 
     /** Chave de sessão do condomínio em contexto (0/ausente = todos os do escopo). */
     public const CONTEXT_KEY = CondominiumContext::SESSION_KEY;
