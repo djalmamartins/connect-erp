@@ -334,6 +334,58 @@ final class MyDay
         Audit::record('update', 'studio_calendar_events', $eventId, ['status' => $event['status']], ['status' => $status]);
     }
 
+    /**
+     * Adiar ou mudar o horário de um compromisso ainda marcado (ADR 0668, app Meu Dia): novo dia e hora de início.
+     * Sem hora de fim, mantém a duração que já tinha. Mesmas regras de quem pode mexer do setEventStatus.
+     *
+     * @param array<string, mixed> $input date (AAAA-MM-DD), start (HH:MM), end (HH:MM, opcional)
+     * @return array{starts_at: string, ends_at: ?string}
+     * @throws MyDayError
+     */
+    public function moveEvent(User $viewer, int $eventId, array $input): array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, status, starts_at, ends_at, assigned_to, created_by FROM studio_calendar_events WHERE id = ?');
+        $stmt->execute([$eventId]);
+        $event = $stmt->fetch(PDO::FETCH_ASSOC);
+        $mine = is_array($event) && in_array((int)$viewer->id, [(int)$event['assigned_to'], (int)$event['created_by']], true);
+        if (!is_array($event) || (!$mine && !$this->canSeeTeam($viewer))) {
+            throw new MyDayError('event', 'Compromisso não encontrado.', 404);
+        }
+        if ($event['status'] !== 'scheduled') {
+            throw MyDayError::invalid(['status' => 'Só dá para mudar o horário de um compromisso em aberto. Reabra antes.']);
+        }
+        $errors = [];
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', (string)($input['date'] ?? ''));
+        if ($date === false) {
+            $errors['date'] = 'Escolha o dia.';
+        }
+        $start = self::time((string)($input['start'] ?? ''));
+        if ($start === null) {
+            $errors['start'] = 'Informe a hora de início (ex.: 09:00).';
+        }
+        $end = self::time((string)($input['end'] ?? ''));
+        if (($input['end'] ?? '') !== '' && $end === null) {
+            $errors['end'] = 'Hora de fim inválida.';
+        }
+        if ($start !== null && $end !== null && $end <= $start) {
+            $errors['end'] = 'O fim precisa ser depois do início.';
+        }
+        if ($errors !== []) {
+            throw MyDayError::invalid($errors);
+        }
+        $startsAt = $date->format('Y-m-d') . " {$start}:00";
+        $endsAt = null;
+        if ($end !== null) {
+            $endsAt = $date->format('Y-m-d') . " {$end}:00";
+        } elseif ($event['ends_at'] !== null) {
+            $minutes = max(0, (int)round((strtotime((string)$event['ends_at']) - strtotime((string)$event['starts_at'])) / 60));
+            $endsAt = (new DateTimeImmutable($startsAt))->modify("+{$minutes} minutes")->format('Y-m-d H:i:s');
+        }
+        $this->pdo->prepare('UPDATE studio_calendar_events SET starts_at = ?, ends_at = ? WHERE id = ?')->execute([$startsAt, $endsAt, $eventId]);
+        Audit::record('update', 'studio_calendar_events', $eventId, ['starts_at' => $event['starts_at'], 'ends_at' => $event['ends_at']], ['starts_at' => $startsAt, 'ends_at' => $endsAt]);
+        return ['starts_at' => $startsAt, 'ends_at' => $endsAt];
+    }
+
     /* ---------------------------------------------------------------- consultas */
 
     /** @return list<array<string, mixed>> */

@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: meu-dia, chamados
-palavras: app, aplicativo, face id, digital, biometria, touch id, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
+palavras: app, aplicativo, adiar, remarcar, mudar horário, face id, digital, biometria, touch id, vistoria pelo celular, fazer vistoria no app, check-in, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
 manual: sim
 rascunho: nao
 ---
@@ -67,6 +67,10 @@ Cada compromisso tem uma faixa colorida à esquerda: **verde** quando já foi fe
 ## Concluir, cancelar ou reabrir
 
 Toque no compromisso na aba **Hoje** e escolha **Concluir** ou **Cancelar**. Se concluiu sem querer, toque de novo e escolha **Reabrir**.
+
+## Adiar um compromisso
+
+Toque no compromisso e escolha **Adiar ou mudar o horário**. Os atalhos são **+1 hora**, **Amanhã** e **Segunda**, no mesmo horário. Um compromisso que ficou para trás ganha também o atalho **Hoje**. Para outro dia, toque em **Outro dia e hora**, escolha o dia e a hora e toque em {{Adiar}}. Se você não informar a hora de fim, o compromisso mantém a mesma duração. Só dá para adiar um compromisso em aberto: um concluído precisa ser reaberto antes. A mudança entra no histórico e o lembrete do celular muda junto.
 
 ## Marcar uma tarefa
 

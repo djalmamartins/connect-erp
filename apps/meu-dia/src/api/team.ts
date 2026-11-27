@@ -4,7 +4,7 @@
  * - Sessão do aparelho da equipe (ADR 0660): POST /team/app-sessions (+ /verify para o 2FA), DELETE /team/app-sessions/current,
  *   GET /team/me e POST/DELETE /team/push-devices com app "meu-dia".
  * - Meu Dia (ADR 0630 e 0658): GET /my-day, GET /my-day/overdue, GET /my-day/team, GET /my-day/visit/{condominium_id}, POST /my-day/events e
- *   POST /my-day/events/{id}/status. As regras são as mesmas da tela /meu-dia do ERP: cada pessoa vê o próprio dia e
+ *   POST /my-day/events/{id}/status e POST /my-day/events/{id}/move (adiar, ADR 0668). As regras são as mesmas da tela /meu-dia do ERP: cada pessoa vê o próprio dia e
  *   só quem tem "ver a equipe" (erp.myday.team) vê o dia de outra pessoa ou marca tarefa para ela.
  * - Vistoria (ADR 0663): POST /inspections (check-in), GET /inspections/{id}, PUT /inspections/{id}/items/{item},
  *   POST /inspections/{id}/items/{item}/photos e POST /inspections/{id}/complete, com as regras da tela de vistoria.
@@ -218,6 +218,8 @@ export function teamApi(client: ApiClient) {
       ),
     completeInspection: (id: number, summary: string) => client.post<Inspection>(`/inspections/${id}/complete`, { summary }),
     createTask: (task: NewTask) => client.post<{ id: number }>('/my-day/events', task),
+    moveEvent: (id: number, date: string, start: string, end?: string) =>
+      client.post<{ id: number; starts_at: string; ends_at: string | null }>(`/my-day/events/${id}/move`, end ? { date, start, end } : { date, start }),
     setStatus: (id: number, status: EventStatus) => client.post<{ id: number; status: EventStatus }>(`/my-day/events/${id}/status`, { status }),
     registerPush: (token: string, platform: string) => client.post<unknown>('/team/push-devices', { token, platform, app: 'meu-dia' }),
     forgetPush: (token: string) => client.delete<unknown>('/team/push-devices', { token, app: 'meu-dia' }),

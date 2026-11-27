@@ -214,3 +214,34 @@ export function eventTone(e: Pick<DayEvent, 'status' | 'type' | 'starts_at' | 'o
   if (isLate(e as DayEvent, today)) return 'late';
   return e.type;
 }
+
+/** Hora + N minutos no mesmo dia ("HH:MM"); null se passar da meia-noite (ADR 0668). */
+export function addMinutes(time: string, minutes: number): string | null {
+  const [h, m] = time.split(':').map(Number);
+  const total = (h ?? 0) * 60 + (m ?? 0) + minutes;
+  if (!Number.isFinite(total) || total < 0 || total >= 24 * 60) return null;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+export type Postpone = { label: string; date: string; start: string };
+
+/**
+ * Atalhos para adiar um compromisso: +1 hora (se couber no dia), amanhã e na próxima segunda no mesmo horário.
+ * Um compromisso que ficou para trás vai para hoje (no mesmo horário) em vez de "+1 hora".
+ */
+export function postponeOptions(e: Pick<DayEvent, 'starts_at' | 'start'>, today: string): Postpone[] {
+  const day = e.starts_at.slice(0, 10);
+  const out: Postpone[] = [];
+  if (day < today) {
+    out.push({ label: `Hoje às ${e.start}`, date: today, start: e.start });
+  } else {
+    const later = addMinutes(e.start, 60);
+    if (later) out.push({ label: `+1 hora (${later})`, date: day, start: later });
+  }
+  const base = day < today ? today : day;
+  out.push({ label: `Amanhã às ${e.start}`, date: addDays(base, 1), start: e.start });
+  const weekday = parseDay(base).getDay();
+  const toMonday = ((8 - weekday) % 7) || 7;
+  if (toMonday > 1) out.push({ label: `Segunda às ${e.start}`, date: addDays(base, toMonday), start: e.start });
+  return out;
+}

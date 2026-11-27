@@ -647,6 +647,7 @@ $route->get("/my-day", "MyDay:show", null, \Source\Support\Middleware\ApiAuthent
 $route->get("/my-day/visit/{condominium_id}", "MyDay:visit", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events", "MyDay:store", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/my-day/events/{id}/status", "MyDay:status", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->post("/my-day/events/{id}/move", "MyDay:move", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Ficou para trás (ADR 0658): o que não foi feito em dia anterior, levado para hoje até fechar.
 $route->get("/my-day/overdue", "MyDay:overdue", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Quem aparece em "Para quem" no app Meu Dia (ADR 0659): só para quem pode ver o dia da equipe (erp.myday.team).

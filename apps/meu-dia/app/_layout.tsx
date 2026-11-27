@@ -48,6 +48,7 @@ function RootStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="visita/[id]" />
         <Stack.Screen name="vistoria/[id]" />
+        <Stack.Screen name="adiar/[id]" />
       </Stack.Protected>
     </Stack>
   );

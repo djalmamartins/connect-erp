@@ -61,6 +61,12 @@ final class MyDay
         });
     }
 
+    /** POST /api/v1/my-day/events/{id}/move — adiar ou mudar o horário (ADR 0668) */
+    public function move(array $data): void
+    {
+        $this->run(fn (User $user, MyDayService $service): array => [200, ['data' => ['id' => (int)($data['id'] ?? 0)] + $service->moveEvent($user, (int)($data['id'] ?? 0), $this->body())]]);
+    }
+
     /** GET /api/v1/my-day/team — a equipe para escolher "Para quem" no app Meu Dia (ADR 0659). Exige erp.myday.team. */
     public function team(): void
     {

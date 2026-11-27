@@ -195,6 +195,28 @@ final class MyDayTest extends TestCase
         $this->service->setEventStatus($other, $id, 'completed');
     }
 
+    public function testMoveEventKeepsDurationAndRules(): void
+    {
+        $me = $this->user([], [$this->condo]);
+        $other = $this->user([], [$this->condo]);
+        $id = $this->service->createEvent($me, ['title' => 'Reunião com o síndico', 'date' => '2026-11-25', 'start' => '09:00', 'end' => '10:30']);
+
+        // Adiar para amanhã às 14h mantém 1h30.
+        self::assertSame(['starts_at' => '2026-11-26 14:00:00', 'ends_at' => '2026-11-26 15:30:00'], $this->service->moveEvent($me, $id, ['date' => '2026-11-26', 'start' => '14:00']));
+        self::assertSame([], $this->service->day($me, new DateTimeImmutable('2026-11-25'))['events']);
+        $moved = $this->service->day($me, new DateTimeImmutable('2026-11-26'))['events'][0];
+        self::assertSame(['14:00', '15:30'], [$moved['start'], $moved['end']]);
+        self::assertSame(['starts_at' => '2026-11-26 16:00:00', 'ends_at' => '2026-11-26 16:15:00'], $this->service->moveEvent($me, $id, ['date' => '2026-11-26', 'start' => '16:00', 'end' => '16:15']));
+
+        $this->expectStatus(404, fn() => $this->service->moveEvent($other, $id, ['date' => '2026-11-27', 'start' => '09:00']));
+        $errors = $this->expectStatus(422, fn() => $this->service->moveEvent($me, $id, ['date' => 'amanhã', 'start' => '25:00', 'end' => 'x']));
+        self::assertSame(['date', 'start', 'end'], array_keys($errors));
+        $this->service->setEventStatus($me, $id, 'completed');
+        self::assertArrayHasKey('status', $this->expectStatus(422, fn() => $this->service->moveEvent($me, $id, ['date' => '2026-11-27', 'start' => '09:00'])));
+        $audit = $this->pdo->query("SELECT COUNT(*) FROM system_audit_logs WHERE entity = 'studio_calendar_events' AND entity_id = {$id} AND action = 'update'")->fetchColumn();
+        self::assertGreaterThanOrEqual(3, (int)$audit);
+    }
+
     public function testValidationAndCondominiumScope(): void
     {
         $me = $this->user([], [$this->condo]);
