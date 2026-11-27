@@ -15,11 +15,42 @@ final class Access
 
     private static array $cache = [];
 
+    /**
+     * Permissões estritas (erp.*, api.*, security.*) negadas nesta requisição por decisão do banco, na ordem
+     * em que foram conferidas (ADR 0681). Serve para a tela dizer qual permissão falta em vez de cair na
+     * demonstração. Falha de banco não entra aqui.
+     *
+     * @var list<string>
+     */
+    private static array $denied = [];
+
     public static function can(string $permission, ?User $user = null): bool
     {
         if (!$user || !$user->id) { return false; }
         $key = $user->id . ":" . $permission;
-        if (array_key_exists($key, self::$cache)) { return self::$cache[$key]; }
+        if (!array_key_exists($key, self::$cache)) {
+            $allowed = self::decide($permission, $user, $key);
+            if ($allowed === null) { return false; }
+        }
+        if (self::$cache[$key] === false && self::isStrict($permission)) { self::$denied[] = $permission; }
+        return self::$cache[$key];
+    }
+
+    /** Posição atual da lista de negações; use com deniedSince(). */
+    public static function deniedMark(): int
+    {
+        return count(self::$denied);
+    }
+
+    /** @return list<string> permissões estritas negadas desde a marca, sem repetir. */
+    public static function deniedSince(int $mark): array
+    {
+        return array_values(array_unique(array_slice(self::$denied, $mark)));
+    }
+
+    /** Decide e guarda no cache; null quando a checagem falhou (nega sem cache). */
+    private static function decide(string $permission, User $user, string $key): ?bool
+    {
         try {
             $pdo = Connect::getInstance();
             $stmt = $pdo->prepare("SELECT r.slug AS role_slug, o.effect,
@@ -47,7 +78,7 @@ final class Access
             AppLogger::exception($exception, 'authorization', ['event_type' => 'permission_check_failed', 'permission' => $permission, 'users_id' => $user->id]);
             // Falha na checagem sempre nega e não entra no cache: não libera pelo nível
             // legado nem fixa a negação por uma indisponibilidade transitória.
-            return false;
+            return null;
         }
     }
 

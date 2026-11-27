@@ -301,7 +301,11 @@ final class Panel extends Controller
             $this->state($user, 404, 'Página não encontrada', 'O endereço não corresponde a nenhuma página do ERP.');
             return;
         }
-        echo $this->view->render(...$this->pageView($user, $id));
+        [$template, $data] = $this->pageView($user, $id);
+        if ($template === 'pages/system/state') {
+            http_response_code((int)$data['stateCode']);
+        }
+        echo $this->view->render($template, $data);
     }
 
     /**
@@ -356,8 +360,52 @@ final class Panel extends Controller
             $data['columns'] = FieldSpec::parseAll($cols, 'c');
             $data['rows'] = DemoData::rows($id, $cols, 6);
         }
+        $mark = Access::deniedMark();
         $data += $this->screenData($user, $id);
-        return [self::ownTemplate($id, $data) ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
+        $template = self::ownTemplate($id, $data);
+        if ($template === null) {
+            // Tela com dados reais que não abriu por falta de permissão (ADR 0681): diz qual falta em vez de
+            // mostrar a interface proposta com dados de demonstração, que parece funcionar e não funciona.
+            $missing = Access::deniedSince($mark);
+            if ($missing !== []) {
+                return ['pages/system/state', $this->layoutData($user, $id, self::forbiddenState($missing, self::permissionNames($missing)))];
+            }
+        }
+        return [$template ?? 'pages/modules/' . $kind, $this->layoutData($user, $id, $data)];
+    }
+
+    /**
+     * Dados do estado 403 de uma tela sem permissão (regra pura, ADR 0681).
+     *
+     * @param list<string> $missing slugs negados, na ordem em que a tela conferiu
+     * @param array<string, string> $names slug => nome mostrado no Studio
+     * @return array{stateCode:int, stateTitle:string, stateMessage:string, withNavigation:bool, stateMissing:list<string>}
+     */
+    public static function forbiddenState(array $missing, array $names): array
+    {
+        $labels = array_map(static fn (string $slug): string => '“' . ($names[$slug] ?? $slug) . '”', $missing);
+        $list = count($labels) > 1 ? implode(', ', array_slice($labels, 0, -1)) . ' e ' . end($labels) : (string)($labels[0] ?? '');
+        return [
+            'stateCode' => 403,
+            'stateTitle' => 'Sem permissão para esta tela',
+            'stateMessage' => 'Sua conta não tem a permissão ' . $list . '. Quem administra pode liberar em Studio › Usuários › Permissões específicas, '
+                . 'ou para o perfil inteiro em Configurações › Permissões de Usuários.',
+            'withNavigation' => true,
+            'stateMissing' => $missing,
+        ];
+    }
+
+    /** @param list<string> $slugs @return array<string, string> slug => nome em access_permissions (vazio sem banco). */
+    private static function permissionNames(array $slugs): array
+    {
+        try {
+            $in = implode(',', array_fill(0, count($slugs), '?'));
+            $stmt = Connect::getInstance()->prepare("SELECT slug, name FROM access_permissions WHERE slug IN ({$in})");
+            $stmt->execute($slugs);
+            return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'name', 'slug');
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
