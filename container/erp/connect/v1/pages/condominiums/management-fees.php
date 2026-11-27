@@ -1,7 +1,7 @@
 <?php
 /**
  * Honorários (CN-008, ADR 0402): contrato de administração da Connect com cada condomínio do escopo, total
- * mensal dos contratos ativos e, na competência escolhida, o pedido da nota fiscal (NFS-e). ?condominio={id}
+ * mensal dos contratos ativos e, na competência escolhida, o pedido da nota fiscal (NFS-e). ?editar={id}
  * abre o contrato para editar e o histórico de pedidos. Gravar, pedir e cancelar são POST com CSRF
  * (ManagementFeeScreens). Sem a chave nfse.enabled ligada, o botão "Solicitar nota" não aparece.
  * @var array $currentPage @var ?array $fees @var string $feesCompetence @var ?array $feesEditing
@@ -64,7 +64,7 @@ $this->insert('components/layout/page-head', [
                     <td><?php if ($c === null): ?><span class="erp-muted">Sem contrato</span><?php else: ?><span class="erp-badge erp-badge--<?= $tones[$c['status']] ?>"><?= $this->e(ManagementFees::STATUSES[$c['status']]) ?></span><?php endif; ?></td>
                     <td><?php if ($r['request'] !== null): ?><span class="erp-badge erp-badge--<?= $tones[$r['request']['status']] ?? 'plain' ?>"><?= $this->e(ManagementFees::REQUEST_STATUSES[$r['request']['status']] ?? $r['request']['status']) ?></span><?php elseif ($c !== null && !$r['billable']): ?><span class="erp-muted">Fora do contrato</span><?php else: ?><span class="erp-muted">Não pedida</span><?php endif; ?></td>
                     <td class="is-num"><div class="erp-table__actions">
-                        <a class="erp-btn erp-btn--sm" href="<?= $this->e($route . '?' . http_build_query(['competencia' => $feesCompetence, 'condominio' => $id])) ?>#contrato" aria-label="<?= $c === null ? 'Cadastrar' : 'Abrir' ?> os honorários de <?= $this->e($r['condominium_name']) ?>"><?= $c === null ? 'Cadastrar' : 'Abrir' ?></a>
+                        <a class="erp-btn erp-btn--sm" href="<?= $this->e($route . '?' . http_build_query(['competencia' => $feesCompetence, 'editar' => $id])) ?>#contrato" aria-label="<?= $c === null ? 'Cadastrar' : 'Abrir' ?> os honorários de <?= $this->e($r['condominium_name']) ?>"><?= $c === null ? 'Cadastrar' : 'Abrir' ?></a>
                         <?php if ($canManage && $enabled && $c !== null && $c['status'] === 'active' && $r['billable'] && $r['request'] === null): ?>
                             <form method="post" action="<?= $this->e($route . '/' . $id . '/nota') ?>" data-erp-confirm="Solicitar a nota de <?= $this->e($feesCompetence) ?> de <?= $this->e($r['condominium_name']) ?> no valor de <?= $this->e($brl($c['monthly_fee_cents'])) ?>?" data-confirm-undo="sim" data-confirm-undo-text="Enquanto a nota não for emitida, dá para cancelar o pedido."><?= csrf_input() ?><input type="hidden" name="competence" value="<?= $this->e($feesCompetence) ?>"><button type="submit" class="erp-btn erp-btn--sm erp-btn--primary">Solicitar nota</button></form>
                         <?php endif; ?>
