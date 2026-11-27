@@ -1047,6 +1047,7 @@ paths:
                       two_factor_enabled: { type: boolean }
                       can_see_team: { type: boolean, description: 'erp.myday.team: vê e marca o Meu Dia de outra pessoa' }
                       can_attend_sac: { type: boolean, description: 'support.manage: atende chamados (triagem, resposta, nota interna)' }
+                      can_inspect: { type: boolean, description: 'erp.inspections.perform: faz a vistoria pelo app Meu Dia (ADR 0663)' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /team/push-devices:

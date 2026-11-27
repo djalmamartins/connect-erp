@@ -80,6 +80,7 @@ final class TeamApp
             'two_factor_enabled' => (new TwoFactorService())->isEnabled((int)$user->id),
             'can_see_team' => Access::can('erp.myday.team', $user),
             'can_attend_sac' => Access::can('support.manage', $user),
+            'can_inspect' => Access::can('erp.inspections.perform', $user),
         ]]);
     }
 

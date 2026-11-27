@@ -6,9 +6,11 @@
  * - Meu Dia (ADR 0630 e 0658): GET /my-day, GET /my-day/overdue, GET /my-day/team, GET /my-day/visit/{condominium_id}, POST /my-day/events e
  *   POST /my-day/events/{id}/status. As regras são as mesmas da tela /meu-dia do ERP: cada pessoa vê o próprio dia e
  *   só quem tem "ver a equipe" (erp.myday.team) vê o dia de outra pessoa ou marca tarefa para ela.
+ * - Vistoria (ADR 0663): POST /inspections (check-in), GET /inspections/{id}, PUT /inspections/{id}/items/{item},
+ *   POST /inspections/{id}/items/{item}/photos e POST /inspections/{id}/complete, com as regras da tela de vistoria.
  * Datas AAAA-MM-DD, horas HH:MM.
  */
-import type { ApiClient } from './client';
+import type { ApiClient, UploadFile } from './client';
 
 export type Session = { token: string; expires_at: string; idle_days: number };
 export type LoginResult = { kind: 'ok'; session: Session } | { kind: 'twoFactor'; challenge: string };
@@ -20,6 +22,8 @@ export type Me = {
   role?: { slug: string; name: string } | null;
   can_see_team: boolean;
   can_attend_sac?: boolean;
+  /** erp.inspections.perform: faz a vistoria pelo app (ADR 0663). */
+  can_inspect?: boolean;
 };
 
 export type Person = { id: number; name: string };
@@ -74,6 +78,8 @@ export type Visit = {
   frequency_label: string;
   due_on: string;
   overdue: boolean;
+  template_id?: number;
+  open_inspection_id?: number | null;
 };
 
 export type Deadline = { id: number; title: string; date: string; days: number; label: string; condominium_id?: number; condominium?: string };
@@ -136,6 +142,36 @@ export type VisitPanel = {
   last_visit: { id: number; template: string; completed_at: string; issues: number } | null;
 };
 
+export type InspectionResult = 'pending' | 'ok' | 'issue' | 'not_applicable';
+
+export type InspectionItem = {
+  id: number;
+  position: number;
+  section: string;
+  label: string;
+  requires_photo: boolean;
+  result: InspectionResult;
+  note: string | null;
+  photos: { id: number; url: string; created_at: string }[];
+};
+
+/** Vistoria presencial (CN-001, rotas /inspections): check-in, itens, fotos e conclusão. */
+export type Inspection = {
+  id: number;
+  condominium_id: number;
+  condominium: string;
+  template: string;
+  status: 'in_progress' | 'completed' | 'cancelled';
+  checkin: { at: string; status: string; distance_m: number | null; note: string | null };
+  summary: string | null;
+  completed_at: string | null;
+  counts: Record<InspectionResult, number>;
+  items: InspectionItem[];
+  editable: boolean;
+};
+
+export type CheckIn = { condominium_id: number; template_id: number; latitude?: number; longitude?: number; accuracy?: number; checkin_note?: string };
+
 export type Overdue = { count: number; oldest: string | null; items: OverdueItem[] };
 
 export type NewTask = {
@@ -170,6 +206,17 @@ export function teamApi(client: ApiClient) {
     day: (date?: string, personId?: number | null) => client.get<Day>('/my-day', { date, person_id: personId ?? undefined }),
     overdue: (personId?: number | null) => client.get<Overdue>('/my-day/overdue', { person_id: personId ?? undefined }),
     visit: (condominiumId: number) => client.get<VisitPanel>(`/my-day/visit/${condominiumId}`),
+    startInspection: (checkin: CheckIn) => client.post<Inspection>('/inspections', checkin),
+    inspection: (id: number) => client.get<Inspection>(`/inspections/${id}`),
+    answer: (id: number, itemId: number, result: InspectionResult, note: string) =>
+      client.put<Inspection>(`/inspections/${id}/items/${itemId}`, { result, note }),
+    addPhoto: (id: number, itemId: number, file: UploadFile, position?: { latitude: number; longitude: number }) =>
+      client.upload<{ id: number }>(
+        `/inspections/${id}/items/${itemId}/photos`,
+        position ? { latitude: String(position.latitude), longitude: String(position.longitude) } : {},
+        [{ field: 'photo', file }],
+      ),
+    completeInspection: (id: number, summary: string) => client.post<Inspection>(`/inspections/${id}/complete`, { summary }),
     createTask: (task: NewTask) => client.post<{ id: number }>('/my-day/events', task),
     setStatus: (id: number, status: EventStatus) => client.post<{ id: number; status: EventStatus }>(`/my-day/events/${id}/status`, { status }),
     registerPush: (token: string, platform: string) => client.post<unknown>('/team/push-devices', { token, platform, app: 'meu-dia' }),
