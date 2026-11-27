@@ -184,9 +184,11 @@ final class Definitions
                     'relationship' => ['label' => 'Vínculo', 'type' => 'select', 'required' => true, 'span' => 3, 'list' => true, 'filter' => true, 'options' => [
                         'owner' => 'Proprietário', 'tenant' => 'Inquilino', 'resident' => 'Morador', 'financial' => 'Responsável financeiro',
                     ]],
-                    'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true],
+                    // ADR 0687: ao digitar, sugere quem já está cadastrado (outra unidade, outro vínculo); quem não está é digitado inteiro.
+                    'name' => ['label' => 'Nome completo ou razão social', 'type' => 'text', 'required' => true, 'max' => 160, 'span' => 8, 'list' => true, 'search' => true,
+                        'suggest' => ['kind' => 'person', 'sources' => 'residents', 'fill_email' => 'email']],
                     'document' => ['label' => 'CPF/CNPJ', 'type' => 'document', 'span' => 4, 'list' => true, 'search' => true, 'cnpj_lookup' => ['name' => 'razao_social', 'email' => 'email', 'phone' => 'phone']],
-                    'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6],
+                    'email' => ['label' => 'E-mail', 'type' => 'email', 'span' => 6, 'suggest' => ['kind' => 'email', 'sources' => 'residents', 'fill_name' => 'name']],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'span' => 6, 'list' => true],
                     'starts_on' => ['label' => 'Início do vínculo', 'type' => 'date', 'span' => 4],
                     'ends_on' => ['label' => 'Fim do vínculo', 'type' => 'date', 'span' => 4, 'after' => 'starts_on'],

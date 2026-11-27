@@ -76,7 +76,7 @@ $this->insert('components/layout/page-head', [
                 <div class="erp-modal__head"><h2 id="delivery-pickup-title">Baixa da retirada</h2><button type="button" class="erp-btn erp-btn--ghost erp-btn--sm" data-erp-modal-close aria-label="Fechar"><?= $icon('close', 'erp-icon--sm') ?></button></div>
                 <div class="erp-modal__body">
                     <p><strong data-pickup-label></strong></p>
-                    <div class="erp-field"><label for="pickup-by">Quem retirou</label><input class="erp-input" id="pickup-by" name="picked_up_by" minlength="2" maxlength="160" required autocomplete="off"></div>
+                    <div class="erp-field"><label for="pickup-by">Quem retirou</label><input class="erp-input" id="pickup-by" name="picked_up_by" minlength="2" maxlength="160" required autocomplete="off" data-cx-suggest="person" data-cx-suggest-sources="residents"></div>
                     <div class="erp-field"><label for="pickup-on">Data da retirada</label><input class="erp-input" type="date" id="pickup-on" name="picked_up_on" max="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>" required></div>
                     <p class="erp-field__hint">Só o nome fica guardado; foto e documento de quem retira não são guardados.</p>
                     <div data-form-error aria-live="assertive"></div>

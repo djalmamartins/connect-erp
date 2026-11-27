@@ -104,6 +104,10 @@ final class Tickets extends Controller
         // "Eu mesmo" não leva os campos do morador, mesmo que tenham sido preenchidos.
         if (($_POST['requester'] ?? 'me') !== 'other') {
             unset($input['requester_name'], $input['requester_email'], $input['requester_phone']);
+        } elseif (($account = (int)($_POST['requester_id'] ?? 0)) > 0
+            && (new \Source\Services\Directory\PeopleSuggest())->accountAllowed($user, $account, (string)($_POST['requester_email'] ?? ''))) {
+            // Pessoa escolhida na sugestão (ADR 0687) com conta: o chamado aparece para ela no app.
+            $input['requester_id'] = $account;
         }
         try {
             $opened = $this->service->open($input, 'erp', $user);

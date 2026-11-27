@@ -614,6 +614,8 @@ $route->get("/units/{id}/collection-contacts", "Collections:contacts", null, \So
 // ADR 0162: busca e vínculo de pessoas (proprietário e inquilino)
 $route->get("/people/search", "People:search", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/people/{id}/links", "People:links", null, \Source\Support\Middleware\ApiAuthenticated::class);
+// ADR 0687: sugestões de pessoa e e-mail ao digitar, o campo padrão de todo o sistema (ERP, Studio e Help Desk)
+$route->get("/suggest/people", "PeopleSuggest:search", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/collection-contacts", "Collections:storeContact", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/legal-cases", "Collections:cases", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/legal-cases", "Collections:storeCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
