@@ -45,5 +45,6 @@ final class InspectionApiPhotoHeadersTest extends TestCase
     {
         $index = (string)file_get_contents(dirname(__DIR__, 3) . '/index.php');
         self::assertStringContainsString('$route->get("/inspections/{id}/photos/{photo}", "Inspections:photoFile", null, \\Source\\Support\\Middleware\\ApiAuthenticated::class);', $index);
+        self::assertStringContainsString('$route->delete("/inspections/{id}/photos/{photo}", "Inspections:deletePhoto", null, \\Source\\Support\\Middleware\\ApiAuthenticated::class);', $index);
     }
 }

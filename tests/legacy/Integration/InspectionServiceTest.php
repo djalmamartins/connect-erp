@@ -233,11 +233,16 @@ final class InspectionServiceTest extends TestCase
         $this->service->deletePhoto($inspector, $id, $photos[0]);
         self::assertFileDoesNotExist($path);
         $this->expectStatus(404, fn() => $this->service->photoFile($inspector, $id, $photos[0]));
+        // Remover pela API do app (ADR 0675): quem só vê não remove; foto de outra vistoria não existe.
+        $viewer = $this->user(['erp.inspections.view'], [$this->condo]);
+        $this->expectStatus(403, fn() => $this->service->deletePhoto($viewer, $id, $photos[1]));
+        $this->expectStatus(404, fn() => $this->service->deletePhoto($inspector, $id, 999999));
 
         $this->assertInvalid(fn() => $this->service->cancel($inspector, $id, ''), 'reason');
         $this->service->cancel($inspector, $id, 'Portaria não liberou a entrada');
         self::assertSame('cancelled', $this->service->get($inspector, $id)['status']);
         $this->expectConflict(fn() => $this->service->addPhoto($inspector, $id, $item, ['tmp_name' => $this->jpeg(), 'error' => UPLOAD_ERR_OK]));
+        $this->expectConflict(fn() => $this->service->deletePhoto($inspector, $id, $photos[1]));
         $report = new InspectionReport($this->service, moves_container_path('erp', 'connect'));
         $this->expectConflict(fn() => $report->queue($inspector, $this->service->get($inspector, $id), ['a@test.local']));
     }

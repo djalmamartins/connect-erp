@@ -124,6 +124,19 @@ final class Inspections
         ];
     }
 
+    /**
+     * DELETE /api/v1/inspections/{id}/photos/{photo} — remove a foto errada (ADR 0675). Mesmas regras da tela:
+     * permissão de fazer vistoria, condomínio no escopo e vistoria em andamento; apaga o arquivo e entra na auditoria.
+     */
+    public function deletePhoto(array $data): void
+    {
+        $this->run(function (User $user, InspectionService $service) use ($data): array {
+            $id = (int)($data['id'] ?? 0);
+            $service->deletePhoto($user, $id, (int)($data['photo'] ?? 0));
+            return [200, ['data' => $this->public($service->get($user, $id))]];
+        });
+    }
+
     /** POST /api/v1/inspections/{id}/complete */
     public function complete(array $data): void
     {

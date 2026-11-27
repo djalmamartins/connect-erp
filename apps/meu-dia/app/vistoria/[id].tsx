@@ -82,6 +82,25 @@ export default function InspectionScreen() {
     }
   }
 
+  async function removePhoto(item: InspectionItem, index: number) {
+    const target = item.photos[index];
+    if (!target) return;
+    const ok = await dialog.confirm({
+      title: 'Remover esta foto?',
+      message: `Ela sai do item "${item.label}" e o arquivo é apagado.`,
+      confirm: 'Remover foto',
+      undo: false,
+      undoText: 'Para repor, tire a foto de novo.',
+    });
+    if (!ok) return;
+    try {
+      setData(await api.deletePhoto(insp.id, target.id));
+      dialog.toast('Foto removida');
+    } catch (e) {
+      await dialog.notice({ title: 'A foto não foi removida', message: e instanceof ApiError ? e.message : 'Tente de novo.', tone: 'error' });
+    }
+  }
+
   async function complete() {
     if (missing.length > 0) {
       await dialog.notice({ title: 'Ainda falta', message: missing.slice(0, 5).join('\n') + (missing.length > 5 ? `\ne mais ${missing.length - 5}.` : ''), tone: 'error' });
@@ -132,6 +151,7 @@ export default function InspectionScreen() {
               editable={insp.editable && !finished}
               onSave={save}
               onPhoto={() => void photo(item)}
+              onRemovePhoto={(index) => void removePhoto(item, index)}
             />
           ))}
         </View>
@@ -157,12 +177,14 @@ function ItemCard({
   editable,
   onSave,
   onPhoto,
+  onRemovePhoto,
 }: {
   item: InspectionItem;
   photos: ImageURISource[];
   editable: boolean;
   onSave: (item: InspectionItem, result: InspectionResult, note: string) => Promise<boolean>;
   onPhoto: () => void;
+  onRemovePhoto: (index: number) => void;
 }) {
   const [draft, setDraft] = useState<InspectionResult | null>(null);
   const [note, setNote] = useState(item.note ?? '');
@@ -227,7 +249,7 @@ function ItemCard({
           </Pressable>
         ) : null}
       </View>
-      <PhotoStrip sources={photos} label={item.label} />
+      <PhotoStrip sources={photos} label={item.label} onRemove={editable ? onRemovePhoto : undefined} />
     </Card>
   );
 }

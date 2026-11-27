@@ -55,7 +55,7 @@ O painel mostra só os prédios que você atende, com as mesmas regras de acesso
 1. No **Painel da visita**, toque em {{Iniciar vistoria}}. Na primeira vez, o celular pergunta se pode usar a localização: toque em **Permitir**. Ela serve só para o check-in e para marcar onde cada foto foi tirada.
 2. Se você estiver longe do condomínio, ou o celular estiver sem sinal de localização, o app pede o **Motivo do check-in** (por exemplo, "estou na portaria dos fundos"). Escreva e toque em {{Iniciar com o motivo}}.
 3. Em cada item, toque em **Conforme**, **Com problema** ou **Não se aplica**. Em **Com problema**, descreva o que está errado e toque em {{Salvar problema}}. Cada resposta é salva na hora.
-4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto. As fotos já enviadas aparecem em miniatura embaixo do item: toque numa delas para ver na tela inteira e no **X** para fechar.
+4. Toque em **Foto** para tirar ou escolher a foto do item. Os itens com **Foto obrigatória** em vermelho ainda precisam de foto. As fotos já enviadas aparecem em miniatura embaixo do item: toque numa delas para ver na tela inteira e no **X** para fechar. Se mandou a foto errada, abra a foto e toque em {{Remover foto}}: ela sai do item e o arquivo é apagado. Depois de concluída, a vistoria não muda mais.
 5. No fim, escreva o resumo se quiser e toque em {{Concluir vistoria}}. Se faltar algum item, o app mostra qual.
 
 Ao concluir, o chamado da vistoria é resolvido e os itens **Com problema** viram um chamado de pendências, igual à vistoria feita no ERP. Só quem tem a permissão de fazer vistorias vê o botão.

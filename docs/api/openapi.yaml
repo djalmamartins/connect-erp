@@ -8266,6 +8266,20 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: Foto não encontrada ou fora do escopo }
+    delete:
+      operationId: deleteInspectionPhoto
+      tags: [Inspections]
+      summary: Remove a foto do item (vistoria em andamento; apaga o arquivo e registra na auditoria; ADR 0675)
+      security: [{ session: [], csrf: [] }, { teamApp: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: photo, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Vistoria atualizada }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Foto não encontrada ou fora do escopo }
+        '409': { description: Vistoria concluída ou cancelada }
   /inspections/{id}/complete:
     post:
       operationId: completeInspection

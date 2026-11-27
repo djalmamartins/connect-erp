@@ -642,6 +642,7 @@ $route->get("/inspections/{id}", "Inspections:show", null, \Source\Support\Middl
 $route->put("/inspections/{id}/items/{item}", "Inspections:answer", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/items/{item}/photos", "Inspections:photo", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->get("/inspections/{id}/photos/{photo}", "Inspections:photoFile", null, \Source\Support\Middleware\ApiAuthenticated::class);
+$route->delete("/inspections/{id}/photos/{photo}", "Inspections:deletePhoto", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/inspections/{id}/complete", "Inspections:complete", null, \Source\Support\Middleware\ApiAuthenticated::class);
 // Meu Dia (CN-010, ADR 0630): agenda e tarefas do dia de quem está logado.
 $route->get("/my-day", "MyDay:show", null, \Source\Support\Middleware\ApiAuthenticated::class);

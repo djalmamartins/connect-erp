@@ -219,6 +219,7 @@ export function teamApi(client: ApiClient) {
         position ? { latitude: String(position.latitude), longitude: String(position.longitude) } : {},
         [{ field: 'photo', file }],
       ),
+    deletePhoto: (id: number, photoId: number) => client.delete<Inspection>(`/inspections/${id}/photos/${photoId}`),
     /** Origem da imagem com o cabeçalho do token, para o <Image> do React Native. */
     photoSource: (path: string) => ({ uri: client.url(path), headers: client.authHeaders() }),
     completeInspection: (id: number, summary: string) => client.post<Inspection>(`/inspections/${id}/complete`, { summary }),
