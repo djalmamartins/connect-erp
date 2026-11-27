@@ -46,6 +46,12 @@
         }
       ],
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "O Meu Dia usa o Face ID para abrir a sua agenda sem digitar a senha."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "O Meu Dia usa as suas fotos para anexar à vistoria.",

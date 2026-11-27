@@ -10,6 +10,7 @@ import { PersonProvider } from '../src/auth/PersonContext';
 import { configureDisplay } from '../src/lib/notify';
 import { colors } from '../src/theme';
 import { DialogHost } from '../src/ui/Dialog';
+import { LockScreen } from '../src/ui/LockScreen';
 import { Loading } from '../src/ui/kit';
 
 configureDisplay();
@@ -36,6 +37,7 @@ function RootStack() {
   const { status } = useAuth();
   useNotificationTap(status === 'signedIn');
   if (status === 'loading') return <Loading />;
+  if (status === 'locked') return <LockScreen />;
   const signedIn = status === 'signedIn';
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
