@@ -176,6 +176,8 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Honorários (CN-008, ADR 0402): contrato de administração por condomínio e pedido da nota (NFS-e), com CSRF.
     $route->get(\Source\Controllers\Erp\Connect\ManagementFeeScreens::ROUTE, "ManagementFeeScreens:index");
+    // Unidades da imobiliária (CN-012, ADR 0684): só leitura para a imobiliária parceira.
+    $route->get(\Source\Controllers\Erp\Connect\PartnerUnitScreens::ROUTE, "PartnerUnitScreens:index");
     $route->post("/condominios/honorarios/pedidos/{id}/cancelar", "ManagementFeeScreens:cancel");
     $route->post("/condominios/honorarios/{id}", "ManagementFeeScreens:save");
     $route->post("/condominios/honorarios/{id}/nota", "ManagementFeeScreens:request");
@@ -212,7 +214,7 @@ foreach ($erpBases as $erpIndex => $erpBase) {
 
     // Uma rota por página do catálogo (exceto as que têm controller próprio, registradas acima).
     foreach ($erpCatalog['pages'] as $pageId => $page) {
-        if (in_array($page['route'], ['/dashboard', '/meu-dia', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/comunicacao/propostas', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
+        if (in_array($page['route'], ['/dashboard', '/meu-dia', '/condominios', '/operacional/vistorias', '/operacional/chamados', '/configuracoes/fila-de-avisos', '/condominios/honorarios', '/condominios/imobiliaria', '/comunicacao/propostas', '/configuracoes/dados-pessoais'], true) || in_array($pageId, $erpRegistryPages, true)
             || isset(\Source\Controllers\Erp\Connect\EntryShortcutScreens::NEW_ENTRY_ROUTES[$page['route']])) {
             continue;
         }

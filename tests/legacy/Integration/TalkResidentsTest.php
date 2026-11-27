@@ -95,7 +95,7 @@ final class TalkResidentsTest extends TestCase
         $me = $this->call(fn () => (new Talk())->resident(['id' => (string)$this->resident]));
         self::assertSame('Maria', $me['data']['first_name']);
         self::assertSame(['id' => $this->unit, 'label' => 'A - 101'], $me['data']['unit']);
-        self::assertSame(['reservations', 'announcements', 'deliveries', 'assemblies'], $me['data']['features'], 'Inquilino: boletos ficam de fora do Talk.');
+        self::assertSame(['reservations', 'announcements', 'deliveries'], $me['data']['features'], 'Inquilino: boletos ficam de fora do Talk e assembleia é do proprietário (ADR 0683).');
         self::assertStringNotContainsString('99999', (string)json_encode($me), 'O telefone não volta na resposta.');
 
         $deliveries = $this->call(fn () => (new Talk())->residentDeliveries(['id' => (string)$this->resident]));
@@ -108,7 +108,7 @@ final class TalkResidentsTest extends TestCase
         self::assertSame('documents', $off['error']['feature']);
 
         $foreign = $this->call(fn () => (new Talk())->residentAssembly(['id' => (string)$this->resident, 'assembly' => (string)$this->betaAssembly]));
-        self::assertSame('not_found', $foreign['error']['code'], 'Assembleia de outro condomínio.');
+        self::assertSame('feature_disabled', $foreign['error']['code'], 'Inquilino: assembleia é só do proprietário (ADR 0683), antes de olhar o condomínio.');
         $area = $this->call(fn () => (new Talk())->residentAreaAvailability(['id' => (string)$this->resident, 'area' => '999999']));
         self::assertSame('not_found', $area['error']['code']);
 

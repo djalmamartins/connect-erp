@@ -108,6 +108,16 @@ return [
         ],
     ],
 
+    'CN-012' => [
+        'faz' => 'Mostra à imobiliária parceira, só para consulta, as unidades que ela administra em cada condomínio liberado, se o condomínio de cada uma está em dia ou em atraso e quem mora nelas.',
+        'por_tras' => [
+            'Aparecem só as unidades marcadas com a sua imobiliária na ficha da unidade, nos condomínios que a Connect liberou para a sua conta.',
+            'Em atraso é a unidade com conta do condomínio vencida antes de hoje e ainda não paga. A tela olha os últimos 24 meses.',
+            'Não aparecem lançamentos, boletos, pagador nem documentos. E-mail, telefone e documento dos moradores vêm com parte escondida.',
+            'Nada é alterado por esta tela. Se a imobiliária for desativada, a tela deixa de mostrar as unidades.',
+        ],
+    ],
+
     'CN-010' => [
         'faz' => 'Mostra o seu dia de trabalho num lugar só: os compromissos de hoje e da semana, os chamados que estão com você esperando uma data, os que aguardam o cliente, as vistorias que vencem e os documentos dos condomínios que estão para vencer.',
         'por_tras' => [

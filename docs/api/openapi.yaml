@@ -7572,11 +7572,11 @@ paths:
   /partner/view:
     get:
       operationId: partnerView
-      summary: Consulta da imobiliária parceira, com unidades e moradores mascarados do condomínio concedido (erp.partner.view)
+      summary: Consulta da imobiliária parceira, só com as unidades dela (partner_agency_id), a situação de pagamento e os moradores mascarados do condomínio concedido (erp.partner.view, ADR 0684)
       security: [{ session: [] }]
       parameters: [{ name: condominium_id, in: query, required: true, schema: { type: integer } }]
       responses:
-        '200': { description: '{ condominium_id, units[{ id, label, type, status }], residents[{ unit_id, name, relationship, email, phone, document (mascarados) }] }' }
+        '200': { description: '{ condominium_id, as_of, units[{ id, label, type, status, payment{ situation (em_dia, em_atraso), overdue_count, overdue_cents, oldest_overdue_on, open_cents, last_paid_on } }], residents[{ unit_id, name, relationship, email, phone, document (mascarados) }] }' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }

@@ -328,6 +328,25 @@ foreach ($catalog['pages'] as $id => $page) {
         $assert(str_contains($html, 'Honorários indisponíveis'), 'CN-008: sem banco');
         continue;
     }
+    if ($id === 'CN-012') {
+        // Unidades da imobiliária (ADR 0684): só leitura, situação de pagamento, contato mascarado e escape.
+        $pay = static fn (array $over = []): array => $over + ['situation' => 'em_dia', 'overdue_count' => 0, 'overdue_cents' => 0, 'oldest_overdue_on' => null, 'open_cents' => 0, 'last_paid_on' => '2026-11-08'];
+        $partnerData = static fn (array $over = []): array => $over + ['partnerError' => null, 'partnerAsOf' => '2026-11-20', 'partner' => [
+            ['id' => 7, 'name' => '<b>Residencial</b>', 'condominium_id' => 7, 'as_of' => '2026-11-20',
+                'units' => [['id' => 1, 'label' => 'A-101', 'type' => 'apartamento', 'status' => 'active', 'payment' => $pay(['situation' => 'em_atraso', 'overdue_count' => 2, 'overdue_cents' => 130000, 'oldest_overdue_on' => '2026-09-10'])],
+                    ['id' => 2, 'label' => 'A-102', 'type' => 'apartamento', 'status' => 'active', 'payment' => $pay()]],
+                'residents' => [['unit_id' => 1, 'name' => 'Bia <i>', 'relationship' => 'tenant', 'email' => 'b**@x.test', 'phone' => '*******4321', 'document' => null]]],
+            ['id' => 8, 'name' => 'Beta', 'condominium_id' => 8, 'as_of' => '2026-11-20', 'units' => [], 'residents' => []]]];
+        $html = $render('pages/condominiums/partner-units', $layoutData->invoke($panel, $user, 'CN-012', $partnerData()));
+        $common($html, $id, 'Unidades da imobiliária');
+        $save('cn-012', $html);
+        $assert(str_contains($html, 'Em atraso') && str_contains($html, 'Em dia') && str_contains($html, 'R$ 1.300,00') && str_contains($html, '10/09/2026')
+            && str_contains($html, '*******4321') && !str_contains($html, '<b>Residencial') && !str_contains($html, 'Bia <i>') && !str_contains($html, 'action="' . $erpRoot . '/condominios/imobiliaria')
+            && str_contains($html, 'Nenhuma unidade ligada à sua imobiliária'), 'CN-012: situação, máscara, escape e só leitura');
+        $html = $render('pages/condominiums/partner-units', $layoutData->invoke($panel, $user, 'CN-012', $partnerData(['partner' => null])));
+        $assert(str_contains($html, 'Unidades indisponíveis'), 'CN-012: sem banco');
+        continue;
+    }
     if ($id === 'CN-011') {
         // Propostas (ADR 0644 e 0653): lista com alerta de novas, filtros, escape, o detalhe com gerar/enviar e a nova proposta.
         $row = ['id' => 7, 'protocol' => 'PROP-261122-ABC123', 'name' => '<b>Ana</b>', 'email' => 'ana@example.test', 'whatsapp' => '(11) 99999-0000', 'condominium' => 'Residencial <i>Teste</i>',
