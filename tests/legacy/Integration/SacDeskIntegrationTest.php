@@ -246,6 +246,38 @@ final class SacDeskIntegrationTest extends TestCase
         self::assertTrue($body['data']['messages'][0]['from_team']);
     }
 
+    public function testPresenceOnTheSiteBalloon(): void
+    {
+        $this->call($this->agent, 'summary');
+        self::assertNotNull($this->pdo->query('SELECT sac_seen_at FROM users WHERE id = ' . (int)$this->agent->id)->fetchColumn(), 'a fila aberta marca a pessoa como ativa');
+
+        [$status, $body] = $this->call($this->agent, 'presence');
+        self::assertSame(200, $status);
+        self::assertFalse($body['data']['public']);
+        self::assertFalse($body['data']['shown']);
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        try {
+            [$status, $body] = $this->call($this->agent, 'presence', [], ['public' => true]);
+            self::assertSame(200, $status);
+            self::assertTrue($body['data']['public']);
+            // Aparece só no horário de atendimento (dia útil, 8h às 18h).
+            self::assertSame($body['data']['open'], $body['data']['shown']);
+            self::assertSame($body['data']['open'] ? ['Bia'] : [], $body['data']['online']);
+
+            [$status, $body] = $this->call($this->agent, 'presence', [], ['public' => 'sim']);
+            self::assertSame([422, 'public'], [$status, array_key_first($body['error']['fields'])]);
+            [$status] = $this->call($this->viewer, 'presence', [], ['public' => true]);
+            self::assertSame(403, $status);
+
+            [, $body] = $this->call($this->agent, 'presence', [], ['public' => false]);
+            self::assertFalse($body['data']['public']);
+            self::assertSame([], $body['data']['online']);
+        } finally {
+            unset($_SERVER['REQUEST_METHOD']);
+        }
+    }
+
     public function testFlagReadsFormAndJson(): void
     {
         self::assertTrue(SacDesk::flag(true));

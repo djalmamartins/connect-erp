@@ -92,3 +92,12 @@ test('novo chamado: confere antes de enviar', () => {
   expect(newTicketProblem({ ...ok, subject: 'Oi' })).toMatch(/assunto/);
   expect(newTicketProblem({ ...ok, message: 'curto' })).toMatch(/Descreva/);
 });
+
+import { presenceText } from '../src/lib/tickets';
+
+test('chave do balão do site', () => {
+  const base = { public: true, open: true, shown: true, hours: 'segunda a sexta, das 8h às 18h' };
+  expect(presenceText(base).title).toBe('Você está online no balão do site');
+  expect(presenceText({ ...base, public: false }).title).toBe('Você não aparece no balão do site');
+  expect(presenceText({ ...base, open: false, shown: false }).detail).toContain('das 8h às 18h');
+});
