@@ -58,6 +58,8 @@ Só quem atende chamados vê o formulário.
 
 Procura em todos os chamados que você pode ver, abertos e fechados, pelo assunto ou pelo protocolo (SAC... ou OCO...).
 
+Abaixo da busca ficam os botões de **situação** (Aberto, Em atendimento, Aguardando cliente, Resolvido, Fechado). Escolha uma para ver só os chamados naquela situação. Sem digitar nada, o app lista todos daquela situação, por exemplo todos os que estão aguardando o cliente. Toque em **Todas as situações** para tirar o filtro.
+
 O cartão **Meu Dia de hoje** mostra os seus compromissos e o que está para agendar. Tocar nele abre o app **Meu Dia** (ou a página do Meu Dia, se o app não estiver instalado).
 
 ## Dentro do chamado

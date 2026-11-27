@@ -193,3 +193,11 @@ export function appendPage(prev: Ticket[], page: Ticket[]): Ticket[] {
   const seen = new Set(prev.map((t) => t.id));
   return [...prev, ...page.filter((t) => !seen.has(t.id))];
 }
+
+/** Situações do filtro do Buscar, na ordem do atendimento. */
+export const STATUS_FILTERS: TicketStatus[] = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
+
+/** O Buscar consulta com 2 letras ou mais, ou só com a situação escolhida (sem texto lista todos daquela situação). */
+export function searchReady(search: string, status: TicketStatus | ''): boolean {
+  return search.trim().length >= 2 || status !== '';
+}
