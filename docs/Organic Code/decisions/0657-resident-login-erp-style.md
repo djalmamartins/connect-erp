@@ -33,3 +33,10 @@ recuperação de senha (ADR 0655). O Djalma quer os dois apps iguais.
 
 A view antiga `container/app/connect/v1/pages/login.php` fica sem uso (mantida, sem remoção de
 arquivos). `studio.min.css` recebeu só as regras novas: `.connect-login__note` e, no celular, espaço abaixo do texto da foto para o cartão não cobrir (vale também para o ERP e a recuperação de senha).
+
+## Atualização (26/11/2026, 22:54): foto de dia
+
+O Djalma pediu a foto de fundo "como se fosse dia" e mandou uma imagem gerada. Ela entra só no
+morador: `container/web/default/v1/assets/images/bkg_login_morador_dia.jpg` no login, recuperação,
+senha nova e 2FA quando o ambiente é o app (`next=app`), e recortada em
+`apps/morador/assets/login-cover.jpg` no celular. ERP, Studio e Help Desk continuam com a foto de noite.

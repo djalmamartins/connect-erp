@@ -29,7 +29,7 @@ $icons = [
     'phone' => '<rect x="14" y="5" width="20" height="38" rx="4"/><path d="M21 37h6"/>',
 ];
 ?>
-<main class="connect-login connect-login--two-factor" style="--login-cover:url('<?= theme('/assets/images/bkg_home_connect.jpg') ?>')">
+<main class="connect-login connect-login--two-factor" style="--login-cover:url('<?= theme($next === '/app' ? '/assets/images/bkg_login_morador_dia.jpg' : '/assets/images/bkg_home_connect.jpg') /* morador: foto de dia (ADR 0657) */ ?>')">
     <section class="connect-login__visual" aria-label="Dicas de segurança">
         <div class="connect-login__shade"></div>
         <div class="connect-login__visual-content">

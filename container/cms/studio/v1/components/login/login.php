@@ -7,7 +7,7 @@
 $this->layout('layouts/login');
 $isResidentApp = ($loginEnvironment ?? 'studio') === 'app';
 ?>
-<main class="connect-login" style="--login-cover:url('<?= theme('/assets/images/bkg_home_connect.jpg') ?>')">
+<main class="connect-login" style="--login-cover:url('<?= theme(($loginEnvironment ?? '') === 'app' ? '/assets/images/bkg_login_morador_dia.jpg' : '/assets/images/bkg_home_connect.jpg') /* morador: foto de dia (ADR 0657) */ ?>')">
     <section class="connect-login__visual">
         <div class="connect-login__shade"></div>
         <div class="connect-login__visual-content">
