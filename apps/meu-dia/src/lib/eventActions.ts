@@ -2,11 +2,11 @@ import { router } from 'expo-router';
 import { ApiError } from '../api/client';
 import type { DayEvent, EventStatus, TeamApi } from '../api/team';
 import { dialog } from '../ui/Dialog';
-import { postponeOptions, shortDay } from './day';
+import { copyParams, postponeOptions, shortDay } from './day';
 
 /**
  * O menu de um compromisso, igual em Hoje e na Semana (ADR 0670): concluir, cancelar, reabrir e adiar
- * (ADR 0668: atalhos rápidos ou outro dia e hora). Depois de mudar, chama reload para a tela atualizar.
+ * (ADR 0668: atalhos rápidos ou outro dia e hora) e repetir em outro dia (ADR 0679). Depois de mudar, chama reload para a tela atualizar.
  */
 export async function eventActions(api: TeamApi, event: DayEvent, today: string, reload: () => Promise<void>): Promise<void> {
   const done = event.status === 'completed';
@@ -26,11 +26,16 @@ export async function eventActions(api: TeamApi, event: DayEvent, today: string,
     options: [
       ...options.map((o) => ({ label: o.label, danger: o.danger, icon: o.status === 'completed' ? ('checkmark-circle-outline' as const) : o.status === 'cancelled' ? ('close-circle-outline' as const) : ('refresh' as const) })),
       ...(canMove ? [{ label: 'Adiar ou mudar o horário', icon: 'time-outline' as const }] : []),
+      { label: 'Repetir em outro dia', icon: 'copy-outline' as const },
     ],
   });
   if (choice === null) return;
-  if (choice === options.length) {
+  if (canMove && choice === options.length) {
     await postpone(api, event, today, reload);
+    return;
+  }
+  if (choice === options.length + (canMove ? 1 : 0)) {
+    router.navigate({ pathname: '/nova', params: copyParams(event, today) });
     return;
   }
   try {

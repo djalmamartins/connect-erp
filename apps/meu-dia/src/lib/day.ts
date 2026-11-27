@@ -245,3 +245,21 @@ export function postponeOptions(e: Pick<DayEvent, 'starts_at' | 'start'>, today:
   if (toMonday > 1) out.push({ label: `Segunda às ${e.start}`, date: addDays(base, toMonday), start: e.start });
   return out;
 }
+
+/**
+ * "Repetir em outro dia" (ADR 0679): os campos para abrir a Nova tarefa já preenchida com o mesmo título, tipo,
+ * descrição e horário, no dia seguinte ao do compromisso (ou amanhã, se ele já passou). Chamado não vai junto:
+ * a cópia é uma tarefa nova, sem ligação com o chamado do original.
+ */
+export function copyParams(e: Pick<DayEvent, 'title' | 'type' | 'description' | 'start' | 'end' | 'starts_at'>, today: string): Record<string, string> {
+  const day = e.starts_at.slice(0, 10);
+  return {
+    copy: '1',
+    title: e.title.slice(0, 180),
+    type: e.type,
+    description: (e.description ?? '').slice(0, 2000),
+    date: addDays(day < today ? today : day, 1),
+    start: e.start,
+    end: e.end ?? '',
+  };
+}

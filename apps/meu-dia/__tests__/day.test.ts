@@ -1,5 +1,5 @@
 import type { Day, DayEvent } from '../src/api/team';
-import { addDays, badgeCount, diffDays, eventReminders, lateLabel, morningSummary, nextMorning, overdueItems, relativeDay, shortDay, stripTone } from '../src/lib/day';
+import { addDays, badgeCount, diffDays, eventReminders, lateLabel, morningSummary, nextMorning, overdueItems, relativeDay, shortDay, stripTone, copyParams } from '../src/lib/day';
 
 function event(over: Partial<DayEvent>): DayEvent {
   return {
@@ -97,5 +97,15 @@ describe('lembretes', () => {
     });
     expect(morningSummary(d, '2026-11-27')).toEqual({ title: 'Bom dia! 2 tarefas atrasadas', body: '1 compromisso (o primeiro às 09:30).' });
     expect(morningSummary(day(), '2026-11-27').title).toBe('Bom dia! Seu dia no Connect');
+  });
+});
+
+describe('repetir em outro dia', () => {
+  const base = { title: 'Ronda na garagem', type: 'task' as const, description: 'Ver as luzes', start: '09:00', end: '10:00', starts_at: '2026-11-27 09:00:00' };
+  it('abre a nova tarefa no dia seguinte com os mesmos campos', () => {
+    expect(copyParams(base, '2026-11-27')).toEqual({ copy: '1', title: 'Ronda na garagem', type: 'task', description: 'Ver as luzes', date: '2026-11-28', start: '09:00', end: '10:00' });
+  });
+  it('compromisso que já passou vai para amanhã, e sem fim fica vazio', () => {
+    expect(copyParams({ ...base, end: null, starts_at: '2026-11-20 14:30:00' }, '2026-11-27')).toMatchObject({ date: '2026-11-28', end: '' });
   });
 });

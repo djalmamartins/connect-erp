@@ -28,7 +28,7 @@ function br(iso: string): string {
  */
 export default function NewTask() {
   const { api, me } = useAuth();
-  const params = useLocalSearchParams<{ ticket_id?: string; title?: string; type?: string; for?: string }>();
+  const params = useLocalSearchParams<{ ticket_id?: string; title?: string; type?: string; for?: string; copy?: string; description?: string; date?: string; start?: string; end?: string }>();
   const today = dayKey(new Date());
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(br(today));
@@ -50,6 +50,18 @@ export default function NewTask() {
     }
     if (params.for) setAssignee(Number(params.for) || null);
   }, [params.ticket_id, params.title, params.for]);
+
+  // "Repetir em outro dia" (ADR 0679): chega com os campos do compromisso, no dia seguinte.
+  useEffect(() => {
+    if (params.copy !== '1') return;
+    setTicketId(null);
+    setTitle(typeof params.title === 'string' ? params.title.slice(0, 180) : '');
+    if (params.type === 'meeting' || params.type === 'task' || params.type === 'deadline' || params.type === 'support') setType(params.type);
+    setDescription(typeof params.description === 'string' ? params.description : '');
+    if (typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)) setDate(br(params.date));
+    if (typeof params.start === 'string' && /^\d{2}:\d{2}$/.test(params.start)) setStart(params.start);
+    setEnd(typeof params.end === 'string' && /^\d{2}:\d{2}$/.test(params.end) ? params.end : '');
+  }, [params.copy, params.title, params.type, params.description, params.date, params.start, params.end]);
 
   useEffect(() => {
     if (me?.can_see_team) {
