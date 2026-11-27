@@ -187,3 +187,9 @@ export function queueCondominium(saved: string | null, condominiums: { id: numbe
   if (!Number.isInteger(id) || id <= 0 || condominiums.length < 2) return 0;
   return condominiums.some((c) => c.id === id) ? id : 0;
 }
+
+/** Junta a página seguinte sem repetir chamado que já veio (ADR 0672). */
+export function appendPage(prev: Ticket[], page: Ticket[]): Ticket[] {
+  const seen = new Set(prev.map((t) => t.id));
+  return [...prev, ...page.filter((t) => !seen.has(t.id))];
+}

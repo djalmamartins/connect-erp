@@ -310,6 +310,31 @@ final class SacDeskIntegrationTest extends TestCase
         self::assertSame(403, $status);
     }
 
+    public function testLoadMorePagesInOrderAndOpenOnlyInTheQueue(): void
+    {
+        $ids = [];
+        for ($i = 0; $i < 5; $i++) {
+            $ids[] = $this->openTicket();
+        }
+        // Mesmo segundo para três deles: a ordem desempata pelo id.
+        $this->pdo->exec("UPDATE studio_support_tickets SET created_at = '2026-11-20 10:00:00' WHERE id IN ({$ids[1]}, {$ids[2]}, {$ids[3]})");
+        $this->pdo->exec("UPDATE studio_support_tickets SET created_at = '2026-11-19 09:00:00' WHERE id = {$ids[0]}");
+        $this->pdo->exec("UPDATE studio_support_tickets SET created_at = '2026-11-21 08:00:00', status = 'resolved' WHERE id = {$ids[4]}");
+
+        [$status, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'all', 'limit' => '2']);
+        self::assertSame(200, $status);
+        self::assertSame([$ids[4], $ids[3]], array_column($body['data'], 'id'));
+        self::assertSame($ids[3], $body['meta']['next']);
+        [, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'all', 'limit' => '2', 'before' => (string)$ids[3]]);
+        self::assertSame([$ids[2], $ids[1]], array_column($body['data'], 'id'));
+        [, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'all', 'limit' => '2', 'before' => (string)$ids[1]]);
+        self::assertSame([[$ids[0]], null], [array_column($body['data'], 'id'), $body['meta']['next']]);
+
+        // Sem responsável: o resolvido fica fora já na consulta, então a página vem cheia.
+        [, $body] = $this->call($this->agent, 'index', [], null, ['view' => 'unassigned', 'limit' => '2']);
+        self::assertSame([$ids[3], $ids[2]], array_column($body['data'], 'id'));
+    }
+
     public function testViewFiltersArePure(): void
     {
         self::assertSame(['assigned' => '7'], SacDesk::viewFilters('mine', 7));

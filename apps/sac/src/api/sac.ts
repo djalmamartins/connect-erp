@@ -112,6 +112,11 @@ export type MyDayToday = {
   summary: { commitments: number; done: number; to_schedule: number; waiting: number; overdue: number };
 };
 
+/** Chamados por página no app (ADR 0672). */
+export const PAGE_SIZE = 50;
+export type TicketPageMeta = { view: View; next: number | null };
+export type TicketPage = { data: Ticket[]; meta: TicketPageMeta };
+
 export type Triage = Partial<{ status: TicketStatus; priority: TicketPriority; assigned_to: number | null; team: string }>;
 
 export function sacApi(client: ApiClient) {
@@ -131,7 +136,15 @@ export function sacApi(client: ApiClient) {
 
     summary: (condominiumId = 0) => client.get<Summary>('/sac/summary', { condominium_id: condominiumId > 0 ? condominiumId : undefined }),
     options: () => client.get<Options>('/sac/options'),
-    tickets: (view: View, q = '', condominiumId = 0) => client.get<Ticket[]>('/sac/tickets', { view, q, condominium_id: condominiumId > 0 ? condominiumId : undefined }),
+    /** Uma página da fila (ADR 0672): meta.next vai em before para pedir a seguinte; null quando acabou. */
+    tickets: (view: View, q = '', condominiumId = 0, before = 0) =>
+      client.getWithMeta<Ticket[], TicketPageMeta>('/sac/tickets', {
+        view,
+        q,
+        condominium_id: condominiumId > 0 ? condominiumId : undefined,
+        limit: PAGE_SIZE,
+        before: before > 0 ? before : undefined,
+      }),
     presence: () => client.get<Presence>('/sac/presence'),
     setPresence: (isPublic: boolean) => client.post<Presence>('/sac/presence', { public: isPublic }),
     units: (condominiumId: number) => client.get<Unit[]>('/sac/units', { condominium_id: condominiumId }),

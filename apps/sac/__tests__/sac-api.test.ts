@@ -31,7 +31,7 @@ test('fila, Bearer e ações do atendimento', async () => {
   await api.tickets('unassigned', 'SAC2026');
   await api.answer(7, 'Oi', true, false);
   await api.forgetPush('ExponentPushToken[abc]');
-  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=unassigned&q=SAC2026');
+  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=unassigned&q=SAC2026&limit=50');
   expect((calls[0].init.headers as Record<string, string>).Authorization).toBe('Bearer t0k');
   expect(calls[1].url).toBe('https://erp.x/api/v1/sac/tickets/7/answers');
   expect(JSON.parse(String(calls[1].init.body))).toEqual({ message: 'Oi', internal: true, resolve: false, time_spent: 0 });
@@ -74,7 +74,15 @@ test('filtro de condomínio vai na fila e nos números só quando escolhido (ADR
   await api.tickets('mine', '', 12);
   await api.summary(12);
   await api.summary(0);
-  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=mine&condominium_id=12');
+  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=mine&condominium_id=12&limit=50');
   expect(calls[1].url).toBe('https://erp.x/api/v1/sac/summary?condominium_id=12');
   expect(calls[2].url).toBe('https://erp.x/api/v1/sac/summary');
+});
+
+test('carregar mais pede a página seguinte com before (ADR 0672)', async () => {
+  const { calls, fetchImpl } = fake([{ status: 200, body: { data: [], meta: { view: 'all', next: null } } }]);
+  const api = sacApi(createClient({ baseUrl: 'https://erp.x', getToken: () => 't', fetchImpl }));
+  const page = await api.tickets('all', 'vaz', 0, 81);
+  expect(calls[0].url).toBe('https://erp.x/api/v1/sac/tickets?view=all&q=vaz&limit=50&before=81');
+  expect(page.meta.next).toBeNull();
 });
