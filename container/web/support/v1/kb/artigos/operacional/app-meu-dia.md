@@ -25,7 +25,7 @@ Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem
 
 ## As quatro abas
 
-- **Hoje:** a faixa dos dias (toque num dia para ver), os números do dia, a agenda por horário, os prazos de chamados, as vistorias, os chamados **Para agendar** e os que aguardam o cliente.
+- **Hoje:** a faixa dos dias (toque num dia para ver), o quadro verde do progresso (quantos compromissos já foram feitos, as atrasadas e o próximo da agenda), os números do dia, a agenda por horário, os prazos de chamados, as vistorias, os chamados **Para agendar** e os que aguardam o cliente.
 - **Semana:** de segunda a domingo, com os compromissos de cada dia. As setas mudam a semana; toque num dia para abrir ele em Hoje.
 - **Nova tarefa:** marca uma tarefa ou compromisso na agenda.
 - **Conta:** quem está conectado, de quem é o dia mostrado, os lembretes e o botão {{Sair}}.
@@ -57,6 +57,10 @@ O painel mostra só os prédios que você atende, com as mesmas regras de acesso
 5. No fim, escreva o resumo se quiser e toque em {{Concluir vistoria}}. Se faltar algum item, o app mostra qual.
 
 Ao concluir, o chamado da vistoria é resolvido e os itens **Com problema** viram um chamado de pendências, igual à vistoria feita no ERP. Só quem tem a permissão de fazer vistorias vê o botão.
+
+## As cores da agenda
+
+Cada compromisso tem uma faixa colorida à esquerda: **verde** quando já foi feito, **vermelho** quando ficou para trás, **azul** para reunião, **verde-claro** para tarefa, **amarelo** para prazo e **dourado** para atendimento do SAC. A hora fica à esquerda, e o que já foi feito aparece riscado.
 
 ## Concluir, cancelar ou reabrir
 

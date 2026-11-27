@@ -6,7 +6,7 @@ import { ApiError } from '../../src/api/client';
 import type { Day, DayEvent, EventStatus, OverdueItem, Ticket } from '../../src/api/team';
 import { useAuth } from '../../src/auth/AuthContext';
 import { usePerson } from '../../src/auth/PersonContext';
-import { isLate, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
+import { dayProgress, eventTone, type EventTone, KIND_LABEL, lateLabel, longDay, overdueItems, relativeDay, shortDay, stripTone } from '../../src/lib/day';
 import { syncReminders } from '../../src/lib/notify';
 import { openInSac } from '../../src/lib/sac';
 import { useResource } from '../../src/lib/useResource';
@@ -210,6 +210,8 @@ function DayBody({
         </View>
       ) : null}
 
+      {isToday ? <Progress d={d} late={late.length} /> : null}
+
       <View style={styles.stats}>
         <Stat label="Compromissos" value={d.summary.commitments} />
         <Stat label="Feitos" value={d.summary.done} />
@@ -219,21 +221,9 @@ function DayBody({
 
       <SectionTitle>Agenda do dia</SectionTitle>
       {events.length === 0 ? <Empty text="Nada marcado para este dia." /> : null}
-      {events.map((e) => {
-        const lateEvent = isLate(e, d.today);
-        const done = e.status === 'completed';
-        return (
-          <IconRow
-            key={e.id}
-            icon={done ? 'checkmark-circle' : lateEvent ? 'alert-circle' : e.type === 'support' ? 'chatbubbles-outline' : e.type === 'deadline' ? 'flag-outline' : e.type === 'task' ? 'checkbox-outline' : 'people-outline'}
-            tint={done ? colors.success : lateEvent ? colors.danger : colors.brandStrong}
-            bg={done ? colors.successSoft : lateEvent ? colors.dangerSoft : colors.brandSoft}
-            title={e.title}
-            subtitle={[`${e.start}${e.end ? `–${e.end}` : ''}`, e.type_label, e.condominium, e.protocol, done ? 'Concluída' : lateEvent ? 'Atrasada' : null].filter(Boolean).join(' · ')}
-            onPress={() => onEvent(e)}
-          />
-        );
-      })}
+      {events.map((e) => (
+        <EventCard key={e.id} e={e} tone={eventTone(e, d.today)} onPress={() => onEvent(e)} />
+      ))}
 
       {d.day_deadlines.length > 0 ? (
         <>
@@ -299,6 +289,70 @@ function DayBody({
   );
 }
 
+/** Topo verde-escuro de Hoje: N de M feitos, barra dourada, atrasadas e o próximo compromisso. */
+function Progress({ d, late }: { d: Day; late: number }) {
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const p = dayProgress(d, late, hhmm);
+  if (p.total === 0 && late === 0) return null;
+  return (
+    <View style={styles.progress} accessibilityRole="summary" accessibilityLabel={`${p.done} de ${p.total} feitos, ${late} atrasadas`}>
+      <View style={styles.progressHead}>
+        <Text style={styles.progressTitle}>
+          {p.done} de {p.total} {p.total === 1 ? 'feito' : 'feitos'}
+        </Text>
+        {late > 0 ? <Text style={styles.progressLate}>{late === 1 ? '1 atrasada' : `${late} atrasadas`}</Text> : null}
+      </View>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${p.percent}%` }]} />
+      </View>
+      <Text style={styles.progressNext} numberOfLines={1}>
+        {p.next ? `Próximo: ${p.next.start} · ${p.next.title}` : p.total > 0 && p.done === p.total ? 'Tudo feito por hoje.' : 'Nenhum compromisso pela frente hoje.'}
+      </Text>
+    </View>
+  );
+}
+
+const TONE: Record<EventTone, { bar: string; icon: string; bg: string }> = {
+  done: { bar: colors.success, icon: colors.success, bg: colors.successSoft },
+  late: { bar: colors.danger, icon: colors.danger, bg: colors.dangerSoft },
+  meeting: { bar: colors.info, icon: colors.info, bg: colors.infoSoft },
+  task: { bar: colors.brand, icon: colors.brandStrong, bg: colors.brandSoft },
+  deadline: { bar: colors.warning, icon: colors.warning, bg: colors.warningSoft },
+  support: { bar: colors.accent, icon: colors.warning, bg: colors.accentSoft },
+};
+
+/** Compromisso com a hora à esquerda e a borda colorida pelo tipo (verde feito, vermelho atrasado). */
+function EventCard({ e, tone, onPress }: { e: DayEvent; tone: EventTone; onPress: () => void }) {
+  const t = TONE[tone];
+  const done = tone === 'done';
+  const icon = done ? 'checkmark-circle' : tone === 'late' ? 'alert-circle' : e.type === 'support' ? 'chatbubbles-outline' : e.type === 'deadline' ? 'flag-outline' : e.type === 'task' ? 'checkbox-outline' : 'people-outline';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.event, { borderLeftColor: t.bar }, pressed && { opacity: 0.75 }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${e.start}, ${e.title}${done ? ', concluída' : tone === 'late' ? ', atrasada' : ''}. Toque para concluir ou cancelar`}
+    >
+      <View style={styles.eventTime}>
+        <Text style={[styles.eventStart, done && styles.eventDoneText]}>{e.start}</Text>
+        {e.end ? <Text style={styles.eventEnd}>{e.end}</Text> : null}
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.eventTitle, done && styles.eventDoneText]} numberOfLines={2}>
+          {e.title}
+        </Text>
+        <Text style={[styles.eventMeta, tone === 'late' && { color: colors.danger }]} numberOfLines={2}>
+          {[e.type_label, e.condominium, e.protocol, done ? 'Concluída' : tone === 'late' ? 'Atrasada' : null].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+      <View style={[styles.eventIcon, { backgroundColor: t.bg }]}>
+        <Ionicons name={icon} size={18} color={t.icon} />
+      </View>
+    </Pressable>
+  );
+}
+
 function TicketRow({ t, onPress }: { t: Ticket; onPress?: () => void }) {
   const red = t.overdue || t.priority === 'urgent';
   return (
@@ -345,6 +399,21 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center', paddingVertical: space[3], paddingHorizontal: space[1] },
   statValue: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
   statLabel: { fontFamily: fonts.medium, fontSize: 11, color: colors.muted, textAlign: 'center' },
+  progress: { backgroundColor: colors.sidebar, borderRadius: radius.xl, padding: space[4], gap: space[2], borderBottomWidth: 3, borderBottomColor: colors.accent },
+  progressHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  progressTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.onBrand },
+  progressLate: { fontFamily: fonts.semibold, fontSize: 14, color: '#ff8a8f' },
+  track: { height: 8, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
+  fill: { height: 8, borderRadius: radius.pill, backgroundColor: colors.accent },
+  progressNext: { fontFamily: fonts.regular, fontSize: 13, color: colors.sidebarInk },
+  event: { flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, borderLeftWidth: 4, paddingVertical: space[3], paddingHorizontal: space[3], minHeight: 56 },
+  eventTime: { width: 46, alignItems: 'flex-start' },
+  eventStart: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
+  eventEnd: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  eventTitle: { fontFamily: fonts.semibold, fontSize: 15.5, color: colors.text },
+  eventMeta: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted },
+  eventDoneText: { color: colors.muted, textDecorationLine: 'line-through' },
+  eventIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   todayBtn: { paddingHorizontal: space[3], paddingVertical: space[2], borderRadius: radius.pill, backgroundColor: colors.brandSoft },
   todayText: { fontFamily: fonts.semibold, color: colors.brandStrong },
 });
