@@ -3217,6 +3217,28 @@ return [
         ],
     ],
     'CN-012' => [
+        'faz' => 'Tela da imobiliária parceira, só de consulta: as unidades que ela administra em cada condomínio, se o condomínio está em dia ou em atraso e quem mora em cada uma.',
+        'artigo' => 'unidades-da-imobiliaria',
+        'topicos' => [
+            [
+                'id' => 'quem-ve-esta-tela',
+                'title' => 'Quem vê esta tela',
+            ],
+            [
+                'id' => 'o-que-cada-coluna-mostra',
+                'title' => 'O que cada coluna mostra',
+            ],
+            [
+                'id' => 'como-a-connect-libera-as-unidades',
+                'title' => 'Como a Connect libera as unidades',
+            ],
+            [
+                'id' => 'cuidados',
+                'title' => 'Cuidados',
+            ],
+        ],
+    ],
+    'CN-013' => [
         'faz' => 'Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Cadastre uma vez e escolha-os em Síndico e conselho, em qualquer prédio.',
         'artigo' => 'sindicos-profissionais',
         'topicos' => [

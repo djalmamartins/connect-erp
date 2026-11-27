@@ -2146,7 +2146,7 @@
     var rule = (wrap.getAttribute('data-only-if') || '').split('=');
     var other = document.getElementById(rule[0]);
     if (!other) return;
-    var accepted = (rule[1] || '').split('|'); // ADR 0683: lista de valores, ex.: f-role=sindico|subsindico
+    var accepted = (rule[1] || '').split('|'); // ADR 0686: lista de valores, ex.: f-role=sindico|subsindico
     var sync = function () {
       var on = accepted.indexOf(other.value) !== -1;
       wrap.hidden = !on;
@@ -4120,7 +4120,7 @@
       close.addEventListener('click', function () { storage.set(key, 'dismissed'); box.hidden = true; });
     }
   });
-  /* Síndico e conselho (ADR 0683): mandato de 1 ou 2 anos com o fim calculado (início + anos − 1 dia), sugestões de
+  /* Síndico e conselho (ADR 0686): mandato de 1 ou 2 anos com o fim calculado (início + anos − 1 dia), sugestões de
    * moradores do prédio e de síndicos profissionais ao digitar o nome, e o quadro "Escolher a pessoa". Os dados vêm de
    * GET /api/v1/board-members/candidates; o servidor confere o vínculo, o condomínio e o limite de 2 anos ao gravar. */
   (function () {

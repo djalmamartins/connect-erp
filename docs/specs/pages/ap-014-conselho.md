@@ -52,7 +52,7 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
 | Observações (`notes`) | longtext | não |
 | Situação (`status`) | Ativo, Inativo | sim |
 
-## Escolha entre moradores e síndicos profissionais e mandato de 1 ou 2 anos (27/11/2026, ADR 0683)
+## Escolha entre moradores e síndicos profissionais e mandato de 1 ou 2 anos (27/11/2026, ADR 0686)
 
 Pedido do proprietário durante os testes: ao digitar o nome, sugerir as pessoas do prédio (síndico morador); poder
 cadastrar síndicos profissionais e escolhê-los; no conselho, mostrar a lista de moradores para escolher; e um campo de
@@ -71,7 +71,7 @@ mandato de 1 ou 2 anos (máximo 2) que calcula o fim pelo início.
 | Lista de moradores só com `erp.residents.view` (LGPD: mesma regra da tela de moradores) | CONFIRMADO |
 
 API: `GET /api/v1/board-members/candidates?condominium_id=` (erp.access + erp.board.manage). Síndicos profissionais:
-CN-012, `/erp/cadastros/sindicos-profissionais`, `/api/v1/professional-managers`.
+CN-013, `/erp/cadastros/sindicos-profissionais`, `/api/v1/professional-managers`.
 
 Campos novos: Morador do prédio (`resident_id`, ref lazy), Síndico profissional (`professional_manager_id`, ref lazy,
 só síndico/subsíndico), Duração do mandato (`term_years`). Migration `20261127_2130_board_member_picker`.

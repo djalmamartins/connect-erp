@@ -1,4 +1,4 @@
--- Síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais (ADR 0683, pedido do Djalma,
+-- Síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais (ADR 0686, pedido do Djalma,
 -- 27/11/2026). Idempotente.
 -- erp_professional_managers: síndicos profissionais da Connect (pessoa ou empresa), usados por todos os condomínios,
 -- como fornecedores e advogados (escopo da administradora, ADR-002). Sem condominium_id de propósito: o mesmo síndico

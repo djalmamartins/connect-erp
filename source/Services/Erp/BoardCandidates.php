@@ -13,7 +13,7 @@ use Source\Support\Access;
 use Source\Support\Erp\BrDocument;
 
 /**
- * Quem pode ser síndico ou conselheiro de um condomínio (ADR 0683, pedido do Djalma, 27/11/2026), somente leitura:
+ * Quem pode ser síndico ou conselheiro de um condomínio (ADR 0686, pedido do Djalma, 27/11/2026), somente leitura:
  * os moradores do prédio (proprietários, inquilinos, moradores e responsáveis financeiros ativos em erp_residents) e
  * os síndicos profissionais da Connect (erp_professional_managers, que valem para todos os condomínios).
  *

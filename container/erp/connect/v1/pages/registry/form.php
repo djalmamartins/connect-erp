@@ -63,7 +63,7 @@ $this->insert('components/layout/page-head', [
         ]);
     } ?>
     <?php if (($boardPicker ?? null) !== null) {
-        // ADR 0683: moradores do prédio e síndicos profissionais para o síndico e o conselho.
+        // ADR 0686: moradores do prédio e síndicos profissionais para o síndico e o conselho.
         $this->insert('components/cards/board-picker', ['picker' => $boardPicker]);
     } ?>
     <?php if (($unitOccupants ?? null) !== null) {

@@ -1135,7 +1135,7 @@ td.is-num .erp-inline-form + .erp-btn { margin-top: var(--erp-space-2, 8px); }
 .erp-span-all { grid-column: 1 / -1; }
 #unit-occupant-dialog .erp-check { display: flex; margin: 4px 0; }
 
-/* Síndico e conselho: escolher a pessoa e sugestões do nome (ADR 0683) */
+/* Síndico e conselho: escolher a pessoa e sugestões do nome (ADR 0686) */
 .erp-board-picker__tabs { margin-bottom: 12px; }
 .erp-board-picker__panel { display: grid; gap: 6px; }
 .erp-board-picker__status { margin: 4px 0 0; font-size: 13px; }

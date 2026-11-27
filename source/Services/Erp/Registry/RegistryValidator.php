@@ -58,18 +58,18 @@ final class RegistryValidator
             }
         }
         foreach ($definition['fields'] as $name => $field) {
-            // 'only_if' aceita um valor ou uma lista de valores aceitos (ADR 0683).
+            // 'only_if' aceita um valor ou uma lista de valores aceitos (ADR 0686).
             foreach ($field['only_if'] ?? [] as $other => $expected) {
                 if (!isset($errors[$name]) && ($clean[$name] ?? null) !== null && !in_array((string)($clean[$other] ?? ''), array_map('strval', (array)$expected), true)) {
                     $errors[$name] = $field['only_if_message'] ?? 'Campo não se aplica.';
                 }
             }
-            // 'not_with' (ADR 0683): os dois campos não podem vir preenchidos juntos (morador ou síndico profissional).
+            // 'not_with' (ADR 0686): os dois campos não podem vir preenchidos juntos (morador ou síndico profissional).
             $other = $field['not_with'] ?? null;
             if (is_string($other) && !isset($errors[$name]) && ($clean[$name] ?? null) !== null && ($clean[$other] ?? null) !== null) {
                 $errors[$name] = $field['not_with_message'] ?? 'Preencha só um dos dois campos.';
             }
-            // 'max_years' (ADR 0683): a data não passa de "from" + anos. 'years' é um número ou o nome do campo com os
+            // 'max_years' (ADR 0686): a data não passa de "from" + anos. 'years' é um número ou o nome do campo com os
             // anos; o fim calculado pela tela é início + anos − 1 dia, e até início + anos é aceito.
             $limit = $field['max_years'] ?? null;
             if (is_array($limit) && !isset($errors[$name]) && is_string($clean[$name] ?? null) && is_string($clean[$limit['from']] ?? null)) {

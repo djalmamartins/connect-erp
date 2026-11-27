@@ -212,10 +212,10 @@ CONNECT_PAGES = [
      "route": "/comunicacao/propostas", "kind": "list", "status": "CONNECT",
      "spec": "docs/specs/pages/cn-011-propostas-do-site.md", "reference": "",
      "note": "Pedidos de proposta feitos no site, com alerta de proposta nova, situação e responsável; mesma tabela do Studio (pedido do proprietário, 22/11/2026)"},
-    # Síndicos profissionais da Connect, escolhidos em Síndico e conselho (ADR 0683). Logo depois do AP-014.
-    {"id": "CN-012", "name": "Síndicos profissionais", "group": "cadastros", "section": "", "order": 1,
+    # Síndicos profissionais da Connect, escolhidos em Síndico e conselho (ADR 0686). Logo depois do AP-014.
+    {"id": "CN-013", "name": "Síndicos profissionais", "group": "cadastros", "section": "", "order": 1,
      "route": "/cadastros/sindicos-profissionais", "kind": "list", "status": "CONNECT",
-     "spec": "docs/specs/pages/cn-012-sindicos-profissionais.md", "reference": "",
+     "spec": "docs/specs/pages/cn-013-sindicos-profissionais.md", "reference": "",
      "note": "Síndicos profissionais (pessoa ou empresa) da Connect, escolhidos no cadastro Síndico e conselho junto com os moradores do prédio (pedido do proprietário, 27/11/2026)"},
     # Pedidos do titular pela LGPD: relatório dos dados e anonimização (ADR 0328, 0330 e 0332).
     {"id": "CN-009", "name": "Dados pessoais (LGPD)", "group": "configuracoes", "section": "Acesso", "order": 100,

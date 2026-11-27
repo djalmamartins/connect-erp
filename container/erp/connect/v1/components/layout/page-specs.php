@@ -276,7 +276,7 @@ return [
         'tabs' => ['Dados', 'Vínculos', 'Histórico'],
         'kpis' => [],
     ],
-    'CN-012' => [
+    'CN-013' => [
         'kind' => 'list',
         'entity' => 'síndico profissional',
         'gender' => 'o',

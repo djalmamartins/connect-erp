@@ -22,8 +22,9 @@ use Source\Support\Audit;
  * - quem concede só concede condomínio do próprio escopo. Desvincular tira o papel, todo o acesso a
  *   condomínios e o vínculo. Sem papel, o usuário fica sem acesso (fail-closed);
  * - a conta do usuário é criada pelo fluxo de usuários que já existe; aqui não se cria login nem senha;
- * - consulta do parceiro (view): unidades e moradores dos condomínios concedidos, com e-mail, telefone e
- *   documento mascarados; nada de financeiro, inadimplência ou documentos.
+ * - consulta do parceiro (view): só as unidades que a imobiliária administra (erp_units.partner_agency_id) nos
+ *   condomínios concedidos, com os moradores delas mascarados e a situação de pagamento de cada unidade (em dia
+ *   ou em atraso, com totais e datas, ADR 0684); nada de lançamentos, boletos, pagador ou documentos.
  * Toda mudança vai para a auditoria.
  */
 final class PartnerAccess
@@ -141,14 +142,17 @@ final class PartnerAccess
             if ((int)$user['level'] > self::MAX_USER_LEVEL) {
                 throw new DomainException('Só um usuário comum pode ser parceiro: este usuário tem nível administrativo.');
             }
-            $check = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM access_user_roles WHERE user_id = :u1) AS roles,
+            // Conta criada no Studio já nasce com papel: Morador ou Imobiliária sem mais nada servem (ADR 0684); o papel vira Imobiliária.
+            $check = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id
+                    WHERE ur.user_id = :u1 AND r.slug NOT IN (\'user\', \'' . self::PARTNER_ROLE . '\')) AS roles,
                 (SELECT COUNT(*) FROM user_condominium_access WHERE user_id = :u2) AS grants, (SELECT COUNT(*) FROM access_user_overrides WHERE user_id = :u3) AS overrides');
             $check->execute(['u1' => $userId, 'u2' => $userId, 'u3' => $userId]);
             $state = $check->fetch(PDO::FETCH_ASSOC) ?: [];
             if ((int)($state['roles'] ?? 0) > 0 || (int)($state['grants'] ?? 0) > 0 || (int)($state['overrides'] ?? 0) > 0) {
                 throw new DomainException('O usuário já tem papel, acesso a condomínio ou permissão própria: use uma conta nova para o parceiro.');
             }
-            $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id, assigned_by) VALUES (:u, :r, :by)')->execute(['u' => $userId, 'r' => $role, 'by' => (int)$admin->id]);
+            $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id, assigned_by) VALUES (:u, :r, :by)
+                ON DUPLICATE KEY UPDATE role_id = VALUES(role_id), assigned_by = VALUES(assigned_by)')->execute(['u' => $userId, 'r' => $role, 'by' => (int)$admin->id]);
             $this->pdo->prepare('INSERT INTO erp_partner_agency_users (user_id, agency_id, linked_by) VALUES (:u, :a, :by)')->execute(['u' => $userId, 'a' => $agencyId, 'by' => (int)$admin->id]);
             $this->pdo->commit();
         } catch (\Throwable $error) {
@@ -228,27 +232,81 @@ final class PartnerAccess
      * Consulta do parceiro: unidades e moradores de um condomínio concedido, com contato mascarado.
      * Exige que o usuário seja parceiro vinculado a uma imobiliária ativa, além do escopo.
      */
-    public function view(User $partner, int $condominiumId): array
+    public function view(User $partner, int $condominiumId, ?string $today = null): array
     {
-        $stmt = $this->pdo->prepare("SELECT a.status FROM erp_partner_agency_users pu JOIN erp_partner_agencies a ON a.id = pu.agency_id WHERE pu.user_id = :u");
+        $stmt = $this->pdo->prepare("SELECT a.id, a.status FROM erp_partner_agency_users pu JOIN erp_partner_agencies a ON a.id = pu.agency_id WHERE pu.user_id = :u");
         $stmt->execute(['u' => (int)$partner->id]);
-        if ($stmt->fetchColumn() !== 'active') {
+        $agency = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($agency) || $agency['status'] !== 'active') {
             throw new RegistryNotFound();
         }
         $this->scope->assertAccess($partner, $condominiumId);
-        $units = $this->pdo->prepare("SELECT id, label, type, status FROM erp_units WHERE condominium_id = :c AND deleted_at IS NULL ORDER BY label LIMIT " . self::MAX_VIEW_ROWS);
-        $units->execute(['c' => $condominiumId]);
-        $people = $this->pdo->prepare("SELECT unit_id, name, relationship, email, phone, document FROM erp_residents WHERE condominium_id = :c AND deleted_at IS NULL AND status = 'active'
-            ORDER BY name LIMIT " . self::MAX_VIEW_ROWS);
-        $people->execute(['c' => $condominiumId]);
+        $today ??= date('Y-m-d');
+        // ADR 0684: só as unidades que a imobiliária administra (Unidades › Imobiliária), com a situação de pagamento.
+        $units = $this->pdo->prepare("SELECT id, label, type, status FROM erp_units WHERE condominium_id = :c AND partner_agency_id = :a AND deleted_at IS NULL
+            ORDER BY label LIMIT " . self::MAX_VIEW_ROWS);
+        $units->execute(['c' => $condominiumId, 'a' => (int)$agency['id']]);
+        $unitRows = $units->fetchAll(PDO::FETCH_ASSOC);
+        $ids = array_map(static fn (array $u): int => (int)$u['id'], $unitRows);
+        $payments = $ids === [] ? [] : $this->payments($condominiumId, $ids, $today);
+        $residents = [];
+        if ($ids !== []) {
+            $in = implode(',', $ids);
+            $people = $this->pdo->prepare("SELECT unit_id, name, relationship, email, phone, document FROM erp_residents WHERE condominium_id = :c AND unit_id IN ({$in})
+                AND deleted_at IS NULL AND status = 'active' ORDER BY name LIMIT " . self::MAX_VIEW_ROWS);
+            $people->execute(['c' => $condominiumId]);
+            $residents = $people->fetchAll(PDO::FETCH_ASSOC);
+        }
         return [
             'condominium_id' => $condominiumId,
-            'units' => array_map(static fn (array $u): array => ['id' => (int)$u['id'], 'label' => (string)$u['label'], 'type' => $u['type'], 'status' => (string)$u['status']],
-                $units->fetchAll(PDO::FETCH_ASSOC)),
+            'as_of' => $today,
+            'units' => array_map(static fn (array $u): array => ['id' => (int)$u['id'], 'label' => (string)$u['label'], 'type' => $u['type'], 'status' => (string)$u['status'],
+                'payment' => $payments[(int)$u['id']] ?? self::paymentSummary([], $today)], $unitRows),
             'residents' => array_map(static fn (array $p): array => ['unit_id' => $p['unit_id'] === null ? null : (int)$p['unit_id'], 'name' => (string)$p['name'],
                 'relationship' => $p['relationship'], 'email' => RegistryReports::maskEmail($p['email']), 'phone' => RegistryReports::maskPhone($p['phone']),
-                'document' => CollectionReports::maskDocument($p['document'])], $people->fetchAll(PDO::FETCH_ASSOC)),
+                'document' => CollectionReports::maskDocument($p['document'])], $residents),
         ];
+    }
+
+    /**
+     * Situação de pagamento de uma unidade (regra pura, ADR 0684): em atraso quando há conta a receber vencida e não paga;
+     * senão em dia. Só datas e totais: nada de descrição, pagador ou boleto.
+     *
+     * @param list<array{due_on:string, paid_on:?string, amount_cents:int}> $entries contas ativas da unidade
+     * @return array{situation:string, overdue_count:int, overdue_cents:int, oldest_overdue_on:?string, open_cents:int, last_paid_on:?string}
+     */
+    public static function paymentSummary(array $entries, string $today): array
+    {
+        $out = ['situation' => 'em_dia', 'overdue_count' => 0, 'overdue_cents' => 0, 'oldest_overdue_on' => null, 'open_cents' => 0, 'last_paid_on' => null];
+        foreach ($entries as $e) {
+            if ($e['paid_on'] !== null) {
+                $out['last_paid_on'] = max($out['last_paid_on'] ?? '', (string)$e['paid_on']);
+                continue;
+            }
+            $out['open_cents'] += (int)$e['amount_cents'];
+            if ((string)$e['due_on'] < $today) {
+                $out['overdue_count']++;
+                $out['overdue_cents'] += (int)$e['amount_cents'];
+                $out['oldest_overdue_on'] = $out['oldest_overdue_on'] === null ? (string)$e['due_on'] : min($out['oldest_overdue_on'], (string)$e['due_on']);
+            }
+        }
+        $out['situation'] = $out['overdue_count'] > 0 ? 'em_atraso' : 'em_dia';
+        return $out;
+    }
+
+    /** @param list<int> $unitIds @return array<int, array<string, mixed>> */
+    private function payments(int $condominiumId, array $unitIds, string $today): array
+    {
+        $in = implode(',', array_map('intval', $unitIds));
+        // Últimos 24 meses: o suficiente para atraso e último pagamento sem varrer o histórico inteiro.
+        $stmt = $this->pdo->prepare("SELECT unit_id, due_on, paid_on, amount_cents FROM erp_entries WHERE condominium_id = :c AND unit_id IN ({$in})
+            AND nature = 'receita' AND status = 'active' AND deleted_at IS NULL AND due_on >= DATE_SUB(:t, INTERVAL 24 MONTH)");
+        $stmt->execute(['c' => $condominiumId, 't' => $today]);
+        $byUnit = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $byUnit[(int)$r['unit_id']][] = ['due_on' => (string)$r['due_on'], 'paid_on' => $r['paid_on'] !== null ? (string)$r['paid_on'] : null, 'amount_cents' => (int)$r['amount_cents']];
+        }
+        return array_map(static fn (array $rows): array => self::paymentSummary($rows, $today), $byUnit);
     }
 
     /**
@@ -335,10 +393,11 @@ final class PartnerAccess
      */
     public function eligibleUsers(int $self): array
     {
-        $stmt = $this->pdo->prepare('SELECT u.id, u.first_name, u.last_name, u.email FROM users u WHERE u.level <= :level AND u.id <> :self
-            AND NOT EXISTS (SELECT 1 FROM access_user_roles r WHERE r.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM user_condominium_access a WHERE a.user_id = u.id)
+        $stmt = $this->pdo->prepare("SELECT u.id, u.first_name, u.last_name, u.email FROM users u WHERE u.level <= :level AND u.id <> :self
+            AND NOT EXISTS (SELECT 1 FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id WHERE ur.user_id = u.id AND r.slug NOT IN ('user', '" . self::PARTNER_ROLE . "'))
+            AND NOT EXISTS (SELECT 1 FROM user_condominium_access a WHERE a.user_id = u.id)
             AND NOT EXISTS (SELECT 1 FROM access_user_overrides o WHERE o.user_id = u.id) AND NOT EXISTS (SELECT 1 FROM erp_partner_agency_users p WHERE p.user_id = u.id)
-            ORDER BY u.first_name, u.last_name, u.id LIMIT 500');
+            ORDER BY u.first_name, u.last_name, u.id LIMIT 500");
         $stmt->execute(['level' => self::MAX_USER_LEVEL, 'self' => $self]);
         return array_map(static fn (array $r): array => ['id' => (int)$r['id'], 'label' => trim($r['first_name'] . ' ' . $r['last_name']) . ' · ' . RegistryReports::maskEmail($r['email'])],
             $stmt->fetchAll(PDO::FETCH_ASSOC));

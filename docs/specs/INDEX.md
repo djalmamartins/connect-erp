@@ -188,4 +188,5 @@ Connect ERP é de administradora única (ADR-002): fichas marcadas FORA DO ESCOP
 - [CN-009 — Dados pessoais (LGPD)](pages/cn-009-dados-pessoais.md) · configuracoes · CONFIRMADA (roteiro da v1.0, 16/11/2026)
 - [CN-010 — Meu Dia](pages/cn-010-meu-dia.md) · dashboard · CONFIRMADA (pedido do proprietário, 20/11/2026)
 - [CN-011 — Propostas](pages/cn-011-propostas-do-site.md) · comunicacao · CONFIRMADA (pedidos do proprietário, 22/11 e 26/11/2026)
-- [CN-012 — Síndicos profissionais](pages/cn-012-sindicos-profissionais.md) · cadastros · CONFIRMADA (pedido do proprietário, 27/11/2026)
+- [CN-012 — Unidades da imobiliária](pages/cn-012-unidades-da-imobiliaria.md) · condominios · CONFIRMADA (pedido do proprietário, 27/11/2026)
+- [CN-013 — Síndicos profissionais](pages/cn-013-sindicos-profissionais.md) · cadastros · CONFIRMADA (pedido do proprietário, 27/11/2026)

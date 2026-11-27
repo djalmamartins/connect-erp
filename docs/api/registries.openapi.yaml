@@ -106,13 +106,13 @@ components:
         document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
         unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
-        resident_id: { type: [integer, "null"], minimum: 1, description: 'ID de /residents ativo, do plano padrão ou do mesmo condomínio.' }
-        professional_manager_id: { type: [integer, "null"], minimum: 1, description: 'ID de /professional-managers ativo.' }
         term_years: { type: [string, "null"], enum: ['1', '2'] }
         term_starts_on: { type: [string, "null"], format: date }
         term_ends_on: { type: [string, "null"], format: date }
         email: { type: [string, "null"], format: email, maxLength: 254 }
         phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        resident_id: { type: [integer, "null"], minimum: 1, description: 'ID de /residents ativo, do plano padrão ou do mesmo condomínio.' }
+        professional_manager_id: { type: [integer, "null"], minimum: 1, description: 'ID de /professional-managers ativo.' }
         notes: { type: [string, "null"], maxLength: 2000 }
         status: { type: string, enum: [active, inactive], default: active }
     BoardMembers:

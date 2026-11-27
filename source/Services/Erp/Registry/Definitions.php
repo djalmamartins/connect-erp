@@ -227,7 +227,7 @@ final class Definitions
                     // ADR 0151 (Djalma, 10/11/2026): e-mail e telefone obrigatórios; são o canal de comunicação com o conselho.
                     'email' => ['label' => 'E-mail', 'type' => 'email', 'required' => true, 'span' => 6],
                     'phone' => ['label' => 'Telefone', 'type' => 'phone', 'required' => true, 'span' => 6, 'list' => true],
-                    // ADR 0683 (Djalma, 27/11/2026): a pessoa vem dos moradores do prédio ou dos síndicos profissionais,
+                    // ADR 0686 (Djalma, 27/11/2026): a pessoa vem dos moradores do prédio ou dos síndicos profissionais,
                     // escolhida no quadro "Escolher a pessoa" ou nas sugestões do nome (GET /api/v1/board-members/candidates).
                     // 'ref_lazy': as opções não vão no formulário (um prédio grande tem centenas de moradores); o servidor
                     // confere do mesmo jeito que existe, está ativo e é do mesmo condomínio.
@@ -243,11 +243,11 @@ final class Definitions
                 'order' => 'role',
                 'title' => 'name',
             ],
-            // ADR 0683 (Djalma, 27/11/2026): síndicos profissionais da Connect, escolhidos no cadastro "Síndico e conselho".
+            // ADR 0686 (Djalma, 27/11/2026): síndicos profissionais da Connect, escolhidos no cadastro "Síndico e conselho".
             // Da administradora (escopo none, como fornecedores e advogados): o mesmo síndico atende vários prédios.
             // Usa as permissões de "Síndico e conselho" (erp.board), sem permissão nova.
             'professional_managers' => [
-                'page' => 'CN-012', 'table' => 'erp_professional_managers', 'route' => '/cadastros/sindicos-profissionais',
+                'page' => 'CN-013', 'table' => 'erp_professional_managers', 'route' => '/cadastros/sindicos-profissionais',
                 'api' => 'professional-managers', 'permission' => 'erp.board', 'label' => 'Síndicos profissionais',
                 'entity' => 'síndico profissional', 'gender' => 'o', 'scope' => 'none',
                 'lead' => 'Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Escolha-os em Síndico e conselho.',

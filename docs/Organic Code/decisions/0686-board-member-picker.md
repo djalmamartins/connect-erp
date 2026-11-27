@@ -1,4 +1,4 @@
-# 0683 — Síndico e conselho escolhidos entre os moradores e os síndicos profissionais, com mandato de 1 ou 2 anos
+# 0686 — Síndico e conselho escolhidos entre os moradores e os síndicos profissionais, com mandato de 1 ou 2 anos
 
 - Status: Aceito
 - Data: 27/11/2026
@@ -15,7 +15,7 @@ síndicos profissionais, que atendem vários prédios, e o fim do mandato era di
 
 ## Decisão
 
-- **Síndicos profissionais (CN-012)**: cadastro novo no motor, `erp_professional_managers`, rota
+- **Síndicos profissionais (CN-013)**: cadastro novo no motor, `erp_professional_managers`, rota
   `/erp/cadastros/sindicos-profissionais`, API `/api/v1/professional-managers`. É da administradora (escopo none, como
   fornecedores e advogados; ADR-002): sem `condominium_id`, o mesmo síndico serve a vários prédios. Usa as permissões
   de Síndico e conselho (`erp.board.view` / `erp.board.manage`), sem permissão nova (outra frente mexe em papéis e

@@ -1,6 +1,6 @@
 <?php
 /**
- * "Escolher a pessoa" no cadastro Síndico e conselho (ADR 0683, pedido do Djalma, 27/11/2026). Mostra os moradores do
+ * "Escolher a pessoa" no cadastro Síndico e conselho (ADR 0686, pedido do Djalma, 27/11/2026). Mostra os moradores do
  * prédio escolhido no formulário e os síndicos profissionais da Connect, com busca; ao clicar, o erp.js
  * (data-erp-board-picker) preenche nome, CPF/CNPJ, e-mail, telefone e unidade e grava o vínculo no campo escondido
  * (resident_id ou professional_manager_id). As mesmas pessoas aparecem como sugestão ao digitar o nome.

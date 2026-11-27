@@ -30,7 +30,7 @@ $display = match ($field['type']) {
 $units ??= [];
 $attachment ??= null;
 ?>
-<?php // 'only_if' aceita uma lista de valores (ADR 0683): data-only-if="f-role=sindico|subsindico".
+<?php // 'only_if' aceita uma lista de valores (ADR 0686): data-only-if="f-role=sindico|subsindico".
 $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . implode('|', array_map('strval', (array)$expected))) . '"'; } ?>
 <div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>"<?= $onlyIf ?>>
     <?php if ($field['type'] === 'bool'): ?>
@@ -115,7 +115,7 @@ $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf
                 <?php endforeach; ?>
             </select>
         <?php elseif ($field['type'] === 'ref' && !empty($field['ref_lazy'])):
-            // ADR 0683: sem lista no formulário; o valor vem do quadro "Escolher a pessoa" (erp.js) e aqui só aparece quem
+            // ADR 0686: sem lista no formulário; o valor vem do quadro "Escolher a pessoa" (erp.js) e aqui só aparece quem
             // está vinculado, com "Desvincular". O servidor confere o vínculo ao gravar.
             $linked = ($refOptions ?? [])[0]['label'] ?? null; ?>
             <input type="hidden" id="<?= $id ?>" name="<?= $this->e($name) ?>" value="<?= $this->e($text) ?>"<?= $disabled ?> data-erp-ref-lazy>

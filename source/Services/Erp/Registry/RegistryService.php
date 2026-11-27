@@ -300,7 +300,7 @@ final class RegistryService
         }
 
         [$values, $errors] = RegistryValidator::validate($definition, $input);
-        // ADR 0683: o limite de 'max_years' vale para o mandato novo ou alterado; registro antigo editado sem mexer nas
+        // ADR 0686: o limite de 'max_years' vale para o mandato novo ou alterado; registro antigo editado sem mexer nas
         // datas (ex.: só o telefone) continua gravando, mesmo com mandato anterior à regra.
         if ($before !== null) {
             foreach ($definition['fields'] as $name => $field) {
@@ -642,7 +642,7 @@ final class RegistryService
             $target = self::definition((string)$field['ref']);
             [$where, $params] = $this->scopeWhere($user, $target);
             if (!empty($field['ref_lazy'])) {
-                // ADR 0683: sem lista; só o registro já vinculado (mesmo inativo), para o formulário mostrar o nome.
+                // ADR 0686: sem lista; só o registro já vinculado (mesmo inativo), para o formulário mostrar o nome.
                 $current = filter_var($values[$name] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
                 if ($current === false || $current === null) {
                     $options[$name] = [];
@@ -896,7 +896,7 @@ final class RegistryService
             if ($field['type'] !== 'ref' || $values[$name] === null) {
                 continue;
             }
-            // ADR 0683: vínculo 'ref_lazy' que não mudou continua valendo mesmo se a pessoa ficou inativa (o morador saiu
+            // ADR 0686: vínculo 'ref_lazy' que não mudou continua valendo mesmo se a pessoa ficou inativa (o morador saiu
             // do prédio), para o mandato antigo poder ser editado e encerrado. Vínculo novo é conferido inteiro.
             if (!empty($field['ref_lazy']) && $before !== null && (string)($before[$name] ?? '') === (string)$values[$name]
                 && (string)($before['condominium_id'] ?? '') === (string)($values['condominium_id'] ?? '')) {

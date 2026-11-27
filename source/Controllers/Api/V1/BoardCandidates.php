@@ -12,7 +12,7 @@ use Source\Services\Erp\BoardCandidates as Service;
 use Source\Support\Access;
 
 /**
- * Moradores do prédio e síndicos profissionais para escolher o síndico e o conselho (ADR 0683), somente leitura:
+ * Moradores do prédio e síndicos profissionais para escolher o síndico e o conselho (ADR 0686), somente leitura:
  *  GET /api/v1/board-members/candidates?condominium_id=
  *  {"data":{"condominium_id","residents_allowed","residents":[{"id","name","document","document_formatted","email","phone",
  *   "unit_id","unit_label","relationship","relationship_label"}],"professionals":[{"id","name","document",

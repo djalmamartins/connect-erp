@@ -240,7 +240,7 @@ final class Registry extends Controller
             'occurrenceTicket' => $definition['slug'] === 'occurrences' && $id !== null ? self::ticketData($id, $values, $canManage) : null,
             'recordAction' => $id !== null && $canManage ? self::recordAction($definition['slug'], $id, $values) : null,
             'unitOccupants' => $definition['slug'] === 'units' && $id !== null ? self::occupantsData($user, $id) : null,
-            // ADR 0683: síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais.
+            // ADR 0686: síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais.
             'boardPicker' => $definition['slug'] === 'board' && $canManage && ($id === null || $service->canWrite($user, 'board', $values)) ? [
                 'api' => url('/api/v1/board-members/candidates'),
                 'newProfessional' => erp_url('/cadastros/sindicos-profissionais/novo'),

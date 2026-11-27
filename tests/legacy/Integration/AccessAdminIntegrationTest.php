@@ -62,13 +62,30 @@ final class AccessAdminIntegrationTest extends TestCase
         $this->pdo->prepare('INSERT INTO access_user_roles (user_id, role_id) VALUES (?, ?)')->execute([(int)$withRole->id, (int)$this->pdo->lastInsertId()]);
         $this->expectFailure(fn () => $service->linkUser($this->admin, $agency['id'], (int)$withRole->id), DomainException::class, 'usuário que já tem papel');
         $this->expectFailure(fn () => $service->grant($this->admin, (int)$withRole->id, $this->alpha), DomainException::class, 'conceder condomínio a quem não é parceiro');
+        // Conta criada no Studio nasce com o papel Morador: serve para a imobiliária e vira Imobiliária (ADR 0684).
+        $fromStudio = $this->user(1, []);
+        $this->pdo->exec("INSERT IGNORE INTO access_roles (name, slug, level) VALUES ('Morador', 'user', 10)");
+        $this->pdo->prepare("INSERT INTO access_user_roles (user_id, role_id) SELECT ?, id FROM access_roles WHERE slug = 'user'")->execute([(int)$fromStudio->id]);
+        self::assertContains((int)$fromStudio->id, array_column($service->eligibleUsers((int)$this->admin->id), 'id'));
+        $service->linkUser($this->admin, $agency['id'], (int)$fromStudio->id);
+        self::assertSame('erp_partner', (string)$this->pdo->query('SELECT r.slug FROM access_user_roles ur JOIN access_roles r ON r.id = ur.role_id WHERE ur.user_id = ' . (int)$fromStudio->id)->fetchColumn());
 
         // O parceiro vê unidades e moradores com contato mascarado, e só isso.
         $registry = new RegistryService($this->pdo);
         $unit = $registry->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '101', 'type' => 'apartamento'])['id'];
         $registry->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $unit, 'relationship' => 'owner', 'name' => 'Bia', 'email' => 'bia@morador.test', 'phone' => '11987654321']);
-        $view = $service->view($partner, $this->alpha);
+        $other = $registry->save($this->admin, 'units', ['condominium_id' => $this->alpha, 'number' => '102', 'type' => 'apartamento'])['id'];
+        $registry->save($this->admin, 'residents', ['condominium_id' => $this->alpha, 'unit_id' => $other, 'relationship' => 'owner', 'name' => 'Caio']);
+        self::assertSame([], $service->view($partner, $this->alpha)['units'], 'ADR 0684: sem unidade ligada à imobiliária, nada.');
+        $this->pdo->prepare('UPDATE erp_units SET partner_agency_id = ? WHERE id = ?')->execute([$agency['id'], $unit]);
+        $view = $service->view($partner, $this->alpha, '2026-11-20');
+        self::assertSame([(int)$unit], array_column($view['units'], 'id'), 'Só a unidade que a imobiliária administra.');
+        self::assertSame('em_dia', $view['units'][0]['payment']['situation']);
+        self::assertSame(['Bia'], array_column($view['residents'], 'name'));
         self::assertSame(['b**@morador.test', '*******4321'], [$view['residents'][0]['email'], $view['residents'][0]['phone']]);
+        $this->resetAccessCache();
+        self::assertTrue(\Source\Controllers\Erp\Connect\PartnerUnitScreens::partnerOnly($partner), 'Menu da imobiliária só com as unidades dela.');
+        self::assertFalse(\Source\Controllers\Erp\Connect\PartnerUnitScreens::partnerOnly($this->admin));
         $this->resetAccessCache();
         self::assertTrue(Access::can('erp.partner.view', $partner));
         foreach (['erp.entries.view', 'erp.agreements.view', 'erp.documents.view', 'erp.residents.view', 'erp.access_admin.manage'] as $denied) {

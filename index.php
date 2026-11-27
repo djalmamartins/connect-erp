@@ -620,7 +620,7 @@ $route->post("/legal-cases", "Collections:storeCase", null, \Source\Support\Midd
 $route->get("/legal-cases/{id}", "Collections:showCase", null, \Source\Support\Middleware\ApiAuthenticated::class);
 $route->post("/legal-cases/{id}/events", "Collections:caseEvent", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
-// Moradores e síndicos profissionais para escolher síndico e conselho (ADR 0683). Antes do laço: /board-members/{id}.
+// Moradores e síndicos profissionais para escolher síndico e conselho (ADR 0686). Antes do laço: /board-members/{id}.
 $route->get("/board-members/candidates", "BoardCandidates:index", null, \Source\Support\Middleware\ApiAuthenticated::class);
 
 // Cadastros do ERP (ADR 0014): um recurso por cadastro, mesmo RegistryService das telas.

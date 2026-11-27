@@ -1,8 +1,8 @@
-# CN-012 — Síndicos profissionais
+# CN-013 — Síndicos profissionais
 
 Origem: pedido do proprietário em 27/11/2026, nos testes de Síndico e conselho ("aonde tem o histórico embaixo, se a
 gente ter como cadastrar síndicos profissionais, e aí a gente seleciona qual é o síndico profissional que está"). Não
-existe no inventário APControle; é página própria da Connect. Decisão: ADR 0683.
+existe no inventário APControle; é página própria da Connect. Decisão: ADR 0686.
 Rota: `/erp/cadastros/sindicos-profissionais` (grupo Cadastros, logo depois de Síndico e conselho).
 API: `/api/v1/professional-managers` (motor de cadastros, ADR 0014) e `GET /api/v1/board-members/candidates`.
 

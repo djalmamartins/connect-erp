@@ -1,4 +1,4 @@
--- Reversão da ADR 0683: tira os vínculos do membro e a duração do mandato e apaga os síndicos profissionais.
+-- Reversão da ADR 0686: tira os vínculos do membro e a duração do mandato e apaga os síndicos profissionais.
 ALTER TABLE `erp_board_members`
   DROP FOREIGN KEY IF EXISTS `fk_erp_board_members_resident`,
   DROP FOREIGN KEY IF EXISTS `fk_erp_board_members_professional`;

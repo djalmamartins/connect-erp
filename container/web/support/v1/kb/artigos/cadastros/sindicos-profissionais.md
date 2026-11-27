@@ -1,5 +1,5 @@
 ---
-codigo: CN-012
+codigo: CN-013
 titulo: Cadastrar síndicos profissionais
 resumo: Síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. Cadastre uma vez e escolha-os em Síndico e conselho, em qualquer prédio.
 categoria: cadastros
@@ -8,7 +8,7 @@ menu: Cadastros > Síndicos profissionais
 icone: list-outline
 situacao: funciona
 relacionados: sindico-e-conselho, proprietarios-e-inquilinos, fornecedores
-palavras: síndicos profissionais, síndico profissional, cadastros, CN-012, síndico externo, empresa de sindicatura
+palavras: síndicos profissionais, síndico profissional, cadastros, CN-013, síndico externo, empresa de sindicatura
 rascunho: nao
 manual: sim
 ---

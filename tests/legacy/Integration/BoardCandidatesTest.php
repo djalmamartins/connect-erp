@@ -14,7 +14,7 @@ use Source\Services\Erp\Registry\RegistryService;
 use Source\Services\Erp\Registry\RegistryValidationException;
 use Source\Support\Access;
 
-/** ADR 0683: síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais. */
+/** ADR 0686: síndico e conselho escolhidos entre os moradores do prédio e os síndicos profissionais. */
 final class BoardCandidatesTest extends TestCase
 {
     private int $alpha;

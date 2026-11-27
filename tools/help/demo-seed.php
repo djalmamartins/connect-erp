@@ -142,7 +142,7 @@ $suppliers = [];
 foreach ([['Elevadores Ascensão Ltda', 'elevadores'], ['Limpa Bem Serviços', 'limpeza'], ['Verde Vivo Jardinagem', 'jardinagem'], ['Águas da Cidade', 'concessionaria']] as $i => [$supplierName, $category]) {
     $suppliers[] = $save('suppliers', ['legal_name' => $supplierName, 'document' => cnpj(40 + $i), 'trade_name' => explode(' ', $supplierName)[0], 'category' => $category, 'email' => 'contato' . $i . '@fornecedor.exemplo', 'phone' => '(16) 3300-450' . $i]);
 }
-// Síndicos profissionais (ADR 0683), escolhidos em Síndico e conselho.
+// Síndicos profissionais (ADR 0686), escolhidos em Síndico e conselho.
 $save('professional_managers', ['name' => 'Sindicatura Prime Gestão Ltda', 'document' => cnpj(60), 'contact_name' => 'Marcos Prado', 'email' => 'atendimento@sindicatura.exemplo', 'phone' => '(16) 3300-4600']);
 $save('professional_managers', ['name' => 'Renata Coelho Síndica Profissional', 'document' => cpf(910), 'email' => 'renata@sindica.exemplo', 'phone' => '(16) 99300-4700']);
 $save('lawyers', ['name' => 'Helena Duarte Ramos', 'oab' => 'SP123456', 'document' => cpf(900), 'firm' => 'Duarte Ramos Advocacia', 'email' => 'helena@advocacia.exemplo', 'fee_percent' => '10']);

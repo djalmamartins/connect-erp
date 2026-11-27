@@ -9,7 +9,7 @@ use Source\Services\Erp\Registry\Definitions;
 use Source\Services\Erp\Registry\RegistryValidator;
 use Source\Core\View;
 
-/** ADR 0683: síndico e conselho entre moradores e síndicos profissionais, mandato de 1 ou 2 anos; sem banco. */
+/** ADR 0686: síndico e conselho entre moradores e síndicos profissionais, mandato de 1 ou 2 anos; sem banco. */
 final class BoardMemberPickerTest extends TestCase
 {
     private const THEME = 'container/erp/connect/v1/';
@@ -71,12 +71,12 @@ final class BoardMemberPickerTest extends TestCase
     public function testProfessionalManagersRegistry(): void
     {
         $def = Definitions::get('professional_managers');
-        self::assertSame(['CN-012', 'erp_professional_managers', '/cadastros/sindicos-profissionais', 'professional-managers', 'erp.board', 'none'],
+        self::assertSame(['CN-013', 'erp_professional_managers', '/cadastros/sindicos-profissionais', 'professional-managers', 'erp.board', 'none'],
             [$def['page'], $def['table'], $def['route'], $def['api'], $def['permission'], $def['scope']]);
         [, $errors] = RegistryValidator::validate($def, []);
         self::assertSame(['name', 'email', 'phone'], array_keys($errors));
         $catalog = require self::THEME . 'components/layout/catalog.php';
-        self::assertSame('/cadastros/sindicos-profissionais', $catalog['pages']['CN-012']['route']);
+        self::assertSame('/cadastros/sindicos-profissionais', $catalog['pages']['CN-013']['route']);
         $board = Definitions::get('board')['fields'];
         self::assertSame('professional_managers', $board['professional_manager_id']['ref']);
         self::assertTrue($board['resident_id']['ref_lazy'] && $board['professional_manager_id']['ref_lazy'], 'Sem lista de centenas de moradores no formulário.');
