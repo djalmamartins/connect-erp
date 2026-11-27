@@ -59,7 +59,9 @@ final class RegistryValidator
         }
         foreach ($definition['fields'] as $name => $field) {
             foreach ($field['only_if'] ?? [] as $other => $expected) {
-                if (!isset($errors[$name]) && ($clean[$name] ?? null) !== null && (string)($clean[$other] ?? '') !== (string)$expected) {
+                // Caixa desmarcada (bool 0) conta como vazia (ADR 0685).
+                $empty = ($clean[$name] ?? null) === null || ($field['type'] === 'bool' && $clean[$name] === 0);
+                if (!isset($errors[$name]) && !$empty && (string)($clean[$other] ?? '') !== (string)$expected) {
                     $errors[$name] = $field['only_if_message'] ?? 'Campo não se aplica.';
                 }
             }

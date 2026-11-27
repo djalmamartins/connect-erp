@@ -63,7 +63,7 @@ final class LabSampleYearRemovalTest extends TestCase
             "CREATE TABLE erp_cost_centers (id INTEGER PRIMARY KEY, condominium_id INTEGER, code TEXT, name TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_suppliers (id INTEGER PRIMARY KEY, condominium_id INTEGER, legal_name TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_bank_accounts (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL REFERENCES condominiums (id), name TEXT, bank_code TEXT, branch TEXT,
-                account_number TEXT, kind TEXT DEFAULT 'corrente', parent_bank_account_id INTEGER REFERENCES erp_bank_accounts (id), opening_balance_cents INTEGER DEFAULT 0,
+                account_number TEXT, kind TEXT DEFAULT 'corrente', parent_bank_account_id INTEGER REFERENCES erp_bank_accounts (id), is_pocket INTEGER DEFAULT 0, opening_balance_cents INTEGER DEFAULT 0,
                 opened_on TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_agreements (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL REFERENCES condominiums (id), unit_id INTEGER REFERENCES erp_units (id), status TEXT,
                 chart_account_id INTEGER REFERENCES erp_chart_accounts (id), original_cents INTEGER, fees_cents INTEGER, discount_cents INTEGER, total_cents INTEGER,

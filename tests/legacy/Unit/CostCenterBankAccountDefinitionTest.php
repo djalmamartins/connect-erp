@@ -43,7 +43,7 @@ final class CostCenterBankAccountDefinitionTest extends TestCase
     {
         $definition = Definitions::get('bank_accounts');
         [, $errors] = RegistryValidator::validate($definition, []);
-        self::assertSame(['condominium_id', 'name', 'bank_code', 'branch', 'account_number', 'kind'], array_keys($errors));
+        self::assertSame(['condominium_id', 'name', 'kind', 'bank_code', 'branch', 'account_number'], array_keys($errors));
 
         $valid = ['condominium_id' => '1', 'name' => 'Movimento', 'bank_code' => '341', 'branch' => '1234', 'account_number' => '12345-6', 'kind' => 'corrente'];
         [$clean, $errors] = RegistryValidator::validate($definition, $valid + ['is_main' => '1', 'opening_balance_cents' => '1.500,00', 'opened_on' => '01/11/2026']);

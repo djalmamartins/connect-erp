@@ -59,6 +59,16 @@ final class Investments
             }
             $parent = (int)$row['id'];
         }
+        if ($investment['is_pocket']) {
+            // Caixinha (ADR 0685): sempre ligada a uma conta corrente, com o banco, a agência e a conta dela.
+            if ($parent === null) {
+                throw new InvalidArgumentException('A caixinha precisa ficar ligada a uma conta corrente.');
+            }
+            $numbers = $this->pdo->prepare('SELECT bank_code, branch, account_number FROM erp_bank_accounts WHERE id = :p');
+            $numbers->execute(['p' => $parent]);
+            $this->pdo->prepare('UPDATE erp_bank_accounts SET bank_code = :b, branch = :g, account_number = :n WHERE id = :id')
+                ->execute(array_combine(['b', 'g', 'n'], array_values((array)$numbers->fetch(PDO::FETCH_ASSOC))) + ['id' => $investmentId]);
+        }
         $this->pdo->prepare('UPDATE erp_bank_accounts SET parent_bank_account_id = :p WHERE id = :id')->execute(['p' => $parent, 'id' => $investmentId]);
         Audit::record('update', 'erp_bank_accounts', $investmentId, ['parent_bank_account_id' => $investment['parent_bank_account_id']], ['parent_bank_account_id' => $parent]);
         return $this->account($user, $investmentId);
@@ -143,14 +153,14 @@ final class Investments
     /** @return array{id:int, condominium_id:int, name:string, kind:string, parent_bank_account_id:?int} */
     private function account(User $user, int $id): array
     {
-        $stmt = $this->pdo->prepare("SELECT id, condominium_id, name, kind, parent_bank_account_id FROM erp_bank_accounts WHERE id = :id AND deleted_at IS NULL AND status = 'active'");
+        $stmt = $this->pdo->prepare("SELECT id, condominium_id, name, kind, parent_bank_account_id, is_pocket FROM erp_bank_accounts WHERE id = :id AND deleted_at IS NULL AND status = 'active'");
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row === false || !$this->scope->canAccess($user, (int)$row['condominium_id'])) {
             throw new CondominiumAccessDenied($row === false ? 0 : (int)$row['condominium_id']);   // 404, sem dizer se existe
         }
         return ['id' => (int)$row['id'], 'condominium_id' => (int)$row['condominium_id'], 'name' => (string)$row['name'], 'kind' => (string)$row['kind'],
-            'parent_bank_account_id' => $row['parent_bank_account_id'] !== null ? (int)$row['parent_bank_account_id'] : null];
+            'parent_bank_account_id' => $row['parent_bank_account_id'] !== null ? (int)$row['parent_bank_account_id'] : null, 'is_pocket' => (bool)$row['is_pocket']];
     }
 
     private function shortcuts(): EntryShortcuts

@@ -37,6 +37,10 @@ namespace Source\Services\Erp\Registry;
  *   'month' => true num texto AAAA-MM mostra o seletor de mês e aceita 11/2026 ou nov/2026.
  * 'only_if' => [campo => valor] no campo (ADR 0149): preenchido só quando o outro campo tem o valor; o
  *   formulário esconde o campo nos outros casos e o validador recusa ('only_if_message').
+ * ADR 0685: 'hide_if' => campo bool: o formulário esconde o campo (e deixa de exigi-lo) com a caixa marcada.
+ *   'inherit' => ['when' => bool, 'from' => campo ref, 'fields' => [...]] no cadastro: com a caixa marcada, os
+ *   campos são copiados do registro apontado (do mesmo cadastro e do mesmo condomínio), não do formulário.
+ *   'unique' aceita 'unless' => campo bool: com a caixa marcada não compara, e os registros marcados não contam.
  */
 final class Definitions
 {
@@ -525,19 +529,23 @@ final class Definitions
                 'fields' => [
                     'condominium_id' => ['label' => 'Condomínio', 'type' => 'condominium', 'required' => true, 'span' => 6, 'list' => true],
                     'name' => ['label' => 'Apelido', 'type' => 'text', 'required' => true, 'max' => 80, 'span' => 6, 'list' => true, 'search' => true, 'hint' => 'Ex.: Conta movimento'],
-                    'bank_code' => ['label' => 'Banco (código)', 'type' => 'text', 'required' => true, 'max' => 3, 'span' => 2, 'list' => true,
-                        'pattern' => '/^\d{3}$/', 'pattern_message' => 'Use o código de 3 dígitos do banco (COMPE).'],
-                    'branch' => ['label' => 'Agência', 'type' => 'text', 'required' => true, 'max' => 10, 'span' => 2, 'list' => true,
-                        'pattern' => '/^\d{1,5}(-[\dXx])?$/', 'pattern_message' => 'Agência inválida (ex.: 1234 ou 1234-5).'],
-                    'account_number' => ['label' => 'Conta', 'type' => 'text', 'required' => true, 'max' => 20, 'span' => 3, 'list' => true, 'search' => true,
-                        'pattern' => '/^\d{1,15}-[\dXx]$/', 'pattern_message' => 'Conta com dígito (ex.: 123456-7).'],
                     'kind' => ['label' => 'Tipo', 'type' => 'select', 'required' => true, 'span' => 3, 'filter' => true, 'options' => ['corrente' => 'Conta corrente', 'poupanca' => 'Poupança', 'aplicacao' => 'Aplicação']],
+                    // ADR 0685: caixinha = aplicação no mesmo banco da conta corrente, como os bancos fazem hoje.
+                    // Banco, agência e conta vêm da conta corrente ligada e não se digitam de novo.
+                    'is_pocket' => ['label' => 'Caixinha no mesmo banco da conta corrente', 'type' => 'bool', 'span' => 3,
+                        'only_if' => ['kind' => 'aplicacao'], 'only_if_message' => 'Só uma conta de tipo aplicação pode ser caixinha.'],
                     // ADR 0170 e 0149: a aplicação aponta para a conta corrente de onde sai e para onde volta o dinheiro.
                     'parent_bank_account_id' => ['label' => 'Conta corrente da aplicação', 'type' => 'ref', 'span' => 6, 'ref' => 'bank_accounts',
                         'ref_where' => ['kind' => 'corrente'], 'ref_label' => ['name', 'bank_code', 'account_number'],
                         'ref_message' => 'Escolha uma conta corrente ativa do mesmo condomínio.',
                         'only_if' => ['kind' => 'aplicacao'], 'only_if_message' => 'Só uma conta de tipo aplicação é ligada a uma conta corrente.',
-                        'hint' => 'Só para aplicação: aplicar tira desta conta e resgatar devolve para ela'],
+                        'hint' => 'Aplicar tira desta conta e resgatar devolve para ela. Na caixinha, banco, agência e conta são os desta conta'],
+                    'bank_code' => ['label' => 'Banco (código)', 'type' => 'text', 'required' => true, 'max' => 3, 'span' => 2, 'list' => true, 'hide_if' => 'is_pocket',
+                        'pattern' => '/^\d{3}$/', 'pattern_message' => 'Use o código de 3 dígitos do banco (COMPE).'],
+                    'branch' => ['label' => 'Agência', 'type' => 'text', 'required' => true, 'max' => 10, 'span' => 2, 'list' => true, 'hide_if' => 'is_pocket',
+                        'pattern' => '/^\d{1,5}(-[\dXx])?$/', 'pattern_message' => 'Agência inválida (ex.: 1234 ou 1234-5).'],
+                    'account_number' => ['label' => 'Conta', 'type' => 'text', 'required' => true, 'max' => 20, 'span' => 3, 'list' => true, 'search' => true, 'hide_if' => 'is_pocket',
+                        'pattern' => '/^\d{1,15}-[\dXx]$/', 'pattern_message' => 'Conta com dígito (ex.: 123456-7).'],
                     'wallet' => ['label' => 'Carteira de cobrança', 'type' => 'text', 'max' => 20, 'span' => 2, 'hint' => 'Quando houver'],
                     'opening_balance_cents' => ['label' => 'Saldo inicial', 'type' => 'money', 'span' => 3],
                     'opened_on' => ['label' => 'Data do saldo inicial', 'type' => 'date', 'span' => 3],
@@ -547,9 +555,13 @@ final class Definitions
                         'ref_message' => 'Escolha um centro de custo ativo do padrão ou deste condomínio.', 'hint' => 'Opcional; sugerido nos lançamentos desta conta'],
                     'notes' => ['label' => 'Observações', 'type' => 'longtext', 'max' => 2000, 'span' => 12],
                 ],
-                'unique' => [['fields' => ['condominium_id', 'bank_code', 'branch', 'account_number'], 'message' => 'Esta conta já está cadastrada neste condomínio.']],
+                // ADR 0685: a caixinha repete banco, agência e conta da conta corrente, por isso fica fora da comparação.
+                'unique' => [['fields' => ['condominium_id', 'bank_code', 'branch', 'account_number'], 'unless' => 'is_pocket',
+                    'message' => 'Esta conta já está cadastrada neste condomínio. Se for uma aplicação no mesmo banco, marque "Caixinha no mesmo banco da conta corrente".']],
+                'inherit' => ['when' => 'is_pocket', 'from' => 'parent_bank_account_id', 'fields' => ['bank_code', 'branch', 'account_number']],
                 'single_active' => [['field' => 'is_main', 'value' => 1, 'per' => 'condominium_id', 'message' => 'Este condomínio já tem uma conta principal ativa. Desmarque a atual antes.']],
-                'requires' => [['field' => 'opened_on', 'when' => 'opening_balance_cents', 'message' => 'Informe a data do saldo inicial.']],
+                'requires' => [['field' => 'opened_on', 'when' => 'opening_balance_cents', 'message' => 'Informe a data do saldo inicial.'],
+                    ['field' => 'parent_bank_account_id', 'when' => 'is_pocket', 'message' => 'Escolha a conta corrente da caixinha.']],
                 'order' => 'name',
             ],
             // Lançamentos (AP-020, ADR 0022): receitas e despesas do condomínio. A conta do plano de

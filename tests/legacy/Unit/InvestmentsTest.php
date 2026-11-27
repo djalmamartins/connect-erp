@@ -39,6 +39,7 @@ final class InvestmentsTest extends TestCase
             "CREATE TABLE erp_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER, nature TEXT, chart_account_id INTEGER, bank_account_id INTEGER, description TEXT,
                 amount_cents INTEGER, competence TEXT, due_on TEXT, paid_on TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_bank_accounts (id INTEGER PRIMARY KEY, condominium_id INTEGER, name TEXT, kind TEXT DEFAULT 'corrente', parent_bank_account_id INTEGER,
+                is_pocket INTEGER DEFAULT 0, bank_code TEXT, branch TEXT, account_number TEXT,
                 opening_balance_cents INTEGER DEFAULT 0, opened_on TEXT, status TEXT DEFAULT 'active', deleted_at TEXT)",
             "CREATE TABLE erp_bank_transfers (id INTEGER PRIMARY KEY, condominium_id INTEGER NOT NULL, from_bank_account_id INTEGER, to_bank_account_id INTEGER, amount_cents INTEGER,
                 transferred_on TEXT, description TEXT, status TEXT DEFAULT 'active', created_by INTEGER, cancelled_by INTEGER, cancelled_at TEXT, cancel_reason TEXT,
@@ -81,6 +82,23 @@ final class InvestmentsTest extends TestCase
         }
         $this->expectScope(fn () => $service->link($this->user(), 30, 31));
         self::assertNull($service->link($this->user(), 11, null)['parent_bank_account_id'], 'Desligar.');
+    }
+
+    /** ADR 0685: a caixinha nunca fica sem conta corrente e, ao trocar de conta, leva o banco, a agência e a conta dela. */
+    public function testPocketFollowsItsCheckingAccount(): void
+    {
+        $this->pdo->exec("UPDATE erp_bank_accounts SET bank_code = '077', branch = '0001', account_number = '1234-5' WHERE id = 10");
+        $this->pdo->exec("UPDATE erp_bank_accounts SET bank_code = '341', branch = '4321', account_number = '999-1' WHERE id = 12");
+        $this->pdo->exec("UPDATE erp_bank_accounts SET is_pocket = 1, parent_bank_account_id = 10, bank_code = '077', branch = '0001', account_number = '1234-5' WHERE id = 11");
+        $service = $this->service();
+        try {
+            $service->link($this->user(), 11, null);
+            self::fail('Desligou a caixinha.');
+        } catch (InvalidArgumentException $error) {
+            self::assertStringContainsString('caixinha', $error->getMessage());
+        }
+        self::assertSame(12, $service->link($this->user(), 11, 12)['parent_bank_account_id']);
+        self::assertSame(['341', '4321', '999-1'], array_values($this->pdo->query('SELECT bank_code, branch, account_number FROM erp_bank_accounts WHERE id = 11')->fetch(\PDO::FETCH_ASSOC)));
     }
 
     public function testApplyAndYieldKeepTheTotalAndShowOnlyTheYieldInTheIncomeStatement(): void

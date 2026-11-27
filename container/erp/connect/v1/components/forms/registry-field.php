@@ -30,7 +30,9 @@ $display = match ($field['type']) {
 $units ??= [];
 $attachment ??= null;
 ?>
-<?php $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . $expected) . '"'; } ?>
+<?php $onlyIf = ''; foreach ($field['only_if'] ?? [] as $other => $expected) { $onlyIf = ' data-only-if="' . $this->e('f-' . $other . '=' . $expected) . '"'; }
+// ADR 0685: 'hide_if' esconde o campo com a caixa marcada (ex.: banco, agência e conta da caixinha vêm da conta corrente).
+if (isset($field['hide_if'])) { $onlyIf .= ' data-hide-if="' . $this->e('f-' . $field['hide_if']) . '"'; } ?>
 <div class="erp-field erp-col-<?= $attachment !== null ? max(6, (int)$field['span']) : (int)$field['span'] ?>"<?= $onlyIf ?>>
     <?php if ($field['type'] === 'bool'): ?>
         <span class="erp-field__label" aria-hidden="true">&nbsp;</span>

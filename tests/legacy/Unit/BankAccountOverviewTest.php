@@ -36,7 +36,7 @@ final class BankAccountOverviewTest extends TestCase
             "CREATE TABLE condominiums (id INTEGER PRIMARY KEY, name TEXT, document TEXT, status TEXT DEFAULT 'active')",
             'CREATE TABLE user_condominium_access (user_id INTEGER, condominium_id INTEGER)',
             'CREATE TABLE erp_bank_accounts (id INTEGER PRIMARY KEY, condominium_id INTEGER, name TEXT, bank_code TEXT, branch TEXT, account_number TEXT, kind TEXT,
-                parent_bank_account_id INTEGER NULL, is_main INTEGER, opening_balance_cents INTEGER, status TEXT, deleted_at TEXT NULL)',
+                parent_bank_account_id INTEGER NULL, is_pocket INTEGER DEFAULT 0, is_main INTEGER, opening_balance_cents INTEGER, status TEXT, deleted_at TEXT NULL)',
             'CREATE TABLE erp_entries (id INTEGER PRIMARY KEY, condominium_id INTEGER, bank_account_id INTEGER NULL, description TEXT, amount_cents INTEGER, paid_on TEXT NULL,
                 status TEXT, deleted_at TEXT NULL)',
             'CREATE TABLE erp_bank_transfers (id INTEGER PRIMARY KEY, condominium_id INTEGER, from_bank_account_id INTEGER, to_bank_account_id INTEGER, amount_cents INTEGER,

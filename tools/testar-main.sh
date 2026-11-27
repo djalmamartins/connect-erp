@@ -301,6 +301,21 @@ else
   fi
 fi
 
+# --- 6b2. Cofre dos bancos do lab (ADR 0685) ---------------------------------------------------
+# Integrações > Banco Inter grava as credenciais do sandbox cifradas com CONNECT_BANK_VAULT_KEY (32 bytes em
+# base64, separada da chave do 2FA). Sem ela, "Testar e gravar" falhava (teste 6.3 do manual). O script cria
+# a chave que faltar no .env local (fora do Git) e nunca troca uma existente: trocar a chave faz as
+# credenciais já gravadas deixarem de abrir. O ERP lê o .env a cada página; não precisa recriar o app.
+if env_has CONNECT_BANK_VAULT_KEY; then
+  add "Cofre dos bancos" OK "chave já está no .env"
+else
+  [ -z "$(tail -c1 .env)" ] || echo >>.env
+  key=$(openssl rand -base64 32)
+  sed -i.bak '/^CONNECT_BANK_VAULT_KEY=/d' .env && rm -f .env.bak
+  printf '\n# Cofre dos bancos, gerado por tools/testar-main.sh. Trocar a chave invalida as credenciais bancárias gravadas.\nCONNECT_BANK_VAULT_KEY=%s\n' "$key" >>.env
+  add "Cofre dos bancos" OK "chave criada no .env; grave de novo as credenciais do Inter em Integrações"
+fi
+
 # --- 6c. Central de Ajuda (ADR 0141): publica os artigos da base no /suporte ---------------
 docker compose exec -T app php service/commands/database-migrate.php status >"$logs/migrations-ajuda.log" 2>&1
 if grep -q '^\[aplicada\] 20261109_0901_help_center' "$logs/migrations-ajuda.log"; then
