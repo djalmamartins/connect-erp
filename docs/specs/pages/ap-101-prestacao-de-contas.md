@@ -43,6 +43,7 @@ PROPOSTO: aplicar componentes do design system, incluindo vazio, erro, carregame
   - tabela dos 12 últimos meses (Visualizar e PDF);
   - `GET /prestacao-de-contas/prestacao-de-contas/documento` e `/pdf` (`AccountabilityDocument`);
   - caixa "Ocultar unidade".
-- PENDENTE:
+- FEITO (ADR 0323):
   - colunas "Sobras de rateio" e "Fundo de reserva" por despesa;
-  - anexos em PDF juntados no mesmo arquivo.
+  - comprovantes em PDF juntados no mesmo arquivo.
+- FEITO (ADR 0652): PDF em A4 retrato, com totais em verde e linhas listradas.

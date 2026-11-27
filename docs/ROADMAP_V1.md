@@ -50,7 +50,7 @@ Se o servidor ou a aprovação do Inter atrasarem, tudo anda junto: cada semana 
 | **Connect Talk dentro do ERP** (Djalma, 16/11/2026): trazer a central de WhatsApp (repositório `djalmamartins/talk`, hoje em hospedagem separada) para dentro do Connect ERP, no mesmo login, permissões, condomínios e Help Desk | **pausado** (Djalma, 17/11/2026, ADR 0359): o Talk volta a ser o projeto separado, inteiro num Raspberry Pi no escritório com nobreak, ligado ao ERP pela API. O código das etapas 1 e 2 (ADR 0324 e 0349) fica no ERP, desligado na hospedagem, porque o relatório e a anonimização do titular usam essas tabelas (ADR 0353) | não |
 | NFS-e etapas 2 e 3 (certificado A1, envio à API Nacional, nota do condomínio) | dependem de dados fiscais e da norma de dez/2026 | **não** (emitir manualmente no início) |
 | Itaú e CNAB 240 genérico | não iniciados | **não** (v1.1) |
-| `docs/specs/pages/ap-*.md` com campos PENDENTE | documentação desatualizada | não bloqueia |
+| `docs/specs/pages/ap-*.md` com campos PENDENTE | documentação desatualizada; em 27/11 as fichas AP-025 e AP-101 passaram os itens já feitos para FEITO (ADR 0323, 0329, 0331, 0652); as demais ainda têm o texto padrão do esqueleto | não bloqueia |
 
 ### 3.2 Issues antigas abertas (provavelmente já resolvidas)
 **Feito em 16/11 (etapa 1):** `#1`, `#2`, `#3`, `#10` e `#11` fechadas; `docs/migration/PENDENCIAS.md` revisado.
