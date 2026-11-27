@@ -165,7 +165,19 @@ return [
             'Cada condomínio só pode ter um síndico ativo. Para cadastrar o novo, inative o atual antes.',
             'E-mail e telefone são obrigatórios, e o fim do mandato precisa ser depois do início.',
             'O fim do mandato não inativa o membro sozinho: depois da eleição, inative quem saiu.',
+            'A pessoa vem dos moradores do prédio ou dos síndicos profissionais (sugestões ao digitar o nome e quadro Escolher a pessoa); o conselho é só de moradores.',
+            'O mandato é de 1 ou 2 anos: o fim é calculado pelo início e não pode passar do limite da duração.',
+            'A lista de moradores só aparece para quem também pode ver Proprietários e inquilinos. Ao salvar, o servidor confere o vínculo: morador ativo do mesmo prédio, síndico profissional só como síndico ou subsíndico, nunca os dois juntos.',
             ...$registry,
+        ],
+    ],
+
+    'CN-012' => [
+        'faz' => 'Cadastra os síndicos profissionais (pessoa ou empresa) que a Connect indica aos condomínios. O cadastro vale para todos os prédios e aparece para escolher em Síndico e conselho.',
+        'por_tras' => [
+            'O CPF ou CNPJ não pode se repetir: o síndico profissional é cadastrado uma vez só e escolhido em vários condomínios.',
+            'Síndico profissional ligado a um membro ativo de Síndico e conselho não pode ser excluído. Inative-o: ele sai das escolhas e o histórico continua.',
+            'Toda inclusão, alteração e exclusão entra no histórico (quem fez, quando e o que mudou).',
         ],
     ],
 

@@ -41,6 +41,7 @@ components:
         floor: { type: [string, "null"], maxLength: 10 }
         ideal_fraction: { type: [number, "null"], minimum: 0, maximum: 1 }
         private_area: { type: [number, "null"], minimum: 0, maximum: 99999999.99 }
+        apportion_percent: { type: [number, "null"], minimum: 0, maximum: 100 }
         cib: { type: [string, "null"], pattern: "^[0-9A-Z]{8}$", description: 'Código CIB: 7 caracteres + DV; aceita com traço, resposta sem.' }
         is_vacant: { type: boolean }
         due_day: { type: [integer, "null"], minimum: 1, maximum: 31 }
@@ -97,7 +98,7 @@ components:
             updated_at: { type: string }
     BoardMembersInput:
       type: object
-      required: [condominium_id, role, name, term_starts_on, term_ends_on, email, phone]
+      required: [condominium_id, role, name, term_years, term_starts_on, term_ends_on, email, phone]
       properties:
         condominium_id: { type: [integer, "null"], minimum: 1 }
         role: { type: [string, "null"], enum: ['sindico', 'subsindico', 'fiscal', 'consultivo', 'suplente'] }
@@ -105,6 +106,9 @@ components:
         document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
         unit_id: { type: [integer, "null"], minimum: 1, description: 'ID de /units do mesmo condomínio; preenche unit_label com o texto da unidade.' }
         unit_label: { type: [string, "null"], maxLength: 40 }
+        resident_id: { type: [integer, "null"], minimum: 1, description: 'ID de /residents ativo, do plano padrão ou do mesmo condomínio.' }
+        professional_manager_id: { type: [integer, "null"], minimum: 1, description: 'ID de /professional-managers ativo.' }
+        term_years: { type: [string, "null"], enum: ['1', '2'] }
         term_starts_on: { type: [string, "null"], format: date }
         term_ends_on: { type: [string, "null"], format: date }
         email: { type: [string, "null"], format: email, maxLength: 254 }
@@ -118,6 +122,25 @@ components:
           properties:
             id: { type: integer }
             condominium_name: { type: [string, "null"] }
+            created_at: { type: string }
+            updated_at: { type: string }
+    ProfessionalManagersInput:
+      type: object
+      required: [name, email, phone]
+      properties:
+        name: { type: [string, "null"], maxLength: 160 }
+        document: { type: [string, "null"], description: 'CPF ou CNPJ com DV válido; resposta só com dígitos.' }
+        contact_name: { type: [string, "null"], maxLength: 160 }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        phone: { type: [string, "null"], description: 'DDD e número; resposta só com dígitos.' }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        status: { type: string, enum: [active, inactive], default: active }
+    ProfessionalManagers:
+      allOf:
+        - $ref: '#/components/schemas/ProfessionalManagersInput'
+        - type: object
+          properties:
+            id: { type: integer }
             created_at: { type: string }
             updated_at: { type: string }
     EmployeesInput:
@@ -448,6 +471,7 @@ components:
         amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
         chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         cost_center_id: { type: [integer, "null"], minimum: 1, description: 'ID de /cost-centers ativo, do plano padrão ou do mesmo condomínio.' }
+        related_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         due_on: { type: [string, "null"], format: date }
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
@@ -501,6 +525,7 @@ components:
         amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
         chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         cost_center_id: { type: [integer, "null"], minimum: 1, description: 'ID de /cost-centers ativo, do plano padrão ou do mesmo condomínio.' }
+        related_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         due_on: { type: [string, "null"], format: date }
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
@@ -528,6 +553,7 @@ components:
         amount_cents: { type: [integer, "null"], minimum: 0, description: 'Centavos. Na entrada também aceita "1.250,00".' }
         chart_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         cost_center_id: { type: [integer, "null"], minimum: 1, description: 'ID de /cost-centers ativo, do plano padrão ou do mesmo condomínio.' }
+        related_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /chart-accounts ativo, do plano padrão ou do mesmo condomínio.' }
         due_on: { type: [string, "null"], format: date }
         paid_on: { type: [string, "null"], format: date }
         bank_account_id: { type: [integer, "null"], minimum: 1, description: 'ID de /bank-accounts ativo, do plano padrão ou do mesmo condomínio.' }
@@ -1131,6 +1157,7 @@ paths:
       security: [{ session: [], csrf: [] }]
       responses:
         '204': { description: Excluído }
+        '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /board-members:
     get:
@@ -1190,6 +1217,64 @@ paths:
       security: [{ session: [], csrf: [] }]
       responses:
         '204': { description: Excluído }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /professional-managers:
+    get:
+      tags: ['Síndicos profissionais']
+      summary: 'Lista síndicos profissionais (permissão erp.board.view)'
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: per_page, in: query, description: 'Itens por página (ADR 0310); sem ele, 25', schema: { type: integer, enum: [50, 100, 200, 500] } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/ProfessionalManagers' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sem sessão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: ['Síndicos profissionais']
+      summary: 'Cadastra (permissão erp.board.manage)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProfessionalManagersInput' } } } }
+      responses:
+        '201': { description: Criado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ProfessionalManagers' } } } } } }
+        '400': { description: JSON inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Sem permissão, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '419': { description: CSRF inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /professional-managers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: ['Síndicos profissionais']
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ProfessionalManagers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    put:
+      tags: ['Síndicos profissionais']
+      summary: 'Substitui todos os campos'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProfessionalManagersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ProfessionalManagers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: ['Síndicos profissionais']
+      summary: 'Mesmo comportamento do PUT (todos os campos)'
+      security: [{ session: [], csrf: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProfessionalManagersInput' } } } }
+      responses:
+        '200': { description: Alterado, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ProfessionalManagers' } } } } } }
+        '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: ['Síndicos profissionais']
+      summary: Exclusão lógica (o histórico de auditoria é mantido)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '204': { description: Excluído }
+        '409': { description: Em uso por cadastros ativos vinculados, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: Inexistente ou fora do escopo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /employees:
     get:
