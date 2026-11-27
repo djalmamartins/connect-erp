@@ -23,7 +23,7 @@ npm run typecheck
 npm test
 ```
 
-No celular, pelo Mac com o Connect no Docker: `bash tools/app-meu-dia/celular.sh` (na raiz do projeto) e leia o
+No celular, pelo Mac com o Connect no Docker: `bash tools/app-meu-dia/celular.sh` (na raiz do projeto; ponte 8092 e Expo 8083, para abrir junto com o app do SAC) e leia o
 QR code com o Expo Go. Endereço da API: `EXPO_PUBLIC_API_URL` ou `extra.apiBaseUrl` do `app.json`.
 
 ## Notificações

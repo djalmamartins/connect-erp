@@ -8,7 +8,7 @@ menu:
 icone: phone-portrait-outline
 situacao: guia
 relacionados: meu-dia, chamados
-palavras: app, aplicativo, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
+palavras: app, aplicativo, painel da visita, checklist de chegada, visita ao condomínio, celular, iphone, android, meu dia, lembrete, notificação, push, tarefa atrasada, atrasada, agenda no celular, marcar tarefa para outra pessoa
 manual: sim
 rascunho: nao
 ---
@@ -35,6 +35,17 @@ Esqueceu a senha? Troque pela tela de login do ERP no computador. Só entra quem
 O que ficou para trás (um compromisso de ontem que não foi concluído, um chamado com o prazo vencido, uma vistoria vencida) aparece num quadro **vermelho** no alto da aba **Hoje**, com há quantos dias está atrasado. Ele continua aparecendo todos os dias, até ser fechado. Na faixa dos dias, o dia em que a tarefa ficou para trás também fica vermelho. O número no ícone do app é a quantidade de tarefas atrasadas.
 
 Para fechar: toque na tarefa e escolha **Concluir**. Chamado fecha no SAC: toque nele e escolha **Abrir no app do SAC** para responder, ou **Marcar horário para atender**. Quando fecha, sai do vermelho e tudo volta ao normal.
+
+## Painel da visita
+
+Na aba **Hoje**, toque numa **vistoria** para abrir o **Painel da visita** do prédio, para ver antes de entrar:
+
+- **O que acompanhar:** quantos chamados estão abertos (em vermelho quando há urgente), os documentos e vencimentos do prédio (em vermelho quando algum já venceu) e as pendências da última vistoria, com a data dela.
+- **Checklist de chegada:** portaria e livro de ocorrências, zelador ou síndico, pendências da última vistoria, áreas comuns e fotos. Marque cada item ao fazer. O checklist fica só no seu celular e recomeça na visita seguinte.
+- **Abrir chamado com foto no SAC:** abre o **Novo chamado** no app do SAC.
+- **Chamados abertos** e **documentos e vencimentos** do prédio: toque num chamado para abrir no app do SAC.
+
+O painel mostra só os prédios que você atende, com as mesmas regras de acesso do ERP.
 
 ## Concluir, cancelar ou reabrir
 

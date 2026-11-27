@@ -3,7 +3,7 @@
  *
  * - Sessão do aparelho da equipe (ADR 0660): POST /team/app-sessions (+ /verify para o 2FA), DELETE /team/app-sessions/current,
  *   GET /team/me e POST/DELETE /team/push-devices com app "meu-dia".
- * - Meu Dia (ADR 0630 e 0658): GET /my-day, GET /my-day/overdue, GET /my-day/team, POST /my-day/events e
+ * - Meu Dia (ADR 0630 e 0658): GET /my-day, GET /my-day/overdue, GET /my-day/team, GET /my-day/visit/{condominium_id}, POST /my-day/events e
  *   POST /my-day/events/{id}/status. As regras são as mesmas da tela /meu-dia do ERP: cada pessoa vê o próprio dia e
  *   só quem tem "ver a equipe" (erp.myday.team) vê o dia de outra pessoa ou marca tarefa para ela.
  * Datas AAAA-MM-DD, horas HH:MM.
@@ -126,6 +126,16 @@ export type Day = {
   unassigned?: Ticket[];
 };
 
+/** Painel da visita (GET /my-day/visit/{condominium_id}): o que acompanhar no prédio antes de entrar. */
+export type VisitPanel = {
+  condominium: { id: number; name: string; address: string };
+  tickets: Ticket[];
+  urgent: number;
+  documents: Deadline[];
+  pending_from_last_visit: Ticket[];
+  last_visit: { id: number; template: string; completed_at: string; issues: number } | null;
+};
+
 export type Overdue = { count: number; oldest: string | null; items: OverdueItem[] };
 
 export type NewTask = {
@@ -159,6 +169,7 @@ export function teamApi(client: ApiClient) {
     team: () => client.get<Person[]>('/my-day/team'),
     day: (date?: string, personId?: number | null) => client.get<Day>('/my-day', { date, person_id: personId ?? undefined }),
     overdue: (personId?: number | null) => client.get<Overdue>('/my-day/overdue', { person_id: personId ?? undefined }),
+    visit: (condominiumId: number) => client.get<VisitPanel>(`/my-day/visit/${condominiumId}`),
     createTask: (task: NewTask) => client.post<{ id: number }>('/my-day/events', task),
     setStatus: (id: number, status: EventStatus) => client.post<{ id: number; status: EventStatus }>(`/my-day/events/${id}/status`, { status }),
     registerPush: (token: string, platform: string) => client.post<unknown>('/team/push-devices', { token, platform, app: 'meu-dia' }),

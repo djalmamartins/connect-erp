@@ -255,6 +255,8 @@ function DayBody({
               bg={v.overdue ? colors.dangerSoft : colors.infoSoft}
               title={`${v.template} · ${v.condominium}`}
               subtitle={[v.frequency_label, v.overdue ? `Vencida desde ${shortDay(v.due_on)}` : null, v.address].filter(Boolean).join(' · ')}
+              onPress={() => router.push({ pathname: '/visita/[id]', params: { id: String(v.condominium_id), template: v.template } })}
+              accessibilityLabel={`${v.template} em ${v.condominium}. Toque para ver o painel da visita`}
             />
           ))}
         </>

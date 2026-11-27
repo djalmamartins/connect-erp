@@ -9,6 +9,7 @@ const TOKEN_KEY = 'connect.meudia.token';
 const LOGIN_KEY = 'connect.meudia.last_login';
 const PUSH_KEY = 'connect.meudia.push_token';
 const REMINDERS_KEY = 'connect.meudia.reminders';
+const ARRIVAL_KEY = 'connect.meudia.arrival';
 const memory = new Map<string, string>();
 
 async function read(key: string): Promise<string | null> {
@@ -38,4 +39,7 @@ export const storage = {
     return (await read(REMINDERS_KEY)) !== '0';
   },
   setReminders: (on: boolean) => write(REMINDERS_KEY, on ? null : '0'),
+  /** Checklist de chegada da visita em andamento (só a última: prédio e dia). */
+  getArrival: () => read(ARRIVAL_KEY),
+  setArrival: (value: string | null) => write(ARRIVAL_KEY, value),
 };
